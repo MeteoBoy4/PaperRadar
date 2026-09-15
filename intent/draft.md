@@ -1,6 +1,6 @@
 # PaperRadar 第一版方案
 
-> 状态：经 Q1–Q89 逐项校准后的实施规格
+> 状态：经 Q1–Q89 逐项校准并完成审阅意见收口的实施规格
 > 目标用户：单个研究者
 > 核心目标：每天从持续到达的论文中找出真正值得精读的工作，并给出能够回到原文核查的精读结果
 > 本文是第一版范围和验收依据；与早期设想冲突时，以本文、根目录 CONTEXT.md 和已记录 ADR 为准。
@@ -29,12 +29,15 @@ PaperRadar 第一版不是通用文献管理平台，也不是多源学术搜索
 - 单篇或单个外部来源失败不阻断同批其他论文；
 - 本机一致性快照可恢复，启用无人值守运行前完成一次 NAS 恢复演练。
 
+这些约束服从同一失败成本顺序：首先避免每日结果过多到让用户放弃系统，其次避免漏掉真正相关的论文，再次避免把昂贵全文精读浪费在低价值论文上，最后才是减少复核积压，即 `attention_overload > missed_relevant > wasted_full_read > review_backlog`。因此日报和自动任务有硬容量，自动精读强调值得看，而复核队列允许积压。
+
 ### 1.2 服务目标与容量
 
 - 正常容量下，摘要级速览在发现后一天内产生；
 - 正常容量下，自动接受论文的全文精读在一周内产生；
 - 每个自然日最多自动 Screening 20 篇、自动精读 3 篇；
 - 用户显式请求的精读不占自动名额，也不设每日数量上限；
+- 当日未取得自动精读名额的 accepted 论文继续留在队列，次日及以后仍可按同一资格参与选择，不要求在发现当日完成，也不因跨日创建重复任务；
 - 每个模型阶段对同一输入指纹最多自动尝试两次；
 - 超额任务留在队列，系统不为追赶服务目标而突破自动配额；
 - 预测积压会使服务目标超时时，日报和 doctor 必须显示容量告警。
@@ -70,6 +73,8 @@ OCR、AI 精确版面解析、登录态辅助下载和可编辑前端可以在�
 |Quarterly Journal of the Royal Meteorological Society|https://rmets.onlinelibrary.wiley.com/feed/1477870x/most-recent|
 |大气科学|https://www.iapjournals.ac.cn/dqkx/rss/current.xml|
 
+《大气科学》第一版暂不订阅未列入官方 RSS 目录的 `latest.xml`。因此其优先发表论文可能要等到进入 `current.xml` 后才被发现；这是明确接受的发现延迟，不改变“一旦发现，优先发表属于正式期刊版本”的版本语义。后续加入 `latest.xml` 时必须作为独立 Feed 建立契约监测，并与 `current.xml` 按强标识汇聚发现事实。
+
 Feed 条目只要最终解析为 journal-article 就进入 Screening，不在之前继续区分研究论文、综述、社论或勘误。Feed 自己明确提供的原始文章类别仍原样保存。该选择会带来非目标初筛噪声，但避免因不同出版平台的子类型缺失或不一致漏掉论文。
 
 在线优先、EarlyView 或优先发表属于正式期刊版本。正式期刊版本出现后优先成为论文的当前版本。
@@ -96,6 +101,8 @@ PDF 可以显式附加到 paper ID。系统若从 PDF 中检测到 DOI，只能�
 - SQLite 中完整的事实、历史和用户行为。
 
 Markdown 是只读数据库投影。用户反馈、笔记和行为通过 CLI 追加到数据库，再由报告渲染；直接修改 Markdown 不受保存保证。
+
+原题名、作者、摘要和证据片段始终保留原语言。系统不得覆盖原题名，可以另存可选中文显示题名；速览、分析和行动建议默认中文，只有翻译会损坏术语或证据原义时保留必要原文。用户可以为单篇论文显式请求英文 Read 重跑；输出语言进入 Read 输入指纹，但不得因此重抓 Feed、元数据、PDF 或重跑 Docling。
 
 ### 2.4 外部 LLM 数据边界
 
@@ -160,9 +167,9 @@ doctor 必须明确显示数据会离开本机。日志不得记录全文、完�
 
 每个模型或解析阶段保存规范输入指纹：
 
-- Screening：规范题名、摘要、Research Profile、模型、提示词、输出契约；
+- Screening：规范题名、摘要、Research Profile、可映射主题集合、模型、提示词、输出契约；
 - Docling：PDF SHA-256、Docling/core/parse 版本、PDF 后端、模型制品哈希、完整解析配置；
-- Read：正文提取物、Research Profile、模型、提示词、输出契约；
+- Read：正文提取物、Research Profile、输出语言、模型、提示词、输出契约；
 - 确定性决定：Screening 原始输出和规则版本；
 - 报告：固定成员及其具体筛选或分析制品。
 
@@ -207,7 +214,7 @@ doctor 必须明确显示数据会离开本机。日志不得记录全文、完�
 - 可转化成果：研究价值至少 3，复用可行性至少 4；
 - 认知增益：研究价值至少 4，复用可行性不高于 3。
 
-每天自动精读最多三篇。两条队列都非空时各保留至少一个名额；剩余名额从两条队列的帕累托前沿选择。若仍无法区分，依次比较等待时间、期刊信誉和发现时间。
+每天自动精读最多三篇。两条队列都非空时各保留至少一个名额；剩余名额从两条队列的帕累托前沿选择。仍有多个候选时先选择等待更久者；只有研究价值、复用可行性、价值类型集合和等待时间均相同时，期刊信誉才可破同；若期刊信誉不适用或仍相同，最后按更早发现者选择。
 
 期刊信誉只有 preferred、normal、low 三档，只作最后的次级排序，不进入 Agent 输入，不改变价值评分和筛选决定。V1 不保存紧急性，也不计算被引次数或综合 Rank。
 
@@ -215,12 +222,10 @@ doctor 必须明确显示数据会离开本机。日志不得记录全文、完�
 
 ### 3.7 筛选建议与生效决定
 
-Screening Agent 只产生结构化语义判断。程序以版本化规则生成建议：
+Screening Agent 只产生结构化语义判断。只有 §7.4 的两阶段输出成功并通过业务校验后，程序才以版本化规则生成筛选建议；摘要不可得或模型失败没有合法筛选制品，因此不会调用本规则，而在复核投影中显示为带原因的 pending：
 
 ~~~text
-if missing abstract or invalid model output:
-    suggestion = pending
-elif boundary == out_of_scope:
+if boundary == out_of_scope:
     suggestion = denied(reason=out_of_scope)
 elif boundary == uncertain:
     suggestion = pending
@@ -228,11 +233,15 @@ elif predicted_research_value >= 4:
     suggestion = accepted
 elif predicted_research_value == 3 and predicted_reuse_feasibility >= 4:
     suggestion = accepted
+elif predicted_research_value <= 2 and predicted_reuse_feasibility >= 4:
+    suggestion = pending(reason=value_reuse_conflict)
 elif predicted_research_value <= 2:
     suggestion = denied(reason=low_value)
 else:
-    suggestion = denied(reason=low_reuse)
+    suggestion = denied(reason=low_reuse_feasibility)
 ~~~
+
+研究价值高但复用困难不是冲突：研究价值至少 4 时仍 accepted，并进入认知增益。只有“研究价值不高于 2、复用可行性至少 4”这种低价值但容易采用的反向信号进入 pending，交给用户判断是否存在摘要阶段漏掉的实用价值；其余组合按上表 accepted 或带原因 denied。
 
 建议和生效决定分开：
 
@@ -261,6 +270,35 @@ else:
 
 ## 四、端到端工作流
 
+### 4.0 总体流程
+
+~~~mermaid
+flowchart TD
+    F[四个期刊 Feed] --> I[发现、身份与版本]
+    M[人工 DOI / URL / PDF] --> I
+    I --> D{题名与摘要可得?}
+    D -- 否 --> U[元数据补全与 7 天复查]
+    U --> MU[metadata_unobtainable / 人工复核]
+    D -- 是 --> S[两阶段 Screening]
+    S --> G{筛选建议与有效决定}
+    G -- pending --> Q[复核队列]
+    Q --> G
+    G -- denied --> X[停止新的自动下游任务]
+    G -- accepted --> P[PDF 取得]
+    G -- accepted 且来自 Feed --> R[一层参考文献发现]
+    P --> E[Docling 与质量门槛]
+    E --> A[自动或人工 Read 队列]
+    A --> L[精读分析与 evidence]
+    Q --> O[普通日报]
+    L --> O
+    L --> PR[单篇报告]
+    S -. 校准样本 .-> C[盲评 calibration evaluation]
+    C --> K{自动精读门禁}
+    K -. 控制系统建议能否自动 Read .-> A
+~~~
+
+图中门禁只控制系统建议触发的自动 Read；人工 accepted 和人工精读请求不受它阻止。参考文献发现与 PDF/Read 路线在 accepted 后并行，任一侧失败不阻断另一侧。
+
 ### 4.1 单一日常入口
 
 常驻运行只需要一个有界、幂等的日常入口：
@@ -283,6 +321,8 @@ paper-radar run-due --date YYYY-MM-DD
 10. 写入运行摘要和容量告警。
 
 每篇论文、每个阶段独立提交。外部网络和模型调用期间不持有 SQLite 写事务。单篇失败记录自己的 task attempt，不取消同批其他论文。
+
+自动 Read 领取查询面向所有仍合格的 accepted 积压，而不是只看当天发现或当天 accepted 的论文。未领取者保留同一待办资格，在后续日期重新参与队列选择；每日配额只限制当天新领取数，不把跨日积压判为失败，也不以追赶方式突破三篇上限。
 
 备份由独立每日 timer 运行，不拆成十余个高频 stage timer。各阶段命令仍可以手动调用和测试。
 
@@ -320,7 +360,7 @@ Screening 最低元数据要求：
 - 至少一个可靠来源 URL；
 - 已经尝试适用的 DOI 与出版者路线。
 
-摘要缺失时论文保留在元数据待补队列，不允许只用标题假装完成“题名 + 摘要”筛选。
+题名或摘要缺失时不允许只用不完整输入假装完成“题名 + 摘要”筛选。系统先完成 Feed、当前版本出版者和适用 DOI 注册机构路线，并在发现满 7 天后安排一次延迟复查；仍缺失时追加 `metadata_unobtainable(reason=no_title|no_abstract)` 事实，不再被每日任务自动重试，也不进入 Screening 或校准样本。该论文以 pending 处理投影进入元数据复核入口，用户可以用 `insufficient_metadata` 原因 denied、补充元数据或显式请求精读；新当前版本、新的权威来源事实或用户显式 retry 会形成新任务资格。
 
 字段仲裁采用当前版本优先、字段级来源：
 
@@ -349,27 +389,7 @@ Screening 最低元数据要求：
 
 ### 4.5 两阶段 Screening Agent
 
-阶段一只接收题名、摘要、完整 Research Profile、提示词和输出 Schema：
-
-~~~python
-class ResearchBoundaryOutput(BaseModel):
-    verdict: Literal["in_scope", "out_of_scope", "uncertain"]
-    reason: str
-~~~
-
-out_of_scope 停止；in_scope 与 uncertain 进入阶段二，以便 pending 论文仍有速览：
-
-~~~python
-class ValuePredictionOutput(BaseModel):
-    research_value: int  # 1..5
-    research_value_reason: str
-    reuse_feasibility: int  # 1..5
-    reuse_feasibility_reason: str
-    value_types: list[ValueType]
-    topic_ids: list[str]
-    abstract_brief_zh: str
-    why_might_matter_zh: str
-~~~
+阶段一只接收原题名、摘要、完整 Research Profile、提示词和输出 Schema。out_of_scope 停止；in_scope 与 uncertain 进入阶段二，以便 pending 论文仍有可复核速览。两阶段唯一权威 Schema 位于 §7.4；本工作流不得复制或私自扩展另一组字段定义，实际实现由 `screening/schema.py` 提供同一个 Interface 给 Agent adapter、持久化和测试。
 
 Agent 不知道期刊信誉和最终建议规则，也不输出最终决定、权重、紧急性、自由标签、priority 或数值置信度。程序验证主题 ID、价值类型、枚举和分数完整性；未知、重复、缺失或截断输出不能进入成功缓存。
 
@@ -377,7 +397,9 @@ Agent 不知道期刊信誉和最终建议规则，也不输出最终决定、�
 
 ### 4.6 盲评校准
 
-初始样本为四刊各自连续 8 篇，共 32 篇，不按标题挑选。每批最多 5 篇并按四刊轮转；批次生成后固定，上一批未全部提交和揭晓时不生成下一批。用户可以隔几天处理，不要求连续日历日。
+初始样本为四刊各自按发现顺序连续进入校准资格的 8 篇，共 32 篇，不按标题挑选。`metadata_unobtainable` 论文因没有共同的题名摘要输入而不具备校准资格，但每刊被排除的数量和原因必须随 calibration evaluation 报告，不能静默跳过。每批最多 5 篇并按四刊轮转；批次生成后固定，上一批未全部提交和揭晓时不生成下一批。用户可以隔几天处理，不要求连续日历日。
+
+`calibration create-batch` 先确定本批按顺序应选的元数据就绪成员，并预检当日剩余自动 Screening 名额。缺失的 Screening 制品由该命令同步生成，每篇计入当日 20 篇配额；名额不足时不创建批次，明确提示最早可在次日重试。批次一旦创建即固定成员；个别模型调用耗尽两次仍失败时保留该成员，以 `pending(reason=model_failure)` 作为校准比较结果，不能换入另一篇更容易成功的论文。
 
 待评报告只显示固定编号、题名、摘要和来源，不显示 Agent 预测。CLI 读取同一批：
 
@@ -385,7 +407,7 @@ Agent 不知道期刊信誉和最终建议规则，也不输出最终决定、�
 paper-radar review submit --batch <batch-id>
 ~~~
 
-CLI 默认只显示编号和短题名，用户输入 accepted、pending 或 denied；输入 ? 时重显摘要。最后一项提交后才生成揭晓报告，展示人工决定、系统建议、两项预测及差异。
+CLI 默认只显示编号和短题名，用户输入 accepted、pending 或 denied；输入 ? 时重显摘要。选择 denied 后必须继续从 `out_of_scope`、`low_value`、`low_reuse_feasibility` 中选择原因，校准期人工 denied 也不得省略。最后一项提交后才生成揭晓报告，展示人工决定、系统比较结果、可用的两项预测及差异；模型失败成员显示 `pending(reason=model_failure)` 和失败类别，不伪造预测分。
 
 四项启用门槛：
 
@@ -393,6 +415,8 @@ CLI 默认只显示编号和短题名，用户输入 accepted、pending 或 deni
 2. 人工 accepted 中至少 90% 没有被系统判为 denied；
 3. 系统明确给出 accepted 或 denied 的样本至少 16 篇；
 4. 系统 accepted 至少 5 篇。
+
+门禁保持 `system_accepts >= 5`，不提高到 10；但 status、reveal 和最终验收必须同时展示每项指标的原始分子/分母与百分比。`system_accepts` 为 5–9 时附加 `small_sample` 警告，提醒 80% 可能只代表 4/5，但警告本身不阻止第一版开门。
 
 如果前两项不达标，校准未通过。允许依据揭晓结果调整 Profile、提示词、模型、契约或规则，然后复用同一组 32 篇人工标签重新产生 Screening 制品、建议和门槛指标；每轮必须保存完整运行组合、结果和前一轮关系，并标记 `reused_revealed_labels`。这种结果可以作为第一版自动精读门禁依据，但它是对已揭晓调优样本的拟合后复算，不得称为新样本独立验证。如果后两项不足，结果是“校准不确定”，在语义组合不变时按四刊各连续 2 篇的平衡批次继续，直到分母充分。
 
@@ -552,32 +576,33 @@ class EvidenceRef(BaseModel):
     evidence_id: str
 
 class SupportedStatement(BaseModel):
-    statement_zh: str
+    statement: str
     evidence: list[EvidenceRef]
 
 class ReusablePoint(BaseModel):
-    item_zh: str
-    how_to_reuse_zh: str
+    item: str
+    how_to_reuse: str
     evidence: list[EvidenceRef]
 
 class ReadAnalysisOutput(BaseModel):
-    one_sentence_conclusion_zh: str
-    research_question_zh: str
-    methods_summary_zh: str
-    data_summary_zh: str
+    output_language: Literal["zh", "en"]
+    one_sentence_conclusion: str
+    research_question: str
+    methods_summary: str
+    data_summary: str
     main_findings: list[SupportedStatement]
     research_value: int  # 1..5
-    research_value_reason_zh: SupportedStatement
+    research_value_reason: SupportedStatement
     reuse_feasibility: int  # 1..5
-    reuse_feasibility_reason_zh: SupportedStatement
-    required_adaptations_zh: list[str]
+    reuse_feasibility_reason: SupportedStatement
+    required_adaptations: list[str]
     reusable_points: list[ReusablePoint]
     key_limitations: list[SupportedStatement]
-    open_questions_zh: list[str]
+    open_questions: list[str]
     value_types: list[ValueType]
-    why_it_matters_zh: str
-    next_action_zh: str
-    degraded_content_warnings_zh: list[str]
+    why_it_matters: str
+    next_action: str
+    degraded_content_warnings: list[str]
 ~~~
 
 主要发现、两项正式评分理由、可复用内容和关键局限都必须引用 evidence ID。程序检查：
@@ -598,22 +623,34 @@ class ReadAnalysisOutput(BaseModel):
 3. 最终分析只能引用当前 evidence-map 中存在的 ID；
 4. 不使用向量 RAG，也不截断论文尾部。
 
-Read Agent 不输出紧急性、priority、Rank、自由标签或无证据的精确公式/表格值。所有输出原则上为中文；术语或证据翻译会损坏原义时保留必要原文。
+Read Agent 不输出紧急性、priority、Rank、自由标签或无证据的精确公式/表格值。自动 Read 和未指定语言的人工请求使用中文；术语或证据翻译会损坏原义时保留必要原文。用户显式指定 `--language en` 时生成独立英文 analysis；这只改变 Read 指纹，不使元数据、PDF 或 Docling 制品过期。
 
 ### 4.11 报告与复核
 
 普通日报每天最多五项：
 
 - 成功全文分析最多三项；
-- 其余名额用于有摘要速览的 pending 论文；
+- 其余名额用于有摘要速览、需要用户作决定的 pending 论文；
 - 全文分析不足三项时 pending 可以补足；
 - 可转化成果和认知增益分栏，不给出跨栏总顺序；
 - 尚未发布的分析留在报告等待队列；
-- 每个筛选制品和分析制品只在普通日报首次发布一次；
+- 每个可发布的 pending 筛选制品和分析制品只在普通日报首次发布一次；
 - 积压项目不因未处理而重复出现；
 - 当天无新结果仍生成空日报。
 
-运行摘要健康时只显示抓取、筛选、精读和积压数量；存在 Feed、模型、PDF、解析或备份异常时才展开告警。空日报必须区分“确实没有新结果”和“因故障没有结果”。
+自动 accepted 的筛选制品不单独占普通日报槽位：其摘要速览随成功全文分析一起呈现，但 report entry 的首次发布键只针对 analysis。若 Read 失败或 accepted 积压导致一周服务目标超时，运行摘要显示 accepted backlog/失败告警，详情留在 CLI 查询，不把同一筛选制品逐日塞回论文槽位。曾以 pending 筛选制品出现的论文，后来 accepted 并完成全文分析时可以再以新 analysis 出现一次。
+
+普通日报的论文条目使用固定 `N1`–`N5` 显示编号；只有其中当前仍 pending 的条目参与普通复核。用户可以在任意后续日期运行：
+
+~~~bash
+paper-radar review submit --report <report-id>
+~~~
+
+CLI 按日报原顺序显示编号和短题名，收集 accepted、pending 或 denied；选择 denied 时继续询问受控原因。普通复核不是盲评，不生成 reveal，也不重新计算报告成员。积压允许长期保留；逐篇 `screening set-decision` 仍作为直接入口。
+
+所有报告以原题名为身份文本；存在 `display_title_zh` 时可以并列显示，但不得替换原题名。期刊信誉档位可以显示，且必须与两项分数和价值类型分开，避免看起来像评分来源。
+
+运行摘要健康时只显示抓取、筛选、精读和积压数量；存在 Feed、元数据不可得、模型、PDF、解析或备份异常时才展开告警。空日报必须区分“确实没有新结果”和“因故障没有结果”。
 
 单篇报告只为成功分析生成，固定引用具体 analysis ID、PDF 哈希、正文制品和 evidence。新版本分析生成新修订，不改写历史日报。
 
@@ -639,7 +676,7 @@ Read Agent 不输出紧急性、priority、Rank、自由标签或无证据的精
 |feeds|Feed URL、期刊、ETag、Last-Modified、健康信息|规范 URL 唯一|
 |feed_discoveries|原始条目、上游 entry ID、item fingerprint、首次/最近发现时间、解析版本、paper/version 指向|feed_id + entry ID + item fingerprint 唯一；内容未变只更新 last_seen|
 |papers|一项学术工作的稳定 UUID|不放题名、DOI、当前版本或任何流程字段|
-|paper_versions|版本类型、题名、摘要、作者、发布日期、卷期页码、来源 URL|同一 paper 可有多版本；当前版本不存于本表|
+|paper_versions|版本类型、原题名、摘要、作者、发布日期、卷期页码、来源 URL|同一 paper 可有多版本；翻译题名不写入；当前版本不存于本表|
 |current_version_selections|paper、version、选择原因、时间|只追加；当前版本取最新有效选择|
 |external_identifiers|DOI、arXiv ID、PMID 等规范标识及其所属 paper/version|scheme + normalized_value 全局唯一|
 |manual_intakes|用户提交的 DOI、URL 或 PDF、解析候选和确认结果|PDF 检测身份确认前不附加|
@@ -666,12 +703,12 @@ Read Agent 不输出紧急性、priority、Rank、自由标签或无证据的精
 
 |逻辑实体|核心内容|关键约束|
 |---|---|---|
-|screening_artifacts|阶段一、阶段二结构输出，模型/提示词/Profile/契约版本及原始成功响应|输入指纹唯一成功结果；预测值不可冒充正式值|
+|screening_artifacts|阶段一、阶段二结构输出、可选中文显示题名，模型/提示词/Profile/契约版本及原始成功响应|输入指纹唯一成功结果；预测值和显示题名不可冒充原始事实|
 |screening_suggestions|artifact、规则版本、建议三态、原因|纯函数可重算；Agent 不直接写建议|
 |screening_decision_events|人工或系统决定、依据 suggestion/artifact、原因、时间|只追加；当前有效决定按优先级派生|
 |calibration_batches|批次编号、固定成员、创建/揭晓时间、状态|最多五篇；上一批未揭晓不能新建|
-|calibration_members|paper、顺序、题名摘要快照、隐藏 suggestion、人工三态和提交时间|提交前查询不能泄漏系统结果|
-|calibration_evaluations|样本集合、runtime plan、各指标分子分母、结果、评估依据、前一轮|每次重算只追加；复用揭晓标签必须标记 reused_revealed_labels|
+|calibration_members|paper、顺序、题名摘要快照、隐藏系统比较结果及依据、人工三态/原因和提交时间|比较结果可来自 suggestion 或失败派生 pending；提交前不能泄漏|
+|calibration_evaluations|样本集合、各刊元数据排除计数、runtime plan、各指标分子分母、警告、结果、评估依据、前一轮|每次重算只追加；5–9 个 system accepts 标 small_sample；复用揭晓标签标 reused_revealed_labels|
 |calibration_changes|前后 runtime plan、差异摘要、待分级/minor/major、用户理由、时间|检测后先待分级；只有用户能确定 minor/major|
 |automatic_read_gate_events|enable/disable、所依据 evaluation、用户、理由、时间|只追加；enable 要求门槛通过且无待分级或未解决 major 变更|
 
@@ -694,7 +731,7 @@ Read Agent 不输出紧急性、priority、Rank、自由标签或无证据的精
 |---|---|---|
 |fulltext_files|paper version、PDF 哈希、来源、取得方式、许可证据、文件位置、验证结果|内容哈希去重；原 PDF 永久保留|
 |extraction_artifacts|PDF、解析输入指纹、Docling/模型配置、manifest/document/reading/evidence-map 路径、质量结果|只有通过质量门槛的制品可成为当前|
-|analyses|Read 输入指纹、模型/提示词/Profile/契约、完整结构输出、原始成功响应|同一指纹一个成功分析；历史不覆盖|
+|analyses|Read 输入指纹、输出语言、模型/提示词/Profile/契约、完整结构输出、原始成功响应|同一指纹一个成功分析；历史不覆盖；语言变化不重做事实采集|
 |analysis_evidence|analysis 内字段路径、evidence ID、支持片段|必须能解析到该分析使用的 evidence-map|
 |analysis_reviews|用户对 Read 的两项评分、重大误述、证据问题和笔记|只用于抽查，不构成门禁|
 
@@ -705,17 +742,18 @@ Read Agent 不输出紧急性、priority、Rank、自由标签或无证据的精
 |逻辑实体|核心内容|关键约束|
 |---|---|---|
 |user_events|reviewed、saved、read、reuse_planned、reused、dismissed、note|只追加；不修改处理事实|
-|read_requests|paper、请求时间、触发决定事件、取消时间、完成 analysis|每篇最多一条未完成请求；pending/denied 请求必须关联 manual_read_request accepted；不写自动配额|
+|read_requests|paper、输出语言、请求时间、触发决定事件、取消时间、完成 analysis|同一论文/语言最多一条未完成请求；pending/denied 请求必须关联 manual_read_request accepted；不写自动配额|
 |report_runs|种类、日期或 calibration batch、固定成员、输入指纹、发布结果|重跑不重新选成员|
-|report_entries|report、artifact_kind、artifact_id、paper、栏位、顺序和 first-publication key|普通筛选制品和分析制品分别最多首次发布一次|
+|report_entries|report、primary artifact、可选 supporting screening artifact、paper、固定显示编号、栏位、顺序和 first-publication key|只有 pending 筛选制品单独发布；analysis 最多首次发布一次，附带速览固定到具体制品|
 
-report_entries 的唯一性不能只有 report_date + paper_id，因为同一论文的摘要筛选制品和后来全文分析都是独立可发布的新结果。
+report_entries 的唯一性不能只有 report_date + paper_id，因为同一论文曾经出现的 pending 摘要筛选制品和后来全文分析是独立可发布的新结果。自动 accepted 筛选制品没有独立 first-publication key；它作为 analysis entry 的 supporting artifact 固定并随之渲染，但不产生第二个槽位。
 
 ### 5.7 派生任务查询
 
 以下概念用 repository 查询或数据库 view 推导，而不是 papers.status：
 
 - metadata_ready；
+- metadata_unobtainable；
 - canonical_paper；
 - current_version；
 - current_screening_artifact；
@@ -728,6 +766,7 @@ report_entries 的唯一性不能只有 report_date + paper_id，因为同一论
 - needs_extraction；
 - extraction_failed；
 - eligible_for_auto_read；
+- accepted_read_backlog；
 - requested_manual_read；
 - model_failure_queue；
 - waiting_calibration；
@@ -746,12 +785,16 @@ config/
   settings.yaml
   feeds.yaml
   journals.yaml
-  research_profile.yaml
-  topics.yaml
+  profiles/profile-v1.yaml
+  topics/topics-v1.yaml
 prompts/
   screening/boundary-v1.md
   screening/value-v1.md
   reading/v1.md
+contracts/
+  screening/boundary-v1.schema.json
+  screening/value-v1.schema.json
+  reading/v1.schema.json
 data/
   paperradar.sqlite3
   blobs/sha256/
@@ -768,6 +811,8 @@ reports/
 logs/
 ~~~
 
+`settings.yaml` 只选择当前 Profile、主题、提示词和契约版本；带版本的内容文件创建后不可原地改写。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
+
 blob 和 artifact 路径只由哈希、UUID 与受控枚举构造。数据库保存相对路径；根目录由配置决定，以便 NAS 恢复到不同挂载点。
 
 永久保留：
@@ -779,7 +824,8 @@ blob 和 artifact 路径只由哈希、UUID 与受控枚举构造。数据库保
 - 正式分析；
 - 被正式分析引用的 Docling 制品；
 - GROBID TEI 及其被采用的原始引用观察；
-- 用户事件与已发布报告成员。
+- 用户事件与已发布报告成员；
+- 所有被 RuntimePlan 或历史制品引用的 Profile、主题、提示词和导出契约版本。
 
 可以清理：
 
@@ -794,7 +840,7 @@ blob 和 artifact 路径只由哈希、UUID 与受控枚举构造。数据库保
 
 ### 7.1 Research Profile
 
-research_profile.yaml 必须包含六个独立段落：
+`config/profiles/<version>.yaml` 必须包含六个独立段落：
 
 ~~~yaml
 version: profile-v1
@@ -837,7 +883,7 @@ journals:
     tier: preferred  # preferred | normal | low
 ~~~
 
-以规范 ISSN/ISSN-L 匹配，刊名只展示。冲突显示为配置错误，不由 Agent 决定。期刊信誉只在二维候选仍无法区分时破同。
+以规范 ISSN/ISSN-L 匹配，刊名和档位可以在日报展示。冲突显示为配置错误，不由 Agent 决定。队列先执行双队列保留、二维帕累托比较和等待时间破同；只有研究价值、复用可行性、价值类型集合和等待时间均相同时，期刊信誉才可继续破同，最后才按发现时间。档位不得抬高分数、改变筛选建议或跨越不相同的价值类型。
 
 ### 7.4 Screening 输出
 
@@ -853,11 +899,14 @@ class ValuePredictionOutput(BaseModel):
     reuse_feasibility_reason_zh: str
     value_types: list[ValueType]
     topic_ids: list[str]
+    display_title_zh: str | None = None
     abstract_brief_zh: str
     why_it_may_matter_zh: str
 ~~~
 
 阶段一和阶段二是可独立恢复的调用。out_of_scope 不运行阶段二；in_scope 和 uncertain 运行阶段二，以便 pending 也有可复核速览。Agent 不读取期刊信誉，不输出最终决定、紧急性、置信分、权重或标签。
+
+本节是 Screening 结构输出的唯一权威定义；§4.5 只规定调用顺序和输入，不重复 Schema。`display_title_zh` 只是可选展示文本，原题名永远从论文版本事实读取；缺少中文显示题名不使输出失败。
 
 Pydantic Schema 通过后仍要执行业务校验：
 
@@ -887,6 +936,8 @@ models:
 
 运行计划与最近一次门禁所依据的计划存在校准相关差异时，doctor 和 run-due 必须列出差异并要求用户分级。系统不得仅依据文件名、版本号或 diff 大小自动判定 minor/major；用户选择和理由形成审计事件。minor 不阻止门禁继承，major 才关闭既有门禁，但待分级期间自动精读保持暂停。
 
+提示词、Research Profile 和导出的输出契约使用声明版本 + 内容哈希的不可变文件。修改内容必须创建新版本文件并更新 active selector，不能在同一版本路径原地覆盖；doctor 发现同一声明版本对应不同哈希时拒绝编译 RuntimePlan。旧版本及其实际 Schema 快照永久保留，使校准重算和历史制品可以脱网回放。
+
 ## 八、CLI、任务与运行语义
 
 ### 8.1 必备 CLI
@@ -897,6 +948,10 @@ paper-radar run-due --date YYYY-MM-DD
 
 paper-radar feed list
 paper-radar feed fetch <feed-id>
+
+paper-radar metadata unobtainable
+paper-radar metadata retry <paper-id>
+paper-radar metadata deny <paper-id>
 
 paper-radar paper add-doi <doi>
 paper-radar paper add-url <url>
@@ -910,6 +965,7 @@ paper-radar merge undo <merge-event-id>
 
 paper-radar calibration create-batch
 paper-radar review submit --batch <batch-id>
+paper-radar review submit --report <report-id>
 paper-radar calibration reveal <batch-id>
 paper-radar calibration status
 paper-radar calibration recalculate --evaluation <evaluation-id>
@@ -931,7 +987,7 @@ paper-radar fulltext attach <paper-id> <path>
 paper-radar extraction failures
 paper-radar extraction verify <artifact-id>
 
-paper-radar reading request <paper-id>
+paper-radar reading request <paper-id> [--language <zh|en>]
 paper-radar reading failures
 paper-radar reading retry <paper-id>
 
@@ -949,6 +1005,8 @@ paper-radar restore verify <snapshot> --target <empty-directory>
 
 命令名可以在实现时统一风格，但必须覆盖这些用户能力，且不得重新暴露主状态、综合 Rank、主题权重或自由标签。
 
+根命令、每个命令组和每条子命令的 `--help` 都必须提供中文说明，至少写清用途、参数与选项、读取/写入副作用、配额影响、常见失败、输出去向和一个可复制示例。`--help` 不访问网络、不打开数据库写事务且退出码为 0；危险或不可撤销的误解点（例如 merge、restore、artifact GC、是否消耗自动配额）必须在对应帮助中直接说明。
+
 `calibration recalculate` 复用指定 evaluation 的人工标签，生成新的 Screening 制品、建议和 evaluation，不覆盖原轮次；输出必须直接显示“复用已揭晓标签，不是独立验证”。`calibration classify-change` 只能由用户执行，缺少非空理由时拒绝写入。自动精读只能由用户用一个已通过的 evaluation 显式 enable；major 变更后的新 evaluation 不静默恢复旧 enable。
 
 ### 8.2 盲评交互
@@ -959,9 +1017,9 @@ paper-radar restore verify <snapshot> --target <empty-directory>
 paper-radar review submit --batch <batch-id>
 ~~~
 
-CLI 只显示编号和短题名并收集 accepted、pending、denied；输入 ? 才重新显示摘要。提交写入后不可通过普通命令读取隐藏建议，直到整个批次完成。最后一项提交成功后生成 reveal 报告。
+CLI 只显示编号和短题名并收集 accepted、pending、denied；输入 ? 才重新显示摘要。选择 denied 时继续要求 `out_of_scope`、`low_value` 或 `low_reuse_feasibility`，原因与人工决定原子写入。提交写入后不可通过普通命令读取隐藏建议，直到整个批次完成。最后一项提交成功后生成 reveal 报告。
 
-reveal 显示人工决定、系统建议、两个预测维度、理由、价值类型、主题以及差异，不改变已经生效的人工决定。
+reveal 显示人工决定、系统比较结果、可用的两个预测维度、理由、价值类型、主题以及差异；模型失败成员显示失败派生 pending 和错误类别，不伪造预测字段。揭晓不改变已经生效的人工决定。
 
 ### 8.3 模型失败
 
@@ -973,7 +1031,7 @@ reveal 显示人工决定、系统建议、两个预测维度、理由、价值�
 4. 以后 run-due 不自动再试；
 5. 用户显式 retry，或输入、模型、提示词、Schema 变化产生新指纹后，才重新获得尝试预算。
 
-模型失败不等同于 pending 决定。若没有合法 Screening 制品，程序投影为 pending/需要处理，但必须保留真实失败原因。
+模型失败不等同于 pending 决定，也不伪造 screening_suggestion。若没有合法 Screening 制品，程序的复核投影为 pending/需要处理并保留真实失败原因；固定校准成员则把该失败投影冻结为 `pending(reason=model_failure)` 参与反弃权统计，但它仍指向 task failure 而不是虚构的 Agent 输出。
 
 ### 8.4 HTTP 与外部来源失败
 
@@ -1059,6 +1117,7 @@ NAS 增量备份包括：
 - 永久 blob 和制品；
 - 配置、Profile、主题、期刊与 Feed；
 - 提示词；
+- 导出契约及所有被引用的历史 Profile、主题和提示词版本；
 - 只读报告；
 - 迁移与版本清单。
 
@@ -1100,11 +1159,16 @@ src/paper_radar/
     crossref.py
     datacite.py
     unpaywall.py
+  metadata/
+    collect.py
+    arbitrate.py
+    eligibility.py
   identity/
     identifiers.py
     resolver.py
     merges.py
   screening/
+    schema.py
     boundary_agent.py
     value_agent.py
     decision.py
@@ -1166,10 +1230,12 @@ SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、
 
 - 初始化 uv 项目、锁文件、代码质量与测试命令；
 - 建立配置编译、提示词版本和 RuntimePlan；
+- 建立 `screening/schema.py` 单一 Schema 权威及冻结 JSON Schema 导出；
 - 建立逻辑数据模型、Alembic 初始迁移和 repository 边界；
 - 建立内容寻址 blob/artifact store；
 - 实现阶段输入指纹和任务 attempt/lease；
 - 建立结构化日志、CLI 骨架和 doctor；
+- 为根命令和首批命令组建立中文 `--help` 契约；
 - 建立本机 SQLite 一致性快照及隔离恢复命令；
 - 固化四刊 Feed、参考文献和 PDF fixture 注册格式。
 
@@ -1178,11 +1244,14 @@ SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、
 - 空目录迁移后数据库可打开，外键、唯一约束和索引生效；
 - Schema 中不存在 papers.status、Rank、citation、自由标签或被引指标；
 - 相同规范输入生成相同指纹；
+- 同一声明版本下修改 Profile、提示词或契约内容时 RuntimePlan 编译失败；新增版本并切换 selector 时保留旧文件和旧哈希；
+- §4.5 工作流、Agent adapter、repository 和测试都导入 `screening/schema.py`，不存在第二份手写字段定义；
 - 改变卷期页码不使 Screening/Read 指纹变化；
 - 改变摘要只使 Screening 及下游相关制品过期；
 - 改变 PDF 只使 Docling/Read 过期；
 - 在“文件已落盘、数据库未提交”和“数据库事务中断”处故障注入，重启不产生半条成功事实；
 - 日志 fixture 中的 API key、完整 Profile、摘要和正文不会出现在输出；
+- 根命令和每个已有子命令的 `--help` 为中文、包含副作用与示例、不访问网络或执行数据库写入；
 - WAL 活跃时建立本机快照，隔离恢复后通过 integrity、foreign key 和清单检查。
 
 DoD：
@@ -1219,6 +1288,8 @@ JGR: Atmospheres Feed
 - 最小日报使用最终 report run/entry 数据契约；
 - 保存一次真实验收记录，并冻结相应 Feed、元数据、PDF 和模型响应用于离线回放。
 
+阶段 B 的真实验收以真实 Research Profile 和已选择的 Screening/Read 模型为前置；缺少它们不阻止阶段 A 工程完成，但阶段 B 只能保持“工程就绪、真实验收待配置”，不能用占位 Profile 宣称闭环成功。
+
 测试：
 
 - 同一 JGR Feed fixture 重放两次只产生一条发现事实；
@@ -1235,13 +1306,13 @@ JGR: Atmospheres Feed
 - 使用真实 Research Profile 和已配置模型运行 Screening；
 - 用户人工接受；
 - 使用无需登录的合法 PDF 或人工确认的合法 PDF；
-- 生成一份真实英文精读和最小日报；
+- 为一篇真实英文论文生成默认中文精读和最小日报；
 - 保存所有配置、模型、PDF、Docling 和报告哈希。
 
 DoD：
 
 - 冻结路径可以完全脱网重放；
-- 真实非 mock 英文纵向闭环成功；
+- 真实非 mock 英文论文纵向闭环成功；
 - 该结果不替代阶段 D 的正式校准，也不替代阶段 I 对最终契约的重新验证。
 
 ### 阶段 C：四刊发现、身份、版本与来源
@@ -1256,7 +1327,8 @@ DoD：
 - 实现正式版、在线优先版和预印本优先级；
 - 实现强标识解析、重复候选、合并预览、确认和 undo；
 - 实现字段级来源仲裁和有事实价值的来源快照；
-- 实现版本变化的分阶段失效。
+- 实现版本变化的分阶段失效；
+- 实现缺少题名/摘要的初次采集、7 天延迟复查、metadata_unobtainable 事实和显式 retry。
 
 测试：
 
@@ -1270,7 +1342,10 @@ DoD：
 - 合并和 undo 不改写历史报告；
 - 304、限流、重复空响应只产生执行事实；
 - 实际贡献字段或冲突的响应形成哈希去重 snapshot；
-- journal-article 不做子类型预过滤。
+- journal-article 不做子类型预过滤；
+- 缺少题名/摘要的论文在适用路线和 7 天复查耗尽后不调用 Screening、不进入校准，并停止每日自动重试；
+- metadata deny 追加人工 denied(reason=insufficient_metadata)，不删除来源或缺失事实；
+- 新版本、新权威摘要来源或显式 metadata retry 重新获得元数据任务资格。
 
 真实验收：
 
@@ -1295,7 +1370,9 @@ DoD：
 - 完成建议与有效决定分离；
 - 完成用户维护主题与三档期刊信誉；
 - 完成双队列和反弃权门槛；
+- 完成低研究价值/高复用可行性的 value_reuse_conflict pending 分支；
 - 完成最多五篇、四刊轮转的固定校准批次；
+- 完成 create-batch 同步 Screening、每日配额预检及失败成员不替换；
 - 完成待评 Markdown、盲评 CLI 和揭晓 Markdown；
 - 完成同一揭晓标签上的版本化重算及非独立验证标记；
 - 完成校准相关变更检测、用户 minor/major 分级和门禁转移；
@@ -1309,15 +1386,21 @@ DoD：
 - out_of_scope 不调用第二阶段；
 - uncertain 即使价值高也产生 pending；
 - 覆盖研究价值 2/3/4 与复用可行性 3/4 的决定边界；
+- 研究价值 2、复用可行性 4 产生 pending(reason=value_reuse_conflict)，研究价值 2、复用可行性 3 仍 denied(low_value)；
 - 同样的两个预测值在不同期刊产生相同建议；
 - 未知或重复 topic ID 使输出失败；
 - 研究价值至少 3 而 value_types 为空时失败；
+- display_title_zh 缺失仍可成功；存在时只写 screening artifact，原题名事实保持原文；
 - 同一指纹两次模型失败后，次日 run-due 不自动再试；
 - 显式 retry 和新指纹重新获得预算；
 - 待评文件和未揭晓 CLI 不包含或泄漏 Agent 字段；
 - 批次成员不随 Feed、元数据或队列变化；
+- 当日 Screening 剩余名额少于拟建成员数时不创建批次；名额足够时同步调用并准确领取每篇配额；
+- 固定成员 Screening 两次失败后以 model_failure pending 参与校准，不替换样本；
+- 校准期人工 denied 必须从受控原因中选择，决定与原因原子写入；
 - 初始样本恰好四刊各连续 8 篇；
 - 构造混淆矩阵分别验证四项门槛；
+- status、reveal 和验收证据显示四项门槛的原始分子/分母；system_accepts 为 5–9 时显示 small_sample 但仍可通过；
 - 反弃权不足时只产生 calibration_inconclusive，并按四刊各 2 篇继续；
 - 80% 或 90% 不达标后，复用同一 32 篇标签重算并保留新旧 evaluation、runtime plan 和指标；
 - 复用揭晓标签的 evaluation 明确标记 reused_revealed_labels，任何输出都不称其为独立验证；
@@ -1452,7 +1535,9 @@ DoD：
 - 保存正式研究价值、复用可行性和七类价值类型；
 - 实现两条队列、帕累托前沿与破同规则；
 - 实现每日三个自动名额和不限量人工请求；
+- 实现 accepted 跨日积压继续参与自动选择；
 - 实现人工请求对 pending/denied 原子追加 manual_read_request accepted 决定；
+- 实现默认中文和用户显式英文 Read analysis，输出语言只进入 Read 指纹；
 - 实现 Read 失败队列、显式重试与少量人工抽查。
 
 测试：
@@ -1468,12 +1553,15 @@ DoD：
 - 研究价值和复用可行性从不生成隐式总分；
 - 构造二维候选验证帕累托选择；
 - 两队列均非空时自动名额至少各一；
+- 同分候选先按等待时间；只有两项分数、价值类型集合和等待时间均相同才使用期刊信誉，最后按发现时间；
+- 当日第四个 accepted 不获名额，次日仍可获自动名额且不创建重复 Read task；
 - 人工请求五篇可以串行完成且不消耗自动计数；
 - pending/denied 的人工请求只有在 accepted 决定事件和请求同时提交后才获得 Read 资格；
 - 请求事务失败时既不留下 accepted 决定也不留下孤立请求；
 - 人工请求后再次明确 denied 会阻止尚未开始的 Read，但保留审计历史；
 - 当日普通日报仍最多发布三份分析；
-- 中文优先，必要术语和证据保留原文。
+- 中文优先，必要术语和证据保留原文；
+- 英文重跑产生独立 analysis，但复用既有元数据、PDF、Docling 和 evidence-map；原题名保持不变，可选中文显示题名不写回版本事实。
 
 真实验收：
 
@@ -1493,11 +1581,14 @@ DoD：
 
 - 加固待评、揭晓、普通日报和单篇报告；
 - 实现普通日报固定成员、首次发布和报告等待队列；
+- 实现自动 accepted 筛选制品随 analysis 展示但不单独占槽，pending 筛选制品才拥有独立首次发布键；
+- 实现普通日报固定 N1–N5 编号和 `review submit --report` 非盲复核；
 - 实现可转化成果/认知增益分栏；
 - 实现健康运行摘要和容量告警；
 - 实现 reviewed、saved、read、reuse_planned、reused、dismissed 和 note；
 - 实现 paper show、trace、各失败/积压查询；
 - 实现纯渲染、原子发布、verify 和 rebuild；
+- 完成全部 CLI 命令与命令组的中文 `--help`；
 - 明确 Markdown 手工编辑不保存。
 
 测试：
@@ -1506,6 +1597,8 @@ DoD：
 - 2 分析 + 3 pending 为五项；
 - 五份新分析只发布三份，其余进入等待队列；
 - 同一筛选或分析制品跨日不重复；
+- 自动 accepted 筛选制品不单独占槽，analysis 条目同时显示其摘要速览；
+- pending 筛选条目以后完成 analysis 时，同一论文可以按两个不同制品各出现一次；
 - 同一论文的新分析制品以后可以再次发布；
 - 校准报告不占普通日报名额；
 - 两条价值队列分栏且无跨栏总排名；
@@ -1514,6 +1607,8 @@ DoD：
 - 渲染中断保留旧文件和 planned 成员；
 - 手改 Markdown 后 rebuild 以数据库为准；
 - CLI note 和用户事件可以重现；
+- `review submit --report` 只遍历该日报当前 pending 的固定编号，不隐藏系统字段、不生成 reveal，denied 仍要求受控原因；
+- 所有 `--help` 中文输出包含用途、参数、副作用、配额、常见错误和示例，且在空数据目录也无写入；
 - 恶意标题不能产生路径穿越；
 - 报告生成从不调用模型。
 
@@ -1571,20 +1666,29 @@ DoD：
 |同题名作者年份、无强 ID|只生成重复候选|
 |预印本后来有正式 DOI|正式版成为当前版本，旧版本与旧分析保留|
 |online-first 到达|视为正式版本|
+|《大气科学》论文只出现在 latest.xml|V1 不抓取；接受延迟到 current.xml，不能误称 Feed 故障|
 |卷期页码补全|不使 Screening 或 Read 过期|
 |摘要变化|新 Screening 制品待生成；旧人工决定继续有效并提示复核|
 |PDF 变化|新 Docling/Read 待生成，旧分析保留|
 |合并后 undo|身份、版本、引用和可见性恢复；历史报告不重写|
-|摘要缺失|不调用 Screening，进入元数据待补队列|
+|题名或摘要初次缺失|不调用 Screening，完成适用路线并安排 7 天延迟复查|
+|延迟复查后仍不完整|追加 metadata_unobtainable，不进入 Screening/校准、不再每日自动重试；保留人工处理入口|
+|用户放弃 metadata_unobtainable 论文|追加人工 denied(reason=insufficient_metadata)，不删除缺失事实|
+|metadata_unobtainable 后出现新版本摘要|形成新资格并可进入 Screening，旧事实保留|
 |boundary out_of_scope|不调用价值阶段，建议 denied|
 |boundary uncertain 且价值很高|建议仍为 pending，但保存速览|
 |研究价值 4、复用 1|accepted，进入认知增益|
 |研究价值 3、复用 4|accepted，进入可转化成果|
-|研究价值 3、复用 3|denied，原因 low_reuse|
+|研究价值 3、复用 3|denied，原因 low_reuse_feasibility|
+|研究价值 2、复用 4|pending，原因 value_reuse_conflict|
 |两个预测相同、期刊不同|建议相同|
 |模型连续两次无效|进入失败队列，次日不自动重试|
+|建校准批次但当日 Screening 名额不足|不创建批次，提示次日重试|
+|校准固定成员 Screening 失败|成员不替换，以 model_failure pending 参与比较|
 |校准批次未完成|不能揭晓、不能创建下一批|
+|盲评选择 denied|必须继续选择受控原因，决定和原因一起写入|
 |大量 pending|触发反弃权不确定，不启用自动精读|
+|系统 accepted 恰好 5、其中人工 accepted 4|精确率项为 4/5=80%，可通过但显示 small_sample|
 |80% 或 90% 校准门槛失败后调优|可复用原 32 篇人工标签重算；保留每轮结果并标记非独立验证|
 |校准相关变更尚未分级|暂停自动精读，不能由系统猜测 minor/major|
 |用户把校准相关变更标为 minor|继承既有门禁；受影响制品仍按新指纹重算|
@@ -1606,14 +1710,22 @@ DoD：
 |Read 引用未知 evidence|结构输出失败|
 |长文 reduce 引用 map 外证据|结构输出失败|
 |两队列都有候选|三个自动名额至少各一|
+|候选分数相同但价值类型不同|期刊信誉不得破同；按等待时间及最终发现时间处理|
+|accepted 当日未获自动名额|保留队列资格，次日可领取且不复制任务|
 |人工请求五篇精读|分别原子确保人工 accepted 后串行执行五篇，不消耗自动三个名额|
 |对 denied 论文请求精读|同一事务追加 reason=manual_read_request 的人工 accepted 和 read request|
 |当天五份分析完成|日报最多发布三份，其余等待以后首次发布|
-|筛选制品已发布后仍 pending|以后普通日报不重复|
+|自动 accepted 但分析未完成|筛选制品不单独占日报槽；积压或超时进入运行摘要/CLI|
+|自动 accepted 后分析完成|一个 analysis 槽同时显示摘要速览，不另建 screening 槽|
+|pending 筛选制品已发布|以后普通日报不重复；完成新 analysis 后可再出现一次|
 |同论文后来有新全文分析|新分析可以再发布一次|
+|普通日报 N3 为 pending|可用 report ID 提交决定；不是盲评且不生成 reveal|
+|显式英文 Read 重跑|新增英文 analysis，复用元数据、PDF 和 Docling；原题名不变|
+|Agent 给出中文显示题名|与原题名并列展示，只存于筛选制品，不覆盖论文版本|
 |健康且无论文|生成明确的健康空日报|
 |Feed 故障且无结果|空日报明确故障，不冒充无新论文|
 |Markdown 被手工编辑后 rebuild|以数据库事实重建，不保存文件修改|
+|任意命令执行 --help|中文解释完整，不访问网络、不写数据库|
 |NAS 不可达|本机事实不受损，备份告警|
 |同日运行两次 run-due|不重置自动配额，不重复副作用|
 
@@ -1624,19 +1736,24 @@ DoD：
 - AIES：AMETSOC RSS；
 - JGR: Atmospheres：Wiley/AGU eTOC RSS；
 - QJRMS：Wiley most-recent RSS；
-- 《大气科学》：期刊 current RSS。
+- 《大气科学》：期刊 current RSS；`latest.xml` 明确不进入 V1。
 
 每个真实响应只作为验收输入，普通测试使用去除无关和敏感内容后的冻结 fixture。fixture 保存抓取时间、URL、HTTP 条件头、响应哈希和解析器版本。
 
 ### 13.2 参考文献样本
 
-已核查的代表情况：
+2026-09-13 的来源审计至少固定以下标识和结论，阶段 A 应直接写入 fixture registry，不再重新寻找同类样本：
 
-- AIES 可以出现出版者/PDF 有大量参考文献而 Crossref 为零；
-- Crossref reference 的 DOI 可能只存在于 unstructured 原始字符串；
-- QJRMS 可以有出版者和 Crossref 条目总数一致，但结构化 DOI 覆盖不完整；
-- 《大气科学》可以由出版者提供参考文献而 Crossref DOI 查询缺失；
-- Wiley PDF 的 403 代表访问受阻，不代表论文不是开放获取。
+|期刊|DOI|已核查结论|
+|---|---|---|
+|AIES|`10.1175/AIES-D-25-0111.1`|出版者/PDF 参考文献 77 条，Crossref 0 条|
+|AIES|`10.1175/AIES-D-25-0103.1`|出版者与 Crossref 均为 20 条；DOI 信息需要从 unstructured 原始串提取|
+|QJRMS|`10.1002/qj.70299`|出版者与 Crossref 均为 57 条，仍需规范原始 DOI|
+|QJRMS|`10.1002/qj.70303`|出版者与 Crossref 均为 66 条；部分 DOI 含 Unicode 连字符|
+|《大气科学》|`10.3878/j.issn.1006-9895.2604.26034`|出版者完整提供 78 条，Crossref 无记录|
+|《大气科学》|`10.3878/j.issn.1006-9895.2512.24134`|出版者完整提供 32 条，Crossref 无记录|
+
+另外，Wiley PDF 的 403 代表访问受阻，不代表论文不是开放获取。
 
 因此 fixture 必须同时断言列表完整性、原始字符串保存、强标识规范和 PDF 获取失败分类。
 
@@ -1649,11 +1766,15 @@ DoD：
 - QJRMS：机构库权利页、双栏、编号小节和复杂宽表；
 - 《大气科学》：中文双栏、出版者推荐封面、中文章节和公式。
 
+JGR 的已核查合法样本固定为 Wada et al.，DOI `10.1029/2025JD043927`，机构库 handle `11094/103589`。2026-09-13 的本机审计约 16 秒、峰值约 2.32 GiB；正文顺序和 provenance 可用，但必须去除仓储封面、修复标题层级和重复页眉，并把 `2–3 min` 被合并为 `23 min` 作为精确字符降级回归。
+
+其余三刊的 parser fixture 优先从 §13.2 已固定 DOI 中选择。fixture registry 必须保存最终选中的 DOI/handle、合法来源、审计日期、本地 PDF SHA-256、许可状态、Docling/模型版本、期望版式特征和已知失败；如果替换样本，旧 registry 记录不覆盖，并说明替换原因。
+
 公开仓库只提交许可允许的整篇 PDF、许可代表页或合成 fixture；其他 PDF 在 fixture registry 中记录合法来源和本地 SHA-256，由真实验收环境提供，不把版权受限全文提交到仓库。
 
 ## 十四、上线前必须由用户提供的配置
 
-方案和工程实现可以先完成，但以下内容缺失时不能开始正式校准：
+方案和阶段 A 工程实现可以先完成，但以下内容缺失时不能完成阶段 B 的真实纵向验收，也不能开始正式校准：
 
 - 六段式真实 Research Profile；
 - 用户维护的主题列表；
@@ -1685,6 +1806,7 @@ doctor 分别报告：
 - 用户控制的浏览器登录态 PDF 获取；
 - 可编辑前端以及反馈、笔记和行为的可视化；
 - 新 Feed、会议、预印本、学位论文和数据集；
+- 经独立契约监测后接入《大气科学》`latest.xml` 优先发表 Feed；
 - OpenAlex、Semantic Scholar、OpenCitations 或其他图谱；
 - 主动检索、向量召回和多层引用探索；
 - 本地模型或额外模型的显式校准；

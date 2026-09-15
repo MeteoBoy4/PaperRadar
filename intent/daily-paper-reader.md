@@ -1,5 +1,7 @@
 # `daily-paper-reader` 调研及 PaperRadar 建设路线建议
 
+> 历史文档：本文针对当时旧版 `draft.md` 的修改建议已经由 Q1–Q89 讨论及后续复核取代。本文只保留为上游项目调研记录；PaperRadar 的现行实施规格以 [`draft.md`](./draft.md) 为准，不要把下文旧锚点或待改清单当作当前任务。
+
 > 调研日期：2026-09-10  
 > 本地方案基线：[`draft.md`](./draft.md)  
 > 上游项目：[`ziwenhahaha/daily-paper-reader`](https://github.com/ziwenhahaha/daily-paper-reader)  
