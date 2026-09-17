@@ -1,3 +1,3 @@
 # 由用户判定校准相关变更的等级
 
-当 Screening 模型、关键提示词、Research Profile、输出契约、评分语义或建议规则出现可能影响既有校准解释的变化时，PaperRadar 记录前后 runtime plan 差异并暂停自动精读，直到用户附理由将变化标为 `minor` 或 `major`。`minor` 继承既有门禁，但受影响制品仍按阶段输入指纹重算；`major` 关闭门禁，直到既有揭晓标签上的重算或新盲评校准通过，并由用户针对新 evaluation 再次显式启用。系统不能静默复用旧 enable，也不能按 diff 大小或预设字段替用户作出等级决定，只能给出风险提示。这样保留个人系统所需的裁量权和审计链，代价是分级前无人值守精读会暂停，而且用户可能把实质变化误判为 minor。
+当 Screening 模型、关键提示词、Research Profile、输出契约、复用升级参数、评分语义或建议规则可能改变既有校准解释时，PaperRadar 记录 runtime plan 差异并暂停自动精读，直到用户附理由标为 `minor` 或 `major`。`minor` 继承门禁，但自动重算只覆盖 waiting_review、waiting_calibration 和尚无生效决定的论文，并预先显示篇数与配额耗时；既有人工决定继续生效，正式分析不因 Profile 演进自动重跑。`major` 关闭门禁，直到同标签重算或新盲评通过且用户再次显式启用。系统不能静默复用旧 enable，也不能替用户决定等级。
