@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repository_root"
+
+# 避免只读 HOME 阻止 uv 启动；该目录是工具缓存，不是 PaperRadar 业务数据。
+export UV_CACHE_DIR="${UV_CACHE_DIR:-$repository_root/.cache/paper-radar-uv}"
+export UV_NO_PROGRESS=1
+
+run_check() {
+    local description="$1"
+    shift
+    printf '[离线检查] %s\n' "$description"
+    "$@"
+}
+
+run_check "锁文件一致性" uv lock --check --offline
+run_check "格式" uv run --offline --locked ruff format --check src tests
+run_check "静态检查" uv run --offline --locked ruff check src tests
+run_check "类型检查" uv run --offline --locked mypy
+run_check "全部测试" uv run --offline --locked pytest
+
+printf '[离线检查] 全部通过\n'

@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "paper-radar"
+version = "0.1.0"
+description = "面向单用户的学术论文发现、筛选与研读流水线"
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+    "pydantic>=2.12,<3",
+    "typer>=0.19,<1",
+]
+
+[project.scripts]
+paper-radar = "paper_radar.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.18,<2",
+    "pytest>=8.4,<9",
+    "ruff>=0.13,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/paper_radar"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["RUF001"] # 中文用户界面需要全角标点。
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
