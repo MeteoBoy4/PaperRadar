@@ -1258,7 +1258,7 @@ paper-radar artifacts gc --execute <plan-id>
 
 ## 十、代码模块边界
 
-建议工程结构：
+建议工程结构（可以根据功能模块化设计视情况拆分或改变）：
 
 ~~~text
 src/paper_radar/
