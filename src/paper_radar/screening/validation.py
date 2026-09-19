@@ -31,6 +31,14 @@ _GUIDANCE: dict[OutputErrorCategory, str] = {
 }
 
 
+def _issue(location: str, category: OutputErrorCategory) -> OutputValidationIssue:
+    return OutputValidationIssue(
+        location=location,
+        category=category,
+        guidance_zh=_GUIDANCE[category],
+    )
+
+
 def _safe_location(parts: tuple[int | str, ...], category: OutputErrorCategory) -> str:
     if category is OutputErrorCategory.EXTRA_FIELD:
         return "$.<额外字段>"
@@ -65,13 +73,7 @@ def _issues_from_pydantic(error: ValidationError) -> tuple[OutputValidationIssue
     issues: list[OutputValidationIssue] = []
     for detail in error.errors(include_url=False, include_context=False):
         category = _category_for_pydantic_error(detail)
-        issues.append(
-            OutputValidationIssue(
-                location=_safe_location(detail["loc"], category),
-                category=category,
-                guidance_zh=_GUIDANCE[category],
-            )
-        )
+        issues.append(_issue(_safe_location(detail["loc"], category), category))
     return tuple(issues)
 
 
@@ -82,19 +84,13 @@ def validate_output(
 ) -> BoundaryOutput:
     """验证输出的结构和适用业务规则后返回权威类型。"""
     if kind != OutputKind.BOUNDARY:
-        issue = OutputValidationIssue(
-            location="$.kind",
-            category=OutputErrorCategory.UNKNOWN_KIND,
-            guidance_zh=_GUIDANCE[OutputErrorCategory.UNKNOWN_KIND],
+        raise OutputValidationError(
+            (_issue("$.kind", OutputErrorCategory.UNKNOWN_KIND),)
         )
-        raise OutputValidationError((issue,))
     if context is not None and (not isinstance(context, Mapping) or len(context) > 0):
-        issue = OutputValidationIssue(
-            location="$.context",
-            category=OutputErrorCategory.CONTEXT_MISMATCH,
-            guidance_zh=_GUIDANCE[OutputErrorCategory.CONTEXT_MISMATCH],
+        raise OutputValidationError(
+            (_issue("$.context", OutputErrorCategory.CONTEXT_MISMATCH),)
         )
-        raise OutputValidationError((issue,))
 
     validation_issues: tuple[OutputValidationIssue, ...] | None = None
     try:
@@ -112,11 +108,8 @@ def validate_output(
         raise OutputValidationError(validation_issues)
 
     if not is_meaningful_text(output.reason_zh):
-        issue = OutputValidationIssue(
-            location="$.reason_zh",
-            category=OutputErrorCategory.INVALID_TEXT,
-            guidance_zh=_GUIDANCE[OutputErrorCategory.INVALID_TEXT],
+        raise OutputValidationError(
+            (_issue("$.reason_zh", OutputErrorCategory.INVALID_TEXT),)
         )
-        raise OutputValidationError((issue,))
 
     return output
