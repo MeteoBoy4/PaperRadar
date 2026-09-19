@@ -1,7 +1,8 @@
 # PaperRadar
 
-PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库只交付了
-Issue #2 的工程入口；Screening 契约、数据库、网络来源和论文处理命令尚未实现。
+PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库交付了
+Issue #2 的工程入口和 Issue #3 的研究边界输出验证；价值预测、复用可行性升级、
+原因组合、冻结契约导出、数据库、网络来源和论文处理命令尚未实现。
 
 ## 环境与安装
 
@@ -16,8 +17,8 @@ uv sync --locked
 精确解析版本以 `uv.lock` 为唯一权威，避免依赖升级后在说明文档中保留过期副本。
 
 当前 CLI 尚未调用 Pydantic；Issue #2 AC1 明确要求先锁定阶段 A 使用的
-Pydantic v2，具体 Screening 契约仍由后续 ticket 交付。这项锁定不表示契约能力
-已经就绪。
+Pydantic v2。Issue #3 已使用它交付 `BoundaryOutput` 和纯 Python 公共验证入口，
+但这不表示其他 Screening 契约已经就绪。
 
 没有引入数据库、网络、LLM 或文档解析依赖。
 
@@ -32,6 +33,14 @@ uv run --offline --locked paper-radar --help
 帮助命令只向标准输出写文本；它不读取配置或凭据，不访问网络或数据库，
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
 当前不注册尚未实现的业务命令。
+
+## 研究边界输出验证
+
+`paper_radar.screening.validate_output` 接受研究边界 JSON 或结构数据，成功时返回
+严格的 `BoundaryOutput`，失败时返回可操作且脱敏的受控错误。公共接口、错误类别、
+占位文本规则和示例见
+[Screening 输出验证接口](docs/contracts/screening-validation.md)。本接口不访问网络、
+数据库、LLM 或 Docling，也不提供文件导出命令。
 
 ## 完整离线验证
 
