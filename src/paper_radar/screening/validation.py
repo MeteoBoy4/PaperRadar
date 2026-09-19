@@ -15,7 +15,7 @@ from paper_radar.screening.kinds import OutputKind
 from paper_radar.screening.schema import BoundaryOutput
 from paper_radar.screening.text import is_meaningful_text
 
-_KNOWN_BOUNDARY_FIELDS = frozenset({"boundary", "reason_zh"})
+_KNOWN_BOUNDARY_FIELDS = frozenset(BoundaryOutput.model_fields)
 
 _GUIDANCE: dict[OutputErrorCategory, str] = {
     OutputErrorCategory.UNKNOWN_KIND: "请使用已注册的输出种类。",

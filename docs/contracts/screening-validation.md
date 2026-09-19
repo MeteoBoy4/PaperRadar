@@ -25,6 +25,16 @@ result = validate_output(
 assert isinstance(result, BoundaryOutput)
 ```
 
+当前完整公共面为：
+
+- `BoundaryOutput`：研究边界判断的权威 Pydantic 类型；
+- `OutputKind`：已注册输出种类；
+- `OutputErrorCategory`：受控错误类别；
+- `OutputValidationIssue`：单个脱敏验证问题；
+- `OutputValidationError`：公共验证失败异常；
+- `EXPLICIT_PLACEHOLDER_TEXTS`：明确占位文本共享词汇；
+- `validate_output`：统一验证入口。
+
 `validate_output(kind, payload, context=None)` 接受原始 JSON 字符串/字节或结构
 数据。当前唯一注册的 kind 是 `boundary`。`BoundaryOutput` 只包含：
 
@@ -32,8 +42,8 @@ assert isinstance(result, BoundaryOutput)
 - `reason_zh`：非空、非占位的理由文本。
 
 缺字段、额外字段、错误类型、非法枚举和不完整 JSON 都会失败，入口不会补字段、
-修复 JSON、改写理由或修改调用方数据。boundary 不需要业务上下文；`None` 或空的
-只读 mapping 合法，显式非空 context 或其他 context 类型会以
+修复 JSON、改写理由或修改调用方数据。boundary 不需要业务上下文；`None` 或空
+mapping 合法，且验证器不会修改它。显式非空 context 或其他 context 类型会以
 `context_mismatch` 失败。
 
 验证成功返回冻结的权威 Pydantic 类型。失败抛出 `OutputValidationError`；其

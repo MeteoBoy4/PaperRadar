@@ -37,7 +37,7 @@ uv run --offline --locked paper-radar --help
 ## 研究边界输出验证
 
 `paper_radar.screening.validate_output` 接受研究边界 JSON 或结构数据，成功时返回
-严格的 `BoundaryOutput`，失败时返回可操作且脱敏的受控错误。公共接口、错误类别、
+严格的 `BoundaryOutput`，失败时抛出可操作且脱敏的受控错误。公共接口、错误类别、
 占位文本规则和示例见
 [Screening 输出验证接口](docs/contracts/screening-validation.md)。本接口不访问网络、
 数据库、LLM 或 Docling，也不提供文件导出命令。

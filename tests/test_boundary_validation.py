@@ -148,11 +148,12 @@ def test_boundary_reason_preserves_legal_original_terms_exactly() -> None:
     assert result.reason_zh == reason
 
 
-def test_boundary_accepts_controlled_kind_and_empty_read_only_context() -> None:
+@pytest.mark.parametrize("context", [None, {}, MappingProxyType({})])
+def test_boundary_accepts_no_context_or_an_empty_mapping(context: object) -> None:
     result = validate_output(
         OutputKind.BOUNDARY,
         {"boundary": "out_of_scope", "reason_zh": "研究对象超出画像边界。"},
-        context=MappingProxyType({}),
+        context=context,
     )
 
     assert result.boundary == "out_of_scope"

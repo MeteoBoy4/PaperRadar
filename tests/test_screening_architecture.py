@@ -74,7 +74,7 @@ def _forbidden_imports(screening_root: Path, source_root: Path) -> list[str]:
     return violations
 
 
-def test_import_boundary_scanner_catches_nested_relative_imports(
+def test_import_boundary_scanner_catches_absolute_and_relative_imports(
     tmp_path: Path,
 ) -> None:
     source_root = tmp_path / "src"
@@ -82,7 +82,10 @@ def test_import_boundary_scanner_catches_nested_relative_imports(
     nested_module = screening_root / "nested" / "rules.py"
     nested_module.parent.mkdir(parents=True)
     nested_module.write_text(
-        "from ... import cli\nfrom ...storage import repositories\n",
+        "import sqlite3\n"
+        "from typer import Typer\n"
+        "from ... import cli\n"
+        "from ...storage import repositories\n",
         encoding="utf-8",
     )
 
@@ -90,6 +93,9 @@ def test_import_boundary_scanner_catches_nested_relative_imports(
         "nested/rules.py: paper_radar.cli",
         "nested/rules.py: paper_radar.storage",
         "nested/rules.py: paper_radar.storage.repositories",
+        "nested/rules.py: sqlite3",
+        "nested/rules.py: typer",
+        "nested/rules.py: typer.Typer",
     ]
 
 
