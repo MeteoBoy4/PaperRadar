@@ -4,8 +4,6 @@ set -euo pipefail
 repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"
 
-# 避免只读 HOME 阻止 uv 启动；该目录是工具缓存，不是 PaperRadar 业务数据。
-export UV_CACHE_DIR="${UV_CACHE_DIR:-$repository_root/.cache/paper-radar-uv}"
 export UV_NO_PROGRESS=1
 
 run_check() {

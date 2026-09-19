@@ -24,7 +24,7 @@ V1 的优先级为：
 进行非微小改动前，先阅读：
 
 1. `CONTEXT.md`：项目术语和领域概念的权威定义。
-2. `intent/draft.md` 中与当前任务相关的章节。
+2. `intent/draft.md` 中与当前任务相关的内容。
 3. 相关 ADR 和 `docs/agents/`。
 4. 当前 issue / task，以及受影响的代码和测试。
 
