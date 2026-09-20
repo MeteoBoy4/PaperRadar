@@ -61,15 +61,15 @@ def _imports_in(path: Path, source_root: Path) -> set[str]:
     return imports
 
 
-def _forbidden_imports(screening_root: Path, source_root: Path) -> list[str]:
+def _forbidden_imports(package_root: Path, source_root: Path) -> list[str]:
     violations: list[str] = []
-    for path in sorted(screening_root.rglob("*.py")):
+    for path in sorted(package_root.rglob("*.py")):
         for imported_module in sorted(_imports_in(path, source_root)):
             if any(
                 imported_module == prefix or imported_module.startswith(f"{prefix}.")
                 for prefix in FORBIDDEN_IMPORT_PREFIXES
             ):
-                relative_path = path.relative_to(screening_root)
+                relative_path = path.relative_to(package_root)
                 violations.append(f"{relative_path}: {imported_module}")
     return violations
 
@@ -104,3 +104,10 @@ def test_screening_contract_layer_has_no_external_or_upward_dependencies() -> No
     screening_root = source_root / "paper_radar" / "screening"
 
     assert _forbidden_imports(screening_root, source_root) == []
+
+
+def test_contracts_layer_has_no_external_or_upward_dependencies() -> None:
+    source_root = Path(__file__).parents[1] / "src"
+    contracts_root = source_root / "paper_radar" / "contracts"
+
+    assert _forbidden_imports(contracts_root, source_root) == []

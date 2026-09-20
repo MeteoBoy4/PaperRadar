@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import errno
-import hashlib
-import json
 import os
 import shutil
 import tempfile
@@ -13,15 +11,18 @@ from enum import StrEnum
 from pathlib import Path
 
 from paper_radar.contracts.schema import (
-    _MANIFEST_FORMAT_VERSION,
-    _SUPPORTED_CONTRACT_NAMES,
-    _SUPPORTED_CONTRACT_VERSIONS,
     ContractName,
+    ContractSelectionError,
     ContractVersion,
     FrozenContract,
-    _canonical_json_bytes,
-    _ManifestField,
-    build_frozen_contract,
+    build_selected_contract,
+)
+from paper_radar.contracts.snapshot import (
+    SnapshotInspection,
+    SnapshotPathError,
+    SnapshotPathProblem,
+    inspect_frozen_snapshot,
+    resolve_snapshot_directory,
 )
 
 
@@ -65,6 +66,33 @@ class ContractExportError(ValueError):
         super().__init__(message_zh)
 
 
+_DAMAGED_SNAPSHOT_FAILURE = (
+    ContractExportErrorCategory.DAMAGED_SNAPSHOT,
+    "既有冻结契约损坏或不完整，拒绝覆盖；请恢复原快照，契约变化应新建版本。",
+)
+
+_EXISTING_SNAPSHOT_FAILURES: dict[
+    SnapshotInspection, tuple[ContractExportErrorCategory, str]
+] = {
+    SnapshotInspection.INCOMPLETE: _DAMAGED_SNAPSHOT_FAILURE,
+    SnapshotInspection.UNREADABLE: _DAMAGED_SNAPSHOT_FAILURE,
+    SnapshotInspection.DAMAGED: _DAMAGED_SNAPSHOT_FAILURE,
+    SnapshotInspection.VERSION_MISMATCH: (
+        ContractExportErrorCategory.VERSION_MISMATCH,
+        "既有冻结契约的契约或版本信息不一致，拒绝覆盖；请核对选择，契约变化应新建版本。",
+    ),
+    SnapshotInspection.CONTENT_DRIFT: (
+        ContractExportErrorCategory.CONTENT_CONFLICT,
+        "同一声明版本已经存在不同内容，请新建版本。",
+    ),
+}
+
+_PATH_FAILURE_CATEGORIES: dict[SnapshotPathProblem, ContractExportErrorCategory] = {
+    SnapshotPathProblem.INVALID_TARGET: ContractExportErrorCategory.INVALID_TARGET,
+    SnapshotPathProblem.PATH_ESCAPE: ContractExportErrorCategory.PATH_ESCAPE,
+}
+
+
 def _write_durable_file(path: Path, content: bytes) -> None:
     with path.open("xb") as stream:
         stream.write(content)
@@ -80,96 +108,13 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
-def _invalid_target_error() -> ContractExportError:
-    return ContractExportError(
-        ContractExportErrorCategory.INVALID_TARGET,
-        "目标目录无法解析；请检查访问权限和符号链接循环。",
-    )
-
-
-def _resolve_snapshot_directory(
-    target: Path | str,
-    contract: FrozenContract,
-) -> Path:
-    try:
-        root = Path(target).resolve(strict=False)
-        snapshot_dir = root.joinpath(*contract.snapshot_parts)
-        resolved_snapshot = snapshot_dir.resolve(strict=False)
-    except (OSError, RuntimeError) as error:
-        raise _invalid_target_error() from error
-    if not resolved_snapshot.is_relative_to(root):
-        raise ContractExportError(
-            ContractExportErrorCategory.PATH_ESCAPE,
-            "导出路径超出目标目录；请移除目标内指向外部的符号链接。",
-        )
-    return snapshot_dir
-
-
-def _damaged_snapshot_error() -> ContractExportError:
-    return ContractExportError(
-        ContractExportErrorCategory.DAMAGED_SNAPSHOT,
-        "既有冻结契约损坏或不完整，拒绝覆盖；请恢复原快照，契约变化应新建版本。",
-    )
-
-
-def _verify_existing_snapshot(
-    snapshot_dir: Path,
-    contract: FrozenContract,
-) -> None:
-    schema_path = snapshot_dir / contract.schema_filename
-    manifest_path = snapshot_dir / contract.manifest_filename
-    try:
-        schema_bytes = schema_path.read_bytes()
-        manifest_bytes = manifest_path.read_bytes()
-    except OSError as error:
-        raise _damaged_snapshot_error() from error
-
-    try:
-        schema = json.loads(schema_bytes)
-        manifest = json.loads(manifest_bytes)
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise _damaged_snapshot_error() from error
-
-    if (
-        not isinstance(schema, dict)
-        or not isinstance(manifest, dict)
-        or _canonical_json_bytes(schema) != schema_bytes
-        or _canonical_json_bytes(manifest) != manifest_bytes
-        or set(manifest) != {field.value for field in _ManifestField}
-        or manifest.get(_ManifestField.FORMAT_VERSION.value) != _MANIFEST_FORMAT_VERSION
-        or manifest.get(_ManifestField.SCHEMA_FILE.value) != contract.schema_filename
-        or not isinstance(manifest.get(_ManifestField.SCHEMA_SHA256.value), str)
-        or hashlib.sha256(schema_bytes).hexdigest()
-        != manifest.get(_ManifestField.SCHEMA_SHA256.value)
-    ):
-        raise _damaged_snapshot_error()
-
-    schema_identity = schema.get("x-paper-radar-contract")
-    expected_identity = {
-        "name": contract.name.value,
-        "version": contract.version.value,
-    }
-    if (
-        manifest.get(_ManifestField.CONTRACT.value) != contract.name.value
-        or manifest.get(_ManifestField.VERSION.value) != contract.version.value
-        or schema_identity != expected_identity
-    ):
-        raise ContractExportError(
-            ContractExportErrorCategory.VERSION_MISMATCH,
-            "既有冻结契约的契约或版本信息不一致，拒绝覆盖；请核对选择，契约变化应新建版本。",
-        )
-
-    if schema_bytes != contract.schema_bytes:
-        raise ContractExportError(
-            ContractExportErrorCategory.CONTENT_CONFLICT,
-            "同一声明版本已经存在不同内容，请新建版本。",
-        )
-
-
 def _write_error(error: OSError) -> ContractExportError:
     category = ContractExportErrorCategory.WRITE_FAILED
     if error.errno == errno.ELOOP:
-        return _invalid_target_error()
+        return ContractExportError(
+            ContractExportErrorCategory.INVALID_TARGET,
+            "目标目录无法解析；请检查访问权限和符号链接循环。",
+        )
     elif isinstance(error, PermissionError):
         guidance = "目标目录不可写；请检查目录权限后重试。"
     elif isinstance(error, NotADirectoryError):
@@ -212,37 +157,29 @@ def export_frozen_contract(
 ) -> ContractExportResult:
     """把一份已实现契约安全导出到目标根目录。"""
     try:
-        controlled_name = ContractName(name)
-    except ValueError as error:
+        contract = build_selected_contract(name, version)
+    except ContractSelectionError as error:
         raise ContractExportError(
-            ContractExportErrorCategory.INVALID_SELECTION,
-            f"未知契约；当前支持：{_SUPPORTED_CONTRACT_NAMES}。",
+            ContractExportErrorCategory.INVALID_SELECTION, str(error)
         ) from error
 
     try:
-        controlled_version = ContractVersion(version)
-    except ValueError as error:
+        snapshot_dir = resolve_snapshot_directory(target, contract)
+    except SnapshotPathError as error:
         raise ContractExportError(
-            ContractExportErrorCategory.INVALID_SELECTION,
-            f"无效声明版本；当前支持：{_SUPPORTED_CONTRACT_VERSIONS}。",
+            _PATH_FAILURE_CATEGORIES[error.problem], str(error)
         ) from error
 
-    try:
-        contract = build_frozen_contract(controlled_name, controlled_version)
-    except KeyError as error:
-        raise ContractExportError(
-            ContractExportErrorCategory.INVALID_SELECTION,
-            "所选契约与声明版本组合尚未实现；请查看命令帮助中的可用组合。",
-        ) from error
-
-    snapshot_dir = _resolve_snapshot_directory(target, contract)
-    if os.path.lexists(snapshot_dir):
-        _verify_existing_snapshot(snapshot_dir, contract)
+    inspection = inspect_frozen_snapshot(snapshot_dir, contract)
+    if inspection is SnapshotInspection.MATCHED:
         return ContractExportResult(
             outcome=ExportOutcome.UNCHANGED,
             snapshot_dir=snapshot_dir,
             schema_sha256=contract.schema_sha256,
         )
+    if inspection is not SnapshotInspection.ABSENT:
+        category, message = _EXISTING_SNAPSHOT_FAILURES[inspection]
+        raise ContractExportError(category, message)
 
     try:
         _create_snapshot(snapshot_dir, contract)

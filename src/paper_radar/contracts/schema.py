@@ -88,6 +88,37 @@ def _canonical_json_bytes(value: object) -> bytes:
     ).encode()
 
 
+class ContractSelectionError(ValueError):
+    """受控契约选择无效。消息为脱敏的中文操作指引。"""
+
+
+def build_selected_contract(
+    name: ContractName | str,
+    version: ContractVersion | str,
+) -> FrozenContract:
+    """从受控契约名与声明版本生成冻结契约。选择无效时给出稳定指引。"""
+    try:
+        controlled_name = ContractName(name)
+    except ValueError as error:
+        raise ContractSelectionError(
+            f"未知契约；当前支持：{_SUPPORTED_CONTRACT_NAMES}。"
+        ) from error
+
+    try:
+        controlled_version = ContractVersion(version)
+    except ValueError as error:
+        raise ContractSelectionError(
+            f"无效声明版本；当前支持：{_SUPPORTED_CONTRACT_VERSIONS}。"
+        ) from error
+
+    try:
+        return build_frozen_contract(controlled_name, controlled_version)
+    except KeyError as error:
+        raise ContractSelectionError(
+            "所选契约与声明版本组合尚未实现；请查看命令帮助中的可用组合。"
+        ) from error
+
+
 def build_frozen_contract(
     name: ContractName,
     version: ContractVersion,

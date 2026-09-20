@@ -10,7 +10,12 @@ from pathlib import Path
 
 import pytest
 
-from tests.contract_snapshot_support import canonical_json_bytes
+from tests.contract_snapshot_support import (
+    canonical_json_bytes,
+    filesystem_fingerprint,
+)
+
+_CHECK_COMMAND = ("contracts", "check", "--contract", "boundary", "--version", "v1")
 
 
 def _installed_entrypoint() -> Path:
@@ -244,3 +249,151 @@ def test_real_cli_interruption_keeps_history_and_leaves_no_partial_snapshot(
     assert "已创建冻结契约" not in result.stdout
     assert historical.read_text(encoding="utf-8") == "historical snapshot"
     assert {path.name for path in version_parent.iterdir()} == {"v0"}
+
+
+def _export_valid_snapshot(tmp_path: Path, target: Path) -> Path:
+    command = (
+        "contracts",
+        "export",
+        "--contract",
+        "boundary",
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+    created = _run_cli(tmp_path, *command)
+    assert created.returncode == 0, created.stderr
+    return target / "screening" / "boundary" / "v1"
+
+
+def test_real_cli_check_confirms_snapshot_without_writing(tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    _export_valid_snapshot(tmp_path, target)
+    before = filesystem_fingerprint(target)
+
+    result = _run_cli(tmp_path, *_CHECK_COMMAND, "--target", str(target))
+
+    assert result.returncode == 0, result.stderr
+    assert "冻结契约一致" in result.stdout
+    assert "boundary v1" in result.stdout
+    assert "SHA-256" in result.stdout
+    assert filesystem_fingerprint(target) == before
+
+
+def test_real_cli_check_on_missing_snapshot_creates_nothing(tmp_path: Path) -> None:
+    target = tmp_path / "absent"
+
+    result = _run_cli(tmp_path, *_CHECK_COMMAND, "--target", str(target))
+
+    assert result.returncode != 0
+    assert "missing_snapshot" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not target.exists()
+
+
+@pytest.mark.parametrize(
+    ("existing_state", "expected_error"),
+    [
+        ("damaged", "damaged_snapshot"),
+        ("missing_manifest", "missing_snapshot"),
+        ("version_mismatch", "version_mismatch"),
+        ("content_drift", "content_drift"),
+    ],
+)
+def test_real_cli_check_reports_snapshot_problem_without_writing(
+    tmp_path: Path,
+    existing_state: str,
+    expected_error: str,
+) -> None:
+    target = tmp_path / "target"
+    snapshot_dir = _export_valid_snapshot(tmp_path, target)
+    schema_path = snapshot_dir / "schema.json"
+    manifest_path = snapshot_dir / "manifest.json"
+
+    if existing_state == "damaged":
+        schema_path.write_text('{"tampered": true}\n', encoding="utf-8")
+    elif existing_state == "missing_manifest":
+        manifest_path.unlink()
+    else:
+        schema = json.loads(schema_path.read_bytes())
+        manifest = json.loads(manifest_path.read_bytes())
+        if existing_state == "version_mismatch":
+            schema["x-paper-radar-contract"]["version"] = "v2"
+            manifest["version"] = "v2"
+        else:
+            schema["description"] = "同版本的另一份有效内容"
+        changed_schema = canonical_json_bytes(schema)
+        schema_path.write_bytes(changed_schema)
+        manifest["schema_sha256"] = hashlib.sha256(changed_schema).hexdigest()
+        manifest_path.write_bytes(canonical_json_bytes(manifest))
+
+    before = filesystem_fingerprint(target)
+    result = _run_cli(tmp_path, *_CHECK_COMMAND, "--target", str(target))
+
+    assert result.returncode != 0
+    assert expected_error in result.stderr
+    assert "Traceback" not in result.stderr
+    assert "冻结契约一致" not in result.stdout
+    assert filesystem_fingerprint(target) == before
+
+
+def test_real_cli_check_reports_unreadable_snapshot_without_writing(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+    snapshot_dir = _export_valid_snapshot(tmp_path, target)
+    schema_path = snapshot_dir / "schema.json"
+    schema_path.chmod(0o000)
+    try:
+        before = filesystem_fingerprint(target)
+
+        result = _run_cli(tmp_path, *_CHECK_COMMAND, "--target", str(target))
+
+        assert result.returncode != 0
+        assert "unreadable_snapshot" in result.stderr
+        assert "Traceback" not in result.stderr
+        assert filesystem_fingerprint(target) == before
+    finally:
+        schema_path.chmod(0o600)
+
+
+def test_real_cli_check_errors_do_not_leak_snapshot_content(tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    snapshot_dir = _export_valid_snapshot(tmp_path, target)
+    (snapshot_dir / "schema.json").write_text(
+        '{"synthetic-secret-contract-check": "sk-test-123"}\n',
+        encoding="utf-8",
+    )
+
+    result = _run_cli(tmp_path, *_CHECK_COMMAND, "--target", str(target))
+
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "damaged_snapshot" in result.stderr
+    assert "synthetic-secret-contract-check" not in output
+    assert "sk-test-123" not in output
+
+
+def test_real_cli_check_rejects_unknown_selection_without_touching_target(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+
+    result = _run_cli(
+        tmp_path,
+        "contracts",
+        "check",
+        "--contract",
+        "unknown",
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+
+    assert result.returncode != 0
+    assert "invalid_selection" in result.stderr
+    assert "未知契约；当前支持：boundary" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not target.exists()

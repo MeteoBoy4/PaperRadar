@@ -1,7 +1,7 @@
-# 冻结契约导出
+# 冻结契约导出与检查
 
 当前只交付 `BoundaryOutput` 的 `boundary/v1` 冻结契约。价值预测、复用可行性
-升级、原因契约、批量导出和只读 `contracts check` 均尚未实现。
+升级、原因契约和批量导出尚未实现。
 
 ## 命令与公共入口
 
@@ -18,7 +18,17 @@ paper-radar contracts export \
 未知契约、无效版本、既有快照异常或写入失败返回非零。命令不访问网络、数据库
 或模型，也不消耗自动处理配额。
 
-Python 调用方使用 `paper_radar.contracts.export_frozen_contract`。纯内容生成可使用
+只读确认既有快照没有漂移使用同一组显式选择：
+
+```bash
+paper-radar contracts check \
+  --contract boundary \
+  --version v1 \
+  --target contracts
+```
+
+Python 调用方使用 `paper_radar.contracts.export_frozen_contract` 和
+`paper_radar.contracts.check_frozen_contract`。纯内容生成可使用
 `build_frozen_contract`；它直接调用权威 `BoundaryOutput.model_json_schema()`，不会维护
 第二份字段定义。
 
@@ -36,7 +46,7 @@ screening/
 
 `screening`、`boundary`、`v1` 和两个文件名均来自代码中的受控选择，不接受模型
 输出或任意路径片段。解析后的快照路径必须仍位于目标根目录内；已有符号链接若把
-路径引向根目录外，导出会在写入前失败。
+路径引向根目录外，导出会在写入前失败，`check` 也会直接拒绝检查。
 
 两个 JSON 文件统一使用 UTF-8、键名排序、两空格缩进、非 ASCII 字符原样保存，
 并以一个换行结束。内容不含时间、绝对路径或随机值。`schema.json` 包含契约身份
@@ -89,3 +99,34 @@ screening/
 | `invalid_target` | 目标不能解析；检查权限或符号链接循环 |
 | `path_escape` | 受控子路径经符号链接逃出目标根；移除该链接 |
 | `write_failed` | 权限、空间、只读挂载或其他写入失败；按具体中文指引处理 |
+
+## 只读检查单份快照
+
+`contracts check` 一次只检查一份显式选择的快照，不遍历目录也不汇总多份契约
+（批量汇总属于后续 ticket）。命令复用导出使用的权威 Schema、规范序列化、清单
+字段和 SHA-256 判据，只把“拒绝覆盖”的写入语义替换为检查语义：
+
+- 一致时返回 0，并输出契约身份、快照位置和 SHA-256；
+- 其余情况返回非零，不修复、不刷新、不创建目录，也不写入任何文件；
+- 目标根目录、版本目录或必需文件不存在时直接报缺失，不创建数据目录；
+- 不访问网络、数据库或模型，不消耗自动处理配额。
+
+`check_frozen_contract` 成功返回 `ContractCheckResult`；失败抛出
+`ContractCheckError`。其 `category` 复用导出词汇，并只在检查语义需要时区分
+缺失、不可读取与内容漂移：
+
+| 类别 | 判据与操作 |
+| --- | --- |
+| `invalid_selection` | 契约或声明版本未实现；改用帮助列出的受控选择 |
+| `missing_snapshot` | 目标根目录、版本目录，或 `schema.json` / `manifest.json` 不存在；确认选择或先运行 export |
+| `unreadable_snapshot` | 快照文件存在但不可读取；检查文件权限和文件系统状态 |
+| `damaged_snapshot` | 不是规范 JSON、清单字段非法，或清单哈希与 Schema 字节不符；从版本控制恢复快照 |
+| `version_mismatch` | 快照内部一致但契约或版本身份与选择不符；核对 `--contract` 与 `--version` |
+| `content_drift` | 身份正确且内部一致，但 Schema 与当前权威输出不同；有意变更须新建版本，否则恢复快照 |
+| `invalid_target` | 目标不是可访问的目录，或路径无法解析（例如符号链接循环）；选择有效目录 |
+| `path_escape` | 受控子路径经符号链接逃出目标根目录；移除该链接 |
+
+`scripts/check-offline` 在全部测试之后运行
+`paper-radar contracts check --contract boundary --version v1 --target contracts`，
+因此完整离线入口会实际执行这份快照的一致性检查。未来新增契约继续使用同一检查
+路径和同一类别词汇。

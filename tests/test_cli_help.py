@@ -27,6 +27,10 @@ def _visible_files(root: Path) -> set[Path]:
             ["contracts", "export", "--help"],
             "paper-radar contracts export --contract boundary --version v1",
         ),
+        (
+            ["contracts", "check", "--help"],
+            "paper-radar contracts check --contract boundary --version v1",
+        ),
     ],
 )
 def test_installed_entrypoint_has_complete_chinese_help_without_side_effects(
@@ -64,7 +68,7 @@ def test_installed_entrypoint_has_complete_chinese_help_without_side_effects(
     assert "run-due" not in result.stdout
 
 
-def test_contract_export_help_lists_every_registered_choice(tmp_path: Path) -> None:
+def test_contract_help_lists_every_registered_choice(tmp_path: Path) -> None:
     deny_external_io = Path(__file__).parent / "deny_external_io"
     env = {
         "PATH": os.environ["PATH"],
@@ -81,21 +85,25 @@ def test_contract_export_help_lists_every_registered_choice(tmp_path: Path) -> N
         text=True,
         check=False,
     )
-    export_help = subprocess.run(
-        [str(_installed_entrypoint()), "contracts", "export", "--help"],
-        cwd=tmp_path,
-        env=env,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    command_helps = [
+        subprocess.run(
+            [str(_installed_entrypoint()), "contracts", command, "--help"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        for command in ("export", "check")
+    ]
 
     registered_names = "、".join(item.value for item in ContractName)
     registered_versions = "、".join(item.value for item in ContractVersion)
     assert group_help.returncode == 0, group_help.stderr
-    assert export_help.returncode == 0, export_help.stderr
     assert f"当前支持：{registered_names}" in group_help.stdout
-    assert f"当前支持的契约：{registered_names}" in export_help.stdout
-    assert f"当前支持的声明版本：{registered_versions}" in export_help.stdout
-    assert f"受控契约名；当前支持：{registered_names}" in export_help.stdout
-    assert f"声明版本；当前支持：{registered_versions}" in export_help.stdout
+    for result in command_helps:
+        assert result.returncode == 0, result.stderr
+        assert f"当前支持的契约：{registered_names}" in result.stdout
+        assert f"当前支持的声明版本：{registered_versions}" in result.stdout
+        assert f"受控契约名；当前支持：{registered_names}" in result.stdout
+        assert f"声明版本；当前支持：{registered_versions}" in result.stdout

@@ -1,0 +1,130 @@
+"""冻结契约快照的只读状态检查与目标路径解析。"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+from enum import StrEnum
+from pathlib import Path
+
+from paper_radar.contracts.schema import (
+    _MANIFEST_FORMAT_VERSION,
+    FrozenContract,
+    _canonical_json_bytes,
+    _ManifestField,
+)
+
+
+class SnapshotInspection(StrEnum):
+    """既有快照相对当前权威定义的稳定只读状态。"""
+
+    ABSENT = "absent"
+    INCOMPLETE = "incomplete"
+    UNREADABLE = "unreadable"
+    DAMAGED = "damaged"
+    VERSION_MISMATCH = "version_mismatch"
+    CONTENT_DRIFT = "content_drift"
+    MATCHED = "matched"
+
+
+class SnapshotPathProblem(StrEnum):
+    """无法为所选契约构造目标快照路径的原因。"""
+
+    INVALID_TARGET = "invalid_target"
+    PATH_ESCAPE = "path_escape"
+
+
+class SnapshotPathError(ValueError):
+    """目标路径无法解析。消息为脱敏的中文操作指引。"""
+
+    def __init__(self, problem: SnapshotPathProblem, message_zh: str) -> None:
+        self.problem = problem
+        super().__init__(message_zh)
+
+
+class _UnavailableFile(Exception):
+    """必需快照文件缺失或不可读取。"""
+
+    def __init__(self, inspection: SnapshotInspection) -> None:
+        self.inspection = inspection
+        super().__init__(inspection.value)
+
+
+def resolve_snapshot_directory(target: Path | str, contract: FrozenContract) -> Path:
+    """把受控契约身份映射到目标根目录内的快照路径。不创建任何目录。"""
+    try:
+        root = Path(target).resolve(strict=False)
+        snapshot_dir = root.joinpath(*contract.snapshot_parts)
+        resolved_snapshot = snapshot_dir.resolve(strict=False)
+    except (OSError, RuntimeError) as error:
+        raise SnapshotPathError(
+            SnapshotPathProblem.INVALID_TARGET,
+            "目标目录无法解析；请检查访问权限和符号链接循环。",
+        ) from error
+    if not resolved_snapshot.is_relative_to(root):
+        raise SnapshotPathError(
+            SnapshotPathProblem.PATH_ESCAPE,
+            "受控快照路径超出目标目录；请移除目标内指向外部的符号链接。",
+        )
+    return snapshot_dir
+
+
+def _read_required_file(path: Path) -> bytes:
+    try:
+        return path.read_bytes()
+    except FileNotFoundError as error:
+        raise _UnavailableFile(SnapshotInspection.INCOMPLETE) from error
+    except OSError as error:
+        raise _UnavailableFile(SnapshotInspection.UNREADABLE) from error
+
+
+def inspect_frozen_snapshot(
+    snapshot_dir: Path,
+    contract: FrozenContract,
+) -> SnapshotInspection:
+    """只读判定一份既有快照与当前权威定义的关系。从不修复或改写文件。"""
+    if not os.path.lexists(snapshot_dir):
+        return SnapshotInspection.ABSENT
+
+    try:
+        schema_bytes = _read_required_file(snapshot_dir / contract.schema_filename)
+        manifest_bytes = _read_required_file(snapshot_dir / contract.manifest_filename)
+    except _UnavailableFile as unavailable:
+        return unavailable.inspection
+
+    try:
+        schema = json.loads(schema_bytes)
+        manifest = json.loads(manifest_bytes)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return SnapshotInspection.DAMAGED
+
+    if (
+        not isinstance(schema, dict)
+        or not isinstance(manifest, dict)
+        or _canonical_json_bytes(schema) != schema_bytes
+        or _canonical_json_bytes(manifest) != manifest_bytes
+        or set(manifest) != {field.value for field in _ManifestField}
+        or manifest.get(_ManifestField.FORMAT_VERSION.value) != _MANIFEST_FORMAT_VERSION
+        or manifest.get(_ManifestField.SCHEMA_FILE.value) != contract.schema_filename
+        or not isinstance(manifest.get(_ManifestField.SCHEMA_SHA256.value), str)
+        or hashlib.sha256(schema_bytes).hexdigest()
+        != manifest.get(_ManifestField.SCHEMA_SHA256.value)
+    ):
+        return SnapshotInspection.DAMAGED
+
+    expected_identity = {
+        "name": contract.name.value,
+        "version": contract.version.value,
+    }
+    if (
+        manifest.get(_ManifestField.CONTRACT.value) != contract.name.value
+        or manifest.get(_ManifestField.VERSION.value) != contract.version.value
+        or schema.get("x-paper-radar-contract") != expected_identity
+    ):
+        return SnapshotInspection.VERSION_MISMATCH
+
+    if schema_bytes != contract.schema_bytes:
+        return SnapshotInspection.CONTENT_DRIFT
+
+    return SnapshotInspection.MATCHED

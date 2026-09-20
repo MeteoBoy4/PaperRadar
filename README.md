@@ -1,9 +1,9 @@
 # PaperRadar
 
 PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库交付了工程入口、
-研究边界输出验证，以及 `BoundaryOutput` 的 `boundary/v1` 冻结契约安全导出；价值
-预测、复用可行性升级、原因组合、只读契约检查、数据库、网络来源和论文处理命令
-尚未实现。
+研究边界输出验证，以及 `BoundaryOutput` 的 `boundary/v1` 冻结契约安全导出与
+只读漂移检查；价值预测、复用可行性升级、原因组合、数据库、网络来源和论文
+处理命令尚未实现。
 
 ## 环境与安装
 
@@ -33,7 +33,8 @@ uv run --offline --locked paper-radar --help
 
 帮助命令只向标准输出写文本；它不读取配置或凭据，不访问网络或数据库，
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
-当前只额外注册已实现的 `contracts export`，不注册尚未实现的业务命令。
+当前只额外注册已实现的 `contracts export` 和 `contracts check`，不注册尚未
+实现的业务命令。
 
 ## 研究边界输出验证
 
@@ -41,10 +42,10 @@ uv run --offline --locked paper-radar --help
 严格的 `BoundaryOutput`，失败时抛出可操作且脱敏的受控错误。公共接口、错误类别、
 占位文本规则和示例见
 [Screening 输出验证接口](docs/contracts/screening-validation.md)。本接口不访问网络、
-数据库、LLM 或 Docling。冻结 Schema 的格式与导出方式见
+数据库、LLM 或 Docling。冻结 Schema 的格式、导出与只读检查见
 [冻结契约导出](docs/contracts/frozen-contracts.md)。
 
-## 冻结契约导出
+## 冻结契约导出与检查
 
 只支持当前已经实现的 `boundary/v1`：
 
@@ -58,13 +59,27 @@ uv run --offline --locked paper-radar contracts export \
 快照写入 `contracts/screening/boundary/v1/`。同内容重跑不改写；损坏、版本不一致
 或同版本内容冲突会明确拒绝覆盖。此命令不访问网络、数据库或模型，不消耗配额。
 
+只读确认这份快照仍与当前权威定义一致：
+
+```bash
+uv run --offline --locked paper-radar contracts check \
+  --contract boundary \
+  --version v1 \
+  --target contracts
+```
+
+一致返回 0；缺失、不可读取、损坏、版本不一致或内容漂移返回非零并给出受控
+中文类别。检查不修复、不刷新、不创建任何文件，也不访问网络、数据库或模型。
+
 ## 完整离线验证
 
 ```bash
 ./scripts/check-offline
 ```
 
-该入口依次检查 lockfile 一致性、Ruff 格式、Ruff 静态规则、mypy 类型和全部
-pytest 测试（包括冻结契约导出测试）。所有 `uv` 调用都带有 `--offline`；运行时使用
-`--locked`，因此依赖声明与 lockfile 不一致会直接失败，而不会改写 lockfile。
-若首次环境准备未完成或所需包不在本地，检查会返回非零，不会联网补装。
+该入口依次检查 lockfile 一致性、Ruff 格式、Ruff 静态规则、mypy 类型、全部
+pytest 测试（包括冻结契约导出与只读检查测试），最后实际运行
+`contracts check` 确认已提交快照与当前权威定义一致。所有 `uv` 调用都带有
+`--offline`；运行时使用 `--locked`，因此依赖声明与 lockfile 不一致会直接失败，
+而不会改写 lockfile。若首次环境准备未完成或所需包不在本地，检查会返回非零，
+不会联网补装。
