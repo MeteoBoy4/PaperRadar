@@ -257,7 +257,7 @@ else:
     suggestion = denied(reason=low_reuse_feasibility)
 ~~~
 
-`effective_reuse_feasibility` 在升级制品存在时取升级结果，否则取阶段二初步预测；`effective_reuse_feasibility_inferable` 在任一合法输入足以判断时为真。升级制品不会覆盖阶段二字段，两者都保留并展示。研究价值高但复用困难不是冲突：研究价值至少 4 时仍 accepted，并以阶段二预测进入认知增益或可转化成果，是否为其升级队列归属留到 V2。只有“研究价值不高于 2、且当前有效输入足以判断复用可行性至少 4”这种反向信号进入 pending；V1 的触发集合不含低研究价值，因此低研究价值且复用不可判断时直接 denied(low_value)。以后即使把触发集合扩为 `{2, 3}`，升级也只补充复用判断，不会把研究价值 2 的论文直接 accepted。
+有效复用可行性 `effective_reuse_feasibility` 在升级制品存在时取升级结果，否则取阶段二初步预测；`effective_reuse_feasibility_inferable` 在任一合法输入足以判断时为真。升级制品不会覆盖阶段二字段，两者都保留并展示。研究价值高但复用困难不是冲突：研究价值至少 4 时仍 accepted，并以阶段二预测进入认知增益或可转化成果，是否为其升级队列归属留到 V2。只有“研究价值不高于 2、且当前有效输入足以判断复用可行性至少 4”这种反向信号进入 pending；V1 的触发集合不含低研究价值，因此低研究价值且复用不可判断时直接 denied(low_value)。以后即使把触发集合扩为 `{2, 3}`，升级也只补充复用判断，不会把研究价值 2 的论文直接 accepted。
 
 建议和生效决定分开：
 
