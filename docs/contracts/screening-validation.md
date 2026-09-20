@@ -1,8 +1,9 @@
 # Screening 输出验证接口
 
-当前交付研究边界判断及其 `boundary/v1` 冻结契约。价值预测、复用可行性升级、
-原因组合和批量导出仍由后续 ticket 实现，不能据此视为就绪。冻结格式、
-版本纪律、导出与只读检查命令见[冻结契约导出](frozen-contracts.md)。
+当前交付研究边界判断、摘要层价值预测及研究边界的 `boundary/v1` 冻结契约。
+价值预测只提供公共验证能力，不产出冻结快照，也不新增 CLI；复用可行性升级、
+原因组合和批量导出仍由后续 ticket 实现，不能据此视为就绪。冻结格式、版本纪律、
+导出与只读检查命令见[冻结契约导出](frozen-contracts.md)。
 
 ## 公共入口
 
@@ -13,6 +14,8 @@ from paper_radar.screening import (
     BoundaryOutput,
     OutputKind,
     OutputValidationError,
+    ValuePredictionContext,
+    ValuePredictionOutput,
     validate_output,
 )
 
@@ -24,11 +27,34 @@ result = validate_output(
     },
 )
 assert isinstance(result, BoundaryOutput)
+
+value_result = validate_output(
+    OutputKind.VALUE_PREDICTION,
+    {
+        "research_value": 4,
+        "research_value_reason_zh": "该方法能改进区域降水诊断。",
+        "reuse_feasibility": 3,
+        "reuse_feasibility_reason_zh": "需要调整现有 ERA5 数据处理流程。",
+        "reuse_feasibility_inferable": True,
+        "value_types": ["method"],
+        "topic_ids": ["extreme-rainfall"],
+        "abstract_brief_zh": "研究提出一种新的极端降水诊断方法。",
+        "why_it_may_matter_zh": "可用于改进当前的区域降水分析。",
+    },
+    context=ValuePredictionContext(
+        enabled_topic_ids=frozenset({"extreme-rainfall"}),
+        original_title_is_zh=False,
+    ),
+)
+assert isinstance(value_result, ValuePredictionOutput)
 ```
 
 当前完整公共面为：
 
 - `BoundaryOutput`：研究边界判断的权威 Pydantic 类型；
+- `ValuePredictionOutput`：摘要层价值预测的权威 Pydantic 类型；
+- `ValuePredictionContext`：已启用主题集合与原题名语言事实的只读上下文；
+- `ValueType`、`VALUE_TYPE_DESCRIPTIONS_ZH`：七类价值的序列化值与中文说明；
 - `OutputKind`：已注册输出种类；
 - `OutputErrorCategory`：受控错误类别；
 - `OutputValidationIssue`：单个脱敏验证问题；
@@ -37,7 +63,13 @@ assert isinstance(result, BoundaryOutput)
 - `validate_output`：统一验证入口。
 
 `validate_output(kind, payload, context=None)` 接受原始 JSON 字符串/字节或结构
-数据。当前唯一注册的 kind 是 `boundary`。`BoundaryOutput` 只包含：
+数据。当前注册的 kind 是 `boundary` 和 `value_prediction`。成功返回意味着结构与
+该 kind 的全部适用业务规则都已通过；验证器不修复输入、不改写文本，也不调用模型
+判断科学语义。
+
+### 研究边界
+
+`BoundaryOutput` 只包含：
 
 - `boundary`：`in_scope`、`out_of_scope` 或 `uncertain`；
 - `reason_zh`：非空、非占位的理由文本。
@@ -46,6 +78,82 @@ assert isinstance(result, BoundaryOutput)
 修复 JSON、改写理由或修改调用方数据。boundary 不需要业务上下文；`None` 或空
 mapping 合法，且验证器不会修改它。显式非空 context 或其他 context 类型会以
 `context_mismatch` 失败。
+
+### 价值预测结构
+
+`ValuePredictionOutput` 严格包含：
+
+- `research_value`：1–5 整数；
+- `research_value_reason_zh`：研究价值中文理由；
+- `reuse_feasibility`：1–5 初步整数评分；
+- `reuse_feasibility_reason_zh`：复用可行性中文理由；
+- `reuse_feasibility_inferable`：真正的布尔值；
+- `value_types`：零个或多个受控价值类型；
+- `topic_ids`：零个或多个已启用主题 ID；
+- `display_title_zh`：唯一可缺省的字段，默认 `null`；
+- `abstract_brief_zh`：中文摘要速览；
+- `why_it_may_matter_zh`：中文价值说明。
+
+其他字段全部必填。评分拒绝布尔、浮点、数字字符串、0 和 6；可判断性拒绝数字或
+字符串布尔值；列表必须是真正的 JSON/Python list。额外字段一律拒绝，因此最终
+决定、期刊信誉、Rank、priority、urgency、自由标签、主题权重和置信分均不能进入
+该制品。不完整 JSON 不会被修复。
+
+### 价值预测上下文
+
+价值预测必须同时提供以下只读业务事实：
+
+- `enabled_topic_ids: frozenset[str]`：本次可用的已启用主题 ID 集合；
+- `original_title_is_zh: bool`：上游提供的原题名是否中文事实。
+
+推荐调用方显式构造冻结的 `ValuePredictionContext`。公共入口也接受字段完全匹配的
+mapping，并先将其验证为该受控类型；不会把自由键值直接传给业务规则。缺少上下文
+或必需键报 `missing_context`，类型错误、额外键或不适用的上下文报
+`context_mismatch`。验证器只信任 `original_title_is_zh`，不实现语言识别器。
+
+输出中的主题 ID 必须属于 `enabled_topic_ids` 且不得重复；未知或已停用 ID 都按
+“未启用”拒绝。零匹配合法，不会新增 `unclassified_value` 等模型输出字段。
+boundary 仍只接受 `None` 或空 mapping，上述价值预测上下文不能用于 boundary。
+
+### 价值类型 vocabulary
+
+| 序列化值 | 中文说明 |
+| --- | --- |
+| `method` | 方法 |
+| `data` | 数据 |
+| `code_tool` | 代码/工具 |
+| `theory_mechanism` | 理论/机制 |
+| `evidence_conclusion` | 证据/结论 |
+| `question_hypothesis` | 问题/假设 |
+| `review_knowledge_map` | 综述/知识地图 |
+
+没有 `other`。未知值和重复值失败；研究价值为 3、4 或 5 时至少需要一类，1 或 2
+时允许空列表。主题和价值类型都不形成权重或综合 Rank。
+
+### 题名、文本与可判断性
+
+原题名为中文时，省略 `display_title_zh` 与显式 `null` 等价且合法，任何非 null
+值报 `context_mismatch`。原题名非中文时，该字段仍可省略或为 null；提供值时必须
+是非空、非占位文本。
+
+四个必填文本字段
+`research_value_reason_zh`、`reuse_feasibility_reason_zh`、
+`abstract_brief_zh` 和 `why_it_may_matter_zh` 共用下述明确占位规则。合法的
+英文缩写、数据集名和原文术语逐字保留，程序不尝试翻译或改写。
+
+`reuse_feasibility_inferable=false` 时，1–5 初步分仍然必填，且仅
+`reuse_feasibility_reason_zh` 必须含有至少一个以下固定片段，以明确当前摘要层输入
+不足：
+
+- `当前输入不足`、`信息不足`、`摘要未说明`、`摘要未提供`、`摘要未披露`；
+- `仅凭摘要无法判断`、`无法从摘要判断`；
+- `insufficient information`、`not reported in the abstract`、
+  `not provided in the abstract`、`not disclosed in the abstract`、
+  `unclear from the abstract`（英文比较不区分大小写）。
+
+例如“摘要未说明 GPU memory 与训练时长，因此复用条件仍不明确”合法；“需要调整
+ERA5 preprocessing pipeline”虽是有效文本，但没有说明输入不足，不能配合
+`inferable=false`。该约定只做可审计的机械检查，不证明评分或理由在科学上正确。
 
 验证成功返回冻结的权威 Pydantic 类型。失败抛出 `OutputValidationError`；其
 `issues` 仅包含 `location`、`category` 和中文 `guidance_zh`。错误文本不包含输入值、

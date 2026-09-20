@@ -167,7 +167,7 @@ def test_boundary_authoritative_schema_contains_only_declared_fields() -> None:
     ("kind", "context", "category", "location"),
     [
         (
-            "value_prediction",
+            "reuse_assessment",
             None,
             OutputErrorCategory.UNKNOWN_KIND,
             "$.kind",

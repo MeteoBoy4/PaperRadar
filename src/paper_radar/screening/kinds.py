@@ -9,3 +9,4 @@ class OutputKind(StrEnum):
     """已实现的结构输出种类。后续 ticket 只在此追加成员。"""
 
     BOUNDARY = "boundary"
+    VALUE_PREDICTION = "value_prediction"
