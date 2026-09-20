@@ -220,6 +220,7 @@ def test_public_failures_do_not_leak_input_or_pydantic_details(
         lambda: validate_output(
             markers[0],
             {"boundary": "in_scope", "reason_zh": "合法理由"},
+            context=None,
         ),
         lambda: validate_output(
             "boundary",

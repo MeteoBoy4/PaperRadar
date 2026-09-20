@@ -16,17 +16,11 @@ from paper_radar.screening.errors import (
 from paper_radar.screening.kinds import OutputKind
 from paper_radar.screening.schema import BoundaryOutput, ValuePredictionOutput
 from paper_radar.screening.text import is_meaningful_text, states_input_is_insufficient
+from paper_radar.screening.value_types import ValueType
 
 _KNOWN_BOUNDARY_FIELDS = frozenset(BoundaryOutput.model_fields)
 _KNOWN_VALUE_PREDICTION_FIELDS = frozenset(ValuePredictionOutput.model_fields)
 _KNOWN_VALUE_CONTEXT_FIELDS = frozenset(ValuePredictionContext.model_fields)
-_REQUIRED_VALUE_TEXT_FIELDS = (
-    "research_value_reason_zh",
-    "reuse_feasibility_reason_zh",
-    "abstract_brief_zh",
-    "why_it_may_matter_zh",
-)
-
 _GUIDANCE: dict[OutputErrorCategory, str] = {
     OutputErrorCategory.UNKNOWN_KIND: "请使用已注册的输出种类。",
     OutputErrorCategory.INVALID_JSON: "请提交完整且语法正确的 JSON。",
@@ -130,9 +124,15 @@ def _value_prediction_business_issues(
     context: ValuePredictionContext,
 ) -> tuple[OutputValidationIssue, ...]:
     issues: list[OutputValidationIssue] = []
-    for field_name in _REQUIRED_VALUE_TEXT_FIELDS:
-        if not is_meaningful_text(getattr(output, field_name)):
-            issues.append(_issue(f"$.{field_name}", OutputErrorCategory.INVALID_TEXT))
+    required_texts = (
+        ("$.research_value_reason_zh", output.research_value_reason_zh),
+        ("$.reuse_feasibility_reason_zh", output.reuse_feasibility_reason_zh),
+        ("$.abstract_brief_zh", output.abstract_brief_zh),
+        ("$.why_it_may_matter_zh", output.why_it_may_matter_zh),
+    )
+    for location, value in required_texts:
+        if not is_meaningful_text(value):
+            issues.append(_issue(location, OutputErrorCategory.INVALID_TEXT))
 
     if output.display_title_zh is not None:
         if context.original_title_is_zh:
@@ -162,7 +162,7 @@ def _value_prediction_business_issues(
     if output.research_value >= 3 and not output.value_types:
         issues.append(_issue("$.value_types", OutputErrorCategory.BUSINESS_RULE))
 
-    seen_value_types: set[object] = set()
+    seen_value_types: set[ValueType] = set()
     for index, value_type in enumerate(output.value_types):
         if value_type in seen_value_types:
             issues.append(
@@ -234,7 +234,7 @@ def validate_output(
 def validate_output(
     kind: Literal[OutputKind.VALUE_PREDICTION, "value_prediction"],
     payload: object,
-    context: object = None,
+    context: ValuePredictionContext | Mapping[str, object],
 ) -> ValuePredictionOutput: ...
 
 
@@ -242,7 +242,7 @@ def validate_output(
 def validate_output(
     kind: object,
     payload: object,
-    context: object = None,
+    context: object,
 ) -> BoundaryOutput | ValuePredictionOutput: ...
 
 

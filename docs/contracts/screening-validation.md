@@ -60,6 +60,7 @@ assert isinstance(value_result, ValuePredictionOutput)
 - `OutputValidationIssue`：单个脱敏验证问题；
 - `OutputValidationError`：公共验证失败异常；
 - `EXPLICIT_PLACEHOLDER_TEXTS`：明确占位文本共享词汇；
+- `INSUFFICIENT_INPUT_MARKERS`：摘要层输入不足理由的固定片段；
 - `validate_output`：统一验证入口。
 
 `validate_output(kind, payload, context=None)` 接受原始 JSON 字符串/字节或结构

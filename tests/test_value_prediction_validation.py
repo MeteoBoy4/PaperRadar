@@ -7,6 +7,7 @@ from copy import deepcopy
 import pytest
 
 from paper_radar.screening import (
+    INSUFFICIENT_INPUT_MARKERS,
     VALUE_TYPE_DESCRIPTIONS_ZH,
     OutputErrorCategory,
     OutputValidationError,
@@ -35,6 +36,28 @@ def _context() -> ValuePredictionContext:
     return ValuePredictionContext(
         enabled_topic_ids=frozenset({"extreme-rainfall"}),
         original_title_is_zh=False,
+    )
+
+
+def test_insufficient_input_markers_are_public_controlled_vocabulary() -> None:
+    assert (
+        frozenset(
+            {
+                "当前输入不足",
+                "信息不足",
+                "摘要未说明",
+                "摘要未提供",
+                "摘要未披露",
+                "仅凭摘要无法判断",
+                "无法从摘要判断",
+                "insufficient information",
+                "not reported in the abstract",
+                "not provided in the abstract",
+                "not disclosed in the abstract",
+                "unclear from the abstract",
+            }
+        )
+        == INSUFFICIENT_INPUT_MARKERS
     )
 
 
