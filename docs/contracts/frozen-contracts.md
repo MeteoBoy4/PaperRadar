@@ -67,3 +67,25 @@ screening/
 首次导出先在目标版本目录的同级临时目录完整写入、刷新 Schema 和清单，再以目录
 重命名一次发布。清单不会先于完整 Schema 可见；中断或权限失败会清理临时目录，
 不会把半文件当成成功快照，也不会触碰已经发布的版本。
+
+## 受控结果与错误
+
+`export_frozen_contract` 成功返回 `ContractExportResult`。`outcome` 只有两个值：
+
+| 值 | 含义 |
+| --- | --- |
+| `created` | 首次发布了完整快照 |
+| `unchanged` | 既有快照逐字节一致，未执行改写 |
+
+失败抛出 `ContractExportError`；`category` 使用以下完整受控词汇，消息只提供中文
+操作指引，不包含文件内容或底层异常文本：
+
+| 类别 | 含义与操作 |
+| --- | --- |
+| `invalid_selection` | 契约或声明版本未实现；改用帮助列出的受控选择 |
+| `damaged_snapshot` | 既有快照损坏或不完整；先恢复原快照，契约变化则新建版本 |
+| `version_mismatch` | 快照身份与选择不一致；核对目标与版本，禁止覆盖 |
+| `content_conflict` | 同一版本存在另一份内部一致内容；必须新建版本 |
+| `invalid_target` | 目标不能解析；检查权限或符号链接循环 |
+| `path_escape` | 受控子路径经符号链接逃出目标根；移除该链接 |
+| `write_failed` | 权限、空间、只读挂载或其他写入失败；按具体中文指引处理 |

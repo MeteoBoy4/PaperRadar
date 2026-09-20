@@ -76,6 +76,13 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
+def _invalid_target_error() -> ContractExportError:
+    return ContractExportError(
+        ContractExportErrorCategory.INVALID_TARGET,
+        "目标目录无法解析；请检查访问权限和符号链接循环。",
+    )
+
+
 def _resolve_snapshot_directory(
     target: Path | str,
     contract: FrozenContract,
@@ -85,10 +92,7 @@ def _resolve_snapshot_directory(
         snapshot_dir = root.joinpath(*contract.snapshot_parts)
         resolved_snapshot = snapshot_dir.resolve(strict=False)
     except (OSError, RuntimeError) as error:
-        raise ContractExportError(
-            ContractExportErrorCategory.INVALID_TARGET,
-            "目标目录无法解析；请检查访问权限和符号链接循环。",
-        ) from error
+        raise _invalid_target_error() from error
     if not resolved_snapshot.is_relative_to(root):
         raise ContractExportError(
             ContractExportErrorCategory.PATH_ESCAPE,
@@ -167,8 +171,7 @@ def _verify_existing_snapshot(
 def _write_error(error: OSError) -> ContractExportError:
     category = ContractExportErrorCategory.WRITE_FAILED
     if error.errno == errno.ELOOP:
-        category = ContractExportErrorCategory.INVALID_TARGET
-        guidance = "目标目录无法解析；请检查访问权限和符号链接循环。"
+        return _invalid_target_error()
     elif isinstance(error, PermissionError):
         guidance = "目标目录不可写；请检查目录权限后重试。"
     elif isinstance(error, NotADirectoryError):
