@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import stat
 from pathlib import Path
 
 import pytest
@@ -23,6 +24,14 @@ from tests.contract_snapshot_support import (
 )
 
 _SNAPSHOT_PARTS = ("screening", "boundary", "v1")
+
+_MALFORMED_SCHEMA_PAYLOADS = {
+    "unpaired-surrogate": b'{"x": "\\ud800"}',
+    "huge-integer": b'{"x": ' + b"1" * 5000 + b"}",
+    "nan-constant": b'{"x": NaN}',
+    "infinity-constant": b'{"x": -Infinity}',
+    "deep-nesting": b"[" * 200_000 + b"]" * 200_000,
+}
 
 
 def _create_snapshot(root: Path) -> Path:
@@ -122,6 +131,68 @@ def test_check_errors_do_not_leak_snapshot_content(tmp_path: Path) -> None:
     assert captured.value.category is ContractCheckErrorCategory.DAMAGED_SNAPSHOT
     assert "synthetic-secret-contract-check" not in message
     assert "sk-test-123" not in message
+
+
+@pytest.mark.parametrize(
+    "payload",
+    _MALFORMED_SCHEMA_PAYLOADS.values(),
+    ids=_MALFORMED_SCHEMA_PAYLOADS.keys(),
+)
+def test_malformed_snapshot_content_is_damaged_and_not_rewritten(
+    tmp_path: Path,
+    payload: bytes,
+) -> None:
+    root = tmp_path / "contracts"
+    snapshot_dir = _create_snapshot(root)
+    (snapshot_dir / "schema.json").write_bytes(payload)
+    before = filesystem_fingerprint(root)
+
+    with pytest.raises(ContractCheckError) as captured:
+        check_frozen_contract("boundary", "v1", root)
+
+    assert captured.value.category is ContractCheckErrorCategory.DAMAGED_SNAPSHOT
+    assert filesystem_fingerprint(root) == before
+
+
+def test_nonstandard_json_constants_are_damaged_even_when_consistent(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "contracts"
+    snapshot_dir = _create_snapshot(root)
+    payload = b'{\n  "x": NaN\n}\n'
+    (snapshot_dir / "schema.json").write_bytes(payload)
+    manifest = json.loads((snapshot_dir / "manifest.json").read_bytes())
+    manifest["schema_sha256"] = hashlib.sha256(payload).hexdigest()
+    (snapshot_dir / "manifest.json").write_bytes(canonical_json_bytes(manifest))
+    before = filesystem_fingerprint(root)
+
+    with pytest.raises(ContractCheckError) as captured:
+        check_frozen_contract("boundary", "v1", root)
+
+    assert captured.value.category is ContractCheckErrorCategory.DAMAGED_SNAPSHOT
+    assert filesystem_fingerprint(root) == before
+
+
+@pytest.mark.parametrize("restricted", ["root", "screening"])
+def test_directory_permission_denied_is_reported_as_unreadable(
+    tmp_path: Path,
+    restricted: str,
+) -> None:
+    root = tmp_path / "contracts"
+    _create_snapshot(root)
+    restricted_dir = root if restricted == "root" else root / "screening"
+    before = filesystem_fingerprint(root)
+    original_mode = stat.S_IMODE(restricted_dir.stat().st_mode)
+    restricted_dir.chmod(0o000)
+    try:
+        with pytest.raises(ContractCheckError) as captured:
+            check_frozen_contract("boundary", "v1", root)
+
+        assert captured.value.category is ContractCheckErrorCategory.UNREADABLE_SNAPSHOT
+        assert "权限" in str(captured.value)
+    finally:
+        restricted_dir.chmod(original_mode)
+    assert filesystem_fingerprint(root) == before
 
 
 def test_unreadable_snapshot_is_reported_separately_from_damage(

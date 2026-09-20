@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import stat
 from pathlib import Path
 
 import pytest
@@ -218,6 +219,37 @@ def test_interrupted_publish_keeps_history_and_leaves_no_partial_snapshot(
     assert historical.read_text(encoding="utf-8") == "historical snapshot"
     assert not (version_parent / "v1").exists()
     assert {path.name for path in version_parent.iterdir()} == {"v0"}
+
+
+def test_uncontrolled_json_in_snapshot_is_damaged_not_a_traceback(
+    tmp_path: Path,
+) -> None:
+    export_frozen_contract("boundary", "v1", tmp_path)
+    schema_path, _manifest_path = _snapshot_files(tmp_path)
+    schema_path.write_bytes(b'{"x": "\\ud800"}')
+    tampered = schema_path.read_bytes()
+
+    with pytest.raises(ContractExportError) as captured:
+        export_frozen_contract("boundary", "v1", tmp_path)
+
+    assert captured.value.category is ContractExportErrorCategory.DAMAGED_SNAPSHOT
+    assert schema_path.read_bytes() == tampered
+
+
+def test_inaccessible_target_is_reported_as_write_failure(tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    original_mode = stat.S_IMODE(target.stat().st_mode)
+    target.chmod(0o000)
+    try:
+        with pytest.raises(ContractExportError) as captured:
+            export_frozen_contract("boundary", "v1", target)
+    finally:
+        target.chmod(original_mode)
+
+    assert captured.value.category is ContractExportErrorCategory.WRITE_FAILED
+    assert "不可访问" in str(captured.value)
+    assert list(target.iterdir()) == []
 
 
 def test_unwritable_target_fails_without_publishing_snapshot(tmp_path: Path) -> None:

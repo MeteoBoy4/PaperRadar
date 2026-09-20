@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import stat
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -373,6 +374,43 @@ def test_real_cli_check_errors_do_not_leak_snapshot_content(tmp_path: Path) -> N
     assert "damaged_snapshot" in result.stderr
     assert "synthetic-secret-contract-check" not in output
     assert "sk-test-123" not in output
+
+
+def test_real_cli_check_maps_malformed_json_to_damaged_without_traceback(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+    snapshot_dir = _export_valid_snapshot(tmp_path, target)
+    (snapshot_dir / "schema.json").write_bytes(b'{"x": "\\ud800"}')
+    before = filesystem_fingerprint(target)
+
+    result = _run_cli(tmp_path, *_CHECK_COMMAND, "--target", str(target))
+
+    assert result.returncode != 0
+    assert "damaged_snapshot" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert "UnicodeEncodeError" not in result.stderr
+    assert filesystem_fingerprint(target) == before
+
+
+def test_real_cli_check_reports_directory_permission_denied_without_traceback(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+    _export_valid_snapshot(tmp_path, target)
+    screening = target / "screening"
+    before = filesystem_fingerprint(target)
+    original_mode = stat.S_IMODE(screening.stat().st_mode)
+    screening.chmod(0o000)
+    try:
+        result = _run_cli(tmp_path, *_CHECK_COMMAND, "--target", str(target))
+    finally:
+        screening.chmod(original_mode)
+
+    assert result.returncode != 0
+    assert "unreadable_snapshot" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert filesystem_fingerprint(target) == before
 
 
 def test_real_cli_check_rejects_unknown_selection_without_touching_target(

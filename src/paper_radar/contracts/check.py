@@ -87,6 +87,12 @@ def _snapshot_failure(
             f"{contract.schema_filename} 或 {contract.manifest_filename}）："
             f"{snapshot_dir}；请从版本控制恢复完整快照，不要手工补齐。",
         )
+    if inspection is SnapshotInspection.INACCESSIBLE:
+        return (
+            ContractCheckErrorCategory.UNREADABLE_SNAPSHOT,
+            f"契约 {identity} 的冻结快照路径不可读取：{snapshot_dir}；"
+            "请检查目录权限和文件系统状态后重试。",
+        )
     if inspection is SnapshotInspection.UNREADABLE:
         return (
             ContractCheckErrorCategory.UNREADABLE_SNAPSHOT,

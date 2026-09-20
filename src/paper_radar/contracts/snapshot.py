@@ -7,6 +7,7 @@ import json
 import os
 from enum import StrEnum
 from pathlib import Path
+from typing import NoReturn
 
 from paper_radar.contracts.schema import (
     _MANIFEST_FORMAT_VERSION,
@@ -20,6 +21,7 @@ class SnapshotInspection(StrEnum):
     """既有快照相对当前权威定义的稳定只读状态。"""
 
     ABSENT = "absent"
+    INACCESSIBLE = "inaccessible"
     INCOMPLETE = "incomplete"
     UNREADABLE = "unreadable"
     DAMAGED = "damaged"
@@ -79,13 +81,31 @@ def _read_required_file(path: Path) -> bytes:
         raise _UnavailableFile(SnapshotInspection.UNREADABLE) from error
 
 
+def _reject_json_constant(constant: str) -> NoReturn:
+    raise ValueError(f"JSON 不接受常量：{constant}")
+
+
+def _probe_snapshot_directory(snapshot_dir: Path) -> SnapshotInspection | None:
+    """区分权限拒绝与真正缺失。返回非 None 时表示无法继续读取快照。"""
+    try:
+        os.lstat(snapshot_dir)
+    except PermissionError:
+        return SnapshotInspection.INACCESSIBLE
+    except OSError:
+        # 不存在、非目录组件或符号链接循环仍按“不存在”处理。
+        # 这样导出路径可以沿用原有的受控写入错误。
+        return SnapshotInspection.ABSENT
+    return None
+
+
 def inspect_frozen_snapshot(
     snapshot_dir: Path,
     contract: FrozenContract,
 ) -> SnapshotInspection:
     """只读判定一份既有快照与当前权威定义的关系。从不修复或改写文件。"""
-    if not os.path.lexists(snapshot_dir):
-        return SnapshotInspection.ABSENT
+    probe_result = _probe_snapshot_directory(snapshot_dir)
+    if probe_result is not None:
+        return probe_result
 
     try:
         schema_bytes = _read_required_file(snapshot_dir / contract.schema_filename)
@@ -94,16 +114,19 @@ def inspect_frozen_snapshot(
         return unavailable.inspection
 
     try:
-        schema = json.loads(schema_bytes)
-        manifest = json.loads(manifest_bytes)
-    except (UnicodeDecodeError, json.JSONDecodeError):
+        schema = json.loads(schema_bytes, parse_constant=_reject_json_constant)
+        manifest = json.loads(manifest_bytes, parse_constant=_reject_json_constant)
+        schema_canonical = _canonical_json_bytes(schema)
+        manifest_canonical = _canonical_json_bytes(manifest)
+    except (ValueError, RecursionError):
+        # 不完整编码、超长整数、非标准常量和过深嵌套都算损坏。不向外泄漏异常。
         return SnapshotInspection.DAMAGED
 
     if (
         not isinstance(schema, dict)
         or not isinstance(manifest, dict)
-        or _canonical_json_bytes(schema) != schema_bytes
-        or _canonical_json_bytes(manifest) != manifest_bytes
+        or schema_canonical != schema_bytes
+        or manifest_canonical != manifest_bytes
         or set(manifest) != {field.value for field in _ManifestField}
         or manifest.get(_ManifestField.FORMAT_VERSION.value) != _MANIFEST_FORMAT_VERSION
         or manifest.get(_ManifestField.SCHEMA_FILE.value) != contract.schema_filename

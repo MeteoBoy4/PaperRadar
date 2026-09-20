@@ -74,6 +74,10 @@ _DAMAGED_SNAPSHOT_FAILURE = (
 _EXISTING_SNAPSHOT_FAILURES: dict[
     SnapshotInspection, tuple[ContractExportErrorCategory, str]
 ] = {
+    SnapshotInspection.INACCESSIBLE: (
+        ContractExportErrorCategory.WRITE_FAILED,
+        "目标目录不可访问；请检查目录权限后重试。",
+    ),
     SnapshotInspection.INCOMPLETE: _DAMAGED_SNAPSHOT_FAILURE,
     SnapshotInspection.UNREADABLE: _DAMAGED_SNAPSHOT_FAILURE,
     SnapshotInspection.DAMAGED: _DAMAGED_SNAPSHOT_FAILURE,
