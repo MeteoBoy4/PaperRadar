@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -22,6 +23,7 @@ class SnapshotInspection(StrEnum):
 
     ABSENT = "absent"
     INACCESSIBLE = "inaccessible"
+    INVALID_PATH = "invalid_path"
     INCOMPLETE = "incomplete"
     UNREADABLE = "unreadable"
     DAMAGED = "damaged"
@@ -85,16 +87,30 @@ def _reject_json_constant(constant: str) -> NoReturn:
     raise ValueError(f"JSON 不接受常量：{constant}")
 
 
+# 上限固定且远低于解释器整数转换的最小阈值。
+# 因此整数位数判定不依赖 PYTHONINTMAXSTRDIGITS。
+_MAX_JSON_INTEGER_DIGITS = 100
+
+
+def _parse_json_integer(literal: str) -> int:
+    digits = literal[1:] if literal.startswith("-") else literal
+    if len(digits) > _MAX_JSON_INTEGER_DIGITS:
+        raise ValueError("冻结契约不接受超长整数")
+    return int(literal)
+
+
 def _probe_snapshot_directory(snapshot_dir: Path) -> SnapshotInspection | None:
-    """区分权限拒绝与真正缺失。返回非 None 时表示无法继续读取快照。"""
+    """区分真正缺失、权限拒绝与无法解析的路径。返回非 None 表示无法继续。"""
     try:
         os.lstat(snapshot_dir)
+    except FileNotFoundError:
+        return SnapshotInspection.ABSENT
     except PermissionError:
         return SnapshotInspection.INACCESSIBLE
-    except OSError:
-        # 不存在、非目录组件或符号链接循环仍按“不存在”处理。
-        # 这样导出路径可以沿用原有的受控写入错误。
-        return SnapshotInspection.ABSENT
+    except OSError as error:
+        if error.errno in (errno.ELOOP, errno.ENOTDIR):
+            return SnapshotInspection.INVALID_PATH
+        return SnapshotInspection.INACCESSIBLE
     return None
 
 
@@ -114,8 +130,16 @@ def inspect_frozen_snapshot(
         return unavailable.inspection
 
     try:
-        schema = json.loads(schema_bytes, parse_constant=_reject_json_constant)
-        manifest = json.loads(manifest_bytes, parse_constant=_reject_json_constant)
+        schema = json.loads(
+            schema_bytes,
+            parse_constant=_reject_json_constant,
+            parse_int=_parse_json_integer,
+        )
+        manifest = json.loads(
+            manifest_bytes,
+            parse_constant=_reject_json_constant,
+            parse_int=_parse_json_integer,
+        )
         schema_canonical = _canonical_json_bytes(schema)
         manifest_canonical = _canonical_json_bytes(manifest)
     except (ValueError, RecursionError):

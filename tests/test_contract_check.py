@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import stat
+import sys
 from pathlib import Path
 
 import pytest
@@ -21,6 +22,8 @@ from paper_radar.contracts import (
 from tests.contract_snapshot_support import (
     canonical_json_bytes,
     filesystem_fingerprint,
+    install_self_consistent_schema,
+    self_consistent_huge_integer_schema,
 )
 
 _SNAPSHOT_PARTS = ("screening", "boundary", "v1")
@@ -159,11 +162,7 @@ def test_nonstandard_json_constants_are_damaged_even_when_consistent(
 ) -> None:
     root = tmp_path / "contracts"
     snapshot_dir = _create_snapshot(root)
-    payload = b'{\n  "x": NaN\n}\n'
-    (snapshot_dir / "schema.json").write_bytes(payload)
-    manifest = json.loads((snapshot_dir / "manifest.json").read_bytes())
-    manifest["schema_sha256"] = hashlib.sha256(payload).hexdigest()
-    (snapshot_dir / "manifest.json").write_bytes(canonical_json_bytes(manifest))
+    install_self_consistent_schema(snapshot_dir, b'{\n  "x": NaN\n}\n')
     before = filesystem_fingerprint(root)
 
     with pytest.raises(ContractCheckError) as captured:
@@ -171,6 +170,58 @@ def test_nonstandard_json_constants_are_damaged_even_when_consistent(
 
     assert captured.value.category is ContractCheckErrorCategory.DAMAGED_SNAPSHOT
     assert filesystem_fingerprint(root) == before
+
+
+def test_huge_integer_is_damaged_when_interpreter_limit_disabled(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "contracts"
+    snapshot_dir = _create_snapshot(root)
+    install_self_consistent_schema(
+        snapshot_dir,
+        self_consistent_huge_integer_schema(),
+    )
+    before = filesystem_fingerprint(root)
+    previous_limit = sys.get_int_max_str_digits()
+    sys.set_int_max_str_digits(0)
+    try:
+        with pytest.raises(ContractCheckError) as captured:
+            check_frozen_contract("boundary", "v1", root)
+    finally:
+        sys.set_int_max_str_digits(previous_limit)
+
+    assert captured.value.category is ContractCheckErrorCategory.DAMAGED_SNAPSHOT
+    assert filesystem_fingerprint(root) == before
+
+
+@pytest.mark.parametrize(
+    ("digits", "expected_category"),
+    [
+        (100, ContractCheckErrorCategory.CONTENT_DRIFT),
+        (101, ContractCheckErrorCategory.DAMAGED_SNAPSHOT),
+    ],
+)
+def test_integer_digit_cap_is_fixed_and_documented(
+    tmp_path: Path,
+    digits: int,
+    expected_category: ContractCheckErrorCategory,
+) -> None:
+    root = tmp_path / "contracts"
+    snapshot_dir = _create_snapshot(root)
+    install_self_consistent_schema(
+        snapshot_dir,
+        canonical_json_bytes(
+            {
+                "x": int("1" * digits),
+                "x-paper-radar-contract": {"name": "boundary", "version": "v1"},
+            }
+        ),
+    )
+
+    with pytest.raises(ContractCheckError) as captured:
+        check_frozen_contract("boundary", "v1", root)
+
+    assert captured.value.category is expected_category
 
 
 @pytest.mark.parametrize("restricted", ["root", "screening"])
@@ -293,6 +344,37 @@ def test_symlink_path_escape_is_rejected_without_touching_outside(
     assert captured.value.category is ContractCheckErrorCategory.PATH_ESCAPE
     assert list(outside.iterdir()) == []
     assert (root / "screening").is_symlink()
+
+
+def test_intermediate_symlink_loop_is_invalid_target_not_missing(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "contracts"
+    root.mkdir()
+    (root / "screening").symlink_to(root / "screening", target_is_directory=True)
+
+    with pytest.raises(ContractCheckError) as captured:
+        check_frozen_contract("boundary", "v1", root)
+
+    assert captured.value.category is ContractCheckErrorCategory.INVALID_TARGET
+    assert "无法解析" in str(captured.value)
+    assert (root / "screening").is_symlink()
+
+
+def test_intermediate_non_directory_component_is_invalid_target(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "contracts"
+    root.mkdir()
+    (root / "screening").write_text("occupied", encoding="utf-8")
+    before = filesystem_fingerprint(root)
+
+    with pytest.raises(ContractCheckError) as captured:
+        check_frozen_contract("boundary", "v1", root)
+
+    assert captured.value.category is ContractCheckErrorCategory.INVALID_TARGET
+    assert "无法解析" in str(captured.value)
+    assert filesystem_fingerprint(root) == before
 
 
 def test_unresolvable_target_symlink_loop_is_invalid_target(tmp_path: Path) -> None:

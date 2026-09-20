@@ -87,6 +87,12 @@ def _snapshot_failure(
             f"{contract.schema_filename} 或 {contract.manifest_filename}）："
             f"{snapshot_dir}；请从版本控制恢复完整快照，不要手工补齐。",
         )
+    if inspection is SnapshotInspection.INVALID_PATH:
+        return (
+            ContractCheckErrorCategory.INVALID_TARGET,
+            f"契约 {identity} 的目标快照路径无法解析（存在符号链接循环或非目录组件）："
+            f"{snapshot_dir}；请核对 --target 后重试。",
+        )
     if inspection is SnapshotInspection.INACCESSIBLE:
         return (
             ContractCheckErrorCategory.UNREADABLE_SNAPSHOT,

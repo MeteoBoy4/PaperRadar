@@ -14,6 +14,8 @@ import pytest
 from tests.contract_snapshot_support import (
     canonical_json_bytes,
     filesystem_fingerprint,
+    install_self_consistent_schema,
+    self_consistent_huge_integer_schema,
 )
 
 _CHECK_COMMAND = ("contracts", "check", "--contract", "boundary", "--version", "v1")
@@ -409,6 +411,31 @@ def test_real_cli_check_reports_directory_permission_denied_without_traceback(
 
     assert result.returncode != 0
     assert "unreadable_snapshot" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert filesystem_fingerprint(target) == before
+
+
+def test_real_cli_check_rejects_huge_integer_when_interpreter_limit_disabled(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+    snapshot_dir = _export_valid_snapshot(tmp_path, target)
+    install_self_consistent_schema(
+        snapshot_dir,
+        self_consistent_huge_integer_schema(),
+    )
+    before = filesystem_fingerprint(target)
+
+    result = _run_cli(
+        tmp_path,
+        *_CHECK_COMMAND,
+        "--target",
+        str(target),
+        extra_env={"PYTHONINTMAXSTRDIGITS": "0"},
+    )
+
+    assert result.returncode != 0
+    assert "damaged_snapshot" in result.stderr
     assert "Traceback" not in result.stderr
     assert filesystem_fingerprint(target) == before
 

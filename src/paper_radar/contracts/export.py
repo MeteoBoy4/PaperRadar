@@ -71,6 +71,13 @@ _DAMAGED_SNAPSHOT_FAILURE = (
     "既有冻结契约损坏或不完整，拒绝覆盖；请恢复原快照，契约变化应新建版本。",
 )
 
+_CREATION_ATTEMPT_INSPECTIONS = frozenset(
+    {
+        SnapshotInspection.ABSENT,
+        SnapshotInspection.INVALID_PATH,
+    }
+)
+
 _EXISTING_SNAPSHOT_FAILURES: dict[
     SnapshotInspection, tuple[ContractExportErrorCategory, str]
 ] = {
@@ -181,10 +188,11 @@ def export_frozen_contract(
             snapshot_dir=snapshot_dir,
             schema_sha256=contract.schema_sha256,
         )
-    if inspection is not SnapshotInspection.ABSENT:
+    if inspection not in _CREATION_ATTEMPT_INSPECTIONS:
         category, message = _EXISTING_SNAPSHOT_FAILURES[inspection]
         raise ContractExportError(category, message)
 
+    # 无法探测的路径结构交给写入路径。沿用既有受控错误。
     try:
         _create_snapshot(snapshot_dir, contract)
     except OSError as error:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -11,6 +12,26 @@ def canonical_json_bytes(value: object) -> bytes:
     return (
         json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
     ).encode()
+
+
+def install_self_consistent_schema(snapshot_dir: Path, payload: bytes) -> None:
+    """写入 schema 并让清单哈希与其自洽。使判定只由契约规则决定。"""
+    (snapshot_dir / "schema.json").write_bytes(payload)
+    manifest = json.loads((snapshot_dir / "manifest.json").read_bytes())
+    manifest["schema_sha256"] = hashlib.sha256(payload).hexdigest()
+    (snapshot_dir / "manifest.json").write_bytes(canonical_json_bytes(manifest))
+
+
+def self_consistent_huge_integer_schema() -> bytes:
+    """含 5000 位整数且自带权威身份的规范 schema。"""
+    return (
+        b'{\n  "x": ' + b"1" * 5000 + b",\n"
+        b'  "x-paper-radar-contract": {\n'
+        b'    "name": "boundary",\n'
+        b'    "version": "v1"\n'
+        b"  }\n"
+        b"}\n"
+    )
 
 
 def filesystem_fingerprint(root: Path) -> dict[str, tuple[int, int, bytes | None]]:
