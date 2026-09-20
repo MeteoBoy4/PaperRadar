@@ -2,9 +2,27 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field, StrictStr
+from collections.abc import Mapping
+from types import MappingProxyType
+from typing import Annotated
 
-from paper_radar.screening.excerpt_kinds import ContextExcerptKind
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StrictStr
+
+from paper_radar.screening.excerpt_kinds import ContextExcerptKind, ExcerptKind
+
+
+def _freeze_excerpt_kinds(
+    value: Mapping[str, ExcerptKind],
+) -> Mapping[str, ExcerptKind]:
+    if any(not excerpt_id.strip() for excerpt_id in value):
+        raise ValueError("摘录 ID 必须是非空文本")
+    return MappingProxyType(dict(value))
+
+
+_FrozenExcerptKinds = Annotated[
+    Mapping[StrictStr, ContextExcerptKind],
+    AfterValidator(_freeze_excerpt_kinds),
+]
 
 
 class ValuePredictionContext(BaseModel):
@@ -21,4 +39,4 @@ class ReuseAssessmentContext(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    excerpt_kinds: dict[StrictStr, ContextExcerptKind] = Field(strict=True)
+    excerpt_kinds: _FrozenExcerptKinds = Field(strict=True)

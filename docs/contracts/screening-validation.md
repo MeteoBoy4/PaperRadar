@@ -201,10 +201,11 @@ Docling。
 不会产生 `accepted`、`pending` 或 `denied`。
 
 验证时必须提供 `ReuseAssessmentContext(excerpt_kinds=...)`。映射的键是当次确定性
-选择器实际提供的摘录 ID，值只允许 `availability` 或 `methods`。选择器级的
-`data` 摘录应由调用方在构造上下文时归入 `methods`；上下文不新增 `data` 值，
-输出枚举也不新增 `data`。缺少上下文或必需键报 `missing_context`，错误类型、额外
-键或未归一化的 `data` 报 `context_mismatch`。
+选择器实际提供的非空摘录 ID，值只允许 `availability` 或 `methods`；验证后该映射
+不可原地修改。选择器级的 `data` 摘录应由调用方在构造上下文时归入 `methods`；
+上下文不新增 `data` 值，输出枚举也不新增 `data`。缺少上下文或必需键报
+`missing_context`，空白 ID、错误类型、额外键或未归一化的 `data` 报
+`context_mismatch`。
 
 `excerpt_ids` 中每个 ID 都必须存在于该映射，但无需引用映射中的全部摘录，因而合法
 子集不会被扩成全集。声明为 `availability` 时引用集合只能含 availability；声明为

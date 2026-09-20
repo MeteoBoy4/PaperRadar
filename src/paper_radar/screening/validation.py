@@ -212,28 +212,31 @@ def _reuse_assessment_business_issues(
         return tuple(issues)
     seen_excerpt_ids: set[str] = set()
     has_unknown_excerpt = False
+    referenced_kinds: set[ExcerptKind] = set()
     for index, excerpt_id in enumerate(output.excerpt_ids):
         if excerpt_id in seen_excerpt_ids:
             issues.append(
                 _issue(f"$.excerpt_ids[{index}]", OutputErrorCategory.BUSINESS_RULE)
             )
+            continue
+        seen_excerpt_ids.add(excerpt_id)
         if excerpt_id not in context.excerpt_kinds:
             has_unknown_excerpt = True
             issues.append(
                 _issue(f"$.excerpt_ids[{index}]", OutputErrorCategory.BUSINESS_RULE)
             )
-        seen_excerpt_ids.add(excerpt_id)
-    if not has_unknown_excerpt:
-        referenced_kinds = {
-            context.excerpt_kinds[excerpt_id] for excerpt_id in output.excerpt_ids
-        }
-        expected_kinds = (
-            {ExcerptKind.AVAILABILITY, ExcerptKind.METHODS}
-            if output.excerpt_kind is ExcerptKind.BOTH
-            else {output.excerpt_kind}
+            continue
+        referenced_kinds.add(context.excerpt_kinds[excerpt_id])
+
+    expected_kinds = {ExcerptKind.AVAILABILITY, ExcerptKind.METHODS}
+    if output.excerpt_kind is ExcerptKind.BOTH:
+        kind_mismatch = not has_unknown_excerpt and referenced_kinds != expected_kinds
+    else:
+        kind_mismatch = any(
+            kind is not output.excerpt_kind for kind in referenced_kinds
         )
-        if referenced_kinds != expected_kinds:
-            issues.append(_issue("$.excerpt_kind", OutputErrorCategory.BUSINESS_RULE))
+    if kind_mismatch:
+        issues.append(_issue("$.excerpt_kind", OutputErrorCategory.BUSINESS_RULE))
     return tuple(issues)
 
 

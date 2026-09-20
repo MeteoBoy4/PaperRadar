@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, MutableMapping
 from copy import deepcopy
+from typing import cast
 
 import pytest
 
@@ -117,6 +118,56 @@ def test_reuse_assessment_rejects_excerpt_id_outside_current_context() -> None:
     assert captured.value.issues[0].location == "$.excerpt_ids[0]"
     assert captured.value.issues[0].category is OutputErrorCategory.BUSINESS_RULE
     assert "secret-unknown-excerpt" not in str(captured.value)
+
+
+def test_duplicate_unknown_excerpt_reports_each_invalid_position_once() -> None:
+    payload = _valid_payload()
+    payload["excerpt_kind"] = "availability"
+    payload["excerpt_ids"] = ["ghost", "ghost"]
+
+    with pytest.raises(OutputValidationError) as captured:
+        validate_output(
+            "reuse_assessment",
+            payload,
+            context={"excerpt_kinds": {}},
+        )
+
+    assert [issue.location for issue in captured.value.issues] == [
+        "$.excerpt_ids[0]",
+        "$.excerpt_ids[1]",
+    ]
+
+
+def test_known_kind_conflict_is_reported_alongside_unknown_excerpt() -> None:
+    payload = _valid_payload()
+    payload["excerpt_kind"] = "availability"
+    payload["excerpt_ids"] = ["methods-1", "ghost"]
+
+    with pytest.raises(OutputValidationError) as captured:
+        validate_output(
+            "reuse_assessment",
+            payload,
+            context={"excerpt_kinds": {"methods-1": "methods"}},
+        )
+
+    assert [issue.location for issue in captured.value.issues] == [
+        "$.excerpt_ids[1]",
+        "$.excerpt_kind",
+    ]
+
+
+def test_unknown_excerpt_does_not_invent_an_indeterminate_both_conflict() -> None:
+    payload = _valid_payload()
+    payload["excerpt_ids"] = ["availability-1", "ghost"]
+
+    with pytest.raises(OutputValidationError) as captured:
+        validate_output(
+            "reuse_assessment",
+            payload,
+            context={"excerpt_kinds": {"availability-1": "availability"}},
+        )
+
+    assert [issue.location for issue in captured.value.issues] == ["$.excerpt_ids[1]"]
 
 
 @pytest.mark.parametrize(
@@ -374,6 +425,49 @@ def test_reuse_assessment_context_mapping_is_not_mutated() -> None:
     validate_output("reuse_assessment", _valid_payload(), context=context)
 
     assert context == original
+
+
+def test_reuse_assessment_context_exposes_an_immutable_mapping() -> None:
+    context = ReuseAssessmentContext(excerpt_kinds={"methods-1": ExcerptKind.METHODS})
+    mutable_view = cast(MutableMapping[str, ExcerptKind], context.excerpt_kinds)
+
+    with pytest.raises(TypeError):
+        mutable_view["methods-2"] = ExcerptKind.METHODS
+
+
+@pytest.mark.parametrize(
+    ("excerpt_ids", "context", "category"),
+    [
+        (
+            [""],
+            {"excerpt_kinds": {"methods-1": "methods"}},
+            OutputErrorCategory.BUSINESS_RULE,
+        ),
+        (
+            ["methods-1"],
+            {"excerpt_kinds": {}},
+            OutputErrorCategory.BUSINESS_RULE,
+        ),
+        (
+            [""],
+            {"excerpt_kinds": {"": "methods"}},
+            OutputErrorCategory.CONTEXT_MISMATCH,
+        ),
+    ],
+)
+def test_empty_excerpt_id_or_empty_context_mapping_cannot_validate(
+    excerpt_ids: list[str],
+    context: object,
+    category: OutputErrorCategory,
+) -> None:
+    payload = _valid_payload()
+    payload["excerpt_kind"] = "methods"
+    payload["excerpt_ids"] = excerpt_ids
+
+    with pytest.raises(OutputValidationError) as captured:
+        validate_output("reuse_assessment", payload, context=context)
+
+    assert captured.value.issues[0].category is category
 
 
 def test_reuse_assessment_failures_do_not_leak_response_or_excerpt_context(
