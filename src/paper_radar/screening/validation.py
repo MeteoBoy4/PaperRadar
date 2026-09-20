@@ -7,20 +7,26 @@ from typing import Literal, overload
 
 from pydantic import BaseModel, ValidationError
 
-from paper_radar.screening.context import ValuePredictionContext
+from paper_radar.screening.context import ReuseAssessmentContext, ValuePredictionContext
 from paper_radar.screening.errors import (
     OutputErrorCategory,
     OutputValidationError,
     OutputValidationIssue,
 )
 from paper_radar.screening.kinds import OutputKind
-from paper_radar.screening.schema import BoundaryOutput, ValuePredictionOutput
+from paper_radar.screening.schema import (
+    BoundaryOutput,
+    ReuseAssessmentOutput,
+    ValuePredictionOutput,
+)
 from paper_radar.screening.text import is_meaningful_text, states_input_is_insufficient
 from paper_radar.screening.value_types import ValueType
 
 _KNOWN_BOUNDARY_FIELDS = frozenset(BoundaryOutput.model_fields)
 _KNOWN_VALUE_PREDICTION_FIELDS = frozenset(ValuePredictionOutput.model_fields)
+_KNOWN_REUSE_ASSESSMENT_FIELDS = frozenset(ReuseAssessmentOutput.model_fields)
 _KNOWN_VALUE_CONTEXT_FIELDS = frozenset(ValuePredictionContext.model_fields)
+_KNOWN_REUSE_CONTEXT_FIELDS = frozenset(ReuseAssessmentContext.model_fields)
 _GUIDANCE: dict[OutputErrorCategory, str] = {
     OutputErrorCategory.UNKNOWN_KIND: "请使用已注册的输出种类。",
     OutputErrorCategory.INVALID_JSON: "请提交完整且语法正确的 JSON。",
@@ -180,6 +186,56 @@ def _value_prediction_business_issues(
     return tuple(issues)
 
 
+def _reuse_assessment_business_issues(
+    output: ReuseAssessmentOutput,
+    context: ReuseAssessmentContext,
+) -> tuple[OutputValidationIssue, ...]:
+    issues: list[OutputValidationIssue] = []
+    if not is_meaningful_text(output.reuse_feasibility_reason_zh):
+        issues.append(
+            _issue(
+                "$.reuse_feasibility_reason_zh",
+                OutputErrorCategory.INVALID_TEXT,
+            )
+        )
+    for index, adaptation in enumerate(output.required_adaptations):
+        if not is_meaningful_text(adaptation):
+            issues.append(
+                _issue(
+                    f"$.required_adaptations[{index}]",
+                    OutputErrorCategory.INVALID_TEXT,
+                )
+            )
+    if not output.excerpt_ids:
+        issues.append(_issue("$.excerpt_ids", OutputErrorCategory.BUSINESS_RULE))
+        return tuple(issues)
+    seen_excerpt_ids: set[str] = set()
+    has_unknown_excerpt = False
+    for index, excerpt_id in enumerate(output.excerpt_ids):
+        if excerpt_id in seen_excerpt_ids:
+            issues.append(
+                _issue(f"$.excerpt_ids[{index}]", OutputErrorCategory.BUSINESS_RULE)
+            )
+        if excerpt_id not in context.excerpt_kinds:
+            has_unknown_excerpt = True
+            issues.append(
+                _issue(f"$.excerpt_ids[{index}]", OutputErrorCategory.BUSINESS_RULE)
+            )
+        seen_excerpt_ids.add(excerpt_id)
+    if not has_unknown_excerpt:
+        referenced_kinds = {
+            context.excerpt_kinds[excerpt_id] for excerpt_id in output.excerpt_ids
+        }
+        expected_kinds = (
+            {"availability", "methods"}
+            if output.excerpt_kind == "both"
+            else {output.excerpt_kind}
+        )
+        if referenced_kinds != expected_kinds:
+            issues.append(_issue("$.excerpt_kind", OutputErrorCategory.BUSINESS_RULE))
+    return tuple(issues)
+
+
 def _validate_value_prediction_context(
     context: object,
 ) -> ValuePredictionContext:
@@ -222,6 +278,49 @@ def _validate_value_prediction_context(
     return controlled_context
 
 
+def _validate_reuse_assessment_context(context: object) -> ReuseAssessmentContext:
+    if context is None:
+        raise OutputValidationError(
+            (_issue("$.context", OutputErrorCategory.MISSING_CONTEXT),)
+        )
+    if isinstance(context, ReuseAssessmentContext):
+        return context
+    if not isinstance(context, Mapping):
+        raise OutputValidationError(
+            (_issue("$.context", OutputErrorCategory.CONTEXT_MISMATCH),)
+        )
+
+    controlled_context: ReuseAssessmentContext | None = None
+    context_issues: tuple[OutputValidationIssue, ...] | None = None
+    try:
+        controlled_context = ReuseAssessmentContext.model_validate(dict(context))
+    except ValidationError as error:
+        issues: list[OutputValidationIssue] = []
+        for detail in error.errors(include_url=False, include_context=False):
+            category = (
+                OutputErrorCategory.MISSING_CONTEXT
+                if detail["type"] == "missing"
+                else OutputErrorCategory.CONTEXT_MISMATCH
+            )
+            issues.append(
+                _issue(
+                    _safe_location(
+                        detail["loc"],
+                        category,
+                        _KNOWN_REUSE_CONTEXT_FIELDS,
+                        root="$.context",
+                    ),
+                    category,
+                )
+            )
+        context_issues = tuple(issues)
+
+    if context_issues is not None:
+        raise OutputValidationError(context_issues)
+    assert controlled_context is not None
+    return controlled_context
+
+
 @overload
 def validate_output(
     kind: Literal[OutputKind.BOUNDARY, "boundary"],
@@ -240,19 +339,31 @@ def validate_output(
 
 @overload
 def validate_output(
+    kind: Literal[OutputKind.REUSE_ASSESSMENT, "reuse_assessment"],
+    payload: object,
+    context: ReuseAssessmentContext | Mapping[str, object],
+) -> ReuseAssessmentOutput: ...
+
+
+@overload
+def validate_output(
     kind: object,
     payload: object,
     context: object,
-) -> BoundaryOutput | ValuePredictionOutput: ...
+) -> BoundaryOutput | ValuePredictionOutput | ReuseAssessmentOutput: ...
 
 
 def validate_output(
     kind: object,
     payload: object,
     context: object = None,
-) -> BoundaryOutput | ValuePredictionOutput:
+) -> BoundaryOutput | ValuePredictionOutput | ReuseAssessmentOutput:
     """验证输出的结构和适用业务规则后返回权威类型。"""
-    if kind not in (OutputKind.BOUNDARY, OutputKind.VALUE_PREDICTION):
+    if kind not in (
+        OutputKind.BOUNDARY,
+        OutputKind.VALUE_PREDICTION,
+        OutputKind.REUSE_ASSESSMENT,
+    ):
         raise OutputValidationError(
             (_issue("$.kind", OutputErrorCategory.UNKNOWN_KIND),)
         )
@@ -270,6 +381,20 @@ def validate_output(
         if business_issues:
             raise OutputValidationError(business_issues)
         return value_output
+    if kind == OutputKind.REUSE_ASSESSMENT:
+        reuse_context = _validate_reuse_assessment_context(context)
+        reuse_output = _validate_model(
+            ReuseAssessmentOutput,
+            payload,
+            _KNOWN_REUSE_ASSESSMENT_FIELDS,
+        )
+        business_issues = _reuse_assessment_business_issues(
+            reuse_output,
+            reuse_context,
+        )
+        if business_issues:
+            raise OutputValidationError(business_issues)
+        return reuse_output
 
     if context is not None and (not isinstance(context, Mapping) or len(context) > 0):
         raise OutputValidationError(

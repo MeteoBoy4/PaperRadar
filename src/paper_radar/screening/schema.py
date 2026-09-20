@@ -54,3 +54,15 @@ class ValuePredictionOutput(BaseModel):
     display_title_zh: StrictStr | None = None
     abstract_brief_zh: StrictStr
     why_it_may_matter_zh: StrictStr
+
+
+class ReuseAssessmentOutput(BaseModel):
+    """条件式复用可行性升级的独立预测制品。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    reuse_feasibility: _OneToFiveScore
+    reuse_feasibility_reason_zh: StrictStr
+    required_adaptations: _StrictStringList
+    excerpt_kind: Literal["availability", "methods", "both"]
+    excerpt_ids: _StrictStringList

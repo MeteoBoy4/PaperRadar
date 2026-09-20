@@ -1,9 +1,9 @@
 # Screening 输出验证接口
 
-当前交付研究边界判断、摘要层价值预测及研究边界的 `boundary/v1` 冻结契约。
-价值预测只提供公共验证能力，不产出冻结快照，也不新增 CLI；复用可行性升级、
-原因组合和批量导出仍由后续 ticket 实现，不能据此视为就绪。冻结格式、版本纪律、
-导出与只读检查命令见[冻结契约导出](frozen-contracts.md)。
+当前交付研究边界判断、摘要层价值预测、复用可行性升级验证，以及研究边界的
+`boundary/v1` 冻结契约。价值预测和复用可行性升级只提供公共验证能力，不产出冻结
+快照，也不新增 CLI；原因组合和批量导出仍由后续 ticket 实现，不能据此视为就绪。
+冻结格式、版本纪律、导出与只读检查命令见[冻结契约导出](frozen-contracts.md)。
 
 ## 公共入口
 
@@ -14,6 +14,8 @@ from paper_radar.screening import (
     BoundaryOutput,
     OutputKind,
     OutputValidationError,
+    ReuseAssessmentContext,
+    ReuseAssessmentOutput,
     ValuePredictionContext,
     ValuePredictionOutput,
     validate_output,
@@ -47,6 +49,24 @@ value_result = validate_output(
     ),
 )
 assert isinstance(value_result, ValuePredictionOutput)
+
+reuse_result = validate_output(
+    OutputKind.REUSE_ASSESSMENT,
+    {
+        "reuse_feasibility": 4,
+        "reuse_feasibility_reason_zh": "数据开放，方法可在调整网格后复用。",
+        "required_adaptations": ["将输入资料转换为本地网格。"],
+        "excerpt_kind": "both",
+        "excerpt_ids": ["availability-1", "methods-1"],
+    },
+    context=ReuseAssessmentContext(
+        excerpt_kinds={
+            "availability-1": "availability",
+            "methods-1": "methods",
+        }
+    ),
+)
+assert isinstance(reuse_result, ReuseAssessmentOutput)
 ```
 
 当前完整公共面为：
@@ -54,6 +74,8 @@ assert isinstance(value_result, ValuePredictionOutput)
 - `BoundaryOutput`：研究边界判断的权威 Pydantic 类型；
 - `ValuePredictionOutput`：摘要层价值预测的权威 Pydantic 类型；
 - `ValuePredictionContext`：已启用主题集合与原题名语言事实的只读上下文；
+- `ReuseAssessmentOutput`：条件式复用可行性升级的独立权威类型；
+- `ReuseAssessmentContext`：当次选择器摘录 ID 到契约种类的只读映射；
 - `ValueType`、`VALUE_TYPE_DESCRIPTIONS_ZH`：七类价值的序列化值与中文说明；
 - `OutputKind`：已注册输出种类；
 - `OutputErrorCategory`：受控错误类别；
@@ -64,9 +86,9 @@ assert isinstance(value_result, ValuePredictionOutput)
 - `validate_output`：统一验证入口。
 
 `validate_output(kind, payload, context=None)` 接受原始 JSON 字符串/字节或结构
-数据。当前注册的 kind 是 `boundary` 和 `value_prediction`。成功返回意味着结构与
-该 kind 的全部适用业务规则都已通过；验证器不修复输入、不改写文本，也不调用模型
-判断科学语义。
+数据。当前注册的 kind 是 `boundary`、`value_prediction` 和
+`reuse_assessment`。成功返回意味着结构与该 kind 的全部适用业务规则都已通过；
+验证器不修复输入、不改写文本，也不调用模型判断科学语义。
 
 ### 研究边界
 
@@ -160,6 +182,33 @@ ERA5 preprocessing pipeline”虽是有效文本，但没有说明输入不足�
 `issues` 仅包含 `location`、`category` 和中文 `guidance_zh`。错误文本不包含输入值、
 完整 Pydantic 异常或 traceback。纯验证包不访问 CLI、数据库、网络、LLM 或
 Docling。
+
+### 复用可行性升级
+
+`ReuseAssessmentOutput` 严格包含原方案 §7.4 的五个必填字段：
+
+- `reuse_feasibility`：1–5 的严格整数；
+- `reuse_feasibility_reason_zh`：非空、非占位的中文理由；
+- `required_adaptations`：所需改造文本列表，可以为空，重复项也合法；
+- `excerpt_kind`：`availability`、`methods` 或 `both`；
+- `excerpt_ids`：实际支持判断的摘录 ID，必须非空且不得重复。
+
+该输出没有 `reuse_feasibility_inferable` 字段，不套用摘要层“输入不足理由”规则。
+额外字段一律失败，因此它不能携带筛选决定、provenance、正文质量结论或其他阶段
+事实。验证成功只返回独立的 `ReuseAssessmentOutput`，不会覆盖摘要层价值预测，也
+不会产生 `accepted`、`pending` 或 `denied`。
+
+验证时必须提供 `ReuseAssessmentContext(excerpt_kinds=...)`。映射的键是当次确定性
+选择器实际提供的摘录 ID，值只允许 `availability` 或 `methods`。选择器级的
+`data` 摘录应由调用方在构造上下文时归入 `methods`；上下文不新增 `data` 值，
+输出枚举也不新增 `data`。缺少上下文或必需键报 `missing_context`，错误类型、额外
+键或未归一化的 `data` 报 `context_mismatch`。
+
+`excerpt_ids` 中每个 ID 都必须存在于该映射，但无需引用映射中的全部摘录，因而合法
+子集不会被扩成全集。声明为 `availability` 时引用集合只能含 availability；声明为
+`methods` 时只能含 methods（包括上游归类后的 data）；声明为 `both` 时必须同时含
+两类。未知、重复或种类不一致都报 `business_rule`。验证器不执行摘录选择，不判断
+来源是否合法或正文是否通过质量门槛，也不修改输出或上下文。
 
 ## 受控错误类别
 

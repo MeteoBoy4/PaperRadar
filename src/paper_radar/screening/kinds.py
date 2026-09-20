@@ -10,3 +10,4 @@ class OutputKind(StrEnum):
 
     BOUNDARY = "boundary"
     VALUE_PREDICTION = "value_prediction"
+    REUSE_ASSESSMENT = "reuse_assessment"
