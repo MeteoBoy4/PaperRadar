@@ -6,6 +6,7 @@ from paper_radar.screening.errors import (
     OutputValidationError,
     OutputValidationIssue,
 )
+from paper_radar.screening.excerpt_kinds import ExcerptKind
 from paper_radar.screening.kinds import OutputKind
 from paper_radar.screening.schema import (
     BoundaryOutput,
@@ -24,6 +25,7 @@ __all__ = [
     "INSUFFICIENT_INPUT_MARKERS",
     "VALUE_TYPE_DESCRIPTIONS_ZH",
     "BoundaryOutput",
+    "ExcerptKind",
     "OutputErrorCategory",
     "OutputKind",
     "OutputValidationError",

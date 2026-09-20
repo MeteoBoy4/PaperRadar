@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from pydantic import BaseModel, ConfigDict, Field, StrictStr
 
-from pydantic import BaseModel, ConfigDict, Field
+from paper_radar.screening.excerpt_kinds import ContextExcerptKind
 
 
 class ValuePredictionContext(BaseModel):
@@ -19,6 +19,6 @@ class ValuePredictionContext(BaseModel):
 class ReuseAssessmentContext(BaseModel):
     """一次复用升级验证所需的已归类摘录映射。"""
 
-    model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
-    excerpt_kinds: dict[str, Literal["availability", "methods"]] = Field(strict=True)
+    excerpt_kinds: dict[StrictStr, ContextExcerptKind] = Field(strict=True)

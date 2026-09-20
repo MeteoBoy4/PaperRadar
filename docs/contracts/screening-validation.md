@@ -12,6 +12,7 @@
 ```python
 from paper_radar.screening import (
     BoundaryOutput,
+    ExcerptKind,
     OutputKind,
     OutputValidationError,
     ReuseAssessmentContext,
@@ -61,8 +62,8 @@ reuse_result = validate_output(
     },
     context=ReuseAssessmentContext(
         excerpt_kinds={
-            "availability-1": "availability",
-            "methods-1": "methods",
+            "availability-1": ExcerptKind.AVAILABILITY,
+            "methods-1": ExcerptKind.METHODS,
         }
     ),
 )
@@ -76,6 +77,7 @@ assert isinstance(reuse_result, ReuseAssessmentOutput)
 - `ValuePredictionContext`：已启用主题集合与原题名语言事实的只读上下文；
 - `ReuseAssessmentOutput`：条件式复用可行性升级的独立权威类型；
 - `ReuseAssessmentContext`：当次选择器摘录 ID 到契约种类的只读映射；
+- `ExcerptKind`：`availability`、`methods`、`both` 的受控序列化词汇；
 - `ValueType`、`VALUE_TYPE_DESCRIPTIONS_ZH`：七类价值的序列化值与中文说明；
 - `OutputKind`：已注册输出种类；
 - `OutputErrorCategory`：受控错误类别；

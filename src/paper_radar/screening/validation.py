@@ -13,6 +13,7 @@ from paper_radar.screening.errors import (
     OutputValidationError,
     OutputValidationIssue,
 )
+from paper_radar.screening.excerpt_kinds import ExcerptKind
 from paper_radar.screening.kinds import OutputKind
 from paper_radar.screening.schema import (
     BoundaryOutput,
@@ -227,8 +228,8 @@ def _reuse_assessment_business_issues(
             context.excerpt_kinds[excerpt_id] for excerpt_id in output.excerpt_ids
         }
         expected_kinds = (
-            {"availability", "methods"}
-            if output.excerpt_kind == "both"
+            {ExcerptKind.AVAILABILITY, ExcerptKind.METHODS}
+            if output.excerpt_kind is ExcerptKind.BOTH
             else {output.excerpt_kind}
         )
         if referenced_kinds != expected_kinds:
@@ -236,24 +237,26 @@ def _reuse_assessment_business_issues(
     return tuple(issues)
 
 
-def _validate_value_prediction_context(
+def _validate_context[ContextModel: BaseModel](
     context: object,
-) -> ValuePredictionContext:
+    model: type[ContextModel],
+    known_fields: frozenset[str],
+) -> ContextModel:
     if context is None:
         raise OutputValidationError(
             (_issue("$.context", OutputErrorCategory.MISSING_CONTEXT),)
         )
-    if isinstance(context, ValuePredictionContext):
+    if isinstance(context, model):
         return context
     if not isinstance(context, Mapping):
         raise OutputValidationError(
             (_issue("$.context", OutputErrorCategory.CONTEXT_MISMATCH),)
         )
 
-    controlled_context: ValuePredictionContext | None = None
+    controlled_context: ContextModel | None = None
     context_issues: tuple[OutputValidationIssue, ...] | None = None
     try:
-        controlled_context = ValuePredictionContext.model_validate(dict(context))
+        controlled_context = model.model_validate(dict(context))
     except ValidationError as error:
         issues: list[OutputValidationIssue] = []
         for detail in error.errors(include_url=False, include_context=False):
@@ -266,53 +269,10 @@ def _validate_value_prediction_context(
             location = _safe_location(
                 detail["loc"],
                 category,
-                _KNOWN_VALUE_CONTEXT_FIELDS,
+                known_fields,
                 root="$.context",
             )
             issues.append(_issue(location, category))
-        context_issues = tuple(issues)
-
-    if context_issues is not None:
-        raise OutputValidationError(context_issues)
-    assert controlled_context is not None
-    return controlled_context
-
-
-def _validate_reuse_assessment_context(context: object) -> ReuseAssessmentContext:
-    if context is None:
-        raise OutputValidationError(
-            (_issue("$.context", OutputErrorCategory.MISSING_CONTEXT),)
-        )
-    if isinstance(context, ReuseAssessmentContext):
-        return context
-    if not isinstance(context, Mapping):
-        raise OutputValidationError(
-            (_issue("$.context", OutputErrorCategory.CONTEXT_MISMATCH),)
-        )
-
-    controlled_context: ReuseAssessmentContext | None = None
-    context_issues: tuple[OutputValidationIssue, ...] | None = None
-    try:
-        controlled_context = ReuseAssessmentContext.model_validate(dict(context))
-    except ValidationError as error:
-        issues: list[OutputValidationIssue] = []
-        for detail in error.errors(include_url=False, include_context=False):
-            category = (
-                OutputErrorCategory.MISSING_CONTEXT
-                if detail["type"] == "missing"
-                else OutputErrorCategory.CONTEXT_MISMATCH
-            )
-            issues.append(
-                _issue(
-                    _safe_location(
-                        detail["loc"],
-                        category,
-                        _KNOWN_REUSE_CONTEXT_FIELDS,
-                        root="$.context",
-                    ),
-                    category,
-                )
-            )
         context_issues = tuple(issues)
 
     if context_issues is not None:
@@ -368,7 +328,11 @@ def validate_output(
             (_issue("$.kind", OutputErrorCategory.UNKNOWN_KIND),)
         )
     if kind == OutputKind.VALUE_PREDICTION:
-        value_context = _validate_value_prediction_context(context)
+        value_context = _validate_context(
+            context,
+            ValuePredictionContext,
+            _KNOWN_VALUE_CONTEXT_FIELDS,
+        )
         value_output = _validate_model(
             ValuePredictionOutput,
             payload,
@@ -382,7 +346,11 @@ def validate_output(
             raise OutputValidationError(business_issues)
         return value_output
     if kind == OutputKind.REUSE_ASSESSMENT:
-        reuse_context = _validate_reuse_assessment_context(context)
+        reuse_context = _validate_context(
+            context,
+            ReuseAssessmentContext,
+            _KNOWN_REUSE_CONTEXT_FIELDS,
+        )
         reuse_output = _validate_model(
             ReuseAssessmentOutput,
             payload,

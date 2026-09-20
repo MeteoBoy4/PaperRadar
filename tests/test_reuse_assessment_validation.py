@@ -6,6 +6,7 @@ from copy import deepcopy
 import pytest
 
 from paper_radar.screening import (
+    ExcerptKind,
     OutputErrorCategory,
     OutputValidationError,
     ReuseAssessmentContext,
@@ -43,7 +44,9 @@ def test_validate_availability_reuse_assessment_returns_authoritative_type() -> 
         "excerpt_kind": "availability",
         "excerpt_ids": ["availability-1"],
     }
-    context = ReuseAssessmentContext(excerpt_kinds={"availability-1": "availability"})
+    context = ReuseAssessmentContext(
+        excerpt_kinds={"availability-1": ExcerptKind.AVAILABILITY}
+    )
     original_payload = deepcopy(payload)
 
     result = validate_output("reuse_assessment", payload, context=context)
@@ -52,7 +55,7 @@ def test_validate_availability_reuse_assessment_returns_authoritative_type() -> 
         reuse_feasibility=4,
         reuse_feasibility_reason_zh="开放数据与代码可直接接入现有流程。",
         required_adaptations=[],
-        excerpt_kind="availability",
+        excerpt_kind=ExcerptKind.AVAILABILITY,
         excerpt_ids=["availability-1"],
     )
     assert payload == original_payload
@@ -66,7 +69,9 @@ def test_reuse_assessment_requires_at_least_one_excerpt_id() -> None:
         "excerpt_kind": "availability",
         "excerpt_ids": [],
     }
-    context = ReuseAssessmentContext(excerpt_kinds={"availability-1": "availability"})
+    context = ReuseAssessmentContext(
+        excerpt_kinds={"availability-1": ExcerptKind.AVAILABILITY}
+    )
 
     with pytest.raises(OutputValidationError) as captured:
         validate_output("reuse_assessment", payload, context=context)
@@ -83,7 +88,9 @@ def test_reuse_assessment_rejects_duplicate_excerpt_id() -> None:
         "excerpt_kind": "availability",
         "excerpt_ids": ["availability-1", "availability-1"],
     }
-    context = ReuseAssessmentContext(excerpt_kinds={"availability-1": "availability"})
+    context = ReuseAssessmentContext(
+        excerpt_kinds={"availability-1": ExcerptKind.AVAILABILITY}
+    )
 
     with pytest.raises(OutputValidationError) as captured:
         validate_output("reuse_assessment", payload, context=context)
@@ -100,7 +107,9 @@ def test_reuse_assessment_rejects_excerpt_id_outside_current_context() -> None:
         "excerpt_kind": "availability",
         "excerpt_ids": ["secret-unknown-excerpt"],
     }
-    context = ReuseAssessmentContext(excerpt_kinds={"availability-1": "availability"})
+    context = ReuseAssessmentContext(
+        excerpt_kinds={"availability-1": ExcerptKind.AVAILABILITY}
+    )
 
     with pytest.raises(OutputValidationError) as captured:
         validate_output("reuse_assessment", payload, context=context)
@@ -134,8 +143,8 @@ def test_reuse_assessment_excerpt_kind_must_match_referenced_kinds(
     }
     context = ReuseAssessmentContext(
         excerpt_kinds={
-            "availability-1": "availability",
-            "methods-1": "methods",
+            "availability-1": ExcerptKind.AVAILABILITY,
+            "methods-1": ExcerptKind.METHODS,
         }
     )
 
@@ -155,7 +164,7 @@ def test_reuse_assessment_rejects_blank_or_placeholder_reason(reason: str) -> No
         "excerpt_kind": "methods",
         "excerpt_ids": ["methods-1"],
     }
-    context = ReuseAssessmentContext(excerpt_kinds={"methods-1": "methods"})
+    context = ReuseAssessmentContext(excerpt_kinds={"methods-1": ExcerptKind.METHODS})
 
     with pytest.raises(OutputValidationError) as captured:
         validate_output("reuse_assessment", payload, context=context)
@@ -175,7 +184,7 @@ def test_reuse_assessment_rejects_invalid_required_adaptation(
         "excerpt_kind": "methods",
         "excerpt_ids": ["methods-1"],
     }
-    context = ReuseAssessmentContext(excerpt_kinds={"methods-1": "methods"})
+    context = ReuseAssessmentContext(excerpt_kinds={"methods-1": ExcerptKind.METHODS})
 
     with pytest.raises(OutputValidationError) as captured:
         validate_output("reuse_assessment", payload, context=context)

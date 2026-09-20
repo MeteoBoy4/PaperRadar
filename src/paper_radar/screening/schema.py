@@ -13,6 +13,7 @@ from pydantic import (
     StrictStr,
 )
 
+from paper_radar.screening.excerpt_kinds import StrictExcerptKind
 from paper_radar.screening.value_types import ValueType
 
 
@@ -64,5 +65,5 @@ class ReuseAssessmentOutput(BaseModel):
     reuse_feasibility: _OneToFiveScore
     reuse_feasibility_reason_zh: StrictStr
     required_adaptations: _StrictStringList
-    excerpt_kind: Literal["availability", "methods", "both"]
+    excerpt_kind: StrictExcerptKind
     excerpt_ids: _StrictStringList
