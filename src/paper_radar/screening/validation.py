@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Literal, overload
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from paper_radar.screening.context import ValuePredictionContext
 from paper_radar.screening.errors import (
@@ -53,11 +53,12 @@ def _safe_location(
     parts: tuple[int | str, ...],
     category: OutputErrorCategory,
     known_fields: frozenset[str],
+    root: str = "$",
 ) -> str:
     if category is OutputErrorCategory.EXTRA_FIELD:
-        return "$.<额外字段>"
+        return f"{root}.<额外字段>"
 
-    location = "$"
+    location = root
     for part in parts:
         if isinstance(part, int):
             location += f"[{part}]"
@@ -98,6 +99,30 @@ def _issues_from_pydantic(
             _issue(_safe_location(detail["loc"], category, known_fields), category)
         )
     return tuple(issues)
+
+
+def _validate_model[OutputModel: BaseModel](
+    model: type[OutputModel],
+    payload: object,
+    known_fields: frozenset[str],
+) -> OutputModel:
+    output: OutputModel | None = None
+    validation_issues: tuple[OutputValidationIssue, ...] | None = None
+    try:
+        if isinstance(payload, str | bytes | bytearray):
+            output = model.model_validate_json(payload)
+        else:
+            structured_payload = (
+                dict(payload) if isinstance(payload, Mapping) else payload
+            )
+            output = model.model_validate(structured_payload)
+    except ValidationError as error:
+        validation_issues = _issues_from_pydantic(error, known_fields)
+
+    if validation_issues is not None:
+        raise OutputValidationError(validation_issues)
+    assert output is not None
+    return output
 
 
 def _value_prediction_business_issues(
@@ -182,14 +207,12 @@ def _validate_value_prediction_context(
                 if is_missing
                 else OutputErrorCategory.CONTEXT_MISMATCH
             )
-            location = "$.context"
-            for part in detail["loc"]:
-                if isinstance(part, int):
-                    location += f"[{part}]"
-                elif part in _KNOWN_VALUE_CONTEXT_FIELDS:
-                    location += f".{part}"
-                else:
-                    location += ".<额外字段>"
+            location = _safe_location(
+                detail["loc"],
+                category,
+                _KNOWN_VALUE_CONTEXT_FIELDS,
+                root="$.context",
+            )
             issues.append(_issue(location, category))
         context_issues = tuple(issues)
 
@@ -235,22 +258,11 @@ def validate_output(
         )
     if kind == OutputKind.VALUE_PREDICTION:
         value_context = _validate_value_prediction_context(context)
-        value_validation_issues: tuple[OutputValidationIssue, ...] | None = None
-        try:
-            if isinstance(payload, str | bytes | bytearray):
-                value_output = ValuePredictionOutput.model_validate_json(payload)
-            else:
-                structured_payload = (
-                    dict(payload) if isinstance(payload, Mapping) else payload
-                )
-                value_output = ValuePredictionOutput.model_validate(structured_payload)
-        except ValidationError as error:
-            value_validation_issues = _issues_from_pydantic(
-                error,
-                _KNOWN_VALUE_PREDICTION_FIELDS,
-            )
-        if value_validation_issues is not None:
-            raise OutputValidationError(value_validation_issues)
+        value_output = _validate_model(
+            ValuePredictionOutput,
+            payload,
+            _KNOWN_VALUE_PREDICTION_FIELDS,
+        )
         business_issues = _value_prediction_business_issues(
             value_output,
             value_context,
@@ -264,20 +276,7 @@ def validate_output(
             (_issue("$.context", OutputErrorCategory.CONTEXT_MISMATCH),)
         )
 
-    validation_issues: tuple[OutputValidationIssue, ...] | None = None
-    try:
-        if isinstance(payload, str | bytes | bytearray):
-            output = BoundaryOutput.model_validate_json(payload)
-        else:
-            structured_payload = (
-                dict(payload) if isinstance(payload, Mapping) else payload
-            )
-            output = BoundaryOutput.model_validate(structured_payload)
-    except ValidationError as error:
-        validation_issues = _issues_from_pydantic(error, _KNOWN_BOUNDARY_FIELDS)
-
-    if validation_issues is not None:
-        raise OutputValidationError(validation_issues)
+    output = _validate_model(BoundaryOutput, payload, _KNOWN_BOUNDARY_FIELDS)
 
     if not is_meaningful_text(output.reason_zh):
         raise OutputValidationError(

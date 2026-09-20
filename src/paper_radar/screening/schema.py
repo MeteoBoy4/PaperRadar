@@ -26,7 +26,7 @@ _StrictValueType = Annotated[
     ValueType,
     BeforeValidator(_require_value_type_string),
 ]
-_Score = Annotated[int, Field(strict=True, ge=1, le=5)]
+_OneToFiveScore = Annotated[int, Field(strict=True, ge=1, le=5)]
 _StrictStringList = Annotated[list[StrictStr], Field(strict=True)]
 
 
@@ -44,9 +44,9 @@ class ValuePredictionOutput(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    research_value: _Score
+    research_value: _OneToFiveScore
     research_value_reason_zh: StrictStr
-    reuse_feasibility: _Score
+    reuse_feasibility: _OneToFiveScore
     reuse_feasibility_reason_zh: StrictStr
     reuse_feasibility_inferable: StrictBool
     value_types: Annotated[list[_StrictValueType], Field(strict=True)]
