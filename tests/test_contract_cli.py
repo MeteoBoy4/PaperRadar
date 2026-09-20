@@ -109,6 +109,6 @@ def test_cli_reports_output_failure_without_claiming_success(tmp_path: Path) -> 
     )
 
     assert result.returncode != 0
-    assert "写入失败" in result.stderr
+    assert "目标路径包含非目录项" in result.stderr
     assert "已创建冻结契约" not in result.stdout
     assert target.read_text(encoding="utf-8") == "occupied"

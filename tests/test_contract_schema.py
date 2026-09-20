@@ -4,45 +4,12 @@ import json
 from pathlib import Path
 
 from paper_radar.contracts import ContractName, ContractVersion, build_frozen_contract
-
-EXPECTED_BOUNDARY_SCHEMA = """{
-  "$id": "urn:paper-radar:contracts:screening:boundary:v1",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "additionalProperties": false,
-  "description": "Screening 第一阶段的研究边界判断。",
-  "properties": {
-    "boundary": {
-      "enum": [
-        "in_scope",
-        "out_of_scope",
-        "uncertain"
-      ],
-      "title": "Boundary",
-      "type": "string"
-    },
-    "reason_zh": {
-      "title": "Reason Zh",
-      "type": "string"
-    }
-  },
-  "required": [
-    "boundary",
-    "reason_zh"
-  ],
-  "title": "BoundaryOutput",
-  "type": "object",
-  "x-paper-radar-contract": {
-    "name": "boundary",
-    "version": "v1"
-  }
-}
-""".encode()
+from paper_radar.screening import BoundaryOutput
 
 
 def test_boundary_contract_is_generated_deterministically_from_model() -> None:
     contract = build_frozen_contract(ContractName.BOUNDARY, ContractVersion.V1)
 
-    assert contract.schema_bytes == EXPECTED_BOUNDARY_SCHEMA
     assert (
         contract.schema_sha256
         == "9fd5127a8081fb30f62f2b436a4b6067d1b0ae16fea8d4f190c36874ef8805a7"
@@ -51,6 +18,12 @@ def test_boundary_contract_is_generated_deterministically_from_model() -> None:
     assert contract.schema_filename == "schema.json"
     assert contract.manifest_filename == "manifest.json"
 
+    schema = json.loads(contract.schema_bytes)
+    assert set(schema["properties"]) == set(BoundaryOutput.model_fields)
+    assert schema["x-paper-radar-contract"] == {
+        "name": "boundary",
+        "version": "v1",
+    }
     manifest = json.loads(contract.manifest_bytes)
     assert manifest == {
         "contract": "boundary",

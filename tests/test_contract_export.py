@@ -175,6 +175,17 @@ def test_generated_path_cannot_escape_target_through_a_symlink(tmp_path: Path) -
     assert list(outside.iterdir()) == []
 
 
+def test_unresolvable_target_has_a_controlled_actionable_error(tmp_path: Path) -> None:
+    target = tmp_path / "loop"
+    target.symlink_to(target, target_is_directory=True)
+
+    with pytest.raises(ContractExportError) as captured:
+        export_frozen_contract("boundary", "v1", target)
+
+    assert captured.value.category is ContractExportErrorCategory.INVALID_TARGET
+    assert "符号链接循环" in str(captured.value)
+
+
 def test_broken_snapshot_symlink_is_not_treated_as_an_empty_version(
     tmp_path: Path,
 ) -> None:
@@ -224,4 +235,5 @@ def test_unwritable_target_fails_without_publishing_snapshot(tmp_path: Path) -> 
         target.chmod(0o700)
 
     assert captured.value.category is ContractExportErrorCategory.WRITE_FAILED
+    assert "目录权限" in str(captured.value)
     assert not (target / "screening" / "boundary" / "v1").exists()

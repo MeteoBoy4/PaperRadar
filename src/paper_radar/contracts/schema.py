@@ -12,6 +12,9 @@ from pydantic import BaseModel
 
 from paper_radar.screening.schema import BoundaryOutput
 
+_SCHEMA_FILENAME = "schema.json"
+_MANIFEST_FILENAME = "manifest.json"
+
 
 class ContractName(StrEnum):
     """当前已经实现的冻结契约。"""
@@ -41,8 +44,8 @@ class FrozenContract:
     schema_sha256: str
     manifest_bytes: bytes
     snapshot_parts: tuple[str, str, str]
-    schema_filename: str = "schema.json"
-    manifest_filename: str = "manifest.json"
+    schema_filename: str
+    manifest_filename: str
 
 
 _CONTRACTS: dict[
@@ -88,7 +91,7 @@ def build_frozen_contract(
         {
             "contract": name.value,
             "format_version": 1,
-            "schema_file": "schema.json",
+            "schema_file": _SCHEMA_FILENAME,
             "schema_sha256": schema_sha256,
             "version": version.value,
         }
@@ -100,4 +103,6 @@ def build_frozen_contract(
         schema_sha256=schema_sha256,
         manifest_bytes=manifest_bytes,
         snapshot_parts=(definition.area, name.value, version.value),
+        schema_filename=_SCHEMA_FILENAME,
+        manifest_filename=_MANIFEST_FILENAME,
     )
