@@ -64,7 +64,7 @@ uv run --offline --locked paper-radar contracts export \
 ./scripts/check-offline
 ```
 
-该入口依次检查 lockfile 一致性、Ruff 格式、Ruff 静态规则、mypy 类型和
-冻结契约专项测试及全部 pytest 测试。所有 `uv` 调用都带有 `--offline`；运行时使用
+该入口依次检查 lockfile 一致性、Ruff 格式、Ruff 静态规则、mypy 类型和全部
+pytest 测试（包括冻结契约导出测试）。所有 `uv` 调用都带有 `--offline`；运行时使用
 `--locked`，因此依赖声明与 lockfile 不一致会直接失败，而不会改写 lockfile。
 若首次环境准备未完成或所需包不在本地，检查会返回非零，不会联网补装。

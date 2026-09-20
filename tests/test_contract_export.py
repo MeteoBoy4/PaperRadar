@@ -16,17 +16,12 @@ from paper_radar.contracts import (
     build_frozen_contract,
     export_frozen_contract,
 )
+from tests.contract_snapshot_support import canonical_json_bytes
 
 
 def _snapshot_files(root: Path) -> tuple[Path, Path]:
     snapshot_dir = root / "screening" / "boundary" / "v1"
     return snapshot_dir / "schema.json", snapshot_dir / "manifest.json"
-
-
-def _canonical_json(value: object) -> bytes:
-    return (
-        json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
-    ).encode()
 
 
 def test_first_export_creates_complete_snapshot_and_repeat_does_not_rewrite(
@@ -111,12 +106,12 @@ def test_consistent_but_wrong_version_metadata_is_reported_separately(
     schema_path, manifest_path = _snapshot_files(tmp_path)
     schema = json.loads(schema_path.read_bytes())
     schema["x-paper-radar-contract"]["version"] = "v2"
-    changed_schema = _canonical_json(schema)
+    changed_schema = canonical_json_bytes(schema)
     schema_path.write_bytes(changed_schema)
     manifest = json.loads(manifest_path.read_bytes())
     manifest["version"] = "v2"
     manifest["schema_sha256"] = hashlib.sha256(changed_schema).hexdigest()
-    manifest_path.write_bytes(_canonical_json(manifest))
+    manifest_path.write_bytes(canonical_json_bytes(manifest))
 
     with pytest.raises(ContractExportError) as captured:
         export_frozen_contract("boundary", "v1", tmp_path)
@@ -132,11 +127,11 @@ def test_consistent_same_version_different_schema_is_content_conflict(
     schema_path, manifest_path = _snapshot_files(tmp_path)
     schema = json.loads(schema_path.read_bytes())
     schema["description"] = "同版本的另一份有效内容"
-    changed_schema = _canonical_json(schema)
+    changed_schema = canonical_json_bytes(schema)
     schema_path.write_bytes(changed_schema)
     manifest = json.loads(manifest_path.read_bytes())
     manifest["schema_sha256"] = hashlib.sha256(changed_schema).hexdigest()
-    manifest_path.write_bytes(_canonical_json(manifest))
+    manifest_path.write_bytes(canonical_json_bytes(manifest))
 
     with pytest.raises(ContractExportError) as captured:
         export_frozen_contract("boundary", "v1", tmp_path)

@@ -13,10 +13,12 @@ from enum import StrEnum
 from pathlib import Path
 
 from paper_radar.contracts.schema import (
+    _MANIFEST_FORMAT_VERSION,
     ContractName,
     ContractVersion,
     FrozenContract,
     _canonical_json_bytes,
+    _ManifestField,
     build_frozen_contract,
 )
 
@@ -131,18 +133,12 @@ def _verify_existing_snapshot(
         or not isinstance(manifest, dict)
         or _canonical_json_bytes(schema) != schema_bytes
         or _canonical_json_bytes(manifest) != manifest_bytes
-        or set(manifest)
-        != {
-            "contract",
-            "format_version",
-            "schema_file",
-            "schema_sha256",
-            "version",
-        }
-        or manifest.get("format_version") != 1
-        or manifest.get("schema_file") != contract.schema_filename
-        or not isinstance(manifest.get("schema_sha256"), str)
-        or hashlib.sha256(schema_bytes).hexdigest() != manifest.get("schema_sha256")
+        or set(manifest) != {field.value for field in _ManifestField}
+        or manifest.get(_ManifestField.FORMAT_VERSION.value) != _MANIFEST_FORMAT_VERSION
+        or manifest.get(_ManifestField.SCHEMA_FILE.value) != contract.schema_filename
+        or not isinstance(manifest.get(_ManifestField.SCHEMA_SHA256.value), str)
+        or hashlib.sha256(schema_bytes).hexdigest()
+        != manifest.get(_ManifestField.SCHEMA_SHA256.value)
     ):
         raise _damaged_snapshot_error()
 
@@ -152,8 +148,8 @@ def _verify_existing_snapshot(
         "version": contract.version.value,
     }
     if (
-        manifest.get("contract") != contract.name.value
-        or manifest.get("version") != contract.version.value
+        manifest.get(_ManifestField.CONTRACT.value) != contract.name.value
+        or manifest.get(_ManifestField.VERSION.value) != contract.version.value
         or schema_identity != expected_identity
     ):
         raise ContractExportError(
@@ -215,12 +211,28 @@ def export_frozen_contract(
     """把一份已实现契约安全导出到目标根目录。"""
     try:
         controlled_name = ContractName(name)
-        controlled_version = ContractVersion(version)
-        contract = build_frozen_contract(controlled_name, controlled_version)
-    except (KeyError, ValueError) as error:
+    except ValueError as error:
+        supported_names = "、".join(item.value for item in ContractName)
         raise ContractExportError(
             ContractExportErrorCategory.INVALID_SELECTION,
-            "未知契约或无效声明版本。",
+            f"未知契约；当前支持：{supported_names}。",
+        ) from error
+
+    try:
+        controlled_version = ContractVersion(version)
+    except ValueError as error:
+        supported_versions = "、".join(item.value for item in ContractVersion)
+        raise ContractExportError(
+            ContractExportErrorCategory.INVALID_SELECTION,
+            f"无效声明版本；当前支持：{supported_versions}。",
+        ) from error
+
+    try:
+        contract = build_frozen_contract(controlled_name, controlled_version)
+    except KeyError as error:
+        raise ContractExportError(
+            ContractExportErrorCategory.INVALID_SELECTION,
+            "所选契约与声明版本组合尚未实现；请查看命令帮助中的可用组合。",
         ) from error
 
     snapshot_dir = _resolve_snapshot_directory(target, contract)

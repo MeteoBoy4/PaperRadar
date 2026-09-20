@@ -14,6 +14,15 @@ from paper_radar.screening.schema import BoundaryOutput
 
 _SCHEMA_FILENAME = "schema.json"
 _MANIFEST_FILENAME = "manifest.json"
+_MANIFEST_FORMAT_VERSION = 1
+
+
+class _ManifestField(StrEnum):
+    CONTRACT = "contract"
+    FORMAT_VERSION = "format_version"
+    SCHEMA_FILE = "schema_file"
+    SCHEMA_SHA256 = "schema_sha256"
+    VERSION = "version"
 
 
 class ContractName(StrEnum):
@@ -89,11 +98,11 @@ def build_frozen_contract(
     schema_sha256 = hashlib.sha256(schema_bytes).hexdigest()
     manifest_bytes = _canonical_json_bytes(
         {
-            "contract": name.value,
-            "format_version": 1,
-            "schema_file": _SCHEMA_FILENAME,
-            "schema_sha256": schema_sha256,
-            "version": version.value,
+            _ManifestField.CONTRACT: name.value,
+            _ManifestField.FORMAT_VERSION: _MANIFEST_FORMAT_VERSION,
+            _ManifestField.SCHEMA_FILE: _SCHEMA_FILENAME,
+            _ManifestField.SCHEMA_SHA256: schema_sha256,
+            _ManifestField.VERSION: version.value,
         }
     )
     return FrozenContract(
