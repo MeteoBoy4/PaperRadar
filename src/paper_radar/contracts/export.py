@@ -14,6 +14,8 @@ from pathlib import Path
 
 from paper_radar.contracts.schema import (
     _MANIFEST_FORMAT_VERSION,
+    _SUPPORTED_CONTRACT_NAMES,
+    _SUPPORTED_CONTRACT_VERSIONS,
     ContractName,
     ContractVersion,
     FrozenContract,
@@ -212,19 +214,17 @@ def export_frozen_contract(
     try:
         controlled_name = ContractName(name)
     except ValueError as error:
-        supported_names = "、".join(item.value for item in ContractName)
         raise ContractExportError(
             ContractExportErrorCategory.INVALID_SELECTION,
-            f"未知契约；当前支持：{supported_names}。",
+            f"未知契约；当前支持：{_SUPPORTED_CONTRACT_NAMES}。",
         ) from error
 
     try:
         controlled_version = ContractVersion(version)
     except ValueError as error:
-        supported_versions = "、".join(item.value for item in ContractVersion)
         raise ContractExportError(
             ContractExportErrorCategory.INVALID_SELECTION,
-            f"无效声明版本；当前支持：{supported_versions}。",
+            f"无效声明版本；当前支持：{_SUPPORTED_CONTRACT_VERSIONS}。",
         ) from error
 
     try:

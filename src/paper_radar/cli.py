@@ -9,8 +9,21 @@ import typer
 
 from paper_radar.contracts import (
     ContractExportError,
+    ContractName,
+    ContractVersion,
     ExportOutcome,
     export_frozen_contract,
+)
+from paper_radar.contracts.schema import (
+    _SUPPORTED_CONTRACT_NAMES,
+    _SUPPORTED_CONTRACT_VERSIONS,
+)
+
+_EXAMPLE_CONTRACT_NAME = ContractName.BOUNDARY.value
+_EXAMPLE_CONTRACT_VERSION = ContractVersion.V1.value
+_EXPORT_EXAMPLE = (
+    f"paper-radar contracts export --contract {_EXAMPLE_CONTRACT_NAME} "
+    f"--version {_EXAMPLE_CONTRACT_VERSION} --target contracts"
 )
 
 ROOT_HELP = """\
@@ -33,10 +46,11 @@ PaperRadar 工程入口。
 示例：`paper-radar --help`
 """
 
-CONTRACTS_HELP = """\
+CONTRACTS_HELP = f"""\
 管理由权威 Pydantic 模型生成的版本化冻结契约。
 
-当前用途：导出已实现的 `boundary` 契约；本 ticket 不提供只读 check 或批处理。
+当前用途：导出已实现的契约（当前支持：{_SUPPORTED_CONTRACT_NAMES}）；
+本 ticket 不提供只读 check 或批处理。
 
 参数与选项：export 必须明确提供契约名、声明版本和目标目录。
 
@@ -44,17 +58,20 @@ CONTRACTS_HELP = """\
 
 自动配额：契约命令不访问模型，消耗 0 次自动处理配额。
 
-输出去向：`<目标>/screening/boundary/v1/`，包含 Schema 与哈希清单。
+输出去向：目标目录内受控契约与声明版本对应的子目录，包含 Schema 与哈希清单。
 
 常见失败：未知契约、无效版本、既有快照损坏或冲突、目标不可写均返回非零。
 
 示例：`paper-radar contracts --help`
 """
 
-EXPORT_HELP = """\
+EXPORT_HELP = f"""\
 从权威 BoundaryOutput 生成并安全发布一份冻结 JSON Schema。
 
-当前用途：只支持 `boundary` 的声明版本 `v1`，一次只导出一份契约。
+当前用途：一次只导出一份已经实现的契约。
+
+当前支持的契约：{_SUPPORTED_CONTRACT_NAMES}。
+当前支持的声明版本：{_SUPPORTED_CONTRACT_VERSIONS}。
 
 参数与选项：`--contract` 选择契约，`--version` 选择声明版本，`--target`
 选择输出根目录；三项都必须显式提供。
@@ -63,12 +80,11 @@ EXPORT_HELP = """\
 
 自动配额：不访问网络、数据库或模型，消耗 0 次自动处理配额。
 
-输出去向：目标目录下的 `screening/boundary/v1/schema.json` 和
-`manifest.json`。
+输出去向：目标目录内对应版本子目录的 `schema.json` 和 `manifest.json`。
 
 常见失败：未知选择、版本非法、快照损坏、版本不一致、内容冲突或写入失败。
 
-示例：`paper-radar contracts export --contract boundary --version v1 --target contracts`
+示例：`{_EXPORT_EXAMPLE}`
 """
 
 app = typer.Typer(
@@ -92,11 +108,17 @@ app.add_typer(contracts_app, name="contracts")
 def export_contract_command(
     contract: Annotated[
         str,
-        typer.Option("--contract", help="受控契约名；当前仅支持 boundary。"),
+        typer.Option(
+            "--contract",
+            help=f"受控契约名；当前支持：{_SUPPORTED_CONTRACT_NAMES}。",
+        ),
     ],
     version: Annotated[
         str,
-        typer.Option("--version", help="声明版本；当前仅支持 v1。"),
+        typer.Option(
+            "--version",
+            help=f"声明版本；当前支持：{_SUPPORTED_CONTRACT_VERSIONS}。",
+        ),
     ],
     target: Annotated[
         Path,

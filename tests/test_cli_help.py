@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from paper_radar.contracts import ContractName, ContractVersion
+
 
 def _installed_entrypoint() -> Path:
     return Path(sys.executable).with_name("paper-radar")
@@ -60,3 +62,40 @@ def test_installed_entrypoint_has_complete_chinese_help_without_side_effects(
     assert "常见失败" in result.stdout
     assert example in result.stdout
     assert "run-due" not in result.stdout
+
+
+def test_contract_export_help_lists_every_registered_choice(tmp_path: Path) -> None:
+    deny_external_io = Path(__file__).parent / "deny_external_io"
+    env = {
+        "PATH": os.environ["PATH"],
+        "PYTHONPATH": str(deny_external_io),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONIOENCODING": "utf-8",
+    }
+
+    group_help = subprocess.run(
+        [str(_installed_entrypoint()), "contracts", "--help"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    export_help = subprocess.run(
+        [str(_installed_entrypoint()), "contracts", "export", "--help"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    registered_names = "、".join(item.value for item in ContractName)
+    registered_versions = "、".join(item.value for item in ContractVersion)
+    assert group_help.returncode == 0, group_help.stderr
+    assert export_help.returncode == 0, export_help.stderr
+    assert f"当前支持：{registered_names}" in group_help.stdout
+    assert f"当前支持的契约：{registered_names}" in export_help.stdout
+    assert f"当前支持的声明版本：{registered_versions}" in export_help.stdout
+    assert f"受控契约名；当前支持：{registered_names}" in export_help.stdout
+    assert f"声明版本；当前支持：{registered_versions}" in export_help.stdout

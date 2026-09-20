@@ -67,6 +67,13 @@ _CONTRACTS: dict[
     ),
 }
 
+_SUPPORTED_CONTRACT_NAMES = "、".join(
+    dict.fromkeys(name.value for name, _version in _CONTRACTS)
+)
+_SUPPORTED_CONTRACT_VERSIONS = "、".join(
+    dict.fromkeys(version.value for _name, version in _CONTRACTS)
+)
+
 
 def _canonical_json_bytes(value: object) -> bytes:
     return (
