@@ -17,6 +17,10 @@ run_check "锁文件一致性" uv lock --check --offline
 run_check "格式" uv run --offline --locked ruff format --check src tests
 run_check "静态检查" uv run --offline --locked ruff check src tests
 run_check "类型检查" uv run --offline --locked mypy
+run_check "冻结契约导出" uv run --offline --locked pytest -q \
+    tests/test_contract_schema.py \
+    tests/test_contract_export.py \
+    tests/test_contract_cli.py
 run_check "全部测试" uv run --offline --locked pytest
 
 printf '[离线检查] 全部通过\n'
