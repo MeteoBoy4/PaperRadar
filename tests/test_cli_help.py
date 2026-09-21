@@ -112,7 +112,7 @@ def test_contract_help_lists_every_registered_choice(tmp_path: Path) -> None:
             assert "原命令重跑" in result.stdout
         else:
             assert "可重复的受控契约名" in result.stdout
-            assert "四份均一致才返回 0" in result.stdout
+            assert "全部已选契约一致才返回 0" in result.stdout
             assert "单份失败不会中断其余检查" in result.stdout
         assert f"声明版本；当前支持：{registered_versions}" in result.stdout
 

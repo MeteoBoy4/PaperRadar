@@ -119,6 +119,10 @@ def test_batch_check_reports_every_selected_contract_in_declaration_order(
         None,
         None,
     ]
+    assert [item.message_zh for item in result.items[2:]] == [
+        "冻结契约一致：",
+        "冻结契约一致：",
+    ]
     assert "synthetic-secret-batch-check" not in "".join(
         item.message_zh for item in result.items
     )

@@ -209,14 +209,13 @@ def check_frozen_contract(
 def _select_contracts_for_check(
     names: Iterable[ContractName | str],
     version: ContractVersion | str,
-) -> tuple[tuple[ContractName, ...], ContractVersion]:
+) -> tuple[FrozenContract, ...]:
     try:
-        contracts = select_contracts(names, version)
+        return select_contracts(names, version)
     except ContractSelectionError as error:
         raise ContractCheckError(
             ContractCheckErrorCategory.INVALID_SELECTION, str(error)
         ) from error
-    return tuple(contract.name for contract in contracts), contracts[0].version
 
 
 def check_frozen_contracts(
@@ -225,17 +224,17 @@ def check_frozen_contracts(
     target: Path | str,
 ) -> ContractBatchCheckResult:
     """先整体校验选择。随后按声明顺序完成全部独立只读检查。"""
-    selected_names, controlled_version = _select_contracts_for_check(names, version)
+    contracts = _select_contracts_for_check(names, version)
     items: list[ContractCheckItemResult] = []
 
-    for name in selected_names:
+    for contract in contracts:
         try:
-            checked = check_frozen_contract(name, controlled_version, target)
+            checked = check_frozen_contract(contract.name, contract.version, target)
         except ContractCheckError as error:
             items.append(
                 ContractCheckItemResult(
-                    name=name,
-                    version=controlled_version,
+                    name=contract.name,
+                    version=contract.version,
                     outcome=ContractCheckOutcome.FAILED,
                     error_category=error.category,
                     message_zh=str(error),
@@ -250,7 +249,7 @@ def check_frozen_contracts(
                 version=checked.version,
                 outcome=ContractCheckOutcome.PASSED,
                 error_category=None,
-                message_zh="冻结契约与当前权威定义一致。",
+                message_zh="冻结契约一致：",
                 snapshot_dir=checked.snapshot_dir,
                 schema_sha256=checked.schema_sha256,
             )

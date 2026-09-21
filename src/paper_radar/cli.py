@@ -137,7 +137,7 @@ CHECK_HELP = f"""\
 自动配额：不访问网络、数据库或模型，消耗 0 次自动处理配额。
 
 输出去向：每项固定输出 `contract`、`version`、`result`、`error_category` 和中文
-说明；结果只写入标准输出或标准错误，不产生文件。四份均一致才返回 0。
+说明；结果只写入标准输出或标准错误，不产生文件。全部已选契约一致才返回 0。
 
 常见失败：未知或重复选择会在执行前整体拒绝；快照缺失、不可读取、损坏、版本
 不一致或内容漂移会逐项报告，全部检查完成后返回 2。
@@ -202,7 +202,7 @@ def _write_check_item(result: ContractCheckItemResult, *, err: bool) -> None:
     )
     if result.outcome is ContractCheckOutcome.PASSED:
         message = (
-            f"冻结契约一致：{result.name.value} {result.version.value} "
+            f"{result.message_zh}{result.name.value} {result.version.value} "
             f"{result.snapshot_dir}（SHA-256: {result.schema_sha256}）"
         )
     else:
