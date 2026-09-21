@@ -1004,19 +1004,19 @@ V1 的正式行为固定为 `[3]`；以后改为 `[2, 3]` 或其他集合必须�
 
 ### 7.5 决定与处理原因
 
-原因枚举由代码中的一个权威定义导出到 `contracts/screening/decision-reasons-v1.schema.json`。每个值限制允许的结果和来源，普通复核、盲评、规则和处理失败不得各自维护字符串副本：
+原因枚举由代码中的一个权威定义导出到 `contracts/screening/decision-reasons-v1.schema.json`。每个值限制允许的结果和来源，各人工入口、建议规则和处理失败不得各自维护字符串副本：
 
 |原因|结果|允许来源|
 |---|---|---|
 |high_research_value|accepted|建议规则|
 |research_and_reuse|accepted|建议规则|
-|out_of_scope|denied|建议规则、盲评、普通复核|
+|out_of_scope|denied|建议规则、盲评、普通复核、直接人工决定|
 |boundary_uncertain|pending|建议规则|
 |value_reuse_conflict|pending|建议规则|
 |reuse_unknown|pending|建议规则|
 |reuse_escalation_unavailable|pending|建议规则|
-|low_value|denied|建议规则、盲评、普通复核|
-|low_reuse_feasibility|denied|建议规则、盲评、普通复核|
+|low_value|denied|建议规则、盲评、普通复核、直接人工决定|
+|low_reuse_feasibility|denied|建议规则、盲评、普通复核、直接人工决定|
 |user_judgment|accepted|盲评、普通复核、直接人工决定|
 |unclear_from_available_input|pending|盲评、普通复核、直接人工决定|
 |defer_judgment|pending|盲评、普通复核、直接人工决定|
@@ -1025,7 +1025,7 @@ V1 的正式行为固定为 `[3]`；以后改为 `[2, 3]` 或其他集合必须�
 |manual_read_request|accepted|人工精读请求|
 |model_failure|pending 投影|固定校准成员或失败队列投影；不是建议或决定事件|
 
-accepted 人工决定没有更具体业务原因时使用 `user_judgment`。元数据、模型或解析失败事实继续使用各自错误枚举；只有进入用户可见三态投影时才映射到本表允许的处理原因。
+accepted 人工决定没有更具体业务原因时使用 `user_judgment`。`out_of_scope`、`low_value`、`low_reuse_feasibility` 同时允许普通复核与直接人工决定；`user_judgment`、`unclear_from_available_input`、`defer_judgment`、`outside_current_focus` 同时允许盲评、普通复核与直接人工决定。普通复核和直接人工决定只记录决定从哪个交互入口写入，不改变同一个人工判断的业务语义；denied 不接受泛化的 `user_judgment`，必须给出上述对应 denied 的具体原因。元数据、模型或解析失败事实继续使用各自错误枚举；只有进入用户可见三态投影时才映射到本表允许的处理原因。
 
 ### 7.6 模型配置
 
