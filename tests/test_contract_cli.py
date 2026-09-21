@@ -26,6 +26,10 @@ _ALL_CONTRACTS = (
     "reuse-assessment",
     "decision-reasons",
 )
+_UNKNOWN_CONTRACT_GUIDANCE = (
+    "未知契约；当前支持："
+    "boundary、value-prediction、reuse-assessment、decision-reasons。"
+)
 
 
 def _installed_entrypoint() -> Path:
@@ -120,6 +124,7 @@ def test_each_contract_can_be_exported_repeated_checked_and_detects_conflict(
 
     repeated = _run_cli(tmp_path, *command, "--target", str(first_target))
     independent = _run_cli(tmp_path, *command, "--target", str(second_target))
+    before_check = filesystem_fingerprint(first_target)
     checked = _run_cli(
         tmp_path,
         "contracts",
@@ -144,6 +149,7 @@ def test_each_contract_can_be_exported_repeated_checked_and_detects_conflict(
     assert (other_snapshot / "manifest.json").read_bytes() == original_bytes[1]
     assert checked.returncode == 0, checked.stderr
     assert f"{contract_name} v1" in checked.stdout
+    assert filesystem_fingerprint(first_target) == before_check
 
     schema = json.loads(schema_path.read_bytes())
     manifest = json.loads(manifest_path.read_bytes())
@@ -179,7 +185,7 @@ def test_each_contract_can_be_exported_repeated_checked_and_detects_conflict(
     [
         (
             ("--contract", "unknown", "--version", "v1"),
-            "未知契约；当前支持：boundary",
+            _UNKNOWN_CONTRACT_GUIDANCE,
         ),
         (
             ("--contract", "boundary", "--version", "../v1"),
@@ -546,6 +552,6 @@ def test_real_cli_check_rejects_unknown_selection_without_touching_target(
 
     assert result.returncode != 0
     assert "invalid_selection" in result.stderr
-    assert "未知契约；当前支持：boundary" in result.stderr
+    assert _UNKNOWN_CONTRACT_GUIDANCE in result.stderr
     assert "Traceback" not in result.stderr
     assert not target.exists()

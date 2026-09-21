@@ -146,7 +146,7 @@ def export_contract_command(
         str,
         typer.Option(
             "--contract",
-            help="受控契约名；完整选择见当前用途。",
+            help="受控契约名；完整选择见上方当前支持清单。",
         ),
     ],
     version: Annotated[
@@ -181,7 +181,7 @@ def check_contract_command(
         str,
         typer.Option(
             "--contract",
-            help="受控契约名；完整选择见当前用途。",
+            help="受控契约名；完整选择见上方当前支持清单。",
         ),
     ],
     version: Annotated[
