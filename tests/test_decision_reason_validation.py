@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from itertools import product
 from typing import Any
 
@@ -227,7 +227,7 @@ def test_reason_contract_has_fixed_serialized_vocabulary_and_chinese_description
         ScreeningSource.DIRECT_MANUAL_DECISION: "直接人工决定",
         ScreeningSource.METADATA_ABANDONMENT: "元数据人工放弃",
         ScreeningSource.MANUAL_READ_REQUEST: "人工精读请求",
-        ScreeningSource.FIXED_CALIBRATION_MEMBER_PROJECTION: ("固定校准成员失败投影"),
+        ScreeningSource.FIXED_CALIBRATION_MEMBER_PROJECTION: "固定校准成员失败投影",
         ScreeningSource.FAILURE_QUEUE_PROJECTION: "模型失败队列投影",
     }
     assert DECISION_REASON_DESCRIPTIONS_ZH == {
@@ -425,13 +425,17 @@ def test_authoritative_identity_types_cannot_be_directly_constructed_as_masquera
         model.model_validate(payload)
 
 
-def _combinations_expressed_by_schema() -> set[tuple[str, str, str]]:
+def _schema_branch_definitions() -> Iterator[dict[str, Any]]:
     schema: Any = screening_reason_json_schema()
-    combinations: set[tuple[str, str, str]] = set()
     assert set(schema) == {"$defs", "anyOf"}
     for branch in schema["anyOf"]:
         reference = branch["$ref"]
-        definition = schema["$defs"][reference.removeprefix("#/$defs/")]
+        yield schema["$defs"][reference.removeprefix("#/$defs/")]
+
+
+def _combinations_expressed_by_schema() -> set[tuple[str, str, str]]:
+    combinations: set[tuple[str, str, str]] = set()
+    for definition in _schema_branch_definitions():
         assert definition["additionalProperties"] is False
         assert set(definition["required"]) == {"result", "source", "reason"}
         properties = definition["properties"]
@@ -448,10 +452,7 @@ def _combinations_expressed_by_schema() -> set[tuple[str, str, str]]:
 def _schema_accepts(payload: object) -> bool:
     if not isinstance(payload, dict):
         return False
-    schema: Any = screening_reason_json_schema()
-    for branch in schema["anyOf"]:
-        reference = branch["$ref"]
-        definition = schema["$defs"][reference.removeprefix("#/$defs/")]
+    for definition in _schema_branch_definitions():
         if set(payload) != set(definition["required"]):
             continue
         properties = definition["properties"]

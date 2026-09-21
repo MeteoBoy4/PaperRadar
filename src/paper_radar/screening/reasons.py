@@ -75,7 +75,7 @@ SCREENING_SOURCE_DESCRIPTIONS_ZH = MappingProxyType(
         ScreeningSource.DIRECT_MANUAL_DECISION: "直接人工决定",
         ScreeningSource.METADATA_ABANDONMENT: "元数据人工放弃",
         ScreeningSource.MANUAL_READ_REQUEST: "人工精读请求",
-        ScreeningSource.FIXED_CALIBRATION_MEMBER_PROJECTION: ("固定校准成员失败投影"),
+        ScreeningSource.FIXED_CALIBRATION_MEMBER_PROJECTION: "固定校准成员失败投影",
         ScreeningSource.FAILURE_QUEUE_PROJECTION: "模型失败队列投影",
     }
 )
@@ -111,7 +111,7 @@ class DecisionReasonDefinition:
 
 
 _SUGGESTION = ScreeningSource.SUGGESTION_RULE
-_HUMAN_DECISION_SOURCES = frozenset(
+_GENERAL_HUMAN_JUDGMENT_SOURCES = frozenset(
     {
         ScreeningSource.BLIND_CALIBRATION,
         ScreeningSource.REGULAR_REVIEW,
@@ -128,7 +128,7 @@ DECISION_REASON_DEFINITIONS = MappingProxyType(
             ScreeningResult.ACCEPTED, frozenset({_SUGGESTION})
         ),
         DecisionReason.OUT_OF_SCOPE: DecisionReasonDefinition(
-            ScreeningResult.DENIED, _HUMAN_DECISION_SOURCES | {_SUGGESTION}
+            ScreeningResult.DENIED, _GENERAL_HUMAN_JUDGMENT_SOURCES | {_SUGGESTION}
         ),
         DecisionReason.BOUNDARY_UNCERTAIN: DecisionReasonDefinition(
             ScreeningResult.PENDING, frozenset({_SUGGESTION})
@@ -143,22 +143,22 @@ DECISION_REASON_DEFINITIONS = MappingProxyType(
             ScreeningResult.PENDING, frozenset({_SUGGESTION})
         ),
         DecisionReason.LOW_VALUE: DecisionReasonDefinition(
-            ScreeningResult.DENIED, _HUMAN_DECISION_SOURCES | {_SUGGESTION}
+            ScreeningResult.DENIED, _GENERAL_HUMAN_JUDGMENT_SOURCES | {_SUGGESTION}
         ),
         DecisionReason.LOW_REUSE_FEASIBILITY: DecisionReasonDefinition(
-            ScreeningResult.DENIED, _HUMAN_DECISION_SOURCES | {_SUGGESTION}
+            ScreeningResult.DENIED, _GENERAL_HUMAN_JUDGMENT_SOURCES | {_SUGGESTION}
         ),
         DecisionReason.USER_JUDGMENT: DecisionReasonDefinition(
-            ScreeningResult.ACCEPTED, _HUMAN_DECISION_SOURCES
+            ScreeningResult.ACCEPTED, _GENERAL_HUMAN_JUDGMENT_SOURCES
         ),
         DecisionReason.UNCLEAR_FROM_AVAILABLE_INPUT: DecisionReasonDefinition(
-            ScreeningResult.PENDING, _HUMAN_DECISION_SOURCES
+            ScreeningResult.PENDING, _GENERAL_HUMAN_JUDGMENT_SOURCES
         ),
         DecisionReason.DEFER_JUDGMENT: DecisionReasonDefinition(
-            ScreeningResult.PENDING, _HUMAN_DECISION_SOURCES
+            ScreeningResult.PENDING, _GENERAL_HUMAN_JUDGMENT_SOURCES
         ),
         DecisionReason.OUTSIDE_CURRENT_FOCUS: DecisionReasonDefinition(
-            ScreeningResult.PENDING, _HUMAN_DECISION_SOURCES
+            ScreeningResult.PENDING, _GENERAL_HUMAN_JUDGMENT_SOURCES
         ),
         DecisionReason.INSUFFICIENT_METADATA: DecisionReasonDefinition(
             ScreeningResult.DENIED,
@@ -251,7 +251,7 @@ class ScreeningSuggestion(ScreeningReasonRecord):
 class ScreeningDecision(ScreeningReasonRecord):
     """由受控人工入口产生、可追加保存的筛选决定。"""
 
-    _identity_sources = _HUMAN_DECISION_SOURCES | {
+    _identity_sources = _GENERAL_HUMAN_JUDGMENT_SOURCES | {
         ScreeningSource.METADATA_ABANDONMENT,
         ScreeningSource.MANUAL_READ_REQUEST,
     }
@@ -283,12 +283,23 @@ def _identity_model(source: ScreeningSource) -> type[ScreeningReasonRecord]:
     raise AssertionError("受控来源缺少记录身份")
 
 
+def _literal_value_type(value: StrEnum) -> Any:
+    """为运行时生成的 Pydantic 模型构造 Literal 值类型。"""
+    literal_type: Any = Literal
+    return literal_type[value]
+
+
+def _union_type(models: tuple[type[ScreeningReasonRecord], ...]) -> Any:
+    """为全部精确组合模型构造运行时联合类型。"""
+    union_type: Any = Union
+    return union_type[models]
+
+
 def _combination_model(
     reason: DecisionReason,
     definition: DecisionReasonDefinition,
     source: ScreeningSource,
 ) -> type[ScreeningReasonRecord]:
-    literal: Any = Literal
     model = create_model(
         "_".join(
             (
@@ -299,9 +310,9 @@ def _combination_model(
             )
         ),
         __base__=_identity_model(source),
-        result=(literal[definition.result], ...),
-        source=(literal[source], ...),
-        reason=(literal[reason], ...),
+        result=(_literal_value_type(definition.result), ...),
+        source=(_literal_value_type(source), ...),
+        reason=(_literal_value_type(reason), ...),
     )
     return model
 
@@ -311,9 +322,8 @@ _COMBINATION_MODELS = tuple(
     for reason, definition in DECISION_REASON_DEFINITIONS.items()
     for source in sorted(definition.sources, key=lambda item: item.value)
 )
-_union: Any = Union
 _SCREENING_REASON_ADAPTER: TypeAdapter[ScreeningReason] = TypeAdapter(
-    _union[_COMBINATION_MODELS]
+    _union_type(_COMBINATION_MODELS)
 )
 
 
