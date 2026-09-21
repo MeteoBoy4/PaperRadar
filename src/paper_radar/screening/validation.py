@@ -15,6 +15,12 @@ from paper_radar.screening.errors import (
 )
 from paper_radar.screening.excerpt_kinds import ExcerptKind
 from paper_radar.screening.kinds import OutputKind
+from paper_radar.screening.reasons import (
+    DECISION_REASON_DEFINITIONS,
+    ScreeningReason,
+    ScreeningReasonInput,
+    build_screening_reason,
+)
 from paper_radar.screening.schema import (
     BoundaryOutput,
     ReuseAssessmentOutput,
@@ -28,6 +34,7 @@ _KNOWN_VALUE_PREDICTION_FIELDS = frozenset(ValuePredictionOutput.model_fields)
 _KNOWN_REUSE_ASSESSMENT_FIELDS = frozenset(ReuseAssessmentOutput.model_fields)
 _KNOWN_VALUE_CONTEXT_FIELDS = frozenset(ValuePredictionContext.model_fields)
 _KNOWN_REUSE_CONTEXT_FIELDS = frozenset(ReuseAssessmentContext.model_fields)
+_KNOWN_REASON_FIELDS = frozenset(ScreeningReasonInput.model_fields)
 _GUIDANCE: dict[OutputErrorCategory, str] = {
     OutputErrorCategory.UNKNOWN_KIND: "请使用已注册的输出种类。",
     OutputErrorCategory.INVALID_JSON: "请提交完整且语法正确的 JSON。",
@@ -380,3 +387,19 @@ def validate_output(
         )
 
     return output
+
+
+def validate_screening_reason(payload: object) -> ScreeningReason:
+    """验证结果、来源与原因组合。保留建议、决定或投影身份。"""
+    reason_input = _validate_model(
+        ScreeningReasonInput,
+        payload,
+        _KNOWN_REASON_FIELDS,
+    )
+    definition = DECISION_REASON_DEFINITIONS[reason_input.reason]
+    if (
+        reason_input.result is not definition.result
+        or reason_input.source not in definition.sources
+    ):
+        raise OutputValidationError((_issue("$", OutputErrorCategory.BUSINESS_RULE),))
+    return build_screening_reason(reason_input)

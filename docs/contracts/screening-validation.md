@@ -1,8 +1,10 @@
 # Screening 输出验证接口
 
-当前交付研究边界判断、摘要层价值预测、复用可行性升级验证，以及研究边界的
-`boundary/v1` 冻结契约。价值预测和复用可行性升级只提供公共验证能力，不产出冻结
-快照，也不新增 CLI；原因组合和批量导出仍由后续 ticket 实现，不能据此视为就绪。
+当前交付研究边界判断、摘要层价值预测、复用可行性升级和筛选原因组合验证，以及
+研究边界的 `boundary/v1` 冻结契约。价值预测、复用可行性升级和原因组合只提供公共
+验证能力；其中原因组合可从权威 Pydantic 类型生成内存 JSON Schema，但不产出磁盘
+冻结快照，也不新增 CLI。其他契约冻结和批量导出仍由后续 ticket 实现，不能据此
+视为就绪。
 冻结格式、版本纪律、导出与只读检查命令见[冻结契约导出](frozen-contracts.md)。
 
 ## 公共入口
@@ -17,9 +19,11 @@ from paper_radar.screening import (
     OutputValidationError,
     ReuseAssessmentContext,
     ReuseAssessmentOutput,
+    ScreeningFailureProjection,
     ValuePredictionContext,
     ValuePredictionOutput,
     validate_output,
+    validate_screening_reason,
 )
 
 result = validate_output(
@@ -68,6 +72,15 @@ reuse_result = validate_output(
     ),
 )
 assert isinstance(reuse_result, ReuseAssessmentOutput)
+
+reason_result = validate_screening_reason(
+    {
+        "result": "pending",
+        "source": "fixed_calibration_member_projection",
+        "reason": "model_failure",
+    }
+)
+assert isinstance(reason_result, ScreeningFailureProjection)
 ```
 
 当前完整公共面为：
@@ -83,9 +96,16 @@ assert isinstance(reuse_result, ReuseAssessmentOutput)
 - `OutputErrorCategory`：受控错误类别；
 - `OutputValidationIssue`：单个脱敏验证问题；
 - `OutputValidationError`：公共验证失败异常；
+- `ScreeningResult`、`ScreeningSource`、`DecisionReason`：三态结果、八类来源和
+  16 个原因的固定序列化词汇；
+- `ScreeningSuggestion`、`ScreeningDecision`、`ScreeningFailureProjection`：分别
+  保留建议、可追加人工决定和只读失败投影身份的权威类型；
+- `DECISION_REASON_DEFINITIONS`：结果、来源与原因的唯一组合定义；
 - `EXPLICIT_PLACEHOLDER_TEXTS`：明确占位文本共享词汇；
 - `INSUFFICIENT_INPUT_MARKERS`：摘要层输入不足理由的固定片段；
-- `validate_output`：统一验证入口。
+- `validate_output`：三种 Screening Agent 输出的统一验证入口；
+- `validate_screening_reason`：严格验证原因三元组的公共入口；
+- `screening_reason_json_schema`：从同一组合权威生成 JSON Schema，不写磁盘。
 
 `validate_output(kind, payload, context=None)` 接受原始 JSON 字符串/字节或结构
 数据。当前注册的 kind 是 `boundary`、`value_prediction` 和
@@ -212,6 +232,49 @@ Docling。
 `methods` 时只能含 methods（包括上游归类后的 data）；声明为 `both` 时必须同时含
 两类。未知、重复或种类不一致都报 `business_rule`。验证器不执行摘录选择，不判断
 来源是否合法或正文是否通过质量门槛，也不修改输出或上下文。
+
+## 筛选结果、来源与原因
+
+`validate_screening_reason(payload)` 接受只含 `result`、`source`、`reason` 的 JSON
+或 mapping。三个字段都必填，不接受额外字段、未知值或类型转换。成功值是以下三种
+身份之一：
+
+- `ScreeningSuggestion`：来源固定为 `suggestion_rule`；
+- `ScreeningDecision`：来源是盲评、普通复核、直接人工决定、元数据人工放弃或人工
+  精读请求之一，可作为以后追加决定事件的输入；
+- `ScreeningFailureProjection`：固定校准成员或失败队列中的 `model_failure` 只读
+  pending 投影，不是建议或决定事件。
+
+权威组合如下。表格解释代码中的唯一组合定义，不是第二份运行时规则：
+
+| 原因 | 结果 | 允许来源 |
+| --- | --- | --- |
+| `high_research_value` | `accepted` | `suggestion_rule` |
+| `research_and_reuse` | `accepted` | `suggestion_rule` |
+| `out_of_scope` | `denied` | `suggestion_rule`、`blind_calibration`、`regular_review`、`direct_manual_decision` |
+| `boundary_uncertain` | `pending` | `suggestion_rule` |
+| `value_reuse_conflict` | `pending` | `suggestion_rule` |
+| `reuse_unknown` | `pending` | `suggestion_rule` |
+| `reuse_escalation_unavailable` | `pending` | `suggestion_rule` |
+| `low_value` | `denied` | `suggestion_rule`、`blind_calibration`、`regular_review`、`direct_manual_decision` |
+| `low_reuse_feasibility` | `denied` | `suggestion_rule`、`blind_calibration`、`regular_review`、`direct_manual_decision` |
+| `user_judgment` | `accepted` | `blind_calibration`、`regular_review`、`direct_manual_decision` |
+| `unclear_from_available_input` | `pending` | `blind_calibration`、`regular_review`、`direct_manual_decision` |
+| `defer_judgment` | `pending` | `blind_calibration`、`regular_review`、`direct_manual_decision` |
+| `outside_current_focus` | `pending` | `blind_calibration`、`regular_review`、`direct_manual_decision` |
+| `insufficient_metadata` | `denied` | `metadata_abandonment` |
+| `manual_read_request` | `accepted` | `manual_read_request` |
+| `model_failure` | `pending` 投影 | `fixed_calibration_member_projection`、`failure_queue_projection` |
+
+`out_of_scope`、`low_value` 和 `low_reuse_feasibility` 对普通复核与直接人工决定
+同等开放；来源只记录交互入口，不改变人工判断的业务语义。`insufficient_metadata`
+不能成为一般 denied，`manual_read_request` 不能冒充普通 accepted，`model_failure`
+不能构造建议或决定事件。
+
+`screening_reason_json_schema()` 从相同 Pydantic 组合类型生成 34 个精确对象分支；每个
+分支把三个字段表示为固定值并禁止额外字段。因此 Schema 表达合法组合，而不是三个
+互不相关的枚举。此票不把原因契约注册到 `contracts export/check`，也不写入
+`contracts/`；冻结、清单与批量检查由后续 ticket 交付。
 
 ## 受控错误类别
 
