@@ -107,7 +107,7 @@ def test_batch_check_reports_every_selected_contract_in_declaration_order(
         "reuse-assessment",
         "decision-reasons",
     ]
-    assert [item.result for item in result.items] == [
+    assert [item.outcome for item in result.items] == [
         ContractCheckOutcome.FAILED,
         ContractCheckOutcome.FAILED,
         ContractCheckOutcome.PASSED,

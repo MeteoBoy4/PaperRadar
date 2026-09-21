@@ -14,6 +14,7 @@ from paper_radar.contracts.schema import (
     ContractVersion,
     FrozenContract,
     build_selected_contract,
+    select_contracts,
 )
 from paper_radar.contracts.snapshot import (
     SnapshotInspection,
@@ -72,7 +73,7 @@ class ContractCheckItemResult:
 
     name: ContractName
     version: ContractVersion
-    result: ContractCheckOutcome
+    outcome: ContractCheckOutcome
     error_category: ContractCheckErrorCategory | None
     message_zh: str
     snapshot_dir: Path | None
@@ -88,7 +89,9 @@ class ContractBatchCheckResult:
     @property
     def passed(self) -> bool:
         """仅当每份契约均一致时为真。"""
-        return all(item.result is ContractCheckOutcome.PASSED for item in self.items)
+        return bool(self.items) and all(
+            item.outcome is ContractCheckOutcome.PASSED for item in self.items
+        )
 
 
 _PATH_FAILURE_CATEGORIES: dict[SnapshotPathProblem, ContractCheckErrorCategory] = {
@@ -207,30 +210,13 @@ def _select_contracts_for_check(
     names: Iterable[ContractName | str],
     version: ContractVersion | str,
 ) -> tuple[tuple[ContractName, ...], ContractVersion]:
-    requested = tuple(names)
-    if not requested:
+    try:
+        contracts = select_contracts(names, version)
+    except ContractSelectionError as error:
         raise ContractCheckError(
-            ContractCheckErrorCategory.INVALID_SELECTION,
-            "至少使用一次 --contract 选择一份已实现契约。",
-        )
-
-    selected: dict[ContractName, ContractVersion] = {}
-    for name in requested:
-        try:
-            contract = build_selected_contract(name, version)
-        except ContractSelectionError as error:
-            raise ContractCheckError(
-                ContractCheckErrorCategory.INVALID_SELECTION, str(error)
-            ) from error
-        if contract.name in selected:
-            raise ContractCheckError(
-                ContractCheckErrorCategory.INVALID_SELECTION,
-                f"契约 {contract.name.value} 被重复选择；每份契约只能选择一次。",
-            )
-        selected[contract.name] = contract.version
-
-    selected_names = tuple(name for name in ContractName if name in selected)
-    return selected_names, selected[selected_names[0]]
+            ContractCheckErrorCategory.INVALID_SELECTION, str(error)
+        ) from error
+    return tuple(contract.name for contract in contracts), contracts[0].version
 
 
 def check_frozen_contracts(
@@ -250,7 +236,7 @@ def check_frozen_contracts(
                 ContractCheckItemResult(
                     name=name,
                     version=controlled_version,
-                    result=ContractCheckOutcome.FAILED,
+                    outcome=ContractCheckOutcome.FAILED,
                     error_category=error.category,
                     message_zh=str(error),
                     snapshot_dir=None,
@@ -262,7 +248,7 @@ def check_frozen_contracts(
             ContractCheckItemResult(
                 name=checked.name,
                 version=checked.version,
-                result=ContractCheckOutcome.PASSED,
+                outcome=ContractCheckOutcome.PASSED,
                 error_category=None,
                 message_zh="冻结契约与当前权威定义一致。",
                 snapshot_dir=checked.snapshot_dir,

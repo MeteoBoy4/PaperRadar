@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from functools import partial
@@ -143,6 +143,27 @@ def build_selected_contract(
         raise ContractSelectionError(
             "所选契约与声明版本组合尚未实现；请查看命令帮助中的可用组合。"
         ) from error
+
+
+def select_contracts(
+    names: Iterable[ContractName | str],
+    version: ContractVersion | str,
+) -> tuple[FrozenContract, ...]:
+    """整体校验并去重。随后按受控声明顺序返回契约。"""
+    requested = tuple(names)
+    if not requested:
+        raise ContractSelectionError("至少使用一次 --contract 选择一份已实现契约。")
+
+    selected: dict[ContractName, FrozenContract] = {}
+    for name in requested:
+        contract = build_selected_contract(name, version)
+        if contract.name in selected:
+            raise ContractSelectionError(
+                f"契约 {contract.name.value} 被重复选择；每份契约只能选择一次。"
+            )
+        selected[contract.name] = contract
+
+    return tuple(selected[name] for name in ContractName if name in selected)
 
 
 def build_frozen_contract(

@@ -200,7 +200,7 @@ def _write_check_item(result: ContractCheckItemResult, *, err: bool) -> None:
     error_category = (
         result.error_category.value if result.error_category is not None else "none"
     )
-    if result.result is ContractCheckOutcome.PASSED:
+    if result.outcome is ContractCheckOutcome.PASSED:
         message = (
             f"冻结契约一致：{result.name.value} {result.version.value} "
             f"{result.snapshot_dir}（SHA-256: {result.schema_sha256}）"
@@ -209,7 +209,7 @@ def _write_check_item(result: ContractCheckItemResult, *, err: bool) -> None:
         message = result.message_zh
     typer.echo(
         f"contract={result.name.value} version={result.version.value} "
-        f"result={result.result.value} error_category={error_category} "
+        f"result={result.outcome.value} error_category={error_category} "
         f"message_zh={message}",
         err=err,
     )

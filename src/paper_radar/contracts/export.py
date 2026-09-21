@@ -16,7 +16,7 @@ from paper_radar.contracts.schema import (
     ContractSelectionError,
     ContractVersion,
     FrozenContract,
-    build_selected_contract,
+    select_contracts,
 )
 from paper_radar.contracts.snapshot import (
     SnapshotInspection,
@@ -232,29 +232,12 @@ def _select_contracts(
     names: Iterable[ContractName | str],
     version: ContractVersion | str,
 ) -> tuple[FrozenContract, ...]:
-    requested = tuple(names)
-    if not requested:
+    try:
+        return select_contracts(names, version)
+    except ContractSelectionError as error:
         raise ContractExportError(
-            ContractExportErrorCategory.INVALID_SELECTION,
-            "至少使用一次 --contract 选择一份已实现契约。",
-        )
-
-    selected: dict[ContractName, FrozenContract] = {}
-    for name in requested:
-        try:
-            contract = build_selected_contract(name, version)
-        except ContractSelectionError as error:
-            raise ContractExportError(
-                ContractExportErrorCategory.INVALID_SELECTION, str(error)
-            ) from error
-        if contract.name in selected:
-            raise ContractExportError(
-                ContractExportErrorCategory.INVALID_SELECTION,
-                f"契约 {contract.name.value} 被重复选择；每份契约只能选择一次。",
-            )
-        selected[contract.name] = contract
-
-    return tuple(selected[name] for name in ContractName if name in selected)
+            ContractExportErrorCategory.INVALID_SELECTION, str(error)
+        ) from error
 
 
 def _publish_prepared_contract(
