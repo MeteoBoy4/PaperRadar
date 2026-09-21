@@ -2,8 +2,8 @@
 
 PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库交付了工程入口、
 研究边界、摘要层价值预测、复用可行性升级和筛选原因组合的公共验证，以及
-四种公共契约各自的 `v1` 冻结快照、安全导出与只读漂移检查；批量契约操作、
-数据库、网络来源和论文处理命令尚未实现。
+四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出与逐份只读漂移
+检查；批量检查、数据库、网络来源和论文处理命令尚未实现。
 
 ## 环境与安装
 
@@ -49,27 +49,32 @@ uv run --offline --locked paper-radar --help
 
 ## 冻结契约导出与检查
 
-当前可逐份选择以下四个固定契约，声明版本均为 `v1`：
+当前可一次选择一份或多份以下固定契约，声明版本均为 `v1`：
 
 - `boundary`
 - `value-prediction`
 - `reuse-assessment`
 - `decision-reasons`
 
-例如导出价值预测契约：
+例如一次导出全部四份契约：
 
 ```bash
 uv run --offline --locked paper-radar contracts export \
+  --contract boundary \
   --contract value-prediction \
+  --contract reuse-assessment \
+  --contract decision-reasons \
   --version v1 \
   --target contracts
 ```
 
-快照写入 `contracts/screening/<契约名>/v1/`。同内容重跑不改写；损坏、版本
-不一致或同版本内容冲突会明确拒绝覆盖。此命令不访问网络、数据库或模型，
-不消耗配额。
+`--contract` 可重复，每份至多一次；命令按上述声明顺序处理。快照写入
+`contracts/screening/<契约名>/v1/`。写入前会预检全部既有目标；损坏、版本不一致
+或同版本内容冲突不会产生任何新快照。发布阶段逐份安全落盘，不承诺跨快照事务：
+若中途失败，已经完整写入的项目保留，其余标为未完成；修复后用原命令重跑会
+保持完整项不变并补齐缺失项。此命令不访问网络、数据库或模型，不消耗配额。
 
-只读确认单份快照仍与当前权威定义一致：
+只读确认单份快照仍与当前权威定义一致（批量 check 尚未实现）：
 
 ```bash
 uv run --offline --locked paper-radar contracts check \

@@ -106,5 +106,10 @@ def test_contract_help_lists_every_registered_choice(tmp_path: Path) -> None:
         for name in ContractName:
             assert name.value in result.stdout
         assert f"当前支持的声明版本：{registered_versions}" in result.stdout
-        assert "受控契约名；完整选择见上方当前支持清单" in result.stdout
+        if "export" in result.args:
+            assert "可重复的受控契约名" in result.stdout
+            assert "不承诺跨快照事务" in result.stdout
+            assert "原命令重跑" in result.stdout
+        else:
+            assert "受控契约名；完整选择见上方当前支持清单" in result.stdout
         assert f"声明版本；当前支持：{registered_versions}" in result.stdout

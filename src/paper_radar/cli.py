@@ -8,13 +8,15 @@ from typing import Annotated
 import typer
 
 from paper_radar.contracts import (
+    ContractBatchExportError,
     ContractCheckError,
     ContractExportError,
+    ContractExportResult,
     ContractName,
     ContractVersion,
     ExportOutcome,
     check_frozen_contract,
-    export_frozen_contract,
+    export_frozen_contracts,
 )
 from paper_radar.contracts.schema import _SUPPORTED_CONTRACT_VERSIONS
 
@@ -35,8 +37,8 @@ _CONTRACT_CHOICES_HELP = "\n".join(
 ROOT_HELP = """\
 PaperRadar 工程入口。
 
-当前用途：查看已交付能力；当前可安全地逐份导出或只读检查四种 Screening
-冻结契约。
+当前用途：查看已交付能力；当前可安全地批量导出或逐份只读检查四种 Screening
+冻结契约。批量只读检查尚未实现。
 
 参数与选项：使用 `--help` 查看命令组；业务操作的参数由子命令明确提供。
 
@@ -56,16 +58,17 @@ PaperRadar 工程入口。
 CONTRACTS_HELP = f"""\
 管理由权威 Pydantic 模型生成的版本化冻结契约。
 
-当前用途：导出已实现的契约，以及只读检查单份既有快照是否漂移；每次只选择
-一份，不提供批量导出或汇总。
+当前用途：导出一份或多份已实现契约，以及只读检查单份既有快照是否漂移；
+不提供批量 check 汇总。
 
 当前支持：
 {_CONTRACT_CHOICES_HELP}
 
-参数与选项：export 与 check 都必须明确提供契约名、声明版本和目标目录。
+参数与选项：export 可重复提供 `--contract`，按上方声明顺序处理；check 只接受
+一份契约。两者都必须明确提供声明版本和目标目录。
 
-副作用：查看帮助只输出文本；export 仅在目标目录创建不可覆盖的快照；
-check 只读取既有文件，成功或失败都不写入。
+副作用：查看帮助只输出文本；export 先预检全部已选目标，再逐份创建不可覆盖的
+快照；check 只读取既有文件，成功或失败都不写入。批量 export 不承诺跨快照事务。
 
 自动配额：契约命令不访问模型，消耗 0 次自动处理配额。
 
@@ -73,31 +76,39 @@ check 只读取既有文件，成功或失败都不写入。
 输出和标准错误。
 
 常见失败：未知契约、无效版本、既有快照损坏或冲突、目标不可写均返回非零。
+预检失败不会写入；运行中断时完整项保留并逐份报告，修复后原命令重跑即可补齐。
 
 示例：`paper-radar contracts --help`
 """
 
 EXPORT_HELP = f"""\
-从权威 Pydantic 定义生成并安全发布一份冻结 JSON Schema。
+从权威 Pydantic 定义生成并安全发布一份或多份冻结 JSON Schema。
 
-当前用途：一次只导出一份已经实现的契约。
+当前用途：重复提供 `--contract` 可在一次命令中导出多份契约；无论参数顺序如何，
+都按下方声明顺序预检和发布。
 
 当前支持的契约与声明版本：
 {_CONTRACT_CHOICES_HELP}
 当前支持的声明版本：{_SUPPORTED_CONTRACT_VERSIONS}。
 
-参数与选项：`--contract` 选择契约，`--version` 选择声明版本，`--target`
-选择输出根目录；三项都必须显式提供。
+参数与选项：`--contract` 可重复选择契约，每份至多一次；`--version` 选择声明
+版本，`--target` 选择输出根目录；三项都必须显式提供。
 
-副作用：首次成功会创建版本目录；同版本同内容不改写；任何冲突都拒绝覆盖。
+副作用：写入前预检全部选择的损坏、版本不一致和内容冲突；预检失败不写入。
+开始发布后逐份安全落盘，不承诺跨快照事务；中断前的完整项保留，半快照不算成功。
 
 自动配额：不访问网络、数据库或模型，消耗 0 次自动处理配额。
 
-输出去向：目标目录内对应版本子目录的 `schema.json` 和 `manifest.json`。
+输出去向：目标目录内各对应版本子目录的 `schema.json` 和 `manifest.json`；
+每份输出“已创建”“未改写”或“未完成”。
 
-常见失败：未知选择、版本非法、快照损坏、版本不一致、内容冲突或写入失败。
+常见失败：未知/重复选择、版本非法、快照损坏、版本不一致、内容冲突或写入失败；
+失败返回 2，修复后使用原命令重跑会保留完整项并补齐缺失项。
 
 示例：`{_EXPORT_EXAMPLE}`
+
+批量示例：`paper-radar contracts export --contract boundary --contract value-prediction
+--contract reuse-assessment --contract decision-reasons --version v1 --target contracts`
 """
 
 CHECK_HELP = f"""\
@@ -140,13 +151,45 @@ contracts_app = typer.Typer(
 app.add_typer(contracts_app, name="contracts")
 
 
+def _write_export_result(result: ContractExportResult) -> None:
+    if result.outcome is ExportOutcome.CREATED:
+        status = "已创建冻结契约"
+    else:
+        status = "冻结契约内容一致，未改写"
+    typer.echo(
+        f"{result.name.value} {result.version.value}：{status}："
+        f"{result.snapshot_dir}（SHA-256: {result.schema_sha256}）"
+    )
+
+
+def _write_batch_export_failure(error: ContractBatchExportError) -> None:
+    completed = {result.name: result for result in error.completed}
+    failures = {failure.name: failure for failure in error.failures}
+    for name in error.selected_names:
+        if name in completed:
+            _write_export_result(completed[name])
+        elif name in failures:
+            failure = failures[name]
+            typer.echo(
+                f"{name.value} {error.version.value}：未完成 "
+                f"[{failure.category.value}]：{failure.message_zh}",
+                err=True,
+            )
+        else:
+            typer.echo(
+                f"{name.value} {error.version.value}：未完成："
+                "批量导出已停止；修复上述问题后原命令重跑即可补齐。",
+                err=True,
+            )
+
+
 @contracts_app.command("export", help=EXPORT_HELP)
 def export_contract_command(
     contract: Annotated[
-        str,
+        list[str],
         typer.Option(
             "--contract",
-            help="受控契约名；完整选择见上方当前支持清单。",
+            help="可重复的受控契约名；完整选择见上方当前支持清单。",
         ),
     ],
     version: Annotated[
@@ -161,18 +204,18 @@ def export_contract_command(
         typer.Option("--target", help="冻结契约输出根目录。"),
     ],
 ) -> None:
-    """导出一份不可覆盖的冻结契约。"""
+    """预检后导出一份或多份不可覆盖的冻结契约。"""
     try:
-        result = export_frozen_contract(contract, version, target)
+        results = export_frozen_contracts(contract, version, target)
+    except ContractBatchExportError as error:
+        _write_batch_export_failure(error)
+        raise typer.Exit(code=2) from None
     except ContractExportError as error:
         typer.echo(f"导出失败 [{error.category.value}]：{error}", err=True)
         raise typer.Exit(code=2) from None
 
-    if result.outcome is ExportOutcome.CREATED:
-        status = "已创建冻结契约"
-    else:
-        status = "冻结契约内容一致，未改写"
-    typer.echo(f"{status}：{result.snapshot_dir}（SHA-256: {result.schema_sha256}）")
+    for result in results:
+        _write_export_result(result)
 
 
 @contracts_app.command("check", help=CHECK_HELP)

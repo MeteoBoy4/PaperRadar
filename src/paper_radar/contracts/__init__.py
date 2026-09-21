@@ -7,11 +7,14 @@ from paper_radar.contracts.check import (
     check_frozen_contract,
 )
 from paper_radar.contracts.export import (
+    ContractBatchExportError,
+    ContractBatchExportFailure,
     ContractExportError,
     ContractExportErrorCategory,
     ContractExportResult,
     ExportOutcome,
     export_frozen_contract,
+    export_frozen_contracts,
 )
 from paper_radar.contracts.schema import (
     ContractName,
@@ -21,6 +24,8 @@ from paper_radar.contracts.schema import (
 )
 
 __all__ = [
+    "ContractBatchExportError",
+    "ContractBatchExportFailure",
     "ContractCheckError",
     "ContractCheckErrorCategory",
     "ContractCheckResult",
@@ -34,4 +39,5 @@ __all__ = [
     "build_frozen_contract",
     "check_frozen_contract",
     "export_frozen_contract",
+    "export_frozen_contracts",
 ]

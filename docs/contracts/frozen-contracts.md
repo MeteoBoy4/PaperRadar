@@ -1,7 +1,7 @@
 # 冻结契约导出与检查
 
-当前交付四份可单独选择的 `v1` 磁盘冻结契约。每次命令只处理一份；批量导出和
-汇总检查不在本次范围内。
+当前交付四份可单独或批量选择的 `v1` 磁盘冻结契约。`contracts export` 可在一次
+命令中处理多份；`contracts check` 仍只检查一份，不提供批量汇总。
 
 | CLI 受控名 | 权威定义 | 固定目录 |
 | --- | --- | --- |
@@ -12,18 +12,22 @@
 
 ## 命令与公共入口
 
-维护者使用真实安装入口显式选择契约、声明版本和目标根目录：
+维护者使用真实安装入口重复提供 `--contract`，显式选择契约、声明版本和目标根
+目录。选择顺序不会改变执行顺序；系统始终按上表的 `ContractName` 声明顺序处理：
 
 ```bash
 paper-radar contracts export \
   --contract boundary \
+  --contract value-prediction \
+  --contract reuse-assessment \
+  --contract decision-reasons \
   --version v1 \
   --target contracts
 ```
 
-成功返回 0。首次运行创建快照；相同版本和内容再次运行返回 0 且不改写文件。
-未知契约、无效版本、既有快照异常或写入失败返回非零。命令不访问网络、数据库
-或模型，也不消耗自动处理配额。
+每份契约最多选择一次。全部完成（含 `unchanged`）返回 0；选择、预检或写入失败
+返回 2。首次运行创建快照；相同版本和内容再次运行不改写文件。命令不访问网络、
+数据库或模型，也不消耗自动处理配额。
 
 只读确认既有快照没有漂移使用同一组显式选择：
 
@@ -34,8 +38,9 @@ paper-radar contracts check \
   --target contracts
 ```
 
-Python 调用方使用 `paper_radar.contracts.export_frozen_contract` 和
-`paper_radar.contracts.check_frozen_contract`。纯内容生成可使用
+Python 调用方使用 `paper_radar.contracts.export_frozen_contracts` 执行带预检的
+批量导出；单份兼容入口为 `export_frozen_contract`，只读检查入口为
+`check_frozen_contract`。纯内容生成可使用
 `build_frozen_contract`；三种输出直接调用各自权威 Pydantic 模型的
 `model_json_schema()`，原因契约直接调用从权威合法组合生成的 Pydantic Schema，
 不会维护第二份字段或组合定义。
@@ -112,13 +117,24 @@ screening/
    `content_conflict`，必须新建版本；
 4. 两个文件均与当前输出逐字节相同：`unchanged`，不写入任何文件。
 
+批量导出先完成全部选择解析和上述只读检查，再开始任何写入。只要任一既有目标
+损坏、版本不一致、内容冲突或路径非法，就不创建或改写任何快照；合法但已一致的
+目标报告为“未改写”，其余报告为“未完成”。未知、重复契约和无效版本也在目标
+目录创建前失败。
+
 首次导出先在目标版本目录的同级临时目录完整写入、刷新 Schema 和清单，再以目录
 重命名一次发布。清单不会先于完整 Schema 可见；中断或权限失败会清理临时目录，
 不会把半文件当成成功快照，也不会触碰已经发布的版本。
 
+开始发布后不承诺跨多个版本目录或文件系统事务。若第 N 项发生不可预知的权限、
+空间、挂载或中断故障，之前已经完整发布的项保留并报告“已创建”或“未改写”，
+当前及尚未处理的项报告“未完成”，命令返回 2。修复故障后使用完全相同的命令
+重跑：完整项逐字节一致且不改写，缺失项继续补齐；不会回滚已发布的历史版本。
+
 ## 受控结果与错误
 
-`export_frozen_contract` 成功返回 `ContractExportResult`。`outcome` 只有两个值：
+`export_frozen_contracts` 按声明顺序返回一组 `ContractExportResult`；单份入口返回
+一个结果。`outcome` 只有两个成功值：
 
 | 值 | 含义 |
 | --- | --- |
@@ -127,6 +143,10 @@ screening/
 
 失败抛出 `ContractExportError`；`category` 使用以下完整受控词汇，消息只提供中文
 操作指引，不包含文件内容或底层异常文本：
+
+批量发布期间的失败使用其子类 `ContractBatchExportError`，额外携带已完成结果、
+逐份失败和完整选择顺序，供 CLI 安全报告“已创建 / 未改写 / 未完成”；不会携带
+Schema 内容、输入或底层异常文本。
 
 | 类别 | 含义与操作 |
 | --- | --- |

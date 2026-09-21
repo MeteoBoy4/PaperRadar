@@ -6,6 +6,7 @@ import errno
 import os
 import shutil
 import tempfile
+from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -37,6 +38,8 @@ class ExportOutcome(StrEnum):
 class ContractExportResult:
     """成功导出的契约身份和磁盘位置。"""
 
+    name: ContractName
+    version: ContractVersion
     outcome: ExportOutcome
     snapshot_dir: Path
     schema_sha256: str
@@ -66,6 +69,33 @@ class ContractExportError(ValueError):
         super().__init__(message_zh)
 
 
+@dataclass(frozen=True, slots=True)
+class ContractBatchExportFailure:
+    """批量预检或发布中某一份契约的受控失败。"""
+
+    name: ContractName
+    category: ContractExportErrorCategory
+    message_zh: str
+
+
+class ContractBatchExportError(ContractExportError):
+    """批量导出未完整成功并保留逐份报告所需的安全状态。"""
+
+    def __init__(
+        self,
+        failures: tuple[ContractBatchExportFailure, ...],
+        selected_names: tuple[ContractName, ...],
+        version: ContractVersion,
+        completed: tuple[ContractExportResult, ...],
+    ) -> None:
+        first_failure = failures[0]
+        self.failures = failures
+        self.selected_names = selected_names
+        self.version = version
+        self.completed = completed
+        super().__init__(first_failure.category, first_failure.message_zh)
+
+
 _DAMAGED_SNAPSHOT_FAILURE = (
     ContractExportErrorCategory.DAMAGED_SNAPSHOT,
     "既有冻结契约损坏或不完整，拒绝覆盖；请恢复原快照，契约变化应新建版本。",
@@ -74,7 +104,6 @@ _DAMAGED_SNAPSHOT_FAILURE = (
 _CREATION_ATTEMPT_INSPECTIONS = frozenset(
     {
         SnapshotInspection.ABSENT,
-        SnapshotInspection.INVALID_PATH,
     }
 )
 
@@ -84,6 +113,10 @@ _EXISTING_SNAPSHOT_FAILURES: dict[
     SnapshotInspection.INACCESSIBLE: (
         ContractExportErrorCategory.WRITE_FAILED,
         "目标目录不可访问；请检查目录权限后重试。",
+    ),
+    SnapshotInspection.INVALID_PATH: (
+        ContractExportErrorCategory.INVALID_TARGET,
+        "目标路径包含非目录项或符号链接循环；请选择有效的目标目录。",
     ),
     SnapshotInspection.INCOMPLETE: _DAMAGED_SNAPSHOT_FAILURE,
     SnapshotInspection.UNREADABLE: _DAMAGED_SNAPSHOT_FAILURE,
@@ -161,6 +194,78 @@ def _create_snapshot(snapshot_dir: Path, contract: FrozenContract) -> None:
             shutil.rmtree(staging_dir)
 
 
+def _prepare_export(
+    contract: FrozenContract,
+    target: Path | str,
+) -> tuple[Path, SnapshotInspection]:
+    try:
+        snapshot_dir = resolve_snapshot_directory(target, contract)
+    except SnapshotPathError as error:
+        raise ContractExportError(
+            _PATH_FAILURE_CATEGORIES[error.problem], str(error)
+        ) from error
+
+    inspection = inspect_frozen_snapshot(snapshot_dir, contract)
+    if inspection not in _CREATION_ATTEMPT_INSPECTIONS | {SnapshotInspection.MATCHED}:
+        category, message = _EXISTING_SNAPSHOT_FAILURES[inspection]
+        raise ContractExportError(category, message)
+    return snapshot_dir, inspection
+
+
+def _successful_result(
+    contract: FrozenContract,
+    outcome: ExportOutcome,
+    snapshot_dir: Path,
+) -> ContractExportResult:
+    return ContractExportResult(
+        name=contract.name,
+        version=contract.version,
+        outcome=outcome,
+        snapshot_dir=snapshot_dir,
+        schema_sha256=contract.schema_sha256,
+    )
+
+
+def _select_contracts(
+    names: Iterable[ContractName | str],
+    version: ContractVersion | str,
+) -> tuple[FrozenContract, ...]:
+    requested = tuple(names)
+    if not requested:
+        raise ContractExportError(
+            ContractExportErrorCategory.INVALID_SELECTION,
+            "至少使用一次 --contract 选择一份已实现契约。",
+        )
+
+    selected: dict[ContractName, FrozenContract] = {}
+    for name in requested:
+        try:
+            contract = build_selected_contract(name, version)
+        except ContractSelectionError as error:
+            raise ContractExportError(
+                ContractExportErrorCategory.INVALID_SELECTION, str(error)
+            ) from error
+        if contract.name in selected:
+            raise ContractExportError(
+                ContractExportErrorCategory.INVALID_SELECTION,
+                f"契约 {contract.name.value} 被重复选择；每份契约只能选择一次。",
+            )
+        selected[contract.name] = contract
+
+    return tuple(selected[name] for name in ContractName if name in selected)
+
+
+def _publish_prepared_contract(
+    contract: FrozenContract,
+    snapshot_dir: Path,
+) -> ContractExportResult:
+    try:
+        _create_snapshot(snapshot_dir, contract)
+    except OSError as error:
+        raise _write_error(error) from error
+    return _successful_result(contract, ExportOutcome.CREATED, snapshot_dir)
+
+
 def export_frozen_contract(
     name: ContractName | str,
     version: ContractVersion | str,
@@ -174,32 +279,73 @@ def export_frozen_contract(
             ContractExportErrorCategory.INVALID_SELECTION, str(error)
         ) from error
 
-    try:
-        snapshot_dir = resolve_snapshot_directory(target, contract)
-    except SnapshotPathError as error:
-        raise ContractExportError(
-            _PATH_FAILURE_CATEGORIES[error.problem], str(error)
-        ) from error
-
-    inspection = inspect_frozen_snapshot(snapshot_dir, contract)
+    snapshot_dir, inspection = _prepare_export(contract, target)
     if inspection is SnapshotInspection.MATCHED:
-        return ContractExportResult(
-            outcome=ExportOutcome.UNCHANGED,
-            snapshot_dir=snapshot_dir,
-            schema_sha256=contract.schema_sha256,
+        return _successful_result(contract, ExportOutcome.UNCHANGED, snapshot_dir)
+
+    return _publish_prepared_contract(contract, snapshot_dir)
+
+
+def export_frozen_contracts(
+    names: Iterable[ContractName | str],
+    version: ContractVersion | str,
+    target: Path | str,
+) -> tuple[ContractExportResult, ...]:
+    """预检后按声明顺序导出多份契约且不承诺跨快照事务。"""
+    contracts = _select_contracts(names, version)
+    selected_names = tuple(contract.name for contract in contracts)
+    controlled_version = contracts[0].version
+    prepared: list[tuple[FrozenContract, Path, SnapshotInspection]] = []
+    preflight_failures: list[ContractBatchExportFailure] = []
+    unchanged: list[ContractExportResult] = []
+
+    for contract in contracts:
+        try:
+            snapshot_dir, inspection = _prepare_export(contract, target)
+        except ContractExportError as error:
+            preflight_failures.append(
+                ContractBatchExportFailure(
+                    name=contract.name,
+                    category=error.category,
+                    message_zh=str(error),
+                )
+            )
+            continue
+        prepared.append((contract, snapshot_dir, inspection))
+        if inspection is SnapshotInspection.MATCHED:
+            unchanged.append(
+                _successful_result(contract, ExportOutcome.UNCHANGED, snapshot_dir)
+            )
+
+    if preflight_failures:
+        raise ContractBatchExportError(
+            failures=tuple(preflight_failures),
+            selected_names=selected_names,
+            version=controlled_version,
+            completed=tuple(unchanged),
         )
-    if inspection not in _CREATION_ATTEMPT_INSPECTIONS:
-        category, message = _EXISTING_SNAPSHOT_FAILURES[inspection]
-        raise ContractExportError(category, message)
 
-    # 无法探测的路径结构交给写入路径。沿用既有受控错误。
-    try:
-        _create_snapshot(snapshot_dir, contract)
-    except OSError as error:
-        raise _write_error(error) from error
+    results: list[ContractExportResult] = []
+    for contract, snapshot_dir, inspection in prepared:
+        if inspection is SnapshotInspection.MATCHED:
+            results.append(
+                _successful_result(contract, ExportOutcome.UNCHANGED, snapshot_dir)
+            )
+            continue
+        try:
+            results.append(_publish_prepared_contract(contract, snapshot_dir))
+        except ContractExportError as error:
+            raise ContractBatchExportError(
+                failures=(
+                    ContractBatchExportFailure(
+                        name=contract.name,
+                        category=error.category,
+                        message_zh=str(error),
+                    ),
+                ),
+                selected_names=selected_names,
+                version=controlled_version,
+                completed=tuple(results),
+            ) from error
 
-    return ContractExportResult(
-        outcome=ExportOutcome.CREATED,
-        snapshot_dir=snapshot_dir,
-        schema_sha256=contract.schema_sha256,
-    )
+    return tuple(results)

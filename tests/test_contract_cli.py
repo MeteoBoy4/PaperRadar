@@ -98,6 +98,225 @@ def test_real_cli_exports_deterministic_snapshot_and_repeat_is_noop(
     assert historical.read_text(encoding="utf-8") == "historical snapshot"
 
 
+def test_real_cli_batch_export_uses_declaration_order_and_repeat_is_noop(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+    command = (
+        "contracts",
+        "export",
+        "--contract",
+        "decision-reasons",
+        "--contract",
+        "boundary",
+        "--contract",
+        "reuse-assessment",
+        "--contract",
+        "value-prediction",
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+
+    first = _run_cli(tmp_path, *command)
+
+    assert first.returncode == 0, first.stderr
+    output_positions = [first.stdout.index(name) for name in _ALL_CONTRACTS]
+    assert output_positions == sorted(output_positions)
+    snapshot_files = {
+        name: (
+            target / "screening" / name / "v1" / "schema.json",
+            target / "screening" / name / "v1" / "manifest.json",
+        )
+        for name in _ALL_CONTRACTS
+    }
+    mtimes = {
+        name: tuple(path.stat().st_mtime_ns for path in paths)
+        for name, paths in snapshot_files.items()
+    }
+
+    repeated = _run_cli(tmp_path, *command)
+
+    assert repeated.returncode == 0, repeated.stderr
+    assert repeated.stdout.count("内容一致，未改写") == len(_ALL_CONTRACTS)
+    assert {
+        name: tuple(path.stat().st_mtime_ns for path in paths)
+        for name, paths in snapshot_files.items()
+    } == mtimes
+
+
+def test_real_cli_batch_export_recovers_after_second_publish_fails(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+    command = (
+        "contracts",
+        "export",
+        *(argument for name in _ALL_CONTRACTS for argument in ("--contract", name)),
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+
+    interrupted = _run_cli(
+        tmp_path,
+        *command,
+        extra_env={"PAPER_RADAR_TEST_FAIL_PUBLISH_NUMBER": "2"},
+    )
+
+    assert interrupted.returncode == 2
+    assert "boundary v1：已创建冻结契约" in interrupted.stdout
+    assert "value-prediction v1：未完成 [write_failed]" in interrupted.stderr
+    assert "reuse-assessment v1：未完成" in interrupted.stderr
+    assert "decision-reasons v1：未完成" in interrupted.stderr
+    assert "synthetic-secret-second-publish" not in (
+        interrupted.stdout + interrupted.stderr
+    )
+    boundary_snapshot = target / "screening" / "boundary" / "v1"
+    boundary_mtimes = tuple(
+        (boundary_snapshot / filename).stat().st_mtime_ns
+        for filename in ("schema.json", "manifest.json")
+    )
+    assert sorted(path.name for path in (target / "screening").iterdir()) == [
+        "boundary",
+        "value-prediction",
+    ]
+    assert list((target / "screening" / "value-prediction").iterdir()) == []
+
+    recovered = _run_cli(tmp_path, *command)
+
+    assert recovered.returncode == 0, recovered.stderr
+    assert "boundary v1：冻结契约内容一致，未改写" in recovered.stdout
+    assert (
+        tuple(
+            (boundary_snapshot / filename).stat().st_mtime_ns
+            for filename in ("schema.json", "manifest.json")
+        )
+        == boundary_mtimes
+    )
+    for name in _ALL_CONTRACTS:
+        snapshot = target / "screening" / name / "v1"
+        schema_bytes = (snapshot / "schema.json").read_bytes()
+        manifest = json.loads((snapshot / "manifest.json").read_bytes())
+        assert manifest["schema_sha256"] == hashlib.sha256(schema_bytes).hexdigest()
+
+
+@pytest.mark.parametrize(
+    ("existing_state", "expected_error"),
+    [
+        ("damaged", "damaged_snapshot"),
+        ("version_mismatch", "version_mismatch"),
+        ("content_conflict", "content_conflict"),
+    ],
+)
+def test_real_cli_batch_preflight_rejects_existing_problem_before_any_write(
+    tmp_path: Path,
+    existing_state: str,
+    expected_error: str,
+) -> None:
+    target = tmp_path / "target"
+    decision_command = (
+        "contracts",
+        "export",
+        "--contract",
+        "decision-reasons",
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+    created = _run_cli(tmp_path, *decision_command)
+    assert created.returncode == 0, created.stderr
+    snapshot = target / "screening" / "decision-reasons" / "v1"
+    schema_path = snapshot / "schema.json"
+    manifest_path = snapshot / "manifest.json"
+    if existing_state == "damaged":
+        schema_path.write_text('{"synthetic-secret-batch": true}\n', encoding="utf-8")
+    else:
+        schema = json.loads(schema_path.read_bytes())
+        manifest = json.loads(manifest_path.read_bytes())
+        if existing_state == "version_mismatch":
+            schema["x-paper-radar-contract"]["version"] = "v2"
+            manifest["version"] = "v2"
+        else:
+            schema["description"] = "同版本的另一份有效内容"
+        changed_schema = canonical_json_bytes(schema)
+        schema_path.write_bytes(changed_schema)
+        manifest["schema_sha256"] = hashlib.sha256(changed_schema).hexdigest()
+        manifest_path.write_bytes(canonical_json_bytes(manifest))
+    before = filesystem_fingerprint(target)
+
+    result = _run_cli(
+        tmp_path,
+        "contracts",
+        "export",
+        *(argument for name in _ALL_CONTRACTS for argument in ("--contract", name)),
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+
+    assert result.returncode == 2
+    assert expected_error in result.stderr
+    assert result.stderr.count("未完成") == len(_ALL_CONTRACTS)
+    assert "synthetic-secret-batch" not in result.stdout + result.stderr
+    assert filesystem_fingerprint(target) == before
+
+
+@pytest.mark.parametrize(
+    "contracts",
+    [("unknown", "boundary"), ("boundary", "boundary")],
+)
+def test_real_cli_batch_rejects_illegal_selection_before_creating_target(
+    tmp_path: Path,
+    contracts: tuple[str, str],
+) -> None:
+    target = tmp_path / "target"
+
+    result = _run_cli(
+        tmp_path,
+        "contracts",
+        "export",
+        *(argument for name in contracts for argument in ("--contract", name)),
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+
+    assert result.returncode == 2
+    assert "invalid_selection" in result.stderr
+    assert not target.exists()
+
+
+def test_real_cli_batch_reports_unwritable_target_without_partial_success(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+    target.mkdir(mode=0o500)
+    try:
+        result = _run_cli(
+            tmp_path,
+            "contracts",
+            "export",
+            *(argument for name in _ALL_CONTRACTS for argument in ("--contract", name)),
+            "--version",
+            "v1",
+            "--target",
+            str(target),
+        )
+    finally:
+        target.chmod(0o700)
+
+    assert result.returncode == 2
+    assert "write_failed" in result.stderr
+    assert result.stderr.count("未完成") == len(_ALL_CONTRACTS)
+    assert list(target.iterdir()) == []
+
+
 @pytest.mark.parametrize("contract_name", _ALL_CONTRACTS)
 def test_each_contract_can_be_exported_repeated_checked_and_detects_conflict(
     tmp_path: Path,
