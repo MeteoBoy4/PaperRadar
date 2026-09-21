@@ -11,6 +11,11 @@ from pathlib import Path
 
 import pytest
 
+from paper_radar.contracts import (
+    ContractName,
+    ContractVersion,
+    build_frozen_contract,
+)
 from tests.contract_snapshot_support import (
     canonical_json_bytes,
     filesystem_fingerprint,
@@ -150,6 +155,23 @@ def test_real_cli_batch_export_recovers_after_second_publish_fails(
     tmp_path: Path,
 ) -> None:
     target = tmp_path / "target"
+    existing = _run_cli(
+        tmp_path,
+        "contracts",
+        "export",
+        "--contract",
+        "reuse-assessment",
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+    assert existing.returncode == 0, existing.stderr
+    reuse_snapshot = target / "screening" / "reuse-assessment" / "v1"
+    reuse_mtimes = tuple(
+        (reuse_snapshot / filename).stat().st_mtime_ns
+        for filename in ("schema.json", "manifest.json")
+    )
     command = (
         "contracts",
         "export",
@@ -169,7 +191,7 @@ def test_real_cli_batch_export_recovers_after_second_publish_fails(
     assert interrupted.returncode == 2
     assert "boundary v1：已创建冻结契约" in interrupted.stdout
     assert "value-prediction v1：未完成 [write_failed]" in interrupted.stderr
-    assert "reuse-assessment v1：未完成" in interrupted.stderr
+    assert "reuse-assessment v1：冻结契约内容一致，未改写" in interrupted.stdout
     assert "decision-reasons v1：未完成" in interrupted.stderr
     assert "synthetic-secret-second-publish" not in (
         interrupted.stdout + interrupted.stderr
@@ -181,6 +203,7 @@ def test_real_cli_batch_export_recovers_after_second_publish_fails(
     )
     assert sorted(path.name for path in (target / "screening").iterdir()) == [
         "boundary",
+        "reuse-assessment",
         "value-prediction",
     ]
     assert list((target / "screening" / "value-prediction").iterdir()) == []
@@ -196,11 +219,21 @@ def test_real_cli_batch_export_recovers_after_second_publish_fails(
         )
         == boundary_mtimes
     )
+    assert (
+        tuple(
+            (reuse_snapshot / filename).stat().st_mtime_ns
+            for filename in ("schema.json", "manifest.json")
+        )
+        == reuse_mtimes
+    )
     for name in _ALL_CONTRACTS:
         snapshot = target / "screening" / name / "v1"
         schema_bytes = (snapshot / "schema.json").read_bytes()
         manifest = json.loads((snapshot / "manifest.json").read_bytes())
-        assert manifest["schema_sha256"] == hashlib.sha256(schema_bytes).hexdigest()
+        expected = build_frozen_contract(ContractName(name), ContractVersion.V1)
+        assert hashlib.sha256(schema_bytes).hexdigest() == expected.schema_sha256
+        assert manifest["schema_sha256"] == expected.schema_sha256
+        assert f"SHA-256: {expected.schema_sha256}" in recovered.stdout
 
 
 @pytest.mark.parametrize(

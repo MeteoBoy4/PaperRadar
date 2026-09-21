@@ -335,6 +335,13 @@ def export_frozen_contracts(
         try:
             results.append(_publish_prepared_contract(contract, snapshot_dir))
         except ContractExportError as error:
+            completed_by_name = {result.name: result for result in unchanged}
+            completed_by_name.update({result.name: result for result in results})
+            completed = tuple(
+                completed_by_name[name]
+                for name in selected_names
+                if name in completed_by_name
+            )
             raise ContractBatchExportError(
                 failures=(
                     ContractBatchExportFailure(
@@ -345,7 +352,7 @@ def export_frozen_contracts(
                 ),
                 selected_names=selected_names,
                 version=controlled_version,
-                completed=tuple(results),
+                completed=completed,
             ) from error
 
     return tuple(results)
