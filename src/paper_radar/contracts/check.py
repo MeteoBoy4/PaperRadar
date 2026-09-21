@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -56,6 +57,38 @@ class ContractCheckResult:
     version: ContractVersion
     snapshot_dir: Path
     schema_sha256: str
+
+
+class ContractCheckOutcome(StrEnum):
+    """批量检查中单份契约的稳定结果。"""
+
+    PASSED = "passed"
+    FAILED = "failed"
+
+
+@dataclass(frozen=True, slots=True)
+class ContractCheckItemResult:
+    """批量检查中一份契约的完整只读报告。"""
+
+    name: ContractName
+    version: ContractVersion
+    result: ContractCheckOutcome
+    error_category: ContractCheckErrorCategory | None
+    message_zh: str
+    snapshot_dir: Path | None
+    schema_sha256: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ContractBatchCheckResult:
+    """完成全部已选检查后的有序汇总。"""
+
+    items: tuple[ContractCheckItemResult, ...]
+
+    @property
+    def passed(self) -> bool:
+        """仅当每份契约均一致时为真。"""
+        return all(item.result is ContractCheckOutcome.PASSED for item in self.items)
 
 
 _PATH_FAILURE_CATEGORIES: dict[SnapshotPathProblem, ContractCheckErrorCategory] = {
@@ -168,3 +201,73 @@ def check_frozen_contract(
         snapshot_dir=snapshot_dir,
         schema_sha256=contract.schema_sha256,
     )
+
+
+def _select_contracts_for_check(
+    names: Iterable[ContractName | str],
+    version: ContractVersion | str,
+) -> tuple[tuple[ContractName, ...], ContractVersion]:
+    requested = tuple(names)
+    if not requested:
+        raise ContractCheckError(
+            ContractCheckErrorCategory.INVALID_SELECTION,
+            "至少使用一次 --contract 选择一份已实现契约。",
+        )
+
+    selected: dict[ContractName, ContractVersion] = {}
+    for name in requested:
+        try:
+            contract = build_selected_contract(name, version)
+        except ContractSelectionError as error:
+            raise ContractCheckError(
+                ContractCheckErrorCategory.INVALID_SELECTION, str(error)
+            ) from error
+        if contract.name in selected:
+            raise ContractCheckError(
+                ContractCheckErrorCategory.INVALID_SELECTION,
+                f"契约 {contract.name.value} 被重复选择；每份契约只能选择一次。",
+            )
+        selected[contract.name] = contract.version
+
+    selected_names = tuple(name for name in ContractName if name in selected)
+    return selected_names, selected[selected_names[0]]
+
+
+def check_frozen_contracts(
+    names: Iterable[ContractName | str],
+    version: ContractVersion | str,
+    target: Path | str,
+) -> ContractBatchCheckResult:
+    """先整体校验选择。随后按声明顺序完成全部独立只读检查。"""
+    selected_names, controlled_version = _select_contracts_for_check(names, version)
+    items: list[ContractCheckItemResult] = []
+
+    for name in selected_names:
+        try:
+            checked = check_frozen_contract(name, controlled_version, target)
+        except ContractCheckError as error:
+            items.append(
+                ContractCheckItemResult(
+                    name=name,
+                    version=controlled_version,
+                    result=ContractCheckOutcome.FAILED,
+                    error_category=error.category,
+                    message_zh=str(error),
+                    snapshot_dir=None,
+                    schema_sha256=None,
+                )
+            )
+            continue
+        items.append(
+            ContractCheckItemResult(
+                name=checked.name,
+                version=checked.version,
+                result=ContractCheckOutcome.PASSED,
+                error_category=None,
+                message_zh="冻结契约与当前权威定义一致。",
+                snapshot_dir=checked.snapshot_dir,
+                schema_sha256=checked.schema_sha256,
+            )
+        )
+
+    return ContractBatchCheckResult(items=tuple(items))

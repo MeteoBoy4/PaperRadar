@@ -1,7 +1,7 @@
 # 冻结契约导出与检查
 
 当前交付四份可单独或批量选择的 `v1` 磁盘冻结契约。`contracts export` 可在一次
-命令中处理多份；`contracts check` 仍只检查一份，不提供批量汇总。
+命令中处理多份；`contracts check` 也可在一次命令中逐项检查多份并汇总退出码。
 
 | CLI 受控名 | 权威定义 | 固定目录 |
 | --- | --- | --- |
@@ -29,7 +29,7 @@ paper-radar contracts export \
 返回 2。首次运行创建快照；相同版本和内容再次运行不改写文件。命令不访问网络、
 数据库或模型，也不消耗自动处理配额。
 
-只读确认既有快照没有漂移使用同一组显式选择：
+只读确认单份既有快照没有漂移：
 
 ```bash
 paper-radar contracts check \
@@ -38,9 +38,22 @@ paper-radar contracts check \
   --target contracts
 ```
 
+整组检查继续显式列出四份受控契约，不使用会随注册表扩张的隐式 `--all`。因此以后
+新增契约不会静默改变这组检查的范围：
+
+```bash
+paper-radar contracts check \
+  --contract boundary \
+  --contract value-prediction \
+  --contract reuse-assessment \
+  --contract decision-reasons \
+  --version v1 \
+  --target contracts
+```
+
 Python 调用方使用 `paper_radar.contracts.export_frozen_contracts` 执行带预检的
-批量导出；单份兼容入口为 `export_frozen_contract`，只读检查入口为
-`check_frozen_contract`。纯内容生成可使用
+批量导出；单份兼容入口为 `export_frozen_contract`。只读检查分别使用
+`check_frozen_contract` 和 `check_frozen_contracts`。纯内容生成可使用
 `build_frozen_contract`；三种输出直接调用各自权威 Pydantic 模型的
 `model_json_schema()`，原因契约直接调用从权威合法组合生成的 Pydantic Schema，
 不会维护第二份字段或组合定义。
@@ -159,20 +172,26 @@ Schema 内容、输入或底层异常文本。
 | `path_escape` | 受控子路径经符号链接逃出目标根；移除该链接 |
 | `write_failed` | 权限、空间、只读挂载或其他写入失败；按具体中文指引处理 |
 
-## 只读检查单份快照
+## 只读检查与整组汇总
 
-`contracts check` 一次只检查一份显式选择的快照，不遍历目录也不汇总多份契约
-（批量汇总属于后续 ticket）。命令复用导出使用的权威 Schema、规范序列化、清单
-字段和 SHA-256 判据，只把“拒绝覆盖”的写入语义替换为检查语义：
+`contracts check` 只检查通过一个或多个 `--contract` 显式选择的快照，不遍历目标
+目录。每份最多选择一次，未知或重复选择会在读取任何快照前整体拒绝。合法选择不论
+参数顺序均按上表的 `ContractName` 声明顺序处理。命令逐份复用单份检查的权威
+Schema、规范序列化、清单字段、SHA-256 判据与错误类别，不维护第二套判断逻辑：
 
-- 一致时返回 0，并输出契约身份、快照位置和 SHA-256；
-- 其余情况返回非零，不修复、不刷新、不创建目录，也不写入任何文件；
+- 所有已选契约一致时返回 0；任一项失败时仍检查其余独立项，全部报告后返回 2；
+- 每项固定输出 `contract`、`version`、`result`、`error_category` 和中文处理说明；
+  成功项的 `result=passed`、`error_category=none`，失败项为 `result=failed` 和下表类别；
+- 成功项同时输出快照位置和 SHA-256；失败项不回显文件内容或底层异常；
+- 成功或失败都不修复、不刷新、不创建目录，也不写入任何文件；
 - 目标根目录、版本目录或必需文件不存在时直接报缺失，不创建数据目录；
 - 不访问网络、数据库或模型，不消耗自动处理配额。
 
 `check_frozen_contract` 成功返回 `ContractCheckResult`；失败抛出
 `ContractCheckError`。其 `category` 复用导出词汇，并只在检查语义需要时区分
-缺失、不可读取与内容漂移：
+缺失、不可读取与内容漂移。`check_frozen_contracts` 先整体验证选择，然后逐份调用
+该单份入口，返回包含全部 `ContractCheckItemResult` 的 `ContractBatchCheckResult`；
+`passed` 仅在全部项通过时为真：
 
 | 类别 | 判据与操作 |
 | --- | --- |
@@ -185,7 +204,6 @@ Schema 内容、输入或底层异常文本。
 | `invalid_target` | 目标不是可访问的目录，或快照路径无法解析（符号链接循环、非目录组件）；选择有效目录 |
 | `path_escape` | 受控子路径经符号链接逃出目标根目录；移除该链接 |
 
-`scripts/check-offline` 在全部测试之后分别对 `boundary`、`value-prediction`、
-`reuse-assessment` 和 `decision-reasons` 运行单份 `contracts check`，因此完整离线
-入口会实际执行四份快照的一致性检查。它没有引入批量命令；四次检查继续复用同一
-公开路径和同一类别词汇。
+`scripts/check-offline` 在全部测试之后用一次 `contracts check` 显式选择
+`boundary`、`value-prediction`、`reuse-assessment` 和 `decision-reasons`。完整离线
+入口因此实际执行整组检查；任一项失败时命令仍报告全部四项，最后以非零退出。

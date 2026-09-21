@@ -11,13 +11,17 @@ from pathlib import Path
 import pytest
 
 from paper_radar.contracts import (
+    ContractBatchCheckResult,
     ContractCheckError,
     ContractCheckErrorCategory,
+    ContractCheckOutcome,
     ContractName,
     ContractVersion,
     build_frozen_contract,
     check_frozen_contract,
+    check_frozen_contracts,
     export_frozen_contract,
+    export_frozen_contracts,
 )
 from tests.contract_snapshot_support import (
     canonical_json_bytes,
@@ -71,6 +75,80 @@ def test_consistent_snapshot_passes_and_reports_identity_and_hash(
     assert result.snapshot_dir == snapshot_dir
     assert result.schema_sha256 == expected.schema_sha256
     assert filesystem_fingerprint(root) == before
+
+
+def test_batch_check_reports_every_selected_contract_in_declaration_order(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "contracts"
+    requested = (
+        "decision-reasons",
+        "boundary",
+        "reuse-assessment",
+        "value-prediction",
+    )
+    export_frozen_contracts(requested, "v1", root)
+    boundary = root / "screening" / "boundary" / "v1"
+    (boundary / "schema.json").write_text(
+        '{"synthetic-secret-batch-check": true}\n',
+        encoding="utf-8",
+    )
+    value = root / "screening" / "value-prediction" / "v1"
+    (value / "manifest.json").unlink()
+    before = filesystem_fingerprint(root)
+
+    result = check_frozen_contracts(requested, "v1", root)
+
+    assert isinstance(result, ContractBatchCheckResult)
+    assert result.passed is False
+    assert [item.name.value for item in result.items] == [
+        "boundary",
+        "value-prediction",
+        "reuse-assessment",
+        "decision-reasons",
+    ]
+    assert [item.result for item in result.items] == [
+        ContractCheckOutcome.FAILED,
+        ContractCheckOutcome.FAILED,
+        ContractCheckOutcome.PASSED,
+        ContractCheckOutcome.PASSED,
+    ]
+    assert [item.error_category for item in result.items] == [
+        ContractCheckErrorCategory.DAMAGED_SNAPSHOT,
+        ContractCheckErrorCategory.MISSING_SNAPSHOT,
+        None,
+        None,
+    ]
+    assert "synthetic-secret-batch-check" not in "".join(
+        item.message_zh for item in result.items
+    )
+    assert filesystem_fingerprint(root) == before
+
+
+def test_batch_check_rejects_all_selections_before_checking_any_contract(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "contracts"
+    before = filesystem_fingerprint(root)
+
+    with pytest.raises(ContractCheckError) as captured:
+        check_frozen_contracts(("boundary", "unknown"), "v1", root)
+
+    assert captured.value.category is ContractCheckErrorCategory.INVALID_SELECTION
+    assert filesystem_fingerprint(root) == before
+
+
+def test_batch_check_rejects_duplicate_selection_before_reading_target(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "contracts"
+
+    with pytest.raises(ContractCheckError) as captured:
+        check_frozen_contracts(("boundary", "boundary"), "v1", root)
+
+    assert captured.value.category is ContractCheckErrorCategory.INVALID_SELECTION
+    assert "重复选择" in str(captured.value)
+    assert not root.exists()
 
 
 def test_missing_snapshot_is_reported_without_creating_target(

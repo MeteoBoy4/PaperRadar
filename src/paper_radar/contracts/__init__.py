@@ -1,10 +1,14 @@
 """冻结契约的确定性生成、安全导出与只读检查接口。"""
 
 from paper_radar.contracts.check import (
+    ContractBatchCheckResult,
     ContractCheckError,
     ContractCheckErrorCategory,
+    ContractCheckItemResult,
+    ContractCheckOutcome,
     ContractCheckResult,
     check_frozen_contract,
+    check_frozen_contracts,
 )
 from paper_radar.contracts.export import (
     ContractBatchExportError,
@@ -24,10 +28,13 @@ from paper_radar.contracts.schema import (
 )
 
 __all__ = [
+    "ContractBatchCheckResult",
     "ContractBatchExportError",
     "ContractBatchExportFailure",
     "ContractCheckError",
     "ContractCheckErrorCategory",
+    "ContractCheckItemResult",
+    "ContractCheckOutcome",
     "ContractCheckResult",
     "ContractExportError",
     "ContractExportErrorCategory",
@@ -38,6 +45,7 @@ __all__ = [
     "FrozenContract",
     "build_frozen_contract",
     "check_frozen_contract",
+    "check_frozen_contracts",
     "export_frozen_contract",
     "export_frozen_contracts",
 ]

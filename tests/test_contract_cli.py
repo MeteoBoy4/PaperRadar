@@ -31,6 +31,9 @@ _ALL_CONTRACTS = (
     "reuse-assessment",
     "decision-reasons",
 )
+_ALL_CONTRACT_ARGUMENTS = tuple(
+    argument for name in reversed(_ALL_CONTRACTS) for argument in ("--contract", name)
+)
 _UNKNOWN_CONTRACT_GUIDANCE = (
     "未知契约；当前支持："
     "boundary、value-prediction、reuse-assessment、decision-reasons。"
@@ -627,6 +630,147 @@ def test_real_cli_check_confirms_snapshot_without_writing(tmp_path: Path) -> Non
     assert "boundary v1" in result.stdout
     assert "SHA-256" in result.stdout
     assert filesystem_fingerprint(target) == before
+
+
+def test_real_cli_batch_check_reports_all_successes_in_declaration_order(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+    exported = _run_cli(
+        tmp_path,
+        "contracts",
+        "export",
+        *(argument for name in _ALL_CONTRACTS for argument in ("--contract", name)),
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+    assert exported.returncode == 0, exported.stderr
+    before = filesystem_fingerprint(target)
+
+    result = _run_cli(
+        tmp_path,
+        "contracts",
+        "check",
+        *_ALL_CONTRACT_ARGUMENTS,
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+
+    assert result.returncode == 0, result.stderr
+    lines = result.stdout.splitlines()
+    assert len(lines) == len(_ALL_CONTRACTS)
+    assert [line.split()[0] for line in lines] == [
+        f"contract={name}" for name in _ALL_CONTRACTS
+    ]
+    assert all("version=v1 result=passed error_category=none" in line for line in lines)
+    assert all("SHA-256" in line for line in lines)
+    assert filesystem_fingerprint(target) == before
+
+
+def test_real_cli_batch_check_reports_mixed_results_before_nonzero_exit(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+    exported = _run_cli(
+        tmp_path,
+        "contracts",
+        "export",
+        *(argument for name in _ALL_CONTRACTS for argument in ("--contract", name)),
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+    assert exported.returncode == 0, exported.stderr
+    boundary = target / "screening" / "boundary" / "v1"
+    (boundary / "schema.json").write_text(
+        '{"synthetic-secret-cli-batch-check": true}\n',
+        encoding="utf-8",
+    )
+    value = target / "screening" / "value-prediction" / "v1"
+    (value / "manifest.json").unlink()
+    before = filesystem_fingerprint(target)
+
+    result = _run_cli(
+        tmp_path,
+        "contracts",
+        "check",
+        *_ALL_CONTRACT_ARGUMENTS,
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+
+    assert result.returncode == 2
+    lines = [
+        line for line in result.stderr.splitlines() if line.startswith("contract=")
+    ]
+    assert [line.split()[0] for line in lines] == [
+        f"contract={name}" for name in _ALL_CONTRACTS
+    ]
+    assert "result=failed error_category=damaged_snapshot" in lines[0]
+    assert "result=failed error_category=missing_snapshot" in lines[1]
+    assert all("result=passed error_category=none" in line for line in lines[2:])
+    assert "synthetic-secret-cli-batch-check" not in result.stdout + result.stderr
+    assert filesystem_fingerprint(target) == before
+
+
+def test_real_cli_batch_check_reports_every_failure_without_creating_target(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "absent"
+
+    result = _run_cli(
+        tmp_path,
+        "contracts",
+        "check",
+        *_ALL_CONTRACT_ARGUMENTS,
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+
+    assert result.returncode == 2
+    lines = [
+        line for line in result.stderr.splitlines() if line.startswith("contract=")
+    ]
+    assert len(lines) == len(_ALL_CONTRACTS)
+    assert all(
+        "result=failed error_category=missing_snapshot" in line for line in lines
+    )
+    assert not target.exists()
+
+
+def test_real_cli_batch_check_rejects_unknown_selection_before_any_result(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "absent"
+
+    result = _run_cli(
+        tmp_path,
+        "contracts",
+        "check",
+        "--contract",
+        "boundary",
+        "--contract",
+        "unknown",
+        "--version",
+        "v1",
+        "--target",
+        str(target),
+    )
+
+    assert result.returncode == 2
+    assert "invalid_selection" in result.stderr
+    assert "result=passed" not in result.stdout + result.stderr
+    assert "result=failed" not in result.stdout + result.stderr
+    assert not target.exists()
 
 
 def test_real_cli_check_on_missing_snapshot_creates_nothing(tmp_path: Path) -> None:

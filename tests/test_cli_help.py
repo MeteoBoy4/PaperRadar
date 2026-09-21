@@ -111,5 +111,25 @@ def test_contract_help_lists_every_registered_choice(tmp_path: Path) -> None:
             assert "不承诺跨快照事务" in result.stdout
             assert "原命令重跑" in result.stdout
         else:
-            assert "受控契约名；完整选择见上方当前支持清单" in result.stdout
+            assert "可重复的受控契约名" in result.stdout
+            assert "四份均一致才返回 0" in result.stdout
+            assert "单份失败不会中断其余检查" in result.stdout
         assert f"声明版本；当前支持：{registered_versions}" in result.stdout
+
+    assert "批量只读检查尚未实现" not in group_help.stdout
+    assert "不提供批量 check 汇总" not in group_help.stdout
+
+
+def test_offline_entrypoint_uses_one_explicit_complete_contract_check() -> None:
+    script = (Path(__file__).parents[1] / "scripts" / "check-offline").read_text(
+        encoding="utf-8"
+    )
+
+    assert script.count("paper-radar contracts check") == 1
+    for name in (
+        "boundary",
+        "value-prediction",
+        "reuse-assessment",
+        "decision-reasons",
+    ):
+        assert f"--contract {name}" in script

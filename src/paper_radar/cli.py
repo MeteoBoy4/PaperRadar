@@ -8,14 +8,17 @@ from typing import Annotated
 import typer
 
 from paper_radar.contracts import (
+    ContractBatchCheckResult,
     ContractBatchExportError,
     ContractCheckError,
+    ContractCheckItemResult,
+    ContractCheckOutcome,
     ContractExportError,
     ContractExportResult,
     ContractName,
     ContractVersion,
     ExportOutcome,
-    check_frozen_contract,
+    check_frozen_contracts,
     export_frozen_contracts,
 )
 from paper_radar.contracts.schema import _SUPPORTED_CONTRACT_VERSIONS
@@ -30,6 +33,11 @@ _CHECK_EXAMPLE = (
     f"paper-radar contracts check --contract {_EXAMPLE_CONTRACT_NAME} "
     f"--version {_EXAMPLE_CONTRACT_VERSION} --target contracts"
 )
+_CHECK_ALL_EXAMPLE = (
+    "paper-radar contracts check --contract boundary "
+    "--contract value-prediction --contract reuse-assessment "
+    "--contract decision-reasons --version v1 --target contracts"
+)
 _CONTRACT_CHOICES_HELP = "\n".join(
     f"- `{name.value}`（`{ContractVersion.V1.value}`）" for name in ContractName
 )
@@ -37,8 +45,8 @@ _CONTRACT_CHOICES_HELP = "\n".join(
 ROOT_HELP = """\
 PaperRadar 工程入口。
 
-当前用途：查看已交付能力；当前可安全地批量导出或逐份只读检查四种 Screening
-冻结契约。批量只读检查尚未实现。
+当前用途：查看已交付能力；当前可安全地批量导出，并逐份或整组只读检查四种
+Screening 冻结契约。
 
 参数与选项：使用 `--help` 查看命令组；业务操作的参数由子命令明确提供。
 
@@ -58,22 +66,22 @@ PaperRadar 工程入口。
 CONTRACTS_HELP = f"""\
 管理由权威 Pydantic 模型生成的版本化冻结契约。
 
-当前用途：导出一份或多份已实现契约，以及只读检查单份既有快照是否漂移；
-不提供批量 check 汇总。
+当前用途：导出或只读检查一份或多份已实现契约。多份 check 会逐项报告，
+单份失败不会隐藏其他已选契约的结果。
 
 当前支持：
 {_CONTRACT_CHOICES_HELP}
 
-参数与选项：export 可重复提供 `--contract`，按上方声明顺序处理；check 只接受
-一份契约。两者都必须明确提供声明版本和目标目录。
+参数与选项：export 和 check 都可重复提供 `--contract`，并按上方声明顺序处理。
+完整集合须显式列出当前四份契约；两者都必须明确提供声明版本和目标目录。
 
 副作用：查看帮助只输出文本；export 先预检全部已选目标，再逐份创建不可覆盖的
 快照；check 只读取既有文件，成功或失败都不写入。批量 export 不承诺跨快照事务。
 
 自动配额：契约命令不访问模型，消耗 0 次自动处理配额。
 
-输出去向：export 写入目标目录内对应版本的子目录；check 只把结果写入标准
-输出和标准错误。
+输出去向：export 写入目标目录内对应版本的子目录；check 按固定字段逐项把结果
+写入标准输出或标准错误。
 
 常见失败：未知契约、无效版本、既有快照损坏或冲突、目标不可写均返回非零。
 预检失败不会写入；运行中断时完整项保留并逐份报告，修复后原命令重跑即可补齐。
@@ -112,26 +120,31 @@ EXPORT_HELP = f"""\
 """
 
 CHECK_HELP = f"""\
-只读比较一份既有冻结契约与当前权威定义，报告缺失、损坏、版本或内容漂移。
+只读比较一份或多份既有冻结契约与当前权威定义，逐项报告一致或失败原因。
 
-当前用途：检查单份已经实现的契约；不修复、不刷新、不创建任何文件。
+当前用途：重复 `--contract` 可检查多份契约；完整集合必须显式列出下方四份，
+不会因未来新增契约而静默扩大。单份失败不会中断其余检查。
 
 当前支持的契约与声明版本：
 {_CONTRACT_CHOICES_HELP}
 当前支持的声明版本：{_SUPPORTED_CONTRACT_VERSIONS}。
 
-参数与选项：`--contract` 选择契约，`--version` 选择声明版本，`--target`
-选择既有快照的根目录；三项都必须显式提供。
+参数与选项：`--contract` 可重复选择契约，每份至多一次；`--version` 选择声明
+版本，`--target` 选择既有快照的根目录；三项都必须显式提供。
 
 副作用：只读取目标目录内的既有文件；成功或失败都不写入，也不创建目录。
 
 自动配额：不访问网络、数据库或模型，消耗 0 次自动处理配额。
 
-输出去向：结果只写入标准输出和标准错误，不产生文件。
+输出去向：每项固定输出 `contract`、`version`、`result`、`error_category` 和中文
+说明；结果只写入标准输出或标准错误，不产生文件。四份均一致才返回 0。
 
-常见失败：快照缺失、不可读取、损坏、版本不一致或内容漂移；均返回非零。
+常见失败：未知或重复选择会在执行前整体拒绝；快照缺失、不可读取、损坏、版本
+不一致或内容漂移会逐项报告，全部检查完成后返回 2。
 
 示例：`{_CHECK_EXAMPLE}`
+
+整组示例：`{_CHECK_ALL_EXAMPLE}`
 """
 
 app = typer.Typer(
@@ -183,6 +196,30 @@ def _write_batch_export_failure(error: ContractBatchExportError) -> None:
             )
 
 
+def _write_check_item(result: ContractCheckItemResult, *, err: bool) -> None:
+    error_category = (
+        result.error_category.value if result.error_category is not None else "none"
+    )
+    if result.result is ContractCheckOutcome.PASSED:
+        message = (
+            f"冻结契约一致：{result.name.value} {result.version.value} "
+            f"{result.snapshot_dir}（SHA-256: {result.schema_sha256}）"
+        )
+    else:
+        message = result.message_zh
+    typer.echo(
+        f"contract={result.name.value} version={result.version.value} "
+        f"result={result.result.value} error_category={error_category} "
+        f"message_zh={message}",
+        err=err,
+    )
+
+
+def _write_batch_check_result(result: ContractBatchCheckResult) -> None:
+    for item in result.items:
+        _write_check_item(item, err=not result.passed)
+
+
 @contracts_app.command("export", help=EXPORT_HELP)
 def export_contract_command(
     contract: Annotated[
@@ -221,10 +258,10 @@ def export_contract_command(
 @contracts_app.command("check", help=CHECK_HELP)
 def check_contract_command(
     contract: Annotated[
-        str,
+        list[str],
         typer.Option(
             "--contract",
-            help="受控契约名；完整选择见上方当前支持清单。",
+            help="可重复的受控契约名；完整选择见上方当前支持清单。",
         ),
     ],
     version: Annotated[
@@ -239,17 +276,16 @@ def check_contract_command(
         typer.Option("--target", help="冻结契约检查的既有快照根目录（只读）。"),
     ],
 ) -> None:
-    """只读检查一份冻结契约是否漂移。"""
+    """只读检查一份或多份冻结契约是否漂移。"""
     try:
-        result = check_frozen_contract(contract, version, target)
+        result = check_frozen_contracts(contract, version, target)
     except ContractCheckError as error:
         typer.echo(f"检查失败 [{error.category.value}]：{error}", err=True)
         raise typer.Exit(code=2) from None
 
-    typer.echo(
-        f"冻结契约一致：{result.name.value} {result.version.value} "
-        f"{result.snapshot_dir}（SHA-256: {result.schema_sha256}）"
-    )
+    _write_batch_check_result(result)
+    if not result.passed:
+        raise typer.Exit(code=2)
 
 
 def main() -> None:
