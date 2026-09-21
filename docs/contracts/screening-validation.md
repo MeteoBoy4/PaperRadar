@@ -98,9 +98,13 @@ assert isinstance(reason_result, ScreeningFailureProjection)
 - `OutputValidationError`：公共验证失败异常；
 - `ScreeningResult`、`ScreeningSource`、`DecisionReason`：三态结果、八类来源和
   16 个原因的固定序列化词汇；
+- `SCREENING_RESULT_DESCRIPTIONS_ZH`、`SCREENING_SOURCE_DESCRIPTIONS_ZH`、
+  `DECISION_REASON_DESCRIPTIONS_ZH`：上述受控值的中文说明；
 - `ScreeningSuggestion`、`ScreeningDecision`、`ScreeningFailureProjection`：分别
   保留建议、可追加人工决定和只读失败投影身份的权威类型；
-- `DECISION_REASON_DEFINITIONS`：结果、来源与原因的唯一组合定义；
+- `ScreeningReason`：上述三种合法返回身份的公共联合类型；
+- `DecisionReasonDefinition`、`DECISION_REASON_DEFINITIONS`：单项组合定义类型及
+  结果、来源与原因的唯一只读组合表；
 - `EXPLICIT_PLACEHOLDER_TEXTS`：明确占位文本共享词汇；
 - `INSUFFICIENT_INPUT_MARKERS`：摘要层输入不足理由的固定片段；
 - `validate_output`：三种 Screening Agent 输出的统一验证入口；

@@ -16,7 +16,6 @@ from paper_radar.screening.errors import (
 from paper_radar.screening.excerpt_kinds import ExcerptKind
 from paper_radar.screening.kinds import OutputKind
 from paper_radar.screening.reasons import (
-    DECISION_REASON_DEFINITIONS,
     ScreeningReason,
     ScreeningReasonInput,
     build_screening_reason,
@@ -49,11 +48,15 @@ _GUIDANCE: dict[OutputErrorCategory, str] = {
 }
 
 
-def _issue(location: str, category: OutputErrorCategory) -> OutputValidationIssue:
+def _issue(
+    location: str,
+    category: OutputErrorCategory,
+    guidance_zh: str | None = None,
+) -> OutputValidationIssue:
     return OutputValidationIssue(
         location=location,
         category=category,
-        guidance_zh=_GUIDANCE[category],
+        guidance_zh=guidance_zh or _GUIDANCE[category],
     )
 
 
@@ -396,10 +399,20 @@ def validate_screening_reason(payload: object) -> ScreeningReason:
         payload,
         _KNOWN_REASON_FIELDS,
     )
-    definition = DECISION_REASON_DEFINITIONS[reason_input.reason]
-    if (
-        reason_input.result is not definition.result
-        or reason_input.source not in definition.sources
-    ):
-        raise OutputValidationError((_issue("$", OutputErrorCategory.BUSINESS_RULE),))
+    invalid_fields = reason_input.invalid_combination_fields()
+    if invalid_fields:
+        guidance = {
+            "result": "该原因不允许使用这个结果；请按原因契约选择对应结果。",
+            "source": "该原因不允许来自这个入口；请按原因契约选择允许来源。",
+        }
+        raise OutputValidationError(
+            tuple(
+                _issue(
+                    f"$.{field}",
+                    OutputErrorCategory.BUSINESS_RULE,
+                    guidance[field],
+                )
+                for field in invalid_fields
+            )
+        )
     return build_screening_reason(reason_input)

@@ -213,6 +213,18 @@ class ScreeningReasonInput(BaseModel):
     source: StrictScreeningSource
     reason: StrictDecisionReason
 
+    def invalid_combination_fields(
+        self,
+    ) -> tuple[Literal["result", "source"], ...]:
+        """返回与当前原因的权威组合不一致的字段。"""
+        definition = DECISION_REASON_DEFINITIONS[self.reason]
+        invalid_fields: list[Literal["result", "source"]] = []
+        if self.result is not definition.result:
+            invalid_fields.append("result")
+        if self.source not in definition.sources:
+            invalid_fields.append("source")
+        return tuple(invalid_fields)
+
 
 class ScreeningReasonRecord(ScreeningReasonInput):
     """已通过组合规则校验的 Screening 原因记录。"""
@@ -221,10 +233,7 @@ class ScreeningReasonRecord(ScreeningReasonInput):
 
     @model_validator(mode="after")
     def _require_legal_combination_and_identity(self) -> Self:
-        definition = DECISION_REASON_DEFINITIONS[self.reason]
-        valid_combination = (
-            self.result is definition.result and self.source in definition.sources
-        )
+        valid_combination = not self.invalid_combination_fields()
         valid_identity = (
             self._identity_sources is None or self.source in self._identity_sources
         )

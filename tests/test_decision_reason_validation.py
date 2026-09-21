@@ -178,6 +178,11 @@ def test_every_other_controlled_reason_combination_is_rejected() -> None:
     allowed = {
         (result, source, reason) for result, source, reason, _ in ALLOWED_COMBINATIONS
     }
+    expected_results: dict[str, str] = {}
+    allowed_sources_by_reason: dict[str, set[str]] = {}
+    for allowed_result, allowed_source, allowed_reason, _ in ALLOWED_COMBINATIONS:
+        expected_results[allowed_reason] = allowed_result
+        allowed_sources_by_reason.setdefault(allowed_reason, set()).add(allowed_source)
 
     for result, source, reason in product(
         RESULT_VALUES,
@@ -192,9 +197,16 @@ def test_every_other_controlled_reason_combination_is_rejected() -> None:
                 {"result": result, "source": source, "reason": reason}
             )
 
-        assert captured.value.issues == (captured.value.issues[0],)
-        assert captured.value.issues[0].category is OutputErrorCategory.BUSINESS_RULE
-        assert captured.value.issues[0].location == "$"
+        expected_locations = []
+        if result != expected_results[reason]:
+            expected_locations.append("$.result")
+        if source not in allowed_sources_by_reason[reason]:
+            expected_locations.append("$.source")
+        assert [issue.location for issue in captured.value.issues] == expected_locations
+        assert all(
+            issue.category is OutputErrorCategory.BUSINESS_RULE
+            for issue in captured.value.issues
+        )
 
 
 def test_reason_contract_has_fixed_serialized_vocabulary_and_chinese_descriptions() -> (
@@ -337,6 +349,41 @@ def test_special_reasons_cannot_masquerade_as_suggestions_or_decisions(
         validate_screening_reason(
             {"result": result, "source": source, "reason": reason}
         )
+
+
+@pytest.mark.parametrize(
+    ("payload", "location", "guidance_fragment"),
+    [
+        (
+            {
+                "result": "pending",
+                "source": "suggestion_rule",
+                "reason": "high_research_value",
+            },
+            "$.result",
+            "对应结果",
+        ),
+        (
+            {
+                "result": "accepted",
+                "source": "direct_manual_decision",
+                "reason": "high_research_value",
+            },
+            "$.source",
+            "允许来源",
+        ),
+    ],
+)
+def test_invalid_combination_identifies_the_field_and_action(
+    payload: dict[str, object],
+    location: str,
+    guidance_fragment: str,
+) -> None:
+    with pytest.raises(OutputValidationError) as captured:
+        validate_screening_reason(payload)
+
+    assert captured.value.issues[0].location == location
+    assert guidance_fragment in captured.value.issues[0].guidance_zh
 
 
 @pytest.mark.parametrize(
