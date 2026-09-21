@@ -1,0 +1,1032 @@
+{
+  "$defs": {
+    "ReasonCombination_accepted_blind_calibration_user_judgment": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "user_judgment",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "accepted",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "blind_calibration",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_accepted_blind_calibration_user_judgment",
+      "type": "object"
+    },
+    "ReasonCombination_accepted_direct_manual_decision_user_judgment": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "user_judgment",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "accepted",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "direct_manual_decision",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_accepted_direct_manual_decision_user_judgment",
+      "type": "object"
+    },
+    "ReasonCombination_accepted_manual_read_request_manual_read_request": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "manual_read_request",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "accepted",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "manual_read_request",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_accepted_manual_read_request_manual_read_request",
+      "type": "object"
+    },
+    "ReasonCombination_accepted_regular_review_user_judgment": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "user_judgment",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "accepted",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "regular_review",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_accepted_regular_review_user_judgment",
+      "type": "object"
+    },
+    "ReasonCombination_accepted_suggestion_rule_high_research_value": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "high_research_value",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "accepted",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "suggestion_rule",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_accepted_suggestion_rule_high_research_value",
+      "type": "object"
+    },
+    "ReasonCombination_accepted_suggestion_rule_research_and_reuse": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "research_and_reuse",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "accepted",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "suggestion_rule",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_accepted_suggestion_rule_research_and_reuse",
+      "type": "object"
+    },
+    "ReasonCombination_denied_blind_calibration_low_reuse_feasibility": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "low_reuse_feasibility",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "blind_calibration",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_blind_calibration_low_reuse_feasibility",
+      "type": "object"
+    },
+    "ReasonCombination_denied_blind_calibration_low_value": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "low_value",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "blind_calibration",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_blind_calibration_low_value",
+      "type": "object"
+    },
+    "ReasonCombination_denied_blind_calibration_out_of_scope": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "out_of_scope",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "blind_calibration",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_blind_calibration_out_of_scope",
+      "type": "object"
+    },
+    "ReasonCombination_denied_direct_manual_decision_low_reuse_feasibility": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "low_reuse_feasibility",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "direct_manual_decision",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_direct_manual_decision_low_reuse_feasibility",
+      "type": "object"
+    },
+    "ReasonCombination_denied_direct_manual_decision_low_value": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "low_value",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "direct_manual_decision",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_direct_manual_decision_low_value",
+      "type": "object"
+    },
+    "ReasonCombination_denied_direct_manual_decision_out_of_scope": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "out_of_scope",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "direct_manual_decision",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_direct_manual_decision_out_of_scope",
+      "type": "object"
+    },
+    "ReasonCombination_denied_metadata_abandonment_insufficient_metadata": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "insufficient_metadata",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "metadata_abandonment",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_metadata_abandonment_insufficient_metadata",
+      "type": "object"
+    },
+    "ReasonCombination_denied_regular_review_low_reuse_feasibility": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "low_reuse_feasibility",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "regular_review",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_regular_review_low_reuse_feasibility",
+      "type": "object"
+    },
+    "ReasonCombination_denied_regular_review_low_value": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "low_value",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "regular_review",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_regular_review_low_value",
+      "type": "object"
+    },
+    "ReasonCombination_denied_regular_review_out_of_scope": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "out_of_scope",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "regular_review",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_regular_review_out_of_scope",
+      "type": "object"
+    },
+    "ReasonCombination_denied_suggestion_rule_low_reuse_feasibility": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "low_reuse_feasibility",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "suggestion_rule",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_suggestion_rule_low_reuse_feasibility",
+      "type": "object"
+    },
+    "ReasonCombination_denied_suggestion_rule_low_value": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "low_value",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "suggestion_rule",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_suggestion_rule_low_value",
+      "type": "object"
+    },
+    "ReasonCombination_denied_suggestion_rule_out_of_scope": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "out_of_scope",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "denied",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "suggestion_rule",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_denied_suggestion_rule_out_of_scope",
+      "type": "object"
+    },
+    "ReasonCombination_pending_blind_calibration_defer_judgment": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "defer_judgment",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "blind_calibration",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_blind_calibration_defer_judgment",
+      "type": "object"
+    },
+    "ReasonCombination_pending_blind_calibration_outside_current_focus": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "outside_current_focus",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "blind_calibration",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_blind_calibration_outside_current_focus",
+      "type": "object"
+    },
+    "ReasonCombination_pending_blind_calibration_unclear_from_available_input": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "unclear_from_available_input",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "blind_calibration",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_blind_calibration_unclear_from_available_input",
+      "type": "object"
+    },
+    "ReasonCombination_pending_direct_manual_decision_defer_judgment": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "defer_judgment",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "direct_manual_decision",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_direct_manual_decision_defer_judgment",
+      "type": "object"
+    },
+    "ReasonCombination_pending_direct_manual_decision_outside_current_focus": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "outside_current_focus",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "direct_manual_decision",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_direct_manual_decision_outside_current_focus",
+      "type": "object"
+    },
+    "ReasonCombination_pending_direct_manual_decision_unclear_from_available_input": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "unclear_from_available_input",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "direct_manual_decision",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_direct_manual_decision_unclear_from_available_input",
+      "type": "object"
+    },
+    "ReasonCombination_pending_failure_queue_projection_model_failure": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "model_failure",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "failure_queue_projection",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_failure_queue_projection_model_failure",
+      "type": "object"
+    },
+    "ReasonCombination_pending_fixed_calibration_member_projection_model_failure": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "model_failure",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "fixed_calibration_member_projection",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_fixed_calibration_member_projection_model_failure",
+      "type": "object"
+    },
+    "ReasonCombination_pending_regular_review_defer_judgment": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "defer_judgment",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "regular_review",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_regular_review_defer_judgment",
+      "type": "object"
+    },
+    "ReasonCombination_pending_regular_review_outside_current_focus": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "outside_current_focus",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "regular_review",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_regular_review_outside_current_focus",
+      "type": "object"
+    },
+    "ReasonCombination_pending_regular_review_unclear_from_available_input": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "unclear_from_available_input",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "regular_review",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_regular_review_unclear_from_available_input",
+      "type": "object"
+    },
+    "ReasonCombination_pending_suggestion_rule_boundary_uncertain": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "boundary_uncertain",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "suggestion_rule",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_suggestion_rule_boundary_uncertain",
+      "type": "object"
+    },
+    "ReasonCombination_pending_suggestion_rule_reuse_escalation_unavailable": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "reuse_escalation_unavailable",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "suggestion_rule",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_suggestion_rule_reuse_escalation_unavailable",
+      "type": "object"
+    },
+    "ReasonCombination_pending_suggestion_rule_reuse_unknown": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "reuse_unknown",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "suggestion_rule",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_suggestion_rule_reuse_unknown",
+      "type": "object"
+    },
+    "ReasonCombination_pending_suggestion_rule_value_reuse_conflict": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "const": "value_reuse_conflict",
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "const": "pending",
+          "title": "Result",
+          "type": "string"
+        },
+        "source": {
+          "const": "suggestion_rule",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "source",
+        "reason"
+      ],
+      "title": "ReasonCombination_pending_suggestion_rule_value_reuse_conflict",
+      "type": "object"
+    }
+  },
+  "$id": "urn:paper-radar:contracts:screening:decision-reasons:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "$ref": "#/$defs/ReasonCombination_accepted_suggestion_rule_high_research_value"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_accepted_suggestion_rule_research_and_reuse"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_blind_calibration_out_of_scope"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_direct_manual_decision_out_of_scope"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_regular_review_out_of_scope"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_suggestion_rule_out_of_scope"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_suggestion_rule_boundary_uncertain"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_suggestion_rule_value_reuse_conflict"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_suggestion_rule_reuse_unknown"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_suggestion_rule_reuse_escalation_unavailable"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_blind_calibration_low_value"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_direct_manual_decision_low_value"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_regular_review_low_value"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_suggestion_rule_low_value"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_blind_calibration_low_reuse_feasibility"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_direct_manual_decision_low_reuse_feasibility"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_regular_review_low_reuse_feasibility"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_suggestion_rule_low_reuse_feasibility"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_accepted_blind_calibration_user_judgment"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_accepted_direct_manual_decision_user_judgment"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_accepted_regular_review_user_judgment"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_blind_calibration_unclear_from_available_input"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_direct_manual_decision_unclear_from_available_input"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_regular_review_unclear_from_available_input"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_blind_calibration_defer_judgment"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_direct_manual_decision_defer_judgment"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_regular_review_defer_judgment"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_blind_calibration_outside_current_focus"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_direct_manual_decision_outside_current_focus"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_regular_review_outside_current_focus"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_denied_metadata_abandonment_insufficient_metadata"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_accepted_manual_read_request_manual_read_request"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_failure_queue_projection_model_failure"
+    },
+    {
+      "$ref": "#/$defs/ReasonCombination_pending_fixed_calibration_member_projection_model_failure"
+    }
+  ],
+  "x-paper-radar-contract": {
+    "name": "decision-reasons",
+    "version": "v1"
+  }
+}

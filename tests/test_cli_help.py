@@ -97,13 +97,14 @@ def test_contract_help_lists_every_registered_choice(tmp_path: Path) -> None:
         for command in ("export", "check")
     ]
 
-    registered_names = "、".join(item.value for item in ContractName)
     registered_versions = "、".join(item.value for item in ContractVersion)
     assert group_help.returncode == 0, group_help.stderr
-    assert f"当前支持：{registered_names}" in group_help.stdout
+    for name in ContractName:
+        assert name.value in group_help.stdout
     for result in command_helps:
         assert result.returncode == 0, result.stderr
-        assert f"当前支持的契约：{registered_names}" in result.stdout
+        for name in ContractName:
+            assert name.value in result.stdout
         assert f"当前支持的声明版本：{registered_versions}" in result.stdout
-        assert f"受控契约名；当前支持：{registered_names}" in result.stdout
+        assert "受控契约名；完整选择见当前用途" in result.stdout
         assert f"声明版本；当前支持：{registered_versions}" in result.stdout

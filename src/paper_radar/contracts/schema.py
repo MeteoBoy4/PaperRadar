@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
+from functools import partial
 from typing import Any
 
-from pydantic import BaseModel
-
-from paper_radar.screening.schema import BoundaryOutput
+from paper_radar.screening.reasons import screening_reason_json_schema
+from paper_radar.screening.schema import (
+    BoundaryOutput,
+    ReuseAssessmentOutput,
+    ValuePredictionOutput,
+)
 
 _SCHEMA_FILENAME = "schema.json"
 _MANIFEST_FILENAME = "manifest.json"
@@ -29,6 +34,9 @@ class ContractName(StrEnum):
     """当前已经实现的冻结契约。"""
 
     BOUNDARY = "boundary"
+    VALUE_PREDICTION = "value-prediction"
+    REUSE_ASSESSMENT = "reuse-assessment"
+    DECISION_REASONS = "decision-reasons"
 
 
 class ContractVersion(StrEnum):
@@ -39,7 +47,7 @@ class ContractVersion(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class _ContractDefinition:
-    model: type[BaseModel]
+    schema_builder: Callable[[], dict[str, Any]]
     area: str
 
 
@@ -62,7 +70,25 @@ _CONTRACTS: dict[
     _ContractDefinition,
 ] = {
     (ContractName.BOUNDARY, ContractVersion.V1): _ContractDefinition(
-        model=BoundaryOutput,
+        schema_builder=partial(BoundaryOutput.model_json_schema, mode="validation"),
+        area="screening",
+    ),
+    (ContractName.VALUE_PREDICTION, ContractVersion.V1): _ContractDefinition(
+        schema_builder=partial(
+            ValuePredictionOutput.model_json_schema,
+            mode="validation",
+        ),
+        area="screening",
+    ),
+    (ContractName.REUSE_ASSESSMENT, ContractVersion.V1): _ContractDefinition(
+        schema_builder=partial(
+            ReuseAssessmentOutput.model_json_schema,
+            mode="validation",
+        ),
+        area="screening",
+    ),
+    (ContractName.DECISION_REASONS, ContractVersion.V1): _ContractDefinition(
+        schema_builder=screening_reason_json_schema,
         area="screening",
     ),
 }
@@ -125,7 +151,7 @@ def build_frozen_contract(
 ) -> FrozenContract:
     """直接从已注册的权威模型生成规范 Schema、哈希和清单。"""
     definition = _CONTRACTS[(name, version)]
-    schema: dict[str, Any] = definition.model.model_json_schema(mode="validation")
+    schema = definition.schema_builder()
     schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
     schema["$id"] = f"urn:paper-radar:contracts:{definition.area}:{name}:{version}"
     schema["x-paper-radar-contract"] = {

@@ -1,10 +1,10 @@
 # Screening 输出验证接口
 
 当前交付研究边界判断、摘要层价值预测、复用可行性升级和筛选原因组合验证，以及
-研究边界的 `boundary/v1` 冻结契约。价值预测、复用可行性升级和原因组合只提供公共
-验证能力；其中原因组合可从权威 Pydantic 类型生成内存 JSON Schema，但不产出磁盘
-冻结快照，也不新增 CLI。其他契约冻结和批量导出仍由后续 ticket 实现，不能据此
-视为就绪。
+四者各自的 `v1` 冻结契约。CLI 可以逐份导出或检查 `boundary`、
+`value-prediction`、`reuse-assessment` 和 `decision-reasons`；不提供批量模式。
+JSON Schema 负责结构与原因合法组合，主题、题名语言和摘录引用等运行上下文仍由
+本页的公共验证接口校验，不能只凭 Schema 校验宣称完整契约已经通过。
 冻结格式、版本纪律、导出与只读检查命令见[冻结契约导出](frozen-contracts.md)。
 
 ## 公共入口
@@ -277,8 +277,9 @@ Docling。
 
 `screening_reason_json_schema()` 从相同 Pydantic 组合类型生成 34 个精确对象分支；每个
 分支把三个字段表示为固定值并禁止额外字段。因此 Schema 表达合法组合，而不是三个
-互不相关的枚举。此票不把原因契约注册到 `contracts export/check`，也不写入
-`contracts/`；冻结、清单与批量检查由后续 ticket 交付。
+互不相关的枚举。它以 `decision-reasons/v1` 注册到单份
+`contracts export/check`，已提交的 Schema 和清单位于
+`contracts/screening/decision-reasons/v1/`；批量检查仍由后续 ticket 交付。
 
 ## 受控错误类别
 

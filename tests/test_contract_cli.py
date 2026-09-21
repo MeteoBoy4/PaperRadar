@@ -20,6 +20,13 @@ from tests.contract_snapshot_support import (
 
 _CHECK_COMMAND = ("contracts", "check", "--contract", "boundary", "--version", "v1")
 
+_ALL_CONTRACTS = (
+    "boundary",
+    "value-prediction",
+    "reuse-assessment",
+    "decision-reasons",
+)
+
 
 def _installed_entrypoint() -> Path:
     return Path(sys.executable).with_name("paper-radar")
@@ -85,6 +92,86 @@ def test_real_cli_exports_deterministic_snapshot_and_repeat_is_noop(
     assert other_schema.read_bytes() == schema.read_bytes()
     assert other_schema.with_name("manifest.json").read_bytes() == manifest.read_bytes()
     assert historical.read_text(encoding="utf-8") == "historical snapshot"
+
+
+@pytest.mark.parametrize("contract_name", _ALL_CONTRACTS)
+def test_each_contract_can_be_exported_repeated_checked_and_detects_conflict(
+    tmp_path: Path,
+    contract_name: str,
+) -> None:
+    first_target = tmp_path / "first"
+    second_target = tmp_path / "second"
+    command = (
+        "contracts",
+        "export",
+        "--contract",
+        contract_name,
+        "--version",
+        "v1",
+    )
+
+    created = _run_cli(tmp_path, *command, "--target", str(first_target))
+    snapshot_dir = first_target / "screening" / contract_name / "v1"
+    schema_path = snapshot_dir / "schema.json"
+    manifest_path = snapshot_dir / "manifest.json"
+    assert created.returncode == 0, created.stderr
+    original_bytes = (schema_path.read_bytes(), manifest_path.read_bytes())
+    original_mtimes = (schema_path.stat().st_mtime_ns, manifest_path.stat().st_mtime_ns)
+
+    repeated = _run_cli(tmp_path, *command, "--target", str(first_target))
+    independent = _run_cli(tmp_path, *command, "--target", str(second_target))
+    checked = _run_cli(
+        tmp_path,
+        "contracts",
+        "check",
+        "--contract",
+        contract_name,
+        "--version",
+        "v1",
+        "--target",
+        str(first_target),
+    )
+
+    assert repeated.returncode == 0, repeated.stderr
+    assert "内容一致，未改写" in repeated.stdout
+    assert original_mtimes == (
+        schema_path.stat().st_mtime_ns,
+        manifest_path.stat().st_mtime_ns,
+    )
+    assert independent.returncode == 0, independent.stderr
+    other_snapshot = second_target / "screening" / contract_name / "v1"
+    assert (other_snapshot / "schema.json").read_bytes() == original_bytes[0]
+    assert (other_snapshot / "manifest.json").read_bytes() == original_bytes[1]
+    assert checked.returncode == 0, checked.stderr
+    assert f"{contract_name} v1" in checked.stdout
+
+    schema = json.loads(schema_path.read_bytes())
+    manifest = json.loads(manifest_path.read_bytes())
+    schema["description"] = "同版本的另一份内部一致内容"
+    changed_schema = canonical_json_bytes(schema)
+    schema_path.write_bytes(changed_schema)
+    manifest["schema_sha256"] = hashlib.sha256(changed_schema).hexdigest()
+    manifest_path.write_bytes(canonical_json_bytes(manifest))
+    conflicting_bytes = (schema_path.read_bytes(), manifest_path.read_bytes())
+
+    conflict = _run_cli(tmp_path, *command, "--target", str(first_target))
+    drift = _run_cli(
+        tmp_path,
+        "contracts",
+        "check",
+        "--contract",
+        contract_name,
+        "--version",
+        "v1",
+        "--target",
+        str(first_target),
+    )
+
+    assert conflict.returncode != 0
+    assert "content_conflict" in conflict.stderr
+    assert drift.returncode != 0
+    assert "content_drift" in drift.stderr
+    assert (schema_path.read_bytes(), manifest_path.read_bytes()) == conflicting_bytes
 
 
 @pytest.mark.parametrize(

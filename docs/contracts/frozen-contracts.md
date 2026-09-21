@@ -1,8 +1,14 @@
 # 冻结契约导出与检查
 
-当前只交付 `BoundaryOutput` 的 `boundary/v1` 磁盘冻结契约。价值预测和复用可行性
-升级尚未提供冻结 Schema；原因组合已经能从唯一权威类型生成内存 JSON Schema，
-但尚未注册磁盘冻结、导出或检查。其他契约冻结与批量导出由后续 ticket 实现。
+当前交付四份可单独选择的 `v1` 磁盘冻结契约。每次命令只处理一份；批量导出和
+汇总检查不在本次范围内。
+
+| CLI 受控名 | 权威定义 | 固定目录 |
+| --- | --- | --- |
+| `boundary` | `BoundaryOutput` | `screening/boundary/v1/` |
+| `value-prediction` | `ValuePredictionOutput` | `screening/value-prediction/v1/` |
+| `reuse-assessment` | `ReuseAssessmentOutput` | `screening/reuse-assessment/v1/` |
+| `decision-reasons` | `screening_reason_json_schema()` 使用的权威 Pydantic 组合类型 | `screening/decision-reasons/v1/` |
 
 ## 命令与公共入口
 
@@ -30,8 +36,9 @@ paper-radar contracts check \
 
 Python 调用方使用 `paper_radar.contracts.export_frozen_contract` 和
 `paper_radar.contracts.check_frozen_contract`。纯内容生成可使用
-`build_frozen_contract`；它直接调用权威 `BoundaryOutput.model_json_schema()`，不会维护
-第二份字段定义。
+`build_frozen_contract`；三种输出直接调用各自权威 Pydantic 模型的
+`model_json_schema()`，原因契约直接调用从权威合法组合生成的 Pydantic Schema，
+不会维护第二份字段或组合定义。
 
 ## 路径与文件格式
 
@@ -43,11 +50,23 @@ screening/
     v1/
       schema.json
       manifest.json
+  value-prediction/
+    v1/
+      schema.json
+      manifest.json
+  reuse-assessment/
+    v1/
+      schema.json
+      manifest.json
+  decision-reasons/
+    v1/
+      schema.json
+      manifest.json
 ```
 
-`screening`、`boundary`、`v1` 和两个文件名均来自代码中的受控选择，不接受模型
-输出或任意路径片段。解析后的快照路径必须仍位于目标根目录内；已有符号链接若把
-路径引向根目录外，导出会在写入前失败，`check` 也会直接拒绝检查。
+`screening`、四个契约目录名、`v1` 和两个文件名均来自代码中的受控选择，不接受
+模型输出或任意路径片段。解析后的快照路径必须仍位于目标根目录内；已有符号链接
+若把路径引向根目录外，导出会在写入前失败，`check` 也会直接拒绝检查。
 
 两个 JSON 文件统一使用 UTF-8、键名排序、两空格缩进、非 ASCII 字符原样保存，
 并以一个换行结束。内容不含时间、绝对路径或随机值。`schema.json` 包含契约身份
@@ -58,8 +77,26 @@ screening/
 - `schema_file`：固定为 `schema.json`；
 - `schema_sha256`：对 `schema.json` 完整字节计算的十六进制 SHA-256。
 
-首份快照为 `boundary/v1`，Schema SHA-256 是
-`9fd5127a8081fb30f62f2b436a4b6067d1b0ae16fea8d4f190c36874ef8805a7`。
+当前四份 Schema SHA-256 为：
+
+| 契约 | SHA-256 |
+| --- | --- |
+| `boundary/v1` | `9fd5127a8081fb30f62f2b436a4b6067d1b0ae16fea8d4f190c36874ef8805a7` |
+| `value-prediction/v1` | `5ba68a0499903e01e733872bbd1967e04ae8149089ae1559a5d0a2c6c2fa351e` |
+| `reuse-assessment/v1` | `48c31d66163f7022cd3e7499619d2a97701b11cdc92d9f2e4dfe701cf3d980ff` |
+| `decision-reasons/v1` | `eabf88c7679433d52d8b8fa8a9cc3051c978a22ee528c785a187b146c555e4bc` |
+
+## JSON Schema 与上下文校验边界
+
+冻结 Schema 表达 Pydantic 可确定描述的结构规则：字段、必填性、类型、范围、
+受控枚举、额外字段拒绝，以及原因契约中合法的结果/来源/原因组合。快照不包含
+最终决定、期刊信誉、Rank、priority、urgency、自由标签、主题权重或置信分。
+
+运行时上下文不会被冻结为全局 Schema：已启用主题 ID、原题名是否中文、当次选择器
+提供的 excerpt ID 与种类，以及文本占位和“输入不足”约定，仍由
+`validate_output` 接收对应只读 context 后校验。调用方不能把仅通过 JSON Schema
+等同于通过完整公共契约；原因组合则由其 Schema 和 `validate_screening_reason`
+共同使用同一权威组合定义。
 
 ## 不可覆盖与失败判据
 
@@ -127,7 +164,7 @@ screening/
 | `invalid_target` | 目标不是可访问的目录，或快照路径无法解析（符号链接循环、非目录组件）；选择有效目录 |
 | `path_escape` | 受控子路径经符号链接逃出目标根目录；移除该链接 |
 
-`scripts/check-offline` 在全部测试之后运行
-`paper-radar contracts check --contract boundary --version v1 --target contracts`，
-因此完整离线入口会实际执行这份快照的一致性检查。未来新增契约继续使用同一检查
-路径和同一类别词汇。
+`scripts/check-offline` 在全部测试之后分别对 `boundary`、`value-prediction`、
+`reuse-assessment` 和 `decision-reasons` 运行单份 `contracts check`，因此完整离线
+入口会实际执行四份快照的一致性检查。它没有引入批量命令；四次检查继续复用同一
+公开路径和同一类别词汇。

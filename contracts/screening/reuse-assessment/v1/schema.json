@@ -1,0 +1,60 @@
+{
+  "$defs": {
+    "ExcerptKind": {
+      "description": "复用升级输出允许声明的摘录种类。",
+      "enum": [
+        "availability",
+        "methods",
+        "both"
+      ],
+      "title": "ExcerptKind",
+      "type": "string"
+    }
+  },
+  "$id": "urn:paper-radar:contracts:screening:reuse-assessment:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "条件式复用可行性升级的独立预测制品。",
+  "properties": {
+    "excerpt_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Excerpt Ids",
+      "type": "array"
+    },
+    "excerpt_kind": {
+      "$ref": "#/$defs/ExcerptKind"
+    },
+    "required_adaptations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Adaptations",
+      "type": "array"
+    },
+    "reuse_feasibility": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Reuse Feasibility",
+      "type": "integer"
+    },
+    "reuse_feasibility_reason_zh": {
+      "title": "Reuse Feasibility Reason Zh",
+      "type": "string"
+    }
+  },
+  "required": [
+    "reuse_feasibility",
+    "reuse_feasibility_reason_zh",
+    "required_adaptations",
+    "excerpt_kind",
+    "excerpt_ids"
+  ],
+  "title": "ReuseAssessmentOutput",
+  "type": "object",
+  "x-paper-radar-contract": {
+    "name": "reuse-assessment",
+    "version": "v1"
+  }
+}

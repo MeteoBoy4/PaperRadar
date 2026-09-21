@@ -16,10 +16,7 @@ from paper_radar.contracts import (
     check_frozen_contract,
     export_frozen_contract,
 )
-from paper_radar.contracts.schema import (
-    _SUPPORTED_CONTRACT_NAMES,
-    _SUPPORTED_CONTRACT_VERSIONS,
-)
+from paper_radar.contracts.schema import _SUPPORTED_CONTRACT_VERSIONS
 
 _EXAMPLE_CONTRACT_NAME = ContractName.BOUNDARY.value
 _EXAMPLE_CONTRACT_VERSION = ContractVersion.V1.value
@@ -31,12 +28,15 @@ _CHECK_EXAMPLE = (
     f"paper-radar contracts check --contract {_EXAMPLE_CONTRACT_NAME} "
     f"--version {_EXAMPLE_CONTRACT_VERSION} --target contracts"
 )
+_CONTRACT_CHOICES_HELP = "\n".join(
+    f"- `{name.value}`（`{ContractVersion.V1.value}`）" for name in ContractName
+)
 
 ROOT_HELP = """\
 PaperRadar 工程入口。
 
-当前用途：查看已交付能力；当前可安全导出一份 BoundaryOutput 冻结契约，
-或只读检查该契约快照是否漂移。
+当前用途：查看已交付能力；当前可安全地逐份导出或只读检查四种 Screening
+冻结契约。
 
 参数与选项：使用 `--help` 查看命令组；业务操作的参数由子命令明确提供。
 
@@ -56,8 +56,11 @@ PaperRadar 工程入口。
 CONTRACTS_HELP = f"""\
 管理由权威 Pydantic 模型生成的版本化冻结契约。
 
-当前用途：导出已实现的契约（当前支持：{_SUPPORTED_CONTRACT_NAMES}），以及只读
-检查单份既有快照是否漂移；批量导出与汇总仍由后续 ticket 实现。
+当前用途：导出已实现的契约，以及只读检查单份既有快照是否漂移；每次只选择
+一份，不提供批量导出或汇总。
+
+当前支持：
+{_CONTRACT_CHOICES_HELP}
 
 参数与选项：export 与 check 都必须明确提供契约名、声明版本和目标目录。
 
@@ -75,11 +78,12 @@ check 只读取既有文件，成功或失败都不写入。
 """
 
 EXPORT_HELP = f"""\
-从权威 BoundaryOutput 生成并安全发布一份冻结 JSON Schema。
+从权威 Pydantic 定义生成并安全发布一份冻结 JSON Schema。
 
 当前用途：一次只导出一份已经实现的契约。
 
-当前支持的契约：{_SUPPORTED_CONTRACT_NAMES}。
+当前支持的契约与声明版本：
+{_CONTRACT_CHOICES_HELP}
 当前支持的声明版本：{_SUPPORTED_CONTRACT_VERSIONS}。
 
 参数与选项：`--contract` 选择契约，`--version` 选择声明版本，`--target`
@@ -101,7 +105,8 @@ CHECK_HELP = f"""\
 
 当前用途：检查单份已经实现的契约；不修复、不刷新、不创建任何文件。
 
-当前支持的契约：{_SUPPORTED_CONTRACT_NAMES}。
+当前支持的契约与声明版本：
+{_CONTRACT_CHOICES_HELP}
 当前支持的声明版本：{_SUPPORTED_CONTRACT_VERSIONS}。
 
 参数与选项：`--contract` 选择契约，`--version` 选择声明版本，`--target`
@@ -141,7 +146,7 @@ def export_contract_command(
         str,
         typer.Option(
             "--contract",
-            help=f"受控契约名；当前支持：{_SUPPORTED_CONTRACT_NAMES}。",
+            help="受控契约名；完整选择见当前用途。",
         ),
     ],
     version: Annotated[
@@ -176,7 +181,7 @@ def check_contract_command(
         str,
         typer.Option(
             "--contract",
-            help=f"受控契约名；当前支持：{_SUPPORTED_CONTRACT_NAMES}。",
+            help="受控契约名；完整选择见当前用途。",
         ),
     ],
     version: Annotated[

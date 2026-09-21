@@ -20,5 +20,11 @@ run_check "类型检查" uv run --offline --locked mypy
 run_check "全部测试" uv run --offline --locked pytest
 run_check "冻结契约一致性" uv run --offline --locked paper-radar contracts check \
     --contract boundary --version v1 --target contracts
+run_check "价值预测冻结契约一致性" uv run --offline --locked paper-radar contracts check \
+    --contract value-prediction --version v1 --target contracts
+run_check "复用升级冻结契约一致性" uv run --offline --locked paper-radar contracts check \
+    --contract reuse-assessment --version v1 --target contracts
+run_check "决定原因冻结契约一致性" uv run --offline --locked paper-radar contracts check \
+    --contract decision-reasons --version v1 --target contracts
 
 printf '[离线检查] 全部通过\n'
