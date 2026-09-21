@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from paper_radar.contracts import (
+    ContractBatchExportError,
     ContractExportError,
     ContractExportErrorCategory,
     ContractName,
@@ -23,6 +24,16 @@ from tests.contract_snapshot_support import canonical_json_bytes
 def _snapshot_files(root: Path) -> tuple[Path, Path]:
     snapshot_dir = root / "screening" / "boundary" / "v1"
     return snapshot_dir / "schema.json", snapshot_dir / "manifest.json"
+
+
+def test_batch_export_error_requires_at_least_one_failure() -> None:
+    with pytest.raises(ValueError, match="至少包含一项失败"):
+        ContractBatchExportError(
+            failures=(),
+            selected_names=(ContractName.BOUNDARY,),
+            version=ContractVersion.V1,
+            completed=(),
+        )
 
 
 def test_first_export_creates_complete_snapshot_and_repeat_does_not_rewrite(

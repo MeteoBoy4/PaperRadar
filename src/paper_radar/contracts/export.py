@@ -88,6 +88,8 @@ class ContractBatchExportError(ContractExportError):
         version: ContractVersion,
         completed: tuple[ContractExportResult, ...],
     ) -> None:
+        if not failures:
+            raise ValueError("批量导出错误至少包含一项失败。")
         first_failure = failures[0]
         self.failures = failures
         self.selected_names = selected_names
@@ -271,19 +273,20 @@ def export_frozen_contract(
     version: ContractVersion | str,
     target: Path | str,
 ) -> ContractExportResult:
-    """把一份已实现契约安全导出到目标根目录。"""
+    """通过批量边界把一份已实现契约安全导出到目标根目录。"""
     try:
-        contract = build_selected_contract(name, version)
-    except ContractSelectionError as error:
-        raise ContractExportError(
-            ContractExportErrorCategory.INVALID_SELECTION, str(error)
-        ) from error
+        return export_frozen_contracts((name,), version, target)[0]
+    except ContractBatchExportError as error:
+        raise ContractExportError(error.category, str(error)) from error
 
-    snapshot_dir, inspection = _prepare_export(contract, target)
-    if inspection is SnapshotInspection.MATCHED:
-        return _successful_result(contract, ExportOutcome.UNCHANGED, snapshot_dir)
 
-    return _publish_prepared_contract(contract, snapshot_dir)
+def _ordered_results(
+    selected_names: tuple[ContractName, ...],
+    results_by_name: dict[ContractName, ContractExportResult],
+) -> tuple[ContractExportResult, ...]:
+    return tuple(
+        results_by_name[name] for name in selected_names if name in results_by_name
+    )
 
 
 def export_frozen_contracts(
@@ -295,9 +298,9 @@ def export_frozen_contracts(
     contracts = _select_contracts(names, version)
     selected_names = tuple(contract.name for contract in contracts)
     controlled_version = contracts[0].version
-    prepared: list[tuple[FrozenContract, Path, SnapshotInspection]] = []
+    prepared: list[tuple[FrozenContract, Path]] = []
     preflight_failures: list[ContractBatchExportFailure] = []
-    unchanged: list[ContractExportResult] = []
+    results_by_name: dict[ContractName, ContractExportResult] = {}
 
     for contract in contracts:
         try:
@@ -311,37 +314,29 @@ def export_frozen_contracts(
                 )
             )
             continue
-        prepared.append((contract, snapshot_dir, inspection))
         if inspection is SnapshotInspection.MATCHED:
-            unchanged.append(
-                _successful_result(contract, ExportOutcome.UNCHANGED, snapshot_dir)
+            results_by_name[contract.name] = _successful_result(
+                contract,
+                ExportOutcome.UNCHANGED,
+                snapshot_dir,
             )
+        else:
+            prepared.append((contract, snapshot_dir))
 
     if preflight_failures:
         raise ContractBatchExportError(
             failures=tuple(preflight_failures),
             selected_names=selected_names,
             version=controlled_version,
-            completed=tuple(unchanged),
+            completed=_ordered_results(selected_names, results_by_name),
         )
 
-    results: list[ContractExportResult] = []
-    for contract, snapshot_dir, inspection in prepared:
-        if inspection is SnapshotInspection.MATCHED:
-            results.append(
-                _successful_result(contract, ExportOutcome.UNCHANGED, snapshot_dir)
-            )
-            continue
+    for contract, snapshot_dir in prepared:
         try:
-            results.append(_publish_prepared_contract(contract, snapshot_dir))
-        except ContractExportError as error:
-            completed_by_name = {result.name: result for result in unchanged}
-            completed_by_name.update({result.name: result for result in results})
-            completed = tuple(
-                completed_by_name[name]
-                for name in selected_names
-                if name in completed_by_name
+            results_by_name[contract.name] = _publish_prepared_contract(
+                contract, snapshot_dir
             )
+        except ContractExportError as error:
             raise ContractBatchExportError(
                 failures=(
                     ContractBatchExportFailure(
@@ -352,7 +347,7 @@ def export_frozen_contracts(
                 ),
                 selected_names=selected_names,
                 version=controlled_version,
-                completed=completed,
+                completed=_ordered_results(selected_names, results_by_name),
             ) from error
 
-    return tuple(results)
+    return _ordered_results(selected_names, results_by_name)
