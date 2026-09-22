@@ -4,15 +4,27 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import shlex
+import signal
 import subprocess
 import sys
 from collections.abc import Sequence
+from itertools import pairwise
 from pathlib import Path
 from typing import Any, cast
 
 import pytest
 
-from scripts.offline_evidence import Check, default_checks, run_offline_verification
+from paper_radar.contracts import ContractName, ContractVersion
+from scripts import offline_evidence
+from scripts.offline_evidence import (
+    CONTRACT_NAMES,
+    CONTRACT_VERSION,
+    Check,
+    default_checks,
+    run_offline_verification,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 SECRET = "synthetic-api-key-profile-abstract-fulltext-excerpt-prompt-response"
@@ -232,6 +244,115 @@ def test_plan_runs_only_registered_contracts() -> None:
         "contracts",
     ]
     command = plan[-1].command
-    assert command.count("--contract") == 4
-    assert "boundary" in command
-    assert "decision-reasons" in command
+    assert set(CONTRACT_NAMES) == {name.value for name in ContractName}
+    assert {version.value for version in ContractVersion} == {CONTRACT_VERSION}
+    assert command.count("--contract") == len(CONTRACT_NAMES)
+    for name in CONTRACT_NAMES:
+        assert ("--contract", name) in tuple(pairwise(command))
+    for check in plan:
+        assert shlex.join(check.command) in check.help_zh
+
+
+def test_empty_plan_cannot_claim_success(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="至少一项"):
+        run_offline_verification(ROOT, (), tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_shell_entrypoint_uses_locked_uv_and_preserves_bootstrap_exit_code(
+    tmp_path: Path,
+) -> None:
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    wrapper = scripts / "check-offline"
+    wrapper.write_bytes((ROOT / "scripts/check-offline").read_bytes())
+    wrapper.chmod(0o755)
+    binary_dir = tmp_path / "bin"
+    binary_dir.mkdir()
+    fake_uv = binary_dir / "uv"
+    fake_uv.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$UV_ARGS_FILE"\nexit 23\n')
+    fake_uv.chmod(0o755)
+    arguments = tmp_path / "uv-args"
+
+    result = subprocess.run(
+        (str(wrapper),),
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "PATH": f"{binary_dir}:{os.environ['PATH']}",
+            "UV_ARGS_FILE": str(arguments),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 23
+    assert arguments.read_text().splitlines() == [
+        "run",
+        "--offline",
+        "--locked",
+        "python",
+        "-m",
+        "scripts.offline_evidence",
+    ]
+
+
+def test_interrupt_during_identity_collection_retains_parseable_incomplete_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def interrupt(_root: Path) -> None:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("scripts.offline_evidence._git_metadata", interrupt)
+    path, result = run_offline_verification(ROOT, (_check("later", "pass"),), tmp_path)
+
+    assert result["overall"] == "incomplete"
+    assert result["completed"] is False
+    assert result["code"] == {"commit": None, "dirty": None}
+    assert result["checks"][0]["status"] == "not_run"
+    assert result["checks"][0]["reason"] == "interrupted"
+    assert _read(path) == result
+
+
+def test_interrupt_between_checks_preserves_completed_check_and_marks_rest_unrun(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original_write = offline_evidence._write_evidence
+    interrupted = False
+
+    def interrupt_after_first(path: Path, evidence: dict[str, Any]) -> None:
+        nonlocal interrupted
+        original_write(path, evidence)
+        if evidence["checks"][0]["status"] == "passed" and not interrupted:
+            interrupted = True
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(offline_evidence, "_write_evidence", interrupt_after_first)
+    path, result = run_offline_verification(
+        ROOT, (_check("first", "pass"), _check("later", "pass")), tmp_path
+    )
+
+    assert result["overall"] == "incomplete"
+    assert result["checks"][0]["status"] == "passed"
+    assert result["checks"][1]["status"] == "not_run"
+    assert result["checks"][1]["reason"] == "interrupted"
+    assert _read(path) == result
+
+
+def test_main_reports_failed_evidence_path_and_returns_nonzero(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path = tmp_path / "failed.json"
+
+    def failed_run(
+        _root: Path, _checks: tuple[Check, ...], _output_dir: Path
+    ) -> tuple[Path, dict[str, str]]:
+        return path, {"overall": "failed"}
+
+    monkeypatch.setattr(offline_evidence, "run_offline_verification", failed_run)
+    monkeypatch.setattr(signal, "signal", lambda *_args: None)
+    assert offline_evidence.main() == 1
+    assert str(path) in capsys.readouterr().out

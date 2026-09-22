@@ -205,6 +205,8 @@ tempCodeRunnerFile.py
 
 # Ruff stuff:
 .ruff_cache/
+
+# Local offline verification evidence (see docs/verification/offline-evidence.md)
 verification-runs/
 
 # PyPI configuration file

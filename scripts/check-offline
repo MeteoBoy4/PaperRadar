@@ -5,4 +5,4 @@ repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"
 
 export UV_NO_PROGRESS=1
-exec python3 -m scripts.offline_evidence
+exec uv run --offline --locked python -m scripts.offline_evidence

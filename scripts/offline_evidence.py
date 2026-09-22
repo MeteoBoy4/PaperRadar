@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shlex
 import signal
 import subprocess
 import sys
@@ -58,38 +59,38 @@ CONTRACT_VERSION = "v1"
 def default_checks() -> tuple[Check, ...]:
     """唯一的生产离线检查计划; 证据和实际执行共用此计划。"""
     uv = ("uv", "run", "--offline", "--locked")
+
+    def planned_check(check_id: str, command: tuple[str, ...], note: str = "") -> Check:
+        return Check(
+            check_id,
+            command,
+            help_zh=f"请单独运行：{shlex.join(command)}。{note}",
+        )
+
     return (
-        Check(
+        planned_check(
             "lockfile",
             ("uv", "lock", "--check", "--offline"),
-            help_zh="请检查 uv 是否可用，并单独运行 uv lock --check --offline。",
+            "若无法启动，请检查 uv 是否可用。",
         ),
-        Check(
+        planned_check(
             "format",
             (*uv, "ruff", "format", "--check", "src", "tests", "scripts"),
-            help_zh=(
-                "请单独运行 uv run --offline --locked ruff format --check "
-                "src tests scripts。"
-            ),
         ),
-        Check(
+        planned_check(
             "lint",
             (*uv, "ruff", "check", "src", "tests", "scripts"),
-            help_zh=(
-                "请单独运行 uv run --offline --locked ruff check src tests scripts。"
-            ),
         ),
-        Check(
+        planned_check(
             "types",
             (*uv, "mypy"),
-            help_zh="请单独运行 uv run --offline --locked mypy。",
         ),
-        Check(
+        planned_check(
             "tests",
             (*uv, "pytest"),
-            help_zh="请单独运行 uv run --offline --locked pytest，定位失败用例。",
+            "定位失败用例。",
         ),
-        Check(
+        planned_check(
             "contracts",
             (
                 *uv,
@@ -102,7 +103,7 @@ def default_checks() -> tuple[Check, ...]:
                 "--target",
                 "contracts",
             ),
-            help_zh="请单独运行已选契约的 contracts check，查看逐项安全错误类别。",
+            "查看逐项安全错误类别。",
         ),
     )
 
@@ -225,53 +226,12 @@ def _write_evidence(path: Path, evidence: dict[str, Any]) -> None:
         temporary.unlink(missing_ok=True)
 
 
-def run_offline_verification(
+def _run_checks(
     root: Path,
     checks: tuple[Check, ...],
-    output_dir: Path,
-    *,
-    contract_names: tuple[str, ...] = CONTRACT_NAMES,
-    contract_version: str = CONTRACT_VERSION,
-) -> tuple[Path, dict[str, Any]]:
-    """逐项运行检查; 失败停止后续执行, 证据始终区分未运行。"""
-    run_id = uuid.uuid4().hex
-    output_dir.mkdir(parents=True, exist_ok=True)
-    path = output_dir / f"{run_id}.json"
-    evidence: dict[str, Any] = {
-        "format_version": 1,
-        "run_id": run_id,
-        "started_at": _utc_now(),
-        "finished_at": None,
-        "completed": False,
-        "overall": OverallStatus.INCOMPLETE,
-        "scope": {
-            "issue": 12,
-            "claim": "implemented_offline_checks_only",
-            "full_a1_verified": False,
-            "stage_a_verified": False,
-            "not_assessed": [
-                "business_pipeline",
-                "live_sources",
-                "llm",
-                "pdf",
-                "calibration",
-            ],
-        },
-        "code": _git_metadata(root),
-        "lockfile_sha256": _sha256(root / "uv.lock"),
-        "environment": _environment_metadata(root),
-        "contracts": _contract_metadata(root, contract_names, contract_version),
-        "checks": [
-            {
-                "id": check.id,
-                "status": CheckStatus.NOT_RUN,
-                "reason": CheckReason.NOT_STARTED,
-                "exit_code": None,
-            }
-            for check in checks
-        ],
-    }
-    _write_evidence(path, evidence)
+    path: Path,
+    evidence: dict[str, Any],
+) -> bool:
     stopped = False
     interrupted = False
     for index, check in enumerate(checks):
@@ -321,6 +281,84 @@ def run_offline_verification(
             if item["status"] == CheckStatus.FAILED:
                 print(f"[离线检查] 处理：{check.help_zh}", flush=True)
         _write_evidence(path, evidence)
+    return interrupted
+
+
+def run_offline_verification(
+    root: Path,
+    checks: tuple[Check, ...],
+    output_dir: Path,
+    *,
+    contract_names: tuple[str, ...] = CONTRACT_NAMES,
+    contract_version: str = CONTRACT_VERSION,
+) -> tuple[Path, dict[str, Any]]:
+    """逐项运行检查; 失败停止后续执行, 证据始终区分未运行。"""
+    if not checks:
+        raise ValueError("至少一项离线检查必须实际进入计划。")
+    run_id = uuid.uuid4().hex
+    output_dir.mkdir(parents=True, exist_ok=True)
+    path = output_dir / f"{run_id}.json"
+    evidence: dict[str, Any] = {
+        "format_version": 1,
+        "run_id": run_id,
+        "started_at": _utc_now(),
+        "finished_at": None,
+        "completed": False,
+        "overall": OverallStatus.INCOMPLETE,
+        "scope": {
+            "issue": 12,
+            "claim": "implemented_offline_checks_only",
+            "full_a1_verified": False,
+            "stage_a_verified": False,
+            "not_assessed": [
+                "business_pipeline",
+                "live_sources",
+                "llm",
+                "pdf",
+                "calibration",
+            ],
+        },
+        "code": {"commit": None, "dirty": None},
+        "lockfile_sha256": None,
+        "environment": {
+            "python": None,
+            "dependencies": dict.fromkeys(_DEPENDENCY_NAMES),
+            "missing_reason": "not_collected",
+        },
+        "contracts": [
+            {"name": name, "version": contract_version, "schema_sha256": None}
+            for name in contract_names
+        ],
+        "checks": [
+            {
+                "id": check.id,
+                "status": CheckStatus.NOT_RUN,
+                "reason": CheckReason.NOT_STARTED,
+                "exit_code": None,
+            }
+            for check in checks
+        ],
+    }
+    interrupted = False
+    try:
+        _write_evidence(path, evidence)
+        evidence["code"] = _git_metadata(root)
+        evidence["lockfile_sha256"] = _sha256(root / "uv.lock")
+        evidence["environment"] = _environment_metadata(root)
+        evidence["contracts"] = _contract_metadata(
+            root, contract_names, contract_version
+        )
+        _write_evidence(path, evidence)
+        interrupted = _run_checks(root, checks, path, evidence)
+    except KeyboardInterrupt:
+        interrupted = True
+        for item in evidence["checks"]:
+            if (
+                item["status"] == CheckStatus.NOT_RUN
+                and item["reason"] == CheckReason.NOT_STARTED
+            ):
+                item["reason"] = CheckReason.INTERRUPTED
+        print("[离线检查] 运行被中断；本次证据不视为通过。", flush=True)
     evidence["finished_at"] = _utc_now()
     evidence["completed"] = not interrupted
     if not interrupted:
