@@ -1,9 +1,11 @@
 # 离线验证证据
 
-运行仓库根目录的 `./scripts/check-offline`。脚本按固定顺序实际执行 lockfile
+运行仓库根目录的 `./scripts/check-offline`；`./scripts/check-offline --help` 只打印中文
+帮助，不启动检查或写入证据。脚本按固定顺序实际执行 lockfile
 一致性、格式、静态规则、类型、全部离线测试和已选择的冻结契约一致性检查。每次
-运行会在被 Git 忽略的 `verification-runs/<run_id>.json` 生成新文件；终端最后打印
-准确路径和结果。重跑不会覆盖旧证据，也不会沿用旧检查状态。入口使用
+运行会在被 Git 忽略的 `verification-runs/<run_id>.json` 生成 #12 离线证据，
+并在 `verification-runs/<run_id>.a1.json` 生成独立的 #13 A1 结论；终端最后打印
+两个准确路径和结果。重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
 本次尚无证据文件，终端会收到 uv 的非零退出码。
 
@@ -35,6 +37,38 @@
 含敏感输入的原始输出加入验收证据。`contracts` 项的详细失败类别也可通过已存在的
 `paper-radar contracts check` 命令单独查看。
 
-证据记录的是一次实际执行，不等同于 A1 全部完成、阶段 A 完成、真实来源通过或
-模型能力可用。新增已实现冻结契约或声明版本时，同步更新脚本的 `CONTRACT_NAMES`
+证据记录的是一次实际执行；其中 #12 的 `full_a1_verified=false` 与
+`stage_a_verified=false` 保持固定。A1 结论单独核对完整范围，不改写这份证据。
+新增已实现冻结契约或声明版本时，同步更新脚本的 `CONTRACT_NAMES`
 和 `CONTRACT_VERSION`，使检查命令与证据范围一起更新；测试会与权威注册表核对。
+
+## A1 独立结论
+
+`<run_id>.a1.json` 的 `format_version=1`，`status` 只能是 `passed`、`failed`、
+`incomplete`。只有 `a1_verified=true` 才代表 A1 通过；`stage_a_verified`
+始终为 `false`。结论包含固定 `required_checks`、`required_contracts`、声明版本、
+`not_assessed`、本次 `run_id`、证据文件名及其完整字节 SHA-256、HEAD、工作树
+SHA-256 和 lockfile SHA-256；`environment` 保存 Python 与关键依赖版本，
+`checks` 保存逐项状态，`contracts` 保存逐份只读检查结果与当前哈希。工作树哈希
+覆盖 Git 管理的文件及非忽略文件的路径、类型、权限模式和字节；结论只保存哈希，
+不保存文件内容。
+
+判定要求本次证据保留 #12 的固定 scope、`completed=true`、`overall=passed`，
+六个固定检查按顺序全部
+实际通过（`status=passed`、`reason=none`、`exit_code=0`），环境版本完整，
+且四份 v1 快照在结论生成时仍由只读公共检查逐项确认与权威定义一致、与本次证据
+哈希相同。运行前后的 HEAD、工作树与 lockfile 必须相同，并与证据中的 HEAD、
+未提交变更标记和 lockfile 哈希相符。文件时间和历史成功记录不参与判断。
+
+`reasons` 是带 `code`、中文处理建议及可选检查/契约 `item` 的列表。缺快照、
+版本漂移、证据与当前快照哈希不一致、缺少检查或检查跳过/失败均为 `failed`；
+运行未收尾或中断为 `incomplete`。修复后完整重跑会得到新的 `run_id` 和结论，
+旧结果保留。脚本返回 0 仅当新结论通过；否则返回非零。若 uv 尚未启动 Python，
+无本次证据和结论文件，保留 uv 的非零退出码。
+
+固定 A1 范围包括工程与帮助、三种输出的完整验证、原因组合、四份正式快照、
+单份和批量导出/检查、冲突与恢复、隐私和模块边界、机器证据记录。该结论复用
+现有离线测试和固定 `check-offline` 计划，不将未实现规则当作通过。`not_assessed`
+明确列出阶段 A 剩余的 RuntimePlan、持久化、指纹、任务与共享接口、doctor、
+结构化日志、备份恢复和真实来源审计，以及阶段 B 与自动全文精读；A1 通过不开放
+这些能力，也不自动修改父 Issue。

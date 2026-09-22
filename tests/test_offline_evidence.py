@@ -294,7 +294,7 @@ def test_shell_entrypoint_uses_locked_uv_and_preserves_bootstrap_exit_code(
         "--locked",
         "python",
         "-m",
-        "scripts.offline_evidence",
+        "scripts.a1_acceptance",
     ]
 
 
@@ -304,7 +304,7 @@ def test_interrupt_during_identity_collection_retains_parseable_incomplete_evide
     def interrupt(_root: Path) -> None:
         raise KeyboardInterrupt
 
-    monkeypatch.setattr("scripts.offline_evidence._git_metadata", interrupt)
+    monkeypatch.setattr("scripts.offline_evidence.git_metadata", interrupt)
     path, result = run_offline_verification(ROOT, (_check("later", "pass"),), tmp_path)
 
     assert result["overall"] == "incomplete"

@@ -4,5 +4,23 @@ set -euo pipefail
 repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"
 
+if [[ "${1:-}" == "--help" && "$#" -eq 1 ]]; then
+  cat <<'EOF'
+用法：./scripts/check-offline
+
+执行固定完整离线检查：lockfile、格式、静态规则、类型、全部测试与四份冻结契约。
+副作用：在 verification-runs/ 新建本次离线证据和独立 A1 验收结论；不访问网络、数据库或模型。
+结果：只有全部必需检查、快照和本次身份核对通过才返回 0；阶段 A 与自动精读不因此开放。
+常见失败：依赖未准备、检查失败、快照缺失或漂移、运行中断；按结论 reasons 与离线证据定位。
+示例：./scripts/check-offline
+EOF
+  exit 0
+fi
+
+if [[ "$#" -ne 0 ]]; then
+  echo "未知参数；请运行 ./scripts/check-offline --help。" >&2
+  exit 2
+fi
+
 export UV_NO_PROGRESS=1
-exec uv run --offline --locked python -m scripts.offline_evidence
+exec uv run --offline --locked python -m scripts.a1_acceptance

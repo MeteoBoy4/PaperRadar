@@ -61,6 +61,9 @@ Screening 冻结契约。
 若依赖尚未准备好，离线检查会明确失败，不会联网补装。
 
 示例：`paper-radar --help`
+
+A1 验收：在仓库根目录运行 `./scripts/check-offline`；本次离线证据和独立结论
+写入 `verification-runs/`。A1 通过不表示阶段 A 或自动精读已验收。
 """
 
 CONTRACTS_HELP = f"""\

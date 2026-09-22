@@ -207,3 +207,7 @@ Schema、规范序列化、清单字段、SHA-256 判据与错误类别，不维
 `scripts/check-offline` 在全部测试之后用一次 `contracts check` 显式选择
 `boundary`、`value-prediction`、`reuse-assessment` 和 `decision-reasons`。完整离线
 入口因此实际执行整组检查；任一项失败时命令仍报告全部四项，最后以非零退出。
+入口随后生成独立的 A1 结论：只有本次固定计划全部通过、四份磁盘快照再次只读
+核验并与本次证据哈希一致、HEAD/工作树/lockfile 在运行前后保持一致，才宣布
+A1 通过。`<run_id>.json` 仍只表示 #12 局部证据；完整结论见同目录的
+`<run_id>.a1.json`，解释见[离线验证证据](../verification/offline-evidence.md)。

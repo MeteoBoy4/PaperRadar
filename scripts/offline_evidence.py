@@ -112,14 +112,14 @@ def _utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
-def _sha256(path: Path) -> str | None:
+def file_sha256(path: Path) -> str | None:
     try:
         return hashlib.sha256(path.read_bytes()).hexdigest()
     except OSError:
         return None
 
 
-def _git_metadata(root: Path) -> dict[str, str | bool | None]:
+def git_metadata(root: Path) -> dict[str, str | bool | None]:
     try:
         commit = subprocess.run(
             ("git", "rev-parse", "HEAD"),
@@ -203,7 +203,7 @@ def _contract_metadata(
         {
             "name": name,
             "version": version,
-            "schema_sha256": _sha256(
+            "schema_sha256": file_sha256(
                 root / "contracts" / "screening" / name / version / "schema.json"
             ),
         }
@@ -342,8 +342,8 @@ def run_offline_verification(
     interrupted = False
     try:
         _write_evidence(path, evidence)
-        evidence["code"] = _git_metadata(root)
-        evidence["lockfile_sha256"] = _sha256(root / "uv.lock")
+        evidence["code"] = git_metadata(root)
+        evidence["lockfile_sha256"] = file_sha256(root / "uv.lock")
         evidence["environment"] = _environment_metadata(root)
         evidence["contracts"] = _contract_metadata(
             root, contract_names, contract_version
