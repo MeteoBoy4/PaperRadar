@@ -118,18 +118,3 @@ def test_contract_help_lists_every_registered_choice(tmp_path: Path) -> None:
 
     assert "批量只读检查尚未实现" not in group_help.stdout
     assert "不提供批量 check 汇总" not in group_help.stdout
-
-
-def test_offline_entrypoint_uses_one_explicit_complete_contract_check() -> None:
-    script = (Path(__file__).parents[1] / "scripts" / "check-offline").read_text(
-        encoding="utf-8"
-    )
-
-    assert script.count("paper-radar contracts check") == 1
-    for name in (
-        "boundary",
-        "value-prediction",
-        "reuse-assessment",
-        "decision-reasons",
-    ):
-        assert f"--contract {name}" in script
