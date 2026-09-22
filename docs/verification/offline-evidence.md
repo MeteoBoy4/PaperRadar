@@ -44,27 +44,35 @@
 
 ## A1 独立结论
 
-`<run_id>.a1.json` 的 `format_version=1`，`status` 只能是 `passed`、`failed`、
-`incomplete`。只有 `a1_verified=true` 才代表 A1 通过；`stage_a_verified`
-始终为 `false`。结论包含固定 `required_checks`、`required_contracts`、声明版本、
-`not_assessed`、本次 `run_id`、证据文件名及其完整字节 SHA-256、HEAD、工作树
-SHA-256 和 lockfile SHA-256；`environment` 保存 Python 与关键依赖版本，
-`checks` 保存逐项状态，`contracts` 保存逐份只读检查结果与当前哈希。工作树哈希
-覆盖 Git 管理的文件及非忽略文件的路径、类型、权限模式和字节；结论只保存哈希，
-不保存文件内容。
+`<run_id>.a1.json` 的格式版本为 `1`，字段如下：
+
+| 字段 | 含义 |
+| --- | --- |
+| `run_id`、`evidence_file`、`evidence_sha256` | 绑定本次 #12 证据的运行标识、文件名与完整字节哈希。 |
+| `scope`、`issue`、`not_assessed` | 固定 A1 范围、Issue #13 与明确未验收的阶段 A/B 能力。 |
+| `required_checks`、`checks` | 固定六项检查的顺序与本次逐项状态、原因、退出码。 |
+| `required_test_modules`、`test_modules` | A1 已交付能力测试的固定路径/内容哈希与本次逐项核对结果。 |
+| `required_contracts`、`contract_version`、`contracts` | 四份 v1 契约的固定选择与本次只读核对结果、实际哈希。 |
+| `code`、`worktree_sha256`、`lockfile_sha256` | 本次 HEAD、未提交变更标记，以及工作树和锁文件的哈希。工作树哈希覆盖 Git 管理及非忽略文件的路径、类型、权限模式和字节。 |
+| `environment` | Python 与关键依赖版本；缺失时不能通过。 |
+| `status`、`a1_verified`、`stage_a_verified`、`reasons` | `status` 为 `passed`、`failed` 或 `incomplete`；只有 `a1_verified=true` 代表 A1 通过，`stage_a_verified` 固定为 `false`；失败原因带受控代码、中文建议及可选项目名。 |
+
+结论只保存哈希，不保存测试、快照或工作树文件内容。固定测试范围记录在
+`scripts/a1_scope.py`；有意修改这些测试时须审查对应能力，并同步更新哈希。
+`tests` 检查不继承外部 `PYTEST_ADDOPTS`，避免环境变量暗中缩小固定测试范围。
 
 判定要求本次证据保留 #12 的固定 scope、`completed=true`、`overall=passed`，
-六个固定检查按顺序全部
-实际通过（`status=passed`、`reason=none`、`exit_code=0`），环境版本完整，
+六个固定检查按顺序全部实际通过（`status=passed`、`reason=none`、
+`exit_code=0`），固定测试模块均存在且内容匹配，环境版本完整，
 且四份 v1 快照在结论生成时仍由只读公共检查逐项确认与权威定义一致、与本次证据
 哈希相同。运行前后的 HEAD、工作树与 lockfile 必须相同，并与证据中的 HEAD、
 未提交变更标记和 lockfile 哈希相符。文件时间和历史成功记录不参与判断。
 
-`reasons` 是带 `code`、中文处理建议及可选检查/契约 `item` 的列表。缺快照、
-版本漂移、证据与当前快照哈希不一致、缺少检查或检查跳过/失败均为 `failed`；
-运行未收尾或中断为 `incomplete`。修复后完整重跑会得到新的 `run_id` 和结论，
-旧结果保留。脚本返回 0 仅当新结论通过；否则返回非零。若 uv 尚未启动 Python，
-无本次证据和结论文件，保留 uv 的非零退出码。
+缺快照、版本漂移、证据与当前快照哈希不一致、测试模块缺失或漂移、检查跳过/失败
+均为 `failed`；可捕获的运行中断为 `incomplete`。修复后完整重跑会得到新的
+`run_id` 和结论，旧结果保留。脚本返回 0 仅当新结论通过；否则返回非零。
+若 uv 尚未启动 Python 或进程被强制终止，可能没有本次结论文件；前者保留 uv 的
+非零退出码，后者已有的 #12 证据仍不能作为 A1 通过。
 
 固定 A1 范围包括工程与帮助、三种输出的完整验证、原因组合、四份正式快照、
 单份和批量导出/检查、冲突与恢复、隐私和模块边界、机器证据记录。该结论复用

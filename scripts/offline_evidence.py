@@ -14,7 +14,12 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
+
+
+class CodeIdentity(TypedDict):
+    commit: str | None
+    dirty: bool | None
 
 
 class CheckStatus(StrEnum):
@@ -119,7 +124,7 @@ def file_sha256(path: Path) -> str | None:
         return None
 
 
-def git_metadata(root: Path) -> dict[str, str | bool | None]:
+def git_metadata(root: Path) -> CodeIdentity:
     try:
         commit = subprocess.run(
             ("git", "rev-parse", "HEAD"),
@@ -245,9 +250,13 @@ def _run_checks(
         else:
             print(f"[离线检查] {check.id}", flush=True)
             try:
+                environment = os.environ.copy()
+                if check.id == "tests":
+                    environment.pop("PYTEST_ADDOPTS", None)
                 result = subprocess.run(
                     check.command,
                     cwd=root,
+                    env=environment,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     check=False,

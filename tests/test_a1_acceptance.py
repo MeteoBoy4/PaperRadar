@@ -13,6 +13,7 @@ from typing import Any, cast
 
 import pytest
 
+from paper_radar.contracts import ContractCheckError, ContractCheckErrorCategory
 from scripts import a1_acceptance
 from scripts.offline_evidence import CONTRACT_NAMES, CONTRACT_VERSION, default_checks
 
@@ -187,8 +188,14 @@ def test_missing_required_check_rejects_a1(tmp_path: Path) -> None:
 
 
 def test_shell_help_does_not_create_evidence(tmp_path: Path) -> None:
+    subprocess.run(("git", "init", "-q", str(tmp_path)), check=True)
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    wrapper = scripts / "check-offline"
+    wrapper.write_bytes((ROOT / "scripts/check-offline").read_bytes())
+    wrapper.chmod(0o755)
     result = subprocess.run(
-        (str(ROOT / "scripts/check-offline"), "--help"),
+        (str(wrapper), "--help"),
         cwd=tmp_path,
         capture_output=True,
         text=True,
@@ -196,7 +203,9 @@ def test_shell_help_does_not_create_evidence(tmp_path: Path) -> None:
     )
     assert result.returncode == 0
     assert "A1" in result.stdout
-    assert list(tmp_path.iterdir()) == []
+    assert "[离线检查]" not in result.stdout
+    assert "[A1 验收]" not in result.stdout
+    assert not (tmp_path / "verification-runs").exists()
 
 
 def test_worktree_identity_detects_executable_mode_change(tmp_path: Path) -> None:
@@ -215,6 +224,52 @@ def test_worktree_identity_detects_executable_mode_change(tmp_path: Path) -> Non
     assert first != second
 
 
+def test_deleted_tracked_file_keeps_a_deterministic_worktree_hash(
+    tmp_path: Path,
+) -> None:
+    subprocess.run(("git", "init", "-q", str(tmp_path)), check=True)
+    tracked = tmp_path / "tracked.txt"
+    tracked.write_text("fixture")
+    subprocess.run(("git", "add", "tracked.txt"), cwd=tmp_path, check=True)
+    before = a1_acceptance.capture_identity(tmp_path).worktree_sha256
+
+    tracked.unlink()
+    after = a1_acceptance.capture_identity(tmp_path).worktree_sha256
+
+    assert before is not None
+    assert after is not None
+    assert before != after
+
+
+def test_unreadable_evidence_reports_only_its_direct_cause(tmp_path: Path) -> None:
+    target, evidence_path, _ = _case(tmp_path)
+    evidence_path.write_text("{")
+
+    result = _conclude(tmp_path, target, evidence_path)
+    assert result["status"] == "failed"
+    assert [reason["code"] for reason in result["reasons"]] == ["evidence_unavailable"]
+
+
+def test_invalid_contract_selection_has_specific_reason(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target, evidence_path, _ = _case(tmp_path)
+
+    def invalid_selection(*_args: object) -> None:
+        raise ContractCheckError(
+            ContractCheckErrorCategory.INVALID_SELECTION, "fixture"
+        )
+
+    monkeypatch.setattr(a1_acceptance, "check_frozen_contracts", invalid_selection)
+    result = _conclude(tmp_path, target, evidence_path)
+
+    assert result["status"] == "failed"
+    assert any(
+        reason["code"] == "contract_scope_mismatch" for reason in result["reasons"]
+    )
+    assert not any(reason["code"] == "snapshot_invalid" for reason in result["reasons"])
+
+
 def test_fixed_entry_plan_pairs_new_evidence_and_conclusion_for_each_run(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -222,6 +277,11 @@ def test_fixed_entry_plan_pairs_new_evidence_and_conclusion_for_each_run(
     root.mkdir()
     subprocess.run(("git", "init", "-q", str(root)), check=True)
     shutil.copytree(ROOT / "contracts", root / "contracts")
+    shutil.copytree(
+        ROOT / "tests",
+        root / "tests",
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
     shutil.copy2(ROOT / "uv.lock", root / "uv.lock")
     shutil.copy2(ROOT / "pyproject.toml", root / "pyproject.toml")
     subprocess.run(("git", "add", "."), cwd=root, check=True)
@@ -254,12 +314,17 @@ def test_fixed_entry_plan_pairs_new_evidence_and_conclusion_for_each_run(
         "#!/bin/sh\n"
         'case "$*" in\n'
         f'  *"python -c"*) printf "%s\\n" \'{environment_json}\' ;;\n'
+        '  *" pytest"*) '
+        'printf "%s" "${PYTEST_ADDOPTS-unset}" > "$A1_TEST_PYTEST_ENV_FILE" ;;\n'
         '  *"contracts check"*) '
         'if [ "${A1_TEST_INTERRUPT:-}" = 1 ]; then kill -TERM $$; fi ;;\n'
         "esac\nexit 0\n"
     )
     fake_uv.chmod(0o755)
     monkeypatch.setenv("PATH", f"{binary_dir}:{os.environ['PATH']}")
+    marker = tmp_path / "pytest-addopts"
+    monkeypatch.setenv("A1_TEST_PYTEST_ENV_FILE", str(marker))
+    monkeypatch.setenv("PYTEST_ADDOPTS", "-k no_such_case")
     output_dir = tmp_path / "runs"
 
     def run() -> tuple[Path, dict[str, Any]]:
@@ -273,6 +338,42 @@ def test_fixed_entry_plan_pairs_new_evidence_and_conclusion_for_each_run(
     assert len(normal["checks"]) == 6
     assert len(normal["contracts"]) == 4
     assert normal["environment"]["python"] == "3.14.0"
+    assert marker.read_text() == "unset"
+
+    required = root / "tests/test_contract_export.py"
+    required.unlink()
+    _, missing_test = run()
+    assert missing_test["status"] == "failed"
+    assert any(
+        reason["code"] == "test_scope_mismatch" for reason in missing_test["reasons"]
+    )
+    shutil.copy2(ROOT / "tests/test_contract_export.py", required)
+    required.write_bytes(required.read_bytes() + b"\n")
+    _, drifted_test = run()
+    assert drifted_test["status"] == "failed"
+    assert any(
+        reason["code"] == "test_scope_mismatch" for reason in drifted_test["reasons"]
+    )
+    shutil.copy2(ROOT / "tests/test_contract_export.py", required)
+
+    original_capture = a1_acceptance.capture_identity
+    capture_calls = 0
+
+    def interrupt_after_checks(path: Path) -> a1_acceptance.RunIdentity:
+        nonlocal capture_calls
+        capture_calls += 1
+        if capture_calls == 2:
+            raise KeyboardInterrupt
+        return original_capture(path)
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(a1_acceptance, "capture_identity", interrupt_after_checks)
+        _, interrupted_after_checks = run()
+    assert interrupted_after_checks["status"] == "incomplete"
+    assert any(
+        reason["code"] == "run_incomplete"
+        for reason in interrupted_after_checks["reasons"]
+    )
 
     schema = root / "contracts/screening/boundary/v1/schema.json"
     schema.unlink()
@@ -316,6 +417,9 @@ def test_fixed_entry_plan_pairs_new_evidence_and_conclusion_for_each_run(
         len(
             {
                 normal["run_id"],
+                missing_test["run_id"],
+                drifted_test["run_id"],
+                interrupted_after_checks["run_id"],
                 missing["run_id"],
                 drift["run_id"],
                 skipped["run_id"],
@@ -323,5 +427,5 @@ def test_fixed_entry_plan_pairs_new_evidence_and_conclusion_for_each_run(
                 repaired["run_id"],
             }
         )
-        == 6
+        == 9
     )

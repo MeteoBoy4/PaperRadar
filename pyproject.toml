@@ -41,4 +41,4 @@ ignore = ["RUF001"] # 中文用户界面需要全角标点。
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["src", "tests"]
+files = ["src", "tests", "scripts"]
