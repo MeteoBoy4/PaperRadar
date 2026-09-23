@@ -9,12 +9,12 @@ import typer
 
 from paper_radar.contracts import (
     ContractBatchCheckResult,
-    ContractBatchExportError,
+    ContractBatchExportResult,
     ContractCheckError,
     ContractCheckItemResult,
     ContractCheckOutcome,
     ContractExportError,
-    ContractExportResult,
+    ContractExportItemResult,
     ContractName,
     ContractVersion,
     ExportOutcome,
@@ -167,36 +167,25 @@ contracts_app = typer.Typer(
 app.add_typer(contracts_app, name="contracts")
 
 
-def _write_export_result(result: ContractExportResult) -> None:
-    if result.outcome is ExportOutcome.CREATED:
-        status = "已创建冻结契约"
+def _write_export_item(item: ContractExportItemResult) -> None:
+    identity = f"{item.name.value} {item.version.value}"
+    if item.outcome in (ExportOutcome.CREATED, ExportOutcome.UNCHANGED):
+        typer.echo(
+            f"{identity}：{item.message_zh}："
+            f"{item.snapshot_dir}（SHA-256: {item.schema_sha256}）"
+        )
+    elif item.outcome is ExportOutcome.FAILED:
+        category = (
+            item.error_category.value if item.error_category is not None else "none"
+        )
+        typer.echo(f"{identity}：未完成 [{category}]：{item.message_zh}", err=True)
     else:
-        status = "冻结契约内容一致，未改写"
-    typer.echo(
-        f"{result.name.value} {result.version.value}：{status}："
-        f"{result.snapshot_dir}（SHA-256: {result.schema_sha256}）"
-    )
+        typer.echo(f"{identity}：未完成：{item.message_zh}", err=True)
 
 
-def _write_batch_export_failure(error: ContractBatchExportError) -> None:
-    completed = {result.name: result for result in error.completed}
-    failures = {failure.name: failure for failure in error.failures}
-    for name in error.selected_names:
-        if name in completed:
-            _write_export_result(completed[name])
-        elif name in failures:
-            failure = failures[name]
-            typer.echo(
-                f"{name.value} {error.version.value}：未完成 "
-                f"[{failure.category.value}]：{failure.message_zh}",
-                err=True,
-            )
-        else:
-            typer.echo(
-                f"{name.value} {error.version.value}：未完成："
-                "批量导出已停止；修复上述问题后原命令重跑即可补齐。",
-                err=True,
-            )
+def _write_batch_export_result(result: ContractBatchExportResult) -> None:
+    for item in result.items:
+        _write_export_item(item)
 
 
 def _write_check_item(result: ContractCheckItemResult, *, err: bool) -> None:
@@ -246,16 +235,14 @@ def export_contract_command(
 ) -> None:
     """预检后导出一份或多份不可覆盖的冻结契约。"""
     try:
-        results = export_frozen_contracts(contract, version, target)
-    except ContractBatchExportError as error:
-        _write_batch_export_failure(error)
-        raise typer.Exit(code=2) from None
+        result = export_frozen_contracts(contract, version, target)
     except ContractExportError as error:
         typer.echo(f"导出失败 [{error.category.value}]：{error}", err=True)
         raise typer.Exit(code=2) from None
 
-    for result in results:
-        _write_export_result(result)
+    _write_batch_export_result(result)
+    if not result.passed:
+        raise typer.Exit(code=2)
 
 
 @contracts_app.command("check", help=CHECK_HELP)

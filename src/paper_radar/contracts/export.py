@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+from typing import Literal
 
 from paper_radar.contracts.errors import (
     ContractExportError,
@@ -36,6 +37,8 @@ class ExportOutcome(StrEnum):
 
     CREATED = "created"
     UNCHANGED = "unchanged"
+    FAILED = "failed"
+    NOT_ATTEMPTED = "not_attempted"
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,38 +47,43 @@ class ContractExportResult:
 
     name: ContractName
     version: ContractVersion
-    outcome: ExportOutcome
+    outcome: Literal[ExportOutcome.CREATED, ExportOutcome.UNCHANGED]
     snapshot_dir: Path
     schema_sha256: str
 
 
 @dataclass(frozen=True, slots=True)
-class ContractBatchExportFailure:
-    """批量预检或发布中某一份契约的受控失败。"""
+class ContractExportItemResult:
+    """批量导出中一份契约的完整结果。"""
 
     name: ContractName
-    category: ContractExportErrorCategory
+    version: ContractVersion
+    outcome: ExportOutcome
+    error_category: ContractExportErrorCategory | None
     message_zh: str
+    snapshot_dir: Path | None
+    schema_sha256: str | None
 
 
-class ContractBatchExportError(ContractExportError):
-    """批量导出未完整成功并保留逐份报告所需的安全状态。"""
+@dataclass(frozen=True, slots=True)
+class ContractBatchExportResult:
+    """按声明顺序排列的逐份导出结果。"""
 
-    def __init__(
-        self,
-        failures: tuple[ContractBatchExportFailure, ...],
-        selected_names: tuple[ContractName, ...],
-        version: ContractVersion,
-        completed: tuple[ContractExportResult, ...],
-    ) -> None:
-        if not failures:
-            raise ValueError("批量导出错误至少包含一项失败。")
-        first_failure = failures[0]
-        self.failures = failures
-        self.selected_names = selected_names
-        self.version = version
-        self.completed = completed
-        super().__init__(first_failure.category, first_failure.message_zh)
+    items: tuple[ContractExportItemResult, ...]
+
+    @property
+    def passed(self) -> bool:
+        return bool(self.items) and all(
+            item.outcome in (ExportOutcome.CREATED, ExportOutcome.UNCHANGED)
+            for item in self.items
+        )
+
+
+_OUTCOME_MESSAGES_ZH = {
+    ExportOutcome.CREATED: "已创建冻结契约",
+    ExportOutcome.UNCHANGED: "冻结契约内容一致，未改写",
+    ExportOutcome.NOT_ATTEMPTED: "批量导出已停止；修复上述问题后原命令重跑即可补齐。",
+}
 
 
 def _write_durable_file(path: Path, content: bytes) -> None:
@@ -137,7 +145,7 @@ def _create_snapshot(snapshot_dir: Path, contract: FrozenContract) -> None:
 
 def _successful_result(
     contract: FrozenContract,
-    outcome: ExportOutcome,
+    outcome: Literal[ExportOutcome.CREATED, ExportOutcome.UNCHANGED],
     snapshot_dir: Path,
 ) -> ContractExportResult:
     return ContractExportResult(
@@ -180,6 +188,46 @@ def _export_ready_contract(
     return _publish_prepared_contract(contract, ready.snapshot_dir)
 
 
+def _completed_item(result: ContractExportResult) -> ContractExportItemResult:
+    return ContractExportItemResult(
+        name=result.name,
+        version=result.version,
+        outcome=result.outcome,
+        error_category=None,
+        message_zh=_OUTCOME_MESSAGES_ZH[result.outcome],
+        snapshot_dir=result.snapshot_dir,
+        schema_sha256=result.schema_sha256,
+    )
+
+
+def _failed_item(
+    contract: FrozenContract,
+    category: ContractExportErrorCategory,
+    guidance_zh: str,
+) -> ContractExportItemResult:
+    return ContractExportItemResult(
+        name=contract.name,
+        version=contract.version,
+        outcome=ExportOutcome.FAILED,
+        error_category=category,
+        message_zh=guidance_zh,
+        snapshot_dir=None,
+        schema_sha256=None,
+    )
+
+
+def _not_attempted_item(contract: FrozenContract) -> ContractExportItemResult:
+    return ContractExportItemResult(
+        name=contract.name,
+        version=contract.version,
+        outcome=ExportOutcome.NOT_ATTEMPTED,
+        error_category=None,
+        message_zh=_OUTCOME_MESSAGES_ZH[ExportOutcome.NOT_ATTEMPTED],
+        snapshot_dir=None,
+        schema_sha256=None,
+    )
+
+
 def export_frozen_contract(
     name: ContractName | str,
     version: ContractVersion | str,
@@ -198,67 +246,47 @@ def export_frozen_contract(
     return _export_ready_contract(contract, verdict)
 
 
-def _ordered_results(
-    selected_names: tuple[ContractName, ...],
-    results_by_name: dict[ContractName, ContractExportResult],
-) -> tuple[ContractExportResult, ...]:
-    return tuple(
-        results_by_name[name] for name in selected_names if name in results_by_name
-    )
-
-
 def export_frozen_contracts(
     names: Iterable[ContractName | str],
     version: ContractVersion | str,
     target: Path | str,
-) -> tuple[ContractExportResult, ...]:
+) -> ContractBatchExportResult:
     """预检后按声明顺序导出多份契约且不承诺跨快照事务。"""
     contracts = _select_contracts(names, version)
-    selected_names = tuple(contract.name for contract in contracts)
-    controlled_version = contracts[0].version
     prepared: list[tuple[FrozenContract, ExportReady]] = []
-    preflight_failures: list[ContractBatchExportFailure] = []
-    results_by_name: dict[ContractName, ContractExportResult] = {}
+    items_by_name: dict[ContractName, ContractExportItemResult] = {}
+    preflight_failed = False
 
     for contract in contracts:
         verdict = verdict_for_export(target, contract)
         if isinstance(verdict, ExportBlocked):
-            preflight_failures.append(
-                ContractBatchExportFailure(
-                    name=contract.name,
-                    category=verdict.category,
-                    message_zh=verdict.guidance_zh,
-                )
+            items_by_name[contract.name] = _failed_item(
+                contract, verdict.category, verdict.guidance_zh
             )
+            preflight_failed = True
             continue
         if verdict.relation is ExportRelation.MATCHED:
-            results_by_name[contract.name] = _export_ready_contract(contract, verdict)
+            items_by_name[contract.name] = _completed_item(
+                _export_ready_contract(contract, verdict)
+            )
         else:
             prepared.append((contract, verdict))
 
-    if preflight_failures:
-        raise ContractBatchExportError(
-            failures=tuple(preflight_failures),
-            selected_names=selected_names,
-            version=controlled_version,
-            completed=_ordered_results(selected_names, results_by_name),
-        )
-
+    publish_stopped = preflight_failed
     for contract, ready in prepared:
+        if publish_stopped:
+            items_by_name[contract.name] = _not_attempted_item(contract)
+            continue
         try:
-            results_by_name[contract.name] = _export_ready_contract(contract, ready)
+            items_by_name[contract.name] = _completed_item(
+                _export_ready_contract(contract, ready)
+            )
         except ContractExportError as error:
-            raise ContractBatchExportError(
-                failures=(
-                    ContractBatchExportFailure(
-                        name=contract.name,
-                        category=error.category,
-                        message_zh=str(error),
-                    ),
-                ),
-                selected_names=selected_names,
-                version=controlled_version,
-                completed=_ordered_results(selected_names, results_by_name),
-            ) from error
+            items_by_name[contract.name] = _failed_item(
+                contract, error.category, str(error)
+            )
+            publish_stopped = True
 
-    return _ordered_results(selected_names, results_by_name)
+    return ContractBatchExportResult(
+        items=tuple(items_by_name[contract.name] for contract in contracts)
+    )

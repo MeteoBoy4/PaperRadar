@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from paper_radar.contracts import (
-    ContractBatchExportError,
+    ContractBatchExportResult,
     ContractExportError,
     ContractExportErrorCategory,
     ContractName,
@@ -17,6 +17,7 @@ from paper_radar.contracts import (
     ExportOutcome,
     build_frozen_contract,
     export_frozen_contract,
+    export_frozen_contracts,
 )
 from tests.contract_snapshot_support import canonical_json_bytes
 
@@ -26,14 +27,130 @@ def _snapshot_files(root: Path) -> tuple[Path, Path]:
     return snapshot_dir / "schema.json", snapshot_dir / "manifest.json"
 
 
-def test_batch_export_error_requires_at_least_one_failure() -> None:
-    with pytest.raises(ValueError, match="至少包含一项失败"):
-        ContractBatchExportError(
-            failures=(),
-            selected_names=(ContractName.BOUNDARY,),
-            version=ContractVersion.V1,
-            completed=(),
-        )
+def test_batch_preflight_reports_each_item_without_publishing(tmp_path: Path) -> None:
+    root = tmp_path / "contracts"
+    export_frozen_contract("reuse-assessment", "v1", root)
+    export_frozen_contract("decision-reasons", "v1", root)
+    broken = root / "screening" / "decision-reasons" / "v1" / "schema.json"
+    broken.write_text('{"broken": true}\n', encoding="utf-8")
+
+    result = export_frozen_contracts(tuple(ContractName), "v1", root)
+
+    assert isinstance(result, ContractBatchExportResult)
+    assert result.passed is False
+    assert [item.outcome for item in result.items] == [
+        ExportOutcome.NOT_ATTEMPTED,
+        ExportOutcome.NOT_ATTEMPTED,
+        ExportOutcome.UNCHANGED,
+        ExportOutcome.FAILED,
+    ]
+    assert result.items[2].snapshot_dir == (
+        root / "screening" / "reuse-assessment" / "v1"
+    )
+    assert result.items[2].schema_sha256 is not None
+    assert result.items[2].error_category is None
+    assert (
+        result.items[3].error_category is ContractExportErrorCategory.DAMAGED_SNAPSHOT
+    )
+    assert result.items[3].snapshot_dir is None
+    assert result.items[3].schema_sha256 is None
+    assert result.items[0].error_category is None
+    assert result.items[0].snapshot_dir is None
+    assert result.items[0].schema_sha256 is None
+    assert result.items[0].message_zh == result.items[1].message_zh
+    assert not (root / "screening" / "boundary").exists()
+
+
+def test_batch_publish_failure_keeps_later_matched_item_unchanged(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "contracts"
+    export_frozen_contract("reuse-assessment", "v1", root)
+    replace = os.replace
+    calls = 0
+
+    def fail_second_publish(source: Path, destination: Path) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("synthetic-secret-publish-failure")
+        replace(source, destination)
+
+    monkeypatch.setattr(os, "replace", fail_second_publish)
+
+    result = export_frozen_contracts(tuple(ContractName), "v1", root)
+
+    assert result.passed is False
+    assert [item.outcome for item in result.items] == [
+        ExportOutcome.CREATED,
+        ExportOutcome.FAILED,
+        ExportOutcome.UNCHANGED,
+        ExportOutcome.NOT_ATTEMPTED,
+    ]
+    assert result.items[1].error_category is ContractExportErrorCategory.WRITE_FAILED
+    assert "synthetic-secret" not in result.items[1].message_zh
+    assert result.items[2].error_category is None
+    assert result.items[3].message_zh == (
+        "批量导出已停止；修复上述问题后原命令重跑即可补齐。"
+    )
+
+
+def test_single_and_single_item_batch_export_have_equal_outcomes(
+    tmp_path: Path,
+) -> None:
+    for state in ("absent", "matched", "damaged"):
+        single_root = tmp_path / state / "single"
+        batch_root = tmp_path / state / "batch"
+        if state != "absent":
+            export_frozen_contract("boundary", "v1", single_root)
+            export_frozen_contract("boundary", "v1", batch_root)
+        if state == "damaged":
+            for root in (single_root, batch_root):
+                schema, _manifest = _snapshot_files(root)
+                schema.write_text('{"broken": true}\n', encoding="utf-8")
+
+        batch = export_frozen_contracts(("boundary",), "v1", batch_root)
+        item = batch.items[0]
+        assert item.name is ContractName.BOUNDARY
+        assert item.version is ContractVersion.V1
+        if state == "damaged":
+            with pytest.raises(ContractExportError) as captured:
+                export_frozen_contract("boundary", "v1", single_root)
+            assert item.outcome is ExportOutcome.FAILED
+            assert item.error_category is captured.value.category
+            assert item.message_zh == str(captured.value)
+            assert item.snapshot_dir is None
+            assert item.schema_sha256 is None
+        else:
+            single = export_frozen_contract("boundary", "v1", single_root)
+            assert item.outcome is single.outcome
+            assert item.name is single.name
+            assert item.version is single.version
+            assert item.snapshot_dir == batch_root / single.snapshot_dir.relative_to(
+                single_root
+            )
+            assert item.schema_sha256 == single.schema_sha256
+            assert item.error_category is None
+            assert item.message_zh == (
+                "已创建冻结契约"
+                if single.outcome is ExportOutcome.CREATED
+                else "冻结契约内容一致，未改写"
+            )
+            assert batch.passed is True
+
+    for selection, version in (
+        (("unknown",), "v1"),
+        (("boundary",), "v2"),
+        (("boundary", "boundary"), "v1"),
+        ((), "v1"),
+    ):
+        with pytest.raises(ContractExportError) as captured:
+            export_frozen_contracts(selection, version, tmp_path / "invalid")
+        assert captured.value.category is ContractExportErrorCategory.INVALID_SELECTION
+        if len(selection) == 1:
+            with pytest.raises(ContractExportError) as single_error:
+                export_frozen_contract(selection[0], version, tmp_path / "invalid")
+            assert str(captured.value) == str(single_error.value)
 
 
 def test_first_export_creates_complete_snapshot_and_repeat_does_not_rewrite(

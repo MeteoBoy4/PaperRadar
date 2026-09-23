@@ -147,20 +147,32 @@ screening/
 
 ## 受控结果与错误
 
-`export_frozen_contracts` 按声明顺序返回一组 `ContractExportResult`；单份入口返回
-一个结果。`outcome` 只有两个成功值：
+`export_frozen_contracts` 按声明顺序返回 `ContractBatchExportResult.items`，每份
+契约对应一个 `ContractExportItemResult`；逐份预检或发布失败也返回结果，不抛异常。
+只有选择无效时，才在生成任何 item 前整体抛出 `ContractExportError`。
+单份入口成功时返回 `ContractExportResult`，其 `outcome` 在类型上只可能是
+`created` 或 `unchanged`；失败仍抛出 `ContractExportError`。
 
-| 值 | 含义 |
-| --- | --- |
-| `created` | 首次发布了完整快照 |
-| `unchanged` | 既有快照逐字节一致，未执行改写 |
+| `outcome` | 中文描述 | 含义与操作 |
+| --- | --- | --- |
+| `created` | 已创建冻结契约 | 首次发布了完整快照。 |
+| `unchanged` | 冻结契约内容一致，未改写 | 既有快照逐字节一致，未执行改写。 |
+| `failed` | 逐份判决的中文指引 | 该份预检或发布失败；按 `error_category` 和指引处理。 |
+| `not_attempted` | 批量导出已停止；修复上述问题后原命令重跑即可补齐。 | 其他项预检失败，或发布阶段首次失败后，该份原本待发布的缺失快照没有尝试；两种成因均修复问题后用原命令重跑。预检时已匹配的快照始终为 `unchanged`。 |
 
-失败抛出 `ContractExportError`；`category` 使用以下完整受控词汇，消息只提供中文
-操作指引，不包含文件内容或底层异常文本：
+逐项结果字段如下。判别字段是 `outcome`；`error_category=None` 不代表成功，
+`not_attempted` 的该字段同样为 `None`。只有全部 item 为 `created` 或
+`unchanged` 时，批量结果的 `passed` 才为真。
 
-批量发布期间的失败使用其子类 `ContractBatchExportError`，额外携带已完成结果、
-逐份失败和完整选择顺序，供 CLI 安全报告“已创建 / 未改写 / 未完成”；不会携带
-Schema 内容、输入或底层异常文本。
+| 字段 | `created` / `unchanged` | `failed` | `not_attempted` |
+| --- | --- | --- | --- |
+| `name`、`version` | 所选契约身份 | 所选契约身份 | 所选契约身份 |
+| `outcome` | 对应成功值 | `failed` | `not_attempted` |
+| `error_category` | `None` | 下表类别 | `None` |
+| `message_zh` | 上表中文描述 | 失败判决的中文指引 | 上表中文描述 |
+| `snapshot_dir`、`schema_sha256` | 快照路径和 SHA-256 | `None` | `None` |
+
+失败类别使用以下完整受控词汇，中文指引不包含文件内容或底层异常文本：
 
 | 类别 | 含义与操作 |
 | --- | --- |

@@ -27,7 +27,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_contract_export.py",
-        "f9a9c0f2274b4cafc11cd5b01d18393f5ca4b46f8f6d5b6c13dd067f9ccf349c",
+        "62e522d92351f71103b982e90ae384b382f0c9facf4853dc2953d140137aa2ea",
     ),
     (
         "tests/test_contract_check.py",
