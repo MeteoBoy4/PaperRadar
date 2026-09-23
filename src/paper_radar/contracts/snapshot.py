@@ -210,17 +210,20 @@ class CheckBlocked:
     guidance_zh: str
 
 
-_PATH_FAILURE_CATEGORIES: dict[
-    _SnapshotPathProblem,
-    tuple[ContractExportErrorCategory, ContractCheckErrorCategory],
-] = {
-    _SnapshotPathProblem.INVALID_TARGET: (
-        ContractExportErrorCategory.INVALID_TARGET,
-        ContractCheckErrorCategory.INVALID_TARGET,
+@dataclass(frozen=True, slots=True)
+class _PathFailureCategories:
+    export: ContractExportErrorCategory
+    check: ContractCheckErrorCategory
+
+
+_PATH_FAILURE_CATEGORIES: dict[_SnapshotPathProblem, _PathFailureCategories] = {
+    _SnapshotPathProblem.INVALID_TARGET: _PathFailureCategories(
+        export=ContractExportErrorCategory.INVALID_TARGET,
+        check=ContractCheckErrorCategory.INVALID_TARGET,
     ),
-    _SnapshotPathProblem.PATH_ESCAPE: (
-        ContractExportErrorCategory.PATH_ESCAPE,
-        ContractCheckErrorCategory.PATH_ESCAPE,
+    _SnapshotPathProblem.PATH_ESCAPE: _PathFailureCategories(
+        export=ContractExportErrorCategory.PATH_ESCAPE,
+        check=ContractCheckErrorCategory.PATH_ESCAPE,
     ),
 }
 
@@ -322,7 +325,7 @@ def verdict_for_export(
     try:
         snapshot_dir = _resolve_snapshot_directory(target, contract)
     except _SnapshotPathError as error:
-        return ExportBlocked(_PATH_FAILURE_CATEGORIES[error.problem][0], str(error))
+        return ExportBlocked(_PATH_FAILURE_CATEGORIES[error.problem].export, str(error))
 
     inspection = _inspect_frozen_snapshot(snapshot_dir, contract)
     if inspection is _SnapshotInspection.MATCHED:
@@ -349,7 +352,7 @@ def verdict_for_check(
         snapshot_dir = _resolve_snapshot_directory(target, contract)
     except _SnapshotPathError as error:
         return CheckBlocked(
-            _PATH_FAILURE_CATEGORIES[error.problem][1],
+            _PATH_FAILURE_CATEGORIES[error.problem].check,
             f"契约 {identity} 检查失败：{error}",
         )
 

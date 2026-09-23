@@ -61,6 +61,32 @@ def test_batch_preflight_reports_each_item_without_publishing(tmp_path: Path) ->
     assert not (root / "screening" / "boundary").exists()
 
 
+def test_batch_preflight_keeps_matched_item_after_failure(tmp_path: Path) -> None:
+    root = tmp_path / "contracts"
+    export_frozen_contract("boundary", "v1", root)
+    export_frozen_contract("decision-reasons", "v1", root)
+    broken, _manifest = _snapshot_files(root)
+    broken.write_text('{"broken": true}\n', encoding="utf-8")
+
+    result = export_frozen_contracts(tuple(ContractName), "v1", root)
+
+    assert result.passed is False
+    assert [item.outcome for item in result.items] == [
+        ExportOutcome.FAILED,
+        ExportOutcome.NOT_ATTEMPTED,
+        ExportOutcome.NOT_ATTEMPTED,
+        ExportOutcome.UNCHANGED,
+    ]
+    assert (
+        result.items[0].error_category is ContractExportErrorCategory.DAMAGED_SNAPSHOT
+    )
+    assert result.items[3].error_category is None
+    assert result.items[3].snapshot_dir == (
+        root / "screening" / "decision-reasons" / "v1"
+    )
+    assert not (root / "screening" / "value-prediction").exists()
+
+
 def test_batch_publish_failure_keeps_later_matched_item_unchanged(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -150,7 +176,32 @@ def test_single_and_single_item_batch_export_have_equal_outcomes(
         if len(selection) == 1:
             with pytest.raises(ContractExportError) as single_error:
                 export_frozen_contract(selection[0], version, tmp_path / "invalid")
+            assert single_error.value.category is captured.value.category
             assert str(captured.value) == str(single_error.value)
+
+
+def test_single_and_batch_path_escape_have_equal_failure(tmp_path: Path) -> None:
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    single_root = tmp_path / "single"
+    batch_root = tmp_path / "batch"
+    for root in (single_root, batch_root):
+        root.mkdir()
+        (root / "screening").symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(ContractExportError) as captured:
+        export_frozen_contract("boundary", "v1", single_root)
+    batch = export_frozen_contracts(("boundary",), "v1", batch_root)
+
+    item = batch.items[0]
+    assert batch.passed is False
+    assert captured.value.category is ContractExportErrorCategory.PATH_ESCAPE
+    assert item.outcome is ExportOutcome.FAILED
+    assert item.error_category is captured.value.category
+    assert item.message_zh == str(captured.value)
+    assert item.snapshot_dir is None
+    assert item.schema_sha256 is None
+    assert list(outside.iterdir()) == []
 
 
 def test_first_export_creates_complete_snapshot_and_repeat_does_not_rewrite(
