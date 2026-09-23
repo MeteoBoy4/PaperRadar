@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import os
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
+from paper_radar.contracts.errors import ContractCheckError, ContractCheckErrorCategory
 from paper_radar.contracts.schema import (
     ContractName,
     ContractSelectionError,
@@ -17,37 +17,10 @@ from paper_radar.contracts.schema import (
     select_contracts,
 )
 from paper_radar.contracts.snapshot import (
-    SnapshotInspection,
-    SnapshotPathError,
-    SnapshotPathProblem,
-    inspect_frozen_snapshot,
-    resolve_snapshot_directory,
+    CheckBlocked,
+    CheckReady,
+    verdict_for_check,
 )
-
-
-class ContractCheckErrorCategory(StrEnum):
-    """契约只读检查的稳定失败类别。"""
-
-    INVALID_SELECTION = "invalid_selection"
-    MISSING_SNAPSHOT = "missing_snapshot"
-    UNREADABLE_SNAPSHOT = "unreadable_snapshot"
-    DAMAGED_SNAPSHOT = "damaged_snapshot"
-    VERSION_MISMATCH = "version_mismatch"
-    CONTENT_DRIFT = "content_drift"
-    INVALID_TARGET = "invalid_target"
-    PATH_ESCAPE = "path_escape"
-
-
-class ContractCheckError(ValueError):
-    """冻结契约检查未通过。消息为脱敏的中文操作指引。"""
-
-    def __init__(
-        self,
-        category: ContractCheckErrorCategory,
-        message_zh: str,
-    ) -> None:
-        self.category = category
-        super().__init__(message_zh)
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,75 +67,6 @@ class ContractBatchCheckResult:
         )
 
 
-_PATH_FAILURE_CATEGORIES: dict[SnapshotPathProblem, ContractCheckErrorCategory] = {
-    SnapshotPathProblem.INVALID_TARGET: ContractCheckErrorCategory.INVALID_TARGET,
-    SnapshotPathProblem.PATH_ESCAPE: ContractCheckErrorCategory.PATH_ESCAPE,
-}
-
-
-def _identity(contract: FrozenContract) -> str:
-    return f"{contract.name.value} {contract.version.value}"
-
-
-def _snapshot_failure(
-    inspection: SnapshotInspection,
-    contract: FrozenContract,
-    snapshot_dir: Path,
-) -> tuple[ContractCheckErrorCategory, str]:
-    identity = _identity(contract)
-    if inspection is SnapshotInspection.ABSENT:
-        return (
-            ContractCheckErrorCategory.MISSING_SNAPSHOT,
-            f"契约 {identity} 的冻结快照缺失：{snapshot_dir}；"
-            "请确认 --target、--contract 和 --version，并先运行 contracts export。",
-        )
-    if inspection is SnapshotInspection.INCOMPLETE:
-        return (
-            ContractCheckErrorCategory.MISSING_SNAPSHOT,
-            f"契约 {identity} 的冻结快照不完整（缺少 "
-            f"{contract.schema_filename} 或 {contract.manifest_filename}）："
-            f"{snapshot_dir}；请从版本控制恢复完整快照，不要手工补齐。",
-        )
-    if inspection is SnapshotInspection.INVALID_PATH:
-        return (
-            ContractCheckErrorCategory.INVALID_TARGET,
-            f"契约 {identity} 的目标快照路径无法解析（存在符号链接循环或非目录组件）："
-            f"{snapshot_dir}；请核对 --target 后重试。",
-        )
-    if inspection is SnapshotInspection.INACCESSIBLE:
-        return (
-            ContractCheckErrorCategory.UNREADABLE_SNAPSHOT,
-            f"契约 {identity} 的冻结快照路径不可读取：{snapshot_dir}；"
-            "请检查目录权限和文件系统状态后重试。",
-        )
-    if inspection is SnapshotInspection.UNREADABLE:
-        return (
-            ContractCheckErrorCategory.UNREADABLE_SNAPSHOT,
-            f"契约 {identity} 的冻结快照不可读取：{snapshot_dir}；"
-            "请检查文件权限和文件系统状态后重试。",
-        )
-    if inspection is SnapshotInspection.DAMAGED:
-        return (
-            ContractCheckErrorCategory.DAMAGED_SNAPSHOT,
-            f"契约 {identity} 的冻结快照损坏或格式不规范：{snapshot_dir}；"
-            "请从版本控制恢复该快照；契约变化应新建版本。",
-        )
-    if inspection is SnapshotInspection.VERSION_MISMATCH:
-        return (
-            ContractCheckErrorCategory.VERSION_MISMATCH,
-            f"冻结快照的契约或版本信息与所选身份 {identity} 不一致：{snapshot_dir}；"
-            "请核对 --contract 与 --version。",
-        )
-    if inspection is SnapshotInspection.CONTENT_DRIFT:
-        return (
-            ContractCheckErrorCategory.CONTENT_DRIFT,
-            f"契约 {identity} 的冻结快照与当前权威 Schema 不一致（内容漂移）："
-            f"{snapshot_dir}；若契约确已变化，请新建版本并导出新快照；"
-            "否则恢复该快照。",
-        )
-    raise ValueError(f"一致状态不是失败：{inspection.value}")
-
-
 def check_frozen_contract(
     name: ContractName | str,
     version: ContractVersion | str,
@@ -176,32 +80,17 @@ def check_frozen_contract(
             ContractCheckErrorCategory.INVALID_SELECTION, str(error)
         ) from error
 
-    identity = _identity(contract)
-    root = Path(target)
-    if os.path.lexists(root) and not root.is_dir():
-        raise ContractCheckError(
-            ContractCheckErrorCategory.INVALID_TARGET,
-            f"契约 {identity} 的目标路径不是可访问目录；"
-            "请把 --target 指向包含契约快照的目录。",
-        )
+    verdict = verdict_for_check(target, contract)
+    if isinstance(verdict, CheckBlocked):
+        raise ContractCheckError(verdict.category, verdict.guidance_zh)
+    return _checked_result(contract, verdict)
 
-    try:
-        snapshot_dir = resolve_snapshot_directory(target, contract)
-    except SnapshotPathError as error:
-        raise ContractCheckError(
-            _PATH_FAILURE_CATEGORIES[error.problem],
-            f"契约 {identity} 检查失败：{error}",
-        ) from error
 
-    inspection = inspect_frozen_snapshot(snapshot_dir, contract)
-    if inspection is not SnapshotInspection.MATCHED:
-        category, message = _snapshot_failure(inspection, contract, snapshot_dir)
-        raise ContractCheckError(category, message)
-
+def _checked_result(contract: FrozenContract, ready: CheckReady) -> ContractCheckResult:
     return ContractCheckResult(
         name=contract.name,
         version=contract.version,
-        snapshot_dir=snapshot_dir,
+        snapshot_dir=ready.snapshot_dir,
         schema_sha256=contract.schema_sha256,
     )
 
@@ -228,21 +117,21 @@ def check_frozen_contracts(
     items: list[ContractCheckItemResult] = []
 
     for contract in contracts:
-        try:
-            checked = check_frozen_contract(contract.name, contract.version, target)
-        except ContractCheckError as error:
+        verdict = verdict_for_check(target, contract)
+        if isinstance(verdict, CheckBlocked):
             items.append(
                 ContractCheckItemResult(
                     name=contract.name,
                     version=contract.version,
                     outcome=ContractCheckOutcome.FAILED,
-                    error_category=error.category,
-                    message_zh=str(error),
+                    error_category=verdict.category,
+                    message_zh=verdict.guidance_zh,
                     snapshot_dir=None,
                     schema_sha256=None,
                 )
             )
             continue
+        checked = _checked_result(contract, verdict)
         items.append(
             ContractCheckItemResult(
                 name=checked.name,

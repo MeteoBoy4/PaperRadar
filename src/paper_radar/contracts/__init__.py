@@ -2,19 +2,21 @@
 
 from paper_radar.contracts.check import (
     ContractBatchCheckResult,
-    ContractCheckError,
-    ContractCheckErrorCategory,
     ContractCheckItemResult,
     ContractCheckOutcome,
     ContractCheckResult,
     check_frozen_contract,
     check_frozen_contracts,
 )
+from paper_radar.contracts.errors import (
+    ContractCheckError,
+    ContractCheckErrorCategory,
+    ContractExportError,
+    ContractExportErrorCategory,
+)
 from paper_radar.contracts.export import (
     ContractBatchExportError,
     ContractBatchExportFailure,
-    ContractExportError,
-    ContractExportErrorCategory,
     ContractExportResult,
     ExportOutcome,
     export_frozen_contract,

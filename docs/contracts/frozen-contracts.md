@@ -189,8 +189,8 @@ Schema、规范序列化、清单字段、SHA-256 判据与错误类别，不维
 
 `check_frozen_contract` 成功返回 `ContractCheckResult`；失败抛出
 `ContractCheckError`。其 `category` 复用导出词汇，并只在检查语义需要时区分
-缺失、不可读取与内容漂移。`check_frozen_contracts` 先整体验证选择，然后逐份调用
-该单份入口，返回包含全部 `ContractCheckItemResult` 的 `ContractBatchCheckResult`；
+缺失、不可读取与内容漂移。`check_frozen_contracts` 先整体验证选择，然后与单份入口
+共享同一只读判决和结果构造逻辑，返回包含全部 `ContractCheckItemResult` 的 `ContractBatchCheckResult`；
 `passed` 仅在全部项通过时为真：
 
 | 类别 | 判据与操作 |
