@@ -45,6 +45,11 @@ def config_files(tmp_path: Path) -> tuple[Path, Path, Path]:
         "version: profile-v1\napi_key: do-not-print-me\n",
         "version: profile-v1\nbackground: .nan\n",
         "version: profile-v1\nbackground: +.INF\n",
+        "version: profile-v1\nbackground: +3\n",
+        "version: profile-v1\nbackground: +1.0\n",
+        "version: profile-v1\nbackground: 1e3\n",
+        "version: profile-v1\nbackground: 1_000\n",
+        "version: profile-v1\nbackground: 01\n",
         "version: profile-v1\nbackground: [wrong-type]\n",
     ],
 )

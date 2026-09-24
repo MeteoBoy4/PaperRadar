@@ -57,12 +57,16 @@ _StrictLoader.add_implicit_resolver(
     "tag:yaml.org,2002:null", re.compile(r"^(?:null|~)$"), list("n~")
 )
 _StrictLoader.add_implicit_resolver(
-    "tag:yaml.org,2002:int", re.compile(r"^-?(?:0|[1-9][0-9]*)$"), list("-0123456789")
+    "tag:yaml.org,2002:int",
+    re.compile(r"^[+-]?(?:0|[1-9][0-9]*(?:_[0-9]+)*)$"),
+    list("+-0123456789"),
 )
 _StrictLoader.add_implicit_resolver(
     "tag:yaml.org,2002:float",
     re.compile(
-        r"^(?:-?(?:[0-9]+\.[0-9]*|\.[0-9]+)(?:[eE][-+]?[0-9]+)?|[+-]?\.(?:nan|inf))$",
+        r"^[+-]?(?:[0-9]+(?:_[0-9]+)*(?:\.[0-9]*(?:_[0-9]+)*)?"
+        r"|\.[0-9]+(?:_[0-9]+)*)(?:[eE][+-]?[0-9]+(?:_[0-9]+)*)?$"
+        r"|^[+-]?\.(?:nan|inf)$",
         re.I,
     ),
     list("+-0123456789."),
