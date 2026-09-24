@@ -1,0 +1,2 @@
+model = "gpt-6-sol"
+model_context_window = 1050000
