@@ -125,8 +125,8 @@ pytest 测试（包括冻结契约导出与只读检查测试），最后用一�
 而不会改写 lockfile。若首次环境准备未完成或所需包不在本地，检查会返回非零，
 不会联网补装。
 
-每次运行在 `verification-runs/` 下生成新的 `<run_id>.json` 离线证据与
-`<run_id>.a1.json` 独立 A1 结论。后者仅在本次固定检查、四份快照与运行身份
-全部一致时报告 A1 通过；阶段 A 剩余能力、真实来源和自动精读仍未验收。
+每次运行在 `verification-runs/` 下生成新的 `<run_id>.json` 离线证据、
+`<run_id>.a1.json` 独立 A1 结论与 `<run_id>.a2.json` A2-01 结论。入口仅在
+两份结论都通过时返回 0；阶段 A 剩余能力、真实来源和自动精读仍未验收。
 该目录不进入版本控制；格式、失败表示与使用方法见
 [离线验证证据](docs/verification/offline-evidence.md)。

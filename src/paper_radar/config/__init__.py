@@ -1,8 +1,8 @@
-"""公共配置服务。"""
+"""公共配置服务。延迟导入存储层以保持 CLI --help 无数据库副作用。"""
 
 from pathlib import Path
 
-from paper_radar.config.compile import RuntimeConfigSnapshot, StageReadiness
+from paper_radar.config.compile import RuntimeConfigSnapshot, StageName, StageReadiness
 from paper_radar.config.errors import ConfigError
 
 
@@ -37,6 +37,7 @@ def upgrade_database(path: Path) -> str:
 __all__ = [
     "ConfigError",
     "RuntimeConfigSnapshot",
+    "StageName",
     "StageReadiness",
     "check_config",
     "compile_config",

@@ -19,12 +19,17 @@ from paper_radar.config.errors import ConfigError
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.schema import Profile, Settings
 from paper_radar.config.yaml_loader import read_yaml, validate_yaml_bytes
-from paper_radar.storage.database import open_database, require_current_revision
+from paper_radar.storage.database import (
+    DatabaseMode,
+    open_database,
+    require_current_revision,
+)
 from paper_radar.storage.errors import StorageError
 from paper_radar.storage.records import VersionRecord
 from paper_radar.storage.repository import check_version, read_snapshot, save_snapshot
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_PROFILE_KEY = ("profile", "profile")
 
 
 def _selected_materials(
@@ -54,7 +59,7 @@ def _selected_materials(
     raw, profile = read_yaml(path, Profile, "profile")
     if profile.version != settings.profile:
         raise ConfigError("profile.version：与 settings.profile 不一致；请选择匹配版本")
-    return settings, profile, Material("profile", "profile", profile.version, raw)
+    return settings, profile, Material(*_PROFILE_KEY, profile.version, raw)
 
 
 def _version_record(material: Material | None) -> VersionRecord | None:
@@ -65,7 +70,7 @@ def _version_record(material: Material | None) -> VersionRecord | None:
 
 def check_config(settings_path: Path, database: Path) -> RuntimeConfigSnapshot:
     try:
-        engine = open_database(database, mode="ro")
+        engine = open_database(database, mode=DatabaseMode.READ_ONLY)
         try:
             require_current_revision(engine)
             settings, profile, material = _selected_materials(settings_path)
@@ -81,7 +86,7 @@ def check_config(settings_path: Path, database: Path) -> RuntimeConfigSnapshot:
 
 def compile_config(settings_path: Path, database: Path) -> RuntimeConfigSnapshot:
     try:
-        engine = open_database(database, mode="rw")
+        engine = open_database(database, mode=DatabaseMode.READ_WRITE)
         try:
             require_current_revision(engine)
             settings, profile, material = _selected_materials(settings_path)
@@ -105,7 +110,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
     if not _SHA256.fullmatch(snapshot_id):
         raise ConfigError("快照身份必须是完整 64 位小写 SHA-256")
     try:
-        engine = open_database(database, mode="ro")
+        engine = open_database(database, mode=DatabaseMode.READ_ONLY)
         try:
             require_current_revision(engine)
             saved_json, materials = read_snapshot(engine, snapshot_id)
@@ -135,13 +140,13 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             if len(materials) != 1:
                 raise ValueError
             kind, name, version, raw_hash, raw = materials[0]
-            if (kind, name, version) != ("profile", "profile", selector):
+            if (kind, name, version) != (*_PROFILE_KEY, selector):
                 raise ValueError
             material = Material(kind, name, version, raw)
             if material.raw_sha256 != raw_hash:
                 raise ValueError
             profile = validate_yaml_bytes(raw, Profile, "profile")
-            if not isinstance(profile, Profile) or profile.version != selector:
+            if profile.version != selector:
                 raise ValueError
         rebuilt = compile_snapshot(settings, profile, material)
         if rebuilt.snapshot_id != snapshot_id or rebuilt.payload_json != saved_json:
@@ -149,5 +154,5 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         return rebuilt
     except ConfigError:
         raise
-    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+    except (KeyError, TypeError, ValueError):
         raise ConfigError("快照内容或版本引用损坏；请检查数据库") from None

@@ -18,7 +18,8 @@ from paper_radar.config import (
     load_config_snapshot,
     upgrade_database,
 )
-from paper_radar.storage.database import REVISION, open_database
+from paper_radar.config.compile import StageName
+from paper_radar.storage.database import DatabaseMode, current_revision, open_database
 from paper_radar.storage.schema import metadata
 
 _EXAMPLE_ID = "9ae65bc9fc282e8c0eab654644cff50a8831044f5847456562a683b751c21e58"
@@ -52,7 +53,7 @@ def test_profile_snapshot_survives_source_removal_and_new_process(
 
     checked = check_config(settings, db)
     assert checked.profile_status == "configured"
-    assert checked.stages["boundary"].status == "not_ready"
+    assert checked.stages[StageName.BOUNDARY].status == "not_ready"
     with sqlite3.connect(db) as connection:
         assert connection.execute(
             "SELECT count(*) FROM config_versions"
@@ -130,9 +131,9 @@ def test_same_inputs_moved_to_another_root_keep_identity(tmp_path: Path) -> None
 
 def test_upgrade_is_idempotent_and_schema_matches_metadata(tmp_path: Path) -> None:
     db = tmp_path / "db.sqlite3"
-    assert upgrade_database(db) == REVISION
-    assert upgrade_database(db) == REVISION
-    engine = open_database(db, mode="rw")
+    assert upgrade_database(db) == current_revision()
+    assert upgrade_database(db) == current_revision()
+    engine = open_database(db, mode=DatabaseMode.READ_WRITE)
     try:
         with engine.connect() as connection:
             assert connection.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1

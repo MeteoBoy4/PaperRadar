@@ -39,7 +39,7 @@ def _report(snapshot: RuntimeConfigSnapshot) -> None:
         typer.echo(f"Profile.{field}：{status.value}")
     for stage, readiness in snapshot.stages.items():
         missing = ", ".join(reason.value for reason in readiness.missing)
-        typer.echo(f"{stage}：{readiness.status.value}；缺项：{missing}")
+        typer.echo(f"{stage.value}：{readiness.status.value}；缺项：{missing}")
 
 
 @db_app.command(

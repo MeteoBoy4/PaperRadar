@@ -117,6 +117,19 @@ def test_quoted_nonfinite_spelling_is_profile_text(
     assert compile_config(settings, db).profile_fields["background"] == "configured"
 
 
+def test_yes_and_on_are_profile_text_not_implicit_booleans(
+    config_files: tuple[Path, Path, Path],
+) -> None:
+    settings, profile, db = config_files
+    profile.write_text(
+        "version: profile-v1\nbackground: yes\ncore_questions: on\n",
+        encoding="utf-8",
+    )
+    result = compile_config(settings, db)
+    assert result.profile_fields["background"] == "configured"
+    assert result.profile_fields["core_questions"] == "configured"
+
+
 def test_unsupported_format_and_unknown_revision_fail_cleanly(
     config_files: tuple[Path, Path, Path],
 ) -> None:

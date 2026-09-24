@@ -4,8 +4,9 @@
 帮助，不启动检查或写入证据。脚本按固定顺序实际执行 lockfile
 一致性、格式、静态规则、类型、全部离线测试和已选择的冻结契约一致性检查。每次
 运行会在被 Git 忽略的 `verification-runs/<run_id>.json` 生成 #12 离线证据，
-并在 `verification-runs/<run_id>.a1.json` 生成独立的 #13 A1 结论；终端最后打印
-两个准确路径和结果。重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
+并在 `verification-runs/<run_id>.a1.json` 生成独立的 #13 A1 结论，
+在 `<run_id>.a2.json` 生成 #16 A2-01 结论；终端打印本次三个路径及结果。
+仅两份结论均通过时入口返回 0。重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
 本次尚无证据文件，终端会收到 uv 的非零退出码。
 
@@ -79,4 +80,21 @@
 现有离线测试和固定 `check-offline` 计划，不将未实现规则当作通过。`not_assessed`
 明确列出阶段 A 剩余的 RuntimePlan、持久化、指纹、任务与共享接口、doctor、
 结构化日志、备份恢复和真实来源审计，以及阶段 B 与自动全文精读；A1 通过不开放
-这些能力，也不自动修改父 Issue。
+这些能力，也不自动修改父 Issue。此处 `RuntimePlan` 是 A1 的历史范围文字，
+现对应 `RuntimeConfigSnapshot`；A2-01 的结论另行记录其已实现切片，不回写
+A1 结论的历史含义。
+
+## A2-01 独立结论
+
+`<run_id>.a2.json` 绑定同次 #12 证据的 SHA-256 和 `<run_id>.a1.json` 的
+SHA-256。它核对 A1 已通过、本次六项离线检查全通过、A2 测试与 config/storage
+源码的固定字节哈希、运行前后的 HEAD/工作树/lockfile 身份。固定范围定义在
+`scripts/a2_scope.py`，与 A1 的 `scripts/a1_scope.py` 分开；更新 A2 行为时应
+审查并更新对应哈希，不修改 A1 固定测试哈希。
+
+结论记录锁定 Python 环境中的 Alembic、SQLAlchemy、PyYAML 版本、随包 Alembic
+实际 head、快照编译格式版本，以及未实施项。阶段配置投影与校准基线仍未实现，
+其格式版本为 `null`，不冒充已就绪；A2-01 通过不等于完整 A2、阶段 A、正式
+校准或自动精读通过。结论只保存文件哈希和受控状态，不保存配置正文、Prompt、
+secret 或子进程输出。`status` 为 `passed`、`failed` 或 `incomplete`，只有
+`a2_01_verified=true` 表示本票固定范围通过。

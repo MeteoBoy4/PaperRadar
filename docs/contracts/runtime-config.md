@@ -76,6 +76,24 @@ CLI 只显示槽的 `configured`/`unconfigured`/`placeholder`、阶段的 `ready
 材料、提示词和校准语义基线由后续 A2 票实现；不能把本票完整快照身份当作阶段
 输入指纹。
 
+下表是后续票实现投影时的**依赖契约**，不是本票已经生成的投影。空格表示该材料
+不进入相应投影；校准基线只引用能够改变 Screening、复用升级、摘录或建议的配置。
+
+| 配置材料 | 计划进入的阶段配置投影 | 校准基线 |
+| --- | --- | --- |
+| Profile | boundary、value、reuse、Read | 是 |
+| 已启用主题 | value | 是 |
+| 期刊信誉 | 无 | 否 |
+| Screening 模型与 boundary/value 提示词、契约 | 各自的 boundary/value | 是 |
+| Reuse 模型、提示词、契约与 excerpt selector | reuse | 是 |
+| Read 模型、提示词、契约与 chunking | Read | 否 |
+| 解析器、后端、模型制品、解析配置与 normalization | extraction | 是 |
+| 复用升级触发参数、建议规则与原因契约 | 建议规则 | 是 |
+
+当前只开放 Profile 材料登记；表中其余非空 selector 仍拒绝。未来模型文件的占位
+词表固定为 `REQUIRED`、`REQUIRED_FOR_FORMAL_CALIBRATION`、`REQUIRED_FOR_READ`；
+这些词只能表示 `placeholder`，不能充当可运行模型身份。本票没有模型文件加载。
+
 ## 示例与命令
 
 [`examples/config/`](../../examples/config/) 是**工程验收用合成材料**，不是真实

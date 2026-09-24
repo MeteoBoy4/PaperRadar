@@ -20,6 +20,15 @@ from paper_radar.config.schema import (
 FORMAT_VERSION = 1
 
 
+class StageName(StrEnum):
+    BOUNDARY = "boundary"
+    VALUE = "value"
+    REUSE = "reuse"
+    EXTRACTION = "extraction"
+    READ = "read"
+    SUGGESTION = "suggestion"
+
+
 class StageStatus(StrEnum):
     READY = "ready"
     NOT_READY = "not_ready"
@@ -65,7 +74,7 @@ class RuntimeConfigSnapshot:
     snapshot_id: str
     profile_status: SlotStatus
     profile_fields: Mapping[str, SlotStatus]
-    stages: Mapping[str, StageReadiness]
+    stages: Mapping[StageName, StageReadiness]
     payload_json: str
 
 
@@ -106,7 +115,7 @@ def compile_snapshot(
         () if profile_status is SlotStatus.CONFIGURED else (MissingReason.PROFILE,)
     )
     stages = {
-        "boundary": StageReadiness(
+        StageName.BOUNDARY: StageReadiness(
             StageStatus.NOT_READY,
             (
                 *missing_profile,
@@ -115,7 +124,7 @@ def compile_snapshot(
                 MissingReason.BOUNDARY_CONTRACT,
             ),
         ),
-        "value": StageReadiness(
+        StageName.VALUE: StageReadiness(
             StageStatus.NOT_READY,
             (
                 *missing_profile,
@@ -124,7 +133,7 @@ def compile_snapshot(
                 MissingReason.VALUE_CONTRACT,
             ),
         ),
-        "reuse": StageReadiness(
+        StageName.REUSE: StageReadiness(
             StageStatus.NOT_READY,
             (
                 *missing_profile,
@@ -133,10 +142,10 @@ def compile_snapshot(
                 MissingReason.REUSE_CONTRACT,
             ),
         ),
-        "extraction": StageReadiness(
+        StageName.EXTRACTION: StageReadiness(
             StageStatus.NOT_READY, (MissingReason.EXTRACTION_CONFIG,)
         ),
-        "read": StageReadiness(
+        StageName.READ: StageReadiness(
             StageStatus.NOT_READY,
             (
                 *missing_profile,
@@ -145,7 +154,7 @@ def compile_snapshot(
                 MissingReason.READ_CONTRACT,
             ),
         ),
-        "suggestion": StageReadiness(
+        StageName.SUGGESTION: StageReadiness(
             StageStatus.NOT_READY, (MissingReason.SUGGESTION_RULE,)
         ),
     }

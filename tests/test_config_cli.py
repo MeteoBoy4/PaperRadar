@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -105,3 +106,26 @@ def test_cli_rejects_secret_without_echoing_it(tmp_path: Path) -> None:
     assert result.returncode == 2
     assert "settings.api_key" in result.stderr
     assert "very-secret-value" not in result.stderr
+
+
+def test_existing_uninitialized_database_returns_chinese_exit_two(
+    tmp_path: Path,
+) -> None:
+    db = tmp_path / "uninitialized.sqlite3"
+    with sqlite3.connect(db):
+        pass
+    settings = tmp_path / "settings.yaml"
+    settings.write_text("profile: null\n", encoding="utf-8")
+    result = _run(
+        tmp_path,
+        "config",
+        "check",
+        "--settings",
+        str(settings),
+        "--database",
+        str(db),
+    )
+    assert result.returncode == 2
+    assert "数据库未初始化" in result.stderr
+    with sqlite3.connect(db) as connection:
+        assert connection.execute("SELECT name FROM sqlite_master").fetchall() == []
