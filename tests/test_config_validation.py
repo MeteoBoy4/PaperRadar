@@ -104,6 +104,14 @@ def test_date_text_and_exact_ascii_placeholder_rules(
     assert result.profile_status == "placeholder"
 
 
+def test_quoted_nonfinite_spelling_is_profile_text(
+    config_files: tuple[Path, Path, Path],
+) -> None:
+    settings, profile, db = config_files
+    profile.write_text("version: profile-v1\nbackground: '.nan'\n", encoding="utf-8")
+    assert compile_config(settings, db).profile_fields["background"] == "configured"
+
+
 def test_unsupported_format_and_unknown_revision_fail_cleanly(
     config_files: tuple[Path, Path, Path],
 ) -> None:

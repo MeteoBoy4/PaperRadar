@@ -182,6 +182,38 @@ def test_load_rejects_damaged_version_content(tmp_path: Path) -> None:
         load_config_snapshot(db, snapshot.snapshot_id)
 
 
+def test_repeat_compile_rejects_missing_snapshot_reference(tmp_path: Path) -> None:
+    settings = _write_profile(tmp_path)
+    db = tmp_path / "db.sqlite3"
+    upgrade_database(db)
+    compile_config(settings, db)
+    with sqlite3.connect(db) as connection:
+        connection.execute("DELETE FROM snapshot_version_refs")
+    with pytest.raises(ConfigError, match="引用损坏"):
+        compile_config(settings, db)
+
+
+@pytest.mark.parametrize(
+    "damaged_table", ["config_versions", "runtime_config_snapshots"]
+)
+def test_load_rejects_wrong_sqlite_storage_type(
+    tmp_path: Path, damaged_table: str
+) -> None:
+    settings = _write_profile(tmp_path)
+    db = tmp_path / "db.sqlite3"
+    upgrade_database(db)
+    snapshot = compile_config(settings, db)
+    with sqlite3.connect(db) as connection:
+        if damaged_table == "config_versions":
+            connection.execute("UPDATE config_versions SET raw_content = 'text'")
+        else:
+            connection.execute(
+                "UPDATE runtime_config_snapshots SET payload_json = X'FF'"
+            )
+    with pytest.raises(ConfigError, match="损坏"):
+        load_config_snapshot(db, snapshot.snapshot_id)
+
+
 def test_cross_process_load_uses_database_only(tmp_path: Path) -> None:
     settings = _write_profile(tmp_path)
     db = tmp_path / "db.sqlite3"

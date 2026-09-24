@@ -26,8 +26,12 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
 
 def upgrade_database(path: Path) -> str:
     from paper_radar.storage.database import upgrade_database as run
+    from paper_radar.storage.errors import StorageError
 
-    return run(path)
+    try:
+        return run(path)
+    except StorageError as error:
+        raise ConfigError(str(error)) from None
 
 
 __all__ = [

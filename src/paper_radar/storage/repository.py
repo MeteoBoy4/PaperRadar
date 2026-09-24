@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import Connection, Engine, select
 from sqlalchemy.exc import SQLAlchemyError
 
-from paper_radar.config.compile import Material, RuntimeConfigSnapshot
-from paper_radar.config.errors import ConfigError
-from paper_radar.config.identity import sha256
+from paper_radar.storage.errors import StorageError
+from paper_radar.storage.records import VersionRecord
 from paper_radar.storage.schema import (
     config_versions,
     runtime_config_snapshots,
@@ -18,7 +18,7 @@ from paper_radar.storage.schema import (
 )
 
 
-def _version_row(connection: Connection, material: Material) -> Any:
+def _version_row(connection: Connection, material: VersionRecord) -> Any:
     return (
         connection.execute(
             select(config_versions).where(
@@ -32,29 +32,32 @@ def _version_row(connection: Connection, material: Material) -> Any:
     )
 
 
-def _check_version(connection: Connection, material: Material) -> bool:
+def _check_version(connection: Connection, material: VersionRecord) -> bool:
     row = _version_row(connection, material)
     if row is None:
         return False
     if row["raw_sha256"] != material.raw_sha256 or row["raw_content"] != material.raw:
-        raise ConfigError(
+        raise StorageError(
             f"{material.kind}.{material.name}.{material.version}：声明版本已登记不同字节；请创建新版本"
         )
     return True
 
 
-def check_version(engine: Engine, material: Material | None) -> None:
+def check_version(engine: Engine, material: VersionRecord | None) -> None:
     if material is None:
         return
     try:
         with engine.connect() as connection:
             _check_version(connection, material)
     except SQLAlchemyError:
-        raise ConfigError("数据库读取失败；请检查数据库状态") from None
+        raise StorageError("数据库读取失败；请检查数据库状态") from None
 
 
 def save_snapshot(
-    engine: Engine, snapshot: RuntimeConfigSnapshot, material: Material | None
+    engine: Engine,
+    snapshot_id: str,
+    payload_json: str,
+    material: VersionRecord | None,
 ) -> None:
     """BEGIN IMMEDIATE 覆盖冲突检查与全部写入。失败整体回滚。"""
     try:
@@ -73,14 +76,13 @@ def save_snapshot(
                     )
                 existing = connection.execute(
                     select(runtime_config_snapshots.c.payload_json).where(
-                        runtime_config_snapshots.c.snapshot_id == snapshot.snapshot_id
+                        runtime_config_snapshots.c.snapshot_id == snapshot_id
                     )
                 ).scalar_one_or_none()
-                payload_json = snapshot.payload_json
                 if existing is None:
                     connection.execute(
                         runtime_config_snapshots.insert().values(
-                            snapshot_id=snapshot.snapshot_id,
+                            snapshot_id=snapshot_id,
                             payload_json=payload_json,
                             created_at=datetime.now(UTC).isoformat(),
                         )
@@ -88,7 +90,7 @@ def save_snapshot(
                     if material is not None:
                         connection.execute(
                             snapshot_version_refs.insert().values(
-                                snapshot_id=snapshot.snapshot_id,
+                                snapshot_id=snapshot_id,
                                 kind=material.kind,
                                 name=material.name,
                                 declared_version=material.version,
@@ -96,15 +98,39 @@ def save_snapshot(
                             )
                         )
                 elif existing != payload_json:
-                    raise ConfigError("快照身份对应内容损坏；请检查数据库")
+                    raise StorageError("快照身份对应内容损坏；请检查数据库")
+                else:
+                    rows = connection.execute(
+                        select(
+                            snapshot_version_refs.c.kind,
+                            snapshot_version_refs.c.name,
+                            snapshot_version_refs.c.declared_version,
+                            snapshot_version_refs.c.raw_sha256,
+                        ).where(snapshot_version_refs.c.snapshot_id == snapshot_id)
+                    ).all()
+                    refs = [tuple(row) for row in rows]
+                    expected = (
+                        []
+                        if material is None
+                        else [
+                            (
+                                material.kind,
+                                material.name,
+                                material.version,
+                                material.raw_sha256,
+                            )
+                        ]
+                    )
+                    if refs != expected:
+                        raise StorageError("快照版本引用损坏；请检查数据库")
                 connection.commit()
             except BaseException:
                 connection.rollback()
                 raise
-    except ConfigError:
+    except StorageError:
         raise
     except SQLAlchemyError:
-        raise ConfigError("数据库写入失败；配置事实已回滚，请检查数据库") from None
+        raise StorageError("数据库写入失败；配置事实已回滚，请检查数据库") from None
 
 
 def read_snapshot(
@@ -118,7 +144,9 @@ def read_snapshot(
                 )
             ).scalar_one_or_none()
             if payload is None:
-                raise ConfigError("快照身份不存在；请检查完整 64 位 SHA-256")
+                raise StorageError("快照身份不存在；请检查完整 64 位 SHA-256")
+            if not isinstance(payload, str):
+                raise StorageError("快照内容损坏；请检查数据库")
             rows = connection.execute(
                 select(
                     snapshot_version_refs.c.kind,
@@ -147,14 +175,19 @@ def read_snapshot(
                 )
             ).all()
             if len(rows) != len(ref_count):
-                raise ConfigError("快照版本引用损坏；请检查数据库")
+                raise StorageError("快照版本引用损坏；请检查数据库")
             materials: list[tuple[str, str, str, str, bytes]] = []
             for kind, name, version, raw_hash, registered_hash, raw in rows:
-                if sha256(raw) != raw_hash or registered_hash != raw_hash:
-                    raise ConfigError("已登记版本内容损坏；请检查数据库")
+                if not isinstance(raw, bytes):
+                    raise StorageError("已登记版本内容损坏；请检查数据库")
+                if (
+                    hashlib.sha256(raw).hexdigest() != raw_hash
+                    or registered_hash != raw_hash
+                ):
+                    raise StorageError("已登记版本内容损坏；请检查数据库")
                 materials.append((kind, name, version, raw_hash, raw))
             return payload, materials
-    except ConfigError:
+    except StorageError:
         raise
     except SQLAlchemyError:
-        raise ConfigError("数据库读取失败；请检查数据库状态") from None
+        raise StorageError("数据库读取失败；请检查数据库状态") from None

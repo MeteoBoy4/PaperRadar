@@ -40,3 +40,8 @@ def test_existing_contracts_and_screening_do_not_depend_on_config_storage() -> N
                 name.startswith(("paper_radar.config", "paper_radar.storage"))
                 for name in imported
             )
+
+
+def test_storage_does_not_import_config() -> None:
+    for file in (_ROOT / "storage").rglob("*.py"):
+        assert not any(name.startswith("paper_radar.config") for name in _imports(file))

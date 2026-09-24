@@ -55,7 +55,7 @@ def db_upgrade(
         typer.Option("--database", help="待初始化或升级的 SQLite 路径；必须显式提供。"),
     ],
 ) -> None:
-    from paper_radar.storage.database import upgrade_database
+    from paper_radar.config import upgrade_database
 
     try:
         revision = upgrade_database(database)

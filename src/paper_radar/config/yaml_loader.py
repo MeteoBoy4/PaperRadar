@@ -62,16 +62,15 @@ _StrictLoader.add_implicit_resolver(
 _StrictLoader.add_implicit_resolver(
     "tag:yaml.org,2002:float",
     re.compile(
-        r"^(?:-?(?:[0-9]+\.[0-9]*|\.[0-9]+)(?:[eE][-+]?[0-9]+)?|\.(?:nan|inf|Inf|NaN))$"
+        r"^(?:-?(?:[0-9]+\.[0-9]*|\.[0-9]+)(?:[eE][-+]?[0-9]+)?|[+-]?\.(?:nan|inf))$",
+        re.I,
     ),
-    list("-0123456789."),
+    list("+-0123456789."),
 )
 
 
 def _reject_nonfinite(value: Any, path: str) -> None:
     if isinstance(value, float) and not math.isfinite(value):
-        raise ConfigError(f"{path}：不允许非有限浮点数")
-    if isinstance(value, str) and re.fullmatch(r"[+-]?\.(?:nan|inf)", value, re.I):
         raise ConfigError(f"{path}：不允许非有限浮点数")
     if isinstance(value, dict):
         for key, item in value.items():
