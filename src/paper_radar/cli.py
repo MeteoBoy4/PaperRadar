@@ -7,6 +7,7 @@ from typing import Annotated
 
 import typer
 
+from paper_radar.config.cli import config_app, db_app
 from paper_radar.contracts import (
     ContractBatchCheckResult,
     ContractBatchExportResult,
@@ -45,17 +46,18 @@ _CONTRACT_CHOICES_HELP = "\n".join(
 ROOT_HELP = """\
 PaperRadar 工程入口。
 
-当前用途：查看已交付能力；当前可安全地批量导出，并逐份或整组只读检查四种
-Screening 冻结契约。
+当前用途：管理冻结契约；显式迁移配置数据库，检查或编译 Profile 配置快照。
+未实现的模型与流程配置会明确显示未就绪。
 
 参数与选项：使用 `--help` 查看命令组；业务操作的参数由子命令明确提供。
 
 副作用：查看帮助不读取配置或凭据，不访问网络，不连接或写入数据库，
 也不会创建 data、reports、logs 等业务目录或文件。
 
-自动配额：查看帮助和契约操作消耗 0 次 Screening、复用升级和全文精读配额。
+自动配额：帮助、契约和配置命令消耗 0 次 Screening、复用升级和全文精读配额。
 
-输出去向：帮助写入标准输出；冻结契约只写入 export 的显式目标目录。
+输出去向：帮助写入标准输出；冻结契约写入 export 目标目录，配置快照写入
+--database 指定的既有数据库。
 
 常见失败：若 shell 提示找不到命令，请先在仓库中执行 `uv sync --locked`；
 若依赖尚未准备好，离线检查会明确失败，不会联网补装。
@@ -165,6 +167,8 @@ contracts_app = typer.Typer(
     rich_markup_mode="markdown",
 )
 app.add_typer(contracts_app, name="contracts")
+app.add_typer(db_app, name="db")
+app.add_typer(config_app, name="config")
 
 
 def _write_export_item(item: ContractExportItemResult) -> None:

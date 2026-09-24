@@ -843,9 +843,11 @@ report_entries 的唯一性不能只有 report_date + paper_id，因为同一论
 config/
   settings.yaml
   feeds.yaml
-  journals.yaml
+  journals/journals-v1.yaml
   profiles/profile-v1.yaml
   topics/topics-v1.yaml
+  models/models-v1.yaml
+  extraction/extraction-v1.yaml
   screening/reuse-escalation-v1.yaml
 prompts/
   screening/boundary-v1.md
@@ -853,10 +855,10 @@ prompts/
   screening/reuse-v1.md
   reading/v1.md
 contracts/
-  screening/boundary-v1.schema.json
-  screening/value-v1.schema.json
-  screening/reuse-assessment-v1.schema.json
-  screening/decision-reasons-v1.schema.json
+  screening/boundary/v1/{schema,manifest}.json
+  screening/value-prediction/v1/{schema,manifest}.json
+  screening/reuse-assessment/v1/{schema,manifest}.json
+  screening/decision-reasons/v1/{schema,manifest}.json
   reading/v1.schema.json
 data/
   paperradar.sqlite3
@@ -875,6 +877,8 @@ logs/
 ~~~
 
 `settings.yaml` 只选择当前 Profile、主题、复用升级参数、提示词和契约版本；带版本的内容文件创建后不可原地改写。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
+
+A2-01 首先开放 Profile 纵向路径：`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，其他配置种类的非空选择在后续票开放前拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
 
 blob 和 artifact 路径只由哈希、UUID 与受控枚举构造。数据库保存相对路径；根目录由配置决定，以便 NAS 恢复到不同挂载点。
 

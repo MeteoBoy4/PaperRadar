@@ -3,7 +3,8 @@
 PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库交付了工程入口、
 研究边界、摘要层价值预测、复用可行性升级和筛选原因组合的公共验证，以及
 四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
-只读漂移检查；数据库、网络来源和论文处理命令尚未实现。
+只读漂移检查；另已交付 Profile 配置快照的显式迁移、检查、编译与历史加载。
+网络来源和论文处理命令尚未实现。
 
 ## 环境与安装
 
@@ -14,14 +15,15 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓
 uv sync --locked
 ```
 
-运行依赖为 Pydantic v2 与 Typer，开发工具为 pytest、Ruff 和 mypy。
+运行依赖为 Pydantic v2、Typer、PyYAML、SQLAlchemy 和 Alembic；开发工具为
+pytest、Ruff、mypy 和 PyYAML 类型声明。
 精确解析版本以 `uv.lock` 为唯一权威，避免依赖升级后在说明文档中保留过期副本。
 
 CLI 的契约命令从权威 Pydantic 定义生成 Schema；纯 Python 公共验证入口使用锁定的
 Pydantic v2 校验已实现的三种 Screening 输出及原因组合。冻结结构契约就绪不表示
 后续业务流程已经就绪。
 
-没有引入数据库、网络、LLM 或文档解析依赖。
+当前无网络、LLM 或文档解析依赖。
 
 ## 命令行帮助
 
@@ -33,8 +35,26 @@ uv run --offline --locked paper-radar --help
 
 帮助命令只向标准输出写文本；它不读取配置或凭据，不访问网络或数据库，
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
-当前只额外注册已实现的 `contracts export` 和 `contracts check`，不注册尚未
-实现的业务命令。
+当前注册 `contracts export/check`、`db upgrade` 与 `config check/compile`。
+不注册尚未实现的业务命令。
+
+## Profile 配置快照
+
+`db upgrade` 是唯一可创建数据库的命令；`config check` 只读，`config compile`
+只打开已迁移的既有库。三个命令均要求明确路径：
+
+```bash
+uv run --offline --locked paper-radar db upgrade --database data/paperradar.sqlite3
+uv run --offline --locked paper-radar config check \
+  --settings examples/config/settings.yaml --database data/paperradar.sqlite3
+uv run --offline --locked paper-radar config compile \
+  --settings examples/config/settings.yaml --database data/paperradar.sqlite3
+```
+
+先创建数据库父目录，例如 `mkdir -p data`。示例是工程验收合成材料，不是正式
+校准资料。公共 Python 服务可从数据库加载旧快照；完整字段、声明版本规则、
+身份格式、未就绪范围和迁移行为见
+[运行配置快照契约](docs/contracts/runtime-config.md)。
 
 ## Screening 输出验证
 

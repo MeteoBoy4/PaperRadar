@@ -9,7 +9,10 @@ description = "面向单用户的学术论文发现、筛选与研读流水线"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
 dependencies = [
+    "alembic>=1.17,<2",
     "pydantic>=2.12,<3",
+    "pyyaml>=6.0,<7",
+    "sqlalchemy>=2.0,<3",
     "typer>=0.19,<1",
 ]
 
@@ -21,6 +24,7 @@ dev = [
     "mypy>=1.18,<2",
     "pytest>=8.4,<9",
     "ruff>=0.13,<1",
+    "types-pyyaml>=6.0,<7",
 ]
 
 [tool.hatch.build.targets.wheel]
