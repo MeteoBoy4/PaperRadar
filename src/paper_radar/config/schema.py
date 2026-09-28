@@ -18,6 +18,16 @@ PROFILE_FIELDS = (
 _VERSION = re.compile(r"^[a-z][a-z0-9._-]{0,63}$")
 
 
+def _valid_declared_version(value: str) -> str:
+    if not _VERSION.fullmatch(value):
+        raise ValueError("声明版本格式无效")
+    return value
+
+
+def text_is_placeholder(value: str) -> bool:
+    return value.strip() in ("", "...")
+
+
 class SlotStatus(StrEnum):
     CONFIGURED = "configured"
     UNCONFIGURED = "unconfigured"
@@ -66,9 +76,7 @@ class Models(BaseModel):
     @field_validator("version")
     @classmethod
     def valid_version(cls, value: str) -> str:
-        if not _VERSION.fullmatch(value):
-            raise ValueError("声明版本格式无效")
-        return value
+        return _valid_declared_version(value)
 
 
 def model_slot_status(value: ModelSlot | None) -> SlotStatus:
@@ -95,9 +103,7 @@ class PromptSelectors(BaseModel):
     @field_validator("boundary", "value", "reuse", "reading")
     @classmethod
     def valid_version(cls, value: str | None) -> str | None:
-        if value is not None and not _VERSION.fullmatch(value):
-            raise ValueError("声明版本格式无效")
-        return value
+        return _valid_declared_version(value) if value is not None else None
 
 
 class ContractSelectors(BaseModel):
@@ -113,9 +119,7 @@ class ContractSelectors(BaseModel):
     )
     @classmethod
     def valid_version(cls, value: str | None) -> str | None:
-        if value is not None and not _VERSION.fullmatch(value):
-            raise ValueError("声明版本格式无效")
-        return value
+        return _valid_declared_version(value) if value is not None else None
 
 
 class Settings(BaseModel):
@@ -134,10 +138,8 @@ class Settings(BaseModel):
 
     @field_validator("profile", "models")
     @classmethod
-    def valid_profile_version(cls, value: str | None) -> str | None:
-        if value is not None and not _VERSION.fullmatch(value):
-            raise ValueError("声明版本格式无效")
-        return value
+    def valid_version(cls, value: str | None) -> str | None:
+        return _valid_declared_version(value) if value is not None else None
 
 
 class Profile(BaseModel):
@@ -156,14 +158,12 @@ class Profile(BaseModel):
     @field_validator("version")
     @classmethod
     def valid_version(cls, value: str) -> str:
-        if not _VERSION.fullmatch(value):
-            raise ValueError("声明版本格式无效")
-        return value
+        return _valid_declared_version(value)
 
 
 def profile_field_status(value: str | None) -> SlotStatus:
     if value is None:
         return SlotStatus.UNCONFIGURED
-    if value.strip() in ("", "..."):
+    if text_is_placeholder(value):
         return SlotStatus.PLACEHOLDER
     return SlotStatus.CONFIGURED

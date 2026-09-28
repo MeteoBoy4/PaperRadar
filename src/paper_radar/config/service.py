@@ -23,6 +23,7 @@ from paper_radar.config.schema import Models, Profile, Settings
 from paper_radar.config.yaml_loader import read_yaml, validate_yaml_bytes
 from paper_radar.contracts import (
     ContractCheckError,
+    ContractCheckErrorCategory,
     ContractName,
     ContractVersion,
     build_frozen_contract,
@@ -40,6 +41,16 @@ from paper_radar.storage.repository import check_version, read_snapshot, save_sn
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PROFILE_KEY = (MaterialKind.PROFILE, "profile")
 _MODELS_KEY = (MaterialKind.MODELS, "models")
+_CONTRACT_CHECK_GUIDANCE = {
+    ContractCheckErrorCategory.INVALID_SELECTION: "请确认所选契约和版本已实现",
+    ContractCheckErrorCategory.MISSING_SNAPSHOT: "请从版本控制恢复完整冻结快照",
+    ContractCheckErrorCategory.UNREADABLE_SNAPSHOT: "请检查冻结快照的读取权限",
+    ContractCheckErrorCategory.DAMAGED_SNAPSHOT: "请从版本控制恢复未损坏的冻结快照",
+    ContractCheckErrorCategory.VERSION_MISMATCH: "请核对所选契约版本与冻结快照",
+    ContractCheckErrorCategory.CONTENT_DRIFT: "请恢复权威快照；契约变化须创建新版本",
+    ContractCheckErrorCategory.INVALID_TARGET: "请检查冻结契约目录布局",
+    ContractCheckErrorCategory.PATH_ESCAPE: "请将冻结契约放在配置根目录内",
+}
 
 
 def _unsupported(settings: Settings) -> None:
@@ -84,16 +95,26 @@ def _contract_materials(root: Path, version: str) -> tuple[CompiledMaterial, ...
         ) from None
     try:
         contract = build_frozen_contract(ContractName.BOUNDARY, controlled_version)
+    except (ValueError, KeyError):
+        raise ConfigError(
+            "contracts.boundary：权威契约构造失败；请检查所选版本"
+        ) from None
+    try:
         check_frozen_contract(
             ContractName.BOUNDARY, controlled_version, root / "contracts"
         )
+    except ContractCheckError as error:
+        raise ConfigError(
+            f"contracts.boundary：{error.category.value}；"
+            f"{_CONTRACT_CHECK_GUIDANCE[error.category]}"
+        ) from None
+    try:
         folder = root / "contracts" / Path(*contract.snapshot_parts)
         schema_raw = (folder / contract.schema_filename).read_bytes()
         manifest_raw = (folder / contract.manifest_filename).read_bytes()
-    except (ValueError, KeyError, ContractCheckError, OSError):
+    except OSError:
         raise ConfigError(
-            "contracts.boundary：冻结契约缺失、损坏、版本不一致或漂移；"
-            "请恢复权威 v1 快照"
+            "contracts.boundary：检查后无法读取冻结契约；请检查路径和权限并重试"
         ) from None
     if schema_raw != contract.schema_bytes or manifest_raw != contract.manifest_bytes:
         raise ConfigError("contracts.boundary：冻结契约检查后内容变化；请重试")
@@ -326,5 +347,5 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         return rebuilt
     except ConfigError:
         raise
-    except (KeyError, TypeError, ValueError, UnicodeDecodeError, IndexError):
+    except (KeyError, TypeError, ValueError, UnicodeDecodeError):
         raise ConfigError("快照内容或版本引用损坏；请检查数据库") from None

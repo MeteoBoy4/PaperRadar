@@ -106,6 +106,28 @@ def test_contract_damage_rolls_back_all_new_materials(tmp_path: Path) -> None:
         ).fetchone() == (0,)
 
 
+@pytest.mark.parametrize(
+    ("damage", "category"),
+    [("missing", "missing_snapshot"), ("damaged", "damaged_snapshot")],
+)
+def test_contract_check_reports_specific_failure_without_writing(
+    tmp_path: Path, damage: str, category: str
+) -> None:
+    settings, db = _inputs(tmp_path)
+    folder = tmp_path / "contracts/screening/boundary/v1"
+    if damage == "missing":
+        (folder / "schema.json").unlink()
+    else:
+        (folder / "manifest.json").write_bytes(b"{}")
+    with pytest.raises(ConfigError, match=category) as error:
+        check_config(settings, db)
+    assert "contracts.boundary" in str(error.value)
+    with sqlite3.connect(db) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM config_versions"
+        ).fetchone() == (0,)
+
+
 def test_new_prompt_version_can_reuse_same_bytes(tmp_path: Path) -> None:
     settings, db = _inputs(tmp_path)
     first = compile_config(settings, db)
@@ -324,6 +346,7 @@ def test_installed_cli_ready_and_help_has_no_io(tmp_path: Path) -> None:
     damaged = cli("compile")
     assert damaged.returncode == 2
     assert "contracts.boundary" in damaged.stderr
+    assert "damaged_snapshot" in damaged.stderr
     manifest.write_bytes(original)
 
     prompt = tmp_path / "prompts/screening/boundary-v1.md"

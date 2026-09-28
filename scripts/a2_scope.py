@@ -46,7 +46,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/compile.py",
-        "4c877c4d5c20fcd1bb174f37ecb9a9b9dc05f7a3cb0fbdda5b3c1fd827ad37d8",
+        "f62780e784a6a8a6f2a3ced716478c2ce574f04e7c8511786dfc556e00069ed2",
     ),
     (
         "src/paper_radar/config/errors.py",
@@ -58,11 +58,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/schema.py",
-        "dd34bdbfe5ce2338cfa17a2388b2a3c662c0094487c87d6937124af634816c05",
+        "e89854a42dec3bf1a8d1fe26d3c73933d77300eee3a029e359907e0575a2301a",
     ),
     (
         "src/paper_radar/config/service.py",
-        "d0c862c46e86534439c3fbbad67b1638f40993204a03ec476bfd62dd0412d6f8",
+        "44f0a8e2c2f20861686c56fc88da74adeaa0d91131377fae26b52fc0f64bc016",
     ),
     (
         "src/paper_radar/config/yaml_loader.py",
@@ -115,6 +115,8 @@ REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 NOT_IMPLEMENTED = (
     "topics",
     "journals",
+    "prompts_value_reuse_reading",
+    "contracts_value_prediction_reuse_assessment_decision_reasons",
     "escalation",
     "extraction",
     "stage_config_projections",

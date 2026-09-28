@@ -18,6 +18,7 @@ from paper_radar.config.schema import (
     SlotStatus,
     model_slot_status,
     profile_field_status,
+    text_is_placeholder,
 )
 
 FORMAT_VERSION = 1
@@ -171,6 +172,11 @@ def compile_snapshot(
             return ()
         return (placeholder if status is SlotStatus.PLACEHOLDER else missing,)
 
+    screening_model_missing = model_reason(
+        "screening",
+        MissingReason.SCREENING_MODEL,
+        MissingReason.SCREENING_MODEL_PLACEHOLDER,
+    )
     prompt = next(
         (
             item.material
@@ -183,7 +189,7 @@ def compile_snapshot(
     prompt_missing: tuple[MissingReason, ...]
     if prompt is None:
         prompt_missing = (MissingReason.BOUNDARY_PROMPT,)
-    elif prompt.raw.decode("utf-8").strip() in ("", "..."):
+    elif text_is_placeholder(prompt.raw.decode("utf-8")):
         prompt_missing = (MissingReason.BOUNDARY_PROMPT_PLACEHOLDER,)
     else:
         prompt_missing = ()
@@ -194,11 +200,7 @@ def compile_snapshot(
     )
     boundary_missing = (
         *missing_profile,
-        *model_reason(
-            "screening",
-            MissingReason.SCREENING_MODEL,
-            MissingReason.SCREENING_MODEL_PLACEHOLDER,
-        ),
+        *screening_model_missing,
         *prompt_missing,
         *((MissingReason.BOUNDARY_CONTRACT,) if not contract_present else ()),
     )
@@ -211,11 +213,7 @@ def compile_snapshot(
             StageStatus.NOT_READY,
             (
                 *missing_profile,
-                *model_reason(
-                    "screening",
-                    MissingReason.SCREENING_MODEL,
-                    MissingReason.SCREENING_MODEL_PLACEHOLDER,
-                ),
+                *screening_model_missing,
                 MissingReason.VALUE_PROMPT,
                 MissingReason.VALUE_CONTRACT,
             ),

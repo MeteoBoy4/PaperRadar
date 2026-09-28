@@ -42,7 +42,7 @@ Profile 文件的 `version` 必须与 selector 完全相同。六段字段为 `b
 
 ## 模型、提示词与契约
 
-models 文件必须有 `version` 和 `screening`、`reuse_assessment`、`reading` 三个具名槽；每槽写 `null` 或严格对象。对象允许 `provider`、`model`、`protocol`、`temperature`、`top_p`，未知字段均拒绝。`provider` 与 `model` 是文本，`protocol` 为 `json_schema`、`json_object`、`prompt_only` 之一；前述三项缺失或为 `null` 时该槽为 `unconfigured`。`temperature` 是 0.0–2.0 的有限数字，默认 0.0；`top_p` 是大于 0 且不超过 1 的有限数字，默认 1.0。不得填写凭据、自由参数字典或 fallback 列表。`provider` 或 `model` 精确为 `REQUIRED`、`REQUIRED_FOR_FORMAL_CALIBRATION`、`REQUIRED_FOR_READ` 时槽为 `placeholder`，并按槽显示原因。其他非空文本视为已配置；此处不探测供应商能力或读取凭据。三槽可以写相同的 provider/model，但各自保留身份。
+models 文件必须有 `version` 和 `screening`、`reuse_assessment`、`reading` 三个具名槽；每槽写 `null` 或严格对象。对象允许 `provider`、`model`、`protocol`、`temperature`、`top_p`，未知字段均拒绝。`provider` 与 `model` 是文本，`protocol` 为 `json_schema`、`json_object`、`prompt_only` 之一。`temperature` 是 0.0–2.0 的有限数字，默认 0.0；`top_p` 是大于 0 且不超过 1 的有限数字，默认 1.0。不得填写凭据、自由参数字典或 fallback 列表。先判占位：`provider` 或 `model` 去除首尾空白后精确等于 `REQUIRED`、`REQUIRED_FOR_FORMAL_CALIBRATION`、`REQUIRED_FOR_READ` 之一时，槽为 `placeholder`；否则三项缺失、为 `null` 或 provider/model 为空白时，槽为 `unconfigured`。其余非空文本视为已配置；此处不探测供应商能力或读取凭据。三槽可以写相同的 provider/model，但各自保留身份。
 
 ```yaml
 version: models-v1
@@ -58,7 +58,7 @@ reading: null
 
 boundary 提示词的逻辑名固定为 `boundary`，声明版本来自 `settings.prompts.boundary`，Prompt 本身无需内嵌版本。文件去除首尾空白后为空或精确等于 ASCII `...` 时为占位。两个声明版本可登记完全相同的 Prompt 原始字节；同一版本任何字节变化都拒绝。Profile 的文件内版本与 selector 一致性仍是强制要求。
 
-活跃 boundary 契约只支持 A1 权威 `v1`。check/compile 调用其公开只读检查，并将同一份通过检查的 schema 与 manifest 字节分别登记；它们的哈希和编译值一起进入快照。缺失、损坏、版本错误或内容漂移使整次命令失败，不会修复或导出。历史 load 从数据库核对已登记字节与快照身份，即使原冻结目录后来被移动或损坏，历史仍可读取。
+活跃 boundary 契约只支持 A1 权威 `v1`。check/compile 调用其公开只读检查，并将同一份通过检查的 schema 与 manifest 字节分别登记；它们的哈希和编译值一起进入快照。缺失、损坏、版本错误或内容漂移使整次命令失败，错误显示受控类别与中文处理指引，不会修复或导出。历史 load 从数据库核对已登记字节与快照身份，即使原冻结目录后来被移动或损坏，历史仍可读取。
 
 严格 YAML 只接受单文档、UTF-8、普通标量/列表/映射。重复键、锚点/别名、合并键、
 自定义 tag、非有限浮点数和未知字段均拒绝。只有小写 `true`/`false`、`null`/`~`
