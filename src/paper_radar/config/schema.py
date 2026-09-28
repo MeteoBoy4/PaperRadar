@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 PROFILE_FIELDS = (
     "background",
@@ -24,12 +24,64 @@ class SlotStatus(StrEnum):
     PLACEHOLDER = "placeholder"
 
 
-class ModelSelectors(BaseModel):
+MODEL_SLOTS = ("screening", "reuse_assessment", "reading")
+MODEL_PLACEHOLDERS = frozenset(
+    {"REQUIRED", "REQUIRED_FOR_FORMAL_CALIBRATION", "REQUIRED_FOR_READ"}
+)
+
+
+class ModelProtocol(StrEnum):
+    JSON_SCHEMA = "json_schema"
+    JSON_OBJECT = "json_object"
+    PROMPT_ONLY = "prompt_only"
+
+
+class ModelSlot(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    screening: str | None = None
-    reuse_assessment: str | None = None
-    reading: str | None = None
+    provider: str | None = None
+    model: str | None = None
+    protocol: ModelProtocol | None = None
+    temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+    top_p: float = Field(default=1.0, gt=0.0, le=1.0)
+
+    @field_validator("protocol", mode="before")
+    @classmethod
+    def valid_protocol(cls, value: object) -> ModelProtocol | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("协议必须是受控文本")
+        return ModelProtocol(value)
+
+
+class Models(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    version: str
+    screening: ModelSlot | None
+    reuse_assessment: ModelSlot | None
+    reading: ModelSlot | None
+
+    @field_validator("version")
+    @classmethod
+    def valid_version(cls, value: str) -> str:
+        if not _VERSION.fullmatch(value):
+            raise ValueError("声明版本格式无效")
+        return value
+
+
+def model_slot_status(value: ModelSlot | None) -> SlotStatus:
+    if value is None:
+        return SlotStatus.UNCONFIGURED
+    fields = (value.provider, value.model)
+    if any(text is not None and text.strip() in MODEL_PLACEHOLDERS for text in fields):
+        return SlotStatus.PLACEHOLDER
+    if value.protocol is None or any(
+        text is None or not text.strip() for text in fields
+    ):
+        return SlotStatus.UNCONFIGURED
+    return SlotStatus.CONFIGURED
 
 
 class PromptSelectors(BaseModel):
@@ -40,6 +92,13 @@ class PromptSelectors(BaseModel):
     reuse: str | None = None
     reading: str | None = None
 
+    @field_validator("boundary", "value", "reuse", "reading")
+    @classmethod
+    def valid_version(cls, value: str | None) -> str | None:
+        if value is not None and not _VERSION.fullmatch(value):
+            raise ValueError("声明版本格式无效")
+        return value
+
 
 class ContractSelectors(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
@@ -48,6 +107,15 @@ class ContractSelectors(BaseModel):
     value_prediction: str | None = None
     reuse_assessment: str | None = None
     decision_reasons: str | None = None
+
+    @field_validator(
+        "boundary", "value_prediction", "reuse_assessment", "decision_reasons"
+    )
+    @classmethod
+    def valid_version(cls, value: str | None) -> str | None:
+        if value is not None and not _VERSION.fullmatch(value):
+            raise ValueError("声明版本格式无效")
+        return value
 
 
 class Settings(BaseModel):
@@ -58,13 +126,13 @@ class Settings(BaseModel):
     profile: str | None = None
     topics: str | None = None
     journals: str | None = None
-    models: ModelSelectors = ModelSelectors()
+    models: str | None = None
     prompts: PromptSelectors = PromptSelectors()
     contracts: ContractSelectors = ContractSelectors()
     escalation: str | None = None
     extraction: str | None = None
 
-    @field_validator("profile")
+    @field_validator("profile", "models")
     @classmethod
     def valid_profile_version(cls, value: str | None) -> str | None:
         if value is not None and not _VERSION.fullmatch(value):

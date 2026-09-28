@@ -38,7 +38,7 @@ uv run --offline --locked paper-radar --help
 当前注册 `contracts export/check`、`db upgrade` 与 `config check/compile`。
 不注册尚未实现的业务命令。
 
-## Profile 配置快照
+## 运行配置快照
 
 `db upgrade` 是唯一可创建数据库的命令；`config check` 只读，`config compile`
 只打开已迁移的既有库。三个命令均要求明确路径：
@@ -52,7 +52,7 @@ uv run --offline --locked paper-radar config compile \
 ```
 
 先创建数据库父目录，例如 `mkdir -p data`。示例是工程验收合成材料，不是正式
-校准资料。公共 Python 服务可从数据库加载旧快照；完整字段、声明版本规则、
+校准资料。当前可选六段式 Profile、单份三槽 models 文件、boundary 提示词和 A1 boundary 冻结契约；四者齐全时 boundary 显示配置就绪。公共 Python 服务可从数据库加载旧快照；完整字段、声明版本规则、
 身份格式、未就绪范围和迁移行为见
 [运行配置快照契约](docs/contracts/runtime-config.md)。
 

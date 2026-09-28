@@ -876,9 +876,9 @@ reports/
 logs/
 ~~~
 
-`settings.yaml` 只选择当前 Profile、主题、复用升级参数、提示词和契约版本；带版本的内容文件创建后不可原地改写。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
+`settings.yaml` 只选择当前 Profile、主题、models 整份版本化文件、复用升级参数、提示词和契约版本；带版本的内容文件创建后不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
 
-A2-01 首先开放 Profile 纵向路径：`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，其他配置种类的非空选择在后续票开放前拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
+A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
 
 blob 和 artifact 路径只由哈希、UUID 与受控枚举构造。数据库保存相对路径；根目录由配置决定，以便 NAS 恢复到不同挂载点。
 
@@ -1034,16 +1034,19 @@ accepted 人工决定没有更具体业务原因时使用 `user_judgment`。`out
 ### 7.6 模型配置
 
 ~~~yaml
-models:
-  screening:
-    provider: REQUIRED
-    model: REQUIRED
-  reuse_assessment:
-    provider: REQUIRED_FOR_FORMAL_CALIBRATION
-    model: REQUIRED_FOR_FORMAL_CALIBRATION
-  reading:
-    provider: REQUIRED_FOR_READ
-    model: REQUIRED_FOR_READ
+version: models-v1
+screening:
+  provider: REQUIRED
+  model: REQUIRED
+  protocol: json_schema
+reuse_assessment:
+  provider: REQUIRED_FOR_FORMAL_CALIBRATION
+  model: REQUIRED_FOR_FORMAL_CALIBRATION
+  protocol: json_schema
+reading:
+  provider: REQUIRED_FOR_READ
+  model: REQUIRED_FOR_READ
+  protocol: json_schema
 ~~~
 
 Screening 与 reuse_assessment 可以由用户显式选择同一模型，但仍作为两个配置槽和制品来源保存；两者是正式校准前置，reading 只在阶段 B/G 实际 Read 前必需。没有默认 fallback 列表。PydanticAI 只隔离供应商接口和结构化输出差异，不承诺模型可互换。实际 provider/model、提示词、Schema、Profile 和输入哈希进入每次制品。

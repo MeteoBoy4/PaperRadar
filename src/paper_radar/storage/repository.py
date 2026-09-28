@@ -43,12 +43,13 @@ def _check_version(connection: Connection, material: VersionRecord) -> bool:
     return True
 
 
-def check_version(engine: Engine, material: VersionRecord | None) -> None:
-    if material is None:
+def check_version(engine: Engine, materials: tuple[VersionRecord, ...]) -> None:
+    if not materials:
         return
     try:
         with engine.connect() as connection:
-            _check_version(connection, material)
+            for material in materials:
+                _check_version(connection, material)
     except SQLAlchemyError:
         raise StorageError("数据库读取失败；请检查数据库状态") from None
 
@@ -57,23 +58,24 @@ def save_snapshot(
     engine: Engine,
     snapshot_id: str,
     payload_json: str,
-    material: VersionRecord | None,
+    materials: tuple[VersionRecord, ...],
 ) -> None:
     """BEGIN IMMEDIATE 覆盖冲突检查与全部写入。失败整体回滚。"""
     try:
         with engine.connect() as connection:
             connection.exec_driver_sql("BEGIN IMMEDIATE")
             try:
-                if material is not None and not _check_version(connection, material):
-                    connection.execute(
-                        config_versions.insert().values(
-                            kind=material.kind,
-                            name=material.name,
-                            declared_version=material.version,
-                            raw_sha256=material.raw_sha256,
-                            raw_content=material.raw,
+                for material in materials:
+                    if not _check_version(connection, material):
+                        connection.execute(
+                            config_versions.insert().values(
+                                kind=material.kind,
+                                name=material.name,
+                                declared_version=material.version,
+                                raw_sha256=material.raw_sha256,
+                                raw_content=material.raw,
+                            )
                         )
-                    )
                 existing = connection.execute(
                     select(runtime_config_snapshots.c.payload_json).where(
                         runtime_config_snapshots.c.snapshot_id == snapshot_id
@@ -87,7 +89,7 @@ def save_snapshot(
                             created_at=datetime.now(UTC).isoformat(),
                         )
                     )
-                    if material is not None:
+                    for material in materials:
                         connection.execute(
                             snapshot_version_refs.insert().values(
                                 snapshot_id=snapshot_id,
@@ -108,18 +110,15 @@ def save_snapshot(
                             snapshot_version_refs.c.raw_sha256,
                         ).where(snapshot_version_refs.c.snapshot_id == snapshot_id)
                     ).all()
-                    refs = [tuple(row) for row in rows]
-                    expected = (
-                        []
-                        if material is None
-                        else [
-                            (
-                                material.kind,
-                                material.name,
-                                material.version,
-                                material.raw_sha256,
-                            )
-                        ]
+                    refs = sorted(tuple(row) for row in rows)
+                    expected = sorted(
+                        (
+                            material.kind,
+                            material.name,
+                            material.version,
+                            material.raw_sha256,
+                        )
+                        for material in materials
                     )
                     if refs != expected:
                         raise StorageError("快照版本引用损坏；请检查数据库")

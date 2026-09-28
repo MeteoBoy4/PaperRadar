@@ -42,11 +42,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/cli.py",
-        "730c44c29c442dddd763ed1feae70a1f6ad7a31a9b62e295478371e53fff011c",
+        "59085806ed079a5885eef4b4718b5a22952b3910c4796d50aad8c9a437f615a8",
     ),
     (
         "src/paper_radar/config/compile.py",
-        "31ad130c39199f25a7f29302da36e47e0d5ca40202503726b0949c7d9bb89464",
+        "afb9d5b7c35116a99d92b8182ce34730cefcd7fb77b714aa1b8a2689c3cfdf6f",
     ),
     (
         "src/paper_radar/config/errors.py",
@@ -58,11 +58,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/schema.py",
-        "af7a01153b0c351f5329c3e0c95d11559122293ecb75c7b170a7e86ee2ca6bcc",
+        "dd34bdbfe5ce2338cfa17a2388b2a3c662c0094487c87d6937124af634816c05",
     ),
     (
         "src/paper_radar/config/service.py",
-        "45f44acee254d8aab679dd86ec5d466285484cddbbd10e5059c794c41e91dc3e",
+        "e7ae7b380a5527f0b6d7b9f0c0db082171133a840727f2cdb611f3c9c8dea528",
     ),
     (
         "src/paper_radar/config/yaml_loader.py",
@@ -82,7 +82,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/repository.py",
-        "565ef8859f1823856d9bf31fcd995a59a55e9a8854ef1d8740e830944faae7ae",
+        "a964954d9b0ea152beb411145c88d21dd8c2149319d77bd48601a271dba98765",
     ),
     (
         "src/paper_radar/storage/schema.py",
@@ -115,9 +115,6 @@ REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 NOT_IMPLEMENTED = (
     "topics",
     "journals",
-    "models",
-    "prompts",
-    "frozen_contract_selection",
     "escalation",
     "extraction",
     "stage_config_projections",

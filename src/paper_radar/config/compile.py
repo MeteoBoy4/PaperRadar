@@ -10,10 +10,13 @@ from typing import Any
 
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.schema import (
+    MODEL_SLOTS,
     PROFILE_FIELDS,
+    Models,
     Profile,
     Settings,
     SlotStatus,
+    model_slot_status,
     profile_field_status,
 )
 
@@ -37,15 +40,19 @@ class StageStatus(StrEnum):
 class MissingReason(StrEnum):
     PROFILE = "profile"
     SCREENING_MODEL = "screening_model"
+    SCREENING_MODEL_PLACEHOLDER = "screening_model_placeholder"
     BOUNDARY_PROMPT = "boundary_prompt"
+    BOUNDARY_PROMPT_PLACEHOLDER = "boundary_prompt_placeholder"
     BOUNDARY_CONTRACT = "boundary_contract"
     VALUE_PROMPT = "value_prompt"
     VALUE_CONTRACT = "value_contract"
     REUSE_MODEL = "reuse_model"
+    REUSE_MODEL_PLACEHOLDER = "reuse_model_placeholder"
     REUSE_PROMPT = "reuse_prompt"
     REUSE_CONTRACT = "reuse_contract"
     EXTRACTION_CONFIG = "extraction_config"
     READ_MODEL = "read_model"
+    READ_MODEL_PLACEHOLDER = "read_model_placeholder"
     READ_PROMPT = "read_prompt"
     READ_CONTRACT = "read_contract"
     SUGGESTION_RULE = "suggestion_rule"
@@ -74,12 +81,17 @@ class RuntimeConfigSnapshot:
     snapshot_id: str
     profile_status: SlotStatus
     profile_fields: Mapping[str, SlotStatus]
+    model_slots: Mapping[str, SlotStatus]
     stages: Mapping[StageName, StageReadiness]
     payload_json: str
 
 
 def compile_snapshot(
-    settings: Settings, profile: Profile | None, material: Material | None
+    settings: Settings,
+    profile: Profile | None,
+    material: Material | None,
+    models: Models | None = None,
+    additional: tuple[tuple[Material, Any], ...] = (),
 ) -> RuntimeConfigSnapshot:
     """新增材料种类沿用包络格式。条目按 kind/name/version 排序。"""
     fields = {
@@ -106,29 +118,88 @@ def compile_snapshot(
                 "config": profile.model_dump(),
             }
         )
+    entries.extend(
+        {
+            "kind": item.kind,
+            "name": item.name,
+            "version": item.version,
+            "raw_sha256": item.raw_sha256,
+            "config": config,
+        }
+        for item, config in additional
+    )
+    entries.sort(key=lambda entry: (entry["kind"], entry["name"], entry["version"]))
+    selectors: dict[str, Any] = {"profile": settings.profile}
+    if settings.models is not None:
+        selectors["models"] = settings.models
+    if settings.prompts.boundary is not None:
+        selectors["prompts"] = {"boundary": settings.prompts.boundary}
+    if settings.contracts.boundary is not None:
+        selectors["contracts"] = {"boundary": settings.contracts.boundary}
     payload = {
         "format_version": FORMAT_VERSION,
-        "selectors": {"profile": settings.profile},
+        "selectors": selectors,
         "materials": entries,
     }
     missing_profile = (
         () if profile_status is SlotStatus.CONFIGURED else (MissingReason.PROFILE,)
     )
+    model_slots = {
+        name: model_slot_status(getattr(models, name) if models else None)
+        for name in MODEL_SLOTS
+    }
+
+    def model_reason(
+        name: str, missing: MissingReason, placeholder: MissingReason
+    ) -> tuple[MissingReason, ...]:
+        status = model_slots[name]
+        if status is SlotStatus.CONFIGURED:
+            return ()
+        return (placeholder if status is SlotStatus.PLACEHOLDER else missing,)
+
+    prompt = next(
+        (
+            item
+            for item, _ in additional
+            if item.kind == "prompt" and item.name == "boundary"
+        ),
+        None,
+    )
+    prompt_missing: tuple[MissingReason, ...]
+    if prompt is None:
+        prompt_missing = (MissingReason.BOUNDARY_PROMPT,)
+    elif prompt.raw.decode("utf-8").strip() in ("", "..."):
+        prompt_missing = (MissingReason.BOUNDARY_PROMPT_PLACEHOLDER,)
+    else:
+        prompt_missing = ()
+    contract_present = any(
+        item.kind == "contract_schema" and item.name == "boundary"
+        for item, _ in additional
+    )
+    boundary_missing = (
+        *missing_profile,
+        *model_reason(
+            "screening",
+            MissingReason.SCREENING_MODEL,
+            MissingReason.SCREENING_MODEL_PLACEHOLDER,
+        ),
+        *prompt_missing,
+        *((MissingReason.BOUNDARY_CONTRACT,) if not contract_present else ()),
+    )
     stages = {
         StageName.BOUNDARY: StageReadiness(
-            StageStatus.NOT_READY,
-            (
-                *missing_profile,
-                MissingReason.SCREENING_MODEL,
-                MissingReason.BOUNDARY_PROMPT,
-                MissingReason.BOUNDARY_CONTRACT,
-            ),
+            StageStatus.READY if not boundary_missing else StageStatus.NOT_READY,
+            boundary_missing,
         ),
         StageName.VALUE: StageReadiness(
             StageStatus.NOT_READY,
             (
                 *missing_profile,
-                MissingReason.SCREENING_MODEL,
+                *model_reason(
+                    "screening",
+                    MissingReason.SCREENING_MODEL,
+                    MissingReason.SCREENING_MODEL_PLACEHOLDER,
+                ),
                 MissingReason.VALUE_PROMPT,
                 MissingReason.VALUE_CONTRACT,
             ),
@@ -137,7 +208,11 @@ def compile_snapshot(
             StageStatus.NOT_READY,
             (
                 *missing_profile,
-                MissingReason.REUSE_MODEL,
+                *model_reason(
+                    "reuse_assessment",
+                    MissingReason.REUSE_MODEL,
+                    MissingReason.REUSE_MODEL_PLACEHOLDER,
+                ),
                 MissingReason.REUSE_PROMPT,
                 MissingReason.REUSE_CONTRACT,
             ),
@@ -149,7 +224,11 @@ def compile_snapshot(
             StageStatus.NOT_READY,
             (
                 *missing_profile,
-                MissingReason.READ_MODEL,
+                *model_reason(
+                    "reading",
+                    MissingReason.READ_MODEL,
+                    MissingReason.READ_MODEL_PLACEHOLDER,
+                ),
                 MissingReason.READ_PROMPT,
                 MissingReason.READ_CONTRACT,
             ),
@@ -163,6 +242,7 @@ def compile_snapshot(
         snapshot_id=sha256(canonical),
         profile_status=profile_status,
         profile_fields=MappingProxyType(fields),
+        model_slots=MappingProxyType(model_slots),
         stages=MappingProxyType(stages),
         payload_json=canonical.decode("utf-8"),
     )

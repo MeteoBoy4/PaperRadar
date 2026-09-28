@@ -1,6 +1,6 @@
-# A2-01 运行配置快照契约
+# A2-02 运行配置快照契约
 
-本票只开放六段式 Research Profile。配置完整性不是正式校准资格，也不启用模型或自动精读。
+当前开放六段式 Research Profile、三槽 models 文件、boundary 提示词及 A1 boundary 冻结契约。配置就绪仅说明这些本地材料齐全且合法，不证明模型调用、正式校准或自动精读可用。
 公共 Python 入口是 `paper_radar.config.check_config(settings_path, database)`、
 `compile_config(settings_path, database)`、`load_config_snapshot(database, snapshot_id)` 和
 `upgrade_database(database)`。前三个返回 `RuntimeConfigSnapshot`；错误为脱敏的
@@ -22,11 +22,12 @@ provider/model、secret 或凭据引用。CLI 必须显式传 `--settings` 和 `
 | --- | --- | --- |
 | `profile` | 声明版本或 `null` | 缺失或 `null` 都表示 `unconfigured`，允许保存未就绪快照。 |
 | `topics`, `journals`, `escalation`, `extraction` | 仅 `null` | 非空选择在后续票开放。 |
-| `models.screening`, `models.reuse_assessment`, `models.reading` | 仅 `null` | 模型槽目前不读取模型文件。未来模型文件须具名包含三个槽；本票不接受内联模型。 |
-| `prompts.boundary`, `prompts.value`, `prompts.reuse`, `prompts.reading` | 仅 `null` | 后续票开放。 |
-| `contracts.boundary`, `contracts.value_prediction`, `contracts.reuse_assessment`, `contracts.decision_reasons` | 仅 `null` | 后续票开放。 |
+| `models` | 声明版本或 `null` | 整份 `config/models/<version>.yaml`；三个模型槽在文件内具名，settings 不内联 provider/model。 |
+| `prompts.boundary` | 声明版本或 `null` | 绑定 `prompts/screening/boundary-<version>.md` 的原始 UTF-8 字节。 |
+| `contracts.boundary` | `v1` 或 `null` | 从 `contracts/screening/boundary/v1/{schema,manifest}.json` 检查并登记两份原始字节。 |
+| `prompts.value`, `prompts.reuse`, `prompts.reading` 及其他 `contracts.*` | 仅 `null` | 后续票开放。 |
 
-当前封闭逻辑名称只有版本登记键 `profile/profile`。快照包络中的材料条目含
+当前封闭逻辑名称为 `profile/profile`、`models/models`、`prompt/boundary`、`contract_schema/boundary` 与 `contract_manifest/boundary`。快照包络中的材料条目含
 `kind`、`name`、`version`、`raw_sha256` 和编译值；后续新增材料种类只增加带
 种类和版本键的条目，不提升编译格式版本。只有包络结构改变时才提升格式版本。
 选择了尚未开放的非空字段会返回 2，并给出字段路径；不会忽略选择。
@@ -38,6 +39,26 @@ Profile 文件的 `version` 必须与 selector 完全相同。六段字段为 `b
 是 `placeholder`；其余文本为 `configured`，包括 `…`、`......`、日期文字。
 本票仅判断填写状态，不判断资料真实性。只有六段都配置时 Profile 槽为
 `configured`；有占位段时为 `placeholder`，否则为 `unconfigured`。
+
+## 模型、提示词与契约
+
+models 文件必须有 `version` 和 `screening`、`reuse_assessment`、`reading` 三个具名槽；每槽写 `null` 或严格对象。对象允许 `provider`、`model`、`protocol`、`temperature`、`top_p`，未知字段均拒绝。`provider` 与 `model` 是文本，`protocol` 为 `json_schema`、`json_object`、`prompt_only` 之一；前述三项缺失或为 `null` 时该槽为 `unconfigured`。`temperature` 是 0.0–2.0 的有限数字，默认 0.0；`top_p` 是大于 0 且不超过 1 的有限数字，默认 1.0。不得填写凭据、自由参数字典或 fallback 列表。`provider` 或 `model` 精确为 `REQUIRED`、`REQUIRED_FOR_FORMAL_CALIBRATION`、`REQUIRED_FOR_READ` 时槽为 `placeholder`，并按槽显示原因。其他非空文本视为已配置；此处不探测供应商能力或读取凭据。三槽可以写相同的 provider/model，但各自保留身份。
+
+```yaml
+version: models-v1
+screening:
+  provider: example-provider
+  model: example-model
+  protocol: json_schema
+  temperature: 0.0
+  top_p: 1.0
+reuse_assessment: null
+reading: null
+```
+
+boundary 提示词的逻辑名固定为 `boundary`，声明版本来自 `settings.prompts.boundary`，Prompt 本身无需内嵌版本。文件去除首尾空白后为空或精确等于 ASCII `...` 时为占位。两个声明版本可登记完全相同的 Prompt 原始字节；同一版本任何字节变化都拒绝。Profile 的文件内版本与 selector 一致性仍是强制要求。
+
+活跃 boundary 契约只支持 A1 权威 `v1`。check/compile 调用其公开只读检查，并将同一份通过检查的 schema 与 manifest 字节分别登记；它们的哈希和编译值一起进入快照。缺失、损坏、版本错误或内容漂移使整次命令失败，不会修复或导出。历史 load 从数据库核对已登记字节与快照身份，即使原冻结目录后来被移动或损坏，历史仍可读取。
 
 严格 YAML 只接受单文档、UTF-8、普通标量/列表/映射。重复键、锚点/别名、合并键、
 自定义 tag、非有限浮点数和未知字段均拒绝。只有小写 `true`/`false`、`null`/`~`
@@ -71,9 +92,7 @@ NaN/Infinity；浮点采用 Python `json.dumps` 的浮点表示。材料条目�
 ## 当前就绪范围
 
 CLI 只显示槽的 `configured`/`unconfigured`/`placeholder`、阶段的 `ready`/
-`not_ready` 及受控缺项原因。当前模型、提示词、契约、提取与建议规则尚未开放，
-因此所有阶段均为 `not_ready`。不输出“校准就绪”。阶段配置投影、diff、模型
-材料、提示词和校准语义基线由后续 A2 票实现；不能把本票完整快照身份当作阶段
+`not_ready` 及受控缺项原因。boundary 仅在 Profile 六段、Screening 模型槽、boundary 提示词和权威契约均已配置时为 `ready`。缺失或占位各给受控原因；即使 reuse 或 Read 模型槽已配置，这两个阶段仍因其余材料未开放而为 `not_ready`。不输出“校准就绪”。阶段配置投影、diff 和校准语义基线由后续 A2 票实现；不能把本票完整快照身份当作阶段
 输入指纹。
 
 下表是后续票实现投影时的**依赖契约**，不是本票已经生成的投影。空格表示该材料
@@ -90,9 +109,7 @@ CLI 只显示槽的 `configured`/`unconfigured`/`placeholder`、阶段的 `ready
 | 解析器、后端、模型制品、解析配置与 normalization | extraction | 是 |
 | 复用升级触发参数、建议规则与原因契约 | 建议规则 | 是 |
 
-当前只开放 Profile 材料登记；表中其余非空 selector 仍拒绝。未来模型文件的占位
-词表固定为 `REQUIRED`、`REQUIRED_FOR_FORMAL_CALIBRATION`、`REQUIRED_FOR_READ`；
-这些词只能表示 `placeholder`，不能充当可运行模型身份。本票没有模型文件加载。
+当前只开放 Profile、models、boundary 提示词与契约登记。表中其余非空 selector 仍拒绝。模型槽可分别提取，但本票不生成阶段投影。
 
 ## 示例与命令
 
