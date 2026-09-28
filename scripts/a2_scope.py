@@ -46,7 +46,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/compile.py",
-        "afb9d5b7c35116a99d92b8182ce34730cefcd7fb77b714aa1b8a2689c3cfdf6f",
+        "4c877c4d5c20fcd1bb174f37ecb9a9b9dc05f7a3cb0fbdda5b3c1fd827ad37d8",
     ),
     (
         "src/paper_radar/config/errors.py",
@@ -62,7 +62,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/service.py",
-        "e7ae7b380a5527f0b6d7b9f0c0db082171133a840727f2cdb611f3c9c8dea528",
+        "d0c862c46e86534439c3fbbad67b1638f40993204a03ec476bfd62dd0412d6f8",
     ),
     (
         "src/paper_radar/config/yaml_loader.py",

@@ -58,9 +58,17 @@ class MissingReason(StrEnum):
     SUGGESTION_RULE = "suggestion_rule"
 
 
+class MaterialKind(StrEnum):
+    PROFILE = "profile"
+    MODELS = "models"
+    PROMPT = "prompt"
+    CONTRACT_SCHEMA = "contract_schema"
+    CONTRACT_MANIFEST = "contract_manifest"
+
+
 @dataclass(frozen=True, slots=True)
 class Material:
-    kind: str
+    kind: MaterialKind
     name: str
     version: str
     raw: bytes
@@ -68,6 +76,12 @@ class Material:
     @property
     def raw_sha256(self) -> str:
         return sha256(self.raw)
+
+
+@dataclass(frozen=True, slots=True)
+class CompiledMaterial:
+    material: Material
+    config: Any
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,7 +105,7 @@ def compile_snapshot(
     profile: Profile | None,
     material: Material | None,
     models: Models | None = None,
-    additional: tuple[tuple[Material, Any], ...] = (),
+    additional: tuple[CompiledMaterial, ...] = (),
 ) -> RuntimeConfigSnapshot:
     """新增材料种类沿用包络格式。条目按 kind/name/version 排序。"""
     fields = {
@@ -120,13 +134,13 @@ def compile_snapshot(
         )
     entries.extend(
         {
-            "kind": item.kind,
-            "name": item.name,
-            "version": item.version,
-            "raw_sha256": item.raw_sha256,
-            "config": config,
+            "kind": item.material.kind,
+            "name": item.material.name,
+            "version": item.material.version,
+            "raw_sha256": item.material.raw_sha256,
+            "config": item.config,
         }
-        for item, config in additional
+        for item in additional
     )
     entries.sort(key=lambda entry: (entry["kind"], entry["name"], entry["version"]))
     selectors: dict[str, Any] = {"profile": settings.profile}
@@ -159,9 +173,10 @@ def compile_snapshot(
 
     prompt = next(
         (
-            item
-            for item, _ in additional
-            if item.kind == "prompt" and item.name == "boundary"
+            item.material
+            for item in additional
+            if item.material.kind is MaterialKind.PROMPT
+            and item.material.name == "boundary"
         ),
         None,
     )
@@ -173,8 +188,9 @@ def compile_snapshot(
     else:
         prompt_missing = ()
     contract_present = any(
-        item.kind == "contract_schema" and item.name == "boundary"
-        for item, _ in additional
+        item.material.kind is MaterialKind.CONTRACT_SCHEMA
+        and item.material.name == "boundary"
+        for item in additional
     )
     boundary_missing = (
         *missing_profile,

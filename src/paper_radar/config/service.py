@@ -11,7 +11,9 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.config.compile import (
     FORMAT_VERSION,
+    CompiledMaterial,
     Material,
+    MaterialKind,
     RuntimeConfigSnapshot,
     compile_snapshot,
 )
@@ -36,8 +38,8 @@ from paper_radar.storage.records import VersionRecord
 from paper_radar.storage.repository import check_version, read_snapshot, save_snapshot
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_PROFILE_KEY = ("profile", "profile")
-_MODELS_KEY = ("models", "models")
+_PROFILE_KEY = (MaterialKind.PROFILE, "profile")
+_MODELS_KEY = (MaterialKind.MODELS, "models")
 
 
 def _unsupported(settings: Settings) -> None:
@@ -73,7 +75,7 @@ def _read_prompt(path: Path) -> bytes:
         ) from None
 
 
-def _contract_materials(root: Path, version: str) -> tuple[tuple[Material, Any], ...]:
+def _contract_materials(root: Path, version: str) -> tuple[CompiledMaterial, ...]:
     try:
         controlled_version = ContractVersion(version)
     except ValueError:
@@ -96,12 +98,12 @@ def _contract_materials(root: Path, version: str) -> tuple[tuple[Material, Any],
     if schema_raw != contract.schema_bytes or manifest_raw != contract.manifest_bytes:
         raise ConfigError("contracts.boundary：冻结契约检查后内容变化；请重试")
     return (
-        (
-            Material("contract_schema", "boundary", version, schema_raw),
+        CompiledMaterial(
+            Material(MaterialKind.CONTRACT_SCHEMA, "boundary", version, schema_raw),
             json.loads(schema_raw),
         ),
-        (
-            Material("contract_manifest", "boundary", version, manifest_raw),
+        CompiledMaterial(
+            Material(MaterialKind.CONTRACT_MANIFEST, "boundary", version, manifest_raw),
             json.loads(manifest_raw),
         ),
     )
@@ -114,7 +116,7 @@ def _selected_materials(
     Profile | None,
     Material | None,
     Models | None,
-    tuple[tuple[Material, Any], ...],
+    tuple[CompiledMaterial, ...],
 ]:
     _, settings = read_yaml(settings_path, Settings, "settings")
     _unsupported(settings)
@@ -134,7 +136,7 @@ def _selected_materials(
         profile_material = Material(*_PROFILE_KEY, profile.version, raw)
 
     models: Models | None = None
-    additional: list[tuple[Material, Any]] = []
+    additional: list[CompiledMaterial] = []
     if settings.models is not None:
         raw, models = read_yaml(
             settings_path.parent / "models" / f"{settings.models}.yaml",
@@ -146,7 +148,7 @@ def _selected_materials(
                 "models.version：与 settings.models 不一致；请选择匹配版本"
             )
         additional.append(
-            (
+            CompiledMaterial(
                 Material(*_MODELS_KEY, models.version, raw),
                 models.model_dump(mode="json"),
             )
@@ -155,8 +157,8 @@ def _selected_materials(
         version = settings.prompts.boundary
         raw = _read_prompt(root / "prompts/screening" / f"boundary-{version}.md")
         additional.append(
-            (
-                Material("prompt", "boundary", version, raw),
+            CompiledMaterial(
+                Material(MaterialKind.PROMPT, "boundary", version, raw),
                 {"text": raw.decode("utf-8")},
             )
         )
@@ -166,10 +168,10 @@ def _selected_materials(
 
 
 def _records(
-    profile_material: Material | None, additional: tuple[tuple[Material, Any], ...]
+    profile_material: Material | None, additional: tuple[CompiledMaterial, ...]
 ) -> tuple[VersionRecord, ...]:
     items = ([profile_material] if profile_material is not None else []) + [
-        item for item, _ in additional
+        item.material for item in additional
     ]
     return tuple(
         VersionRecord(item.kind, item.name, item.version, item.raw) for item in items
@@ -254,11 +256,11 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         profile: Profile | None = None
         profile_material: Material | None = None
         models: Models | None = None
-        additional: list[tuple[Material, Any]] = []
+        additional: list[CompiledMaterial] = []
         for entry in listed:
             key = (entry["kind"], entry["name"], entry["version"])
             raw_hash, raw = by_key.pop(key)
-            material = Material(*key, raw)
+            material = Material(MaterialKind(key[0]), key[1], key[2], raw)
             if material.raw_sha256 != raw_hash or raw_hash != entry["raw_sha256"]:
                 raise ValueError
             if key[:2] == _PROFILE_KEY:
@@ -276,24 +278,24 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                     or models.model_dump(mode="json") != entry["config"]
                 ):
                     raise ValueError
-                additional.append((material, entry["config"]))
-            elif key[:2] == ("prompt", "boundary"):
+                additional.append(CompiledMaterial(material, entry["config"]))
+            elif key[:2] == (MaterialKind.PROMPT, "boundary"):
                 if (
                     key[2] != settings.prompts.boundary
                     or {"text": raw.decode("utf-8")} != entry["config"]
                 ):
                     raise ValueError
-                additional.append((material, entry["config"]))
+                additional.append(CompiledMaterial(material, entry["config"]))
             elif key[:2] in (
-                ("contract_schema", "boundary"),
-                ("contract_manifest", "boundary"),
+                (MaterialKind.CONTRACT_SCHEMA, "boundary"),
+                (MaterialKind.CONTRACT_MANIFEST, "boundary"),
             ):
                 if (
                     key[2] != settings.contracts.boundary
                     or json.loads(raw) != entry["config"]
                 ):
                     raise ValueError
-                additional.append((material, entry["config"]))
+                additional.append(CompiledMaterial(material, entry["config"]))
             else:
                 raise ValueError
         if (
@@ -303,11 +305,16 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         ):
             raise ValueError
         if (settings.prompts.boundary is None) != (
-            not any(item.kind == "prompt" for item, _ in additional)
+            not any(item.material.kind is MaterialKind.PROMPT for item in additional)
         ):
             raise ValueError
         contract_count = sum(
-            item.kind.startswith("contract_") for item, _ in additional
+            item.material.kind
+            in (
+                MaterialKind.CONTRACT_SCHEMA,
+                MaterialKind.CONTRACT_MANIFEST,
+            )
+            for item in additional
         )
         if contract_count != (0 if settings.contracts.boundary is None else 2):
             raise ValueError
