@@ -1,0 +1,31 @@
+{
+  "$id": "urn:paper-radar:contracts:screening:boundary:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Screening 第一阶段的研究边界判断。",
+  "properties": {
+    "boundary": {
+      "enum": [
+        "in_scope",
+        "out_of_scope",
+        "uncertain"
+      ],
+      "title": "Boundary",
+      "type": "string"
+    },
+    "reason_zh": {
+      "title": "Reason Zh",
+      "type": "string"
+    }
+  },
+  "required": [
+    "boundary",
+    "reason_zh"
+  ],
+  "title": "BoundaryOutput",
+  "type": "object",
+  "x-paper-radar-contract": {
+    "name": "boundary",
+    "version": "v1"
+  }
+}

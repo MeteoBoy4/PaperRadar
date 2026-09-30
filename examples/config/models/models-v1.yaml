@@ -1,0 +1,10 @@
+# 工程验收合成材料，不得用于正式校准。
+version: models-v1
+screening:
+  provider: example-provider
+  model: example-model
+  protocol: json_schema
+  temperature: 0.0
+  top_p: 1.0
+reuse_assessment: null
+reading: null

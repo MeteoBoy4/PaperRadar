@@ -113,7 +113,8 @@ CLI 只显示槽的 `configured`/`unconfigured`/`placeholder`、阶段的 `ready
 
 ## 示例与命令
 
-[`examples/config/`](../../examples/config/) 是**工程验收用合成材料**，不是真实
+[`examples/`](../../examples/) 是**工程验收用合成材料**，包含四类已选材料（六段
+Profile、三槽 models、boundary 提示词与 A1 boundary 冻结契约），不是真实
 Research Profile，不能据此开始正式校准。先确保数据库的父目录已存在：
 
 ```bash

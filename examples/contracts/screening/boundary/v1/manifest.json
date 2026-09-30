@@ -1,0 +1,7 @@
+{
+  "contract": "boundary",
+  "format_version": 1,
+  "schema_file": "schema.json",
+  "schema_sha256": "9fd5127a8081fb30f62f2b436a4b6067d1b0ae16fea8d4f190c36874ef8805a7",
+  "version": "v1"
+}

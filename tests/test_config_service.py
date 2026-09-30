@@ -22,7 +22,7 @@ from paper_radar.config.compile import StageName
 from paper_radar.storage.database import DatabaseMode, current_revision, open_database
 from paper_radar.storage.schema import metadata
 
-_EXAMPLE_ID = "9ae65bc9fc282e8c0eab654644cff50a8831044f5847456562a683b751c21e58"
+_EXAMPLE_ID = "3b90f05354f67799bc8de9820d836b98146b8e8d029e94825c91dcb8d1ee04b7"
 
 
 def _write_profile(root: Path, *, version: str = "profile-v1") -> Path:

@@ -11,7 +11,7 @@ MIGRATION_REVISION = "a201_profile_snapshot"
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_config_service.py",
-        "26422479dbc776ebbce3622b8d79a1973d6d9b67d756992256c8988de597ad71",
+        "ccd7cea316e16348e14bcea400d392568954d5377b5f6a8a5bc36a0c4cad2d98",
     ),
     (
         "tests/test_config_validation.py",
