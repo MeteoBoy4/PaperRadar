@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from paper_radar.config.schema import _valid_declared_version
+from paper_radar.config.schema import valid_declared_version
 
 _TOPIC_ID = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
+
+
+class TopicsStatus(StrEnum):
+    CONFIGURED = "configured"
+    UNCONFIGURED = "unconfigured"
 
 
 class Topic(BaseModel):
@@ -51,7 +57,7 @@ class Topics(BaseModel):
     @field_validator("version")
     @classmethod
     def valid_version(cls, value: str) -> str:
-        return _valid_declared_version(value)
+        return valid_declared_version(value)
 
     @field_validator("topics")
     @classmethod

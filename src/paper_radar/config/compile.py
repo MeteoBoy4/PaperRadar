@@ -20,7 +20,8 @@ from paper_radar.config.schema import (
     profile_field_status,
     text_is_placeholder,
 )
-from paper_radar.config.topics import EnabledTopic, Topics
+from paper_radar.config.topics import EnabledTopic, Topics, TopicsStatus
+from paper_radar.contracts.schema import ContractName
 
 FORMAT_VERSION = 1
 
@@ -90,6 +91,18 @@ class CompiledMaterial:
 
 
 @dataclass(frozen=True, slots=True)
+class SelectedMaterials:
+    """活跃选择或历史回放得到的已验证材料。"""
+
+    settings: Settings
+    profile: Profile | None
+    profile_material: Material | None
+    models: Models | None
+    topics: Topics | None
+    additional: tuple[CompiledMaterial, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class StageReadiness:
     status: StageStatus
     missing: tuple[MissingReason, ...]
@@ -103,19 +116,18 @@ class RuntimeConfigSnapshot:
     model_slots: Mapping[str, SlotStatus]
     stages: Mapping[StageName, StageReadiness]
     payload_json: str
-    topics_status: SlotStatus = SlotStatus.UNCONFIGURED
-    enabled_topics: tuple[EnabledTopic, ...] = ()
+    topics_status: TopicsStatus
+    enabled_topics: tuple[EnabledTopic, ...]
 
 
-def compile_snapshot(
-    settings: Settings,
-    profile: Profile | None,
-    material: Material | None,
-    models: Models | None = None,
-    additional: tuple[CompiledMaterial, ...] = (),
-    topics: Topics | None = None,
-) -> RuntimeConfigSnapshot:
+def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
     """新增材料种类沿用包络格式。条目按 kind/name/version 排序。"""
+    settings = materials.settings
+    profile = materials.profile
+    material = materials.profile_material
+    models = materials.models
+    topics = materials.topics
+    additional = materials.additional
     fields = {
         field: profile_field_status(getattr(profile, field) if profile else None)
         for field in PROFILE_FIELDS
@@ -192,7 +204,7 @@ def compile_snapshot(
     )
 
     def prompt_reason(
-        name: str, missing: MissingReason, placeholder: MissingReason
+        name: StageName, missing: MissingReason, placeholder: MissingReason
     ) -> tuple[MissingReason, ...]:
         prompt = next(
             (
@@ -209,7 +221,9 @@ def compile_snapshot(
             return (placeholder,)
         return ()
 
-    def contract_reason(name: str, missing: MissingReason) -> tuple[MissingReason, ...]:
+    def contract_reason(
+        name: ContractName, missing: MissingReason
+    ) -> tuple[MissingReason, ...]:
         present = any(
             item.material.kind is MaterialKind.CONTRACT_SCHEMA
             and item.material.name == name
@@ -221,19 +235,21 @@ def compile_snapshot(
         *missing_profile,
         *screening_model_missing,
         *prompt_reason(
-            "boundary",
+            StageName.BOUNDARY,
             MissingReason.BOUNDARY_PROMPT,
             MissingReason.BOUNDARY_PROMPT_PLACEHOLDER,
         ),
-        *contract_reason("boundary", MissingReason.BOUNDARY_CONTRACT),
+        *contract_reason(ContractName.BOUNDARY, MissingReason.BOUNDARY_CONTRACT),
     )
     value_missing = (
         *missing_profile,
         *screening_model_missing,
         *prompt_reason(
-            "value", MissingReason.VALUE_PROMPT, MissingReason.VALUE_PROMPT_PLACEHOLDER
+            StageName.VALUE,
+            MissingReason.VALUE_PROMPT,
+            MissingReason.VALUE_PROMPT_PLACEHOLDER,
         ),
-        *contract_reason("value-prediction", MissingReason.VALUE_CONTRACT),
+        *contract_reason(ContractName.VALUE_PREDICTION, MissingReason.VALUE_CONTRACT),
         *((MissingReason.TOPICS,) if topics is None else ()),
     )
     stages = {
@@ -287,7 +303,7 @@ def compile_snapshot(
         stages=MappingProxyType(stages),
         payload_json=canonical.decode("utf-8"),
         topics_status=(
-            SlotStatus.CONFIGURED if topics is not None else SlotStatus.UNCONFIGURED
+            TopicsStatus.CONFIGURED if topics is not None else TopicsStatus.UNCONFIGURED
         ),
         enabled_topics=topics.enabled_topics if topics is not None else (),
     )

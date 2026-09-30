@@ -19,27 +19,7 @@ from paper_radar.config import (
     upgrade_database,
 )
 from paper_radar.config.compile import MissingReason, StageName
-from tests.test_config_boundary import _inputs
-
-
-def _value_inputs(root: Path, topics: str = "[]") -> tuple[Path, Path]:
-    settings, db = _inputs(root)
-    (root / "config/topics").mkdir()
-    (root / "config/topics/topics-v1.yaml").write_text(
-        f"version: topics-v1\ntopics: {topics}\n", encoding="utf-8"
-    )
-    (root / "prompts/screening/value-v1.md").write_bytes(b"Value prompt\n")
-    source = (
-        Path(__file__).resolve().parents[1] / "contracts/screening/value-prediction"
-    )
-    shutil.copytree(source, root / "contracts/screening/value-prediction")
-    settings.write_text(
-        "profile: profile-v1\nmodels: models-v1\ntopics: topics-v1\n"
-        "prompts:\n  boundary: v1\n  value: v1\n"
-        "contracts:\n  boundary: v1\n  value_prediction: v1\n",
-        encoding="utf-8",
-    )
-    return settings, db
+from tests.config_test_support import imported_modules, value_inputs
 
 
 @pytest.mark.parametrize(
@@ -53,7 +33,7 @@ def _value_inputs(root: Path, topics: str = "[]") -> tuple[Path, Path]:
 def test_configured_topics_make_value_ready_and_replay_without_source_files(
     tmp_path: Path, topics: str
 ) -> None:
-    settings, db = _value_inputs(tmp_path, topics)
+    settings, db = value_inputs(tmp_path, topics)
     checked = check_config(settings, db)
     assert checked.stages[StageName.VALUE].status == "ready"
     assert checked.stages[StageName.BOUNDARY].status == "ready"
@@ -87,7 +67,7 @@ def test_configured_topics_make_value_ready_and_replay_without_source_files(
 def test_empty_and_disabled_sets_keep_distinct_history_and_same_enabled_semantics(
     tmp_path: Path,
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     empty = compile_config(settings, db)
     (tmp_path / "config/topics/topics-v2.yaml").write_text(
         "version: topics-v2\ntopics:\n"
@@ -107,7 +87,7 @@ def test_empty_and_disabled_sets_keep_distinct_history_and_same_enabled_semantic
 def test_unselected_topics_are_missing_even_when_file_exists(
     tmp_path: Path, selector: str
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     settings.write_text(settings.read_text().replace("topics: topics-v1\n", selector))
     saved = compile_config(settings, db)
     assert saved.topics_status == "unconfigured"
@@ -118,7 +98,7 @@ def test_unselected_topics_are_missing_even_when_file_exists(
 
 
 def test_value_does_not_require_boundary_materials(tmp_path: Path) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     settings.write_text(settings.read_text().replace("  boundary: v1\n", ""))
     result = check_config(settings, db)
     assert result.stages[StageName.VALUE].status == "ready"
@@ -140,7 +120,7 @@ def test_value_does_not_require_boundary_materials(tmp_path: Path) -> None:
 def test_value_reports_each_required_configuration_slot(
     tmp_path: Path, replacement: str, expected: MissingReason
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     original = replacement.replace(
         "null",
         {
@@ -160,7 +140,7 @@ def test_value_reports_each_required_configuration_slot(
 def test_value_prompt_placeholder_has_specific_reason(
     tmp_path: Path, text: bytes
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     (tmp_path / "prompts/screening/value-v1.md").write_bytes(text)
     saved = compile_config(settings, db)
     assert saved.stages[StageName.VALUE].missing == (
@@ -202,7 +182,7 @@ def test_value_prompt_placeholder_has_specific_reason(
 def test_invalid_topic_fields_fail_without_registry_writes_or_value_leak(
     tmp_path: Path, topic: str
 ) -> None:
-    settings, db = _value_inputs(tmp_path, f"[{topic}]")
+    settings, db = value_inputs(tmp_path, f"[{topic}]")
     for operation in (check_config, compile_config):
         with pytest.raises(ConfigError) as error:
             operation(settings, db)
@@ -232,7 +212,7 @@ def test_invalid_topic_fields_fail_without_registry_writes_or_value_leak(
     ],
 )
 def test_invalid_topic_collection_is_rejected(tmp_path: Path, content: str) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     (tmp_path / "config/topics/topics-v1.yaml").write_text(content)
     with pytest.raises(ConfigError) as error:
         compile_config(settings, db)
@@ -242,7 +222,7 @@ def test_invalid_topic_collection_is_rejected(tmp_path: Path, content: str) -> N
 def test_topics_are_sorted_and_text_has_no_placeholder_detection(
     tmp_path: Path,
 ) -> None:
-    settings, db = _value_inputs(
+    settings, db = value_inputs(
         tmp_path,
         "[{id: z, name: ' ... ', description: ' D ', enabled: true},"
         "{id: a, name: A, description: …, enabled: true}]",
@@ -259,7 +239,7 @@ def test_topics_are_sorted_and_text_has_no_placeholder_detection(
 
 @pytest.mark.parametrize("version", ["Topics-v1", " topics-v1", "../outside"])
 def test_topic_selector_is_a_controlled_version(tmp_path: Path, version: str) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     settings.write_text(
         settings.read_text().replace("topics: topics-v1", f"topics: '{version}'")
     )
@@ -271,7 +251,7 @@ def test_topic_selector_is_a_controlled_version(tmp_path: Path, version: str) ->
 def test_registered_topics_and_value_prompt_require_new_versions(
     tmp_path: Path, material: str
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     saved = compile_config(settings, db)
     path = tmp_path / (
         "config/topics/topics-v1.yaml"
@@ -303,7 +283,7 @@ def test_registered_topics_and_value_prompt_require_new_versions(
 def test_value_material_registration_rolls_back_after_snapshot_write_failure(
     tmp_path: Path,
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     with sqlite3.connect(db) as connection:
         connection.execute(
             "CREATE TRIGGER fail_snapshot BEFORE INSERT ON runtime_config_snapshots "
@@ -330,7 +310,7 @@ def test_value_material_registration_rolls_back_after_snapshot_write_failure(
 def test_value_contract_failure_writes_no_partial_materials(
     tmp_path: Path, damage: str
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     before = {
         p: p.read_bytes()
         for folder in ("config", "prompts", "contracts")
@@ -360,7 +340,7 @@ def test_value_contract_failure_writes_no_partial_materials(
 def test_new_process_load_keeps_value_materials_without_original_files(
     tmp_path: Path,
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     saved = compile_config(settings, db)
     for folder in ("config", "prompts", "contracts"):
         shutil.rmtree(tmp_path / folder)
@@ -387,7 +367,7 @@ def test_new_process_load_keeps_value_materials_without_original_files(
 def test_changed_disabled_topic_keeps_enabled_semantics_and_boundary_readiness(
     tmp_path: Path,
 ) -> None:
-    settings, db = _value_inputs(
+    settings, db = value_inputs(
         tmp_path,
         "[{id: active, name: A, description: D, enabled: true},"
         "{id: disabled, name: X, description: Old, enabled: false}]",
@@ -408,7 +388,7 @@ def test_changed_disabled_topic_keeps_enabled_semantics_and_boundary_readiness(
 def test_other_material_conflict_rolls_back_new_value_registration(
     tmp_path: Path,
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     full = settings.read_text()
     settings.write_text(
         full.replace("topics: topics-v1\n", "")
@@ -438,7 +418,7 @@ def test_other_material_conflict_rolls_back_new_value_registration(
 def test_value_snapshot_is_independent_of_material_directory_and_does_not_write_inputs(
     tmp_path: Path,
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     before = {
         p: p.read_bytes()
         for folder in ("config", "prompts", "contracts")
@@ -459,7 +439,7 @@ def test_value_snapshot_is_independent_of_material_directory_and_does_not_write_
 def test_load_rejects_corrupt_registered_topics_without_using_source_file(
     tmp_path: Path,
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     saved = compile_config(settings, db)
     with sqlite3.connect(db) as connection:
         connection.execute(
@@ -472,10 +452,8 @@ def test_load_rejects_corrupt_registered_topics_without_using_source_file(
 
 
 def test_topics_schema_remains_in_the_pure_config_layer() -> None:
-    from tests.test_config_architecture import _imports
-
     module = Path(__file__).resolve().parents[1] / "src/paper_radar/config/topics.py"
-    imports = _imports(module)
+    imports = imported_modules(module)
     assert not imports & {"yaml", "sqlite3", "sqlalchemy", "alembic", "typer"}
     assert not any(name.startswith("paper_radar.storage") for name in imports)
 

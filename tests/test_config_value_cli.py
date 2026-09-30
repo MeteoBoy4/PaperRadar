@@ -7,8 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.test_config_cli import _run
-from tests.test_config_value import _value_inputs
+from tests.config_test_support import run_cli, value_inputs
 
 
 @pytest.mark.parametrize(
@@ -20,9 +19,9 @@ from tests.test_config_value import _value_inputs
     ],
 )
 def test_cli_checks_and_saves_configured_topics(tmp_path: Path, topics: str) -> None:
-    settings, db = _value_inputs(tmp_path, topics)
+    settings, db = value_inputs(tmp_path, topics)
     args = ("--settings", str(settings), "--database", str(db))
-    checked = _run(tmp_path, "config", "check", *args)
+    checked = run_cli(tmp_path, "config", "check", *args)
     assert checked.returncode == 0, checked.stderr
     assert "value：ready" in checked.stdout
     assert "boundary：ready" in checked.stdout
@@ -31,7 +30,7 @@ def test_cli_checks_and_saves_configured_topics(tmp_path: Path, topics: str) -> 
         assert connection.execute(
             "SELECT count(*) FROM config_versions"
         ).fetchone() == (0,)
-    saved = _run(tmp_path, "config", "compile", *args)
+    saved = run_cli(tmp_path, "config", "compile", *args)
     assert saved.returncode == 0, saved.stderr
     assert saved.stdout == checked.stdout
 
@@ -39,17 +38,17 @@ def test_cli_checks_and_saves_configured_topics(tmp_path: Path, topics: str) -> 
 def test_cli_reports_missing_topics_and_independent_value_readiness(
     tmp_path: Path,
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     args = ("--settings", str(settings), "--database", str(db))
     original = settings.read_text()
     settings.write_text(original.replace("topics: topics-v1\n", ""))
-    missing = _run(tmp_path, "config", "check", *args)
+    missing = run_cli(tmp_path, "config", "check", *args)
     assert missing.returncode == 0, missing.stderr
     assert "主题集合：unconfigured" in missing.stdout
     assert "value：not_ready；缺项：topics" in missing.stdout
     assert "boundary：ready" in missing.stdout
     settings.write_text(original.replace("  boundary: v1\n", ""))
-    ready = _run(tmp_path, "config", "check", *args)
+    ready = run_cli(tmp_path, "config", "check", *args)
     assert ready.returncode == 0, ready.stderr
     assert "value：ready" in ready.stdout
     assert "boundary：not_ready" in ready.stdout
@@ -58,19 +57,19 @@ def test_cli_reports_missing_topics_and_independent_value_readiness(
 def test_cli_topic_error_is_sanitized_and_new_version_preserves_old_snapshot(
     tmp_path: Path,
 ) -> None:
-    settings, db = _value_inputs(tmp_path)
+    settings, db = value_inputs(tmp_path)
     args = ("--settings", str(settings), "--database", str(db))
-    saved = _run(tmp_path, "config", "compile", *args)
+    saved = run_cli(tmp_path, "config", "compile", *args)
     assert saved.returncode == 0, saved.stderr
     topics = tmp_path / "config/topics/topics-v1.yaml"
     original = topics.read_bytes()
     topics.write_bytes(original + b"api_key: secret-marker\n")
-    invalid = _run(tmp_path, "config", "compile", *args)
+    invalid = run_cli(tmp_path, "config", "compile", *args)
     assert invalid.returncode == 2
     assert "topics.api_key" in invalid.stderr
     assert "secret-marker" not in invalid.stderr + invalid.stdout
     topics.write_bytes(original + b"# revised\n")
-    conflict = _run(tmp_path, "config", "compile", *args)
+    conflict = run_cli(tmp_path, "config", "compile", *args)
     assert conflict.returncode == 2
     assert "声明版本已登记不同字节" in conflict.stderr
     newer = topics.parent / "topics-v2.yaml"
@@ -78,7 +77,7 @@ def test_cli_topic_error_is_sanitized_and_new_version_preserves_old_snapshot(
     settings.write_text(
         settings.read_text().replace("topics: topics-v1", "topics: topics-v2")
     )
-    result = _run(tmp_path, "config", "compile", *args)
+    result = run_cli(tmp_path, "config", "compile", *args)
     assert result.returncode == 0, result.stderr
     assert result.stdout != saved.stdout
     with sqlite3.connect(db) as connection:
@@ -98,7 +97,7 @@ def test_cli_topic_error_is_sanitized_and_new_version_preserves_old_snapshot(
 def test_value_help_has_no_file_database_or_network_side_effects(
     tmp_path: Path, args: tuple[str, ...]
 ) -> None:
-    result = _run(tmp_path, *args, help_only=True)
+    result = run_cli(tmp_path, *args, help_only=True)
     assert result.returncode == 0, result.stderr
     assert "示例" in result.stdout
     assert not list(tmp_path.iterdir())

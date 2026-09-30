@@ -15,6 +15,8 @@ from paper_radar.config.compile import (
     Material,
     MaterialKind,
     RuntimeConfigSnapshot,
+    SelectedMaterials,
+    StageName,
     compile_snapshot,
 )
 from paper_radar.config.errors import ConfigError
@@ -43,7 +45,7 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PROFILE_KEY = (MaterialKind.PROFILE, "profile")
 _MODELS_KEY = (MaterialKind.MODELS, "models")
 _TOPICS_KEY = (MaterialKind.TOPICS, "topics")
-_PROMPT_NAMES = ("boundary", "value")
+_PROMPT_NAMES = (StageName.BOUNDARY, StageName.VALUE)
 _CONTRACT_NAMES = {
     "boundary": ContractName.BOUNDARY,
     "value_prediction": ContractName.VALUE_PREDICTION,
@@ -137,68 +139,54 @@ def _contract_materials(
     )
 
 
-def _selected_materials(
-    settings_path: Path,
-) -> tuple[
-    Settings,
-    Profile | None,
-    Material | None,
-    Models | None,
-    tuple[CompiledMaterial, ...],
-    Topics | None,
-]:
+def _versioned_yaml_material[T: (Profile, Models, Topics)](
+    path: Path, model: type[T], kind: MaterialKind, selected: str
+) -> tuple[T, CompiledMaterial]:
+    label = kind.value
+    raw, config = read_yaml(path, model, label)
+    if config.version != selected:
+        raise ConfigError(
+            f"{label}.version：与 settings.{label} 不一致；请选择匹配版本"
+        )
+    return config, CompiledMaterial(
+        Material(kind, label, selected, raw), config.model_dump(mode="json")
+    )
+
+
+def _selected_materials(settings_path: Path) -> SelectedMaterials:
     _, settings = read_yaml(settings_path, Settings, "settings")
     _unsupported(settings)
     root = settings_path.parent.parent
     profile: Profile | None = None
     profile_material: Material | None = None
     if settings.profile is not None:
-        raw, profile = read_yaml(
+        profile, compiled = _versioned_yaml_material(
             settings_path.parent / "profiles" / f"{settings.profile}.yaml",
             Profile,
-            "profile",
+            MaterialKind.PROFILE,
+            settings.profile,
         )
-        if profile.version != settings.profile:
-            raise ConfigError(
-                "profile.version：与 settings.profile 不一致；请选择匹配版本"
-            )
-        profile_material = Material(*_PROFILE_KEY, profile.version, raw)
+        profile_material = compiled.material
 
     models: Models | None = None
     additional: list[CompiledMaterial] = []
     if settings.models is not None:
-        raw, models = read_yaml(
+        models, compiled = _versioned_yaml_material(
             settings_path.parent / "models" / f"{settings.models}.yaml",
             Models,
-            "models",
+            MaterialKind.MODELS,
+            settings.models,
         )
-        if models.version != settings.models:
-            raise ConfigError(
-                "models.version：与 settings.models 不一致；请选择匹配版本"
-            )
-        additional.append(
-            CompiledMaterial(
-                Material(*_MODELS_KEY, models.version, raw),
-                models.model_dump(mode="json"),
-            )
-        )
+        additional.append(compiled)
     topics: Topics | None = None
     if settings.topics is not None:
-        raw, topics = read_yaml(
+        topics, compiled = _versioned_yaml_material(
             settings_path.parent / "topics" / f"{settings.topics}.yaml",
             Topics,
-            "topics",
+            MaterialKind.TOPICS,
+            settings.topics,
         )
-        if topics.version != settings.topics:
-            raise ConfigError(
-                "topics.version：与 settings.topics 不一致；请选择匹配版本"
-            )
-        additional.append(
-            CompiledMaterial(
-                Material(*_TOPICS_KEY, topics.version, raw),
-                topics.model_dump(mode="json"),
-            )
-        )
+        additional.append(compiled)
     for name in _PROMPT_NAMES:
         version = getattr(settings.prompts, name)
         if version is not None:
@@ -217,15 +205,20 @@ def _selected_materials(
             additional.extend(
                 _contract_materials(root, selector, contract_name, version)
             )
-    return settings, profile, profile_material, models, tuple(additional), topics
+    return SelectedMaterials(
+        settings=settings,
+        profile=profile,
+        profile_material=profile_material,
+        models=models,
+        topics=topics,
+        additional=tuple(additional),
+    )
 
 
-def _records(
-    profile_material: Material | None, additional: tuple[CompiledMaterial, ...]
-) -> tuple[VersionRecord, ...]:
-    items = ([profile_material] if profile_material is not None else []) + [
-        item.material for item in additional
-    ]
+def _records(materials: SelectedMaterials) -> tuple[VersionRecord, ...]:
+    items = (
+        [materials.profile_material] if materials.profile_material is not None else []
+    ) + [item.material for item in materials.additional]
     return tuple(
         VersionRecord(item.kind, item.name, item.version, item.raw) for item in items
     )
@@ -236,13 +229,9 @@ def check_config(settings_path: Path, database: Path) -> RuntimeConfigSnapshot:
         engine = open_database(database, mode=DatabaseMode.READ_ONLY)
         try:
             require_current_revision(engine)
-            settings, profile, material, models, additional, topics = (
-                _selected_materials(settings_path)
-            )
-            check_version(engine, _records(material, additional))
-            return compile_snapshot(
-                settings, profile, material, models, additional, topics
-            )
+            materials = _selected_materials(settings_path)
+            check_version(engine, _records(materials))
+            return compile_snapshot(materials)
         finally:
             engine.dispose()
     except StorageError as error:
@@ -256,17 +245,13 @@ def compile_config(settings_path: Path, database: Path) -> RuntimeConfigSnapshot
         engine = open_database(database, mode=DatabaseMode.READ_WRITE)
         try:
             require_current_revision(engine)
-            settings, profile, material, models, additional, topics = (
-                _selected_materials(settings_path)
-            )
-            snapshot = compile_snapshot(
-                settings, profile, material, models, additional, topics
-            )
+            materials = _selected_materials(settings_path)
+            snapshot = compile_snapshot(materials)
             save_snapshot(
                 engine,
                 snapshot.snapshot_id,
                 snapshot.payload_json,
-                _records(material, additional),
+                _records(materials),
             )
             return snapshot
         finally:
@@ -360,8 +345,8 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 and material.name in _CONTRACT_NAMES.values()
             ):
                 selector = next(
-                    field
-                    for field, name in _CONTRACT_NAMES.items()
+                    selector
+                    for selector, name in _CONTRACT_NAMES.items()
                     if name == material.name
                 )
                 if (
@@ -401,9 +386,15 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         }
         if expected_keys != actual_keys:
             raise ValueError
-        rebuilt = compile_snapshot(
-            settings, profile, profile_material, models, tuple(additional), topics
+        materials = SelectedMaterials(
+            settings=settings,
+            profile=profile,
+            profile_material=profile_material,
+            models=models,
+            topics=topics,
+            additional=tuple(additional),
         )
+        rebuilt = compile_snapshot(materials)
         if rebuilt.snapshot_id != snapshot_id or rebuilt.payload_json != saved_json:
             raise ValueError
         return rebuilt

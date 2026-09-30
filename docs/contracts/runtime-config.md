@@ -64,11 +64,18 @@ ID 必须匹配 `^[a-z][a-z0-9-]{0,63}$`，不接受大小写或空白变体，�
 没有权重、关键词搜索或由 Agent 创建/修改主题的入口。
 
 完整快照保存全部主题（含停用主题），按 ID 排序，保留声明版本、原始字节和哈希。
-公共结果 `topics_status` 为 `configured` 或 `unconfigured`；`enabled_topics` 为按 ID
+公共结果 `topics_status` 使用 `paper_radar.config.TopicsStatus` 二值枚举，仅允许
+`configured` 或 `unconfigured`，没有 placeholder；`enabled_topics` 为按 ID
 排序的不可变元组，每项只有 ID/name/description，不含版本、原始字节哈希或 enabled。
 空集合与全部停用的 `enabled_topics` 同为 `()`，但完整快照与历史材料不同。
 未选择 topics 版本时即使磁盘有文件也仍未配置，不能与合法空集合混同。
 新增版本可切换选择，旧快照仍从 SQLite 中回放，不读取当前文件。
+
+读取所选材料和历史回放共用纯配置层的 frozen `SelectedMaterials` 具名对象，
+交给 `compile_snapshot(materials)` 编译；对象不包含路径、连接或执行计划。
+Profile/models/topics 的活跃 YAML 装载共享声明版本一致性检查，
+版本格式由公开 `valid_declared_version` 统一校验。公共 check/compile/load
+服务参数、持久包络格式与身份序列化保持一致，无需 migration。
 
 ## 模型、提示词与契约
 

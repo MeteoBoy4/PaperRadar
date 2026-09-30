@@ -15,55 +15,13 @@ from paper_radar.config import (
     check_config,
     compile_config,
     load_config_snapshot,
-    upgrade_database,
 )
 from paper_radar.config.compile import MissingReason, StageName
-
-
-def _inputs(root: Path, *, model: str = "real-model") -> tuple[Path, Path]:
-    config = root / "config"
-    (config / "profiles").mkdir(parents=True)
-    (config / "models").mkdir()
-    (root / "prompts/screening").mkdir(parents=True)
-    (root / "contracts/screening/boundary/v1").mkdir(parents=True)
-    for filename in ("schema.json", "manifest.json"):
-        source = (
-            Path(__file__).resolve().parents[1]
-            / "contracts/screening/boundary/v1"
-            / filename
-        )
-        (root / "contracts/screening/boundary/v1" / filename).write_bytes(
-            source.read_bytes()
-        )
-    (config / "profiles/profile-v1.yaml").write_text(
-        "version: profile-v1\n"
-        "background: climate\ncore_questions: rain\ntransferable_methods: statistics\n"
-        "available_data_and_tools: reanalysis\n"
-        "theory_and_cognitive_interests: mechanisms\n"
-        "constraints_and_exclusions: none\n",
-        encoding="utf-8",
-    )
-    (config / "models/models-v1.yaml").write_text(
-        "version: models-v1\n"
-        "screening:\n  provider: provider-a\n"
-        f"  model: {model}\n  protocol: json_schema\n"
-        "reuse_assessment: null\nreading: null\n",
-        encoding="utf-8",
-    )
-    (root / "prompts/screening/boundary-v1.md").write_bytes(b"Boundary prompt\n")
-    settings = config / "settings.yaml"
-    settings.write_text(
-        "profile: profile-v1\nmodels: models-v1\n"
-        "prompts:\n  boundary: v1\ncontracts:\n  boundary: v1\n",
-        encoding="utf-8",
-    )
-    db = root / "db.sqlite3"
-    upgrade_database(db)
-    return settings, db
+from tests.config_test_support import boundary_inputs
 
 
 def test_ready_snapshot_keeps_all_materials_after_files_removed(tmp_path: Path) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     checked = check_config(settings, db)
     assert checked.stages[StageName.BOUNDARY].status == "ready"
     with sqlite3.connect(db) as connection:
@@ -86,7 +44,7 @@ def test_ready_snapshot_keeps_all_materials_after_files_removed(tmp_path: Path) 
 
 
 def test_placeholder_model_is_not_ready_with_specific_reason(tmp_path: Path) -> None:
-    settings, db = _inputs(tmp_path, model="REQUIRED")
+    settings, db = boundary_inputs(tmp_path, model="REQUIRED")
     result = compile_config(settings, db)
     assert result.model_slots["screening"] == "placeholder"
     assert result.stages[StageName.BOUNDARY].missing == (
@@ -95,7 +53,7 @@ def test_placeholder_model_is_not_ready_with_specific_reason(tmp_path: Path) -> 
 
 
 def test_contract_damage_rolls_back_all_new_materials(tmp_path: Path) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     manifest = tmp_path / "contracts/screening/boundary/v1/manifest.json"
     manifest.write_bytes(b"{}")
     with pytest.raises(ConfigError, match=r"contracts\.boundary"):
@@ -113,7 +71,7 @@ def test_contract_damage_rolls_back_all_new_materials(tmp_path: Path) -> None:
 def test_contract_check_reports_specific_failure_without_writing(
     tmp_path: Path, damage: str, category: str
 ) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     folder = tmp_path / "contracts/screening/boundary/v1"
     if damage == "missing":
         (folder / "schema.json").unlink()
@@ -129,7 +87,7 @@ def test_contract_check_reports_specific_failure_without_writing(
 
 
 def test_new_prompt_version_can_reuse_same_bytes(tmp_path: Path) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     first = compile_config(settings, db)
     prompt = tmp_path / "prompts/screening/boundary-v1.md"
     (prompt.parent / "boundary-v2.md").write_bytes(prompt.read_bytes())
@@ -154,7 +112,7 @@ def test_new_prompt_version_can_reuse_same_bytes(tmp_path: Path) -> None:
 
 
 def test_active_contract_damage_is_rejected_after_registration(tmp_path: Path) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     saved = compile_config(settings, db)
     schema = tmp_path / "contracts/screening/boundary/v1/schema.json"
     schema.write_bytes(schema.read_bytes() + b" ")
@@ -164,7 +122,7 @@ def test_active_contract_damage_is_rejected_after_registration(tmp_path: Path) -
 
 
 def test_new_model_version_keeps_old_bytes_and_new_selection(tmp_path: Path) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     first = compile_config(settings, db)
     old = tmp_path / "config/models/models-v1.yaml"
     newer = old.parent / "models-v2.yaml"
@@ -188,7 +146,7 @@ def test_new_model_version_keeps_old_bytes_and_new_selection(tmp_path: Path) -> 
 
 
 def test_selected_unsupported_contract_is_rejected(tmp_path: Path) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     settings.write_text(
         settings.read_text().replace("boundary: v1\n", "boundary: v2\n"),
         encoding="utf-8",
@@ -204,7 +162,7 @@ def test_selected_unsupported_contract_is_rejected(tmp_path: Path) -> None:
 
 
 def test_multi_material_transaction_rollback(tmp_path: Path) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     with sqlite3.connect(db) as connection:
         connection.execute(
             "CREATE TRIGGER fail_snapshot BEFORE INSERT ON runtime_config_snapshots "
@@ -221,7 +179,7 @@ def test_multi_material_transaction_rollback(tmp_path: Path) -> None:
 def test_model_slots_are_independent_even_with_same_provider_model(
     tmp_path: Path,
 ) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     models = tmp_path / "config/models/models-v1.yaml"
     models.write_text(
         models.read_text()
@@ -259,7 +217,7 @@ def test_model_slots_are_independent_even_with_same_provider_model(
 def test_invalid_model_contract_is_rejected_without_leak(
     tmp_path: Path, replacement: str, field: str
 ) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     path = tmp_path / "config/models/models-v1.yaml"
     if replacement.startswith("protocol"):
         path.write_text(
@@ -280,7 +238,7 @@ def test_invalid_model_contract_is_rejected_without_leak(
 
 
 def test_missing_and_placeholder_inputs_are_reported_together(tmp_path: Path) -> None:
-    settings, db = _inputs(tmp_path, model="REQUIRED")
+    settings, db = boundary_inputs(tmp_path, model="REQUIRED")
     settings.write_text(
         "models: models-v1\nprompts:\n  boundary: v1\n", encoding="utf-8"
     )
@@ -293,7 +251,7 @@ def test_missing_and_placeholder_inputs_are_reported_together(tmp_path: Path) ->
 
 
 def test_installed_cli_ready_and_help_has_no_io(tmp_path: Path) -> None:
-    settings, db = _inputs(tmp_path)
+    settings, db = boundary_inputs(tmp_path)
     executable = str(Path(sys.executable).with_name("paper-radar"))
     env = {
         "PATH": os.environ["PATH"],

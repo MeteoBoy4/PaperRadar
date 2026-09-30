@@ -38,7 +38,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/__init__.py",
-        "4eec768c780dc5959233870bebd54a3a248ec1215e2292e26c64c1afe522d67b",
+        "401483592a96141ead89d4fb9340edd2fbae9f2a160d9a950b38e38ec4a619f0",
     ),
     (
         "src/paper_radar/config/cli.py",
@@ -46,7 +46,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/compile.py",
-        "0a15a503b41196dcb726339fb19529d6bd8bd41bd97cfc76e98372b90a426ffc",
+        "435136cb31a6799a52089134a38f175fe4bfd23357508760756e34db3137a1bb",
     ),
     (
         "src/paper_radar/config/errors.py",
@@ -58,15 +58,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/schema.py",
-        "482ed6b51b41767db4d0c5d1e0b3a6881e33e7c7bbdb4ae0d00b1c1f07587ff7",
+        "b8306daad12a3b652d92c4531dd18ac5047e8e4c33d6ff23ade170e08b97ea62",
     ),
     (
         "src/paper_radar/config/service.py",
-        "d83a82e78afa5d7a5706f9ca63e8f7640ee75343f38c3ee06baa6deefa126473",
+        "9768df0d79a33e07235e33683f251b3e0201dd5aca050ed247dd97c6ac832a93",
     ),
     (
         "src/paper_radar/config/topics.py",
-        "10dbc3e337d4f6d86300620f8bb21069a2a6ed6308409e2c99f2b8d73602c60f",
+        "f69f0d0a87f8855ca3db9290c5602f40d34a6189b70cc6b63716626fca6a247a",
     ),
     (
         "src/paper_radar/config/yaml_loader.py",
@@ -99,6 +99,10 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/storage/migrations/versions/a201_profile_snapshot.py",
         "a19059f3143dd9d05e550bfd77f7d89f75bc43a23636ba375d4ac7d4ea2c3039",
+    ),
+    (
+        "tests/config_test_support.py",
+        "1bdd4ec7d1c3a3c2274455cfe184ea5ee7d58971d65adc1ccd532a55c295e840",
     ),
     (
         "tests/deny_network/sitecustomize.py",

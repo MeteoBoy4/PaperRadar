@@ -4,6 +4,7 @@ from pathlib import Path
 
 from paper_radar.config.compile import RuntimeConfigSnapshot, StageName, StageReadiness
 from paper_radar.config.errors import ConfigError
+from paper_radar.config.topics import TopicsStatus
 
 
 def check_config(settings_path: Path, database: Path) -> RuntimeConfigSnapshot:
@@ -39,6 +40,7 @@ __all__ = [
     "RuntimeConfigSnapshot",
     "StageName",
     "StageReadiness",
+    "TopicsStatus",
     "check_config",
     "compile_config",
     "load_config_snapshot",
