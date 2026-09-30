@@ -20,7 +20,9 @@ DB_HELP = """显式初始化或升级配置数据库。
 CONFIG_HELP = """检查或编译运行配置快照。
 
 必须显式提供 --settings 与 --database。check 只读；compile 只写既有且已迁移的库。
-支持 Profile、models 三槽、boundary 提示词和冻结契约；其他非空选择会拒绝。
+支持 Profile、主题、models 三槽、boundary/value 提示词和冻结契约。
+boundary 与 value 分别报告配置就绪及缺项；空主题集合与全部停用都算已配置。
+其他尚未开放的非空选择会拒绝。
 两者均不访问网络、模型或凭据，不消耗自动配额。
 帮助不读文件或数据库；错误返回 2，结果只写入终端。
 示例：paper-radar config check --settings config/settings.yaml
@@ -40,6 +42,7 @@ def _report(snapshot: RuntimeConfigSnapshot) -> None:
         typer.echo(f"Profile.{field}：{status.value}")
     for slot, status in snapshot.model_slots.items():
         typer.echo(f"models.{slot}：{status.value}")
+    typer.echo(f"主题集合：{snapshot.topics_status.value}")
     for stage, readiness in snapshot.stages.items():
         missing = ", ".join(reason.value for reason in readiness.missing)
         typer.echo(f"{stage.value}：{readiness.status.value}；缺项：{missing}")

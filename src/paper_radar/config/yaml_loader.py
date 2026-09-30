@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ValidationError
 from yaml.events import AliasEvent
-from yaml.nodes import MappingNode
+from yaml.nodes import MappingNode, ScalarNode
 
 from paper_radar.config.errors import ConfigError
 
@@ -50,6 +50,14 @@ class _StrictLoader(yaml.SafeLoader):
         return result
 
 
+def _strict_bool(loader: _StrictLoader, node: ScalarNode) -> bool:
+    value = loader.construct_scalar(node)
+    if value not in ("true", "false"):
+        raise ConfigError("YAML 布尔值仅允许小写 true/false；请使用明确布尔值")
+    return value == "true"
+
+
+_StrictLoader.add_constructor("tag:yaml.org,2002:bool", _strict_bool)
 _StrictLoader.add_implicit_resolver(
     "tag:yaml.org,2002:bool", re.compile(r"^(?:true|false)$"), list("tf")
 )

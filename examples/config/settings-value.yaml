@@ -1,0 +1,10 @@
+# 工程验收合成材料，不是真实研究配置。
+profile: profile-example-v1
+models: models-v1
+topics: topics-v1
+prompts:
+  boundary: v1
+  value: v1
+contracts:
+  boundary: v1
+  value_prediction: v1

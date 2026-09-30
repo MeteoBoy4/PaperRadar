@@ -1,0 +1,7 @@
+# 工程验收合成材料，不是真实研究配置；演示 value 材料缺项。
+profile: profile-example-v1
+models: models-v1
+prompts:
+  boundary: v1
+contracts:
+  boundary: v1

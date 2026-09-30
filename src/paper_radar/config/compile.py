@@ -20,6 +20,7 @@ from paper_radar.config.schema import (
     profile_field_status,
     text_is_placeholder,
 )
+from paper_radar.config.topics import EnabledTopic, Topics
 
 FORMAT_VERSION = 1
 
@@ -46,7 +47,9 @@ class MissingReason(StrEnum):
     BOUNDARY_PROMPT_PLACEHOLDER = "boundary_prompt_placeholder"
     BOUNDARY_CONTRACT = "boundary_contract"
     VALUE_PROMPT = "value_prompt"
+    VALUE_PROMPT_PLACEHOLDER = "value_prompt_placeholder"
     VALUE_CONTRACT = "value_contract"
+    TOPICS = "topics"
     REUSE_MODEL = "reuse_model"
     REUSE_MODEL_PLACEHOLDER = "reuse_model_placeholder"
     REUSE_PROMPT = "reuse_prompt"
@@ -61,6 +64,7 @@ class MissingReason(StrEnum):
 
 class MaterialKind(StrEnum):
     PROFILE = "profile"
+    TOPICS = "topics"
     MODELS = "models"
     PROMPT = "prompt"
     CONTRACT_SCHEMA = "contract_schema"
@@ -99,6 +103,8 @@ class RuntimeConfigSnapshot:
     model_slots: Mapping[str, SlotStatus]
     stages: Mapping[StageName, StageReadiness]
     payload_json: str
+    topics_status: SlotStatus = SlotStatus.UNCONFIGURED
+    enabled_topics: tuple[EnabledTopic, ...] = ()
 
 
 def compile_snapshot(
@@ -107,6 +113,7 @@ def compile_snapshot(
     material: Material | None,
     models: Models | None = None,
     additional: tuple[CompiledMaterial, ...] = (),
+    topics: Topics | None = None,
 ) -> RuntimeConfigSnapshot:
     """新增材料种类沿用包络格式。条目按 kind/name/version 排序。"""
     fields = {
@@ -147,10 +154,16 @@ def compile_snapshot(
     selectors: dict[str, Any] = {"profile": settings.profile}
     if settings.models is not None:
         selectors["models"] = settings.models
-    if settings.prompts.boundary is not None:
-        selectors["prompts"] = {"boundary": settings.prompts.boundary}
-    if settings.contracts.boundary is not None:
-        selectors["contracts"] = {"boundary": settings.contracts.boundary}
+    if settings.topics is not None:
+        selectors["topics"] = settings.topics
+    for group in ("prompts", "contracts"):
+        chosen = {
+            name: version
+            for name, version in getattr(settings, group).model_dump().items()
+            if version is not None
+        }
+        if chosen:
+            selectors[group] = chosen
     payload = {
         "format_version": FORMAT_VERSION,
         "selectors": selectors,
@@ -177,32 +190,51 @@ def compile_snapshot(
         MissingReason.SCREENING_MODEL,
         MissingReason.SCREENING_MODEL_PLACEHOLDER,
     )
-    prompt = next(
-        (
-            item.material
+
+    def prompt_reason(
+        name: str, missing: MissingReason, placeholder: MissingReason
+    ) -> tuple[MissingReason, ...]:
+        prompt = next(
+            (
+                item.material
+                for item in additional
+                if item.material.kind is MaterialKind.PROMPT
+                and item.material.name == name
+            ),
+            None,
+        )
+        if prompt is None:
+            return (missing,)
+        if text_is_placeholder(prompt.raw.decode("utf-8")):
+            return (placeholder,)
+        return ()
+
+    def contract_reason(name: str, missing: MissingReason) -> tuple[MissingReason, ...]:
+        present = any(
+            item.material.kind is MaterialKind.CONTRACT_SCHEMA
+            and item.material.name == name
             for item in additional
-            if item.material.kind is MaterialKind.PROMPT
-            and item.material.name == "boundary"
-        ),
-        None,
-    )
-    prompt_missing: tuple[MissingReason, ...]
-    if prompt is None:
-        prompt_missing = (MissingReason.BOUNDARY_PROMPT,)
-    elif text_is_placeholder(prompt.raw.decode("utf-8")):
-        prompt_missing = (MissingReason.BOUNDARY_PROMPT_PLACEHOLDER,)
-    else:
-        prompt_missing = ()
-    contract_present = any(
-        item.material.kind is MaterialKind.CONTRACT_SCHEMA
-        and item.material.name == "boundary"
-        for item in additional
-    )
+        )
+        return () if present else (missing,)
+
     boundary_missing = (
         *missing_profile,
         *screening_model_missing,
-        *prompt_missing,
-        *((MissingReason.BOUNDARY_CONTRACT,) if not contract_present else ()),
+        *prompt_reason(
+            "boundary",
+            MissingReason.BOUNDARY_PROMPT,
+            MissingReason.BOUNDARY_PROMPT_PLACEHOLDER,
+        ),
+        *contract_reason("boundary", MissingReason.BOUNDARY_CONTRACT),
+    )
+    value_missing = (
+        *missing_profile,
+        *screening_model_missing,
+        *prompt_reason(
+            "value", MissingReason.VALUE_PROMPT, MissingReason.VALUE_PROMPT_PLACEHOLDER
+        ),
+        *contract_reason("value-prediction", MissingReason.VALUE_CONTRACT),
+        *((MissingReason.TOPICS,) if topics is None else ()),
     )
     stages = {
         StageName.BOUNDARY: StageReadiness(
@@ -210,13 +242,8 @@ def compile_snapshot(
             boundary_missing,
         ),
         StageName.VALUE: StageReadiness(
-            StageStatus.NOT_READY,
-            (
-                *missing_profile,
-                *screening_model_missing,
-                MissingReason.VALUE_PROMPT,
-                MissingReason.VALUE_CONTRACT,
-            ),
+            StageStatus.READY if not value_missing else StageStatus.NOT_READY,
+            value_missing,
         ),
         StageName.REUSE: StageReadiness(
             StageStatus.NOT_READY,
@@ -259,4 +286,8 @@ def compile_snapshot(
         model_slots=MappingProxyType(model_slots),
         stages=MappingProxyType(stages),
         payload_json=canonical.decode("utf-8"),
+        topics_status=(
+            SlotStatus.CONFIGURED if topics is not None else SlotStatus.UNCONFIGURED
+        ),
+        enabled_topics=topics.enabled_topics if topics is not None else (),
     )

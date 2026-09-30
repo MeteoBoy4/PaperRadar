@@ -136,7 +136,7 @@ class Settings(BaseModel):
     escalation: str | None = None
     extraction: str | None = None
 
-    @field_validator("profile", "models")
+    @field_validator("profile", "models", "topics")
     @classmethod
     def valid_version(cls, value: str | None) -> str | None:
         return _valid_declared_version(value) if value is not None else None

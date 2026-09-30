@@ -878,7 +878,7 @@ logs/
 
 `settings.yaml` 只选择当前 Profile、主题、models 整份版本化文件、复用升级参数、提示词和契约版本；带版本的内容文件创建后不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
 
-A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
+A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约；A2-03 增加 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
 
 blob 和 artifact 路径只由哈希、UUID 与受控枚举构造。数据库保存相对路径；根目录由配置决定，以便 NAS 恢复到不同挂载点。
 
@@ -938,6 +938,8 @@ topics:
     description: 语义描述
     enabled: true
 ~~~
+
+主题文件必须声明版本与 topics 列表。每项 ID/name/description/enabled 均必填；ID 匹配 `^[a-z][a-z0-9-]{0,63}$` 且集合内唯一，名称与描述 strip 后非空，enabled 只接受明确 true/false。未知字段拒绝。空集合与全部停用均合法且已配置；settings 未选择 topics 版本才是缺项，两者不能混同。完整快照保留全部主题，后续 value 配置投影只取已启用主题的 ID/名称/描述，不包含整份文件的字节哈希或声明版本。
 
 主题只能由用户创建、修改和停用。Agent 只能返回已启用 ID；零匹配且仍有价值时标记 unclassified_value。主题没有权重，不进入决定公式，也不是检索关键词。
 

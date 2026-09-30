@@ -1,0 +1,99 @@
+{
+  "$defs": {
+    "ValueType": {
+      "description": "价值预测允许返回的七类受控价值。",
+      "enum": [
+        "method",
+        "data",
+        "code_tool",
+        "theory_mechanism",
+        "evidence_conclusion",
+        "question_hypothesis",
+        "review_knowledge_map"
+      ],
+      "title": "ValueType",
+      "type": "string"
+    }
+  },
+  "$id": "urn:paper-radar:contracts:screening:value-prediction:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Screening 第二阶段的摘要层价值预测。",
+  "properties": {
+    "abstract_brief_zh": {
+      "title": "Abstract Brief Zh",
+      "type": "string"
+    },
+    "display_title_zh": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Display Title Zh"
+    },
+    "research_value": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Research Value",
+      "type": "integer"
+    },
+    "research_value_reason_zh": {
+      "title": "Research Value Reason Zh",
+      "type": "string"
+    },
+    "reuse_feasibility": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Reuse Feasibility",
+      "type": "integer"
+    },
+    "reuse_feasibility_inferable": {
+      "title": "Reuse Feasibility Inferable",
+      "type": "boolean"
+    },
+    "reuse_feasibility_reason_zh": {
+      "title": "Reuse Feasibility Reason Zh",
+      "type": "string"
+    },
+    "topic_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Topic Ids",
+      "type": "array"
+    },
+    "value_types": {
+      "items": {
+        "$ref": "#/$defs/ValueType"
+      },
+      "title": "Value Types",
+      "type": "array"
+    },
+    "why_it_may_matter_zh": {
+      "title": "Why It May Matter Zh",
+      "type": "string"
+    }
+  },
+  "required": [
+    "research_value",
+    "research_value_reason_zh",
+    "reuse_feasibility",
+    "reuse_feasibility_reason_zh",
+    "reuse_feasibility_inferable",
+    "value_types",
+    "topic_ids",
+    "abstract_brief_zh",
+    "why_it_may_matter_zh"
+  ],
+  "title": "ValuePredictionOutput",
+  "type": "object",
+  "x-paper-radar-contract": {
+    "name": "value-prediction",
+    "version": "v1"
+  }
+}

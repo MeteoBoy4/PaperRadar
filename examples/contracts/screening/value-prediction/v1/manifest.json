@@ -1,0 +1,7 @@
+{
+  "contract": "value-prediction",
+  "format_version": 1,
+  "schema_file": "schema.json",
+  "schema_sha256": "5ba68a0499903e01e733872bbd1967e04ae8149089ae1559a5d0a2c6c2fa351e",
+  "version": "v1"
+}

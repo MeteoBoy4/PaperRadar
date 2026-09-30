@@ -20,6 +20,7 @@ from paper_radar.config.compile import (
 from paper_radar.config.errors import ConfigError
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.schema import Models, Profile, Settings
+from paper_radar.config.topics import Topics
 from paper_radar.config.yaml_loader import read_yaml, validate_yaml_bytes
 from paper_radar.contracts import (
     ContractCheckError,
@@ -41,6 +42,12 @@ from paper_radar.storage.repository import check_version, read_snapshot, save_sn
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PROFILE_KEY = (MaterialKind.PROFILE, "profile")
 _MODELS_KEY = (MaterialKind.MODELS, "models")
+_TOPICS_KEY = (MaterialKind.TOPICS, "topics")
+_PROMPT_NAMES = ("boundary", "value")
+_CONTRACT_NAMES = {
+    "boundary": ContractName.BOUNDARY,
+    "value_prediction": ContractName.VALUE_PREDICTION,
+}
 _CONTRACT_CHECK_GUIDANCE = {
     ContractCheckErrorCategory.INVALID_SELECTION: "请确认所选契约和版本已实现",
     ContractCheckErrorCategory.MISSING_SNAPSHOT: "请从版本控制恢复完整冻结快照",
@@ -56,18 +63,18 @@ _CONTRACT_CHECK_GUIDANCE = {
 def _unsupported(settings: Settings) -> None:
     selected = [
         name
-        for name in ("topics", "journals", "escalation", "extraction")
+        for name in ("journals", "escalation", "extraction")
         if getattr(settings, name) is not None
     ]
     selected.extend(
         f"prompts.{name}"
         for name, value in settings.prompts.model_dump().items()
-        if name != "boundary" and value is not None
+        if name not in _PROMPT_NAMES and value is not None
     )
     selected.extend(
         f"contracts.{name}"
         for name, value in settings.contracts.model_dump().items()
-        if name != "boundary" and value is not None
+        if name not in _CONTRACT_NAMES and value is not None
     )
     if selected:
         raise ConfigError(
@@ -75,37 +82,37 @@ def _unsupported(settings: Settings) -> None:
         )
 
 
-def _read_prompt(path: Path) -> bytes:
+def _read_prompt(path: Path, name: str) -> bytes:
     try:
         raw = path.read_bytes()
         raw.decode("utf-8")
         return raw
     except (OSError, UnicodeDecodeError):
         raise ConfigError(
-            "prompts.boundary：无法读取 UTF-8 提示词；请检查路径和编码"
+            f"prompts.{name}：无法读取 UTF-8 提示词；请检查路径和编码"
         ) from None
 
 
-def _contract_materials(root: Path, version: str) -> tuple[CompiledMaterial, ...]:
+def _contract_materials(
+    root: Path, selector: str, name: ContractName, version: str
+) -> tuple[CompiledMaterial, ...]:
     try:
         controlled_version = ContractVersion(version)
     except ValueError:
         raise ConfigError(
-            "contracts.boundary：所选版本尚无权威契约；请选择已实现的 v1"
+            f"contracts.{selector}：所选版本尚无权威契约；请选择已实现的 v1"
         ) from None
     try:
-        contract = build_frozen_contract(ContractName.BOUNDARY, controlled_version)
+        contract = build_frozen_contract(name, controlled_version)
     except (ValueError, KeyError):
         raise ConfigError(
-            "contracts.boundary：权威契约构造失败；请检查所选版本"
+            f"contracts.{selector}：权威契约构造失败；请检查所选版本"
         ) from None
     try:
-        check_frozen_contract(
-            ContractName.BOUNDARY, controlled_version, root / "contracts"
-        )
+        check_frozen_contract(name, controlled_version, root / "contracts")
     except ContractCheckError as error:
         raise ConfigError(
-            f"contracts.boundary：{error.category.value}；"
+            f"contracts.{selector}：{error.category.value}；"
             f"{_CONTRACT_CHECK_GUIDANCE[error.category]}"
         ) from None
     try:
@@ -114,17 +121,17 @@ def _contract_materials(root: Path, version: str) -> tuple[CompiledMaterial, ...
         manifest_raw = (folder / contract.manifest_filename).read_bytes()
     except OSError:
         raise ConfigError(
-            "contracts.boundary：检查后无法读取冻结契约；请检查路径和权限并重试"
+            f"contracts.{selector}：检查后无法读取冻结契约；请检查路径和权限并重试"
         ) from None
     if schema_raw != contract.schema_bytes or manifest_raw != contract.manifest_bytes:
-        raise ConfigError("contracts.boundary：冻结契约检查后内容变化；请重试")
+        raise ConfigError(f"contracts.{selector}：冻结契约检查后内容变化；请重试")
     return (
         CompiledMaterial(
-            Material(MaterialKind.CONTRACT_SCHEMA, "boundary", version, schema_raw),
+            Material(MaterialKind.CONTRACT_SCHEMA, name, version, schema_raw),
             json.loads(schema_raw),
         ),
         CompiledMaterial(
-            Material(MaterialKind.CONTRACT_MANIFEST, "boundary", version, manifest_raw),
+            Material(MaterialKind.CONTRACT_MANIFEST, name, version, manifest_raw),
             json.loads(manifest_raw),
         ),
     )
@@ -138,6 +145,7 @@ def _selected_materials(
     Material | None,
     Models | None,
     tuple[CompiledMaterial, ...],
+    Topics | None,
 ]:
     _, settings = read_yaml(settings_path, Settings, "settings")
     _unsupported(settings)
@@ -174,18 +182,42 @@ def _selected_materials(
                 models.model_dump(mode="json"),
             )
         )
-    if settings.prompts.boundary is not None:
-        version = settings.prompts.boundary
-        raw = _read_prompt(root / "prompts/screening" / f"boundary-{version}.md")
+    topics: Topics | None = None
+    if settings.topics is not None:
+        raw, topics = read_yaml(
+            settings_path.parent / "topics" / f"{settings.topics}.yaml",
+            Topics,
+            "topics",
+        )
+        if topics.version != settings.topics:
+            raise ConfigError(
+                "topics.version：与 settings.topics 不一致；请选择匹配版本"
+            )
         additional.append(
             CompiledMaterial(
-                Material(MaterialKind.PROMPT, "boundary", version, raw),
-                {"text": raw.decode("utf-8")},
+                Material(*_TOPICS_KEY, topics.version, raw),
+                topics.model_dump(mode="json"),
             )
         )
-    if settings.contracts.boundary is not None:
-        additional.extend(_contract_materials(root, settings.contracts.boundary))
-    return settings, profile, profile_material, models, tuple(additional)
+    for name in _PROMPT_NAMES:
+        version = getattr(settings.prompts, name)
+        if version is not None:
+            raw = _read_prompt(
+                root / "prompts/screening" / f"{name}-{version}.md", name
+            )
+            additional.append(
+                CompiledMaterial(
+                    Material(MaterialKind.PROMPT, name, version, raw),
+                    {"text": raw.decode("utf-8")},
+                )
+            )
+    for selector, contract_name in _CONTRACT_NAMES.items():
+        version = getattr(settings.contracts, selector)
+        if version is not None:
+            additional.extend(
+                _contract_materials(root, selector, contract_name, version)
+            )
+    return settings, profile, profile_material, models, tuple(additional), topics
 
 
 def _records(
@@ -204,11 +236,13 @@ def check_config(settings_path: Path, database: Path) -> RuntimeConfigSnapshot:
         engine = open_database(database, mode=DatabaseMode.READ_ONLY)
         try:
             require_current_revision(engine)
-            settings, profile, material, models, additional = _selected_materials(
-                settings_path
+            settings, profile, material, models, additional, topics = (
+                _selected_materials(settings_path)
             )
             check_version(engine, _records(material, additional))
-            return compile_snapshot(settings, profile, material, models, additional)
+            return compile_snapshot(
+                settings, profile, material, models, additional, topics
+            )
         finally:
             engine.dispose()
     except StorageError as error:
@@ -222,10 +256,12 @@ def compile_config(settings_path: Path, database: Path) -> RuntimeConfigSnapshot
         engine = open_database(database, mode=DatabaseMode.READ_WRITE)
         try:
             require_current_revision(engine)
-            settings, profile, material, models, additional = _selected_materials(
-                settings_path
+            settings, profile, material, models, additional, topics = (
+                _selected_materials(settings_path)
             )
-            snapshot = compile_snapshot(settings, profile, material, models, additional)
+            snapshot = compile_snapshot(
+                settings, profile, material, models, additional, topics
+            )
             save_snapshot(
                 engine,
                 snapshot.snapshot_id,
@@ -277,6 +313,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         profile: Profile | None = None
         profile_material: Material | None = None
         models: Models | None = None
+        topics: Topics | None = None
         additional: list[CompiledMaterial] = []
         for entry in listed:
             key = (entry["kind"], entry["name"], entry["version"])
@@ -300,19 +337,35 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 ):
                     raise ValueError
                 additional.append(CompiledMaterial(material, entry["config"]))
-            elif key[:2] == (MaterialKind.PROMPT, "boundary"):
+            elif key[:2] == _TOPICS_KEY:
+                topics = validate_yaml_bytes(raw, Topics, "topics")
                 if (
-                    key[2] != settings.prompts.boundary
+                    topics.version != settings.topics
+                    or topics.model_dump(mode="json") != entry["config"]
+                ):
+                    raise ValueError
+                additional.append(CompiledMaterial(material, entry["config"]))
+            elif (
+                material.kind is MaterialKind.PROMPT and material.name in _PROMPT_NAMES
+            ):
+                if (
+                    key[2] != getattr(settings.prompts, material.name)
                     or {"text": raw.decode("utf-8")} != entry["config"]
                 ):
                     raise ValueError
                 additional.append(CompiledMaterial(material, entry["config"]))
-            elif key[:2] in (
-                (MaterialKind.CONTRACT_SCHEMA, "boundary"),
-                (MaterialKind.CONTRACT_MANIFEST, "boundary"),
+            elif (
+                material.kind
+                in (MaterialKind.CONTRACT_SCHEMA, MaterialKind.CONTRACT_MANIFEST)
+                and material.name in _CONTRACT_NAMES.values()
             ):
+                selector = next(
+                    field
+                    for field, name in _CONTRACT_NAMES.items()
+                    if name == material.name
+                )
                 if (
-                    key[2] != settings.contracts.boundary
+                    key[2] != getattr(settings.contracts, selector)
                     or json.loads(raw) != entry["config"]
                 ):
                     raise ValueError
@@ -323,24 +376,33 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             by_key
             or (settings.profile is None) != (profile is None)
             or (settings.models is None) != (models is None)
+            or (settings.topics is None) != (topics is None)
         ):
             raise ValueError
-        if (settings.prompts.boundary is None) != (
-            not any(item.material.kind is MaterialKind.PROMPT for item in additional)
-        ):
-            raise ValueError
-        contract_count = sum(
-            item.material.kind
+        expected_keys = {
+            (MaterialKind.PROMPT, name, version)
+            for name in _PROMPT_NAMES
+            if (version := getattr(settings.prompts, name)) is not None
+        } | {
+            (kind, name, version)
+            for selector, name in _CONTRACT_NAMES.items()
+            if (version := getattr(settings.contracts, selector)) is not None
+            for kind in (MaterialKind.CONTRACT_SCHEMA, MaterialKind.CONTRACT_MANIFEST)
+        }
+        actual_keys = {
+            (item.material.kind, item.material.name, item.material.version)
+            for item in additional
+            if item.material.kind
             in (
+                MaterialKind.PROMPT,
                 MaterialKind.CONTRACT_SCHEMA,
                 MaterialKind.CONTRACT_MANIFEST,
             )
-            for item in additional
-        )
-        if contract_count != (0 if settings.contracts.boundary is None else 2):
+        }
+        if expected_keys != actual_keys:
             raise ValueError
         rebuilt = compile_snapshot(
-            settings, profile, profile_material, models, tuple(additional)
+            settings, profile, profile_material, models, tuple(additional), topics
         )
         if rebuilt.snapshot_id != snapshot_id or rebuilt.payload_json != saved_json:
             raise ValueError
