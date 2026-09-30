@@ -108,7 +108,7 @@ reading: null
 原始字节及 SHA-256。相同键、相同字节幂等；即使只改注释或空白，同键不同字节
 也拒绝，必须声明新版本。校验、哈希和登记使用同一份内存材料。
 
-快照身份是以下包络的规范 JSON 字节的 SHA-256：
+快照身份是以下包络的规范 JSON 字节的 SHA-256（示意仅展示一条条目；materials 含全部已选材料）：
 
 ```json
 {"format_version":1,"materials":[{"config":{"version":"profile-v1"},"kind":"profile","name":"profile","raw_sha256":"...","version":"profile-v1"}],"selectors":{"profile":"profile-v1"}}
