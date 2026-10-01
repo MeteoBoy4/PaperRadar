@@ -3,7 +3,7 @@
 PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库交付了工程入口、
 研究边界、摘要层价值预测、复用可行性升级和筛选原因组合的公共验证，以及
 四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
-只读漂移检查；另已交付 Profile、模型、主题与两阶段提示词/契约配置快照的显式迁移、检查、编译与历史加载。
+只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约及复用升级参数配置快照的显式迁移、检查、编译与历史加载。
 网络来源和论文处理命令尚未实现。
 
 ## 环境与安装
@@ -52,7 +52,7 @@ uv run --offline --locked paper-radar config compile \
 ```
 
 先创建数据库父目录，例如 `mkdir -p data`。示例是工程验收合成材料，不是正式
-校准资料。当前可选六段式 Profile、单份三槽 models 文件、主题集合、boundary/value 提示词与对应 A1 冻结契约。boundary 与 value 各自报告配置就绪；value 需要已配置的主题集合，空集合和全部停用均合法。`examples/config/settings-value.yaml` 使用完整合成 Profile，演示两阶段均就绪；`settings-boundary.yaml` 演示仅 boundary 就绪；原 `settings.yaml` 保留占位 Profile，展示未就绪原因。公共 Python 服务可从数据库加载旧快照；完整字段、声明版本规则、
+校准资料。当前可选六段式 Profile、单份三槽 models 文件、主题集合、boundary/value/reuse 提示词、四份 A1 冻结契约与复用升级参数。boundary、value、reuse 和 suggestion 各自报告配置就绪；value 需要已配置的主题集合，空集合和全部停用均合法。`examples/config/settings-value.yaml` 使用完整合成 Profile，演示两阶段均就绪；`settings-boundary.yaml` 演示仅 boundary 就绪；`settings-reuse.yaml` 演示缺 value/PDF/extraction 时 reuse 和 suggestion 配置就绪，触发集合默认仅 `{3}`、摘录顺序固定为 availability 优先；算法身份只接受受控 v1，不执行摘录选择或建议规则。原 `settings.yaml` 保留占位 Profile，展示未就绪原因。公共 Python 服务可从数据库加载旧快照；完整字段、声明版本规则、
 身份格式、未就绪范围和迁移行为见
 [运行配置快照契约](docs/contracts/runtime-config.md)。
 

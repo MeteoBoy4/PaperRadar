@@ -4,6 +4,11 @@ from pathlib import Path
 
 from paper_radar.config.compile import RuntimeConfigSnapshot, StageName, StageReadiness
 from paper_radar.config.errors import ConfigError
+from paper_radar.config.escalation import (
+    EscalationSemantics,
+    ExcerptSelectorVersion,
+    SuggestionRuleVersion,
+)
 from paper_radar.config.topics import TopicsStatus
 
 
@@ -37,9 +42,12 @@ def upgrade_database(path: Path) -> str:
 
 __all__ = [
     "ConfigError",
+    "EscalationSemantics",
+    "ExcerptSelectorVersion",
     "RuntimeConfigSnapshot",
     "StageName",
     "StageReadiness",
+    "SuggestionRuleVersion",
     "TopicsStatus",
     "check_config",
     "compile_config",

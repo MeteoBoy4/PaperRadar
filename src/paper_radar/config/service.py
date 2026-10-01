@@ -20,6 +20,7 @@ from paper_radar.config.compile import (
     compile_snapshot,
 )
 from paper_radar.config.errors import ConfigError
+from paper_radar.config.escalation import Escalation
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.schema import Models, Profile, Settings
 from paper_radar.config.topics import Topics
@@ -45,10 +46,13 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PROFILE_KEY = (MaterialKind.PROFILE, "profile")
 _MODELS_KEY = (MaterialKind.MODELS, "models")
 _TOPICS_KEY = (MaterialKind.TOPICS, "topics")
-_PROMPT_NAMES = (StageName.BOUNDARY, StageName.VALUE)
+_ESCALATION_KEY = (MaterialKind.ESCALATION, "escalation")
+_PROMPT_NAMES = (StageName.BOUNDARY, StageName.VALUE, StageName.REUSE)
 _CONTRACT_NAMES = {
     "boundary": ContractName.BOUNDARY,
     "value_prediction": ContractName.VALUE_PREDICTION,
+    "reuse_assessment": ContractName.REUSE_ASSESSMENT,
+    "decision_reasons": ContractName.DECISION_REASONS,
 }
 _CONTRACT_CHECK_GUIDANCE = {
     ContractCheckErrorCategory.INVALID_SELECTION: "请确认所选契约和版本已实现",
@@ -65,7 +69,7 @@ _CONTRACT_CHECK_GUIDANCE = {
 def _unsupported(settings: Settings) -> None:
     selected = [
         name
-        for name in ("journals", "escalation", "extraction")
+        for name in ("journals", "extraction")
         if getattr(settings, name) is not None
     ]
     selected.extend(
@@ -139,7 +143,7 @@ def _contract_materials(
     )
 
 
-def _versioned_yaml_material[T: (Profile, Models, Topics)](
+def _versioned_yaml_material[T: (Profile, Models, Topics, Escalation)](
     path: Path, model: type[T], kind: MaterialKind, selected: str
 ) -> tuple[T, CompiledMaterial]:
     label = kind.value
@@ -187,6 +191,15 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
             settings.topics,
         )
         additional.append(compiled)
+    escalation: Escalation | None = None
+    if settings.escalation is not None:
+        escalation, compiled = _versioned_yaml_material(
+            settings_path.parent / "screening" / f"{settings.escalation}.yaml",
+            Escalation,
+            MaterialKind.ESCALATION,
+            settings.escalation,
+        )
+        additional.append(compiled)
     for name in _PROMPT_NAMES:
         version = getattr(settings.prompts, name)
         if version is not None:
@@ -212,6 +225,7 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
         models=models,
         topics=topics,
         additional=tuple(additional),
+        escalation=escalation,
     )
 
 
@@ -299,6 +313,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         profile_material: Material | None = None
         models: Models | None = None
         topics: Topics | None = None
+        escalation: Escalation | None = None
         additional: list[CompiledMaterial] = []
         for entry in listed:
             key = (entry["kind"], entry["name"], entry["version"])
@@ -327,6 +342,14 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 if (
                     topics.version != settings.topics
                     or topics.model_dump(mode="json") != entry["config"]
+                ):
+                    raise ValueError
+                additional.append(CompiledMaterial(material, entry["config"]))
+            elif key[:2] == _ESCALATION_KEY:
+                escalation = validate_yaml_bytes(raw, Escalation, "escalation")
+                if (
+                    escalation.version != settings.escalation
+                    or escalation.model_dump(mode="json") != entry["config"]
                 ):
                     raise ValueError
                 additional.append(CompiledMaterial(material, entry["config"]))
@@ -362,6 +385,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             or (settings.profile is None) != (profile is None)
             or (settings.models is None) != (models is None)
             or (settings.topics is None) != (topics is None)
+            or (settings.escalation is None) != (escalation is None)
         ):
             raise ValueError
         expected_keys = {
@@ -393,6 +417,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             models=models,
             topics=topics,
             additional=tuple(additional),
+            escalation=escalation,
         )
         rebuilt = compile_snapshot(materials)
         if rebuilt.snapshot_id != snapshot_id or rebuilt.payload_json != saved_json:

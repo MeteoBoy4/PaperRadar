@@ -38,15 +38,19 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/__init__.py",
-        "401483592a96141ead89d4fb9340edd2fbae9f2a160d9a950b38e38ec4a619f0",
+        "4866143ead3b81562409473ce6ad6eaf11a742f7975e0f0d7ff2e1683b984508",
     ),
     (
         "src/paper_radar/config/cli.py",
-        "a993637cbea85f42776e932b3e3fa121c92c10a99c0908c323e5e79f252ff67e",
+        "f03944fd58def271f55478b46c363a59d30b82d03171a9df60e3bb45cc36b736",
     ),
     (
         "src/paper_radar/config/compile.py",
-        "435136cb31a6799a52089134a38f175fe4bfd23357508760756e34db3137a1bb",
+        "dbc44d01404f758ccd920440394fd3d57b8012b93d296d53530076caba250934",
+    ),
+    (
+        "src/paper_radar/config/escalation.py",
+        "dac2d7ec6af78c3ea8b04f6b9d3c4a321d9e331b733df4c73926808a933379ce",
     ),
     (
         "src/paper_radar/config/errors.py",
@@ -58,11 +62,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/schema.py",
-        "b8306daad12a3b652d92c4531dd18ac5047e8e4c33d6ff23ade170e08b97ea62",
+        "7f87ac6aaefd748e13ce3597be615e42d2a3aaeef82bf8f4798b263ca4d65e45",
     ),
     (
         "src/paper_radar/config/service.py",
-        "9768df0d79a33e07235e33683f251b3e0201dd5aca050ed247dd97c6ac832a93",
+        "38479b8b5a2c1f26ce9434ad17d2dd4d8ea98dc5dce08aa6947f5f45e1adaf19",
     ),
     (
         "src/paper_radar/config/topics.py",
@@ -122,9 +126,7 @@ REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 
 NOT_IMPLEMENTED = (
     "journals",
-    "prompts_reuse_reading",
-    "contracts_reuse_assessment_decision_reasons",
-    "escalation",
+    "prompts_reading",
     "extraction",
     "stage_config_projections",
     "calibration_baseline",

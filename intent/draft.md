@@ -234,7 +234,7 @@ Profile 变化不会无界重算全部历史库。自动重算范围限于 `wait
 
 ### 3.7 筛选建议与生效决定
 
-Screening Agent 先产生阶段一、二结构化语义判断；满足条件时，独立的复用可行性升级制品再补充摘要层难以判断的信息。只有相关制品成功并通过业务校验后，程序才以版本化规则生成筛选建议。摘要不可得或模型失败没有合法筛选制品，因此不会调用本规则，而在复核投影中显示为带原因的 pending。V1 默认 `reuse_escalation_research_value = 3`：
+Screening Agent 先产生阶段一、二结构化语义判断；满足条件时，独立的复用可行性升级制品再补充摘要层难以判断的信息。只有相关制品成功并通过业务校验后，程序才以版本化规则生成筛选建议。摘要不可得或模型失败没有合法筛选制品，因此不会调用本规则，而在复核投影中显示为带原因的 pending。V1 默认 `reuse_escalation_research_values = {3}`：
 
 ~~~text
 if boundary == out_of_scope:
@@ -625,14 +625,17 @@ Read 只处理：
 class EvidenceRef(BaseModel):
     evidence_id: str
 
+
 class SupportedStatement(BaseModel):
     statement: str
     evidence: list[EvidenceRef]
+
 
 class ReusablePoint(BaseModel):
     item: str
     how_to_reuse: str
     evidence: list[EvidenceRef]
+
 
 class ReadAnalysisOutput(BaseModel):
     output_language: Literal["zh", "en"]
@@ -878,7 +881,7 @@ logs/
 
 `settings.yaml` 只选择当前 Profile、主题、models 整份版本化文件、复用升级参数、提示词和契约版本；带版本的内容文件创建后不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
 
-A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约；A2-03 增加 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
+A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约；A2-03 增加 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪；A2-04 增加 escalation、reuse 提示词、reuse-assessment 和 decision-reasons 契约，判断 reuse/suggestion 配置就绪，不要求 PDF、正文解析或 value 输出。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
 
 blob 和 artifact 路径只由哈希、UUID 与受控枚举构造。数据库保存相对路径；根目录由配置决定，以便 NAS 恢复到不同挂载点。
 
@@ -962,6 +965,7 @@ class BoundaryOutput(BaseModel):
     boundary: Literal["in_scope", "out_of_scope", "uncertain"]
     reason_zh: str
 
+
 class ValuePredictionOutput(BaseModel):
     research_value: int  # 1..5
     research_value_reason_zh: str
@@ -973,6 +977,7 @@ class ValuePredictionOutput(BaseModel):
     display_title_zh: str | None = None
     abstract_brief_zh: str
     why_it_may_matter_zh: str
+
 
 class ReuseAssessmentOutput(BaseModel):
     reuse_feasibility: int  # 1..5
@@ -1002,11 +1007,13 @@ Pydantic Schema 通过后仍要执行业务校验：
 
 ~~~yaml
 version: reuse-escalation-v1
-research_value_triggers: [3]
+reuse_escalation_research_values: [3]
 excerpt_priority: [availability, methods]
+excerpt_selector_version: v1
+suggestion_rule_version: v1
 ~~~
 
-V1 的正式行为固定为 `[3]`；以后改为 `[2, 3]` 或其他集合必须创建新版本、改变指纹，并进入校准变更分级。
+V1 默认触发集合为 `[3]`；改为 `[2, 3]` 或其他非空、无重复的严格 1–5 整数集合必须创建新版本，语义变化进入相关指纹与校准变更分级。`reuse_escalation_research_values` 是唯一输入字段；旧示例别名 `research_value_triggers` 和单数 `reuse_escalation_research_value` 不作为配置输入接受。`excerpt_priority` 只接受既定顺序 `[availability, methods]`；两个算法身份只接受代码支持的 `v1`，不执行算法、不创建独立内容文件。A2 无法自动检测同算法版本下的代码语义变化。参数字段、默认值和必填性见 `docs/contracts/runtime-config.md`。
 
 ### 7.5 决定与处理原因
 

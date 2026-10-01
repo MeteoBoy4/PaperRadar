@@ -1,0 +1,7 @@
+{
+  "contract": "reuse-assessment",
+  "format_version": 1,
+  "schema_file": "schema.json",
+  "schema_sha256": "48c31d66163f7022cd3e7499619d2a97701b11cdc92d9f2e4dfe701cf3d980ff",
+  "version": "v1"
+}

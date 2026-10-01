@@ -1,0 +1,6 @@
+# 工程验收合成材料。只选择身份，不执行算法。
+version: reuse-escalation-v1
+reuse_escalation_research_values: [3]
+excerpt_priority: [availability, methods]
+excerpt_selector_version: v1
+suggestion_rule_version: v1

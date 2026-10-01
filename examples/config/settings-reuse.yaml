@@ -1,0 +1,9 @@
+# 工程验收合成材料，不是真实 Research Profile 或正式校准输入。
+profile: profile-example-v1
+models: models-reuse-v1
+escalation: reuse-escalation-v1
+prompts:
+  reuse: v1
+contracts:
+  reuse_assessment: v1
+  decision_reasons: v1

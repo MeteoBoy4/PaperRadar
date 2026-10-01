@@ -8,6 +8,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Any
 
+from paper_radar.config.escalation import Escalation, EscalationSemantics
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.schema import (
     MODEL_SLOTS,
@@ -54,19 +55,24 @@ class MissingReason(StrEnum):
     REUSE_MODEL = "reuse_model"
     REUSE_MODEL_PLACEHOLDER = "reuse_model_placeholder"
     REUSE_PROMPT = "reuse_prompt"
+    REUSE_PROMPT_PLACEHOLDER = "reuse_prompt_placeholder"
     REUSE_CONTRACT = "reuse_contract"
+    EXCERPT_SELECTOR = "excerpt_selector"
     EXTRACTION_CONFIG = "extraction_config"
     READ_MODEL = "read_model"
     READ_MODEL_PLACEHOLDER = "read_model_placeholder"
     READ_PROMPT = "read_prompt"
     READ_CONTRACT = "read_contract"
     SUGGESTION_RULE = "suggestion_rule"
+    ESCALATION_PARAMETERS = "escalation_parameters"
+    DECISION_REASONS_CONTRACT = "decision_reasons_contract"
 
 
 class MaterialKind(StrEnum):
     PROFILE = "profile"
     TOPICS = "topics"
     MODELS = "models"
+    ESCALATION = "escalation"
     PROMPT = "prompt"
     CONTRACT_SCHEMA = "contract_schema"
     CONTRACT_MANIFEST = "contract_manifest"
@@ -100,6 +106,7 @@ class SelectedMaterials:
     models: Models | None
     topics: Topics | None
     additional: tuple[CompiledMaterial, ...]
+    escalation: Escalation | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,6 +125,7 @@ class RuntimeConfigSnapshot:
     payload_json: str
     topics_status: TopicsStatus
     enabled_topics: tuple[EnabledTopic, ...]
+    escalation: EscalationSemantics | None
 
 
 def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
@@ -127,6 +135,7 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
     material = materials.profile_material
     models = materials.models
     topics = materials.topics
+    escalation = materials.escalation
     additional = materials.additional
     fields = {
         field: profile_field_status(getattr(profile, field) if profile else None)
@@ -168,6 +177,8 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
         selectors["models"] = settings.models
     if settings.topics is not None:
         selectors["topics"] = settings.topics
+    if settings.escalation is not None:
+        selectors["escalation"] = settings.escalation
     for group in ("prompts", "contracts"):
         chosen = {
             name: version
@@ -252,6 +263,31 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
         *contract_reason(ContractName.VALUE_PREDICTION, MissingReason.VALUE_CONTRACT),
         *((MissingReason.TOPICS,) if topics is None else ()),
     )
+    reuse_missing = (
+        *missing_profile,
+        *model_reason(
+            "reuse_assessment",
+            MissingReason.REUSE_MODEL,
+            MissingReason.REUSE_MODEL_PLACEHOLDER,
+        ),
+        *prompt_reason(
+            StageName.REUSE,
+            MissingReason.REUSE_PROMPT,
+            MissingReason.REUSE_PROMPT_PLACEHOLDER,
+        ),
+        *contract_reason(ContractName.REUSE_ASSESSMENT, MissingReason.REUSE_CONTRACT),
+        *((MissingReason.EXCERPT_SELECTOR,) if escalation is None else ()),
+    )
+    suggestion_missing = (
+        *(
+            (MissingReason.SUGGESTION_RULE, MissingReason.ESCALATION_PARAMETERS)
+            if escalation is None
+            else ()
+        ),
+        *contract_reason(
+            ContractName.DECISION_REASONS, MissingReason.DECISION_REASONS_CONTRACT
+        ),
+    )
     stages = {
         StageName.BOUNDARY: StageReadiness(
             StageStatus.READY if not boundary_missing else StageStatus.NOT_READY,
@@ -262,17 +298,8 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
             value_missing,
         ),
         StageName.REUSE: StageReadiness(
-            StageStatus.NOT_READY,
-            (
-                *missing_profile,
-                *model_reason(
-                    "reuse_assessment",
-                    MissingReason.REUSE_MODEL,
-                    MissingReason.REUSE_MODEL_PLACEHOLDER,
-                ),
-                MissingReason.REUSE_PROMPT,
-                MissingReason.REUSE_CONTRACT,
-            ),
+            StageStatus.READY if not reuse_missing else StageStatus.NOT_READY,
+            reuse_missing,
         ),
         StageName.EXTRACTION: StageReadiness(
             StageStatus.NOT_READY, (MissingReason.EXTRACTION_CONFIG,)
@@ -291,7 +318,8 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
             ),
         ),
         StageName.SUGGESTION: StageReadiness(
-            StageStatus.NOT_READY, (MissingReason.SUGGESTION_RULE,)
+            StageStatus.READY if not suggestion_missing else StageStatus.NOT_READY,
+            suggestion_missing,
         ),
     }
     canonical = canonical_json(payload)
@@ -306,4 +334,5 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
             TopicsStatus.CONFIGURED if topics is not None else TopicsStatus.UNCONFIGURED
         ),
         enabled_topics=topics.enabled_topics if topics is not None else (),
+        escalation=escalation.semantics if escalation is not None else None,
     )

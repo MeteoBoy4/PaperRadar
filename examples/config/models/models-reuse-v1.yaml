@@ -1,0 +1,11 @@
+# 工程验收合成模型身份，不访问供应商。
+version: models-reuse-v1
+screening:
+  provider: example-provider
+  model: example-model
+  protocol: json_schema
+reuse_assessment:
+  provider: example-provider
+  model: example-model
+  protocol: json_schema
+reading: null

@@ -1,0 +1,7 @@
+{
+  "contract": "decision-reasons",
+  "format_version": 1,
+  "schema_file": "schema.json",
+  "schema_sha256": "eabf88c7679433d52d8b8fa8a9cc3051c978a22ee528c785a187b146c555e4bc",
+  "version": "v1"
+}
