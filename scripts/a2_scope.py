@@ -50,7 +50,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/escalation.py",
-        "dac2d7ec6af78c3ea8b04f6b9d3c4a321d9e331b733df4c73926808a933379ce",
+        "086813af87547c24fce5b2940e6fb773b276a63f7ac880637311e3b24443d24d",
     ),
     (
         "src/paper_radar/config/errors.py",
@@ -103,6 +103,10 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/storage/migrations/versions/a201_profile_snapshot.py",
         "a19059f3143dd9d05e550bfd77f7d89f75bc43a23636ba375d4ac7d4ea2c3039",
+    ),
+    (
+        "tests/config_reuse_support.py",
+        "b9f576eb2a4ae3eead274caae1b0de6c63fea30cd65c2f1188c0ba41f450b91d",
     ),
     (
         "tests/config_test_support.py",

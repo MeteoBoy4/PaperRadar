@@ -7,7 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from paper_radar.config import check_config, compile_config, load_config_snapshot
+from paper_radar.config import (
+    check_config,
+    compile_config,
+    load_config_snapshot,
+    upgrade_database,
+)
 from paper_radar.config.compile import MissingReason, StageName
 from tests.config_reuse_support import reuse_inputs
 
@@ -154,8 +159,6 @@ def test_initially_equal_model_slots_remain_independently_queryable(
 
 
 def test_synthetic_reuse_example_is_ready_and_history_replays(tmp_path: Path) -> None:
-    from paper_radar.config import upgrade_database
-
     examples = Path(__file__).resolve().parents[1] / "examples/config"
     db = tmp_path / "db.sqlite3"
     upgrade_database(db)

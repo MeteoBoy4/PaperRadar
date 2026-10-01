@@ -28,7 +28,7 @@ class EscalationSemantics:
 
 
 class Escalation(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid", strict=True, validate_default=True)
 
     version: str
     reuse_escalation_research_values: list[Annotated[StrictInt, Field(ge=1, le=5)]] = (

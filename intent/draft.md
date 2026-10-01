@@ -625,17 +625,14 @@ Read 只处理：
 class EvidenceRef(BaseModel):
     evidence_id: str
 
-
 class SupportedStatement(BaseModel):
     statement: str
     evidence: list[EvidenceRef]
-
 
 class ReusablePoint(BaseModel):
     item: str
     how_to_reuse: str
     evidence: list[EvidenceRef]
-
 
 class ReadAnalysisOutput(BaseModel):
     output_language: Literal["zh", "en"]
@@ -965,7 +962,6 @@ class BoundaryOutput(BaseModel):
     boundary: Literal["in_scope", "out_of_scope", "uncertain"]
     reason_zh: str
 
-
 class ValuePredictionOutput(BaseModel):
     research_value: int  # 1..5
     research_value_reason_zh: str
@@ -977,7 +973,6 @@ class ValuePredictionOutput(BaseModel):
     display_title_zh: str | None = None
     abstract_brief_zh: str
     why_it_may_matter_zh: str
-
 
 class ReuseAssessmentOutput(BaseModel):
     reuse_feasibility: int  # 1..5

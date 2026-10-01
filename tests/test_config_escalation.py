@@ -8,13 +8,17 @@ from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
+from pydantic import Field, ValidationError
 
 from paper_radar.config import (
     ConfigError,
     SuggestionRuleVersion,
     check_config,
     compile_config,
+    load_config_snapshot,
 )
+from paper_radar.config.escalation import Escalation
+from paper_radar.config.identity import canonical_json
 from tests.config_reuse_support import reuse_inputs
 from tests.config_test_support import imported_modules
 
@@ -51,6 +55,35 @@ def test_omitted_research_value_set_has_explicit_v1_default(tmp_path: Path) -> N
     result = check_config(settings, db)
     assert result.escalation is not None
     assert result.escalation.reuse_escalation_research_values == (3,)
+    saved = compile_config(settings, db)
+    assert saved == result == load_config_snapshot(db, saved.snapshot_id)
+
+
+@pytest.mark.parametrize(
+    ("default_values", "expected"),
+    [((3, 2), (2, 3)), ((3, 3), None), ((), None)],
+)
+def test_trigger_defaults_are_validated_and_normalized(
+    default_values: tuple[int, ...], expected: tuple[int, ...] | None
+) -> None:
+    # 作者声明的默认值无法通过用户 YAML 注入。隔离 fixture 继承权威校验器。
+    class EscalationDefaultFixture(Escalation):
+        reuse_escalation_research_values: list[int] = Field(
+            default_factory=lambda: list(default_values), min_length=1
+        )
+
+    fields = {
+        "version": "default-fixture",
+        "excerpt_priority": ["availability", "methods"],
+        "excerpt_selector_version": "v1",
+        "suggestion_rule_version": "v1",
+    }
+    if expected is None:
+        with pytest.raises(ValidationError):
+            EscalationDefaultFixture.model_validate(fields)
+    else:
+        config = EscalationDefaultFixture.model_validate(fields)
+        assert config.semantics.reuse_escalation_research_values == expected
 
 
 @pytest.mark.parametrize(
@@ -188,8 +221,6 @@ def test_new_parameter_versions_can_share_set_semantics_with_distinct_raw_identi
 
 
 def test_ordered_fixture_hash_keeps_list_order() -> None:
-    from paper_radar.config.identity import canonical_json
-
     # 隔离的有序列表 fixture。不把反转摘录顺序变成合法生产配置。
     first = canonical_json({"sequence_fixture": ["a", "b"]})
     second = canonical_json({"sequence_fixture": ["b", "a"]})

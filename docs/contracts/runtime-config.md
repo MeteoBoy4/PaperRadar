@@ -127,6 +127,9 @@ suggestion_rule_version: v1
 | `excerpt_selector_version` | 必填，代码受控的 `ExcerptSelectorVersion.V1`（`v1`）；未知版本或非文本拒绝。 |
 | `suggestion_rule_version` | 必填，代码受控的 `SuggestionRuleVersion.V1`（`v1`）；未知版本或非文本拒绝。 |
 
+省略触发集合时，代码声明的默认值也经过同一类型、非空、去重与排序校验。
+当前默认仍为 `[3]`，不会改变现有合法材料的编译语义或快照身份。
+
 触发字段表达研究价值的**集合成员关系**，不能解释成 `>=3` 阈值；V1 默认集合
 只有 `{3}`。父 spec 评论中的 `research_value_triggers` 与 draft §3.7 原单数名
 `reuse_escalation_research_value` 都只映射到权威字段 `reuse_escalation_research_values`；
