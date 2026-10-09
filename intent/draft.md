@@ -51,7 +51,6 @@ PaperRadar 第一版不是通用文献管理平台，也不是多源学术搜索
 - OCR 和扫描 PDF 自动精读；
 - 公式 LaTeX 精确恢复、表格精确数值恢复或图片理解；
 - 用多模态或专门 AI Agent 复核版面内容；
-- 使用浏览器登录态、机构权限、验证码或反爬绕过自动下载 PDF；
 - 自动跨模型或跨供应商 fallback；
 - OpenAlex、Semantic Scholar、OpenCitations 和被引次数；
 - 综合 Rank、紧急性评分、自由标签；
@@ -60,7 +59,7 @@ PaperRadar 第一版不是通用文献管理平台，也不是多源学术搜索
 - 正文解析器自动 fallback；
 - PostgreSQL、多用户、远程 API 或协作权限系统。
 
-OCR、AI 精确版面解析、登录态辅助下载和可编辑前端可以在第二版以后分别验证；它们不能静默改变第一版的证据契约。
+OCR、AI 精确版面解析和可编辑前端可以在第二版以后分别验证；它们不能静默改变第一版的证据契约。全文自动获取的凭证边界（允许用户自有凭证取得开放内容；禁止自动求解验证码、反爬绕过、机构订阅或他人凭证与付费墙内容）见 §4.8。
 
 ## 二、输入、输出与使用边界
 
@@ -99,7 +98,7 @@ PDF 可以显式附加到 paper ID。系统若从 PDF 中检测到 DOI，只能�
 - 校准期揭晓 Markdown；
 - 普通每日 Markdown；
 - 已成功精读论文的单篇 Markdown；
-- CLI 中的复核、积压、全文缺失、模型失败、重复候选、解析失败和备份状态；
+- CLI 中的复核、积压、全文受阻、模型失败、重复候选、解析失败和备份状态；
 - SQLite 中完整的事实、历史和用户行为。
 
 Markdown 是只读数据库投影。用户反馈、笔记和行为通过 CLI 追加到数据库，再由报告渲染；直接修改 Markdown 不受保存保证。
@@ -512,23 +511,34 @@ DataCite 用于 DOI 身份与元数据路由，不假设它一定提供参考文
 accepted 论文以及处于 `reuse_unknown`、需要条件式复用升级的论文可以独立推进全文取得，不等待参考文献完成：
 
 1. 复用已验证的当前版本本地 PDF；
-2. 检查 Feed、出版者和 DOI 元数据中的合法开放 PDF；
-3. 有 DOI 时请求 Unpaywall；
-4. 检查无需登录的合法机构仓储位置；
-5. 否则进入人工 PDF 队列。
+2. 出版者全文适配器：《大气科学》与 AMS 按出版者开放端点直取；Wiley 两刊（QJRMS 与 JGR-A，含 `10.1029` 前缀）经出版者官方 TDM API 取得——Crossref license 含 CC 许可判为 OA 候选，检查用户 TDM token 后调用官方端点取得出版级 PDF（仅 PDF，无 XML）；
+3. 检查 Feed 和 DOI 元数据中的合法开放 PDF 链接；
+4. 有 DOI 时请求 Unpaywall；
+5. 检查无需登录的合法机构仓储位置；
+6. 否则进入人工 PDF 队列。
 
 复用升级资格只为判断复用可行性取得同一份合法 PDF，不等于 accepted，也不提前取得参考文献或 Read 资格。
 
 自动下载必须：
 
-- 无需用户登录、机构会话或验证码；
+- 只取得开放获取内容：不尝试付费墙内容，无权限的 403 拒绝即终态；
+- 允许用户自有凭证用于开放全文：Wiley TDM token 属于用户在出版方官方 API 上的自有凭证；用户人工引导的自有会话凭证同属允许边界，但第一版只实现 TDM 通道；
+- 不自动求解验证码、不做站点反爬绕过、不使用机构订阅或他人凭证；
+- 下载链不发送浏览器 cookie 或机构凭据，只发送用户显式配置的出版方 API token；
 - 遵循重定向、连接/读取/总超时和最大体积；
 - 验证 HTTP 状态、Content-Type、PDF 文件签名、页数和最小体积；
 - 先写同文件系统临时文件，计算 SHA-256，fsync 后原子移动到内容寻址路径；
 - 保存来源 URL、取得方式、时间、许可或开放状态证据；
 - 把 403_antibot、not_open_access、not_found、invalid_file 和 transient_error 分开。
 
-系统不绕过 Cloudflare 等访问控制；403 不能解释为非开放获取。
+系统不绕过 Cloudflare 等访问控制；403 不能解释为非开放获取。Wiley TDM 的 403 先用固定已知 OA DOI 探测区分两种失效：探测返回 403 说明 token 失效，属于凭证级事实，全部 Wiley 论文记为全文受阻并提示重新配置，不逐篇进入人工 PDF 队列；探测 200 而候选文章 403 说明单篇无权限，按访问受阻分类并进入人工 PDF 队列。
+
+用户 TDM token 的凭证管理：
+
+- token 由用户在 Wiley Online Library 账户接受点击式 TDM 许可后取得；值存文件系统凭证区（0600 权限），SQLite 只存凭证状态事实（存在、上次验证、当前判定），不存值；
+- doctor 与取件前用固定已知 OA DOI 探测有效性；凭证缺失或失效时 Wiley 论文全文受阻（原因：凭证缺失或失效），在复核队列与日报提示重新配置，不阻断同批其他论文，不自动重试轰炸；
+- 配置命令重复执行以新 token 替换旧值并保留状态历史；是否重取以系统侧 PDF SHA-256 事实为准，不依赖下载工具的本地文件缓存；
+- 遵守 TDM 官方限速（3 篇/秒、60 次/10 分钟，响应头提供配额余量）；429 按限速退避，不做高频重试。
 
 人工命令：
 
@@ -536,9 +546,10 @@ accepted 论文以及处于 `reuse_unknown`、需要条件式复用升级的论�
 paper-radar paper needs-pdf
 paper-radar fulltext attach <paper-id> /path/to/paper.pdf
 paper-radar fulltext inspect-candidate /path/to/paper.pdf
+paper-radar fulltext set-wiley-token
 ~~~
 
-inspect-candidate 可以检测 DOI 并建议既有论文，但必须由用户确认。不同 SHA-256 的 PDF 作为不同全文制品保留，不能覆盖旧文件。
+set-wiley-token 从 stdin 或交互提示读入 token，校验 UUID 格式并用固定已知 OA DOI 验证后写入凭证区；token 不经命令行参数传递，不进入 shell 历史或日志。inspect-candidate 可以检测 DOI 并建议既有论文，但必须由用户确认。不同 SHA-256 的 PDF 作为不同全文制品保留，不能覆盖旧文件。
 
 ### 4.9 Docling 正文提取
 
@@ -749,6 +760,7 @@ paper-radar review submit --queue [--limit N]
 |runtime_config_snapshots|所选版本化配置编译后的内容及身份：Profile、主题、期刊、模型、提示词、规则、升级参数、解析器及确定性算法版本哈希|不可变并可被多次运行和任务引用；不含单篇论文输入或执行顺序|
 |tasks|阶段、主体、来源、输入指纹、幂等键、父任务和终态|终态失败不每天复活；解析资源失败可在同一任务剩余预算内跨日重试；显式 retry 建新 task|
 |task_attempts|阶段、主体、输入指纹、尝试序号、结果、错误类别、耗时、用量|同一模型输入或 extraction fingerprint 最多两个自动 attempt|
+|provider_credentials|出版方、凭证种类、状态事实（存在、上次验证、当前判定）、登记时间|不存凭证值，值存文件系统凭证区（0600）；状态历史只追加|
 |daily_quota_claims|本地日期、auto_screening/auto_reuse_assessment/auto_read、来源优先级、是否校准预留、paper、task|短事务领取；分别不超过 20/20/3；校准预留和三档阶段一/二 Screening 优先级可审计|
 |backup_runs|快照、完整性、NAS 目标、恢复演练结果|用于无人值守门禁和日报健康摘要|
 
@@ -1109,6 +1121,7 @@ paper-radar references promote <observation-or-paper-id>
 paper-radar paper needs-pdf
 paper-radar fulltext inspect-candidate <path>
 paper-radar fulltext attach <paper-id> <path>
+paper-radar fulltext set-wiley-token
 paper-radar extraction failures
 paper-radar extraction verify <artifact-id>
 
@@ -1178,7 +1191,7 @@ HTTP 请求可以对连接错误和 429/5xx 做同一次任务内的短暂退避
 - extraction_failed_no_text_layer；
 - extraction_failed_quality_gate。
 
-空结果只描述该来源本次没有数据，不能覆盖其他来源事实。错误页面不进入永久 source snapshot。
+空结果只描述该来源本次没有数据，不能覆盖其他来源事实。错误页面不进入永久 source snapshot。出版方 API 凭证失效（如 Wiley TDM 探测 403）不是单篇失败，按 §4.8 的凭证级全文受阻处理，不进入上述单篇分类。
 
 ### 8.5 任务领取与幂等
 
@@ -1217,7 +1230,7 @@ task attempt 的业务键至少包含：
 
 结构化日志可以包含 task、paper UUID、stage、fingerprint 摘要、attempt、耗时和错误码，不得包含：
 
-- API key、cookie、Authorization；
+- API key、cookie、Authorization、出版方 API token；
 - 完整 Research Profile；
 - 完整提示词；
 - 摘要或正文全文；
@@ -1456,7 +1469,7 @@ JGR: Atmospheres Feed
 - 从当前 JGR Feed 取得一篇真实论文；
 - 使用真实 Research Profile 和已配置模型运行 Screening；
 - 用户人工接受；
-- 使用无需登录的合法 PDF 或人工确认的合法 PDF；
+- 使用合法自动取得的 PDF（含 Wiley TDM 通道）或人工确认的合法 PDF；
 - 为一篇真实英文论文生成默认中文精读和最小日报；
 - 保存所有配置、模型、PDF、Docling 和报告哈希。
 
@@ -1658,9 +1671,10 @@ DoD：
 
 实施：
 
-- 完成出版者、合法仓储和 Unpaywall OA 定位；
+- 完成出版者适配器（《大气科学》/AMS 直连开放端点、Wiley 官方 TDM 通道）、合法仓储和 Unpaywall OA 定位；
+- 实现 Wiley TDM token 凭证管理（0600 凭证区、状态事实、已知 OA DOI 探测、限速与全文受阻降级）；
 - 实现下载验证、内容寻址归档和人工附加候选；
-- 区分 access_blocked_403、not_open_access、not_found、invalid_pdf 与暂时错误；
+- 区分 access_blocked_403、not_open_access、not_found、invalid_pdf 与暂时错误，并区分 TDM 凭证级 403 与单篇 403；
 - 锁定 Docling、PDF 后端、模型制品和配置；
 - 生成 manifest、document、reading 与 evidence-map；
 - 实现带 `normalization_version` 的正文起点、仓储封面、推荐页、重复页眉页脚和标题层级处理；
@@ -1673,8 +1687,8 @@ DoD：
 测试：
 
 - HTML、截断文件、错误 magic 和哈希不符均拒绝；
-- 下载链不发送浏览器 cookie 或机构凭据；
-- 403 与无 OA 形成不同事实；
+- 下载链不发送浏览器 cookie 或机构凭据；TDM 通道只发送用户显式配置的 token，且 token 不出现在日志；
+- 403 与无 OA 形成不同事实；TDM 探测 403（token 失效，凭证级全文受阻）与单篇 403（访问受阻，入人工 PDF 队列）分开降级；
 - PDF DOI 检测只产生候选，确认前不附加；
 - 无文本层 PDF 失败并证明未调用 OCR；
 - 所有规范块 provenance 在页边界内且 charspan 可回放；
@@ -1964,7 +1978,7 @@ DoD：
 |《大气科学》|`10.3878/j.issn.1006-9895.2604.26034`|出版者完整提供 78 条，Crossref 无记录|
 |《大气科学》|`10.3878/j.issn.1006-9895.2512.24134`|出版者完整提供 32 条，Crossref 无记录|
 
-另外，Wiley PDF 的 403 代表访问受阻，不代表论文不是开放获取。
+另外，Wiley PDF 的 403 代表访问受阻，不代表论文不是开放获取；TDM 通道下先用固定已知 OA DOI 探测区分 token 失效与单篇无权限（§4.8）。
 
 因此 fixture 必须同时断言列表完整性、原始字符串保存、强标识规范和 PDF 获取失败分类。
 
@@ -1993,6 +2007,7 @@ JGR 的已核查合法样本固定为 Wada et al.，DOI `10.1029/2025JD043927`�
 - 阶段 B 显式选择的版本化 Screening 与 Read provider/model；Read 模型不属于校准门禁输入；
 - 外部 LLM 数据发送确认；
 - 供 Unpaywall、Crossref、DataCite 与其他外部 HTTP 客户端复用的联系邮箱；
+- Wiley TDM token（用户在 Wiley Online Library 账户接受点击式 TDM 许可后取得；阶段 B 纵向验收经 TDM 通道取得 JGR 论文 PDF，缺失时降级为人工附加，不阻断其他流程）；
 - 主机可用于 PaperRadar 的内存上限；doctor 必须对照锁定 fixture 的峰值和安全余量检查，不足时阻止 Docling 自动运行。
 
 正式预热、冻结和校准另需：
@@ -2015,6 +2030,7 @@ doctor 分别报告：
 - Feed readiness；
 - 校准 readiness；
 - 自动精读 gate；
+- 全文凭证 gate（Wiley TDM token 存在/有效/失效）；
 - Docling fixture gate；
 - backup/restore gate；
 - unattended automation gate。
@@ -2026,7 +2042,7 @@ doctor 分别报告：
 - OCR 与中英文扫描稿质量校准；
 - 公式、表格和图片的 AI Agent 精确解析；
 - 页面截图与多模态证据复核；
-- 用户控制的浏览器登录态 PDF 获取；
+- 站点浏览器辅助下载通道的实现（凭证边界已允许用户自有会话，第一版只实现 TDM 通道）；
 - 可编辑前端以及反馈、笔记和行为的可视化；
 - 新 Feed、会议、预印本、学位论文和数据集；
 - 经独立契约监测后接入《大气科学》`latest.xml` 优先发表 Feed；
