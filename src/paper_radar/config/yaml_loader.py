@@ -13,7 +13,7 @@ from pydantic import BaseModel, ValidationError
 from yaml.events import AliasEvent
 from yaml.nodes import MappingNode, ScalarNode
 
-from paper_radar.config.errors import ConfigError
+from paper_radar.config.errors import VALIDATION_GUIDANCE, ConfigError
 
 
 class _StrictLoader(yaml.SafeLoader):
@@ -109,9 +109,12 @@ def validate_yaml_bytes[T: BaseModel](raw: bytes, model: type[T], label: str) ->
     try:
         return model.model_validate(documents[0])
     except ValidationError as error:
-        first = error.errors()[0]
+        first = error.errors(include_input=False, include_context=False)[0]
         location = ".".join(str(part) for part in first["loc"])
-        raise ConfigError(f"{label}.{location}：字段缺失、类型错误或不受支持") from None
+        guidance = VALIDATION_GUIDANCE.get(
+            first["type"], "字段缺失、类型错误或不受支持"
+        )
+        raise ConfigError(f"{label}.{location}：{guidance}") from None
 
 
 def read_yaml[T: BaseModel](path: Path, model: type[T], label: str) -> tuple[bytes, T]:

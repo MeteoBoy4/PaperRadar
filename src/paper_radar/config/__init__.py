@@ -9,7 +9,11 @@ from paper_radar.config.escalation import (
     ExcerptSelectorVersion,
     SuggestionRuleVersion,
 )
-from paper_radar.config.extraction import ExtractionSemantics, NormalizationVersion
+from paper_radar.config.extraction import (
+    ExtractionSemantics,
+    ModelStage,
+    NormalizationVersion,
+)
 from paper_radar.config.topics import TopicsStatus
 
 
@@ -46,6 +50,7 @@ __all__ = [
     "EscalationSemantics",
     "ExcerptSelectorVersion",
     "ExtractionSemantics",
+    "ModelStage",
     "NormalizationVersion",
     "RuntimeConfigSnapshot",
     "StageName",

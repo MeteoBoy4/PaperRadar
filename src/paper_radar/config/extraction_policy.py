@@ -3,7 +3,9 @@
 from typing import Literal
 
 from pydantic import field_validator
+from pydantic_core import PydanticCustomError
 
+from paper_radar.config.errors import VALIDATION_GUIDANCE, ConfigValidationReason
 from paper_radar.config.extraction_models import FrozenExtractionConfig
 
 
@@ -41,6 +43,14 @@ class DoclingPolicy(FrozenExtractionConfig):
     formula_pdf_crop_review: Literal[True] = True
     trust_remote_code: Literal[False] = False
     formula_load_in_8bit: Literal[False] = False
+
+    @field_validator("do_ocr", mode="before")
+    @classmethod
+    def reject_unsupported_ocr(cls, value: object) -> object:
+        if value is True:
+            reason = ConfigValidationReason.V1_OCR_DISABLED.value
+            raise PydanticCustomError(reason, VALIDATION_GUIDANCE[reason])
+        return value
 
     @field_validator("*", mode="before")
     @classmethod

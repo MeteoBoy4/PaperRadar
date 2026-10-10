@@ -32,9 +32,15 @@ class NormalizationVersion(StrEnum):
     V1 = "v1"
 
 
+class ModelStage(StrEnum):
+    LAYOUT = "layout"
+    TABLE = "table"
+    FORMULA = "formula"
+
+
 @dataclass(frozen=True, slots=True)
 class ModelArtifactIdentity:
-    stage: str
+    stage: ModelStage
     model_id: str
     repo_id: str
     commit_sha: str
@@ -81,7 +87,7 @@ class Extraction(FrozenExtractionConfig):
     normalization_version: NormalizationVersion
 
     @model_validator(mode="after")
-    def enabled_formula_identity(self) -> Self:
+    def formula_flag_matches_model_slot(self) -> Self:
         if self.policy.do_formula_enrichment != (self.models.formula is not None):
             raise ValueError("启用公式候选必须声明模型身份；关闭时不得登记未使用模型")
         return self
@@ -113,12 +119,12 @@ class Extraction(FrozenExtractionConfig):
 
     @property
     def semantics(self) -> ExtractionSemantics:
-        models: list[tuple[str, LayoutModel | TableModel | FormulaModel]] = [
-            ("layout", self.models.layout),
-            ("table", self.models.table),
+        models: list[tuple[ModelStage, LayoutModel | TableModel | FormulaModel]] = [
+            (ModelStage.LAYOUT, self.models.layout),
+            (ModelStage.TABLE, self.models.table),
         ]
         if self.models.formula is not None:
-            models.append(("formula", self.models.formula))
+            models.append((ModelStage.FORMULA, self.models.formula))
         backend_config: dict[str, object] = {
             "pdf_backend": self.pdf_backend,
             "pdf_options": (

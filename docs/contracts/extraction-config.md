@@ -91,10 +91,13 @@ commit 和文件哈希没有假默认值，不能省略；A2 只验证声明格�
 ## 公共语义与历史
 
 `RuntimeConfigSnapshot.extraction` 为 `ExtractionSemantics | None`，是不可变对象：
-`backend` 的中立身份与组件版本、按阶段排列的 `model_artifacts`（冻结 file 元组）、
+`backend` 的中立身份与组件版本、按阶段排列的 `model_artifacts`（冻结 file 元组，
+`stage` 为公共 `ModelStage` enum：`layout` / `table` / `formula`）、
 `backend_config_json` 的规范 JSON、`normalization_version`。另提供自动派生的
 `backend_config_hash` 与 `model_artifacts_hash`（无模型的未来 backend 可为 `None`）；
 它们是配置内容身份，均不是包含 PDF 的 extraction fingerprint。
+V1 必需 layout/table 模型，因此 `model_artifacts_hash` 始终为 SHA-256；`None` 仅对应
+backend 中立语义对象的空模型清单表示，不开放 V1 的无模型解析配置。
 声明 version、toolchain 标签、原 YAML 哈希和本机路径不进入纯语义。
 
 完整快照记录 selector、原字节/哈希、声明标签和补全后的配置。更换声明版本、注释或
@@ -108,6 +111,15 @@ extraction 配置就绪只要求所选材料合法且完整，不依赖 Profile�
 校准基线的一个分量，不嵌入 reuse/Read；A2-08 的投影、diff 和校准门禁不在本票实现。
 V1 `backend_id=docling`，不预建 backend 注册表、自动 fallback、A/B 或论文路由。
 后续 artifact 目录、失败记录、fixture 期望与规范化接缝仍遵循 draft §4.9 的中立契约。
+
+## 校验错误
+
+`do_ocr: true` 返回受控原因 `v1_ocr_disabled`，CLI/公共服务显示字段路径与
+“V1 不支持 OCR；请将 do_ocr 设为 false 或省略；扫描稿需等待 V2”。非布尔 OCR
+值仍属于类型或选择错误，不能被误报为已启用禁止能力。其他校验继续使用既有脱敏
+原因，错误不回显原始值、Pydantic 异常 message、input 或 context。
+本次类型整理和校验器改名不改变合法材料的规范字节、快照身份或语义哈希；既有
+已登记快照继续从 SQLite 原材料回放，无需新增 migration 或重建有效配置。
 
 参见 [运行配置服务](runtime-config.md)、[ADR-0025](../adr/0025-allow-local-formula-candidates-with-source-review.md)
 和 [`settings-extraction.yaml`](../../examples/config/settings-extraction.yaml)。示例是合成

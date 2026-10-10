@@ -77,6 +77,28 @@ def test_cli_errors_are_sanitized_and_actionable(
         assert "Traceback" not in result.stderr
 
 
+@pytest.mark.parametrize("command", ["check", "compile"])
+@pytest.mark.parametrize("value", ["true", "PRIVATE_MARKER"])
+def test_cli_ocr_boundary_reason_is_distinct_from_type_errors(
+    tmp_path: Path, command: str, value: str
+) -> None:
+    settings, path, db = extraction_inputs(tmp_path)
+    path.write_text(path.read_text() + f"policy:\n  do_ocr: {value}\n")
+    result = run_cli(
+        tmp_path, "config", command, "--settings", str(settings), "--database", str(db)
+    )
+    assert result.returncode == 2
+    assert "extraction.policy.do_ocr" in result.stderr
+    if value == "true":
+        assert "V1 不支持 OCR" in result.stderr
+        assert "设为 false 或省略" in result.stderr
+    else:
+        assert "类型错误" in result.stderr
+        assert "V1 不支持 OCR" not in result.stderr
+    assert "PRIVATE_MARKER" not in result.stdout + result.stderr
+    assert "Traceback" not in result.stderr
+
+
 @pytest.mark.parametrize("level", [(), ("check",), ("compile",)])
 def test_extraction_help_documents_scope_without_external_io(
     tmp_path: Path,

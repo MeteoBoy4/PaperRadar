@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import FrozenInstanceError
+from enum import StrEnum
 from pathlib import Path
 
 import pytest
@@ -46,6 +47,28 @@ def test_default_formula_candidates_freeze_model_and_source_separation(
         "table",
         "formula",
     ]
+
+
+def test_model_stages_are_controlled_without_changing_persisted_identity(
+    tmp_path: Path,
+) -> None:
+    settings, _, db = extraction_inputs(tmp_path)
+    saved = compile_config(settings, db)
+    assert saved.extraction is not None
+    assert all(
+        isinstance(model.stage, StrEnum) for model in saved.extraction.model_artifacts
+    )
+    # 从改动前公共服务得到的固定身份。类型整理不能改变既有有效配置语义。
+    assert saved.snapshot_id == (
+        "ba91a2df31e69d9caa248ee0ffb899dfaa2302a0b0d8fde6cac1047a0acd42d4"
+    )
+    assert saved.extraction.backend_config_hash == (
+        "c5ab2231b523d646b9766610c262fcc602fc6c6d9b2803bd011c813d3e53adcb"
+    )
+    assert saved.extraction.model_artifacts_hash == (
+        "a68e0a79937ae0622c5d47103225ab9571e2399ec3764e07a603877c6106fd38"
+    )
+    assert load_config_snapshot(db, saved.snapshot_id) == saved
 
 
 def test_effective_defaults_and_controlled_toolchain_are_archived(

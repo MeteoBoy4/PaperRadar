@@ -55,6 +55,18 @@ def test_v1_policy_rejects_forbidden_values_and_wrong_types(
             operation(settings, db)
 
 
+def test_enabling_ocr_reports_v1_boundary_with_an_actionable_fix(
+    tmp_path: Path,
+) -> None:
+    settings, path, db = extraction_inputs(tmp_path)
+    path.write_text(path.read_text() + "policy:\n  do_ocr: true\n")
+    for operation in (check_config, compile_config):
+        with pytest.raises(ConfigError, match=r"extraction\.policy\.do_ocr") as error:
+            operation(settings, db)
+        assert "V1 不支持 OCR" in str(error.value)
+        assert "设为 false 或省略" in str(error.value)
+
+
 @pytest.mark.parametrize(
     "field",
     [

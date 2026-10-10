@@ -1,6 +1,6 @@
 # V2 可选正文解析器后端：V1 需要预留的接缝
 
-状态：第三节 3.1–3.7 与第四节已全部采纳（3.2/3.3/3.5 及 3.1/3.4/3.6/3.7、第四节均于 2026-10-10 采纳），draft.md 已同步；第五节（V2 演进成本）与第七节（开放问题）明确暂不裁决；不含代码变更。
+状态：第三节 3.1–3.7 与第四节已全部采纳（3.2/3.3/3.5 及 3.1/3.4/3.6/3.7、第四节均于 2026-10-10 采纳），draft.md 已同步；第四节的公式增强边界已按 Issue #20 实施时的用户明确确认和 ADR-0025 更新为局部候选转写；第五节（V2 演进成本）与第七节（开放问题）明确暂不裁决；不含代码变更。
 触发问题：设想 V2 在 Docling 之外接入其他可选 PDF 解析工具，形成独立于其他板块、可插拔的 parser backend 模块，各 backend 统一接入 normalization。V1 的设计、代码架构和实现上有哪些需要提前注意的地方。
 日期：2026-10-10。仓库 HEAD：`1841c26754874f560cb2e7a3d314a6f1fe47b5c0`。
 
@@ -83,7 +83,7 @@ backend 选择与配置进入 `RuntimeConfigSnapshot` 的 extraction 投影。�
 
 - 不做 backend 注册表、自动 fallback、backend 间 A/B 对比、按论文挑 backend。draft.md:59 明确"正文解析器自动 fallback"不进第一版；AGENTS.md 范围控制禁止 V1 引入 provider 自动 fallback。V1 只留**选项**（中立命名 + 干净接缝 + per-backend fixture 结构 + backend 无关失败语义），不实现多 backend **机制**。
 - 不为将来多 backend 提前造第二套规范 schema：canonical 结构以 §4.9 已定义的制品契约为准，由权威 Pydantic schema 生成，不维护手写副本（AGENTS.md Frozen Contract 规则）。
-- 不改变 V1 的单 backend 行为：OCR、公式/图片增强、远程插件照旧关闭（ADR-0010），本稿不触碰。
+- V1 的单 backend 选择与公式候选能力分别裁决：Docling 仍为唯一正文解析器，OCR、代码/图片/图表增强、远程与外部插件关闭。Issue #20 实施时用户明确允许并默认启用 CodeFormulaV2 局部公式候选转写（[ADR-0025](../../docs/adr/0025-allow-local-formula-candidates-with-source-review.md)），公式源文本、候选与 PDF 定位分离保存并通过裁切人工核查；本票仅登记配置，实际解析与核查留待后续实现，未复核候选不作为精确公式证据。
 
 ## 五、V2 接入时的演进成本清单（预先记账，暂不裁决）
 
