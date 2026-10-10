@@ -9,6 +9,7 @@ from types import MappingProxyType
 from typing import Any
 
 from paper_radar.config.escalation import Escalation, EscalationSemantics
+from paper_radar.config.extraction import Extraction, ExtractionSemantics
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.schema import (
     MODEL_SLOTS,
@@ -73,6 +74,7 @@ class MaterialKind(StrEnum):
     TOPICS = "topics"
     MODELS = "models"
     ESCALATION = "escalation"
+    EXTRACTION = "extraction"
     PROMPT = "prompt"
     CONTRACT_SCHEMA = "contract_schema"
     CONTRACT_MANIFEST = "contract_manifest"
@@ -107,6 +109,7 @@ class SelectedMaterials:
     topics: Topics | None
     additional: tuple[CompiledMaterial, ...]
     escalation: Escalation | None = None
+    extraction: Extraction | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,6 +129,7 @@ class RuntimeConfigSnapshot:
     topics_status: TopicsStatus
     enabled_topics: tuple[EnabledTopic, ...]
     escalation: EscalationSemantics | None
+    extraction: ExtractionSemantics | None
 
 
 def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
@@ -136,6 +140,7 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
     models = materials.models
     topics = materials.topics
     escalation = materials.escalation
+    extraction = materials.extraction
     additional = materials.additional
     fields = {
         field: profile_field_status(getattr(profile, field) if profile else None)
@@ -179,6 +184,8 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
         selectors["topics"] = settings.topics
     if settings.escalation is not None:
         selectors["escalation"] = settings.escalation
+    if settings.extraction is not None:
+        selectors["extraction"] = settings.extraction
     for group in ("prompts", "contracts"):
         chosen = {
             name: version
@@ -302,7 +309,8 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
             reuse_missing,
         ),
         StageName.EXTRACTION: StageReadiness(
-            StageStatus.NOT_READY, (MissingReason.EXTRACTION_CONFIG,)
+            StageStatus.READY if extraction is not None else StageStatus.NOT_READY,
+            () if extraction is not None else (MissingReason.EXTRACTION_CONFIG,),
         ),
         StageName.READ: StageReadiness(
             StageStatus.NOT_READY,
@@ -335,4 +343,5 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
         ),
         enabled_topics=topics.enabled_topics if topics is not None else (),
         escalation=escalation.semantics if escalation is not None else None,
+        extraction=extraction.semantics if extraction is not None else None,
     )

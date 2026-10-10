@@ -38,15 +38,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/__init__.py",
-        "4866143ead3b81562409473ce6ad6eaf11a742f7975e0f0d7ff2e1683b984508",
+        "e2725e4fb387360b04f1381ca8427a6a587150f9ec735bbc9ec26d70de299fd9",
     ),
     (
         "src/paper_radar/config/cli.py",
-        "f03944fd58def271f55478b46c363a59d30b82d03171a9df60e3bb45cc36b736",
+        "0b90d88369f613815ca87e77888d347d277e901ea6f16045343ce48a955ff180",
     ),
     (
         "src/paper_radar/config/compile.py",
-        "dbc44d01404f758ccd920440394fd3d57b8012b93d296d53530076caba250934",
+        "9252cf311ac522c0652beaab5fe7b31d9a67100de08b4afdddce153116399925",
     ),
     (
         "src/paper_radar/config/escalation.py",
@@ -62,11 +62,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/schema.py",
-        "7f87ac6aaefd748e13ce3597be615e42d2a3aaeef82bf8f4798b263ca4d65e45",
+        "cd2754b8927bf99896c8b5239ea8542b3605a1d283b9c36be3eedbe57a00e24c",
     ),
     (
         "src/paper_radar/config/service.py",
-        "38479b8b5a2c1f26ce9434ad17d2dd4d8ea98dc5dce08aa6947f5f45e1adaf19",
+        "25228e41750334db3c1cb70b9a92b1ecc9f3c5a6cad8ef78d802c4a44bf4d175",
     ),
     (
         "src/paper_radar/config/topics.py",
@@ -124,6 +124,26 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
         "scripts/a2_acceptance.py",
         "bf1bf762bdd8f44c679e429c37afb6e989ab821dd7771e3aee5e8919afbfc85b",
     ),
+    (
+        "src/paper_radar/config/extraction.py",
+        "f294c7050aa7339cca21637a44e76d4545144b476e2e3b46c0fe1d5f3e09ab22",
+    ),
+    (
+        "src/paper_radar/config/extraction_models.py",
+        "a25c95e28eef976d63827959e87da3c09bd1124383bb05b298cb114156768c6b",
+    ),
+    (
+        "src/paper_radar/config/extraction_policy.py",
+        "cefe1a7d893c40c9f3d5b2711524fc499dc0bb3adaaddf7ef262a6bf170c13a0",
+    ),
+    (
+        "src/paper_radar/config/extraction_toolchain.py",
+        "4f2ae67b03b4ed9d82aba434ca9e30de382804bd73e61217eb8b1559c1f97107",
+    ),
+    (
+        "tests/config_extraction_support.py",
+        "7798711c15be510330d405d7dcef6cc8110214498c6a50b04c454a3d696097d9",
+    ),
 )
 
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
@@ -131,7 +151,7 @@ REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 NOT_IMPLEMENTED = (
     "journals",
     "prompts_reading",
-    "extraction",
+    "body_extraction_execution",
     "stage_config_projections",
     "calibration_baseline",
     "config_diff",

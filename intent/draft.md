@@ -560,9 +560,10 @@ V1 唯一通用正文解析器是锁定版本及模型制品的 Docling，不运
 - 精简本地 PDF 依赖组合；
 - CPU，单论文串行；
 - OCR 关闭；
-- 公式、图片、图表 enrichment 关闭；
+- 局部独立公式候选转写默认开启，使用冻结的 CodeFormulaV2；允许显式关闭，代码、图片、图表 enrichment 关闭（ADR-0025）；
 - 远程和外部插件关闭；
 - 表格结构识别开启；
+- 初始配置候选采用 pypdfium2、Egret medium / Transformers、TableFormer accurate / cell matching；heading hierarchy 开启，keep_empty_clusters 与 force_backend_text 关闭，reading-order separators 开启。工具链采用受控清单、启用模型按阶段冻结 commit 与文件哈希；A2-05 只登记配置，最终运行仍须通过四刊 fixtures；
 - 模型预取并以 commit 和文件 SHA-256 冻结；
 - `normalization_version` 进入提取输入指纹；
 - 单篇超时和内存峰值进入解析清单；
@@ -597,7 +598,7 @@ document.json 保存不嵌入 base64 图片的 DoclingDocument，保留原始 pa
 
 已知受限内容：
 
-- 公式只显示“公式未转写；PDF 第 N 页”和 bbox；
+- 公式候选转写、源 orig 和原 PDF 页码/bbox/charspan 分离保存并提供 PDF 裁切人工核查；生成 LaTeX 不冒充源字符区间；未检出或无法可靠转写时显示“公式未转写；PDF 第 N 页”和 bbox；
 - 表格可以用于理解结构，但每表标注精确数值需核对 PDF；
 - 科学符号、单位、范围和跨行数字可能失真；
 - 任何依赖精确公式、数值或符号的结论不得作为未复核的主要发现、评分理由或复用建议；
@@ -613,7 +614,7 @@ document.json 保存不嵌入 base64 图片的 DoclingDocument，保留原始 pa
 - 页眉页脚不重复进入正文；
 - 中英文关键字符和无 U+FFFD；
 - 每个规范块的页码、bbox 和字符区间可回放；
-- 公式和受限表格显式降级；
+- 公式源/候选分离、PDF 裁切可回查、未复核候选和受限表格显式降级；
 - Markdown 不含 base64；
 - 同一输入与配置产生稳定 artifact hash 和 evidence ID；
 - 给定固定 PDF 与同一 backend/解析配置时，`reading.md` 内容哈希与 fixture registry 中按 backend 分别登记的期望值一致；语义后处理变化必须显式提升 `normalization_version`；
@@ -893,9 +894,9 @@ reports/
 logs/
 ~~~
 
-`settings.yaml` 只选择当前 Profile、主题、models 整份版本化文件、复用升级参数、提示词和契约版本；带版本的内容文件创建后不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
+`settings.yaml` 只选择当前 Profile、主题、models 整份版本化文件、复用升级参数、正文提取配置、提示词和契约版本；带版本的内容文件创建后不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
 
-A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约；A2-03 增加 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪；A2-04 增加 escalation、reuse 提示词、reuse-assessment 和 decision-reasons 契约，判断 reuse/suggestion 配置就绪，不要求 PDF、正文解析或 value 输出。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
+A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约；A2-03 增加 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪；A2-04 增加 escalation、reuse 提示词、reuse-assessment 和 decision-reasons 契约，判断 reuse/suggestion 配置就绪，不要求 PDF、正文解析或 value 输出；A2-05 增加 extraction 的受控工具链、按阶段模型文件身份、有效解析策略与 normalization v1，单独判断 extraction 配置完整性，不安装解析器、下载模型或执行 PDF 解析。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
 
 blob 和 artifact 路径只由哈希、UUID 与受控枚举构造。数据库保存相对路径；根目录由配置决定，以便 NAS 恢复到不同挂载点。
 
@@ -1699,7 +1700,7 @@ DoD：
 - PDF DOI 检测只产生候选，确认前不附加；
 - 无文本层 PDF 失败并证明未调用 OCR；
 - 所有规范块 provenance 在页边界内且 charspan 可回放；
-- 公式产生明确占位；
+- 公式源文本与候选转写分别保存，源 charspan 可回放、PDF 裁切可核查；未检出或不能可靠转写时产生明确占位，未复核候选不得成为精确公式证据；
 - 表格带精确值核对警告；
 - reading.md 不含 base64 图片；
 - 同一输入配置产生稳定 artifact/evidence ID；
@@ -1929,7 +1930,7 @@ DoD：
 |Docling 首次 OOM 或超时|使用同一指纹剩余预算在后续运行重试，最多两次|
 |Docling 无文本层或质量门槛失败|当前指纹永久失败，不做无意义自动重试|
 |Docling 返回文本但 fixture 错序|质量门槛失败，不调用 Read|
-|公式被检测|生成页码/bbox 占位，不做 LaTeX 增强|
+|公式被检测|启用时保存源文本与公式候选转写及页码/bbox/源 charspan，提供 PDF 裁切人工核查；关闭或无法可靠转写时显示定位占位，未复核候选不得支持精确公式结论|
 |表格含精确数值|显示人工核对警告，不作为未核对关键证据|
 |Read 关键结论的数值未出现在所引片段|分析保留但追加 degraded_content_warning 并在报告标出|
 |Read 引用未知 evidence|结构输出失败|

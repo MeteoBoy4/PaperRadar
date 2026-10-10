@@ -22,7 +22,8 @@ provider/model、secret 或凭据引用。CLI 必须显式传 `--settings` 和 `
 | --- | --- | --- |
 | `profile` | 声明版本或 `null` | 缺失或 `null` 都表示 `unconfigured`，允许保存未就绪快照。 |
 | `topics` | 声明版本或 `null` | 选择 `config/topics/<version>.yaml`；未选择为缺项，空集合与全部停用均合法且已配置。 |
-| `journals`, `extraction` | 仅 `null` | 非空选择在后续票开放。 |
+| `journals` | 仅 `null` | 非空选择在后续票开放。 |
+| `extraction` | 声明版本或 `null` | 选择 `config/extraction/<version>.yaml`；[正文提取配置](extraction-config.md) 定义工具链、模型清单和有效策略。 |
 | `escalation` | 声明版本或 `null` | 选择 `config/screening/<version>.yaml`；文件内登记触发集合、固定摘录顺序和算法身份。 |
 | `models` | 声明版本或 `null` | 整份 `config/models/<version>.yaml`；三个模型槽在文件内具名，settings 不内联 provider/model。 |
 | `prompts.boundary` | 声明版本或 `null` | 绑定 `prompts/screening/boundary-<version>.md` 的原始 UTF-8 字节。 |
@@ -34,7 +35,7 @@ provider/model、secret 或凭据引用。CLI 必须显式传 `--settings` 和 `
 | `contracts.decision_reasons` | `v1` 或 `null` | 检查并登记 `contracts/screening/decision-reasons/v1/{schema,manifest}.json`。 |
 | `prompts.reading` | 仅 `null` | 后续票开放。 |
 
-当前封闭逻辑名称为 `profile/profile`、`topics/topics`、`models/models`、`escalation/escalation`、`prompt/boundary`、`prompt/value`、`prompt/reuse`，以及 `contract_schema`/`contract_manifest` 下的 `boundary`、`value-prediction`、`reuse-assessment` 与 `decision-reasons`。快照包络中的材料条目含
+当前封闭逻辑名称为 `profile/profile`、`topics/topics`、`models/models`、`escalation/escalation`、`extraction/extraction`、`prompt/boundary`、`prompt/value`、`prompt/reuse`，以及 `contract_schema`/`contract_manifest` 下的 `boundary`、`value-prediction`、`reuse-assessment` 与 `decision-reasons`。快照包络中的材料条目含
 `kind`、`name`、`version`、`raw_sha256` 和编译值；后续新增材料种类只增加带
 种类和版本键的条目，不提升编译格式版本。只有包络结构改变时才提升格式版本。
 选择了尚未开放的非空字段会返回 2，并给出字段路径；不会忽略选择。
@@ -77,7 +78,7 @@ ID 必须匹配 `^[a-z][a-z0-9-]{0,63}$`，不接受大小写或空白变体，�
 
 读取所选材料和历史回放共用纯配置层的 frozen `SelectedMaterials` 具名对象，
 交给 `compile_snapshot(materials)` 编译；对象不包含路径、连接或执行计划。
-Profile/models/topics/escalation 的活跃 YAML 装载共享声明版本一致性检查，
+Profile/models/topics/escalation/extraction 的活跃 YAML 装载共享声明版本一致性检查，
 版本格式由公开 `valid_declared_version` 统一校验。公共 check/compile/load
 服务参数、持久包络格式与身份序列化保持一致，无需 migration。
 
@@ -185,6 +186,7 @@ CLI 显示槽的 `configured`/`unconfigured`/`placeholder`、阶段的 `ready`/
 | value | Profile 六段、Screening 模型、value 提示词、value-prediction 契约、已配置主题集合 | `profile`、`screening_model` / `screening_model_placeholder`、`value_prompt` / `value_prompt_placeholder`、`value_contract`、`topics` |
 | reuse | Profile 六段、reuse_assessment 模型、reuse 提示词、reuse-assessment 契约、升级文件内 excerpt selector | `profile`、`reuse_model` / `reuse_model_placeholder`、`reuse_prompt` / `reuse_prompt_placeholder`、`reuse_contract`、`excerpt_selector` |
 | suggestion | 升级文件内建议规则身份和触发参数、decision-reasons 契约 | `suggestion_rule`、`escalation_parameters`、`decision_reasons_contract` |
+| extraction | 合法完整的 extraction 材料：受控工具链、启用模型文件身份、有效策略及 normalization v1 | `extraction_config` |
 
 value 不依赖 boundary 提示词/契约或期刊信誉；boundary 不依赖主题选择、启用状态
 或描述。全部已选材料仍需合法，非法主题或任一已选损坏契约会使整次 check/compile
@@ -212,7 +214,7 @@ escalation 文件时，reuse 缺 `excerpt_selector`，suggestion 同时缺 `sugg
 | 解析器、后端、模型制品、解析配置与 normalization | extraction | 是 |
 | 复用升级触发参数、建议规则与原因契约 | 建议规则 | 是 |
 
-当前开放 Profile、topics、models、escalation、boundary/value/reuse 提示词与四份契约登记。
+当前开放 Profile、topics、models、escalation、extraction、boundary/value/reuse 提示词与四份契约登记。
 表中其余非空 selector 仍拒绝。后续 value 投影只取 `enabled_topics`，不取完整集合
 的原始字节哈希或声明版本；仅改停用主题描述、声明版本或 YAML 注释不会改变
 value 语义，空集合与全部停用的 value 投影身份应相同。启用主题的 ID/name/description

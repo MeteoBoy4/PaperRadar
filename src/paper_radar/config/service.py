@@ -21,6 +21,7 @@ from paper_radar.config.compile import (
 )
 from paper_radar.config.errors import ConfigError
 from paper_radar.config.escalation import Escalation
+from paper_radar.config.extraction import Extraction
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.schema import Models, Profile, Settings
 from paper_radar.config.topics import Topics
@@ -47,6 +48,7 @@ _PROFILE_KEY = (MaterialKind.PROFILE, "profile")
 _MODELS_KEY = (MaterialKind.MODELS, "models")
 _TOPICS_KEY = (MaterialKind.TOPICS, "topics")
 _ESCALATION_KEY = (MaterialKind.ESCALATION, "escalation")
+_EXTRACTION_KEY = (MaterialKind.EXTRACTION, "extraction")
 _PROMPT_NAMES = (StageName.BOUNDARY, StageName.VALUE, StageName.REUSE)
 _CONTRACT_NAMES = {
     "boundary": ContractName.BOUNDARY,
@@ -67,11 +69,7 @@ _CONTRACT_CHECK_GUIDANCE = {
 
 
 def _unsupported(settings: Settings) -> None:
-    selected = [
-        name
-        for name in ("journals", "extraction")
-        if getattr(settings, name) is not None
-    ]
+    selected = [name for name in ("journals",) if getattr(settings, name) is not None]
     selected.extend(
         f"prompts.{name}"
         for name, value in settings.prompts.model_dump().items()
@@ -143,7 +141,7 @@ def _contract_materials(
     )
 
 
-def _versioned_yaml_material[T: (Profile, Models, Topics, Escalation)](
+def _versioned_yaml_material[T: (Profile, Models, Topics, Escalation, Extraction)](
     path: Path, model: type[T], kind: MaterialKind, selected: str
 ) -> tuple[T, CompiledMaterial]:
     label = kind.value
@@ -153,7 +151,10 @@ def _versioned_yaml_material[T: (Profile, Models, Topics, Escalation)](
             f"{label}.version：与 settings.{label} 不一致；请选择匹配版本"
         )
     return config, CompiledMaterial(
-        Material(kind, label, selected, raw), config.model_dump(mode="json")
+        Material(kind, label, selected, raw),
+        config.compiled_config()
+        if isinstance(config, Extraction)
+        else config.model_dump(mode="json"),
     )
 
 
@@ -200,6 +201,15 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
             settings.escalation,
         )
         additional.append(compiled)
+    extraction: Extraction | None = None
+    if settings.extraction is not None:
+        extraction, compiled = _versioned_yaml_material(
+            settings_path.parent / "extraction" / f"{settings.extraction}.yaml",
+            Extraction,
+            MaterialKind.EXTRACTION,
+            settings.extraction,
+        )
+        additional.append(compiled)
     for name in _PROMPT_NAMES:
         version = getattr(settings.prompts, name)
         if version is not None:
@@ -226,6 +236,7 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
         topics=topics,
         additional=tuple(additional),
         escalation=escalation,
+        extraction=extraction,
     )
 
 
@@ -314,6 +325,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         models: Models | None = None
         topics: Topics | None = None
         escalation: Escalation | None = None
+        extraction: Extraction | None = None
         additional: list[CompiledMaterial] = []
         for entry in listed:
             key = (entry["kind"], entry["name"], entry["version"])
@@ -353,6 +365,14 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 ):
                     raise ValueError
                 additional.append(CompiledMaterial(material, entry["config"]))
+            elif key[:2] == _EXTRACTION_KEY:
+                extraction = validate_yaml_bytes(raw, Extraction, "extraction")
+                if (
+                    extraction.version != settings.extraction
+                    or extraction.compiled_config() != entry["config"]
+                ):
+                    raise ValueError
+                additional.append(CompiledMaterial(material, entry["config"]))
             elif (
                 material.kind is MaterialKind.PROMPT and material.name in _PROMPT_NAMES
             ):
@@ -386,6 +406,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             or (settings.models is None) != (models is None)
             or (settings.topics is None) != (topics is None)
             or (settings.escalation is None) != (escalation is None)
+            or (settings.extraction is None) != (extraction is None)
         ):
             raise ValueError
         expected_keys = {
@@ -418,6 +439,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             topics=topics,
             additional=tuple(additional),
             escalation=escalation,
+            extraction=extraction,
         )
         rebuilt = compile_snapshot(materials)
         if rebuilt.snapshot_id != snapshot_id or rebuilt.payload_json != saved_json:

@@ -23,6 +23,9 @@ CONFIG_HELP = """检查或编译运行配置快照。
 支持 Profile、主题、models 三槽、boundary/value/reuse 提示词和四份冻结契约。
 复用升级参数包含非空的 1–5 研究价值集合、固定摘录顺序及受控 v1 算法身份。
 boundary、value、复用升级与建议规则分别报告配置就绪及缺项。
+正文提取配置登记受控工具链、模型 commit/文件哈希与 normalization 身份。
+默认 pypdfium2、Egret medium、TableFormer accurate 和局部公式候选；不执行 PDF 解析。
+正文提取配置就绪不证明 fixture gate 或资源检查通过，不验证模型文件存在。
 配置就绪不证明模型、摘录、校准或自动精读可运行。空主题集合与全部停用都算已配置。
 其他尚未开放的非空选择会拒绝。
 两者均不访问网络、模型或凭据，不消耗自动配额。

@@ -1,0 +1,46 @@
+# 工程验收合成声明；文件哈希不是实际模型，禁止用于正式解析。
+version: extraction-example-v1
+toolchain: docling-2.135.0-cpu-v1
+normalization_version: v1
+models:
+  layout:
+    commit_sha: '77ede7cc7bed96d853c58f319734803d6ea2ea5c'
+    files:
+      - path: config.json
+        sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      - path: model.safetensors
+        sha256: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+      - path: preprocessor_config.json
+        sha256: 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+  table:
+    commit_sha: 'fc0f2d45e2218ea24bce5045f58a389aed16dc23'
+    files:
+      - path: model_artifacts/tableformer/accurate/tableformer_accurate.safetensors
+        sha256: 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'
+      - path: model_artifacts/tableformer/accurate/tm_config.json
+        sha256: 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+  formula:
+    commit_sha: 'ecedbe111d15c2dc60bfd4a823cbe80127b58af4'
+    files:
+      - path: added_tokens.json
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      - path: chat_template.json
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      - path: config.json
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      - path: generation_config.json
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      - path: model.safetensors
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      - path: preprocessor_config.json
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      - path: processor_config.json
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      - path: special_tokens_map.json
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      - path: tokenizer.json
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      - path: tokenizer_config.json
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      - path: vocab.json
+        sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
