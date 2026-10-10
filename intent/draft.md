@@ -170,7 +170,7 @@ doctor 必须明确显示这些数据会离开本机。日志不得记录全文�
 每个模型或解析阶段保存规范输入指纹：
 
 - Screening 阶段一、二：规范题名、摘要及其完整性标记、Research Profile、可映射主题集合、模型、提示词、输出契约；
-- Docling/规范正文：PDF SHA-256、Docling/core/parse 版本、PDF 后端、模型制品哈希、完整解析配置和 `normalization_version`；
+- 正文提取：PDF SHA-256、结构化 backend descriptor（`backend_id`、backend 组件版本、模型制品哈希；无模型制品的 backend 后者可为空。V1 值为 Docling/core/parse 版本与 PDF 后端）、完整解析配置和 `normalization_version`；
 - 复用可行性升级：贡献摘录的结构化来源快照或当前正文提取物、所选摘录及其种类、`excerpt_selector_version`、Research Profile、模型、提示词、输出契约；
 - Read：正文提取物、`chunking_version`、Research Profile、输出语言、模型、提示词、输出契约；
 - 确定性决定：Screening 阶段一、二原始输出、可选复用升级制品、版本化升级触发参数和规则版本；
@@ -345,7 +345,7 @@ paper-radar run-due --date YYYY-MM-DD
 
 自动 Read 领取查询面向所有仍合格的 accepted 积压，而不是只看当天发现或当天 accepted 的论文。未领取者保留同一待办资格，在后续日期重新参与队列选择；每日配额只限制当天新领取数，不把跨日积压判为失败，也不以追赶方式突破三篇上限。该查询不提供最终获选保证，并必须能列出长期未领取论文、最老等待月数及其当前被哪些候选支配。
 
-备份由独立每日 timer 运行，不拆成十余个高频 stage timer。backup 与 `run-due` 共用同一把进程互斥锁，不能让 SQLite/制品复制与高内存 Docling 解析并行争用资源；各阶段命令仍可以手动调用和测试。
+备份由独立每日 timer 运行，不拆成十余个高频 stage timer。backup 与 `run-due` 共用同一把进程互斥锁，不能让 SQLite/制品复制与高内存正文解析并行争用资源；各阶段命令仍可以手动调用和测试。
 
 ### 4.2 Feed 抓取
 
@@ -553,7 +553,7 @@ set-wiley-token 从 stdin 或交互提示读入 token，校验 UUID 格式并用
 
 ### 4.9 Docling 正文提取
 
-V1 唯一通用正文解析器是锁定版本及模型制品的 Docling，不运行 PyMuPDF/PyMuPDF4LLM fallback，也不把 GROBID 当正文解析器。
+V1 唯一通用正文解析器是锁定版本及模型制品的 Docling，不运行 PyMuPDF/PyMuPDF4LLM fallback，也不把 GROBID 当正文解析器。V1 不建立 backend 注册表、backend 间对比或按论文挑选 backend 的机制；canonical 契约只保留第二版接入多 backend 的选项，不预建第二版机制，接入时必须说明改变的领域契约、新增 fixture 与校准影响（第十五章准入规则）。
 
 运行配置：
 
@@ -566,22 +566,25 @@ V1 唯一通用正文解析器是锁定版本及模型制品的 Docling，不运
 - 模型预取并以 commit 和文件 SHA-256 冻结；
 - `normalization_version` 进入提取输入指纹；
 - 单篇超时和内存峰值进入解析清单；
-- 同一 `extraction_fingerprint` 最多两次自动尝试。
+- 同一 `extraction_fingerprint` 最多两次自动尝试；
+- 解析器 backend 选择与完整解析配置进入运行配置快照的独立 extraction 投影，不并入 reuse/Read 投影，也不把特定 backend 硬编码为该投影的唯一成员；该投影属于校准语义基线。
 
 每次成功解析生成：
 
 ~~~text
 source/<pdf_sha256>.pdf
-docling/<extraction_fingerprint>/
+extraction/<backend_id>/<extraction_fingerprint>/
   parse-manifest.json
   document.json
   reading.md
   evidence-map.json
 ~~~
 
-parse-manifest 至少包含 PDF 哈希、Docling/core/parse/PDF 后端版本、模型哈希、配置哈希、`normalization_version`、开始结束时间、耗时、峰值内存、警告和结果。
+parse-manifest 至少包含 PDF 哈希、backend 身份与组件版本（V1 为 Docling/core/parse/PDF 后端版本）、模型哈希、配置哈希、`normalization_version`、开始结束时间、耗时、峰值内存、警告和结果。manifest 与 evidence-map 的字段名按 backend 中立命名；`document.json` 等原始输出文件名与格式可随 backend 不同，但 parse-manifest 与 evidence-map 的 schema 保持统一。V1 的 `backend_id` 固定为 `docling`。
 
-document.json 保存不嵌入 base64 图片的 DoclingDocument，保留原始 page_no、bbox、charspan、orig/text 和 content layer。reading.md 是供 Read Agent 使用的规范阅读制品；evidence-map 把稳定块 ID 映射回一个或多个原 PDF provenance。
+document.json 保存不嵌入 base64 图片的 DoclingDocument，保留原始 page_no、bbox、charspan、orig/text 和 content layer。reading.md 是供 Read Agent 使用的规范阅读制品；evidence-map 把稳定块 ID 映射回一个或多个原 PDF provenance。块 ID 只在所属制品内保证稳定；保存 evidence 引用时必须随附所属正文制品的 extraction fingerprint，不得以裸 ID 跨制品引用。
+
+解析器与规范化之间以项目内部 canonical 中间结构为唯一边界：它显式携带 page_no、bbox、charspan、orig/text、标题层级、content layer 与受限内容占位。`docling_parser.py` 只承担 Docling adapter 职责——把 DoclingDocument 转换为 canonical 结构，并把工具错误映射到受控失败枚举；normalize、evidence 与质量门槛只消费 canonical 结构，不导入 Docling SDK。canonical 结构由权威 Pydantic schema 定义，不维护第二份手写 schema；其中页码、bbox 和字符区间是 evidence 回查所必需的最低 provenance，必需 provenance 缺失或不可回放的制品按质量门槛失败处理，不得以降级输出静默降低证据质量。
 
 确定性后处理只做：
 
@@ -600,6 +603,8 @@ document.json 保存不嵌入 base64 图片的 DoclingDocument，保留原始 pa
 - 任何依赖精确公式、数值或符号的结论不得作为未复核的主要发现、评分理由或复用建议；
 - 无可靠文本层的扫描稿记为 `extraction_failed_no_text_layer`，保留 PDF，不调用 Read 或复用升级。
 
+质量门槛只对规范制品（`reading.md` 与 evidence-map）断言，不依赖特定 backend 的输出形态；任何 backend 的制品（含未来新增）都必须先通过同一套四刊 fixtures 才能成为当前制品。
+
 四刊 fixture 至少验证：
 
 - 正文起点和前置杂页排除；
@@ -611,12 +616,12 @@ document.json 保存不嵌入 base64 图片的 DoclingDocument，保留原始 pa
 - 公式和受限表格显式降级；
 - Markdown 不含 base64；
 - 同一输入与配置产生稳定 artifact hash 和 evidence ID；
-- 给定固定 PDF 时，`reading.md` 内容哈希与 fixture registry 的期望值一致；语义后处理变化必须显式提升 `normalization_version`；
+- 给定固定 PDF 与同一 backend/解析配置时，`reading.md` 内容哈希与 fixture registry 中按 backend 分别登记的期望值一致；语义后处理变化必须显式提升 `normalization_version`；
 - 能按受控中英文标题定位 Methods/Data 段和 Data/Code Availability/Open Research 段；定位不到时返回合法降级结果而不是伪造段落。
 
-解析器、后端、模型制品、解析配置或 `normalization_version` 变化使旧正文制品过期并重新运行全部 fixtures。失败制品不能成为当前制品，也不能调用 Read 或复用升级。
+backend 身份、组件版本、模型制品或解析配置变化只使该 backend 的旧正文制品过期；`normalization_version` 变化使所有 backend 的旧正文制品过期。任一变化都要求重新运行全部四刊 fixtures。失败制品不能成为当前制品，也不能调用 Read 或复用升级。
 
-解析失败按可恢复性分类：`extraction_failed_no_text_layer` 与 `extraction_failed_quality_gate` 对当前指纹是永久失败，分别等待 OCR/V2 或配置、fixture、输入变化；`extraction_resource_exhausted` 与 `extraction_timeout` 可以在后续 `run-due` 中使用剩余尝试预算重试。两次耗尽后进入解析失败队列，只有显式 retry 或新指纹重置预算。
+解析失败按可恢复性分类：`extraction_failed_no_text_layer` 与 `extraction_failed_quality_gate` 对当前指纹是永久失败，分别等待 OCR/V2 或配置、fixture、输入变化；`extraction_resource_exhausted` 与 `extraction_timeout` 可以在后续 `run-due` 中使用剩余尝试预算重试。两次耗尽后进入解析失败队列，只有显式 retry 或新指纹重置预算。永久失败与尝试预算都绑定 backend × 指纹，不绑定论文本身：解析失败记录携带 backend 身份，换 backend 即产生新指纹并重置预算；工具错误到受控枚举的映射由 parser adapter 完成，不散落在编排层。
 
 ### 4.10 Read Agent
 
@@ -798,9 +803,9 @@ paper-radar review submit --queue [--limit N]
 |逻辑实体|核心内容|关键约束|
 |---|---|---|
 |fulltext_files|paper version、PDF 哈希、来源、取得方式、许可证据、文件位置、验证结果|内容哈希去重；原 PDF 永久保留|
-|extraction_artifacts|PDF、解析输入指纹、Docling/模型配置、normalization version、manifest/document/reading/evidence-map 路径、质量结果|只有通过质量门槛的制品可成为当前；资源失败与永久失败分开|
+|extraction_artifacts|PDF、解析输入指纹、backend_id、backend_version、backend_config_hash、model_artifacts_hash、normalization version、manifest/document/reading/evidence-map 路径、质量结果|只有通过质量门槛的制品可成为当前；资源失败与永久失败分开|
 |analyses|Read 输入指纹、chunking version、输出语言、模型/提示词/Profile/契约、完整结构输出、原始成功响应|同一指纹一个成功分析；历史不覆盖；语言变化不重做事实采集；Profile 变化不自动重跑历史分析|
-|analysis_evidence|analysis 内字段路径、evidence ID、支持片段|必须能解析到该分析使用的 evidence-map|
+|analysis_evidence|analysis 内字段路径、evidence ID、所属正文制品/extraction fingerprint、支持片段|evidence 引用携带制品身份；必须能解析到该分析当时使用的 evidence-map|
 |analysis_reviews|用户对 Read 的两项评分、重大误述、证据问题和笔记|只用于抽查，不构成门禁|
 
 大体积 Docling 块和 bbox 以版本化 sidecar 为主，数据库保存制品身份、哈希和必要索引；不把整篇 document JSON 塞进 SQLite。
@@ -875,7 +880,7 @@ contracts/
 data/
   paperradar.sqlite3
   blobs/sha256/
-  artifacts/docling/<extraction_fingerprint>/
+  artifacts/extraction/<backend_id>/<extraction_fingerprint>/
   artifacts/grobid/<reference_fingerprint>/
   cache/
   tmp/
@@ -1356,13 +1361,14 @@ src/paper_radar/
 - 顶层 eligibility.py 提供一个跨阶段资格 Interface：输入已加载事实，输出资格和原因；storage 只批量加载事实，orchestration、reports 与 CLI 不复制规则；
 - references/completeness.py 不做身份匹配；
 - identity/resolver.py 不根据引用次数改变筛选；
+- fulltext/docling_parser.py 是 Docling 的唯一消费点：把 DoclingDocument 转换为 canonical 中间结构并把工具错误映射到受控失败枚举；normalize、evidence 与质量门槛只消费 canonical 中间结构，不导入 Docling SDK；
 - fulltext/normalize.py 不产生研究结论；
 - screening 复用升级与 reading 只消费已通过质量门槛的正文契约；
 - reports 不写业务事实、不调用 LLM；
 - orchestration 只组合 eligibility 结果和其他模块 Interface，不重新实现规则；
 - 外部适配器不直接更新 papers 当前事实，必须先形成来源观察并经仲裁。
 
-SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic/PydanticAI、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx、feedparser 和 Docling slim；具体版本在阶段 A 锁定并进入验收证据。
+SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic/PydanticAI、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx、feedparser 和 Docling slim；具体版本在阶段 A 锁定并进入验收证据。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。
 
 ## 十一、九阶段实施与验收
 
@@ -1385,6 +1391,7 @@ A → B → C → F → D → (E, G) → H → I
 实施：
 
 - 初始化 uv 项目、锁文件、代码质量与测试命令；
+- 声明 Docling slim 可选依赖组，保证常规测试套件不依赖 Docling 安装；
 - 建立配置编译、提示词版本、运行配置快照及阶段/校准配置投影；
 - 建立 `screening/schema.py` 单一 Schema 权威、`screening/reasons.py` 原因权威及冻结 JSON Schema 导出；
 - 建立逻辑数据模型、Alembic 初始迁移和 repository 边界；
@@ -1675,7 +1682,7 @@ DoD：
 - 实现 Wiley TDM token 凭证管理（0600 凭证区、状态事实、已知 OA DOI 探测、限速与全文受阻降级）；
 - 实现下载验证、内容寻址归档和人工附加候选；
 - 区分 access_blocked_403、not_open_access、not_found、invalid_pdf 与暂时错误，并区分 TDM 凭证级 403 与单篇 403；
-- 锁定 Docling、PDF 后端、模型制品和配置；
+- 锁定 Docling、PDF 后端、模型制品和配置，并实现 docling_parser adapter、canonical 中间结构与最低 provenance 契约；
 - 生成 manifest、document、reading 与 evidence-map；
 - 实现带 `normalization_version` 的正文起点、仓储封面、推荐页、重复页眉页脚和标题层级处理；
 - 实现带 `excerpt_selector_version` 的 availability、methods/data 中英文段落定位；
@@ -1696,9 +1703,10 @@ DoD：
 - 表格带精确值核对警告；
 - reading.md 不含 base64 图片；
 - 同一输入配置产生稳定 artifact/evidence ID；
-- 固定 PDF 的 reading.md 哈希与 registry 一致；后处理语义改变而未提升 normalization version 时 fixture 失败；
+- 固定 PDF 在同一 backend 下的 reading.md 哈希与该 backend 的 registry 期望一致；后处理语义改变而未提升 normalization version 时 fixture 失败；
 - 每刊 fixture 分别断言 methods/data 和 availability 定位结果；无相应章节时返回明确 unavailable，不抛异常或猜测；
-- no_text_layer/quality_gate 不自动重试，timeout/resource_exhausted 使用剩余预算且最多两次；
+- no_text_layer/quality_gate 不自动重试，timeout/resource_exhausted 使用剩余预算且最多两次；解析失败记录携带 backend 身份，换 backend 即新指纹重置预算；
+- normalize、evidence 与质量门槛模块不导入 Docling SDK，并由 fake parser backend 驱动离线确定性测试；
 - 解析器、模型、normalization 或 excerpt selector 变化自动要求重跑 fixtures；
 - 任何 fixture 失败阻断新 Read；
 - GC 永不选择原 PDF、分析引用制品或不可替代成功响应。
@@ -1993,9 +2001,9 @@ DoD：
 
 JGR 的已核查合法样本固定为 Wada et al.，DOI `10.1029/2025JD043927`，机构库 handle `11094/103589`。2026-09-13 的本机审计约 16 秒、峰值约 2.32 GiB；正文顺序和 provenance 可用，但必须去除仓储封面、修复标题层级和重复页眉，并把 `2–3 min` 被合并为 `23 min` 作为精确字符降级回归。
 
-其余三刊的 parser fixture 优先从 §13.2 已固定 DOI 中选择。fixture registry 必须保存最终选中的 DOI/handle、合法来源、审计日期、本地 PDF SHA-256、许可状态、Docling/模型版本、期望版式特征和已知失败；如果替换样本，旧 registry 记录不覆盖，并说明替换原因。
+其余三刊的 parser fixture 优先从 §13.2 已固定 DOI 中选择。fixture registry 必须保存最终选中的 DOI/handle、合法来源、审计日期、本地 PDF SHA-256、许可状态、backend 与模型制品版本（字段名 backend 中立，V1 值为 Docling 相关版本）、期望版式特征和已知失败；如果替换样本，旧 registry 记录不覆盖，并说明替换原因。
 
-每刊 registry 还必须保存 `reading.md` 期望哈希、Methods/Data 段定位结果和 Data/Code Availability/Open Research 段定位结果。不存在相应章节的论文以明确的“未定位但合法”期望固定，不能为了让测试通过而伪造摘录。
+每刊 registry 还必须按 backend 分别保存 `reading.md` 期望哈希（与该 backend 的 extraction fingerprint 对应）、Methods/Data 段定位结果和 Data/Code Availability/Open Research 段定位结果。不存在相应章节的论文以明确的“未定位但合法”期望固定，不能为了让测试通过而伪造摘录。
 
 公开仓库只提交许可允许的整篇 PDF、许可代表页或合成 fixture；其他 PDF 在 fixture registry 中记录合法来源和本地 SHA-256，由真实验收环境提供，不把版权受限全文提交到仓库。
 
