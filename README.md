@@ -63,6 +63,22 @@ Egret medium、TableFormer accurate 和默认开启的 CodeFormulaV2 局部公�
 不用于正式解析。源文本/生成文本分离与裁切核查由后续解析实现；公开字段与边界见
 [正文提取配置契约](docs/contracts/extraction-config.md)。
 
+`settings-pi.yaml` 使用新增的不可变 `models-pi-v1`，演示 Screening 与复用升级
+使用 V1 选定的 `prompt_only` 协议，四份业务冻结契约继续使用原 `v1`。例如：
+
+```bash
+uv run --offline --locked paper-radar config check \
+  --settings examples/config/settings-pi.yaml --database data/paperradar.sqlite3
+uv run --offline --locked paper-radar config compile \
+  --settings examples/config/settings-pi.yaml --database data/paperradar.sqlite3
+```
+
+该示例只证明 boundary、value、reuse 与 suggestion 配置完整；模型、Profile 和
+提示词仍为合成材料，Read 未就绪。当前没有 Pi RPC 执行器，也不检查 Pi/Node、
+认证、实际参数能力或运行隔离。旧 models 与示例选择保留，以维持历史版本和快照
+回放；配置层继续接受既有协议，不代表 Pi 会支持或自动切换这些协议。
+接入目标与边界见 [ADR-0026](docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。
+
 ## Screening 输出验证
 
 `paper_radar.screening.validate_output` 接受研究边界、摘要层价值预测或复用可行性

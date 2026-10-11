@@ -1,0 +1,12 @@
+# Pi V1 目标协议的工程验收合成材料，不用于真实调用或正式校准。
+# 仅演示配置编译；Pi 运行策略、参数能力与认证尚未检查。
+version: models-pi-v1
+screening:
+  provider: example-provider
+  model: example-model
+  protocol: prompt_only
+reuse_assessment:
+  provider: example-provider
+  model: example-model
+  protocol: prompt_only
+reading: null

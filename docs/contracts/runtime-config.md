@@ -87,16 +87,26 @@ Profile/models/topics/escalation/extraction 的活跃 YAML 装载共享声明版
 models 文件必须有 `version` 和 `screening`、`reuse_assessment`、`reading` 三个具名槽；每槽写 `null` 或严格对象。对象允许 `provider`、`model`、`protocol`、`temperature`、`top_p`，未知字段均拒绝。`provider` 与 `model` 是文本，`protocol` 为 `json_schema`、`json_object`、`prompt_only` 之一。`temperature` 是 0.0–2.0 的有限数字，默认 0.0；`top_p` 是大于 0 且不超过 1 的有限数字，默认 1.0。不得填写凭据、自由参数字典或 fallback 列表。先判占位：`provider` 或 `model` 去除首尾空白后精确等于 `REQUIRED`、`REQUIRED_FOR_FORMAL_CALIBRATION`、`REQUIRED_FOR_READ` 之一时，槽为 `placeholder`；否则三项缺失、为 `null` 或 provider/model 为空白时，槽为 `unconfigured`。其余非空文本视为已配置；此处不探测供应商能力或读取凭据。三槽可以写相同的 provider/model，但各自保留身份。
 
 ```yaml
-version: models-v1
+version: models-pi-v1
 screening:
   provider: example-provider
   model: example-model
-  protocol: json_schema
-  temperature: 0.0
-  top_p: 1.0
-reuse_assessment: null
+  protocol: prompt_only
+reuse_assessment:
+  provider: example-provider
+  model: example-model
+  protocol: prompt_only
 reading: null
 ```
+
+V1 的 Pi 接入选择 `prompt_only`（[ADR-0026](../adr/0026-control-pi-through-a-bounded-rpc-adapter.md)）；
+上例与新增的 `examples/config/models/models-pi-v1.yaml` 一致，仅为配置完整性示例。
+配置编译器保留 `json_schema`、`json_object` 和 `prompt_only` 的既有受控枚举，
+以回放历史材料；它不调用 Pi、不探测 provider 能力，也不执行协议切换。
+已有 `models-v1` / `models-reuse-v1` 不改写，改选目标协议应创建新的 models 版本。
+后续 Pi 执行层需另行检查参数支持、运行资源与隔离，不能把 `ready` 解释为执行就绪。
+提交工具升级的协议名称、配置映射与权威 Contract 尚未开放，不能以 `json_schema`
+伪装该通道，也不能在失败时自动切换协议。
 
 提示词的逻辑名为 `boundary`、`value` 或 `reuse`，声明版本来自对应 `settings.prompts.*`，Prompt 本身无需内嵌版本。文件去除首尾空白后为空或精确等于 ASCII `...` 时为占位。两个声明版本可登记完全相同的 Prompt 原始字节；同一版本任何字节变化都拒绝。Profile 的文件内版本与 selector 一致性仍是强制要求。
 
@@ -211,6 +221,8 @@ escalation 文件时，reuse 缺 `excerpt_selector`，suggestion 同时缺 `sugg
 | value 提示词与 value-prediction 契约 | value | 是 |
 | Reuse 模型、提示词、契约与 excerpt selector 身份及固定 excerpt_priority | reuse | 是 |
 | Read 模型、提示词、契约与 chunking | Read | 否 |
+| Screening/reuse 实际消费的适配器语义：输出协议、有效系统提示词、工具声明与实现、运行策略及参数 | 对应 boundary、value、reuse | 是 |
+| Read 专用适配器语义 | Read | 否 |
 | 解析器、后端、模型制品、解析配置与 normalization | extraction | 是 |
 | 复用升级触发参数、建议规则与原因契约 | 建议规则 | 是 |
 
@@ -221,6 +233,11 @@ value 语义，空集合与全部停用的 value 投影身份应相同。启用�
 变化应进入 value 语义；这些最终投影与基线身份由 A2-08 验收。
 本票只保存可分别提取的语义材料，不生成阶段投影。
 
+以上适配器语义是 Pi 接入后的投影依赖约束；当前 models 已保存 protocol 和模型
+参数，Pi 运行策略、显式资源、工具与系统提示词等版本材料及 selector 尚未开放。
+共有适配器行为须按实际受影响阶段进入投影与校准基线，不能一概归入 Read；
+临时进程/会话 ID、机器路径与纯传输变化不进入语义指纹。
+
 ## 示例与命令
 
 [`examples/`](../../examples/) 是**工程验收用合成材料**，提供六段
@@ -230,6 +247,9 @@ Profile、三槽 models、主题、升级参数、三阶段提示词及四份 A1
 另选择合法空主题集合、value 提示词和 value-prediction 契约，演示两阶段均就绪。
 `settings-reuse.yaml` 选择单独的合成 models 文件、升级参数、reuse 提示词和两份契约，
 演示缺 value/PDF/extraction 时 reuse 与 suggestion 仍配置就绪。
+`settings-pi.yaml` 使用新 models 版本与既有 Profile、主题、升级参数、三阶段提示词
+及四份契约，演示 boundary/value/reuse/suggestion 均配置就绪；Read 与 extraction
+仍未就绪。它不运行 Pi，不是生产提示词、正式校准或真实执行验收。
 它们不是真实
 Research Profile，不能据此开始正式校准。先确保数据库的父目录已存在：
 
@@ -238,6 +258,7 @@ paper-radar db upgrade --database data/paperradar.sqlite3
 paper-radar config check --settings examples/config/settings-boundary.yaml --database data/paperradar.sqlite3
 paper-radar config compile --settings examples/config/settings-value.yaml --database data/paperradar.sqlite3
 paper-radar config compile --settings examples/config/settings-reuse.yaml --database data/paperradar.sqlite3
+paper-radar config compile --settings examples/config/settings-pi.yaml --database data/paperradar.sqlite3
 ```
 
 命令帮助不读配置、不开数据库。成功返回 0；非法输入、未初始化库、版本冲突或
