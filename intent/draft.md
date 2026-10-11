@@ -4,6 +4,7 @@
 > 目标用户：单个研究者
 > 核心目标：每天从持续到达的论文中找出真正值得精读的工作，并给出能够回到原文核查的精读结果
 > 本文是第一版范围和验收依据；与早期设想冲突时，以本文、根目录 CONTEXT.md 和已记录 ADR 为准。
+> 2026-10-11：按 Pi 可行性研究 §5 及用户决策更新模型适配边界（ADR-0026）。这是 V1 目标规格；本次仅更新文档，既有代码、配置文件、已登记版本和 Frozen Contract 未作修改，不表示 Pi 接入已交付。
 
 ## 一、第一版要证明什么
 
@@ -45,6 +46,8 @@ PaperRadar 第一版不是通用文献管理平台，也不是多源学术搜索
 - calibration status、reveal 和 enable 前确认必须显示 `system_accepts / formal_calibration_members` 的隐含接受率，并与 `auto_read_quota / auto_screening_quota` 对照，明确标记当前组合在稳态下“容量自洽”或“预计积压增长”；该指标只披露后果，不新增校准门槛，也不自动调紧建议规则或提高精读配额。
 
 ### 1.3 明确不进入第一版
+
+Pi 接入仅覆盖 §7.7 的有界 LLM/Agent adapter。可行性研究 §6 的自主模型选择、全文获取工具、PDF 解析工具和 evidence 查询工具不进入 V1；已有全文获取、Docling、证据与确定性流程按既定边界实施。
 
 - Web、桌面或移动管理界面；
 - 可直接编辑展示内容的前端；
@@ -115,6 +118,8 @@ Markdown 是只读数据库投影。用户反馈、笔记和行为通过 CLI 追
 
 doctor 必须明确显示这些数据会离开本机。日志不得记录全文、完整摘录、完整提示词、认证信息或密钥。开始正式校准前必须确定并引用由 Screening、复用升级和建议规则等相关配置构成的校准语义基线；Read 模型不属于校准输入，只需在运行相应 Read 前明确配置，且不得自动 fallback。校准后若这些校准相关语义输入发生变化，系统先生成待分级变更；由用户附理由判定为 minor 或 major 后才能继续，不能自动决定是否沿用既有校准。
 
+这些输入由 Python 主程序构造，经 Pi RPC 发送给固定外部模型；Pi 不改变数据发送边界，也不允许将输入写入永久会话或完整事件日志。Screening、复用升级与 Read 的输入分别隔离；Read 的正文、复用摘录或历史隐藏结果不得经会话进入摘要筛选。
+
 ## 三、领域模型与不变量
 
 ### 3.1 论文、版本与发现
@@ -169,12 +174,14 @@ doctor 必须明确显示这些数据会离开本机。日志不得记录全文�
 
 每个模型或解析阶段保存规范输入指纹：
 
-- Screening 阶段一、二：规范题名、摘要及其完整性标记、Research Profile、可映射主题集合、模型、提示词、输出契约；
+- Screening 阶段一、二：规范题名、摘要及其完整性标记、Research Profile、模型、提示词、输出契约；可映射的已启用主题集合只进入阶段二，不进入阶段一；
 - 正文提取：PDF SHA-256、结构化 backend descriptor（`backend_id`、backend 组件版本、模型制品哈希；无模型制品的 backend 后者可为空。V1 值为 Docling/core/parse 版本与 PDF 后端）、完整解析配置和 `normalization_version`；
 - 复用可行性升级：贡献摘录的结构化来源快照或当前正文提取物、所选摘录及其种类、`excerpt_selector_version`、Research Profile、模型、提示词、输出契约；
 - Read：正文提取物、`chunking_version`、Research Profile、输出语言、模型、提示词、输出契约；
 - 确定性决定：Screening 阶段一、二原始输出、可选复用升级制品、版本化升级触发参数和规则版本；
 - 报告：固定成员及其具体筛选或分析制品。
+
+各模型阶段还包含其实际消费的适配器语义身份：输出协议、有效系统提示词、工具声明与实现、会改变模型行为的运行策略及参数。Pi/adapter 的锁定版本与资源哈希保留为执行审计身份；其中可能改变阶段语义的变化必须升级相应语义身份并进入该阶段指纹。进程 ID、临时会话 ID、机器路径、时间及纯传输重构不进入语义指纹。Screening 和复用升级的适配器语义进入校准语义基线，Read 专用语义不进入；共有策略变更必须按实际受影响阶段判断，不能一概称为 Read 配置变更（§7.6–§7.7、ADR-0026）。
 
 只有实际进入某阶段语义输入的事实变化才使制品过期。卷期页码或普通 URL 等书目补充不触发模型重跑。旧人工筛选决定继续生效但标记为基于旧输入并提示复核；旧系统决定由新建议替换。
 
@@ -416,11 +423,13 @@ Screening 最低元数据要求：
 
 ### 4.5 两阶段 Screening Agent 与条件式复用升级
 
-阶段一只接收原题名、摘要、摘要完整性标记、完整 Research Profile、提示词和输出 Schema。out_of_scope 停止；in_scope 与 uncertain 进入阶段二，以便 pending 论文仍有可复核速览。两阶段唯一权威 Schema 位于 §7.4；本工作流不得复制或私自扩展另一组字段定义，实际实现由 `screening/schema.py` 提供同一个 Interface 给 Agent adapter、持久化和测试。
+阶段一只接收原题名、摘要、摘要完整性标记、完整 Research Profile、提示词和输出 Schema。out_of_scope 停止；in_scope 与 uncertain 进入阶段二，以便 pending 论文仍有可复核速览。两阶段结构设计见 §7.4，生产唯一权威 Schema 由 `screening/schema.py` 提供同一个 Interface 给 Agent adapter、持久化和测试；本工作流不得复制或私自扩展另一组字段定义。
+
+阶段一、阶段二和条件式复用升级分别通过 §7.7 的 Pi adapter 运行，使用独立输入与隔离会话；阶段二按契约另外接收已启用主题，不能把前一阶段会话历史当作隐式输入。Pi 仅返回候选制品，Python 权威校验通过后才可供建议规则消费。
 
 Agent 不知道期刊信誉和最终建议规则，也不输出最终决定、权重、紧急性、自由标签、priority 或数值置信度。程序验证主题 ID、价值类型、枚举和分数完整性；未知、重复、缺失或截断输出不能进入成功缓存。
 
-模型输出、供应商、模型名、提示词版本与哈希、Profile 版本与哈希、输入指纹、原始响应、验证结果和规则版本全部保存。相同成功指纹可以复用；缓存命中仍重新检查当前任务资格。
+成功模型输出、供应商、模型名、提示词版本与哈希、Profile 版本与哈希、适配器语义身份、输入指纹、原始成功响应、验证结果和规则版本全部保存；失败只保存脱敏执行信息，不保存响应全文（§8.7）。相同成功指纹可以复用；缓存命中仍重新检查当前任务资格。
 
 阶段二若满足版本化触发参数且 `reuse_feasibility_inferable=false`，立即生成 `pending(reason=reuse_unknown)` 速览并建立非阻塞升级任务，不等待全文才发布结果。升级依次尝试：
 
@@ -459,7 +468,7 @@ CLI 默认只显示编号和短题名，并把问题表述为“如果系统自�
 
 门禁另要求 `human_accepts >= 5`。status、reveal 和最终验收必须展示全部指标的原始分子/分母与百分比、人工 pending 数量和比例，并解释 pending 在前两项指标中的不对称处理。`system_accepts` 或 `human_accepts` 为 5–9 时附加 `small_sample` 警告；警告本身不阻止门禁，但任一分母少于 5 时结论为校准不确定。报告还显示隐含接受率及其与 3/20 自动容量的对照，并按“是否有升级摘录、摘录种类、摘要是否疑似截断、期刊、语言”分组披露，不把异质输入伪装为同一条件。
 
-如果前两项不达标，校准未通过。允许依据揭晓结果调整 Profile、提示词、模型、契约、升级参数或规则，然后复用同一组人工标签重新产生制品、建议和门槛指标；每轮必须保存所依据的运行配置快照、校准语义基线、结果和前一轮关系，并标记 `reused_revealed_labels`。若重算所用的题名、摘要、摘录或其他用户可见输入与原批次冻结输入不同，evaluation 还必须标记 `human_input_drift`，明确人工标签不是在新输入上重新作出的。这种结果仍可作为第一版门禁依据，但它是对已揭晓调优样本的拟合后复算，不得称为新样本独立验证。如果明确决策数、system accepts 或 human accepts 任一最小分母不足，结果是“校准不确定”，在校准语义基线不变时把四刊目标各增加 2 篇并按同一轮转算法扩样，直到分母充分。
+如果前两项不达标，校准未通过。允许依据揭晓结果调整 Profile、提示词、模型、契约、升级参数、Screening/reuse 适配器语义或规则，然后复用同一组人工标签重新产生制品、建议和门槛指标；每轮必须保存所依据的运行配置快照、校准语义基线、结果和前一轮关系，并标记 `reused_revealed_labels`。若重算所用的题名、摘要、摘录或其他用户可见输入与原批次冻结输入不同，evaluation 还必须标记 `human_input_drift`，明确人工标签不是在新输入上重新作出的。这种结果仍可作为第一版门禁依据，但它是对已揭晓调优样本的拟合后复算，不得称为新样本独立验证。如果明确决策数、system accepts 或 human accepts 任一最小分母不足，结果是“校准不确定”，在校准语义基线不变时把四刊目标各增加 2 篇并按同一轮转算法扩样，直到分母充分。
 
 校准通过后，可能影响 Screening 语义或建议边界的变化由系统检测、用户分级：
 
@@ -638,6 +647,8 @@ Read 只处理：
 
 最终结构契约：
 
+以下是 Read 的设计定义；生产接入必须先实现单一权威 Pydantic Schema 与业务验证器，再由它导出 Frozen Contract。可行性研究使用的临时 Read Schema 不取得生产权威资格。单次调用及 map/reduce 均由 Python 编排并通过 §7.7 的隔离 Pi 会话执行；分块、输入证据选择和最终引用检查由 PaperRadar 控制，不新增 Agent evidence 查询或 PDF 工具。
+
 ~~~python
 class EvidenceRef(BaseModel):
     evidence_id: str
@@ -763,7 +774,7 @@ paper-radar review submit --queue [--limit N]
 |---|---|---|
 |source_snapshots|提供方、用途、查询键、时间、内容哈希、响应位置|只保存贡献事实或冲突证据的成功内容；哈希去重|
 |field_provenance|当前规范字段、采用的快照、原始路径、仲裁依据|字段级追溯；不把缺失当空事实|
-|runtime_config_snapshots|所选版本化配置编译后的内容及身份：Profile、主题、期刊、模型、提示词、规则、升级参数、解析器及确定性算法版本哈希|不可变并可被多次运行和任务引用；不含单篇论文输入或执行顺序|
+|runtime_config_snapshots|所选版本化配置编译后的内容及身份：Profile、主题、期刊、模型、提示词、规则、升级参数、解析器、适配器语义及确定性算法版本哈希|不可变并可被多次运行和任务引用；不含单篇论文输入或执行顺序|
 |tasks|阶段、主体、来源、输入指纹、幂等键、父任务和终态|终态失败不每天复活；解析资源失败可在同一任务剩余预算内跨日重试；显式 retry 建新 task|
 |task_attempts|阶段、主体、输入指纹、尝试序号、结果、错误类别、耗时、用量|同一模型输入或 extraction fingerprint 最多两个自动 attempt|
 |provider_credentials|出版方、凭证种类、状态事实（存在、上次验证、当前判定）、登记时间|不存凭证值，值存文件系统凭证区（0600）；状态历史只追加|
@@ -771,6 +782,8 @@ paper-radar review submit --queue [--limit N]
 |backup_runs|快照、完整性、NAS 目标、恢复演练结果|用于无人值守门禁和日报健康摘要|
 
 304、限流和失败不创建响应体快照，但 task_attempts 保存状态、时间、查询键和重试资格。
+
+模型任务与成功制品引用当次固定的适配器语义身份，并保留实际 Pi/adapter 版本与资源哈希、provider/model、权威输出通道和脱敏完成/用量信息。它们是现有配置、执行及制品事实的一部分；Pi session/JSONL 不成为第二个事实源。上述逻辑模型是目标，后续若需调整物理持久化必须通过 migration，本次不修改用户数据库或既有快照格式。
 
 ### 5.3 Screening 与校准
 
@@ -913,6 +926,8 @@ blob 和 artifact 路径只由哈希、UUID 与受控枚举构造。数据库保
 - 用户事件与已发布报告成员；
 - 所有被运行配置快照或历史制品引用的 Profile、主题、提示词和导出契约版本。
 
+模型原始成功响应指通过权威校验的最终 assistant 输出正文，或显式升级后被接收的提交工具参数；其作为受访问控制的业务制品保留，不进入普通日志。完整 Pi session/JSONL transcript、带输入的 RPC 消息和失败响应全文不永久保存（§8.7），不能以“保留原始响应”为由扩大留存范围。
+
 可以清理：
 
 - 失败下载临时文件；
@@ -1002,7 +1017,7 @@ class ReuseAssessmentOutput(BaseModel):
 
 阶段一和阶段二是可独立恢复的调用。out_of_scope 不运行阶段二；in_scope 和 uncertain 运行阶段二，以便 pending 也有可复核速览。`ReuseAssessmentOutput` 是条件触发的独立第三制品，只看已经由确定性选择器固定的摘录。每个稳定 excerpt ID 映射到贡献它的来源快照路径，或当前正文提取物的 evidence ID、章节与 provenance；模型只能引用输入中存在的 excerpt ID。Agent 不读取期刊信誉，不输出最终决定、紧急性、置信分、权重或标签。
 
-本节是 Screening 及复用升级结构输出的唯一权威定义；§4.5 只规定调用顺序和输入，不重复 Schema。`display_title_zh` 只是可选展示文本，原题名永远从论文版本事实读取；原题名已经是中文时它必须为 `None`，其他情况下缺少中文显示题名不使输出失败。
+本节是 Screening 及复用升级结构输出的设计规范；生产唯一权威定义为 `screening/schema.py` 中的 Pydantic 模型，业务接收同时遵守公共验证器。发送给 Pi 的 Schema 与 Frozen Contract 均从该权威生成，不从本文示意代码维护第二套 Schema；§4.5 只规定调用顺序和输入。`display_title_zh` 只是可选展示文本，原题名永远从论文版本事实读取；原题名已经是中文时它必须为 `None`，其他情况下缺少中文显示题名不使输出失败。
 
 Pydantic Schema 通过后仍要执行业务校验：
 
@@ -1060,24 +1075,47 @@ version: models-v1
 screening:
   provider: REQUIRED
   model: REQUIRED
-  protocol: json_schema
+  protocol: prompt_only
 reuse_assessment:
   provider: REQUIRED_FOR_FORMAL_CALIBRATION
   model: REQUIRED_FOR_FORMAL_CALIBRATION
-  protocol: json_schema
+  protocol: prompt_only
 reading:
   provider: REQUIRED_FOR_READ
   model: REQUIRED_FOR_READ
-  protocol: json_schema
+  protocol: prompt_only
 ~~~
 
-Screening 与 reuse_assessment 可以由用户显式选择同一模型，但仍作为两个配置槽和制品来源保存；两者是正式校准前置，reading 只在阶段 B/G 实际 Read 前必需。没有默认 fallback 列表。PydanticAI 只隔离供应商接口和结构化输出差异，不承诺模型可互换。实际 provider/model、提示词、Schema、Profile 和输入哈希进入每次制品。
+Screening 与 reuse_assessment 可以由用户显式选择同一模型，但仍作为两个配置槽和制品来源保存；两者是正式校准前置，reading 只在阶段 B/G 实际 Read 前必需。Python 主程序通过有界 Pi RPC adapter 调用显式固定的 provider/model，不以 Pi 代替供应商名称，不保留 PydanticAI 作为 V1 的模型调用实现选择。实际 provider/model、提示词、Schema、Profile、适配器身份和输入哈希进入每次制品；没有默认 fallback 列表，也不承诺模型可互换。
 
-模型格式能力可以在 json_schema、json_object 和 prompt_only 之间做同一模型的有限协议适配，但无效内容不能靠切格式伪装成功。
+V1 首次接入使用 `prompt_only`：提示词要求最终纯 JSON 文本，Python 严格解析并权威校验；Pi 外层 RPC JSONL 不代表模型具有原生严格 `json_schema` 能力。专用提交工具是已经验证可行的备用升级，两种能力可以共存于适配器能力层，按阶段版本化配置显式选择；每次运行固定一个权威通道，失败或无效输出不触发通道切换，也不把另一通道的结果当作兜底。工具参数带 Schema 不等于 provider 原生 `json_schema`。
+
+上例是目标选择示意，不授权原地修改已经登记的 `models-v1`；既有协议枚举及当前配置编译契约见 `docs/contracts/runtime-config.md`，它们保留已交付范围。Pi 运行策略的版本化配置、阶段选择与现有槽的映射尚待实现；提交工具的显式协议名称及配置 Contract 需在启用该升级前另行定义并同步权威 Schema、文档和必要 migration，不能复用 `json_schema` 或 `json_object` 隐藏其真实通道。V1 默认验收不要求启用提交工具。
+
+现有 `temperature`、`top_p` 等模型参数须在接入时明确映射到 Pi/provider 的实际能力；不能静默忽略、改写或用个人默认设置代替。所选参数或协议无法实现时，执行就绪检查给出具体不支持原因，不将已有的配置完整性判断解释为真实调用已就绪。
 
 当前运行配置快照的校准语义基线与门禁所依据的 evaluation 基线（或其已分级的 minor 继承链末端）存在校准相关差异时，doctor 和 run-due 必须列出差异并要求用户分级。只改变 Read 模型等无关配置时，即使完整快照 ID 变化，也不得因此关闭门禁、重算 Screening 或创建校准变更。系统不得仅依据文件名、版本号或 diff 大小自动判定 minor/major；用户选择和理由形成审计事件。minor 可沿审计链继承既有门禁，major 才关闭既有门禁，但待分级期间自动精读保持暂停。
 
 提示词、Research Profile 和导出的输出契约使用声明版本 + 内容哈希的不可变文件。修改内容必须创建新版本文件并更新 active selector，不能在同一版本路径原地覆盖；doctor 发现同一声明版本对应不同哈希时拒绝编译运行配置快照。旧版本及其实际 Schema 快照永久保留，使校准重算和历史制品可以脱网回放。
+
+适配器语义配置同样不可原地改写：固定有效系统提示词、工具 allowlist 与实现哈希、运行策略及参数。Screening/reuse 使用的共有 Pi 行为改变时，必须纳入校准变更检测并由用户分级；纯 Read 行为变化只影响 Read。切换到 Pi 或启用提交工具都不能直接宣布既有校准仍有效，也不能自动归为 minor 或 major。
+
+### 7.7 Pi RPC 适配边界
+
+接入依据为 [Pi 可行性研究](discussions/pi-agent-contract-feasibility.md) §5 与其中“我的决策”，架构决策见 [ADR-0026](../docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。Python 确定性程序构造阶段输入、版本、哈希与预算，经 Pi RPC 取得候选结构输出，再用 PaperRadar 权威 Pydantic Schema 与业务规则决定是否接收；只有接收成功后，PaperRadar 才产生建议、写事实并处理校准与任务资格。
+
+接入必须同时满足：
+
+1. 每个阶段、每次 attempt 使用独立临时会话；长驻 RPC 子进程在调用前明确建立新会话或重建进程，不能继承其他论文、阶段或 attempt 的消息。Read map 各块与 reduce 也各自隔离；所需候选与 evidence 由 Python 显式传入。修正重试只接收同一冻结阶段输入与脱敏校验原因。
+2. 固定 provider/model、有效提示词、Contract、Profile、工具声明及运行策略；禁用自动发现的 context、skills、prompts、extensions、MCP 和个人设置对运行的隐式影响。Pi 必需的系统提示词与显式资源属于可审计配置；无法固定、隔离或匹配实际模型时拒绝运行。
+3. 关闭 Pi agent/provider 隐含 retry、自动 compaction/summarization 及额外模型确认回合。Python 按 §8.3 统一领取尝试预算，一次 attempt 最多一次模型调用；工具循环不能隐藏额外调用。Read map/reduce 仍是既定的显式分块流程，各个输入分别受预算限制，不由 Pi 自主拆分。
+4. RPC `prompt` ACK 只表示命令接收；必须消费到 `agent_settled`，检查最终消息 `stopReason`、实际 provider/model、所选通道、超时、取消与子进程异常。正常完成且仅有一个有效权威结果，再通过严格 JSON 解析、Schema 和业务校验，才形成成功；错误、拒绝、截断、缺失/重复提交或无效内容均失败。超时、取消或进程退出不得提交部分输出，异常进程退出后重建隔离环境，不能阻断同批无关论文。
+5. `prompt_only` 只接收最终 assistant 的完整纯 JSON 文本；围栏、截断补全、类型强转或从解释文本中拼接结果都不能修复成成功。提交工具升级只接收唯一显式工具的参数，经 Python 权威校验成功后返回 validated artifact 并终结该 run；失败、未调用或参数无效时按同一预算处理，不能另取最终文本。
+6. 提交工具的 TypeBox 参数 Schema 必须从 Pydantic 生成的 JSON Schema 导入，必要的传输变换不能维护第二套领域字段或放松规则；工具端校验不能替代 Python 最终校验。升级不改变业务输出契约、建议规则或 evidence 要求，但其模型行为可能变化，仍须按相应阶段处理指纹与校准变更。
+7. `prompt_only` 的工具 allowlist 为空；升级后仅允许专用提交工具。通用 bash、文件读写、网络访问、数据库写入、全文获取、Docling 和 evidence 查询均不向论文驱动的 Agent 开放；固定模型通信由 adapter 承担。`--tools` 不是 OS sandbox，正式实现必须另外约束子进程、扩展与文件系统权限，使其不能访问业务数据库、无关文件或出版方凭证。
+8. 关闭 Pi 会话持久化，完整 RPC/JSONL 事件流仅在内存消费；按 §8.6–§8.7 提取脱敏执行事实与必要成功制品。RPC ACK、进程退出码、工具参数 Schema 或研究中的临时 Read 校验都不能代替生产验收。可行性实验已暴露的样本在正式采集时按 §4.6 登记排除，不伪造尚未存在的业务登记。
+
+可行性研究 §6 的扩展能力不在本次 V1 决策范围内。模型选择、合法全文取得、PDF 解析、证据构造、建议/决定、自动名额、Topic、持久化与校准均由现有 PaperRadar 模块控制；Pi 仅承接上述有界结构输出调用。
 
 ## 八、CLI、任务与运行语义
 
@@ -1175,7 +1213,9 @@ reveal 显示人工决定、系统比较结果、阶段二与可选升级的两�
 2. 若超时、协议失败或内容未通过 Schema/业务校验，最多修正重试一次；
 3. 仍失败则写入模型失败队列；
 4. 以后 run-due 不自动再试；
-5. 用户显式 retry，或输入、模型、提示词、Schema 变化产生新指纹后，才重新获得尝试预算。
+5. 用户显式 retry，或输入、模型、提示词、Schema、适配器语义变化产生新指纹后，才重新获得尝试预算。
+
+Pi 的 retry、自动 compaction/summarization 和后续模型回合关闭；一次 attempt 最多一次模型调用，修正由 Python 在第二次 attempt 中显式发起。RPC 超时、取消、进程异常、错误 stopReason、输出通道违例或权威校验失败均记录为该 attempt 的失败；仅重启进程、重置会话或重发同一输入不刷新预算。长文 Read 的各 map 输入与 reduce 输入分别计数，不能把自主工具循环当作一个阶段调用。失败原因映射为受控、可操作的错误，输出中不得夹带模型文本、完整输入或认证信息。
 
 模型失败不等同于 pending 决定，也不伪造 screening_suggestion。若没有合法 Screening 制品，程序的复核投影为 pending/需要处理并保留真实失败原因；固定校准成员则把该失败投影冻结为 `pending(reason=model_failure)` 参与反弃权统计，但它仍指向 task failure 而不是虚构的 Agent 输出。
 
@@ -1230,6 +1270,8 @@ task attempt 的业务键至少包含：
 - 已知单价下的实际或估算成本；
 - 耗时与结果。
 
+实际 Pi/adapter 版本、所选协议与运行策略身份也需可追溯。request ID、token 或成本若 RPC/provider 未提供，保存明确的未知或估算标记，不能编造实际用量；模型调用次数与 retry 预算由 Python 独立计数，不依赖 Pi 的汇总值。
+
 每周报告按 Screening 阶段一/二、复用升级、Read map、Read reduce 分开汇总，并附 §4.11 的注意力可持续性指标。第一版先使用工作数量和重试次数限制；月度金额上限在获得真实用量后由用户配置。
 
 ### 8.7 日志与隐私
@@ -1242,6 +1284,8 @@ task attempt 的业务键至少包含：
 - 摘要或正文全文；
 - 模型完整原始响应；
 - 带临时凭据的 URL。
+
+Pi 完整 session、RPC 请求/响应、JSONL transcript、stderr 与工具错误不能直接复制进日志或诊断制品；只输出脱敏字段与受控错误。最终成功输出按第六章作为受访问控制的业务制品保存，校准隐藏结果仍通过共享可见性 Interface 隔离。stdout/stderr 都必须受控处理；开启诊断不能恢复完整会话持久化。
 
 paper trace 从数据库事实和审计事件重建过程，普通日志不是唯一证据。
 
@@ -1272,6 +1316,8 @@ NAS 增量备份包括：
 - 迁移与版本清单。
 
 排除 API 密钥、临时下载、HTTP 缓存和可清理失败文件。保留策略由配置决定，但不得删除仍被正式分析、筛选建议、校准成员或复用升级引用的制品。
+
+保留被引用的适配器语义版本和锁定执行资源的版本/哈希清单；排除 Pi 认证信息与完整 session/JSONL transcript。恢复依据是 PaperRadar 事实与业务制品，不加载旧 Pi 会话继续任务；未完成调用按租约、指纹和剩余 attempt 预算恢复。
 
 启用无人值守 timer 前，必须把 NAS 快照恢复到一个空隔离目录，并在不读取原数据目录的情况下完成数据库检查、制品哈希、CLI 查询和报告重建。
 
@@ -1342,6 +1388,9 @@ src/paper_radar/
     chunking.py
     agent.py
     select.py
+  llm/
+    interface.py
+    pi_rpc.py
   eligibility.py
   reports/
     queries.py
@@ -1365,11 +1414,12 @@ src/paper_radar/
 - fulltext/docling_parser.py 是 Docling 的唯一消费点：把 DoclingDocument 转换为 canonical 中间结构并把工具错误映射到受控失败枚举；normalize、evidence 与质量门槛只消费 canonical 中间结构，不导入 Docling SDK；
 - fulltext/normalize.py 不产生研究结论；
 - screening 复用升级与 reading 只消费已通过质量门槛的正文契约；
+- llm/interface.py 提供有界模型调用 Interface，llm/pi_rpc.py 封装 Pi 子进程、RPC 事件、隔离与取消；阶段模块持有权威 Schema/业务验证，不依赖 Pi 协议细节。adapter 返回候选输出与脱敏执行信息，不生成领域决定、不写业务事实；离线测试用 fake RPC/adapter，不能要求真实 Pi、Node、网络或付费模型；
 - reports 不写业务事实、不调用 LLM；
 - orchestration 只组合 eligibility 结果和其他模块 Interface，不重新实现规则；
 - 外部适配器不直接更新 papers 当前事实，必须先形成来源观察并经仲裁。
 
-SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic/PydanticAI、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx、feedparser 和 Docling slim；具体版本在阶段 A 锁定并进入验收证据。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。
+SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic、Pi RPC adapter、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx、feedparser 和 Docling slim；具体版本在阶段 A 锁定并进入验收证据。Pi 是锁定 Node/Pi 版本及显式资源的本机子进程，不是 Python 包；不为接入它另建 Node 业务服务，Python 依赖仍统一由 uv 与已提交 lockfile 管理。真实模型调用前 doctor 检查 Pi/Node、固定模型与认证可用性及隔离策略，缺失时报告具体配置或安装原因；`--help` 不探测 Pi、模型或凭证。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。
 
 ## 十一、九阶段实施与验收
 
@@ -1394,6 +1444,7 @@ A → B → C → F → D → (E, G) → H → I
 - 初始化 uv 项目、锁文件、代码质量与测试命令；
 - 声明 Docling slim 可选依赖组，保证常规测试套件不依赖 Docling 安装；
 - 建立配置编译、提示词版本、运行配置快照及阶段/校准配置投影；
+- 建立 §7.7 的有界 Pi RPC adapter，固定运行资源与策略身份；V1 首次只启用 `prompt_only`，专用提交工具保留为显式升级能力；
 - 建立 `screening/schema.py` 单一 Schema 权威、`screening/reasons.py` 原因权威及冻结 JSON Schema 导出；
 - 建立逻辑数据模型、Alembic 初始迁移和 repository 边界；
 - 建立内容寻址 blob/artifact store；
@@ -1410,6 +1461,10 @@ A → B → C → F → D → (E, G) → H → I
 - 空目录迁移后数据库可打开，外键、唯一约束和索引生效；
 - Schema 中不存在 papers.status、Rank、citation、自由标签或被引指标；
 - 相同规范输入生成相同指纹；
+- fake RPC 覆盖 ACK 未完成、正常 settled、错误/截断 stopReason、实际模型不符、超时、取消、子进程退出和 Schema/业务拒绝；仅完整有效输出可以成功，单次故障不阻断其他任务；
+- 跨论文、Screening 两阶段、reuse、Read map/reduce 及修正 attempt 的会话隔离；历史 Profile、隐藏结果、全文、自动发现资源与个人设置不能进入当前输入；
+- Pi 隐含 retry、compaction、额外模型回合与未许可工具被禁止；同一输入最多两次 Python attempt，重建进程或切换通道不能重置预算；
+- Screening/reuse 的适配器语义变化进入相关指纹与校准差异，纯 Read 策略或进程/会话 ID 变化不误伤 Screening；
 - normalization、excerpt selector 或 chunking 语义版本变化只使相应下游指纹变化；
 - 同一声明版本下修改 Profile、提示词或契约内容时运行配置快照编译失败；新增版本并切换 selector 时保留旧文件和旧哈希；
 - 只改变 Read 模型时可得到新运行配置快照，但校准语义基线及 Screening 输入指纹不变；
@@ -1419,9 +1474,10 @@ A → B → C → F → D → (E, G) → H → I
 - `paper trace`、调度和各积压列表对同一事实返回一致资格与原因；
 - 改变卷期页码不使 Screening/Read 指纹变化；
 - 改变摘要只使 Screening 及下游相关制品过期；
-- 改变 PDF 只使 Docling/Read 过期；
+- 改变 PDF 使相关 Docling/Read 过期；若该 PDF 的制品贡献了复用摘录，相应升级也按其输入指纹重算，不使题名摘要 Screening 失效；
 - 在“文件已落盘、数据库未提交”和“数据库事务中断”处故障注入，重启不产生半条成功事实；
 - 日志 fixture 中的 API key、完整 Profile、摘要和正文不会出现在输出；
+- Pi session/JSONL、完整 RPC 消息与 stderr 不被永久落盘；必要成功输出可按业务制品回查，盲评未揭晓结果仍不出现在任何展示面；
 - 根命令和每个已有子命令的 `--help` 为中文、包含副作用与示例、不访问网络或执行数据库写入；
 - WAL 活跃时建立本机快照，隔离恢复后通过 integrity、foreign key 和清单检查；
 - 摘要审计表按期刊、来源和疑似截断状态可重放；主路径不稳定的期刊会阻断相应真实闭环而不是伪造就绪。
@@ -1462,6 +1518,8 @@ JGR: Atmospheres Feed
 
 阶段 B 的真实验收以真实 Research Profile 和显式选择的 Screening/Read 模型为前置；此处 Read 模型可以是阶段 B 的版本化选择，不因此成为正式校准输入，也可在阶段 G 前显式更换。缺少这些配置不阻止阶段 A 工程完成，但阶段 B 只能保持“工程就绪、真实验收待配置”，不能用占位 Profile 宣称闭环成功。
 
+真实调用还需锁定 Pi/Node 与适配器配置、可用的固定模型认证和 `prompt_only` 通道，并通过 §7.7 隔离与完成判据。研究实验不能替代该路径验收，也不要求为了闭环接入提交工具或研究 §6 的扩展能力。
+
 测试：
 
 - 同一 JGR Feed fixture 重放两次只产生一条发现事实；
@@ -1480,6 +1538,7 @@ JGR: Atmospheres Feed
 - 使用合法自动取得的 PDF（含 Wiley TDM 通道）或人工确认的合法 PDF；
 - 为一篇真实英文论文生成默认中文精读和最小日报；
 - 保存所有配置、模型、PDF、Docling 和报告哈希。
+- 保存实际 Pi/adapter 版本与资源身份、固定 provider/model、所选通道、脱敏完成判据与用量；成功制品通过生产权威 Schema/业务校验，完整会话不进入验收材料。
 
 DoD：
 
@@ -1585,7 +1644,7 @@ DoD：
 - 条件式复用升级使用独立的每日 20 篇上限；积压不能在 PDF 集中到达时无界突发；
 - 当日校准可用名额少于拟建成员数时不创建批次；名额足够时同步调用阶段一/二并准确领取每篇配额；
 - create-batch 不等待第三阶段；成员冻结当时已有摘录或 unavailable 状态，后来补 PDF 不回写；
-- 预热期产生的制品只有在论文仍具正式样本资格、该阶段输入指纹与正式批次所需输入相同且未泄漏隐藏结果时才能复用；指纹不符时 create-batch 必须生成新制品，无关 Read 配置变化不阻止同指纹复用；
+- 正式校准前产生的制品只有在论文未被标记为 warmup、阶段 B 样本或其他排除项，仍具正式样本资格、该阶段输入指纹与正式批次所需输入相同且未泄漏隐藏结果时才能复用；预热样本永久排除，不因缓存可用而重新取得资格。指纹不符时 create-batch 必须生成新制品，无关 Read 配置变化不阻止同指纹复用；
 - 固定成员 Screening 两次失败后以 model_failure pending 参与校准，不替换样本；
 - 校准期人工 pending 和 denied 都必须从受控原因中选择，决定与原因原子写入；界面说明 pending 的指标影响；
 - 初始样本恰好 32 篇且每刊至少 4 篇；轮转指针、skip 事件、metadata ready time 和最低席位保留可重放；
@@ -1599,6 +1658,7 @@ DoD：
 - 重算时若所用输入与校准成员原先冻结的摘录、题名、摘要或其他用户可见输入不同，另标 human_input_drift，但按 V1 决策仍允许用户显式启用；
 - 发现校准相关差异后，未分级时暂停自动精读；
 - 只切换 Read 模型或其他无关配置时，运行配置快照可以变化，但校准语义基线、既有 evaluation 依据和自动精读门禁保持有效，不产生待分级变更；
+- Screening/reuse 的输出协议、有效系统提示词、工具或共有 Pi 策略改变时先产生待分级变更，不自动沿用旧门禁；只改 Read 专用策略时不产生该变更；
 - 用户标为 minor 时继承门禁；CLI 先显示仅覆盖 unresolved 范围的重算篇数与预计天数，新输入指纹使该范围制品重算；
 - 多次校准相关 minor 变更后，门禁必须能从当前基线沿完整分级审计链追溯到已显式启用的通过 evaluation，不能要求完整快照 ID 与评价时相同；
 - 用户标为 major 时关闭门禁，直到既有标签重算通过或新校准通过；
@@ -1753,6 +1813,7 @@ DoD：
 - 未知 evidence、错误页码、越界 bbox 或空片段使分析失败；
 - reduce 引用 map 未产生的 evidence 时失败；
 - 固定长文的 chunk manifest 哈希进入 fixture；分块语义变化而未提升 chunking version 时测试失败；
+- map 各块与 reduce 使用隔离 Pi 会话及各自输入预算；reduce 的候选证据由 Python 显式传入，不调用 PDF/evidence 工具或借会话读取其他块；
 - 未人工核验的受限公式或表格块不能支撑关键字段；
 - 关键字段出现未在所引支持片段中出现的数值或单位时，分析保留但生成 degraded warning；
 - 相同成功指纹不重调模型；
@@ -1850,6 +1911,7 @@ DoD：
 - 四 Feed 中一个超时，其他 Feed 与已入库任务继续；
 - 20 篇中一篇元数据异常，其他论文继续；
 - Screening 或 Read 两次返回无效结构，只影响该论文；
+- Pi RPC 在 ACK 后超时、取消或子进程退出时不产生成功制品；重建进程后使用新隔离会话，恢复不刷新该输入的 attempt 预算；
 - 坏 PDF 或 extraction_failed 不阻断其他 PDF；
 - GROBID 失败不阻断 Read；
 - 报告写入中断不修改论文或分析；
@@ -1884,6 +1946,7 @@ DoD：
 |卷期页码补全|不使 Screening 或 Read 过期|
 |摘要变化|新 Screening 制品待生成；旧人工决定继续有效并提示复核|
 |PDF 变化|新 Docling/Read 待生成，旧分析保留|
+|变化的 PDF 曾贡献复用摘录|相关升级按输入指纹重算，题名摘要 Screening 不失效，冻结盲评输入不改写|
 |合并后 undo|身份、版本、引用和可见性恢复；历史报告不重写|
 |题名或摘要初次缺失|不调用 Screening，完成适用路线并安排 7 天延迟复查|
 |Feed 摘要非空但疑似截断|继续尝试其他来源；最终仅有截断版时带标记筛选并在校准中披露|
@@ -1900,6 +1963,15 @@ DoD：
 |研究价值 2、复用 4|pending，原因 value_reuse_conflict|
 |两个预测相同、期刊不同|建议相同|
 |模型连续两次无效|进入失败队列，次日不自动重试|
+|Pi RPC 仅返回 prompt ACK|不能记成功；等待 settled 并核对最终消息、实际模型、通道与权威校验|
+|Pi 输出截断、围栏或非法业务字段|拒绝接收，不补全、不强转；最多使用一次剩余修正预算|
+|Pi 超时、取消、进程退出或请求额外模型回合|记录受控失败，不提交部分输出，不刷新预算，不阻断无关任务|
+|切换论文、阶段、map/reduce 输入或 attempt|新隔离临时会话，只含 Python 显式构造的当前输入|
+|同次调用出现两个输出通道|仅预选通道有接收资格；通道违例或重复提交失败，禁止竞争与自动兜底|
+|提交工具参数含 Schema|仍须 Python 权威校验，不宣称 provider 原生 json_schema；升级必须先定义显式配置映射|
+|Screening/reuse 的适配器语义变化|相关指纹与校准语义基线变化，先暂停自动精读并由用户分级|
+|仅改变 Read 专用 Pi 策略或临时会话 ID|前者只影响 Read，后者不改变语义指纹；均不使 Screening 校准失效|
+|Pi 完整会话/事件流被请求留作诊断|不永久落盘；只保留脱敏执行信息和受访问控制的原始成功输出|
 |存在待校准成员|为校准保留 5 个 Screening 名额；其余按新 Feed、历史晋级顺序使用|
 |建校准批次但当日校准可用名额不足|不创建批次，提示剩余名额和最早重试时间|
 |校准固定成员 Screening 失败|成员不替换，以 model_failure pending 参与比较|
@@ -2014,6 +2086,7 @@ JGR 的已核查合法样本固定为 Wada et al.，DOI `10.1029/2025JD043927`�
 
 - 六段式真实 Research Profile；
 - 阶段 B 显式选择的版本化 Screening 与 Read provider/model；Read 模型不属于校准门禁输入；
+- 锁定 Pi/Node 执行环境与显式运行资源、版本化适配器策略、`prompt_only` 通道及固定模型认证；认证信息不进入版本化配置、SQLite、日志或报告；
 - 外部 LLM 数据发送确认；
 - 供 Unpaywall、Crossref、DataCite 与其他外部 HTTP 客户端复用的联系邮箱；
 - Wiley TDM token（用户在 Wiley Online Library 账户接受点击式 TDM 许可后取得；阶段 B 纵向验收经 TDM 通道取得 JGR 论文 PDF，缺失时降级为人工附加，不阻断其他流程）；
@@ -2024,7 +2097,7 @@ JGR 的已核查合法样本固定为 Wada et al.，DOI `10.1029/2025JD043927`�
 - 用户维护的主题列表；
 - 四刊期刊信誉档位；
 - 由用户手工选择并标注结论的 10–20 篇预热论文；
-- 预热后冻结的 Screening 与 reuse-assessment provider/model、提示词、契约、升级参数与规则。
+- 预热后冻结的 Screening 与 reuse-assessment provider/model、提示词、契约、适配器语义、升级参数与规则。
 
 启用无人值守运行前另需：
 
@@ -2037,6 +2110,7 @@ doctor 分别报告：
 
 - 基础工程 readiness；
 - Feed readiness；
+- Pi adapter readiness（执行环境、固定模型/认证、所选协议与隔离策略，不等同于校准通过）；
 - 校准 readiness；
 - 自动精读 gate；
 - 全文凭证 gate（Wiley TDM token 存在/有效/失效）；
@@ -2067,6 +2141,6 @@ doctor 分别报告：
 
 反弃权门槛不足时，只要 Screening 语义和建议规则未改变，就按四刊各 2 篇连续增加盲评样本并累计指标；这仍是原校准活动的扩样，不是调优后的重算。
 
-若 80% 精确率或 90% 防漏判指标不达标，可以依据已揭晓结果调整模型、提示词、Research Profile、输出契约、升级参数或建议规则，并复用原 32 篇人工标签重新计算。每次调整先由用户附理由分类为 minor 或 major，再编译并引用相应运行配置快照与校准语义基线，生成新的 Screening/复用升级制品、建议和 calibration evaluation。旧轮次不可覆盖。重算通过后，第一版允许用户据此开启自动精读，但所有状态页、报告和最终验收都必须明确标记：该结果拟合并复用了已经揭晓的标签，不是新论文上的独立验证；若重算使用的用户可见输入与原批次冻结输入不同，还必须额外显示 human_input_drift。
+若 80% 精确率或 90% 防漏判指标不达标，可以依据已揭晓结果调整模型、提示词、Research Profile、输出契约、升级参数、Screening/reuse 适配器语义或建议规则，并复用原 32 篇人工标签重新计算。每次调整先由用户附理由分类为 minor 或 major，再编译并引用相应运行配置快照与校准语义基线，生成新的 Screening/复用升级制品、建议和 calibration evaluation。旧轮次不可覆盖。重算通过后，第一版允许用户据此开启自动精读，但所有状态页、报告和最终验收都必须明确标记：该结果拟合并复用了已经揭晓的标签，不是新论文上的独立验证；若重算使用的用户可见输入与原批次冻结输入不同，还必须额外显示 human_input_drift。
 
 minor 变更继承既有门禁状态，但不能绕过阶段输入指纹；自动重算只覆盖 waiting_review、waiting_calibration 和尚无生效决定的论文，并在分级前显示篇数与按当前配额估算的耗时。已有人工决定继续生效并标记依据旧 Profile，既有正式分析不因 Profile 演进自动过期或重跑。major 变更立即关闭既有门禁，只有同标签重算或新盲评校准通过、并由用户针对新 evaluation 再次显式启用后才能开启；系统不静默恢复旧 enable。任何可能影响校准语义的变化在用户完成分级前只暂停自动精读，不由系统根据差异大小自行归类。
