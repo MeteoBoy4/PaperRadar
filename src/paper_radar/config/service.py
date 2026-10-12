@@ -9,6 +9,11 @@ from typing import Any
 
 from sqlalchemy.exc import SQLAlchemyError
 
+from paper_radar.config.adapter_loading import (
+    adapter_semantics,
+    selected_adapter_materials,
+)
+from paper_radar.config.adapters import ADAPTER_NAME, SYSTEM_PROMPT_NAME, PiAdapter
 from paper_radar.config.compile import (
     FORMAT_VERSION,
     CompiledMaterial,
@@ -25,7 +30,7 @@ from paper_radar.config.extraction import Extraction
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.schema import Models, Profile, Settings
 from paper_radar.config.topics import Topics
-from paper_radar.config.yaml_loader import read_yaml, validate_yaml_bytes
+from paper_radar.config.yaml_loader import read_prompt, read_yaml, validate_yaml_bytes
 from paper_radar.contracts import (
     ContractCheckError,
     ContractCheckErrorCategory,
@@ -84,17 +89,6 @@ def _unsupported(settings: Settings) -> None:
         raise ConfigError(
             f"settings.{selected[0]}：本票尚不支持非空选择；请移除或设为 null"
         )
-
-
-def _read_prompt(path: Path, name: str) -> bytes:
-    try:
-        raw = path.read_bytes()
-        raw.decode("utf-8")
-        return raw
-    except (OSError, UnicodeDecodeError):
-        raise ConfigError(
-            f"prompts.{name}：无法读取 UTF-8 提示词；请检查路径和编码"
-        ) from None
 
 
 def _contract_materials(
@@ -213,9 +207,7 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
     for name in _PROMPT_NAMES:
         version = getattr(settings.prompts, name)
         if version is not None:
-            raw = _read_prompt(
-                root / "prompts/screening" / f"{name}-{version}.md", name
-            )
+            raw = read_prompt(root / "prompts/screening" / f"{name}-{version}.md", name)
             additional.append(
                 CompiledMaterial(
                     Material(MaterialKind.PROMPT, name, version, raw),
@@ -228,6 +220,10 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
             additional.extend(
                 _contract_materials(root, selector, contract_name, version)
             )
+    adapter_materials, adapters = selected_adapter_materials(
+        settings_path.parent, settings, models
+    )
+    additional.extend(adapter_materials)
     return SelectedMaterials(
         settings=settings,
         profile=profile,
@@ -237,6 +233,7 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
         additional=tuple(additional),
         escalation=escalation,
         extraction=extraction,
+        adapters=adapters,
     )
 
 
@@ -326,6 +323,8 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         topics: Topics | None = None
         escalation: Escalation | None = None
         extraction: Extraction | None = None
+        adapters: dict[str, PiAdapter] = {}
+        system_prompts: dict[str, bytes] = {}
         additional: list[CompiledMaterial] = []
         for entry in listed:
             key = (entry["kind"], entry["name"], entry["version"])
@@ -372,6 +371,25 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                     or extraction.compiled_config() != entry["config"]
                 ):
                     raise ValueError
+                additional.append(CompiledMaterial(material, entry["config"]))
+            elif (
+                material.kind is MaterialKind.ADAPTER and material.name == ADAPTER_NAME
+            ):
+                adapter = validate_yaml_bytes(raw, PiAdapter, "adapter")
+                if (
+                    adapter.version != key[2]
+                    or adapter.model_dump(mode="json") != entry["config"]
+                ):
+                    raise ValueError
+                adapters[key[2]] = adapter
+                additional.append(CompiledMaterial(material, entry["config"]))
+            elif (
+                material.kind is MaterialKind.PROMPT
+                and material.name == SYSTEM_PROMPT_NAME
+            ):
+                if {"text": raw.decode("utf-8")} != entry["config"]:
+                    raise ValueError
+                system_prompts[key[2]] = raw
                 additional.append(CompiledMaterial(material, entry["config"]))
             elif (
                 material.kind is MaterialKind.PROMPT and material.name in _PROMPT_NAMES
@@ -428,6 +446,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 MaterialKind.CONTRACT_SCHEMA,
                 MaterialKind.CONTRACT_MANIFEST,
             )
+            and item.material.name != SYSTEM_PROMPT_NAME
         }
         if expected_keys != actual_keys:
             raise ValueError
@@ -440,6 +459,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             additional=tuple(additional),
             escalation=escalation,
             extraction=extraction,
+            adapters=adapter_semantics(settings, models, adapters, system_prompts),
         )
         rebuilt = compile_snapshot(materials)
         if rebuilt.snapshot_id != snapshot_id or rebuilt.payload_json != saved_json:

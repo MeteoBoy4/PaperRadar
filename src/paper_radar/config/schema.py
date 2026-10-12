@@ -122,6 +122,19 @@ class ContractSelectors(BaseModel):
         return valid_declared_version(value) if value is not None else None
 
 
+class AdapterSelectors(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    screening: str | None = None
+    reuse_assessment: str | None = None
+    reading: str | None = None
+
+    @field_validator("screening", "reuse_assessment", "reading")
+    @classmethod
+    def valid_version(cls, value: str | None) -> str | None:
+        return valid_declared_version(value) if value is not None else None
+
+
 class Settings(BaseModel):
     """settings.yaml 只含选择。后续票逐种开放非空选择。"""
 
@@ -135,6 +148,7 @@ class Settings(BaseModel):
     contracts: ContractSelectors = ContractSelectors()
     escalation: str | None = None
     extraction: str | None = None
+    adapters: AdapterSelectors = AdapterSelectors()
 
     @field_validator("profile", "models", "topics", "escalation", "extraction")
     @classmethod

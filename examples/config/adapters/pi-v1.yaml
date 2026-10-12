@@ -1,0 +1,13 @@
+# 工程验收合成材料；1.1.0 是审计版本示例，不选择或安装实际 Pi。
+version: pi-v1
+backend: pi-rpc
+pi_version: 1.1.0
+adapter_version: transport-v1
+thinking_level: low
+policy:
+  version: bounded-rpc-v1
+resources:
+  - kind: system_prompt
+    name: pi-system
+    version: v1
+    sha256: 8b0188e425cc6a77059940a6a5c371f39f8eb28346ef504c5a3ec6b247747c25

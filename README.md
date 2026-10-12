@@ -5,6 +5,8 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓
 四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
 只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数与正文提取配置快照的显式迁移、检查、编译与历史加载。
 网络来源和论文处理命令尚未实现。
+另可登记 Pi adapter 的三个独立选择、完整有效系统指令、资源哈希、推理档位与
+固定调用策略；其只读语义供后续统一投影消费。
 
 ## 环境与安装
 
@@ -78,6 +80,11 @@ uv run --offline --locked paper-radar config compile \
 认证、实际参数能力或运行隔离。旧 models 与示例选择保留，以维持历史版本和快照
 回放；配置层继续接受既有协议，不代表 Pi 会支持或自动切换这些协议。
 接入目标与边界见 [ADR-0026](docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。
+示例独立选择三个 adapter 槽，使用一份 `adapters/pi-v1.yaml` 与它引用的
+`config/prompts/pi-system-v1.md`。未选择 adapter 时明确显示 unconfigured；旧快照
+身份和回放保持不变。完整字段、固定策略及阶段/校准消费者依赖见
+[Pi adapter 配置契约](docs/contracts/adapter-config.md)。配置事实不证明执行隔离、
+实际有效输入或校准通过；统一阶段投影、校准基线和 diff 联动仍待 #23。
 
 ## Screening 输出验证
 

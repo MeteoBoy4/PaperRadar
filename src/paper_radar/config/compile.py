@@ -8,6 +8,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Any
 
+from paper_radar.config.adapters import AdapterSemantics
 from paper_radar.config.escalation import Escalation, EscalationSemantics
 from paper_radar.config.extraction import Extraction, ExtractionSemantics
 from paper_radar.config.identity import canonical_json, sha256
@@ -67,6 +68,9 @@ class MissingReason(StrEnum):
     SUGGESTION_RULE = "suggestion_rule"
     ESCALATION_PARAMETERS = "escalation_parameters"
     DECISION_REASONS_CONTRACT = "decision_reasons_contract"
+    SCREENING_ADAPTER_PROMPT_PLACEHOLDER = "screening_adapter_prompt_placeholder"
+    REUSE_ADAPTER_PROMPT_PLACEHOLDER = "reuse_adapter_prompt_placeholder"
+    READ_ADAPTER_PROMPT_PLACEHOLDER = "read_adapter_prompt_placeholder"
 
 
 class MaterialKind(StrEnum):
@@ -75,6 +79,7 @@ class MaterialKind(StrEnum):
     MODELS = "models"
     ESCALATION = "escalation"
     EXTRACTION = "extraction"
+    ADAPTER = "adapter"
     PROMPT = "prompt"
     CONTRACT_SCHEMA = "contract_schema"
     CONTRACT_MANIFEST = "contract_manifest"
@@ -110,6 +115,7 @@ class SelectedMaterials:
     additional: tuple[CompiledMaterial, ...]
     escalation: Escalation | None = None
     extraction: Extraction | None = None
+    adapters: tuple[tuple[str, AdapterSemantics], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,6 +136,36 @@ class RuntimeConfigSnapshot:
     enabled_topics: tuple[EnabledTopic, ...]
     escalation: EscalationSemantics | None
     extraction: ExtractionSemantics | None
+    adapters: Mapping[str, AdapterSemantics | None]
+
+    @property
+    def adapter_slots(self) -> Mapping[str, SlotStatus]:
+        return MappingProxyType(
+            {
+                slot: (
+                    SlotStatus.UNCONFIGURED
+                    if semantics is None
+                    else SlotStatus.PLACEHOLDER
+                    if text_is_placeholder(semantics.system_prompt_text)
+                    else SlotStatus.CONFIGURED
+                )
+                for slot, semantics in self.adapters.items()
+            }
+        )
+
+    @property
+    def adapter_dependencies(self) -> Mapping[str, tuple[StageName, ...]]:
+        return MappingProxyType(
+            {
+                "screening": (StageName.BOUNDARY, StageName.VALUE),
+                "reuse_assessment": (StageName.REUSE,),
+                "reading": (StageName.READ,),
+            }
+        )
+
+    @property
+    def calibration_adapter_slots(self) -> tuple[str, ...]:
+        return ("screening", "reuse_assessment")
 
 
 def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
@@ -194,6 +230,13 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
         }
         if chosen:
             selectors[group] = chosen
+    chosen_adapters = {
+        name: version
+        for name, version in settings.adapters.model_dump().items()
+        if version is not None
+    }
+    if chosen_adapters:
+        selectors["adapters"] = chosen_adapters
     payload = {
         "format_version": FORMAT_VERSION,
         "selectors": selectors,
@@ -202,6 +245,16 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
     missing_profile = (
         () if profile_status is SlotStatus.CONFIGURED else (MissingReason.PROFILE,)
     )
+    adapters = dict(materials.adapters)
+
+    def adapter_reason(
+        slot: str, placeholder: MissingReason
+    ) -> tuple[MissingReason, ...]:
+        selected = adapters.get(slot)
+        if selected is not None and text_is_placeholder(selected.system_prompt_text):
+            return (placeholder,)
+        return ()
+
     model_slots = {
         name: model_slot_status(getattr(models, name) if models else None)
         for name in MODEL_SLOTS
@@ -252,6 +305,9 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
     boundary_missing = (
         *missing_profile,
         *screening_model_missing,
+        *adapter_reason(
+            "screening", MissingReason.SCREENING_ADAPTER_PROMPT_PLACEHOLDER
+        ),
         *prompt_reason(
             StageName.BOUNDARY,
             MissingReason.BOUNDARY_PROMPT,
@@ -262,6 +318,9 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
     value_missing = (
         *missing_profile,
         *screening_model_missing,
+        *adapter_reason(
+            "screening", MissingReason.SCREENING_ADAPTER_PROMPT_PLACEHOLDER
+        ),
         *prompt_reason(
             StageName.VALUE,
             MissingReason.VALUE_PROMPT,
@@ -272,6 +331,9 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
     )
     reuse_missing = (
         *missing_profile,
+        *adapter_reason(
+            "reuse_assessment", MissingReason.REUSE_ADAPTER_PROMPT_PLACEHOLDER
+        ),
         *model_reason(
             "reuse_assessment",
             MissingReason.REUSE_MODEL,
@@ -316,6 +378,9 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
             StageStatus.NOT_READY,
             (
                 *missing_profile,
+                *adapter_reason(
+                    "reading", MissingReason.READ_ADAPTER_PROMPT_PLACEHOLDER
+                ),
                 *model_reason(
                     "reading",
                     MissingReason.READ_MODEL,
@@ -344,4 +409,5 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
         enabled_topics=topics.enabled_topics if topics is not None else (),
         escalation=escalation.semantics if escalation is not None else None,
         extraction=extraction.semantics if extraction is not None else None,
+        adapters=MappingProxyType({name: adapters.get(name) for name in MODEL_SLOTS}),
     )

@@ -15,6 +15,16 @@ from yaml.nodes import MappingNode, ScalarNode
 
 from paper_radar.config.errors import VALIDATION_GUIDANCE, ConfigError
 
+_FIELD_NAME = re.compile(r"^[a-z_][a-z0-9_]{0,63}$")
+
+
+def _safe_field_name(value: object) -> str:
+    if isinstance(value, int) or (
+        isinstance(value, str) and _FIELD_NAME.fullmatch(value)
+    ):
+        return str(value)
+    return "未知字段"
+
 
 class _StrictLoader(yaml.SafeLoader):
     yaml_implicit_resolvers = {  # noqa: RUF012
@@ -45,7 +55,9 @@ class _StrictLoader(yaml.SafeLoader):
             if not isinstance(key, str):
                 raise ConfigError("YAML 字段名必须是文本")
             if key in result:
-                raise ConfigError(f"YAML 字段 {key} 重复")
+                raise ConfigError(
+                    f"YAML 字段 {_safe_field_name(key)} 重复；请删除重复键"
+                )
             result[key] = self.construct_object(value_node, deep=deep)
         return result
 
@@ -86,7 +98,7 @@ def _reject_nonfinite(value: Any, path: str) -> None:
         raise ConfigError(f"{path}：不允许非有限浮点数")
     if isinstance(value, dict):
         for key, item in value.items():
-            _reject_nonfinite(item, f"{path}.{key}")
+            _reject_nonfinite(item, f"{path}.{_safe_field_name(key)}")
     elif isinstance(value, list):
         for index, item in enumerate(value):
             _reject_nonfinite(item, f"{path}[{index}]")
@@ -110,7 +122,7 @@ def validate_yaml_bytes[T: BaseModel](raw: bytes, model: type[T], label: str) ->
         return model.model_validate(documents[0])
     except ValidationError as error:
         first = error.errors(include_input=False, include_context=False)[0]
-        location = ".".join(str(part) for part in first["loc"])
+        location = ".".join(_safe_field_name(part) for part in first["loc"])
         guidance = VALIDATION_GUIDANCE.get(
             first["type"], "字段缺失、类型错误或不受支持"
         )
@@ -123,3 +135,14 @@ def read_yaml[T: BaseModel](path: Path, model: type[T], label: str) -> tuple[byt
     except OSError:
         raise ConfigError(f"{label}：无法读取文件；请检查路径和权限") from None
     return raw, validate_yaml_bytes(raw, model, label)
+
+
+def read_prompt(path: Path, name: str) -> bytes:
+    try:
+        raw = path.read_bytes()
+        raw.decode("utf-8")
+        return raw
+    except (OSError, UnicodeDecodeError):
+        raise ConfigError(
+            f"prompts.{name}：无法读取 UTF-8 提示词；请检查路径和编码"
+        ) from None

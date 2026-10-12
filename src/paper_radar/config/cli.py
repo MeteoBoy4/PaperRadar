@@ -28,6 +28,8 @@ boundary、value、复用升级与建议规则分别报告配置就绪及缺项�
 正文提取配置就绪不证明 fixture gate 或资源检查通过，不验证模型文件存在。
 配置就绪不证明模型、摘录、校准或自动精读可运行。空主题集合与全部停用都算已配置。
 其他尚未开放的非空选择会拒绝。
+adapters 三槽独立选择 Pi 语义材料；冻结系统指令、资源哈希、推理档位和固定隔离策略。
+仅登记配置事实，不安装 Pi/Node、不执行 RPC；没有适配器选择时明确显示 unconfigured。
 两者均不访问网络、模型或凭据，不消耗自动配额。
 帮助不读文件或数据库；错误返回 2，结果只写入终端。
 示例：paper-radar config check --settings config/settings.yaml
@@ -48,6 +50,9 @@ def _report(snapshot: RuntimeConfigSnapshot) -> None:
     for slot, status in snapshot.model_slots.items():
         typer.echo(f"models.{slot}：{status.value}")
     typer.echo(f"主题集合：{snapshot.topics_status.value}")
+    for slot, status in snapshot.adapter_slots.items():
+        typer.echo(f"adapters.{slot}：{status.value}")
+    typer.echo("配置完整性不证明 Pi 执行就绪、校准通过或自动精读资格。")
     for stage, readiness in snapshot.stages.items():
         missing = ", ".join(reason.value for reason in readiness.missing)
         typer.echo(f"{stage.value}：{readiness.status.value}；缺项：{missing}")

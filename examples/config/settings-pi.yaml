@@ -1,6 +1,10 @@
 # Pi V1 目标协议的配置完整性示例，不是真实 Profile 或执行就绪检查。
 profile: profile-example-v1
 models: models-pi-v1
+adapters:
+  screening: pi-v1
+  reuse_assessment: pi-v1
+  reading: pi-v1
 topics: topics-v1
 escalation: reuse-escalation-v1
 prompts:

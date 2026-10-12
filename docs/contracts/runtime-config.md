@@ -26,6 +26,7 @@ provider/model、secret 或凭据引用。CLI 必须显式传 `--settings` 和 `
 | `extraction` | 声明版本或 `null` | 选择 `config/extraction/<version>.yaml`；[正文提取配置](extraction-config.md) 定义工具链、模型清单和有效策略。 |
 | `escalation` | 声明版本或 `null` | 选择 `config/screening/<version>.yaml`；文件内登记触发集合、固定摘录顺序和算法身份。 |
 | `models` | 声明版本或 `null` | 整份 `config/models/<version>.yaml`；三个模型槽在文件内具名，settings 不内联 provider/model。 |
+| `adapters.screening` / `adapters.reuse_assessment` / `adapters.reading` | 各自为声明版本或 `null` | 独立选择 `config/adapters/<version>.yaml`；[Pi adapter 配置](adapter-config.md) 定义系统指令、资源、参数、审计版本与固定策略。 |
 | `prompts.boundary` | 声明版本或 `null` | 绑定 `prompts/screening/boundary-<version>.md` 的原始 UTF-8 字节。 |
 | `contracts.boundary` | `v1` 或 `null` | 从 `contracts/screening/boundary/v1/{schema,manifest}.json` 检查并登记两份原始字节。 |
 | `prompts.value` | 声明版本或 `null` | 绑定 `prompts/screening/value-<version>.md` 的原始 UTF-8 字节。 |
@@ -39,6 +40,8 @@ provider/model、secret 或凭据引用。CLI 必须显式传 `--settings` 和 `
 `kind`、`name`、`version`、`raw_sha256` 和编译值；后续新增材料种类只增加带
 种类和版本键的条目，不提升编译格式版本。只有包络结构改变时才提升格式版本。
 选择了尚未开放的非空字段会返回 2，并给出字段路径；不会忽略选择。
+另开放 `adapter/pi-rpc` 和 `prompt/pi-system`；后者引用来自 adapter 资源清单，
+位置在 `config/prompts/`，与业务 Prompt 分开登记。
 
 Profile 文件的 `version` 必须与 selector 完全相同。六段字段为 `background`、
 `core_questions`、`transferable_methods`、`available_data_and_tools`、

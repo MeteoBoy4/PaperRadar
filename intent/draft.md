@@ -879,6 +879,8 @@ config/
   profiles/profile-v1.yaml
   topics/topics-v1.yaml
   models/models-v1.yaml
+  adapters/pi-v1.yaml
+  prompts/pi-system-v1.md
   extraction/extraction-v1.yaml
   screening/reuse-escalation-v1.yaml
 prompts/
@@ -1113,6 +1115,12 @@ V1 首次接入使用 `prompt_only`：提示词要求最终纯 JSON 文本，Pyt
 适配器语义配置同样不可原地改写：固定有效系统提示词、工具 allowlist 与实现哈希、运行策略及参数。Screening/reuse 使用的共有 Pi 行为改变时，必须纳入校准变更检测并由用户分级；纯 Read 行为变化只影响 Read。切换到 Pi 或启用提交工具都不能直接宣布既有校准仍有效，也不能自动归为 minor 或 major。
 
 ### 7.7 Pi RPC 适配边界
+
+Issue #26 的配置切片已开放 settings 的 adapters 三槽、Pi YAML 与独立系统 Prompt
+登记/回放，以及具名只读 adapter 语义和消费者依赖。字段、路径和固定 V1 策略见
+[适配器配置契约](../docs/contracts/adapter-config.md)。没有 adapter 的旧快照保持
+原身份和含义；该配置切片不执行 RPC 或安装程序。统一阶段投影、校准基线及 diff
+联动仍待 #23，不能把 adapter 分量身份冒称为完整基线或执行就绪证明。
 
 接入依据为 [Pi 可行性研究](discussions/pi-agent-contract-feasibility.md) §5 与其中“我的决策”，架构决策见 [ADR-0026](../docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。Python 确定性程序构造阶段输入、版本、哈希与预算，经 Pi RPC 取得候选结构输出，再用 PaperRadar 权威 Pydantic Schema 与业务规则决定是否接收；只有接收成功后，PaperRadar 才产生建议、写事实并处理校准与任务资格。
 
