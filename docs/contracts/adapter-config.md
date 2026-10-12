@@ -23,9 +23,11 @@ V1 封闭逻辑名为 `pi-rpc`，登记键为 `(adapter, pi-rpc, declared_versio
 不定义通用 harness、插件或自由资源注册表。
 
 V1 唯一显式资源为完整有效系统指令，复用 `PROMPT` 登记机制，封闭逻辑名
-`pi-system`，与 `boundary/value/reuse` 分开，即使同为 `v1` 也不共用登记键。
+`pi-system`，与 `boundary/value/reuse/reading` 分开，即使同为 `v1` 也不共用登记键。
 版本来自资源引用，正文无需内嵌声明；位置为 settings 相邻的
-`prompts/pi-system-<version>.md`。业务 Prompt 仍在配置根的 `prompts/screening/`。
+`prompts/pi-system-<version>.md`。Screening 业务 Prompt 在配置根的
+`prompts/screening/<name>-<version>.md`，Read 业务 Prompt 在
+`prompts/reading/<version>.md`，由 `settings.prompts.reading` 选择。
 
 ```yaml
 version: pi-v1
