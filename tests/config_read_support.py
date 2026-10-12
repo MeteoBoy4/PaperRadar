@@ -17,18 +17,19 @@ def read_inputs(root: Path) -> tuple[Path, Path]:
     (root / "prompts/reading/v1.md").write_bytes(READ_PROMPT)
     models = settings.parent / "models/models-v1.yaml"
     models.write_text(
-        models.read_text().replace(
-            "reading: null",
-            "reading:\n  provider: provider-a\n"
-            "  model: read-model\n  protocol: prompt_only",
-        ),
+        "version: models-v1\n"
+        "screening:\n  provider: provider-a\n"
+        "  model: real-model\n  protocol: json_schema\n"
+        "reuse_assessment: null\n"
+        "reading:\n  provider: provider-a\n"
+        "  model: read-model\n  protocol: prompt_only\n",
         encoding="utf-8",
     )
     settings.write_text(
-        settings.read_text().replace(
-            "  boundary: v1\ncontracts", "  boundary: v1\n  reading: v1\ncontracts"
-        )
-        + "read: read-v1\n",
+        "profile: profile-v1\nmodels: models-v1\n"
+        "prompts:\n  boundary: v1\n  reading: v1\n"
+        "contracts:\n  boundary: v1\n"
+        "read: read-v1\n",
         encoding="utf-8",
     )
     return settings, db

@@ -47,7 +47,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/compile.py",
-        "f01a69897969ccacc5803b1ab88f94a853d27ffb4f89595effefd0f0a1f8c633",
+        "6ec8f65b407226563d9a151cf9f914719ff0f0a2db44cd919b6982a8837a526f",
     ),
     (
         "src/paper_radar/config/escalation.py",
@@ -63,11 +63,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/schema.py",
-        "415efb4841fe1454f2af78842eac8177445d63cc3c30a108b13c48c3120b2ef8",
+        "9e21dd519d13c0d98a6e99758285df7d0dd9f1aaac1df17d3df7be2771a8935f",
     ),
     (
         "src/paper_radar/config/service.py",
-        "41a3a3f9ae61a9beb956ad6037323c4eb6f885bf9af3065339d44987019b99b5",
+        "263b6e9f75760f6d98bd1045b6bf2586a53e5fd5eb14d1d68d2673672a771283",
     ),
     (
         "src/paper_radar/config/topics.py",
@@ -163,7 +163,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/config_read_support.py",
-        "010c9dcbf6a7526041633b46bfda146cdfdb07bb03ca0c6dfbbac08d3496f77a",
+        "e7f862a6959c56301046f18a57cb1524262c5e3e321797b6c00f04e5ff8fbf95",
     ),
 )
 

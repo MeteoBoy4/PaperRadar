@@ -92,6 +92,13 @@ def model_slot_status(value: ModelSlot | None) -> SlotStatus:
     return SlotStatus.CONFIGURED
 
 
+class PromptName(StrEnum):
+    BOUNDARY = "boundary"
+    VALUE = "value"
+    REUSE = "reuse"
+    READING = "reading"
+
+
 class PromptSelectors(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 

@@ -18,6 +18,7 @@ from paper_radar.config.schema import (
     PROFILE_FIELDS,
     Models,
     Profile,
+    PromptName,
     Settings,
     SlotStatus,
     model_slot_status,
@@ -283,7 +284,7 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
     )
 
     def prompt_reason(
-        name: str, missing: MissingReason, placeholder: MissingReason
+        name: PromptName, missing: MissingReason, placeholder: MissingReason
     ) -> tuple[MissingReason, ...]:
         prompt = next(
             (
@@ -317,7 +318,7 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
             "screening", MissingReason.SCREENING_ADAPTER_PROMPT_PLACEHOLDER
         ),
         *prompt_reason(
-            StageName.BOUNDARY,
+            PromptName.BOUNDARY,
             MissingReason.BOUNDARY_PROMPT,
             MissingReason.BOUNDARY_PROMPT_PLACEHOLDER,
         ),
@@ -330,7 +331,7 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
             "screening", MissingReason.SCREENING_ADAPTER_PROMPT_PLACEHOLDER
         ),
         *prompt_reason(
-            StageName.VALUE,
+            PromptName.VALUE,
             MissingReason.VALUE_PROMPT,
             MissingReason.VALUE_PROMPT_PLACEHOLDER,
         ),
@@ -348,7 +349,7 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
             MissingReason.REUSE_MODEL_PLACEHOLDER,
         ),
         *prompt_reason(
-            StageName.REUSE,
+            PromptName.REUSE,
             MissingReason.REUSE_PROMPT,
             MissingReason.REUSE_PROMPT_PLACEHOLDER,
         ),
@@ -395,7 +396,7 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
                     MissingReason.READ_MODEL_PLACEHOLDER,
                 ),
                 *prompt_reason(
-                    "reading",
+                    PromptName.READING,
                     MissingReason.READ_PROMPT,
                     MissingReason.READ_PROMPT_PLACEHOLDER,
                 ),

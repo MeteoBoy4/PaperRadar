@@ -114,6 +114,9 @@ V1 的 Pi 接入选择 `prompt_only`（[ADR-0026](../adr/0026-control-pi-through
 
 提示词的逻辑名为 `boundary`、`value`、`reuse` 或 `reading`，声明版本来自对应 `settings.prompts.*`，Prompt 本身无需内嵌版本。文件去除首尾空白后为空或精确等于 ASCII `...` 时为占位。两个声明版本可登记完全相同的 Prompt 原始字节；同一版本任何字节变化都拒绝。Profile 的文件内版本与 selector 一致性仍是强制要求。
 `prompt/reading` 是 Read 业务提示词，与 `prompt/pi-system` 的有效系统指令使用不同登记键。
+四个业务逻辑名由纯配置类型 `paper_radar.config.schema.PromptName` 统一声明，
+独立于阶段名（Read 阶段为 `read`，业务 Prompt 为 `reading`）。加载服务以固定
+路径表选择材料；这项内部重构不改变 selector、登记键、文件布局或快照身份。
 
 活跃 boundary、value-prediction、reuse-assessment 与 decision-reasons 契约只支持 A1 权威 `v1`。check/compile 调用其公开只读检查，并将同一份通过检查的 schema 与 manifest 字节分别登记；它们的哈希和编译值一起进入快照。缺失、损坏、版本错误或内容漂移使整次命令失败，错误显示受控类别与中文处理指引，不会修复或导出。历史 load 从数据库核对已登记字节与快照身份，即使原冻结目录后来被移动或损坏，历史仍可读取。
 

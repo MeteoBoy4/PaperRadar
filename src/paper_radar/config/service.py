@@ -21,7 +21,6 @@ from paper_radar.config.compile import (
     MaterialKind,
     RuntimeConfigSnapshot,
     SelectedMaterials,
-    StageName,
     compile_snapshot,
 )
 from paper_radar.config.errors import ConfigError
@@ -29,7 +28,7 @@ from paper_radar.config.escalation import Escalation
 from paper_radar.config.extraction import Extraction
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.read import ReadConfig
-from paper_radar.config.schema import Models, Profile, Settings
+from paper_radar.config.schema import Models, Profile, PromptName, Settings
 from paper_radar.config.topics import Topics
 from paper_radar.config.yaml_loader import read_prompt, read_yaml, validate_yaml_bytes
 from paper_radar.contracts import (
@@ -56,7 +55,13 @@ _TOPICS_KEY = (MaterialKind.TOPICS, "topics")
 _ESCALATION_KEY = (MaterialKind.ESCALATION, "escalation")
 _EXTRACTION_KEY = (MaterialKind.EXTRACTION, "extraction")
 _READ_KEY = (MaterialKind.READ, "read")
-_PROMPT_NAMES = (StageName.BOUNDARY, StageName.VALUE, StageName.REUSE, "reading")
+_PROMPT_NAMES = tuple(PromptName)
+_PROMPT_PATHS = {
+    PromptName.BOUNDARY: "prompts/screening/boundary-{version}.md",
+    PromptName.VALUE: "prompts/screening/value-{version}.md",
+    PromptName.REUSE: "prompts/screening/reuse-{version}.md",
+    PromptName.READING: "prompts/reading/{version}.md",
+}
 _CONTRACT_NAMES = {
     "boundary": ContractName.BOUNDARY,
     "value_prediction": ContractName.VALUE_PREDICTION,
@@ -220,11 +225,7 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
     for name in _PROMPT_NAMES:
         version = getattr(settings.prompts, name)
         if version is not None:
-            path = (
-                root / "prompts/reading" / f"{version}.md"
-                if name == "reading"
-                else root / "prompts/screening" / f"{name}-{version}.md"
-            )
+            path = root / _PROMPT_PATHS[name].format(version=version)
             raw = read_prompt(path, name)
             additional.append(
                 CompiledMaterial(
