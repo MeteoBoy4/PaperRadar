@@ -21,6 +21,10 @@ _RESOURCE_HASH = re.compile(r"^[0-9a-f]{64}$")
 ThinkingLevel = Literal["off", "minimal", "low", "medium", "high", "xhigh", "max"]
 
 
+def _tuple_or_passthrough(value: object) -> object:
+    return tuple(value) if isinstance(value, list) else value
+
+
 class _FrozenConfig(BaseModel):
     model_config = ConfigDict(
         extra="forbid", strict=True, frozen=True, validate_default=True
@@ -67,7 +71,7 @@ class PiPolicy(_FrozenConfig):
     @field_validator("tools", mode="before")
     @classmethod
     def tool_list(cls, value: object) -> object:
-        return tuple(value) if isinstance(value, list) else value
+        return _tuple_or_passthrough(value)
 
 
 class PiAdapter(_FrozenConfig):
@@ -97,7 +101,7 @@ class PiAdapter(_FrozenConfig):
     @field_validator("resources", mode="before")
     @classmethod
     def resource_list(cls, value: object) -> object:
-        return tuple(value) if isinstance(value, list) else value
+        return _tuple_or_passthrough(value)
 
     def semantics(self, system_prompt_text: str) -> AdapterSemantics:
         return AdapterSemantics(

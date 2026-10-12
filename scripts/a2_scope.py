@@ -55,7 +55,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/errors.py",
-        "2c2326032de9559b3a5e19818eab3139ff9a8c83b761550d6e3a61e1e2954e63",
+        "aa165dbf836df09f92e0d6fe4f1402f7d3f8612a45e831a2b362f0b1e33be29a",
     ),
     (
         "src/paper_radar/config/identity.py",
@@ -67,7 +67,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/service.py",
-        "e6ce26b41526da8be8590bb6867383ef763c9d23af36504ec1f6846e44c87f68",
+        "f0d309c62aeae623e66a1f1b5b5f19970b45b3ae99fe16c2f39d9993ec42aed5",
     ),
     (
         "src/paper_radar/config/topics.py",
@@ -75,7 +75,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/yaml_loader.py",
-        "15c6a3d4349c1e70de1809670cdd1c4bda1cfeb784d51aaf51f323d4d1a1c93c",
+        "5c5c88473481ba27a71dd4512565e04965fc46a14e23947b953b71a7bdaee1b8",
     ),
     (
         "src/paper_radar/storage/database.py",
@@ -147,11 +147,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/adapters.py",
-        "711e0fbbbb6eec03930e4300561d5f171cfaafeb615f80ed617a9f62a2ae73aa",
+        "1d76bb8fc4890f0826fee3d397541d90b9b7df2e2774cb3eb01d4a90f481a48f",
     ),
     (
         "src/paper_radar/config/adapter_loading.py",
-        "c1b75bfe1064afa1d973f4ba837e76970d4f87b070584c75a40d800202c3c2d5",
+        "ca79d39630e78e81fea0ce8940be91e71ee809f8b5b73aafc14986283f8c94a7",
+    ),
+    (
+        "tests/config_adapter_support.py",
+        "04e71ec7c1a888844a7b55c3a1fe8d2dc3445866f08f3fa8f9481ff5b8a345ce",
     ),
 )
 

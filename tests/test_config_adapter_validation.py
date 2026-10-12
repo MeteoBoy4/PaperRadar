@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from paper_radar.config import ConfigError, check_config, compile_config
-from tests.config_adapter_support import adapter_inputs
+from tests.config_adapter_support import SYSTEM_PROMPT, adapter_inputs
 
 
 @pytest.mark.parametrize(
@@ -156,3 +156,32 @@ def test_pin_and_hash_format_errors_explain_the_required_format(
     with pytest.raises(ConfigError, match=guidance) as error:
         check_config(settings, db)
     assert "PRIVATE_MARKER" not in str(error.value)
+
+
+@pytest.mark.parametrize("slot", ["screening", "reuse_assessment", "reading"])
+def test_dangling_adapter_selector_identifies_its_slot_without_echoing_content(
+    tmp_path: Path, slot: str
+) -> None:
+    settings, _, db = adapter_inputs(tmp_path)
+    settings.write_text(
+        settings.read_text().replace(f"{slot}: pi-v1", f"{slot}: pi-absent")
+    )
+    for service in (check_config, compile_config):
+        with pytest.raises(ConfigError, match=rf"adapters\.{slot}") as error:
+            service(settings, db)
+        assert "无法读取文件" in str(error.value)
+        assert SYSTEM_PROMPT.decode() not in str(error.value)
+
+
+def test_adapter_version_mismatch_identifies_the_independent_selector(
+    tmp_path: Path,
+) -> None:
+    settings, path, db = adapter_inputs(tmp_path)
+    settings.write_text(
+        settings.read_text().replace("reading: pi-v1", "reading: pi-v2")
+    )
+    (path.parent / "pi-v2.yaml").write_text(path.read_text() + "# PRIVATE_MARKER\n")
+    for service in (check_config, compile_config):
+        with pytest.raises(ConfigError, match=r"settings\.adapters\.reading") as error:
+            service(settings, db)
+        assert "PRIVATE_MARKER" not in str(error.value)

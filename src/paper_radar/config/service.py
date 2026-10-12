@@ -383,21 +383,15 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                     raise ValueError
                 adapters[key[2]] = adapter
                 additional.append(CompiledMaterial(material, entry["config"]))
-            elif (
-                material.kind is MaterialKind.PROMPT
-                and material.name == SYSTEM_PROMPT_NAME
+            elif material.kind is MaterialKind.PROMPT and material.name in (
+                SYSTEM_PROMPT_NAME,
+                *_PROMPT_NAMES,
             ):
                 if {"text": raw.decode("utf-8")} != entry["config"]:
                     raise ValueError
-                system_prompts[key[2]] = raw
-                additional.append(CompiledMaterial(material, entry["config"]))
-            elif (
-                material.kind is MaterialKind.PROMPT and material.name in _PROMPT_NAMES
-            ):
-                if (
-                    key[2] != getattr(settings.prompts, material.name)
-                    or {"text": raw.decode("utf-8")} != entry["config"]
-                ):
+                if material.name == SYSTEM_PROMPT_NAME:
+                    system_prompts[key[2]] = raw
+                elif key[2] != getattr(settings.prompts, material.name):
                     raise ValueError
                 additional.append(CompiledMaterial(material, entry["config"]))
             elif (

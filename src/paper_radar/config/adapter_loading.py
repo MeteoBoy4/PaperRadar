@@ -18,7 +18,7 @@ from paper_radar.config.yaml_loader import read_prompt, read_yaml
 
 
 def selected_adapter_materials(
-    config_root: Path, settings: Settings, models: Models | None
+    config_dir: Path, settings: Settings, models: Models | None
 ) -> tuple[tuple[CompiledMaterial, ...], tuple[tuple[str, AdapterSemantics], ...]]:
     """同一声明版本只装载一次。所有资源绑定精确内容而非外部路径。"""
     adapters: dict[str, PiAdapter] = {}
@@ -28,12 +28,16 @@ def selected_adapter_materials(
         version = getattr(settings.adapters, slot)
         if version is None or version in adapters:
             continue
-        raw, config = read_yaml(
-            config_root / "adapters" / f"{version}.yaml", PiAdapter, "adapter"
-        )
+        try:
+            raw, config = read_yaml(
+                config_dir / "adapters" / f"{version}.yaml", PiAdapter, "adapter"
+            )
+        except ConfigError as error:
+            raise ConfigError(f"adapters.{slot}：{error}") from None
         if config.version != version:
             raise ConfigError(
-                "adapter.version：与 selector 不一致；请选择匹配的声明版本"
+                f"adapter.version：与 settings.adapters.{slot} 不一致；"
+                "请选择匹配的声明版本"
             )
         adapters[version] = config
         materials.append(
@@ -45,7 +49,7 @@ def selected_adapter_materials(
         resource = config.resources[0]
         if resource.version not in prompts:
             prompt = read_prompt(
-                config_root / "prompts" / f"pi-system-{resource.version}.md",
+                config_dir / "prompts" / f"pi-system-{resource.version}.md",
                 SYSTEM_PROMPT_NAME,
             )
             prompts[resource.version] = prompt

@@ -46,3 +46,22 @@ def test_help_has_no_config_database_or_external_io(
     result = run_cli(tmp_path, *args, "--help", help_only=True)
     assert result.returncode == 0, result.stderr
     assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize("command", ["check", "compile"])
+@pytest.mark.parametrize("slot", ["screening", "reuse_assessment", "reading"])
+def test_cli_rejects_dangling_adapter_selection_with_an_actionable_slot(
+    tmp_path: Path, command: str, slot: str
+) -> None:
+    settings, _, db = adapter_inputs(tmp_path)
+    settings.write_text(
+        settings.read_text().replace(f"{slot}: pi-v1", f"{slot}: pi-absent")
+    )
+    result = run_cli(
+        tmp_path, "config", command, "--settings", str(settings), "--database", str(db)
+    )
+    assert result.returncode == 2
+    assert f"adapters.{slot}" in result.stderr
+    assert "无法读取文件" in result.stderr
+    assert "请检查路径和权限" in result.stderr
+    assert "Frozen effective" not in result.stdout + result.stderr

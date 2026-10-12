@@ -1,4 +1,4 @@
-"""仅用于配置文件边界的严格 YAML 读取。"""
+"""配置文件边界的严格 YAML 装载与 UTF-8 Prompt 字节读取。"""
 
 from __future__ import annotations
 

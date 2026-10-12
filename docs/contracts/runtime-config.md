@@ -1,6 +1,6 @@
-# A2-04 运行配置快照契约
+# 运行配置快照契约（已交付配置切片）
 
-当前开放六段式 Research Profile、主题集合、三槽 models 文件、boundary/value/reuse 提示词、四份 A1 冻结契约与复用升级参数。配置就绪仅说明这些本地材料齐全且合法，不证明模型调用、正式校准或自动精读可用。
+当前开放六段式 Research Profile、主题集合、三槽 models 文件、boundary/value/reuse 提示词、四份 A1 冻结契约、复用升级参数、正文提取配置，以及三槽 Pi adapter 材料和完整有效系统 Prompt。配置就绪仅说明这些本地材料齐全且合法，不证明模型调用、正式校准或自动精读可用。
 公共 Python 入口是 `paper_radar.config.check_config(settings_path, database)`、
 `compile_config(settings_path, database)`、`load_config_snapshot(database, snapshot_id)` 和
 `upgrade_database(database)`。前三个返回 `RuntimeConfigSnapshot`；错误为脱敏的
@@ -36,11 +36,11 @@ provider/model、secret 或凭据引用。CLI 必须显式传 `--settings` 和 `
 | `contracts.decision_reasons` | `v1` 或 `null` | 检查并登记 `contracts/screening/decision-reasons/v1/{schema,manifest}.json`。 |
 | `prompts.reading` | 仅 `null` | 后续票开放。 |
 
-当前封闭逻辑名称为 `profile/profile`、`topics/topics`、`models/models`、`escalation/escalation`、`extraction/extraction`、`prompt/boundary`、`prompt/value`、`prompt/reuse`，以及 `contract_schema`/`contract_manifest` 下的 `boundary`、`value-prediction`、`reuse-assessment` 与 `decision-reasons`。快照包络中的材料条目含
+当前封闭逻辑名称为 `profile/profile`、`topics/topics`、`models/models`、`escalation/escalation`、`extraction/extraction`、`adapter/pi-rpc`、`prompt/pi-system`、`prompt/boundary`、`prompt/value`、`prompt/reuse`，以及 `contract_schema`/`contract_manifest` 下的 `boundary`、`value-prediction`、`reuse-assessment` 与 `decision-reasons`。快照包络中的材料条目含
 `kind`、`name`、`version`、`raw_sha256` 和编译值；后续新增材料种类只增加带
 种类和版本键的条目，不提升编译格式版本。只有包络结构改变时才提升格式版本。
 选择了尚未开放的非空字段会返回 2，并给出字段路径；不会忽略选择。
-另开放 `adapter/pi-rpc` 和 `prompt/pi-system`；后者引用来自 adapter 资源清单，
+`prompt/pi-system` 的版本引用来自 adapter 资源清单，
 位置在 `config/prompts/`，与业务 Prompt 分开登记。
 
 Profile 文件的 `version` 必须与 selector 完全相同。六段字段为 `background`、
@@ -195,11 +195,18 @@ CLI 显示槽的 `configured`/`unconfigured`/`placeholder`、阶段的 `ready`/
 
 | 阶段 | 必需材料 | 缺项原因（缺失 / 占位） |
 | --- | --- | --- |
-| boundary | Profile 六段、Screening 模型、boundary 提示词、boundary 契约 | `profile`、`screening_model` / `screening_model_placeholder`、`boundary_prompt` / `boundary_prompt_placeholder`、`boundary_contract` |
-| value | Profile 六段、Screening 模型、value 提示词、value-prediction 契约、已配置主题集合 | `profile`、`screening_model` / `screening_model_placeholder`、`value_prompt` / `value_prompt_placeholder`、`value_contract`、`topics` |
-| reuse | Profile 六段、reuse_assessment 模型、reuse 提示词、reuse-assessment 契约、升级文件内 excerpt selector | `profile`、`reuse_model` / `reuse_model_placeholder`、`reuse_prompt` / `reuse_prompt_placeholder`、`reuse_contract`、`excerpt_selector` |
+| boundary | Profile 六段、Screening 模型、boundary 提示词、boundary 契约；若已选择 Screening adapter，其系统 Prompt 不得占位 | `profile`、`screening_model` / `screening_model_placeholder`、`boundary_prompt` / `boundary_prompt_placeholder`、`boundary_contract`、`screening_adapter_prompt_placeholder` |
+| value | Profile 六段、Screening 模型、value 提示词、value-prediction 契约、已配置主题集合；若已选择 Screening adapter，其系统 Prompt 不得占位 | `profile`、`screening_model` / `screening_model_placeholder`、`value_prompt` / `value_prompt_placeholder`、`value_contract`、`topics`、`screening_adapter_prompt_placeholder` |
+| reuse | Profile 六段、reuse_assessment 模型、reuse 提示词、reuse-assessment 契约、升级文件内 excerpt selector；若已选择 reuse adapter，其系统 Prompt 不得占位 | `profile`、`reuse_model` / `reuse_model_placeholder`、`reuse_prompt` / `reuse_prompt_placeholder`、`reuse_contract`、`excerpt_selector`、`reuse_adapter_prompt_placeholder` |
+| Read（当前恒未就绪） | Profile 六段、Read 模型、reading 提示词与权威 Read 契约（后二者尚未开放）；若已选择 reading adapter，其系统 Prompt 不得占位 | `profile`、`read_model` / `read_model_placeholder`、`read_prompt`、`read_contract`、`read_adapter_prompt_placeholder` |
 | suggestion | 升级文件内建议规则身份和触发参数、decision-reasons 契约 | `suggestion_rule`、`escalation_parameters`、`decision_reasons_contract` |
 | extraction | 合法完整的 extraction 材料：受控工具链、启用模型文件身份、有效策略及 normalization v1 | `extraction_config` |
+
+adapter 占位缺项只在对应槽已选择且系统 Prompt 为占位时出现；未选择 adapter
+仍按既有业务配置完整性判断，并单独显示 `adapters.<slot>: unconfigured`，不合成
+默认 Pi 策略。已选择 adapter 的 YAML、资源引用、哈希或协议非法时整次命令失败，
+不能伪装成普通缺项。adapter 文件错误会标出对应 `adapters.<slot>`；文件内声明版本
+不匹配时指明 `settings.adapters.<slot>`，不回显内容或原始异常。
 
 value 不依赖 boundary 提示词/契约或期刊信誉；boundary 不依赖主题选择、启用状态
 或描述。全部已选材料仍需合法，非法主题或任一已选损坏契约会使整次 check/compile
@@ -208,7 +215,7 @@ reuse 就绪不要求 PDF、正文提取、value 配置或实际模型输出；s
 Screening 制品或模型槽。这些是配置完整性，不是实际任务 eligibility。未选择
 escalation 文件时，reuse 缺 `excerpt_selector`，suggestion 同时缺 `suggestion_rule`
 和 `escalation_parameters`。Read 仍因缺少权威契约及其余未开放材料为 `not_ready`。
-不输出“校准就绪”。阶段配置投影、diff 和校准语义基线由 A2-08 实现；不能把本票
+不输出“校准就绪”。阶段配置投影、diff 和校准语义基线由 A2-08（Issue #23）实现；不能把本票
 完整快照身份当作阶段输入指纹。
 
 下表是后续票实现投影时的**依赖契约**，不是本票已经生成的投影。空格表示该材料
@@ -252,7 +259,8 @@ Profile、三槽 models、主题、升级参数、三阶段提示词及四份 A1
 `settings-reuse.yaml` 选择单独的合成 models 文件、升级参数、reuse 提示词和两份契约，
 演示缺 value/PDF/extraction 时 reuse 与 suggestion 仍配置就绪。
 `settings-pi.yaml` 使用新 models 版本与既有 Profile、主题、升级参数、三阶段提示词
-及四份契约，演示 boundary/value/reuse/suggestion 均配置就绪；Read 与 extraction
+及四份契约；三个 adapters 槽分别显式选择 `pi-v1`，登记 Pi 系统 Prompt 和固定策略。
+示例演示 boundary/value/reuse/suggestion 均配置就绪；Read 与 extraction
 仍未就绪。它不运行 Pi，不是生产提示词、正式校准或真实执行验收。
 它们不是真实
 Research Profile，不能据此开始正式校准。先确保数据库的父目录已存在：

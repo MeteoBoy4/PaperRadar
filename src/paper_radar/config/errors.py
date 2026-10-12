@@ -18,6 +18,7 @@ VALIDATION_GUIDANCE = MappingProxyType(
         ConfigValidationReason.RESOURCE_HASH_INVALID.value: (
             "请填写所选系统 Prompt 精确字节的 64 位小写 SHA-256"
         ),
+        # 以下键来自 Pydantic ValidationError.errors() 的 type 字段。
         "missing": "必填字段缺失；请补充配置契约要求的字段",
         "extra_forbidden": "未知字段；请删除或使用配置契约支持的字段",
         "literal_error": "类型错误或取值不受支持；请使用配置契约的受控值或固定 V1 策略",
