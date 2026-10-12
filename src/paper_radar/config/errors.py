@@ -20,7 +20,7 @@ VALIDATION_GUIDANCE = MappingProxyType(
         ),
         "missing": "必填字段缺失；请补充配置契约要求的字段",
         "extra_forbidden": "未知字段；请删除或使用配置契约支持的字段",
-        "literal_error": "取值不受支持；请使用配置契约的受控值或固定 V1 策略",
+        "literal_error": "类型错误或取值不受支持；请使用配置契约的受控值或固定 V1 策略",
         "string_type": "必须为文本；请检查类型，不要使用数字、布尔或 null",
         "tuple_type": "必须为列表；请使用配置契约规定的资源或工具清单",
         "missing_argument": "必填清单成员缺失；请补充配置契约规定的资源",

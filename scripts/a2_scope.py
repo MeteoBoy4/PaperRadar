@@ -55,7 +55,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/errors.py",
-        "574257d70252a5ac692614f54677e5c1b468c536569a7ee93ca11b469de44d69",
+        "2c2326032de9559b3a5e19818eab3139ff9a8c83b761550d6e3a61e1e2954e63",
     ),
     (
         "src/paper_radar/config/identity.py",
