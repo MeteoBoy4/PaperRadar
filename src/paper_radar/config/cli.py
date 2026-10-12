@@ -20,7 +20,9 @@ DB_HELP = """显式初始化或升级配置数据库。
 CONFIG_HELP = """检查或编译运行配置快照。
 
 必须显式提供 --settings 与 --database。check 只读；compile 只写既有且已迁移的库。
-支持 Profile、主题、models 三槽、boundary/value/reuse 提示词和四份冻结契约。
+支持 Profile、主题、models 三槽、boundary/value/reuse/reading 提示词和四份冻结契约。
+Read 分块配置由 settings.read 选择，chunking 只接受受控 v1；不执行分块或 Read。
+Read 始终 not_ready，缺少权威 Read 契约；仍列出模型、提示词、适配器与分块缺项。
 复用升级参数包含非空的 1–5 研究价值集合、固定摘录顺序及受控 v1 算法身份。
 boundary、value、复用升级与建议规则分别报告配置就绪及缺项。
 正文提取配置登记受控工具链、模型 commit/文件哈希与 normalization 身份。

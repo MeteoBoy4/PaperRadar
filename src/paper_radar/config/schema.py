@@ -148,9 +148,10 @@ class Settings(BaseModel):
     contracts: ContractSelectors = ContractSelectors()
     escalation: str | None = None
     extraction: str | None = None
+    read: str | None = None
     adapters: AdapterSelectors = AdapterSelectors()
 
-    @field_validator("profile", "models", "topics", "escalation", "extraction")
+    @field_validator("profile", "models", "topics", "escalation", "extraction", "read")
     @classmethod
     def valid_version(cls, value: str | None) -> str | None:
         return valid_declared_version(value) if value is not None else None

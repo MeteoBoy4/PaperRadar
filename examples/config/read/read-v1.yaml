@@ -1,0 +1,3 @@
+# 工程验收合成材料，只登记算法身份，不执行分块。
+version: read-v1
+chunking_version: v1

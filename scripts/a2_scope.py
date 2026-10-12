@@ -8,7 +8,7 @@ SNAPSHOT_FORMAT_VERSION = 1
 MIGRATION_REVISION = "a201_profile_snapshot"
 
 # 哈希在完成本票改动后固定。预期值不能从被检查文件动态生成。
-# #26 复核适配器接入后的源码绑定。scope 和 A2-01 固定测试保持不变。
+# #21 复核 Read 配置接入后的源码绑定。scope 和 A2-01 固定测试保持不变。
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_config_service.py",
@@ -39,15 +39,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/__init__.py",
-        "a3e381542f56953ff4692886fcb4e3235ef80cc63b8be8ce07bc5a426af22cc4",
+        "79997a6f670bc2ee5d6c3d146250d98c037420d00f39c5998ab32808477eb688",
     ),
     (
         "src/paper_radar/config/cli.py",
-        "4597c2d48e03eded891d5123104d07646a37335fdb46bedbdbe8d04869705fdb",
+        "b0b0d8330cd5bcc8f4c1028e9d435df2a143982da699cb8250bad2d22056726d",
     ),
     (
         "src/paper_radar/config/compile.py",
-        "d74f1e74c085117780cf339bf3ceb96799c52e997fa311aa631d3c385e795281",
+        "f01a69897969ccacc5803b1ab88f94a853d27ffb4f89595effefd0f0a1f8c633",
     ),
     (
         "src/paper_radar/config/escalation.py",
@@ -55,7 +55,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/errors.py",
-        "aa165dbf836df09f92e0d6fe4f1402f7d3f8612a45e831a2b362f0b1e33be29a",
+        "98a315d80e78f9f85f965f8bea935cd17ec29a97cccc90b5a611e2d9de6ae376",
     ),
     (
         "src/paper_radar/config/identity.py",
@@ -63,11 +63,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/schema.py",
-        "9a0fb6693bbf0151ba944970f54290b80050466dedf46054bf5cfb8de50ae908",
+        "415efb4841fe1454f2af78842eac8177445d63cc3c30a108b13c48c3120b2ef8",
     ),
     (
         "src/paper_radar/config/service.py",
-        "f0d309c62aeae623e66a1f1b5b5f19970b45b3ae99fe16c2f39d9993ec42aed5",
+        "41a3a3f9ae61a9beb956ad6037323c4eb6f885bf9af3065339d44987019b99b5",
     ),
     (
         "src/paper_radar/config/topics.py",
@@ -157,13 +157,22 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
         "tests/config_adapter_support.py",
         "04e71ec7c1a888844a7b55c3a1fe8d2dc3445866f08f3fa8f9481ff5b8a345ce",
     ),
+    (
+        "src/paper_radar/config/read.py",
+        "f6f3ae3d508ae3d7ecfeb34b22ca47d51990cb123f7047f9474d2487f0a15ae0",
+    ),
+    (
+        "tests/config_read_support.py",
+        "010c9dcbf6a7526041633b46bfda146cdfdb07bb03ca0c6dfbbac08d3496f77a",
+    ),
 )
 
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 
 NOT_IMPLEMENTED = (
     "journals",
-    "prompts_reading",
+    "read_output_contract",
+    "read_execution",
     "body_extraction_execution",
     "stage_config_projections",
     "calibration_baseline",

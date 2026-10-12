@@ -8,10 +8,14 @@ class ConfigValidationReason(StrEnum):
     V1_OCR_DISABLED = "v1_ocr_disabled"
     PI_VERSION_INVALID = "pi_version_invalid"
     RESOURCE_HASH_INVALID = "resource_hash_invalid"
+    CHUNKING_VERSION_UNSUPPORTED = "chunking_version_unsupported"
 
 
 VALIDATION_GUIDANCE = MappingProxyType(
     {
+        ConfigValidationReason.CHUNKING_VERSION_UNSUPPORTED.value: (
+            "分块算法身份不受支持；请将 chunking_version 设为文本 v1"
+        ),
         ConfigValidationReason.PI_VERSION_INVALID.value: (
             "请填写无前导零的精确三段版本（如 1.1.0），不能使用范围、latest 或路径"
         ),

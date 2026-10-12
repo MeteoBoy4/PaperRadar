@@ -1,0 +1,11 @@
+# 工程验收合成材料，不用于真实模型调用或正式校准。
+version: models-read-v1
+screening:
+  provider: example-provider
+  model: example-model
+  protocol: json_schema
+reuse_assessment: null
+reading:
+  provider: example-provider
+  model: example-read-model
+  protocol: prompt_only

@@ -3,7 +3,7 @@
 PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库交付了工程入口、
 研究边界、摘要层价值预测、复用可行性升级和筛选原因组合的公共验证，以及
 四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
-只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数与正文提取配置快照的显式迁移、检查、编译与历史加载。
+只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
 网络来源和论文处理命令尚未实现。
 另可登记 Pi adapter 的三个独立选择、完整有效系统指令、资源哈希、推理档位与
 固定调用策略；其只读语义供后续统一投影消费。
@@ -57,6 +57,17 @@ uv run --offline --locked paper-radar config compile \
 校准资料。当前可选六段式 Profile、单份三槽 models 文件、主题集合、boundary/value/reuse 提示词、四份 A1 冻结契约与复用升级参数。boundary、value、reuse 和 suggestion 各自报告配置就绪；value 需要已配置的主题集合，空集合和全部停用均合法。`examples/config/settings-value.yaml` 使用完整合成 Profile，演示两阶段均就绪；`settings-boundary.yaml` 演示仅 boundary 就绪；`settings-reuse.yaml` 演示缺 value/PDF/extraction 时 reuse 和 suggestion 配置就绪，触发集合默认仅 `{3}`、摘录顺序固定为 availability 优先；算法身份只接受受控 v1，不执行摘录选择或建议规则。原 `settings.yaml` 保留占位 Profile，展示未就绪原因。公共 Python 服务可从数据库加载旧快照；完整字段、声明版本规则、
 身份格式、未就绪范围和迁移行为见
 [运行配置快照契约](docs/contracts/runtime-config.md)。
+
+`settings-read.yaml` 使用新增的 `models-read-v1`、独立 `config/read/read-v1.yaml`
+和 `prompts/reading/v1.md`，演示 Read 模型、业务提示词和受控 chunking v1 的
+版本登记与历史回放。`settings.read` 选择分块配置，`prompts.reading` 选择提示词；
+Read 始终 `not_ready`，该合成示例仅缺 `read_contract`，boundary 仍配置就绪。
+当前不执行分块或 Read，不接受手写 Read Schema，也不构成阶段 B 验收：
+
+```bash
+uv run --offline --locked paper-radar config compile \
+  --settings examples/config/settings-read.yaml --database data/paperradar.sqlite3
+```
 
 `settings-extraction.yaml` 独立演示正文提取配置就绪：受控工具链、pypdfium2、
 Egret medium、TableFormer accurate 和默认开启的 CodeFormulaV2 局部公式候选，

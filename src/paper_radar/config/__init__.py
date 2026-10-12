@@ -15,6 +15,7 @@ from paper_radar.config.extraction import (
     ModelStage,
     NormalizationVersion,
 )
+from paper_radar.config.read import ChunkingVersion, ReadSemantics
 from paper_radar.config.topics import TopicsStatus
 
 
@@ -48,12 +49,14 @@ def upgrade_database(path: Path) -> str:
 
 __all__ = [
     "AdapterSemantics",
+    "ChunkingVersion",
     "ConfigError",
     "EscalationSemantics",
     "ExcerptSelectorVersion",
     "ExtractionSemantics",
     "ModelStage",
     "NormalizationVersion",
+    "ReadSemantics",
     "RuntimeConfigSnapshot",
     "StageName",
     "StageReadiness",

@@ -1,0 +1,11 @@
+# 工程验收合成材料。boundary 配置就绪；Read 缺少权威契约，始终未就绪。
+profile: profile-example-v1
+models: models-read-v1
+read: read-v1
+prompts:
+  boundary: v1
+  reading: v1
+contracts:
+  boundary: v1
+adapters:
+  reading: pi-v1

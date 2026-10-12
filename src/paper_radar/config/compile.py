@@ -12,6 +12,7 @@ from paper_radar.config.adapters import AdapterSemantics
 from paper_radar.config.escalation import Escalation, EscalationSemantics
 from paper_radar.config.extraction import Extraction, ExtractionSemantics
 from paper_radar.config.identity import canonical_json, sha256
+from paper_radar.config.read import ReadConfig, ReadSemantics
 from paper_radar.config.schema import (
     MODEL_SLOTS,
     PROFILE_FIELDS,
@@ -64,7 +65,9 @@ class MissingReason(StrEnum):
     READ_MODEL = "read_model"
     READ_MODEL_PLACEHOLDER = "read_model_placeholder"
     READ_PROMPT = "read_prompt"
+    READ_PROMPT_PLACEHOLDER = "read_prompt_placeholder"
     READ_CONTRACT = "read_contract"
+    CHUNKING_VERSION = "chunking_version"
     SUGGESTION_RULE = "suggestion_rule"
     ESCALATION_PARAMETERS = "escalation_parameters"
     DECISION_REASONS_CONTRACT = "decision_reasons_contract"
@@ -79,6 +82,7 @@ class MaterialKind(StrEnum):
     MODELS = "models"
     ESCALATION = "escalation"
     EXTRACTION = "extraction"
+    READ = "read"
     ADAPTER = "adapter"
     PROMPT = "prompt"
     CONTRACT_SCHEMA = "contract_schema"
@@ -116,6 +120,7 @@ class SelectedMaterials:
     escalation: Escalation | None = None
     extraction: Extraction | None = None
     adapters: tuple[tuple[str, AdapterSemantics], ...] = ()
+    read: ReadConfig | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,6 +142,7 @@ class RuntimeConfigSnapshot:
     escalation: EscalationSemantics | None
     extraction: ExtractionSemantics | None
     adapters: Mapping[str, AdapterSemantics | None]
+    read: ReadSemantics | None
 
     @property
     def adapter_slots(self) -> Mapping[str, SlotStatus]:
@@ -222,6 +228,8 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
         selectors["escalation"] = settings.escalation
     if settings.extraction is not None:
         selectors["extraction"] = settings.extraction
+    if settings.read is not None:
+        selectors["read"] = settings.read
     for group in ("prompts", "contracts"):
         chosen = {
             name: version
@@ -275,7 +283,7 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
     )
 
     def prompt_reason(
-        name: StageName, missing: MissingReason, placeholder: MissingReason
+        name: str, missing: MissingReason, placeholder: MissingReason
     ) -> tuple[MissingReason, ...]:
         prompt = next(
             (
@@ -386,8 +394,13 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
                     MissingReason.READ_MODEL,
                     MissingReason.READ_MODEL_PLACEHOLDER,
                 ),
-                MissingReason.READ_PROMPT,
+                *prompt_reason(
+                    "reading",
+                    MissingReason.READ_PROMPT,
+                    MissingReason.READ_PROMPT_PLACEHOLDER,
+                ),
                 MissingReason.READ_CONTRACT,
+                *((MissingReason.CHUNKING_VERSION,) if materials.read is None else ()),
             ),
         ),
         StageName.SUGGESTION: StageReadiness(
@@ -410,4 +423,5 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
         escalation=escalation.semantics if escalation is not None else None,
         extraction=extraction.semantics if extraction is not None else None,
         adapters=MappingProxyType({name: adapters.get(name) for name in MODEL_SLOTS}),
+        read=materials.read.semantics if materials.read is not None else None,
     )

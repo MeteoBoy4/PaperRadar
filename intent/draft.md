@@ -882,6 +882,7 @@ config/
   adapters/pi-v1.yaml
   prompts/pi-system-v1.md
   extraction/extraction-v1.yaml
+  read/read-v1.yaml
   screening/reuse-escalation-v1.yaml
 prompts/
   screening/boundary-v1.md
@@ -918,9 +919,18 @@ reports/
 logs/
 ~~~
 
-`settings.yaml` 只选择当前 Profile、主题、models 整份版本化文件、复用升级参数、正文提取配置、提示词和契约版本；带版本的内容文件创建后不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
+`settings.yaml` 只选择当前 Profile、主题、models 整份版本化文件、复用升级参数、正文提取配置、Read 分块配置、提示词和契约版本；带版本的内容文件创建后不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
 
 A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约；A2-03 增加 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪；A2-04 增加 escalation、reuse 提示词、reuse-assessment 和 decision-reasons 契约，判断 reuse/suggestion 配置就绪，不要求 PDF、正文解析或 value 输出；A2-05 增加 extraction 的受控工具链、按阶段模型文件身份、有效解析策略与 normalization v1，单独判断 extraction 配置完整性，不安装解析器、下载模型或执行 PDF 解析。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
+
+A2-06（#21）新增 `settings.read` 选择 `config/read/<version>.yaml`，只保存
+必填的声明 `version` 与代码受控 `chunking_version: v1`；独立算法无字节登记。
+`prompts.reading` 绑定 `prompts/reading/<version>.md` 的精确 UTF-8 字节，
+使用封闭 `prompt/reading` 逻辑名，与 Pi 系统 Prompt 分开登记。
+models.reading、Read YAML 与提示词沿用原子版本保护和 SQLite 历史回放。
+Read 恒未就绪并列出 `read_contract` 及模型、提示词、适配器占位与 chunking 缺项；
+不新增权威 Read 输出契约、不执行分块或模型调用。输出语言和正文制品仍由后续
+阶段输入指纹组合，不进入运行配置快照。最终阶段投影与校准基线隔离由 #23 验收。
 
 `tools/pi/` 保存 §7.8 的固定供给材料，清单、官方锁文件、release 元数据和校验依据提交版本控制；`.tools/pi/` 是由它们生成的项目专属安装目录，安装树、staging 和缓存不提交 Git。`supply_id` 是供给清单规范载荷的哈希，包含固定材料哈希、工具链、平台、安装参数及预期安装树校验身份，不由目录路径或 Pi 版本号单独确定。项目专属缓存可以作为另一安装位置，但必须保持相同的固定身份与独立生命周期；这些目录不是 settings 的新增配置槽。
 

@@ -28,6 +28,7 @@ from paper_radar.config.errors import ConfigError
 from paper_radar.config.escalation import Escalation
 from paper_radar.config.extraction import Extraction
 from paper_radar.config.identity import canonical_json, sha256
+from paper_radar.config.read import ReadConfig
 from paper_radar.config.schema import Models, Profile, Settings
 from paper_radar.config.topics import Topics
 from paper_radar.config.yaml_loader import read_prompt, read_yaml, validate_yaml_bytes
@@ -54,7 +55,8 @@ _MODELS_KEY = (MaterialKind.MODELS, "models")
 _TOPICS_KEY = (MaterialKind.TOPICS, "topics")
 _ESCALATION_KEY = (MaterialKind.ESCALATION, "escalation")
 _EXTRACTION_KEY = (MaterialKind.EXTRACTION, "extraction")
-_PROMPT_NAMES = (StageName.BOUNDARY, StageName.VALUE, StageName.REUSE)
+_READ_KEY = (MaterialKind.READ, "read")
+_PROMPT_NAMES = (StageName.BOUNDARY, StageName.VALUE, StageName.REUSE, "reading")
 _CONTRACT_NAMES = {
     "boundary": ContractName.BOUNDARY,
     "value_prediction": ContractName.VALUE_PREDICTION,
@@ -135,7 +137,9 @@ def _contract_materials(
     )
 
 
-def _versioned_yaml_material[T: (Profile, Models, Topics, Escalation, Extraction)](
+def _versioned_yaml_material[
+    T: (Profile, Models, Topics, Escalation, Extraction, ReadConfig)
+](
     path: Path, model: type[T], kind: MaterialKind, selected: str
 ) -> tuple[T, CompiledMaterial]:
     label = kind.value
@@ -204,10 +208,24 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
             settings.extraction,
         )
         additional.append(compiled)
+    read: ReadConfig | None = None
+    if settings.read is not None:
+        read, compiled = _versioned_yaml_material(
+            settings_path.parent / "read" / f"{settings.read}.yaml",
+            ReadConfig,
+            MaterialKind.READ,
+            settings.read,
+        )
+        additional.append(compiled)
     for name in _PROMPT_NAMES:
         version = getattr(settings.prompts, name)
         if version is not None:
-            raw = read_prompt(root / "prompts/screening" / f"{name}-{version}.md", name)
+            path = (
+                root / "prompts/reading" / f"{version}.md"
+                if name == "reading"
+                else root / "prompts/screening" / f"{name}-{version}.md"
+            )
+            raw = read_prompt(path, name)
             additional.append(
                 CompiledMaterial(
                     Material(MaterialKind.PROMPT, name, version, raw),
@@ -234,6 +252,7 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
         escalation=escalation,
         extraction=extraction,
         adapters=adapters,
+        read=read,
     )
 
 
@@ -323,6 +342,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         topics: Topics | None = None
         escalation: Escalation | None = None
         extraction: Extraction | None = None
+        read: ReadConfig | None = None
         adapters: dict[str, PiAdapter] = {}
         system_prompts: dict[str, bytes] = {}
         additional: list[CompiledMaterial] = []
@@ -369,6 +389,14 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 if (
                     extraction.version != settings.extraction
                     or extraction.compiled_config() != entry["config"]
+                ):
+                    raise ValueError
+                additional.append(CompiledMaterial(material, entry["config"]))
+            elif key[:2] == _READ_KEY:
+                read = validate_yaml_bytes(raw, ReadConfig, "read")
+                if (
+                    read.version != settings.read
+                    or read.model_dump(mode="json") != entry["config"]
                 ):
                     raise ValueError
                 additional.append(CompiledMaterial(material, entry["config"]))
@@ -419,6 +447,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             or (settings.topics is None) != (topics is None)
             or (settings.escalation is None) != (escalation is None)
             or (settings.extraction is None) != (extraction is None)
+            or (settings.read is None) != (read is None)
         ):
             raise ValueError
         expected_keys = {
@@ -454,6 +483,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             escalation=escalation,
             extraction=extraction,
             adapters=adapter_semantics(settings, models, adapters, system_prompts),
+            read=read,
         )
         rebuilt = compile_snapshot(materials)
         if rebuilt.snapshot_id != snapshot_id or rebuilt.payload_json != saved_json:
