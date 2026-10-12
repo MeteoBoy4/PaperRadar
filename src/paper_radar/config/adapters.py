@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic_core import PydanticCustomError
 
+from paper_radar.config.errors import VALIDATION_GUIDANCE, ConfigValidationReason
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.schema import valid_declared_version
 
 ADAPTER_NAME = "pi-rpc"
 SYSTEM_PROMPT_NAME = "pi-system"
 ADAPTER_SEMANTICS_FORMAT_VERSION = 1
+_PI_VERSION = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
+_RESOURCE_HASH = re.compile(r"^[0-9a-f]{64}$")
 ThinkingLevel = Literal["off", "minimal", "low", "medium", "high", "xhigh", "max"]
 
 
@@ -28,7 +33,15 @@ class PiSystemPrompt(_FrozenConfig):
     kind: Literal["system_prompt"] = "system_prompt"
     name: Literal["pi-system"] = "pi-system"
     version: str
-    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    sha256: str
+
+    @field_validator("sha256")
+    @classmethod
+    def valid_hash(cls, value: str) -> str:
+        if not _RESOURCE_HASH.fullmatch(value):
+            reason = ConfigValidationReason.RESOURCE_HASH_INVALID.value
+            raise PydanticCustomError(reason, VALIDATION_GUIDANCE[reason])
+        return value
 
     @field_validator("version")
     @classmethod
@@ -62,13 +75,19 @@ class PiAdapter(_FrozenConfig):
 
     version: str
     backend: Literal["pi-rpc"] = "pi-rpc"
-    pi_version: str = Field(
-        pattern=r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$"
-    )
+    pi_version: str
     adapter_version: str
     thinking_level: ThinkingLevel
     policy: PiPolicy = PiPolicy()
     resources: tuple[PiSystemPrompt]
+
+    @field_validator("pi_version")
+    @classmethod
+    def exact_pi_version(cls, value: str) -> str:
+        if not _PI_VERSION.fullmatch(value):
+            reason = ConfigValidationReason.PI_VERSION_INVALID.value
+            raise PydanticCustomError(reason, VALIDATION_GUIDANCE[reason])
+        return value
 
     @field_validator("version", "adapter_version")
     @classmethod

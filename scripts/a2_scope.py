@@ -8,6 +8,7 @@ SNAPSHOT_FORMAT_VERSION = 1
 MIGRATION_REVISION = "a201_profile_snapshot"
 
 # 哈希在完成本票改动后固定。预期值不能从被检查文件动态生成。
+# #26 复核适配器接入后的源码绑定。scope 和 A2-01 固定测试保持不变。
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_config_service.py",
@@ -38,15 +39,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/__init__.py",
-        "7411df486927e65347db730bf426348468e4b6592d17a2cdbf3e8f2f2ca0281d",
+        "a3e381542f56953ff4692886fcb4e3235ef80cc63b8be8ce07bc5a426af22cc4",
     ),
     (
         "src/paper_radar/config/cli.py",
-        "0b90d88369f613815ca87e77888d347d277e901ea6f16045343ce48a955ff180",
+        "4597c2d48e03eded891d5123104d07646a37335fdb46bedbdbe8d04869705fdb",
     ),
     (
         "src/paper_radar/config/compile.py",
-        "9252cf311ac522c0652beaab5fe7b31d9a67100de08b4afdddce153116399925",
+        "d74f1e74c085117780cf339bf3ceb96799c52e997fa311aa631d3c385e795281",
     ),
     (
         "src/paper_radar/config/escalation.py",
@@ -54,7 +55,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/errors.py",
-        "7391795e9dc1870504ee261ed86835f9f4892fc66b0b109b75f41af4e0abda95",
+        "574257d70252a5ac692614f54677e5c1b468c536569a7ee93ca11b469de44d69",
     ),
     (
         "src/paper_radar/config/identity.py",
@@ -62,11 +63,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/schema.py",
-        "cd2754b8927bf99896c8b5239ea8542b3605a1d283b9c36be3eedbe57a00e24c",
+        "9a0fb6693bbf0151ba944970f54290b80050466dedf46054bf5cfb8de50ae908",
     ),
     (
         "src/paper_radar/config/service.py",
-        "25228e41750334db3c1cb70b9a92b1ecc9f3c5a6cad8ef78d802c4a44bf4d175",
+        "e6ce26b41526da8be8590bb6867383ef763c9d23af36504ec1f6846e44c87f68",
     ),
     (
         "src/paper_radar/config/topics.py",
@@ -74,7 +75,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/yaml_loader.py",
-        "d94fd0a6bc5846c2f63770f38360ccfbe05d86afd51056105fc40a4968debb48",
+        "15c6a3d4349c1e70de1809670cdd1c4bda1cfeb784d51aaf51f323d4d1a1c93c",
     ),
     (
         "src/paper_radar/storage/database.py",
@@ -143,6 +144,14 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/config_extraction_support.py",
         "7798711c15be510330d405d7dcef6cc8110214498c6a50b04c454a3d696097d9",
+    ),
+    (
+        "src/paper_radar/config/adapters.py",
+        "711e0fbbbb6eec03930e4300561d5f171cfaafeb615f80ed617a9f62a2ae73aa",
+    ),
+    (
+        "src/paper_radar/config/adapter_loading.py",
+        "c1b75bfe1064afa1d973f4ba837e76970d4f87b070584c75a40d800202c3c2d5",
     ),
 )
 

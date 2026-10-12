@@ -135,3 +135,24 @@ def test_untrusted_yaml_key_cannot_echo_a_command_or_input_marker(
         check_config(settings, db)
     assert "PRIVATE_MARKER" not in str(error.value)
     assert "echo never-execute" not in str(error.value)
+
+
+@pytest.mark.parametrize(
+    ("before", "after", "guidance"),
+    [
+        ("pi_version: 1.1.0", "pi_version: PRIVATE_MARKER", "精确三段版本"),
+        (
+            "212c2cd595c12aaf7ca2a4b6783b3f43f85ce077745c2a55f4f18d6c07b9e2d1",
+            "PRIVATE_MARKER",
+            "64 位小写 SHA-256",
+        ),
+    ],
+)
+def test_pin_and_hash_format_errors_explain_the_required_format(
+    tmp_path: Path, before: str, after: str, guidance: str
+) -> None:
+    settings, path, db = adapter_inputs(tmp_path)
+    path.write_text(path.read_text().replace(before, after))
+    with pytest.raises(ConfigError, match=guidance) as error:
+        check_config(settings, db)
+    assert "PRIVATE_MARKER" not in str(error.value)

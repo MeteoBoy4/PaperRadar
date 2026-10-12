@@ -6,10 +6,18 @@ from types import MappingProxyType
 
 class ConfigValidationReason(StrEnum):
     V1_OCR_DISABLED = "v1_ocr_disabled"
+    PI_VERSION_INVALID = "pi_version_invalid"
+    RESOURCE_HASH_INVALID = "resource_hash_invalid"
 
 
 VALIDATION_GUIDANCE = MappingProxyType(
     {
+        ConfigValidationReason.PI_VERSION_INVALID.value: (
+            "请填写无前导零的精确三段版本（如 1.1.0），不能使用范围、latest 或路径"
+        ),
+        ConfigValidationReason.RESOURCE_HASH_INVALID.value: (
+            "请填写所选系统 Prompt 精确字节的 64 位小写 SHA-256"
+        ),
         "missing": "必填字段缺失；请补充配置契约要求的字段",
         "extra_forbidden": "未知字段；请删除或使用配置契约支持的字段",
         "literal_error": "取值不受支持；请使用配置契约的受控值或固定 V1 策略",

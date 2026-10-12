@@ -1104,7 +1104,7 @@ Screening 与 reuse_assessment 可以由用户显式选择同一模型，但仍�
 
 V1 首次接入使用 `prompt_only`：提示词要求最终纯 JSON 文本，Python 严格解析并权威校验；Pi 外层 RPC JSONL 不代表模型具有原生严格 `json_schema` 能力。专用提交工具是已经验证可行的备用升级，两种能力可以共存于适配器能力层，按阶段版本化配置显式选择；每次运行固定一个权威通道，失败或无效输出不触发通道切换，也不把另一通道的结果当作兜底。工具参数带 Schema 不等于 provider 原生 `json_schema`。
 
-上例是目标选择示意，不授权原地修改已经登记的 `models-v1`；既有协议枚举及当前配置编译契约见 `docs/contracts/runtime-config.md`，它们保留已交付范围。Pi 运行策略的版本化配置、阶段选择与现有槽的映射尚待实现；提交工具的显式协议名称及配置 Contract 需在启用该升级前另行定义并同步权威 Schema、文档和必要 migration，不能复用 `json_schema` 或 `json_object` 隐藏其真实通道。V1 默认验收不要求启用提交工具。
+上例是目标选择示意，不授权原地修改已经登记的 `models-v1`；既有协议枚举及当前配置编译契约见 `docs/contracts/runtime-config.md`，它们保留已交付范围。Pi 运行策略的版本化配置、三槽选择与 models 协议一致性检查已由 #26 的配置切片开放，执行映射仍待 RPC 任务；提交工具的显式协议名称及配置 Contract 需在启用该升级前另行定义并同步权威 Schema、文档和必要 migration，不能复用 `json_schema` 或 `json_object` 隐藏其真实通道。V1 默认验收不要求启用提交工具。
 
 现有 `temperature`、`top_p` 等模型参数须在接入时明确映射到 Pi/provider 的实际能力；不能静默忽略、改写或用个人默认设置代替。所选参数或协议无法实现时，执行就绪检查给出具体不支持原因，不将已有的配置完整性判断解释为真实调用已就绪。
 
