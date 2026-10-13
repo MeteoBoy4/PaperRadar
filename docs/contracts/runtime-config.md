@@ -316,7 +316,7 @@ escalation 文件时，reuse 缺 `excerpt_selector`，suggestion 同时缺 `sugg
 | 解析器、后端、模型制品、解析配置与 normalization | extraction | 是 |
 | 复用升级触发参数、建议规则与原因契约 | 建议规则 | 是 |
 
-当前开放 Profile、topics、models、escalation、extraction、read、adapters、boundary/value/reuse/reading 提示词、Pi 系统 Prompt 与四份契约登记。
+当前开放 Profile、topics、journals、models、escalation、extraction、read、adapters、boundary/value/reuse/reading 提示词、Pi 系统 Prompt 与四份契约登记。
 表中其余非空 selector 仍拒绝。后续 value 投影只取 `enabled_topics`，不取完整集合
 的原始字节哈希或声明版本；仅改停用主题描述、声明版本或 YAML 注释不会改变
 value 语义，空集合与全部停用的 value 投影身份应相同。启用主题的 ID/name/description

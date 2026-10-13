@@ -29,5 +29,8 @@ def journal_inputs(root: Path, content: str = JOURNALS) -> tuple[Path, Path]:
     folder = settings.parent / "journals"
     folder.mkdir()
     (folder / "journals-v1.yaml").write_text(content, encoding="utf-8")
-    settings.write_text(settings.read_text() + "journals: journals-v1\n")
+    settings.write_text(
+        settings.read_text(encoding="utf-8") + "journals: journals-v1\n",
+        encoding="utf-8",
+    )
     return settings, database

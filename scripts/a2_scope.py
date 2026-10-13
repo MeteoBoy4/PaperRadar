@@ -167,11 +167,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/journals.py",
-        "16a7047c2453d8725dae450de437799818341a8c61af2b05ff81d4d7d62f3a10",
+        "8eeb3287a83bd0cfc8c7e7cd64b67b39cbf82b06fbfbd613cb4208f46b65060a",
     ),
     (
         "tests/config_journals_support.py",
-        "11fcaf973c536278d4f8bd01e5fb4fdc58b224205ea58f780e09792f1bc78248",
+        "639ea499a5d41e3f914c4c1ba36aeff9a6c3502204f0303fc9c76f893dd508bc",
     ),
 )
 
