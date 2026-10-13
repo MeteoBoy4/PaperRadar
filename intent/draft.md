@@ -1005,12 +1005,18 @@ topics:
 ~~~yaml
 version: journals-v1
 journals:
-  <ISSN-L>:
-    name: ...
+  - issn_l: 2169-897X
+    issns: [2169-897X, 2169-8996]
+    name: Journal of Geophysical Research: Atmospheres
     tier: preferred  # preferred | normal | low
+  - issn_l: 2769-7525
+    name: Artificial Intelligence for the Earth Systems
+    tier: normal
 ~~~
 
-以规范 ISSN/ISSN-L 匹配，刊名和档位可以在日报展示。冲突显示为配置错误，不由 Agent 决定。队列先处理人工决定通道，再执行双队列保留和二维帕累托比较；只有研究价值、复用可行性、价值类型集合和从 accepted 决定起算的完整等待月数均相同时，期刊信誉才可继续破同，最后才按发现时间。档位不得抬高分数、改变筛选建议或跨越不相同的价值类型。
+期刊文件必须声明版本与 journals 列表，采用列表项而非以 ISSN-L 为键的映射，使错误能定位到字段路径。每项 issn_l 必填，先做确定性格式与校验位校验并归一化（校验位大写 X 的 `NNNN-NNNC` 形式），再作为全局唯一键；issns 可省略或为空，条目生效匹配集合为 `{issn_l} ∪ issns`；同一列表内归一化后不得重复，跨条目的归一化标识重复（含某条 issns 撞另一条 issn_l）均为配置错误。name 为 strip 后非空文本，不是标识符，同名不同号合法；tier 只接受 preferred、normal、low。离线不核验 ISSN-L 与刊号的真实对应，不联网查询刊名或 ISSN-L 映射；空集合合法且已配置。未知字段拒绝。完整快照保存全部期刊条目，期刊信誉不进入任何阶段配置投影或校准基线。
+
+以规范 ISSN/ISSN-L 匹配论文侧标识，刊名和档位可以在日报展示。冲突显示为配置错误，不由 Agent 决定。队列先处理人工决定通道，再执行双队列保留和二维帕累托比较；只有研究价值、复用可行性、价值类型集合和从 accepted 决定起算的完整等待月数均相同时，期刊信誉才可继续破同，最后才按发现时间。档位不得抬高分数、改变筛选建议或跨越不相同的价值类型。
 
 ### 7.4 Screening 输出
 
