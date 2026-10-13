@@ -9,10 +9,30 @@ class ConfigValidationReason(StrEnum):
     PI_VERSION_INVALID = "pi_version_invalid"
     RESOURCE_HASH_INVALID = "resource_hash_invalid"
     CHUNKING_VERSION_UNSUPPORTED = "chunking_version_unsupported"
+    ISSN_FORMAT_INVALID = "issn_format_invalid"
+    ISSN_CHECKSUM_INVALID = "issn_checksum_invalid"
+    JOURNAL_IDENTIFIERS_CONFLICT = "journal_identifiers_conflict"
+    JOURNAL_NAME_EMPTY = "journal_name_empty"
+    JOURNAL_TIER_INVALID = "journal_tier_invalid"
 
 
 VALIDATION_GUIDANCE = MappingProxyType(
     {
+        ConfigValidationReason.ISSN_FORMAT_INVALID.value: (
+            "ISSN 格式无效；请填写八位 ISSN，可在第四位后加连字符，末位可用 X/x"
+        ),
+        ConfigValidationReason.ISSN_CHECKSUM_INVALID.value: (
+            "ISSN 校验位无效；请核对完整刊号及 mod-11 校验位"
+        ),
+        ConfigValidationReason.JOURNAL_IDENTIFIERS_CONFLICT.value: (
+            "规范化后的期刊标识重复或冲突；请删除 issns 内重复项或跨期刊重叠标识"
+        ),
+        ConfigValidationReason.JOURNAL_NAME_EMPTY.value: (
+            "期刊名称为空；请填写非空文本"
+        ),
+        ConfigValidationReason.JOURNAL_TIER_INVALID.value: (
+            "期刊信誉档位无效；请使用 preferred、normal 或 low"
+        ),
         ConfigValidationReason.CHUNKING_VERSION_UNSUPPORTED.value: (
             "分块算法身份不受支持；请将 chunking_version 设为文本 v1"
         ),

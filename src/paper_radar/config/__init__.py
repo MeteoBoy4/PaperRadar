@@ -15,6 +15,7 @@ from paper_radar.config.extraction import (
     ModelStage,
     NormalizationVersion,
 )
+from paper_radar.config.journals import JournalSemantics, JournalsStatus, JournalTier
 from paper_radar.config.read import ChunkingVersion, ReadSemantics
 from paper_radar.config.topics import TopicsStatus
 
@@ -54,6 +55,9 @@ __all__ = [
     "EscalationSemantics",
     "ExcerptSelectorVersion",
     "ExtractionSemantics",
+    "JournalSemantics",
+    "JournalTier",
+    "JournalsStatus",
     "ModelStage",
     "NormalizationVersion",
     "ReadSemantics",

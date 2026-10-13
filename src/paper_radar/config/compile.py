@@ -12,6 +12,7 @@ from paper_radar.config.adapters import AdapterSemantics
 from paper_radar.config.escalation import Escalation, EscalationSemantics
 from paper_radar.config.extraction import Extraction, ExtractionSemantics
 from paper_radar.config.identity import canonical_json, sha256
+from paper_radar.config.journals import Journals, JournalSemantics, JournalsStatus
 from paper_radar.config.read import ReadConfig, ReadSemantics
 from paper_radar.config.schema import (
     MODEL_SLOTS,
@@ -80,6 +81,7 @@ class MissingReason(StrEnum):
 class MaterialKind(StrEnum):
     PROFILE = "profile"
     TOPICS = "topics"
+    JOURNALS = "journals"
     MODELS = "models"
     ESCALATION = "escalation"
     EXTRACTION = "extraction"
@@ -122,6 +124,7 @@ class SelectedMaterials:
     extraction: Extraction | None = None
     adapters: tuple[tuple[str, AdapterSemantics], ...] = ()
     read: ReadConfig | None = None
+    journals: Journals | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,6 +147,8 @@ class RuntimeConfigSnapshot:
     extraction: ExtractionSemantics | None
     adapters: Mapping[str, AdapterSemantics | None]
     read: ReadSemantics | None
+    journals_status: JournalsStatus = JournalsStatus.UNCONFIGURED
+    journals: tuple[JournalSemantics, ...] = ()
 
     @property
     def adapter_slots(self) -> Mapping[str, SlotStatus]:
@@ -225,6 +230,8 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
         selectors["models"] = settings.models
     if settings.topics is not None:
         selectors["topics"] = settings.topics
+    if settings.journals is not None:
+        selectors["journals"] = settings.journals
     if settings.escalation is not None:
         selectors["escalation"] = settings.escalation
     if settings.extraction is not None:
@@ -425,4 +432,10 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
         extraction=extraction.semantics if extraction is not None else None,
         adapters=MappingProxyType({name: adapters.get(name) for name in MODEL_SLOTS}),
         read=materials.read.semantics if materials.read is not None else None,
+        journals_status=(
+            JournalsStatus.CONFIGURED
+            if materials.journals is not None
+            else JournalsStatus.UNCONFIGURED
+        ),
+        journals=materials.journals.semantics if materials.journals is not None else (),
     )

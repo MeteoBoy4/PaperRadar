@@ -1,6 +1,6 @@
 # 运行配置快照契约（已交付配置切片）
 
-当前开放六段式 Research Profile、主题集合、三槽 models 文件、boundary/value/reuse/reading 提示词、Read 分块身份、四份 A1 冻结契约、复用升级参数、正文提取配置，以及三槽 Pi adapter 材料和完整有效系统 Prompt。配置就绪仅说明这些本地材料齐全且合法，不证明模型调用、正式校准或自动精读可用。
+当前开放六段式 Research Profile、主题集合、期刊信誉集合、三槽 models 文件、boundary/value/reuse/reading 提示词、Read 分块身份、四份 A1 冻结契约、复用升级参数、正文提取配置，以及三槽 Pi adapter 材料和完整有效系统 Prompt。配置就绪仅说明这些本地材料齐全且合法，不证明模型调用、正式校准或自动精读可用。
 公共 Python 入口是 `paper_radar.config.check_config(settings_path, database)`、
 `compile_config(settings_path, database)`、`load_config_snapshot(database, snapshot_id)` 和
 `upgrade_database(database)`。前三个返回 `RuntimeConfigSnapshot`；错误为脱敏的
@@ -22,7 +22,7 @@ provider/model、secret 或凭据引用。CLI 必须显式传 `--settings` 和 `
 | --- | --- | --- |
 | `profile` | 声明版本或 `null` | 缺失或 `null` 都表示 `unconfigured`，允许保存未就绪快照。 |
 | `topics` | 声明版本或 `null` | 选择 `config/topics/<version>.yaml`；未选择为缺项，空集合与全部停用均合法且已配置。 |
-| `journals` | 仅 `null` | 非空选择在后续票开放。 |
+| `journals` | 声明版本或 `null` | 选择 `config/journals/<version>.yaml`；未选择为未配置，不影响任何阶段就绪。 |
 | `extraction` | 声明版本或 `null` | 选择 `config/extraction/<version>.yaml`；[正文提取配置](extraction-config.md) 定义工具链、模型清单和有效策略。 |
 | `read` | 声明版本或 `null` | 选择 `config/read/<version>.yaml`，登记 Read 分块算法身份；缺失或 `null` 表示未配置。 |
 | `escalation` | 声明版本或 `null` | 选择 `config/screening/<version>.yaml`；文件内登记触发集合、固定摘录顺序和算法身份。 |
@@ -37,7 +37,7 @@ provider/model、secret 或凭据引用。CLI 必须显式传 `--settings` 和 `
 | `contracts.decision_reasons` | `v1` 或 `null` | 检查并登记 `contracts/screening/decision-reasons/v1/{schema,manifest}.json`。 |
 | `prompts.reading` | 声明版本或 `null` | 绑定 `prompts/reading/<version>.md` 原始 UTF-8 字节；缺失或 `null` 为缺项。 |
 
-当前封闭逻辑名称为 `profile/profile`、`topics/topics`、`models/models`、`escalation/escalation`、`extraction/extraction`、`read/read`、`adapter/pi-rpc`、`prompt/pi-system`、`prompt/boundary`、`prompt/value`、`prompt/reuse`、`prompt/reading`，以及 `contract_schema`/`contract_manifest` 下的 `boundary`、`value-prediction`、`reuse-assessment` 与 `decision-reasons`。快照包络中的材料条目含
+当前封闭逻辑名称为 `profile/profile`、`topics/topics`、`journals/journals`、`models/models`、`escalation/escalation`、`extraction/extraction`、`read/read`、`adapter/pi-rpc`、`prompt/pi-system`、`prompt/boundary`、`prompt/value`、`prompt/reuse`、`prompt/reading`，以及 `contract_schema`/`contract_manifest` 下的 `boundary`、`value-prediction`、`reuse-assessment` 与 `decision-reasons`。快照包络中的材料条目含
 `kind`、`name`、`version`、`raw_sha256` 和编译值；后续新增材料种类只增加带
 种类和版本键的条目，不提升编译格式版本。只有包络结构改变时才提升格式版本。
 选择了尚未开放的非空字段会返回 2，并给出字段路径；不会忽略选择。
@@ -82,9 +82,47 @@ ID 必须匹配 `^[a-z][a-z0-9-]{0,63}$`，不接受大小写或空白变体，�
 
 读取所选材料和历史回放共用纯配置层的 frozen `SelectedMaterials` 具名对象，
 交给 `compile_snapshot(materials)` 编译；对象不包含路径、连接或执行计划。
-Profile/models/topics/escalation/extraction/read 的活跃 YAML 装载共享声明版本一致性检查，
+Profile/models/topics/journals/escalation/extraction/read 的活跃 YAML 装载共享声明版本一致性检查，
 版本格式由公开 `valid_declared_version` 统一校验。公共 check/compile/load
 服务参数、持久包络格式与身份序列化保持一致，无需 migration。
+
+## 期刊身份与信誉
+
+`settings.journals` 选择带内部声明版本的 `config/journals/<version>.yaml`；版本必须与
+selector 相同。顶层必填 `version` 和 `journals` 列表；空列表合法且已配置，`null`
+或缺少列表拒绝。每项接受必填文本 `issn_l`、`name`、`tier` 和可省略的 `issns`
+文本列表（默认 `[]`），未知字段拒绝：
+
+```yaml
+version: journals-v1
+journals:
+  - issn_l: 2169-897X
+    issns: [2169-897X, 2169-8996]
+    name: 用户维护的期刊名称
+    tier: preferred
+```
+
+ISSN 只接受七位 ASCII 数字加数字或 `X/x` 校验位，可在第四位后加一个连字符；
+不接受首尾空白或其他分隔符。按 mod-11 验证校验位后，统一为 `NNNN-NNNC`
+（末位大写 `X`）。如 `1477870x` 规范为 `1477-870X`。`issn_l` 作唯一身份，
+生效匹配集合为 `{issn_l} ∪ issns`；`issns` 可以显式包含本条 ISSN-L，但其列表内
+规范化后重复拒绝。跨条目的匹配集合不得重叠，包括某条 ISSN 撞另一条 ISSN-L。
+名称 strip 后必须非空，保存原文本；同名不同号合法。`tier` 仅接受精确的
+`preferred`、`normal`、`low`，无默认档位。离线不核验刊名、ISSN-L 映射或刊号归属。
+
+快照保存声明版本、精确原始字节哈希和完整编译集合，期刊按规范 `issn_l` 排序，
+`issns` 按规范刊号排序。公共结果 `journals_status` 为 `JournalsStatus` 的
+`configured` 或 `unconfigured`；`journals` 是不可变的 `JournalSemantics` 元组，
+每项含 `issn_l`、不可变 `issns`、`name` 与 `JournalTier`。未选择时与合法空集合
+均返回 `()`，由状态区分；二者的完整快照身份不同。类型由 `paper_radar.config`
+公开。CLI check/compile 只显示期刊集合状态，不打印名称、刊号或原始配置正文。
+
+同版本改变任何字节（包括注释、格式或等价刊号写法）拒绝；改变信誉、名称或刊号
+须新建声明版本并切换 selector。旧字节和快照永久保留；load 从 SQLite 回放，不读
+当前配置文件，损坏不回退。沿用配置版本表与事务，无新增 journals 业务表或 migration。
+期刊配置只进入完整快照，不进入六个阶段的就绪必需项、阶段语义对象或校准基线；
+本票不执行论文匹配、评分、排序或来源抓取。阶段投影、基线及其哈希隔离由 #23 验收。
+合成示例为 `examples/config/settings-journals.yaml`，不能作为正式校准资料。
 
 ## 模型、提示词与契约
 

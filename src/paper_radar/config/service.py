@@ -27,6 +27,7 @@ from paper_radar.config.errors import ConfigError
 from paper_radar.config.escalation import Escalation
 from paper_radar.config.extraction import Extraction
 from paper_radar.config.identity import canonical_json, sha256
+from paper_radar.config.journals import Journals
 from paper_radar.config.read import ReadConfig
 from paper_radar.config.schema import Models, Profile, PromptName, Settings
 from paper_radar.config.topics import Topics
@@ -52,6 +53,7 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PROFILE_KEY = (MaterialKind.PROFILE, "profile")
 _MODELS_KEY = (MaterialKind.MODELS, "models")
 _TOPICS_KEY = (MaterialKind.TOPICS, "topics")
+_JOURNALS_KEY = (MaterialKind.JOURNALS, "journals")
 _ESCALATION_KEY = (MaterialKind.ESCALATION, "escalation")
 _EXTRACTION_KEY = (MaterialKind.EXTRACTION, "extraction")
 _READ_KEY = (MaterialKind.READ, "read")
@@ -81,12 +83,11 @@ _CONTRACT_CHECK_GUIDANCE = {
 
 
 def _unsupported(settings: Settings) -> None:
-    selected = [name for name in ("journals",) if getattr(settings, name) is not None]
-    selected.extend(
+    selected = [
         f"prompts.{name}"
         for name, value in settings.prompts.model_dump().items()
         if name not in _PROMPT_NAMES and value is not None
-    )
+    ]
     selected.extend(
         f"contracts.{name}"
         for name, value in settings.contracts.model_dump().items()
@@ -143,7 +144,7 @@ def _contract_materials(
 
 
 def _versioned_yaml_material[
-    T: (Profile, Models, Topics, Escalation, Extraction, ReadConfig)
+    T: (Profile, Models, Topics, Journals, Escalation, Extraction, ReadConfig)
 ](
     path: Path, model: type[T], kind: MaterialKind, selected: str
 ) -> tuple[T, CompiledMaterial]:
@@ -196,6 +197,15 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
         )
         additional.append(compiled)
     escalation: Escalation | None = None
+    journals: Journals | None = None
+    if settings.journals is not None:
+        journals, compiled = _versioned_yaml_material(
+            settings_path.parent / "journals" / f"{settings.journals}.yaml",
+            Journals,
+            MaterialKind.JOURNALS,
+            settings.journals,
+        )
+        additional.append(compiled)
     if settings.escalation is not None:
         escalation, compiled = _versioned_yaml_material(
             settings_path.parent / "screening" / f"{settings.escalation}.yaml",
@@ -254,6 +264,7 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
         extraction=extraction,
         adapters=adapters,
         read=read,
+        journals=journals,
     )
 
 
@@ -341,6 +352,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         profile_material: Material | None = None
         models: Models | None = None
         topics: Topics | None = None
+        journals: Journals | None = None
         escalation: Escalation | None = None
         extraction: Extraction | None = None
         read: ReadConfig | None = None
@@ -374,6 +386,14 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 if (
                     topics.version != settings.topics
                     or topics.model_dump(mode="json") != entry["config"]
+                ):
+                    raise ValueError
+                additional.append(CompiledMaterial(material, entry["config"]))
+            elif key[:2] == _JOURNALS_KEY:
+                journals = validate_yaml_bytes(raw, Journals, "journals")
+                if (
+                    journals.version != settings.journals
+                    or journals.model_dump(mode="json") != entry["config"]
                 ):
                     raise ValueError
                 additional.append(CompiledMaterial(material, entry["config"]))
@@ -446,6 +466,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             or (settings.profile is None) != (profile is None)
             or (settings.models is None) != (models is None)
             or (settings.topics is None) != (topics is None)
+            or (settings.journals is None) != (journals is None)
             or (settings.escalation is None) != (escalation is None)
             or (settings.extraction is None) != (extraction is None)
             or (settings.read is None) != (read is None)
@@ -485,6 +506,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             extraction=extraction,
             adapters=adapter_semantics(settings, models, adapters, system_prompts),
             read=read,
+            journals=journals,
         )
         rebuilt = compile_snapshot(materials)
         if rebuilt.snapshot_id != snapshot_id or rebuilt.payload_json != saved_json:

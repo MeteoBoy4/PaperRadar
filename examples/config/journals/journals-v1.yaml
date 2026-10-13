@@ -1,0 +1,18 @@
+# 工程验收示例：刊号仅用于确定性校验，名称与信誉均为合成材料。
+version: journals-v1
+journals:
+  - issn_l: 2169-897X
+    issns: [2169-897X, 2169-8996]
+    name: 合成双 ISSN 期刊甲
+    tier: preferred
+  - issn_l: 2769-7525
+    name: 合成单 ISSN 期刊乙
+    tier: normal
+  - issn_l: 0035-9009
+    issns: [1477870x]
+    name: 合成双 ISSN 期刊丙
+    tier: low
+  - issn_l: 1006-9895
+    issns: []
+    name: 合成中文期刊丁
+    tier: normal

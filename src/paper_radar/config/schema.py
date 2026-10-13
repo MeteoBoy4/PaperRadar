@@ -158,7 +158,9 @@ class Settings(BaseModel):
     read: str | None = None
     adapters: AdapterSelectors = AdapterSelectors()
 
-    @field_validator("profile", "models", "topics", "escalation", "extraction", "read")
+    @field_validator(
+        "profile", "models", "topics", "journals", "escalation", "extraction", "read"
+    )
     @classmethod
     def valid_version(cls, value: str | None) -> str | None:
         return valid_declared_version(value) if value is not None else None

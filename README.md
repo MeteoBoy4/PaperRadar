@@ -5,6 +5,7 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓
 四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
 只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
 网络来源和论文处理命令尚未实现。
+期刊身份与信誉集合也可版本化登记，校验 ISSN 与冲突，并从 SQLite 回放历史。
 另可登记 Pi adapter 的三个独立选择、完整有效系统指令、资源哈希、推理档位与
 固定调用策略；其只读语义供后续统一投影消费。
 
@@ -96,6 +97,17 @@ uv run --offline --locked paper-radar config compile \
 身份和回放保持不变。完整字段、固定策略及阶段/校准消费者依赖见
 [Pi adapter 配置契约](docs/contracts/adapter-config.md)。配置事实不证明执行隔离、
 实际有效输入或校准通过；统一阶段投影、校准基线和 diff 联动仍待 #23。
+
+`settings-journals.yaml` 单独演示期刊身份、名称与信誉配置。ISSN 支持带或不带
+连字符、末位大小写 X，并先验证校验位再规范化判重。空集合合法；期刊不影响
+任何阶段就绪，也不进入六个阶段投影或校准基线。当前只登记事实，不执行评分、
+排序或论文匹配，哈希隔离由 #23 验收。完整字段与公开只读类型见
+[运行配置快照契约](docs/contracts/runtime-config.md)：
+
+```bash
+uv run --offline --locked paper-radar config compile \
+  --settings examples/config/settings-journals.yaml --database data/paperradar.sqlite3
+```
 
 ## Screening 输出验证
 
