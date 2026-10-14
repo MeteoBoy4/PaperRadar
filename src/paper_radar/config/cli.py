@@ -36,7 +36,7 @@ boundary、value、复用升级与建议规则分别报告配置就绪及缺项�
 adapters 三槽独立选择 Pi 语义材料；冻结系统指令、资源哈希、推理档位和固定隔离策略。
 仅登记配置事实，不安装 Pi/Node、不执行 RPC；没有适配器选择时明确显示 unconfigured。
 两者均不访问网络、模型或凭据，不消耗自动配额。
-diff <before-id> <after-id> --database 只读比较保存材料。
+`diff <before-id> <after-id> --database` 只读比较保存材料。
 ID 必须为完整 64 位小写 SHA-256。
 显示登记身份、六阶段投影与校准基线差异；有差异也返回 0，不分级、不激活或启用精读。
 帮助不读文件或数据库；错误返回 2，结果只写入终端。
@@ -170,8 +170,8 @@ def config_compile(
         "只读比较两个完整快照身份；不读当前配置、不写数据库、不联网或调用模型。"
         "结果只写终端，不消耗配额；比较成功返回 0（含有差异），输入或库损坏返回 2。"
         "不判定变更等级或启用自动精读。"
-        "示例：paper-radar config diff <before-id> <after-id> "
-        "--database data/db.sqlite3"
+        "示例：`paper-radar config diff <before-id> <after-id> "
+        "--database data/db.sqlite3`"
     ),
 )
 def config_diff(

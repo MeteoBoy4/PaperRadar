@@ -182,8 +182,14 @@ def test_diff_requires_an_explicit_database(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "args",
     [
-        ("0" * 64, "0" * 64, "PRIVATE_INPUT_MARKER"),
-        ("0" * 64, "0" * 64, "--PRIVATE_OPTION_MARKER"),
+        ("0" * 64, "0" * 64, "--database", "missing.sqlite3", "PRIVATE_INPUT_MARKER"),
+        (
+            "0" * 64,
+            "0" * 64,
+            "--database",
+            "missing.sqlite3",
+            "--PRIVATE_OPTION_MARKER",
+        ),
         ("0" * 64,),
         (),
         ("0" * 64, "0" * 64, "--database"),
@@ -210,4 +216,5 @@ def test_diff_help_works_with_all_external_io_denied(
     if args:
         assert "diff" in result.stdout
         assert "只读" in result.stdout and "数据库" in result.stdout
+        assert "<before-id>" in result.stdout and "<after-id>" in result.stdout
     assert not list(tmp_path.iterdir())
