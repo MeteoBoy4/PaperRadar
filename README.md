@@ -7,7 +7,7 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓
 网络来源和论文处理命令尚未实现。
 期刊身份与信誉集合也可版本化登记，校验 ISSN 与冲突，并从 SQLite 回放历史。
 另可登记 Pi adapter 的三个独立选择、完整有效系统指令、资源哈希、推理档位与
-固定调用策略；其只读语义供后续统一投影消费。
+固定调用策略；单快照可重建六阶段配置投影和校准基线，并只读比较已保存快照。
 
 ## 环境与安装
 
@@ -38,7 +38,7 @@ uv run --offline --locked paper-radar --help
 
 帮助命令只向标准输出写文本；它不读取配置或凭据，不访问网络或数据库，
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
-当前注册 `contracts export/check`、`db upgrade` 与 `config check/compile`。
+当前注册 `contracts export/check`、`db upgrade` 与 `config check/compile/diff`。
 不注册尚未实现的业务命令。
 
 ## 运行配置快照
@@ -96,18 +96,33 @@ uv run --offline --locked paper-radar config compile \
 `config/prompts/pi-system-v1.md`。未选择 adapter 时明确显示 unconfigured；旧快照
 身份和回放保持不变。完整字段、固定策略及阶段/校准消费者依赖见
 [Pi adapter 配置契约](docs/contracts/adapter-config.md)。配置事实不证明执行隔离、
-实际有效输入或校准通过；统一阶段投影、校准基线和 diff 联动仍待 #23。
+实际有效输入或校准通过；统一阶段投影与 diff 已按槽消费 adapter 语义。
 
 `settings-journals.yaml` 单独演示期刊身份、名称与信誉配置。ISSN 支持带或不带
 连字符、末位大小写 X，并先验证校验位再规范化判重。空集合合法；期刊不影响
 任何阶段就绪，也不进入六个阶段投影或校准基线。当前只登记事实，不执行评分、
-排序或论文匹配，哈希隔离由 #23 验收。完整字段与公开只读类型见
+排序或论文匹配。完整字段与公开只读类型见
 [运行配置快照契约](docs/contracts/runtime-config.md)：
 
 ```bash
 uv run --offline --locked paper-radar config compile \
   --settings examples/config/settings-journals.yaml --database data/paperradar.sqlite3
 ```
+
+用两次 compile 输出的完整 64 位小写快照 ID 只读比较：
+
+```bash
+uv run --offline --locked paper-radar config diff <before-id> <after-id> \
+  --database data/paperradar.sqlite3
+```
+
+输出配置类别、版本/哈希、受影响投影与前后校准基线；比较成功均返回 0，错误返回 2。
+仅改 Read 语义只影响 read 投影；期刊信誉或普通版本标签变化只影响完整快照。
+历史比较只读取 SQLite 保存材料，不要求原配置文件仍存在，不输出 Profile/Prompt 正文。
+公共 `project_config(snapshot)` 对一个已验证快照纯计算六投影及基线，与数据库和 CLI
+解耦，供后续校准或诊断复用；没有单快照 CLI。接口与依赖矩阵见
+[阶段配置投影与比较](docs/contracts/config-projections.md)。保存和比较均不启用精读，
+自动运行前仍需接入完整校准变更工作流；完整 A2 验收结论由 #25 交付。
 
 ## Screening 输出验证
 

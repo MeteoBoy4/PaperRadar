@@ -23,6 +23,7 @@ from paper_radar.config.compile import (
     SelectedMaterials,
     compile_snapshot,
 )
+from paper_radar.config.diff import ConfigSnapshotDiff, compare_config_snapshots
 from paper_radar.config.errors import ConfigError
 from paper_radar.config.escalation import Escalation
 from paper_radar.config.extraction import Extraction
@@ -516,3 +517,12 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         raise
     except (KeyError, TypeError, ValueError, UnicodeDecodeError):
         raise ConfigError("快照内容或版本引用损坏；请检查数据库") from None
+
+
+def diff_config_snapshots(
+    database: Path, before_id: str, after_id: str
+) -> ConfigSnapshotDiff:
+    """只读取已保存的两个快照。存在性与完整性验证先于比较。"""
+    before = load_config_snapshot(database, before_id)
+    after = load_config_snapshot(database, after_id)
+    return compare_config_snapshots(before, after)

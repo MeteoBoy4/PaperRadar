@@ -35,6 +35,9 @@ boundary、value、复用升级与建议规则分别报告配置就绪及缺项�
 adapters 三槽独立选择 Pi 语义材料；冻结系统指令、资源哈希、推理档位和固定隔离策略。
 仅登记配置事实，不安装 Pi/Node、不执行 RPC；没有适配器选择时明确显示 unconfigured。
 两者均不访问网络、模型或凭据，不消耗自动配额。
+diff <before-id> <after-id> --database 只读比较保存材料。
+ID 必须为完整 64 位小写 SHA-256。
+显示登记身份、六阶段投影与校准基线差异；有差异也返回 0，不分级、不激活或启用精读。
 帮助不读文件或数据库；错误返回 2，结果只写入终端。
 示例：paper-radar config check --settings config/settings.yaml
       --database data/db.sqlite3
@@ -134,3 +137,64 @@ def config_compile(
     except ConfigError as error:
         typer.echo(f"配置编译失败：{error}", err=True)
         raise typer.Exit(2) from None
+
+
+@config_app.command(
+    "diff",
+    help=(
+        "只读比较两个完整快照身份；不读当前配置、不写数据库、不联网或调用模型。"
+        "结果只写终端，不消耗配额；比较成功返回 0（含有差异），输入或库损坏返回 2。"
+        "不判定变更等级或启用自动精读。"
+        "示例：paper-radar config diff <before-id> <after-id> "
+        "--database data/db.sqlite3"
+    ),
+)
+def config_diff(
+    before_id: Annotated[
+        str, typer.Argument(help="比较前的完整 64 位小写 SHA-256 快照身份。")
+    ],
+    after_id: Annotated[
+        str, typer.Argument(help="比较后的完整 64 位小写 SHA-256 快照身份。")
+    ],
+    database: Annotated[
+        Path, typer.Option("--database", help="既有且已迁移的 SQLite 路径；只读打开。")
+    ],
+) -> None:
+    from paper_radar.config import diff_config_snapshots
+
+    try:
+        result = diff_config_snapshots(database, before_id, after_id)
+    except ConfigError as error:
+        typer.echo(f"配置比较失败：{error}", err=True)
+        raise typer.Exit(2) from None
+    typer.echo(f"前快照：{result.before_snapshot_id}")
+    typer.echo(f"后快照：{result.after_snapshot_id}")
+    typer.echo("完整快照：有差异" if result.snapshot_changed else "完整快照：无差异")
+    for change in result.identity_changes:
+        typer.echo(f"配置类别：{change.category}")
+        for label, identities in (("前", change.before), ("后", change.after)):
+            if not identities:
+                typer.echo(f"  {label}：未配置")
+            for identity in identities:
+                typer.echo(
+                    f"  {label}：{identity.kind.value}.{identity.name}；"
+                    f"版本 {identity.version}；哈希 {identity.raw_sha256}"
+                )
+    stages = "、".join(change.stage.value for change in result.projection_changes)
+    typer.echo(f"受影响投影：{stages or '无'}")
+    for projection_change in result.projection_changes:
+        typer.echo(
+            f"  {projection_change.stage.value}："
+            f"{projection_change.before.projection_id} → "
+            f"{projection_change.after.projection_id}"
+        )
+        for component in projection_change.components:
+            previous = "已配置" if component.before_configured else "未配置"
+            current = "已配置" if component.after_configured else "未配置"
+            typer.echo(f"    {component.name}：{previous} → {current}（语义变化）")
+    typer.echo(f"前基线：{result.before_baseline.baseline_id}")
+    typer.echo(f"后基线：{result.after_baseline.baseline_id}")
+    typer.echo(f"是否涉及校准：{'是' if result.calibration_changed else '否'}")
+    typer.echo(
+        "比较仅提供配置差异事实；保存快照不等于启用，自动运行需后续校准变更流程。"
+    )

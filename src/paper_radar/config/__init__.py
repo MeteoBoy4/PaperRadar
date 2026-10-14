@@ -4,6 +4,14 @@ from pathlib import Path
 
 from paper_radar.config.adapters import AdapterSemantics
 from paper_radar.config.compile import RuntimeConfigSnapshot, StageName, StageReadiness
+from paper_radar.config.diff import (
+    ComponentChange,
+    ConfigIdentity,
+    ConfigIdentityChange,
+    ConfigSnapshotDiff,
+    StageProjectionChange,
+    compare_config_snapshots,
+)
 from paper_radar.config.errors import ConfigError
 from paper_radar.config.escalation import (
     EscalationSemantics,
@@ -16,6 +24,12 @@ from paper_radar.config.extraction import (
     NormalizationVersion,
 )
 from paper_radar.config.journals import JournalSemantics, JournalsStatus, JournalTier
+from paper_radar.config.projections import (
+    CalibrationBaseline,
+    ConfigSemantics,
+    StageConfigProjection,
+    project_config,
+)
 from paper_radar.config.read import ChunkingVersion, ReadSemantics
 from paper_radar.config.topics import TopicsStatus
 
@@ -38,6 +52,14 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
     return run(database, snapshot_id)
 
 
+def diff_config_snapshots(
+    database: Path, before_id: str, after_id: str
+) -> ConfigSnapshotDiff:
+    from paper_radar.config.service import diff_config_snapshots as run
+
+    return run(database, before_id, after_id)
+
+
 def upgrade_database(path: Path) -> str:
     from paper_radar.storage.database import upgrade_database as run
     from paper_radar.storage.errors import StorageError
@@ -50,8 +72,14 @@ def upgrade_database(path: Path) -> str:
 
 __all__ = [
     "AdapterSemantics",
+    "CalibrationBaseline",
     "ChunkingVersion",
+    "ComponentChange",
     "ConfigError",
+    "ConfigIdentity",
+    "ConfigIdentityChange",
+    "ConfigSemantics",
+    "ConfigSnapshotDiff",
     "EscalationSemantics",
     "ExcerptSelectorVersion",
     "ExtractionSemantics",
@@ -62,12 +90,17 @@ __all__ = [
     "NormalizationVersion",
     "ReadSemantics",
     "RuntimeConfigSnapshot",
+    "StageConfigProjection",
     "StageName",
+    "StageProjectionChange",
     "StageReadiness",
     "SuggestionRuleVersion",
     "TopicsStatus",
     "check_config",
+    "compare_config_snapshots",
     "compile_config",
+    "diff_config_snapshots",
     "load_config_snapshot",
+    "project_config",
     "upgrade_database",
 ]

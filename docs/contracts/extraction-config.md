@@ -107,8 +107,9 @@ backend 中立语义对象的空模型清单表示，不开放 V1 的无模型�
 
 extraction 配置就绪只要求所选材料合法且完整，不依赖 Profile、LLM、PDF、其他阶段、
 本机模型或 fixture gate。无选择时为 `not_ready` / `extraction_config`；有选择但
-文件或字段缺失时是非法配置，不能保存假就绪。独立 extraction 语义整体是 A2-08
-校准基线的一个分量，不嵌入 reuse/Read；A2-08 的投影、diff 和校准门禁不在本票实现。
+文件或字段缺失时是非法配置，不能保存假就绪。extraction 投影已作为独立校准
+基线分量接入 [单快照重建与 diff](config-projections.md)，不嵌入 reuse/read；
+后续实际摘录或正文变化通过论文侧输入指纹影响消费者。校准门禁仍待后续实现。
 V1 `backend_id=docling`，不预建 backend 注册表、自动 fallback、A/B 或论文路由。
 后续 artifact 目录、失败记录、fixture 期望与规范化接缝仍遵循 draft §4.9 的中立契约。
 

@@ -6,11 +6,15 @@
 `upgrade_database(database)`。前三个返回 `RuntimeConfigSnapshot`；错误为脱敏的
 `ConfigError`。`check` 和 `load` 只读；`compile` 只写已迁移的既有库；只有 `upgrade`
 可创建库。不存在、未初始化或 revision 不匹配的库均拒绝配置操作。
+另提供纯单快照 `project_config(snapshot)`、纯比较 `compare_config_snapshots(before, after)`
+与只读服务 `diff_config_snapshots(database, before_id, after_id)`；类型、载荷及格式演进见
+[阶段配置投影与比较](config-projections.md)。
 
 ## 输入与路径
 
 `settings.yaml` 是可变的纯 selector，不登记为版本，也不在里面填写 Profile 正文、
-provider/model、secret 或凭据引用。CLI 必须显式传 `--settings` 和 `--database`。
+provider/model、secret 或凭据引用。check/compile 必须显式传 `--settings` 和
+`--database`；diff 只需两个完整快照 ID 和必填 `--database`。
 传入的 settings 所在目录视为 `config/`，其父目录为配置根；路径不依赖当前工作目录。
 `profile: profile-v1` 精确选择 `config/profiles/profile-v1.yaml`。声明版本只允许小写
 字母开头，后续为小写字母、数字、点、下划线或连字符，长度至多 64。不能用路径
@@ -121,7 +125,8 @@ ISSN 只接受七位 ASCII 数字加数字或 `X/x` 校验位，可在第四位�
 须新建声明版本并切换 selector。旧字节和快照永久保留；load 从 SQLite 回放，不读
 当前配置文件，损坏不回退。沿用配置版本表与事务，无新增 journals 业务表或 migration。
 期刊配置只进入完整快照，不进入六个阶段的就绪必需项、阶段语义对象或校准基线；
-本票不执行论文匹配、评分、排序或来源抓取。阶段投影、基线及其哈希隔离由 #23 验收。
+本票不执行论文匹配、评分、排序或来源抓取。期刊变化只影响完整快照与登记身份，
+六阶段投影和校准基线保持不变。
 合成示例为 `examples/config/settings-journals.yaml`，不能作为正式校准资料。
 
 ## 模型、提示词与契约
@@ -195,7 +200,7 @@ suggestion_rule_version: v1
 是 `EscalationSemantics | None`，提供不可变、升序的 `reuse_escalation_research_values`
 元组、固定的 `excerpt_priority` 元组和两个受控算法版本，不包含声明标签或原始哈希。
 未选择文件时为 `None`。新版本的 `[2, 3]` 和 `[3, 2]` 原材料及完整身份不同，但
-上述集合语义相同；后续 A2-08 应按集合语义生成投影和基线。
+上述集合语义相同；suggestion 投影按升序集合语义生成，校准基线保持相同身份。
 
 父 spec 补充二第 26 条提出反转 excerpt_priority 作为有序列表正例，与 draft
 §4.5 和 ADR-0022 的 availability 优先约束冲突。按 Issue #19 评论保持既定顺序，
@@ -222,11 +227,11 @@ chunking_version: v1
 只接受文本 `v1`，未知值、`null`、数字、布尔或缺失均拒绝。未知字段拒绝。
 读取/编译结果的 `RuntimeConfigSnapshot.read` 为不可变 `ReadSemantics | None`，
 只暴露有语义的 `chunking_version`；未选择时为 `None`，不会合成默认算法。
-该身份只进入后续 Read 配置投影，不进入 Screening/reuse 或校准基线。
+该身份只进入 read 配置投影，不进入 Screening/reuse 或校准基线。
 
 `read/read` 的 YAML 原始字节、声明版本与编译值照常原子登记；修改模型、
 业务提示词或 Read YAML 均须新增相应文件版本。同内容可以改用新的声明标签，
-完整快照身份会变化；普通声明标签不进入后续语义投影，但受控 chunking 算法身份
+完整快照身份会变化；普通声明标签不进入语义投影，但受控 chunking 算法身份
 必须保留。算法自身没有内容文件或独立字节登记；A2 无法检测同算法版本下的
 代码语义变化，需通过评审与版本冻结纪律保证语义变化时声明新受支持版本。
 
@@ -241,7 +246,7 @@ chunking_version: v1
 Read 恒为 `not_ready`，始终包含 `read_contract`；其余缺项见下表。
 不执行分块、模型调用、协议探测或凭据读取。输出语言、正文制品、paper ID、
 任务及其他论文/调用输入均不属于运行配置快照，配置中出现时按未知字段拒绝。
-阶段投影、基线和比较仍由 A2-08（#23）验收。
+Read 模型、Prompt、chunking 与 reading adapter 的变化只影响 read 投影，基线不变。
 
 ## 身份、登记与回放
 
@@ -295,37 +300,40 @@ Screening 制品或模型槽。这些是配置完整性，不是实际任务 eli
 escalation 文件时，reuse 缺 `excerpt_selector`，suggestion 同时缺 `suggestion_rule`
 和 `escalation_parameters`。Read 始终因缺少权威契约为 `not_ready`；模型、提示词、
 分块配置及已选择 adapter 的占位缺项仍分别列出。
-不输出“校准就绪”。阶段配置投影、diff 和校准语义基线由 A2-08（Issue #23）实现；不能把本票
-完整快照身份当作阶段输入指纹。
+不输出“校准就绪”。单快照重建、diff 与校准语义基线已实现；缺项与占位参与身份，
+不会因得到投影而变为 ready。完整快照与配置投影身份均不能当作阶段输入指纹。
 
-下表是后续票实现投影时的**依赖契约**，不是本票已经生成的投影。空格表示该材料
-不进入相应投影；校准基线只引用能够改变 Screening、复用升级、摘录或建议的配置。
+下表是已实现投影的权威依赖矩阵；校准基线组合 boundary、value、reuse、extraction、
+suggestion 五个投影身份。每槽按实际消费者提取，不能使用整个 models/adapter 文件哈希。
 
-| 配置材料 | 计划进入的阶段配置投影 | 校准基线 |
+| 配置材料 | 进入的阶段配置投影 | 校准基线 |
 | --- | --- | --- |
-| Profile | boundary、value、reuse、Read | 是 |
-| 已启用主题 | value | 是 |
+| Profile 六段精确文本（不含普通 version） | boundary、value、reuse、read | 是 |
+| 已启用主题 ID/name/description，按 ID 排序；停用项排除 | value | 是 |
 | 期刊信誉 | 无 | 否 |
 | Screening 模型 | boundary、value | 是 |
 | boundary 提示词与契约 | boundary | 是 |
 | value 提示词与 value-prediction 契约 | value | 是 |
-| Reuse 模型、提示词、契约与 excerpt selector 身份及固定 excerpt_priority | reuse | 是 |
-| models.reading、prompt/reading、未来权威 Read 契约与 read/read 内 chunking | Read | 否 |
+| Reuse 模型、提示词、契约与摘录选择器版本 excerpt_selector_version 及有序 excerpt_priority | reuse | 是 |
+| models.reading、prompt/reading、未来权威 Read 契约（当前 null）与 read/read 内 chunking | read | 否 |
 | Screening/reuse 实际消费的适配器语义：输出协议、有效系统提示词、工具声明与实现、运行策略及参数 | 对应 boundary、value、reuse | 是 |
-| Read 专用适配器语义 | Read | 否 |
+| reading 槽 adapter.semantics_id | read | 否 |
 | 解析器、后端、模型制品、解析配置与 normalization | extraction | 是 |
-| 复用升级触发参数、建议规则与原因契约 | 建议规则 | 是 |
+| 复用升级触发集合、建议规则语义版本与原因契约 | suggestion | 是 |
 
 当前开放 Profile、topics、journals、models、escalation、extraction、read、adapters、boundary/value/reuse/reading 提示词、Pi 系统 Prompt 与四份契约登记。
-表中其余非空 selector 仍拒绝。后续 value 投影只取 `enabled_topics`，不取完整集合
+表中其余非空 selector 仍拒绝。value 投影只取 `enabled_topics`，不取完整集合
 的原始字节哈希或声明版本；仅改停用主题描述、声明版本或 YAML 注释不会改变
-value 语义，空集合与全部停用的 value 投影身份应相同。启用主题的 ID/name/description
-变化应进入 value 语义；这些最终投影与基线身份由 A2-08 验收。
-本票只保存可分别提取的语义材料，不生成阶段投影。
+value 语义，空集合与全部停用的 value 投影身份相同；未选择主题为 null，与空集合区分。
+启用主题的 ID/name/description 变化进入 value 和基线，不影响 boundary。
+触发集合只由 suggestion 消费；复用模型与摘录选择器只由 reuse 消费。
+extraction 独立进入基线，不嵌入 reuse 或 read 配置投影。
 
-以上适配器语义是 Pi 接入后的投影依赖约束；models 保存 protocol 和模型参数，
+models 保存 protocol 和模型参数，
 Pi 运行策略、系统 Prompt 资源及三槽 selector 已按 [adapter 契约](adapter-config.md)
-开放登记和只读语义。统一阶段投影/校准基线/diff 尚待 A2-08，不执行调用或工具。
+开放登记和只读语义。六阶段投影直接引用对应槽的 `AdapterSemantics.semantics_id`，
+不重复实现 adapter 载荷；Pi/adapter 执行审计版本变化只影响完整快照和登记身份。
+投影/比较不执行调用或工具。
 共有适配器行为须按实际受影响阶段进入投影与校准基线，不能一概归入 Read；
 临时进程/会话 ID、机器路径与纯传输变化不进入语义指纹。
 
@@ -355,7 +363,10 @@ paper-radar config compile --settings examples/config/settings-value.yaml --data
 paper-radar config compile --settings examples/config/settings-reuse.yaml --database data/paperradar.sqlite3
 paper-radar config compile --settings examples/config/settings-pi.yaml --database data/paperradar.sqlite3
 paper-radar config compile --settings examples/config/settings-read.yaml --database data/paperradar.sqlite3
+paper-radar config diff <before-id> <after-id> --database data/paperradar.sqlite3
 ```
 
+diff 仅接受完整 64 位小写十六进制 ID；不接受短 ID、uppercase 或当前 selector。
+比较成功返回 0，即使存在校准相关差异；相同且存在的 ID 输出无差异，未知 ID 仍拒绝。
 命令帮助不读配置、不开数据库。成功返回 0；非法输入、未初始化库、版本冲突或
 损坏返回 2。迁移随 wheel 打包，任意工作目录均可运行。

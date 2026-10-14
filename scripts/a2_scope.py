@@ -8,7 +8,8 @@ SNAPSHOT_FORMAT_VERSION = 1
 MIGRATION_REVISION = "a201_profile_snapshot"
 
 # 哈希在完成本票改动后固定。预期值不能从被检查文件动态生成。
-# #22 复核期刊配置接入后的源码绑定。scope 和 A2-01 固定测试保持不变。
+# #23 复核单快照投影与只读 diff 接入后的源码绑定。
+# scope、A2-01 固定测试及其历史未覆盖范围保持不变。完整 A2 结论归 #25。
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_config_service.py",
@@ -35,15 +36,15 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/cli.py",
-        "4ce1b5a1ba1c01f3062518cc4eb958b720ee627393351233070e065cabcec421",
+        "71fbd02062aed17c9386e7cbec8e23b47a7e65c4a66937e295f28bfba5c4ff5e",
     ),
     (
         "src/paper_radar/config/__init__.py",
-        "9ee7cc6ed372fe62b67f75238dde157fef33656139773cf3d6dc954f7653faf6",
+        "bdf6d85f62c46726d8e70eedf8b1ac68364aed0a570f1f4169b3825af9c58c6e",
     ),
     (
         "src/paper_radar/config/cli.py",
-        "de3e587f0a7912bad074664fa2545744b9434a66cac68b9a704c314b3dfaab76",
+        "2bd4834dcb5c89d73b9ad341b84836ce6b72cc8be610b81be6e684fc47602118",
     ),
     (
         "src/paper_radar/config/compile.py",
@@ -67,7 +68,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/service.py",
-        "51d4337df2e6322c5e9b7decc24b21a5a8a826fccb1edc28e383ef064303b327",
+        "5680ff29ec4f1c448881f394aef486e645d37783260633e902829eabf443abab",
     ),
     (
         "src/paper_radar/config/topics.py",
@@ -172,6 +173,18 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/config_journals_support.py",
         "639ea499a5d41e3f914c4c1ba36aeff9a6c3502204f0303fc9c76f893dd508bc",
+    ),
+    (
+        "src/paper_radar/config/projections.py",
+        "556df0270ef282b567647b57ada63a2c8d94c571bb2e3e3fb550d9c6e0415c3c",
+    ),
+    (
+        "src/paper_radar/config/diff.py",
+        "22766d0d2a6e4e879bfd350d7353c1fa324a8e76f334f29915c44b13a36a3687",
+    ),
+    (
+        "tests/config_projection_support.py",
+        "1a3aa9a7ce2535a9a52c3fde9dc18cde964d1de8b89654e3d50e566aae79ef2a",
     ),
 )
 

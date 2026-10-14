@@ -930,7 +930,8 @@ A2-06（#21）新增 `settings.read` 选择 `config/read/<version>.yaml`，只�
 models.reading、Read YAML 与提示词沿用原子版本保护和 SQLite 历史回放。
 Read 恒未就绪并列出 `read_contract` 及模型、提示词、适配器占位与 chunking 缺项；
 不新增权威 Read 输出契约、不执行分块或模型调用。输出语言和正文制品仍由后续
-阶段输入指纹组合，不进入运行配置快照。最终阶段投影与校准基线隔离由 #23 验收。
+阶段输入指纹组合，不进入运行配置快照。#23 已实现单快照六投影与校准基线重建，
+Read 配置变化只影响 read 投影；公共服务与只读比较见 `docs/contracts/config-projections.md`。
 
 `tools/pi/` 保存 §7.8 的固定供给材料，清单、官方锁文件、release 元数据和校验依据提交版本控制；`.tools/pi/` 是由它们生成的项目专属安装目录，安装树、staging 和缓存不提交 Git。`supply_id` 是供给清单规范载荷的哈希，包含固定材料哈希、工具链、平台、安装参数及预期安装树校验身份，不由目录路径或 Pi 版本号单独确定。项目专属缓存可以作为另一安装位置，但必须保持相同的固定身份与独立生命周期；这些目录不是 settings 的新增配置槽。
 
@@ -1022,7 +1023,8 @@ A2-07（#22）已通过公共 check/compile/load 登记该集合，不执行论�
 刊号接受带或不带连字符的 ASCII 八位写法与末位小写 x，不接受首尾空白；
 编译后统一为带连字符、大写 X 的形式。`issns` 可包含本条 ISSN-L，但其自身列表
 不得重复。完整快照内期刊按规范 `issn_l` 排序，附加 `issns` 也排序；精确原始字节
-仍保留，等价写法改动也须新建版本。六个阶段投影与基线的哈希隔离由 #23 验收。
+仍保留，等价写法改动也须新建版本。#23 的六阶段投影与基线均排除期刊材料；
+期刊配置变化只影响完整快照与登记身份。
 
 ### 7.4 Screening 输出
 
@@ -1142,7 +1144,8 @@ Issue #26 的配置切片已开放 settings 的 adapters 三槽、Pi YAML 与独
 登记/回放，以及具名只读 adapter 语义和消费者依赖。字段、路径和固定 V1 策略见
 [适配器配置契约](../docs/contracts/adapter-config.md)。没有 adapter 的旧快照保持
 原身份和含义；该配置切片不执行 RPC 或安装程序。统一阶段投影、校准基线及 diff
-联动仍待 #23，不能把 adapter 分量身份冒称为完整基线或执行就绪证明。
+联动已由 #23 接入单快照重建与只读 diff；不能把 adapter 分量身份冒称为完整基线
+或执行就绪证明。
 
 接入依据为 [Pi 可行性研究](discussions/pi-agent-contract-feasibility.md) §5 与其中“我的决策”，架构决策见 [ADR-0026](../docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。Python 确定性程序构造阶段输入、版本、哈希与预算，经 Pi RPC 取得候选结构输出，再用 PaperRadar 权威 Pydantic Schema 与业务规则决定是否接收；只有接收成功后，PaperRadar 才产生建议、写事实并处理校准与任务资格。
 
