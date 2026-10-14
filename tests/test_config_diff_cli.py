@@ -75,6 +75,8 @@ def test_cli_calibration_diff_succeeds_and_discloses_no_profile_or_prompt(
     assert result.returncode == 0, result.stderr
     assert "是否涉及校准：是" in result.stdout
     assert "suggestion" in result.stdout and "未配置 → 已配置" in result.stdout
+    assert "    suggestion_rule_version：未配置 → 已配置\n" in result.stdout
+    assert "    profile：已配置 → 已配置（语义变化）\n" in result.stdout
     assert hashes["profile"] in result.stdout and hashes["escalation"] in result.stdout
     for secret in (
         "PRIVATE_PROFILE_MARKER",
@@ -86,6 +88,18 @@ def test_cli_calibration_diff_succeeds_and_discloses_no_profile_or_prompt(
     assert "minor" not in result.stdout and "major" not in result.stdout
     assert "calibration passed" not in result.stdout
     assert database.read_bytes() == original
+
+    reverse = run_cli(
+        tmp_path,
+        "config",
+        "diff",
+        after.snapshot_id,
+        before.snapshot_id,
+        "--database",
+        str(database),
+    )
+    assert reverse.returncode == 0, reverse.stderr
+    assert "    suggestion_rule_version：已配置 → 未配置\n" in reverse.stdout
 
 
 def test_cli_identical_existing_id_has_no_difference(tmp_path: Path) -> None:

@@ -20,6 +20,14 @@
 `CalibrationBaseline`，暴露 `format_version`、`payload_json` 与 `baseline_id`。
 载荷含真实配置语义，只用于受控的程序消费，不写终端或日志；这些对象的 repr 不含载荷。
 
+`RuntimeConfigSnapshot.materials` 提供以 `(MaterialKind, name, version)` 为键的只读映射，
+值为不可变 `SnapshotMaterial`（公共导出）：kind/name/version/raw_sha256 与
+不进入 repr 的 `config_json`。后者为编译值的规范 JSON 文本，调用方解析后的对象与
+快照独立；共享 adapter 的多个声明版本不会被同名键覆盖。
+`adapter_selections` 是保存的槽名到声明版本的只读映射，未选择槽不补默认值。
+投影和 diff 通过这些访问器消费已验证材料，隐藏快照包络字段布局；访问器不校验
+原数据库记录，历史 load 仍独立核对原字节、哈希、引用与重建身份后才返回快照。
+
 完整依赖矩阵以 [运行配置契约](runtime-config.md#当前就绪范围) 为权威。
 六投影名称固定为 boundary/value/reuse/extraction/read/suggestion：
 
@@ -110,7 +118,17 @@ load 必须先核对原字节/哈希、引用、编译值、格式及重建身�
 
 `ConfigSnapshotDiff` 暴露 before_snapshot_id/after_snapshot_id、snapshot_changed、
 identity_changes、projection_changes、before_baseline/after_baseline 和
-calibration_changed。身份变化包含受控 category 及前后 `ConfigIdentity` 元组，每个
+calibration_changed。身份变化的 category 为公共受控 `ConfigCategory`（StrEnum），
+其 `.value` 保留既有 CLI 文本和字符串比较行为。封闭集合包含：
+
+- `profile.profile`、`topics.topics`、`journals.journals`、`models.models`、
+  `escalation.escalation`、`extraction.extraction`、`read.read`；
+- `prompt.boundary/value/reuse/reading` 四个类别；
+- `contract_schema` 与 `contract_manifest` 各自的 boundary/value-prediction/
+  reuse-assessment/decision-reasons 四个类别；
+- `adapters.screening/reuse_assessment/reading` 三个按槽类别。
+
+新增材料消费者须同步扩展枚举，不生成自由类别。身份变化另含前后 `ConfigIdentity` 元组，每个
 身份有 kind/name/version/raw_sha256；adapter 按选定槽报告，连同它的系统 Prompt
 资源，因而交换两个已登记 adapter 选择时即使材料集合相同也可见。
 
@@ -130,6 +148,7 @@ paper-radar config diff <before-id> <after-id> --database data/paperradar.sqlite
 
 中文人读输出包含类别、版本/哈希、受影响投影、分量“未配置 → 已配置”等转移和前后
 基线身份；不显示完整 Profile/Prompt、原文 diff、输入错误值、原始异常或 SQL 参数。
+只有前后分量均非 null 时追加“（语义变化）”；配置与未配置之间的变化仅显示受控转移。
 所有 help 在外部 I/O 被拒绝时仍可运行，不读配置或数据库，不创建业务文件。
 保存快照不是启用；完整校准变更审计、minor/major 分级、门禁与自动运行由后续流程接入。
 完整 A2 验收证据仍归 #25，本票仅更新既有 A2-01 源码绑定，保留固定测试和历史 scope。

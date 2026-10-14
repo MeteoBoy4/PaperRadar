@@ -3,9 +3,15 @@
 from pathlib import Path
 
 from paper_radar.config.adapters import AdapterSemantics
-from paper_radar.config.compile import RuntimeConfigSnapshot, StageName, StageReadiness
+from paper_radar.config.compile import (
+    RuntimeConfigSnapshot,
+    SnapshotMaterial,
+    StageName,
+    StageReadiness,
+)
 from paper_radar.config.diff import (
     ComponentChange,
+    ConfigCategory,
     ConfigIdentity,
     ConfigIdentityChange,
     ConfigSnapshotDiff,
@@ -75,6 +81,7 @@ __all__ = [
     "CalibrationBaseline",
     "ChunkingVersion",
     "ComponentChange",
+    "ConfigCategory",
     "ConfigError",
     "ConfigIdentity",
     "ConfigIdentityChange",
@@ -90,6 +97,7 @@ __all__ = [
     "NormalizationVersion",
     "ReadSemantics",
     "RuntimeConfigSnapshot",
+    "SnapshotMaterial",
     "StageConfigProjection",
     "StageName",
     "StageProjectionChange",

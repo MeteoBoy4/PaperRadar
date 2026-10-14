@@ -196,7 +196,7 @@ def config_diff(
     typer.echo(f"后快照：{result.after_snapshot_id}")
     typer.echo("完整快照：有差异" if result.snapshot_changed else "完整快照：无差异")
     for change in result.identity_changes:
-        typer.echo(f"配置类别：{change.category}")
+        typer.echo(f"配置类别：{change.category.value}")
         for label, identities in (("前", change.before), ("后", change.after)):
             if not identities:
                 typer.echo(f"  {label}：未配置")
@@ -216,7 +216,12 @@ def config_diff(
         for component in projection_change.components:
             previous = "已配置" if component.before_configured else "未配置"
             current = "已配置" if component.after_configured else "未配置"
-            typer.echo(f"    {component.name}：{previous} → {current}（语义变化）")
+            suffix = (
+                "（语义变化）"
+                if component.before_configured and component.after_configured
+                else ""
+            )
+            typer.echo(f"    {component.name}：{previous} → {current}{suffix}")
     typer.echo(f"前基线：{result.before_baseline.baseline_id}")
     typer.echo(f"后基线：{result.after_baseline.baseline_id}")
     typer.echo(f"是否涉及校准：{'是' if result.calibration_changed else '否'}")

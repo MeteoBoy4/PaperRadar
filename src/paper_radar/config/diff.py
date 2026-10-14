@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from enum import StrEnum
 
 from paper_radar.config.adapters import ADAPTER_NAME, SYSTEM_PROMPT_NAME
 from paper_radar.config.compile import MaterialKind, RuntimeConfigSnapshot, StageName
@@ -12,6 +13,33 @@ from paper_radar.config.projections import (
     StageConfigProjection,
     project_config,
 )
+
+
+class ConfigCategory(StrEnum):
+    """差异的封闭配置类别。adapter 类别按实际选择槽区分。"""
+
+    PROFILE = "profile.profile"
+    TOPICS = "topics.topics"
+    JOURNALS = "journals.journals"
+    MODELS = "models.models"
+    ESCALATION = "escalation.escalation"
+    EXTRACTION = "extraction.extraction"
+    READ = "read.read"
+    PROMPT_BOUNDARY = "prompt.boundary"
+    PROMPT_VALUE = "prompt.value"
+    PROMPT_REUSE = "prompt.reuse"
+    PROMPT_READING = "prompt.reading"
+    CONTRACT_SCHEMA_BOUNDARY = "contract_schema.boundary"
+    CONTRACT_SCHEMA_VALUE_PREDICTION = "contract_schema.value-prediction"
+    CONTRACT_SCHEMA_REUSE_ASSESSMENT = "contract_schema.reuse-assessment"
+    CONTRACT_SCHEMA_DECISION_REASONS = "contract_schema.decision-reasons"
+    CONTRACT_MANIFEST_BOUNDARY = "contract_manifest.boundary"
+    CONTRACT_MANIFEST_VALUE_PREDICTION = "contract_manifest.value-prediction"
+    CONTRACT_MANIFEST_REUSE_ASSESSMENT = "contract_manifest.reuse-assessment"
+    CONTRACT_MANIFEST_DECISION_REASONS = "contract_manifest.decision-reasons"
+    ADAPTER_SCREENING = "adapters.screening"
+    ADAPTER_REUSE_ASSESSMENT = "adapters.reuse_assessment"
+    ADAPTER_READING = "adapters.reading"
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,7 +52,7 @@ class ConfigIdentity:
 
 @dataclass(frozen=True, slots=True)
 class ConfigIdentityChange:
-    category: str
+    category: ConfigCategory
     before: tuple[ConfigIdentity, ...]
     after: tuple[ConfigIdentity, ...]
 
@@ -64,31 +92,27 @@ class ConfigSnapshotDiff:
 
 def _identities(
     snapshot: RuntimeConfigSnapshot,
-) -> dict[str, tuple[ConfigIdentity, ...]]:
-    saved = json.loads(snapshot.payload_json)
-    by_key = {
-        (entry["kind"], entry["name"], entry["version"]): entry
-        for entry in saved["materials"]
-    }
+) -> dict[ConfigCategory, tuple[ConfigIdentity, ...]]:
+    by_key = snapshot.materials
 
-    def identity(key: tuple[str, str, str]) -> ConfigIdentity:
+    def identity(key: tuple[MaterialKind, str, str]) -> ConfigIdentity:
         entry = by_key[key]
         return ConfigIdentity(
-            MaterialKind(entry["kind"]),
-            entry["name"],
-            entry["version"],
-            entry["raw_sha256"],
+            entry.kind,
+            entry.name,
+            entry.version,
+            entry.raw_sha256,
         )
 
-    result: dict[str, tuple[ConfigIdentity, ...]] = {
-        f"{kind}.{name}": (identity((kind, name, version)),)
+    result: dict[ConfigCategory, tuple[ConfigIdentity, ...]] = {
+        ConfigCategory(f"{kind}.{name}"): (identity((kind, name, version)),)
         for kind, name, version in by_key
         if kind != MaterialKind.ADAPTER and name != SYSTEM_PROMPT_NAME
     }
-    for slot, version in saved["selectors"].get("adapters", {}).items():
+    for slot, version in snapshot.adapter_selections.items():
         key = (MaterialKind.ADAPTER, ADAPTER_NAME, version)
-        resource = by_key[key]["config"]["resources"][0]
-        result[f"adapters.{slot}"] = (
+        resource = json.loads(by_key[key].config_json)["resources"][0]
+        result[ConfigCategory(f"adapters.{slot}")] = (
             identity(key),
             identity((MaterialKind.PROMPT, SYSTEM_PROMPT_NAME, resource["version"])),
         )

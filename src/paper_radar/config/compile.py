@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
 from typing import Any
@@ -134,6 +135,17 @@ class StageReadiness:
 
 
 @dataclass(frozen=True, slots=True)
+class SnapshotMaterial:
+    """已验证快照中的不可变材料视图。编译内容不进入 repr。"""
+
+    kind: MaterialKind
+    name: str
+    version: str
+    raw_sha256: str
+    config_json: str = field(repr=False)
+
+
+@dataclass(frozen=True, slots=True)
 class RuntimeConfigSnapshot:
     snapshot_id: str
     profile_status: SlotStatus
@@ -149,6 +161,33 @@ class RuntimeConfigSnapshot:
     read: ReadSemantics | None
     journals_status: JournalsStatus = JournalsStatus.UNCONFIGURED
     journals: tuple[JournalSemantics, ...] = ()
+
+    @property
+    def materials(self) -> Mapping[tuple[MaterialKind, str, str], SnapshotMaterial]:
+        """只对已验证快照提供材料访问。不替代存储加载的完整性校验。"""
+        entries = json.loads(self.payload_json)["materials"]
+        return MappingProxyType(
+            {
+                (
+                    MaterialKind(entry["kind"]),
+                    entry["name"],
+                    entry["version"],
+                ): SnapshotMaterial(
+                    MaterialKind(entry["kind"]),
+                    entry["name"],
+                    entry["version"],
+                    entry["raw_sha256"],
+                    canonical_json(entry["config"]).decode("utf-8"),
+                )
+                for entry in entries
+            }
+        )
+
+    @property
+    def adapter_selections(self) -> Mapping[str, str]:
+        """保存的 adapter 槽与声明版本绑定。未选择槽不合成默认版本。"""
+        selections = json.loads(self.payload_json)["selectors"].get("adapters", {})
+        return MappingProxyType(selections)
 
     @property
     def adapter_slots(self) -> Mapping[str, SlotStatus]:

@@ -55,9 +55,9 @@ class ConfigSemantics:
 
 def project_config(snapshot: RuntimeConfigSnapshot) -> ConfigSemantics:
     """输入必须已由 check/compile/load 验证。不改变快照或配置就绪判断。"""
-    saved = json.loads(snapshot.payload_json)
     materials = {
-        (entry["kind"], entry["name"]): entry["config"] for entry in saved["materials"]
+        (material.kind, material.name): json.loads(material.config_json)
+        for material in snapshot.materials.values()
     }
     profile = materials.get((MaterialKind.PROFILE, "profile"))
     profile_semantics = (
@@ -67,20 +67,25 @@ def project_config(snapshot: RuntimeConfigSnapshot) -> ConfigSemantics:
     )
     models = materials.get((MaterialKind.MODELS, "models"))
 
+    def contract_components(name: str) -> dict[str, Any] | None:
+        schema = materials.get((MaterialKind.CONTRACT_SCHEMA, name))
+        if schema is None:
+            return None
+        return {
+            "schema": schema,
+            "manifest": materials.get((MaterialKind.CONTRACT_MANIFEST, name)),
+        }
+
     def model_components(
         slot: str, prompt_name: str, contract_name: str
     ) -> dict[str, Any]:
         prompt = materials.get((MaterialKind.PROMPT, prompt_name))
-        schema = materials.get((MaterialKind.CONTRACT_SCHEMA, contract_name))
-        manifest = materials.get((MaterialKind.CONTRACT_MANIFEST, contract_name))
         adapter = snapshot.adapters[slot]
         return {
             "profile": profile_semantics,
             "model": models[slot] if models is not None else None,
             "prompt": prompt["text"] if prompt is not None else None,
-            "contract": (
-                {"schema": schema, "manifest": manifest} if schema is not None else None
-            ),
+            "contract": contract_components(contract_name),
             "adapter": adapter.semantics_id if adapter is not None else None,
         }
 
@@ -117,9 +122,7 @@ def project_config(snapshot: RuntimeConfigSnapshot) -> ConfigSemantics:
             if escalation is not None
             else None
         ),
-        "contract": model_components("screening", "boundary", "decision-reasons")[
-            "contract"
-        ],
+        "contract": contract_components("decision-reasons"),
     }
     extraction = snapshot.extraction
     extraction_components = {
