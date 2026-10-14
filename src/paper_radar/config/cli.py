@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
+from typer.core import TyperCommand
 
 from paper_radar.config.compile import RuntimeConfigSnapshot
 from paper_radar.config.errors import ConfigError
@@ -47,6 +48,29 @@ db_app = typer.Typer(help=DB_HELP, no_args_is_help=True, rich_markup_mode="markd
 config_app = typer.Typer(
     help=CONFIG_HELP, no_args_is_help=True, rich_markup_mode="markdown"
 )
+
+
+class _ConfigDiffCommand(TyperCommand):
+    """diff 参数解析的中文脱敏边界。保留 help/退出行为。"""
+
+    def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
+        try:
+            return super().parse_args(ctx, args)
+        except (typer.Exit, typer.Abort):
+            raise
+        except Exception as error:
+            guidance = "仅接受两个快照 ID 和 --database 路径。请检查参数数量与选项"
+            if isinstance(error, typer.BadParameter) and error.param is not None:
+                guidance = {
+                    "before_id": "before_id：缺少比较前的完整快照 ID",
+                    "after_id": "after_id：缺少比较后的完整快照 ID",
+                    "database": "database：必须显式提供 --database 路径",
+                }.get(error.param.name or "", guidance)
+            typer.echo(
+                f"配置比较参数错误：{guidance}；参见 paper-radar config diff --help。",
+                err=True,
+            )
+            raise typer.Exit(2) from None
 
 
 def _report(snapshot: RuntimeConfigSnapshot) -> None:
@@ -141,6 +165,7 @@ def config_compile(
 
 @config_app.command(
     "diff",
+    cls=_ConfigDiffCommand,
     help=(
         "只读比较两个完整快照身份；不读当前配置、不写数据库、不联网或调用模型。"
         "结果只写终端，不消耗配额；比较成功返回 0（含有差异），输入或库损坏返回 2。"

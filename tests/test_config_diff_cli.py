@@ -175,6 +175,29 @@ def test_cli_errors_are_actionable_read_only_and_redacted(
 def test_diff_requires_an_explicit_database(tmp_path: Path) -> None:
     result = run_cli(tmp_path, "config", "diff", "0" * 64, "0" * 64)
     assert result.returncode == 2
+    assert "必须显式提供 --database" in result.stderr
+    assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ("0" * 64, "0" * 64, "PRIVATE_INPUT_MARKER"),
+        ("0" * 64, "0" * 64, "--PRIVATE_OPTION_MARKER"),
+        ("0" * 64,),
+        (),
+        ("0" * 64, "0" * 64, "--database"),
+    ],
+)
+def test_diff_parser_errors_are_chinese_and_never_echo_untrusted_input(
+    tmp_path: Path, args: tuple[str, ...]
+) -> None:
+    result = run_cli(tmp_path, "config", "diff", *args)
+    assert result.returncode == 2
+    assert "配置比较参数错误" in result.stderr
+    assert "paper-radar config diff --help" in result.stderr
+    assert "PRIVATE_INPUT_MARKER" not in result.stdout + result.stderr
+    assert "PRIVATE_OPTION_MARKER" not in result.stdout + result.stderr
     assert not list(tmp_path.iterdir())
 
 
