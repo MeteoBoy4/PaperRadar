@@ -10,7 +10,11 @@ from pathlib import Path
 import pytest
 
 from scripts.a1_scope import REQUIRED_TEST_MODULES as A1_TEST_MODULES
-from scripts.a2_full_scope import REQUIRED_TEST_MODULES
+from scripts.a2_full_scope import (
+    RECEIPT_COUNTERS,
+    REQUIRED_TEST_MODULES,
+    ReceiptCounter,
+)
 
 
 class TestReceipt:
@@ -19,17 +23,7 @@ class TestReceipt:
         self.run_id = run_id
         self.nodes: dict[str, dict[str, str]] = {}
         self.modules = {
-            name: dict.fromkeys(
-                (
-                    "collected",
-                    "passed",
-                    "failed",
-                    "skipped",
-                    "deselected",
-                    "incomplete",
-                ),
-                0,
-            )
+            name: dict.fromkeys(RECEIPT_COUNTERS, 0)
             for name, _ in (*A1_TEST_MODULES, *REQUIRED_TEST_MODULES)
         }
 
@@ -59,14 +53,14 @@ class TestReceipt:
             module = item.nodeid.split("::", 1)[0]
             if module in self.modules:
                 self.nodes[item.nodeid] = {}
-                self.modules[module]["collected"] += 1
+                self.modules[module][ReceiptCounter.COLLECTED] += 1
         self._write()
 
     def pytest_deselected(self, items: list[pytest.Item]) -> None:
         for item in items:
             module = item.nodeid.split("::", 1)[0]
             if module in self.modules:
-                self.modules[module]["deselected"] += 1
+                self.modules[module][ReceiptCounter.DESELECTED] += 1
 
     def pytest_runtest_logreport(self, report: pytest.TestReport) -> None:
         if report.nodeid in self.nodes:
@@ -74,14 +68,14 @@ class TestReceipt:
 
     def pytest_sessionfinish(self, exitstatus: int) -> None:
         for node, phases in self.nodes.items():
-            if "failed" in phases.values():
-                outcome = "failed"
-            elif "skipped" in phases.values():
-                outcome = "skipped"
+            if ReceiptCounter.FAILED in phases.values():
+                outcome = ReceiptCounter.FAILED
+            elif ReceiptCounter.SKIPPED in phases.values():
+                outcome = ReceiptCounter.SKIPPED
             elif phases == {"setup": "passed", "call": "passed", "teardown": "passed"}:
-                outcome = "passed"
+                outcome = ReceiptCounter.PASSED
             else:
-                outcome = "incomplete"
+                outcome = ReceiptCounter.INCOMPLETE
             self.modules[node.split("::", 1)[0]][outcome] += 1
         self._write(completed=exitstatus not in (2, 3), exit_code=int(exitstatus))
 

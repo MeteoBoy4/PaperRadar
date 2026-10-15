@@ -14,7 +14,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def passed_receipt(run_id: str) -> dict[str, object]:
-    from scripts.a2_full_scope import REQUIRED_TEST_CASE_COUNTS
+    from scripts.a2_full_scope import (
+        RECEIPT_COUNTERS,
+        REQUIRED_TEST_CASE_COUNTS,
+        ReceiptCounter,
+    )
 
     return {
         "format_version": 1,
@@ -23,12 +27,10 @@ def passed_receipt(run_id: str) -> dict[str, object]:
         "exit_code": 0,
         "modules": {
             name: {
-                "collected": count,
-                "passed": count,
-                "failed": 0,
-                "skipped": 0,
-                "deselected": 0,
-                "incomplete": 0,
+                key.value: count
+                if key in (ReceiptCounter.COLLECTED, ReceiptCounter.PASSED)
+                else 0
+                for key in RECEIPT_COUNTERS
             }
             for name, count in REQUIRED_TEST_CASE_COUNTS.items()
         },
@@ -48,8 +50,13 @@ def repository_copy(target: Path) -> Path:
         destination = target / os.fsdecode(relative)
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination, follow_symlinks=False)
-    subprocess.run(("git", "init", "-q", str(target)), check=True)
-    subprocess.run(("git", "add", "."), cwd=target, check=True)
+    init_fixture_repository(target)
+    return target
+
+
+def init_fixture_repository(path: Path) -> None:
+    subprocess.run(("git", "init", "-q", str(path)), check=True)
+    subprocess.run(("git", "add", "."), cwd=path, check=True)
     subprocess.run(
         (
             "git",
@@ -61,10 +68,9 @@ def repository_copy(target: Path) -> Path:
             "-qm",
             "fixture",
         ),
-        cwd=target,
+        cwd=path,
         check=True,
     )
-    return target
 
 
 def fake_checks(tmp_path: Path) -> tuple[Path, Path]:

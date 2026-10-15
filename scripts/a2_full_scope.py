@@ -1,5 +1,19 @@
 """#25 独立完整 A2 固定范围。修改清单须逐项审查。不在运行时重算期望。"""
 
+from enum import StrEnum
+
+
+class ReceiptCounter(StrEnum):
+    COLLECTED = "collected"
+    PASSED = "passed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+    DESELECTED = "deselected"
+    INCOMPLETE = "incomplete"
+
+
+RECEIPT_COUNTERS = tuple(ReceiptCounter)
+
 SCOPE = "a2_versioned_config_snapshots"
 ISSUE = 25
 FORMAT_VERSION = 2
@@ -112,7 +126,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_full_acceptance.py",
-        "88c33228ef99380bb5e0482f5ab530896986062b469894085e7f862dfcbf239d",
+        "6eb204e70671623fbc67a5c3ea1b2a06c9bd29fd5dc22187b12943cb6e986a36",
     ),
     (
         "tests/test_a2_full_entry.py",
@@ -330,11 +344,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "9e174ca9d618f610b629b9d650c541f78c6b74098cd943bd9a07eb9cacfa5a43",
+        "f8588faa9ab866a6bfff826be0fbd2ad69071aa743c43125fb5e94df12fefbbd",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "7f9b69396023209b87ad34e18a4172029628c2a4c19d9a4291028b8196f00d7a",
+        "2525071152c2eb39c3f9d3e5d3688cdf4540ca549c0d51ed499103ea67c475f7",
     ),
     (
         "scripts/check-offline",
@@ -482,7 +496,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/a2_full_support.py",
-        "e812b481fd61138e429a42fe135020c6c47310df0c44a167fafe8e5083b0c691",
+        "d6c69fe997d026288b4793f4c6fe2225ce9f4e019114463bcb0ef03da7527469",
     ),
     (
         "tests/config_adapter_support.py",

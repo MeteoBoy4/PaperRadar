@@ -5,7 +5,6 @@ from __future__ import annotations
 import importlib.metadata
 import json
 import shutil
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +13,7 @@ import pytest
 from scripts.a1_acceptance import capture_identity
 from scripts.a2_full_acceptance import write_full_a2_conclusion
 from scripts.offline_evidence import default_checks, file_sha256
-from tests.a2_full_support import passed_receipt
+from tests.a2_full_support import init_fixture_repository, passed_receipt
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -307,22 +306,7 @@ def test_fixed_files_cannot_disappear_or_drift_and_worktree_change_cannot_pass(
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / relative, target)
-    subprocess.run(("git", "init", "-q", str(root)), check=True)
-    subprocess.run(("git", "add", "."), cwd=root, check=True)
-    subprocess.run(
-        (
-            "git",
-            "-c",
-            "user.name=Fixture",
-            "-c",
-            "user.email=fixture@example.invalid",
-            "commit",
-            "-qm",
-            "fixture",
-        ),
-        cwd=root,
-        check=True,
-    )
+    init_fixture_repository(root)
     evidence, a1_path, a1 = same_run(tmp_path)
     identity = capture_identity(root)
     payload = json.loads(evidence.read_bytes())

@@ -9,6 +9,7 @@ import signal
 import sys
 import tempfile
 import uuid
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,7 @@ from scripts.a2_full_scope import (
     ISSUE,
     MIGRATION_REVISION,
     NOT_ASSESSED,
+    RECEIPT_COUNTERS,
     REQUIRED_CHECKS,
     REQUIRED_DEPENDENCIES,
     REQUIRED_FIXTURE_FILES,
@@ -27,29 +29,69 @@ from scripts.a2_full_scope import (
     REQUIRED_TEST_CASE_COUNTS,
     REQUIRED_TEST_MODULES,
     SCOPE,
+    ReceiptCounter,
 )
-from scripts.offline_evidence import file_sha256
+from scripts.offline_evidence import (
+    CheckReason,
+    CheckStatus,
+    OverallStatus,
+    file_sha256,
+)
 
-_HELP = {
-    "evidence_unavailable": "本次证据无法读取；请重跑完整离线入口。",
-    "binding_mismatch": "证据、A1 结论或运行身份不一致；请重跑完整离线入口。",
-    "format_mismatch": "证据或结论格式不受支持；请核对格式版本后重跑。",
-    "a1_not_passed": "本次 A1 未通过；请先处理 A1 结论中的原因。",
-    "check_not_passed": "完整固定检查缺失、失败或未执行；请查看本次离线证据。",
-    "scope_drift": "固定范围文件缺失或字节变化；请逐项审查后显式更新范围。",
-    "dependency_unavailable": "A2 依赖实际版本不可得；请修复锁定环境。",
-    "migration_unavailable": "临时验收库迁移失败或 head 未登记；请审查迁移范围。",
-    "config_format_drift": "配置格式身份变化；请审查并显式版本化验收范围。",
-    "identity_changed": "运行期间代码、工作树或 lockfile 变化；请重跑完整入口。",
-    "run_incomplete": "本次运行中断或未完成；请重新执行完整入口。",
-    "test_execution_not_passed": (
+
+class A2FullReasonCode(StrEnum):
+    EVIDENCE_UNAVAILABLE = "evidence_unavailable"
+    BINDING_MISMATCH = "binding_mismatch"
+    FORMAT_MISMATCH = "format_mismatch"
+    A1_NOT_PASSED = "a1_not_passed"
+    CHECK_NOT_PASSED = "check_not_passed"
+    SCOPE_DRIFT = "scope_drift"
+    DEPENDENCY_UNAVAILABLE = "dependency_unavailable"
+    MIGRATION_UNAVAILABLE = "migration_unavailable"
+    CONFIG_FORMAT_DRIFT = "config_format_drift"
+    IDENTITY_CHANGED = "identity_changed"
+    RUN_INCOMPLETE = "run_incomplete"
+    TEST_EXECUTION_NOT_PASSED = "test_execution_not_passed"
+
+
+_HELP: dict[A2FullReasonCode, str] = {
+    A2FullReasonCode.EVIDENCE_UNAVAILABLE: "本次证据无法读取；请重跑完整离线入口。",
+    A2FullReasonCode.BINDING_MISMATCH: (
+        "证据、A1 结论或运行身份不一致；请重跑完整离线入口。"
+    ),
+    A2FullReasonCode.FORMAT_MISMATCH: (
+        "证据或结论格式不受支持；请核对格式版本后重跑。"
+    ),
+    A2FullReasonCode.A1_NOT_PASSED: "本次 A1 未通过；请先处理 A1 结论中的原因。",
+    A2FullReasonCode.CHECK_NOT_PASSED: (
+        "完整固定检查缺失、失败或未执行；请查看本次离线证据。"
+    ),
+    A2FullReasonCode.SCOPE_DRIFT: (
+        "固定范围文件缺失或字节变化；请逐项审查后显式更新范围。"
+    ),
+    A2FullReasonCode.DEPENDENCY_UNAVAILABLE: "A2 依赖实际版本不可得；请修复锁定环境。",
+    A2FullReasonCode.MIGRATION_UNAVAILABLE: (
+        "临时验收库迁移失败或 head 未登记；请审查迁移范围。"
+    ),
+    A2FullReasonCode.CONFIG_FORMAT_DRIFT: (
+        "配置格式身份变化；请审查并显式版本化验收范围。"
+    ),
+    A2FullReasonCode.IDENTITY_CHANGED: (
+        "运行期间代码、工作树或 lockfile 变化；请重跑完整入口。"
+    ),
+    A2FullReasonCode.RUN_INCOMPLETE: "本次运行中断或未完成；请重新执行完整入口。",
+    A2FullReasonCode.TEST_EXECUTION_NOT_PASSED: (
         "本次测试回执缺失、不一致或固定用例未全部执行通过；请重跑完整入口。"
     ),
 }
 
 
-def _reason(code: str, item: str | None = None) -> dict[str, str]:
-    return {"code": code, "message_zh": _HELP[code], **({"item": item} if item else {})}
+def _reason(code: A2FullReasonCode, item: str | None = None) -> dict[str, str]:
+    return {
+        "code": code.value,
+        "message_zh": _HELP[code],
+        **({"item": item} if item else {}),
+    }
 
 
 def _read_json(path: Path) -> dict[str, Any] | None:
@@ -66,7 +108,7 @@ def _files(
     reasons: list[dict[str, str]],
 ) -> list[dict[str, Any]]:
     if not required:
-        reasons.append(_reason("scope_drift"))
+        reasons.append(_reason(A2FullReasonCode.SCOPE_DRIFT))
     records = []
     for relative, expected in required:
         actual = file_sha256(root / relative)
@@ -76,11 +118,13 @@ def _files(
                 "path": relative,
                 "expected_sha256": expected,
                 "actual_sha256": actual,
-                "result": "passed" if matched else "failed",
+                "result": CheckStatus.PASSED.value
+                if matched
+                else CheckStatus.FAILED.value,
             }
         )
         if not matched:
-            reasons.append(_reason("scope_drift", relative))
+            reasons.append(_reason(A2FullReasonCode.SCOPE_DRIFT, relative))
     return records
 
 
@@ -94,7 +138,7 @@ def _environment(reasons: list[dict[str, str]]) -> dict[str, Any]:
         available = isinstance(version, str) and bool(version.strip())
         versions[name] = version if available else None
         if not available:
-            reasons.append(_reason("dependency_unavailable", name))
+            reasons.append(_reason(A2FullReasonCode.DEPENDENCY_UNAVAILABLE, name))
     return {"python": sys.version.split()[0], "dependencies": versions}
 
 
@@ -153,7 +197,7 @@ def _test_execution(
 ) -> list[dict[str, Any]]:
     receipt = _read_json(path)
     if receipt is None:
-        reasons.append(_reason("test_execution_not_passed"))
+        reasons.append(_reason(A2FullReasonCode.TEST_EXECUTION_NOT_PASSED))
         return []
     if (
         receipt.get("format_version") != 1
@@ -162,56 +206,45 @@ def _test_execution(
         or type(receipt.get("exit_code")) is not int
         or receipt.get("exit_code") != 0
     ):
-        reasons.append(_reason("test_execution_not_passed"))
+        reasons.append(_reason(A2FullReasonCode.TEST_EXECUTION_NOT_PASSED))
     if receipt.get("completed") is False:
-        reasons.append(_reason("run_incomplete"))
+        reasons.append(_reason(A2FullReasonCode.RUN_INCOMPLETE))
     required = {name for name, _ in (*A1_TEST_MODULES, *REQUIRED_TEST_MODULES)}
     if set(REQUIRED_TEST_CASE_COUNTS) != required:
-        reasons.append(_reason("scope_drift"))
+        reasons.append(_reason(A2FullReasonCode.SCOPE_DRIFT))
     modules = receipt.get("modules")
     if not isinstance(modules, dict):
-        reasons.append(_reason("test_execution_not_passed"))
+        reasons.append(_reason(A2FullReasonCode.TEST_EXECUTION_NOT_PASSED))
         modules = {}
     records = []
     for name in sorted(required):
         raw = modules.get(name)
         if not isinstance(raw, dict):
             raw = {}
-        counts = {
+        counts: dict[str, int | None] = {
             key: raw.get(key) if type(raw.get(key)) is int and raw[key] >= 0 else None
-            for key in (
-                "collected",
-                "passed",
-                "failed",
-                "skipped",
-                "deselected",
-                "incomplete",
-            )
+            for key in RECEIPT_COUNTERS
         }
         expected = REQUIRED_TEST_CASE_COUNTS.get(name)
-        passed = (
-            type(expected) is int
-            and expected > 0
-            and counts
-            == {
-                "collected": expected,
-                "passed": expected,
-                "failed": 0,
-                "skipped": 0,
-                "deselected": 0,
-                "incomplete": 0,
-            }
-        )
+        expected_counts: dict[str, int | None] = {
+            key: expected
+            if key in (ReceiptCounter.COLLECTED, ReceiptCounter.PASSED)
+            else 0
+            for key in RECEIPT_COUNTERS
+        }
+        passed = type(expected) is int and expected > 0 and counts == expected_counts
         records.append(
             {
                 "path": name,
                 "expected_cases": expected,
                 **counts,
-                "result": "passed" if passed else "failed",
+                "result": CheckStatus.PASSED.value
+                if passed
+                else CheckStatus.FAILED.value,
             }
         )
         if not passed:
-            reasons.append(_reason("test_execution_not_passed", name))
+            reasons.append(_reason(A2FullReasonCode.TEST_EXECUTION_NOT_PASSED, name))
     return records
 
 
@@ -223,7 +256,7 @@ def _validate_run(
 ) -> dict[str, Any]:
     evidence = _read_json(evidence_path)
     if evidence is None:
-        reasons.append(_reason("evidence_unavailable"))
+        reasons.append(_reason(A2FullReasonCode.EVIDENCE_UNAVAILABLE))
         evidence = {}
     run_id = a1["run_id"]
     if (
@@ -244,34 +277,34 @@ def _validate_run(
             }.items()
         )
     ):
-        reasons.append(_reason("binding_mismatch"))
+        reasons.append(_reason(A2FullReasonCode.BINDING_MISMATCH))
     if evidence.get("format_version") != 1 or a1.get("format_version") != 1:
-        reasons.append(_reason("format_mismatch"))
-    if a1.get("status") != "passed" or a1.get("a1_verified") is not True:
-        reasons.append(_reason("a1_not_passed"))
+        reasons.append(_reason(A2FullReasonCode.FORMAT_MISMATCH))
+    if a1.get("status") != OverallStatus.PASSED or a1.get("a1_verified") is not True:
+        reasons.append(_reason(A2FullReasonCode.A1_NOT_PASSED))
     checks = evidence.get("checks")
     if (
         evidence.get("completed") is not True
-        or evidence.get("overall") != "passed"
+        or evidence.get("overall") != OverallStatus.PASSED
         or not isinstance(checks, list)
         or [c.get("id") if isinstance(c, dict) else None for c in checks]
         != list(REQUIRED_CHECKS)
         or any(
             not isinstance(c, dict)
-            or c.get("status") != "passed"
-            or c.get("reason") != "none"
+            or c.get("status") != CheckStatus.PASSED
+            or c.get("reason") != CheckReason.NONE
             or type(c.get("exit_code")) is not int
             or c.get("exit_code") != 0
             for c in checks
         )
     ):
-        reasons.append(_reason("check_not_passed"))
+        reasons.append(_reason(A2FullReasonCode.CHECK_NOT_PASSED))
     if (
         evidence.get("completed") is False
-        or evidence.get("overall") == "incomplete"
-        or a1.get("status") == "incomplete"
+        or evidence.get("overall") == OverallStatus.INCOMPLETE
+        or a1.get("status") == OverallStatus.INCOMPLETE
     ):
-        reasons.append(_reason("run_incomplete"))
+        reasons.append(_reason(A2FullReasonCode.RUN_INCOMPLETE))
     return evidence
 
 
@@ -292,7 +325,7 @@ def write_full_a2_conclusion(
         "run_id": run_id,
         "scope": SCOPE,
         "issue": ISSUE,
-        "status": "incomplete",
+        "status": OverallStatus.INCOMPLETE.value,
         "a2_verified": False,
         "stage_a_verified": False,
         "live_verified": False,
@@ -333,13 +366,13 @@ def write_full_a2_conclusion(
         try:
             result["migration_revision"] = _migrated_revision()
         except Exception:
-            reasons.append(_reason("migration_unavailable"))
+            reasons.append(_reason(A2FullReasonCode.MIGRATION_UNAVAILABLE))
         else:
             if result["migration_revision"] != MIGRATION_REVISION:
-                reasons.append(_reason("migration_unavailable"))
+                reasons.append(_reason(A2FullReasonCode.MIGRATION_UNAVAILABLE))
         result["format_versions"] = _formats()
         if result["format_versions"] != FORMAT_VERSIONS:
-            reasons.append(_reason("config_format_drift"))
+            reasons.append(_reason(A2FullReasonCode.CONFIG_FORMAT_DRIFT))
         current = capture_identity(root)
         result.update(
             code=current.code,
@@ -358,7 +391,7 @@ def write_full_a2_conclusion(
                 for key in ("code", "worktree_sha256", "lockfile_sha256")
             )
         ):
-            reasons.append(_reason("identity_changed"))
+            reasons.append(_reason(A2FullReasonCode.IDENTITY_CHANGED))
         # 结论发布前再次核对绑定文件, 不能接受检查期间替换的证据。
         if (
             file_sha256(evidence_path) != result["evidence_sha256"]
@@ -367,15 +400,17 @@ def write_full_a2_conclusion(
             or _read_json(a1_path) != a1_conclusion
             or file_sha256(receipt_path) != result["pytest_receipt_sha256"]
         ):
-            reasons.append(_reason("binding_mismatch"))
+            reasons.append(_reason(A2FullReasonCode.BINDING_MISMATCH))
     except KeyboardInterrupt:
         interrupted = True
     if interrupted:
-        reasons.append(_reason("run_incomplete"))
-    status = "passed" if not reasons else "failed"
-    if any(reason["code"] == "run_incomplete" for reason in reasons):
-        status = "incomplete"
-    result.update(status=status, a2_verified=status == "passed")
+        reasons.append(_reason(A2FullReasonCode.RUN_INCOMPLETE))
+    status = OverallStatus.PASSED if not reasons else OverallStatus.FAILED
+    if any(
+        reason["code"] == A2FullReasonCode.RUN_INCOMPLETE.value for reason in reasons
+    ):
+        status = OverallStatus.INCOMPLETE
+    result.update(status=status.value, a2_verified=status is OverallStatus.PASSED)
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / f"{run_id}.a2-full.json"
     temporary = output_dir / f".{run_id}.{uuid.uuid4().hex}.tmp"
