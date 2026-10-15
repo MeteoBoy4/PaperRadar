@@ -9,12 +9,17 @@
 另提供纯单快照 `project_config(snapshot)`、纯比较 `compare_config_snapshots(before, after)`
 与只读服务 `diff_config_snapshots(database, before_id, after_id)`；类型、载荷及格式演进见
 [阶段配置投影与比较](config-projections.md)。
+另提供只读 `list_config_snapshots(database)` 与
+`resolve_config_snapshot_reference(database, reference)`；返回类型、排序、前缀规则和
+完整操作示例见 [历史快照发现与引用](config-snapshots.md)。数据库选择档案库，
+快照引用选择其中的历史配置；列表不表示完整性已验证或配置已启用。
 
 ## 输入与路径
 
 `settings.yaml` 是可变的纯 selector，不登记为版本，也不在里面填写 Profile 正文、
 provider/model、secret 或凭据引用。check/compile 必须显式传 `--settings` 和
-`--database`；diff 只需两个完整快照 ID 和必填 `--database`。
+`--database`；diff CLI 只需两个快照引用（完整 ID 或唯一短前缀）和必填 `--database`。
+公共 load/diff 服务仍只接受完整 ID；`config snapshots list --database ...` 只读发现记录。
 传入的 settings 所在目录视为 `config/`，其父目录为配置根；路径不依赖当前工作目录。
 `profile: profile-v1` 精确选择 `config/profiles/profile-v1.yaml`。声明版本只允许小写
 字母开头，后续为小写字母、数字、点、下划线或连字符，长度至多 64。不能用路径

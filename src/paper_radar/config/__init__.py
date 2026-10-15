@@ -37,6 +37,7 @@ from paper_radar.config.projections import (
     project_config,
 )
 from paper_radar.config.read import ChunkingVersion, ReadSemantics
+from paper_radar.config.snapshot_summary import ConfigSnapshotSummary, SnapshotVersion
 from paper_radar.config.topics import TopicsStatus
 
 
@@ -66,6 +67,20 @@ def diff_config_snapshots(
     return run(database, before_id, after_id)
 
 
+def list_config_snapshots(database: Path) -> tuple[ConfigSnapshotSummary, ...]:
+    from paper_radar.config.snapshot_queries import list_config_snapshots as run
+
+    return run(database)
+
+
+def resolve_config_snapshot_reference(database: Path, reference: str) -> str:
+    from paper_radar.config.snapshot_queries import (
+        resolve_config_snapshot_reference as run,
+    )
+
+    return run(database, reference)
+
+
 def upgrade_database(path: Path) -> str:
     from paper_radar.storage.database import upgrade_database as run
     from paper_radar.storage.errors import StorageError
@@ -87,6 +102,7 @@ __all__ = [
     "ConfigIdentityChange",
     "ConfigSemantics",
     "ConfigSnapshotDiff",
+    "ConfigSnapshotSummary",
     "EscalationSemantics",
     "ExcerptSelectorVersion",
     "ExtractionSemantics",
@@ -98,6 +114,7 @@ __all__ = [
     "ReadSemantics",
     "RuntimeConfigSnapshot",
     "SnapshotMaterial",
+    "SnapshotVersion",
     "StageConfigProjection",
     "StageName",
     "StageProjectionChange",
@@ -108,7 +125,9 @@ __all__ = [
     "compare_config_snapshots",
     "compile_config",
     "diff_config_snapshots",
+    "list_config_snapshots",
     "load_config_snapshot",
     "project_config",
+    "resolve_config_snapshot_reference",
     "upgrade_database",
 ]

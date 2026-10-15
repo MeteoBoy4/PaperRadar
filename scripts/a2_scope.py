@@ -8,7 +8,7 @@ SNAPSHOT_FORMAT_VERSION = 1
 MIGRATION_REVISION = "a201_profile_snapshot"
 
 # 哈希在完成本票改动后固定。预期值不能从被检查文件动态生成。
-# #23 复核单快照投影与只读 diff 接入后的源码绑定。
+# #27 复核快照发现与前缀 CLI 接入后的源码绑定。
 # scope、A2-01 固定测试及其历史未覆盖范围保持不变。完整 A2 结论归 #25。
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
@@ -36,15 +36,15 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/cli.py",
-        "71fbd02062aed17c9386e7cbec8e23b47a7e65c4a66937e295f28bfba5c4ff5e",
+        "1ee532aae68e9ecd111919759b8220c22f5a38d98a8011f0e306e6ff5db1abf0",
     ),
     (
         "src/paper_radar/config/__init__.py",
-        "624896bcf8717d3987f9290a8f49570893cd9f51af2f6639fdc11f9a5385ae6a",
+        "e8e1844c436c97d48bfca7341cfc855502917767bc8da9e6924c3c12d0b9e4f1",
     ),
     (
         "src/paper_radar/config/cli.py",
-        "41a499785fd93aba5a3b674f36918e8ab7c2ff068b6663e12379becec7cc8579",
+        "76a362f5d24e5cca81e0c4f652240d42fe97cdd8c3cedfc94f995e4e4cab32e8",
     ),
     (
         "src/paper_radar/config/compile.py",

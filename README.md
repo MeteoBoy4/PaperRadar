@@ -109,14 +109,28 @@ uv run --offline --locked paper-radar config compile \
   --settings examples/config/settings-journals.yaml --database data/paperradar.sqlite3
 ```
 
-用两次 compile 输出的完整 64 位小写快照 ID 只读比较：
+数据库选择档案库，快照引用选择其中的历史配置。先只读查看已保存的快照：
 
 ```bash
-uv run --offline --locked paper-radar config diff <before-id> <after-id> \
+uv run --offline --locked paper-radar config snapshots list \
+  --database data/paperradar.sqlite3
+```
+
+列表展示完整 ID、查询时唯一的便捷引用、创建时间（缺失显示“未记录”）与声明版本摘要，
+不验证快照完整性或表示已启用。空库显示“暂无已保存快照”。从列表复制两个完整 ID
+或便捷引用替换占位参数，可混用并只读比较：
+
+```bash
+uv run --offline --locked paper-radar config diff <before-reference> <after-reference> \
   --database data/paperradar.sqlite3
 ```
 
 输出配置类别、版本/哈希、受影响投影与前后校准基线；比较成功均返回 0，错误返回 2。
+引用接受完整 64 位小写十六进制 ID 或唯一的 8–63 位小写十六进制前缀；拒绝大写与别名。
+歧义时要求补充字符。列表前缀从 8 位按需延长，63 位内无法唯一时展示完整 ID。
+新增快照可能使旧前缀不再唯一，使用时重新验证；长期记录、脚本和审计保留完整 ID。
+公共 diff 服务仍只接收完整 ID。列表到比较的完整示例与查询接口见
+[历史快照发现与引用](docs/contracts/config-snapshots.md)。
 仅改 Read 语义只影响 read 投影；期刊信誉或普通版本标签变化只影响完整快照。
 历史比较只读取 SQLite 保存材料，不要求原配置文件仍存在，不输出 Profile/Prompt 正文。
 公共 `project_config(snapshot)` 对一个已验证快照纯计算六投影及基线，与数据库和 CLI

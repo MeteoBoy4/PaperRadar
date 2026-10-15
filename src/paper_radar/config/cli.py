@@ -10,6 +10,7 @@ from typer.core import TyperCommand
 
 from paper_radar.config.compile import RuntimeConfigSnapshot
 from paper_radar.config.errors import ConfigError
+from paper_radar.config.snapshot_cli import snapshots_app
 
 DB_HELP = """显式初始化或升级配置数据库。
 
@@ -36,8 +37,11 @@ boundary、value、复用升级与建议规则分别报告配置就绪及缺项�
 adapters 三槽独立选择 Pi 语义材料；冻结系统指令、资源哈希、推理档位和固定隔离策略。
 仅登记配置事实，不安装 Pi/Node、不执行 RPC；没有适配器选择时明确显示 unconfigured。
 两者均不访问网络、模型或凭据，不消耗自动配额。
-`diff <before-id> <after-id> --database` 只读比较保存材料。
-ID 必须为完整 64 位小写 SHA-256。
+`snapshots list --database` 只读列出历史快照的完整 ID、便捷引用、时间与声明版本摘要。
+数据库选择档案库，快照引用选择其中的历史配置；列表不验证完整性或启用状态。
+`diff <before-id> <after-id> --database` 只读比较保存材料，两个输入也可使用唯一短前缀。
+引用接受 8–63 位小写十六进制前缀或完整 64 位小写 SHA-256；有歧义须补充字符。
+前缀仅在查询时唯一，新增快照后须重新验证；长期记录、脚本和审计保留完整 ID。
 显示登记身份、六阶段投影与校准基线差异；有差异也返回 0，不分级、不激活或启用精读。
 帮助不读文件或数据库；错误返回 2，结果只写入终端。
 示例：paper-radar config check --settings config/settings.yaml
@@ -48,6 +52,7 @@ db_app = typer.Typer(help=DB_HELP, no_args_is_help=True, rich_markup_mode="markd
 config_app = typer.Typer(
     help=CONFIG_HELP, no_args_is_help=True, rich_markup_mode="markdown"
 )
+config_app.add_typer(snapshots_app, name="snapshots")
 
 
 class _ConfigDiffCommand(TyperCommand):
@@ -59,11 +64,11 @@ class _ConfigDiffCommand(TyperCommand):
         except (typer.Exit, typer.Abort):
             raise
         except Exception as error:
-            guidance = "仅接受两个快照 ID 和 --database 路径。请检查参数数量与选项"
+            guidance = "仅接受两个快照引用和 --database 路径。请检查参数数量与选项"
             if isinstance(error, typer.BadParameter) and error.param is not None:
                 guidance = {
-                    "before_id": "before_id：缺少比较前的完整快照 ID",
-                    "after_id": "after_id：缺少比较后的完整快照 ID",
+                    "before_id": "before_id：缺少比较前的快照引用",
+                    "after_id": "after_id：缺少比较后的快照引用",
                     "database": "database：必须显式提供 --database 路径",
                 }.get(error.param.name or "", guidance)
             typer.echo(
@@ -167,7 +172,10 @@ def config_compile(
     "diff",
     cls=_ConfigDiffCommand,
     help=(
-        "只读比较两个完整快照身份；不读当前配置、不写数据库、不联网或调用模型。"
+        "只读比较两个快照引用；接受完整 64 位小写 ID"
+        "或数据库内唯一的 8–63 位小写十六进制前缀。"
+        "歧义时须补充字符；不自动纠错或使用别名。新增快照可能使旧前缀产生歧义。"
+        "不读当前配置、不写数据库、不联网或调用模型。"
         "结果只写终端，不消耗配额；比较成功返回 0（含有差异），输入或库损坏返回 2。"
         "不判定变更等级或启用自动精读。"
         "示例：`paper-radar config diff <before-id> <after-id> "
@@ -176,19 +184,30 @@ def config_compile(
 )
 def config_diff(
     before_id: Annotated[
-        str, typer.Argument(help="比较前的完整 64 位小写 SHA-256 快照身份。")
+        str,
+        typer.Argument(
+            help="比较前的完整 64 位小写 ID 或唯一 8–63 位小写十六进制前缀。"
+        ),
     ],
     after_id: Annotated[
-        str, typer.Argument(help="比较后的完整 64 位小写 SHA-256 快照身份。")
+        str,
+        typer.Argument(
+            help="比较后的完整 64 位小写 ID 或唯一 8–63 位小写十六进制前缀。"
+        ),
     ],
     database: Annotated[
         Path, typer.Option("--database", help="既有且已迁移的 SQLite 路径；只读打开。")
     ],
 ) -> None:
-    from paper_radar.config import diff_config_snapshots
+    from paper_radar.config import (
+        diff_config_snapshots,
+        resolve_config_snapshot_reference,
+    )
 
     try:
-        result = diff_config_snapshots(database, before_id, after_id)
+        before = resolve_config_snapshot_reference(database, before_id)
+        after = resolve_config_snapshot_reference(database, after_id)
+        result = diff_config_snapshots(database, before, after)
     except ConfigError as error:
         typer.echo(f"配置比较失败：{error}", err=True)
         raise typer.Exit(2) from None

@@ -140,8 +140,11 @@ calibration_changed。身份变化的 category 为公共受控 `ConfigCategory`�
 paper-radar config diff <before-id> <after-id> --database data/paperradar.sqlite3
 ```
 
-只接受两个完整 64 位小写十六进制 ID，必填数据库路径；短 ID、列表发现、JSON 输出
-留给后续任务。ID 格式校验属于加载服务，不耦合进单快照或纯比较领域能力。
+#23 原始接口只接受两个完整 64 位小写十六进制 ID，必填数据库路径。
+#27 新增 `config snapshots list` 和 CLI 的唯一短前缀输入；便捷查询服务先解析为完整 ID，
+再调用本页既有公共 diff 服务，后者继续只接收完整 ID。JSON 输出未开放。
+发现列表、排序、引用规则与只读保证见 [历史快照发现与引用](config-snapshots.md)。
+ID 格式校验属于加载服务，不耦合进单快照或纯比较领域能力。
 存在性与损坏验证先于相同 ID 短路；两者相同且有效输出“无差异”并返回 0。
 存在差异或涉及校准也返回 0；ID 错误/不存在、缺库、未迁移、未知格式或损坏返回 2。
 缺库不创建，重复比较输出一致，只读打开数据库，不写登记、缓存、分级、启用或激活事实。
