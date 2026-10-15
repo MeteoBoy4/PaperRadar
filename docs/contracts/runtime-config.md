@@ -412,7 +412,24 @@ paper-radar config compile --settings examples/config/settings-read.yaml --datab
 paper-radar config diff <before-id> <after-id> --database data/paperradar.sqlite3
 ```
 
-diff 仅接受完整 64 位小写十六进制 ID；不接受短 ID、uppercase 或当前 selector。
+#27 已在 CLI 开放数据库内唯一的小写十六进制短前缀，至少 8 位；完整 64 位 ID
+仍可使用。公共 diff 服务继续只接受完整 ID，不接受当前 selector。CLI 先解析引用，
+歧义或错误引用返回 2，详见[历史快照发现与引用](config-snapshots.md)。
 比较成功返回 0，即使存在校准相关差异；相同且存在的 ID 输出无差异，未知 ID 仍拒绝。
 命令帮助不读配置、不开数据库。成功返回 0；非法输入、未初始化库、版本冲突或
 损坏返回 2。迁移随 wheel 打包，任意工作目录均可运行。
+
+## 完整 A2 验收边界
+
+#25 的完整 A2 结论固定聚合以上配置、迁移、投影与 CLI 行为测试，保留 A1 与
+A2-01 的历史测试字节及四份 v1 契约。测试只用合成材料与真实临时 SQLite；
+版本标签隔离、停用主题、模型/adapter 槽隔离、精确契约字节、只读方式、ISSN
+冲突、受控算法、并发与中断恢复均有固定测试范围。验收另建临时库执行 base→head，
+从库内 `alembic_version` 读取实际 revision，不将脚本声明的 head 当作已运行迁移。
+迁移与快照格式仍为 `a201_profile_snapshot` / 1，各阶段投影、校准基线及 adapter
+语义格式分别登记；未登记的迁移 head 或格式变化不能通过。
+
+配置就绪、固定 fixture 与完整 A2 结论都不能证明正式校准或阶段 B 就绪。
+该结论不验收 SQLite 之外的 artifact 发布、全量业务事实、阶段输入指纹、任务/
+共享资格与可见性接口、doctor、备份恢复、真实来源及 Pi/Docling/模型执行。
+证据、失败状态和父规格覆盖表见[离线验证证据](../verification/offline-evidence.md#完整-a2-独立结论)。

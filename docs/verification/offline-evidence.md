@@ -5,8 +5,11 @@
 一致性、格式、静态规则、类型、全部离线测试和已选择的冻结契约一致性检查。每次
 运行会在被 Git 忽略的 `verification-runs/<run_id>.json` 生成 #12 离线证据，
 并在 `verification-runs/<run_id>.a1.json` 生成独立的 #13 A1 结论，
-在 `<run_id>.a2.json` 生成 #16 A2-01 结论；终端打印本次三个路径及结果。
-仅两份结论均通过时入口返回 0。重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
+在 `<run_id>.a2.json` 生成 #16 A2-01 结论，在 `<run_id>.a2-full.json` 生成
+#25 完整 A2 结论；终端打印本次四个路径及结果。整套检查仅执行一次，四份文件
+共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1 与完整 A2 均通过时入口返回 0，
+A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时数据库，不操作用户数据库。
+重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
 本次尚无证据文件，终端会收到 uv 的非零退出码。
 
@@ -71,7 +74,7 @@
 
 缺快照、版本漂移、证据与当前快照哈希不一致、测试模块缺失或漂移、检查跳过/失败
 均为 `failed`；可捕获的运行中断为 `incomplete`。修复后完整重跑会得到新的
-`run_id` 和结论，旧结果保留。脚本返回 0 仅当新结论通过；否则返回非零。
+`run_id` 和结论，旧结果保留。完整入口另须本次完整 A2 通过才返回 0。
 若 uv 尚未启动 Python 或进程被强制终止，可能没有本次结论文件；前者保留 uv 的
 非零退出码，后者已有的 #12 证据仍不能作为 A1 通过。
 
@@ -122,8 +125,9 @@ Read 公共服务、SQLite 原子登记、版本保护、跨进程回放、真�
 #22 审查改进统一期刊自定义错误与公共 YAML 边界的权威指引，并为材料工厂的
 settings 读写显式指定 UTF-8；同步两项受影响源码哈希。现有期刊服务、CLI 与
 持久化回归继续验证相同的接收规则、脱敏错误和历史回放，不新增阶段语义。
-主题、value、复用升级、期刊与正文提取配置的新增行为由公共服务/真实 CLI 回归测试随本次完整测试验证，不把结论重标为完整 A2 通过。阶段配置投影与校准基线仍未实现，
-其格式版本为 `null`，不冒充已就绪；A2-01 通过不等于完整 A2、阶段 A、正式
+主题、value、复用升级、期刊与正文提取配置的新增行为由公共服务/真实 CLI 回归测试随本次完整测试验证，不把结论重标为完整 A2 通过。阶段配置投影与校准基线
+在 A2-01 范围内未作验收，历史格式字段继续为 `null`；#23 已实现的能力另由下文
+完整 A2 结论覆盖。A2-01 通过不等于完整 A2、阶段 A、正式
 校准或自动精读通过。结论只保存文件哈希和受控状态，不保存配置正文、Prompt、
 secret 或子进程输出。`status` 为 `passed`、`failed` 或 `incomplete`，只有
 `a2_01_verified=true` 表示本票固定范围通过。
@@ -133,6 +137,70 @@ secret 或子进程输出。`status` 为 `passed`、`failed` 或 `incomplete`，
 并发及故障位置，不依赖 sleep；覆盖同材料复用、版本冲突、固定 5 秒锁等待、
 SQL 失败、连接中断、提交前进程终止、来源文件替换和脱敏。A1/A2-01 固定测试、
 原有外部 I/O 哨兵、四份 v1 契约、快照格式与 migration 保持不变；不将这些回归
-升级为完整 A2 机器结论，完整 A2 验收仍归 #25。
+升级为完整 A2 机器结论，完整 A2 由 #25 的下列独立结论记录。
 审查补充孤儿引用的拒绝和只读一致性回归，防止重新编译从可变来源补回损坏历史，
 或 check 在并发提交期间误报损坏；同步登记事务源码绑定。
+
+## 完整 A2 独立结论
+
+`<run_id>.a2-full.json` 的格式为 **1**，scope 固定为
+`a2_versioned_config_snapshots`、issue 为 25。生产入口是
+`scripts/check-offline` → `scripts.a2_full_acceptance`，复用原有 A1 执行器，
+完整六项计划只执行一次。A2-01 仍写 `<run_id>.a2.json`，保留自己的 scope、
+固定测试字节与历史未覆盖项；它的结果不能代替完整 A2，也不再决定完整入口退出码。
+#12 格式 1、五个原有依赖字段和 A1 固定测试及 `not_assessed` 保持原义。
+
+| 字段 | 判据与含义 |
+| --- | --- |
+| `run_id`、`evidence_file`、`evidence_sha256` | 与本次 #12 文件名、内容 run_id 和实际字节哈希一致。 |
+| `a1_conclusion_file`、`a1_conclusion_sha256` | 同次 A1 实际文件和哈希；文件内容须与执行器返回的结论一致，且本次 A1 必须通过。 |
+| `required_checks` | 固定 lockfile/format/lint/types/tests/contracts 顺序，每项本次实际通过、reason 为 none、exit_code 为整数 0；缺项、跳过或失败均拒绝。 |
+| `test_modules`、`source_modules` | 固定路径、expected_sha256、actual_sha256 和 passed/failed；缺文件或字节漂移不能通过。 |
+| `fixture_files` | `examples/` 固定合成材料逐文件的 SHA-256 身份与核对结果，不保存配置或 Prompt 正文。测试材料工厂和进程哨兵的字节另列在 source_modules。 |
+| `environment` | 当前锁定 Python 及 Alembic、SQLAlchemy、PyYAML 的实际安装版本；版本缺失失败，新依赖不追加到 #12。 |
+| `migration_revision` | 另建临时 SQLite、真实 base→head 后从库内 alembic_version 读取唯一 revision，并核对随包 head 与固定的 a201_profile_snapshot；未登记新 head、升级失败或读取失败均拒绝。无用户数据库参数。 |
+| `format_versions` | snapshot 为 1；stage_projections 分别记录 boundary/value/reuse/extraction/read/suggestion，各为 1；calibration_baseline 为 1；adapter_semantics 为 1。逐项独立匹配，不能只写一个总版本。 |
+| `code`、`worktree_sha256`、`lockfile_sha256` | 本次实际身份，须与 A1 运行前后核对过的身份及 #12 一致。材料与代码在运行期间变化均拒绝。 |
+| `status`、`a2_verified`、`reasons` | passed/failed/incomplete；只在无失败原因时 a2_verified=true。原因仅受控代码、中文指引及可选受控文件路径/依赖名称，不保存原始异常、SQL、输入值或进程输出。 |
+| `stage_a_verified`、`live_verified`、`not_assessed` | 前两项恒 false；固定列明剩余能力，不从 A1 历史未覆盖项推断当前能力。 |
+
+固定范围在 `scripts/a2_full_scope.py`：显式列出 A2-01–A2-09、#26 adapter、
+已交付 #27 快照发现，以及本票验收、真实示例、入口测试；不在运行时扫描测试目录
+后自动生成期望。修改行为或升级格式时须先逐项审查对应规格与测试，再显式修改清单
+中的字节哈希/受支持版本。不能为取得绿色结果自动刷新期望；A1/A2-01 固定测试
+不得借此重标。当前源码绑定因完整入口帮助变化只更新 A2-01 的 wrapper 源码哈希，
+原五个固定测试、scope 和历史格式 null 不变。
+
+### 父规格与评论覆盖
+
+下列模块均在完整 A2 固定测试清单中；表内模块名省略 `tests/` 和 `.py`。
+它同时核对 #15 Decisions、Testing Decisions、DoD、补充一 #1–20、补充二 #21–46
+与已确认的版本标签隔离，不声明其外部依赖或后续业务流程已经实现。
+
+| 规格/补充 | 验证边界和固定模块 |
+| --- | --- |
+| Decisions 1–5、补充一 1–5、8–9、20、补充二 23、30–32、40–45 | `test_config_service`、`test_config_validation`、`test_config_boundary`、`test_config_value`、各类 validation/architecture 模块：六段 Profile、纯 selector/根目录/封闭名、严格 YAML、占位和未配置、中文受控错误、层级隔离。 |
+| Decisions 6–10、补充一 3、8、10–11、15、17、19、补充二 28、33–35 | `test_config_service`、`test_config_boundary`、`test_config_value`、各类 persistence：真实迁移、metadata 一致、外键唯一约束、原子登记、精确 schema+manifest 字节、跨进程回放、输入零改写、只读模式、未知格式与损坏拒绝。无新增 migration，所以本票不增加伪“上一 revision 升级”案例。 |
+| Decisions 11–14、补充一 1、6–7、9、12–14、16、补充二 21–27、32、39 | `test_config_projections`、`test_config_projection_algorithms`、`test_config_projection_formats`、`test_config_projection_adapters`、`test_config_diff_service/cli/review`：固定独立期望，声明标签/停用主题/期刊/模型与 adapter 槽隔离、集合排序与有序次序、算法受控身份、六投影/基线独立版本与空值、只读脱敏 diff。资源字段拒绝按补充二 43，OCR true 拒绝按 42，不采用被后续修正的早期 OCR/资源开关建议。 |
+| Decision 4、补充二 29 | `test_config_journals`、`test_config_journals_validation/persistence/cli`：ISSN 格式、校验位、规范化后冲突、期刊冻结与回放；不进入评分或投影。 |
+| Decisions 8、15–16、补充一 15、18、补充二 33–34、37 | `test_config_transactions`、`test_config_transaction_cli`：独立连接竞争、跨进程握手、固定 5 秒锁等待、SQL/连接/进程故障、恢复重试、材料替换、孤儿引用拒绝；compile 与 check 的一致读视图。 |
+| Decisions 15–17、补充二 36–41、46 | 原 A1 固定模块与 I/O 哨兵不变；所有 `test_config_*cli` 与架构模块、`test_a2_full_entry`：真实配置入口只拒网络，help 拒网络与数据库；公共 Contract、CLI、布局、投影依赖与版本演进、迁移及恢复文档交叉引用。#27 已交付 CLI 唯一前缀，公共 diff 仍为完整 ID。 |
+| Decision 17、Testing Decisions/DoD、补充一 20、补充二 36–38、45–46、#25 澄清评论 | `test_a2_full_acceptance/entry/examples`：四文件同次绑定、一次计划、实际临时库 head、完整格式与依赖、固定材料哈希、旧格式/缺项/漂移/中断拒绝、无覆盖旧结论、真实示例回放和 CLI；保留 A2-01 共存和 A1 历史含义。 |
+
+配置、持久化、投影与 CLI 的公共契约分别见
+[运行配置](../contracts/runtime-config.md)、[阶段投影](../contracts/config-projections.md)、
+[adapter](../contracts/adapter-config.md)、[解析配置](../contracts/extraction-config.md)、
+[历史查询](../contracts/config-snapshots.md)。迁移与中断恢复遵循运行配置中的 SQLite
+短事务协议；它不是备份恢复。目录与领域定义核对 `intent/draft.md` §6 和 `CONTEXT.md`；
+没有新增领域决策或变更快照/投影身份算法。
+
+完整入口只有本次 A1 与完整 A2 通过时返回 0，否则非零。运行中断记为 incomplete；
+在发布完整 A2 前发生的可捕获中断会得到 incomplete 结论。进程被强制终止或在最终
+原子发布中被终止时可能没有完整结论，缺结论绝不等于通过；已有 #12 若仍
+completed=false，同样不能继承历史成功。已有结论不可覆盖，修复后须用新 run_id
+重新执行整套检查。
+
+完整 A2 的未覆盖项包括阶段输入指纹、全量业务事实与 blob/artifact、task/lease 和
+共享资格/可见性接口、doctor、运行日志、备份恢复、真实来源审计、Pi 供给与 RPC、
+实际算法/Docling/Read、校准工作流/门禁、阶段 B 与自动精读。合成 fixture、配置
+ready 和 A2 passed 都不能证明正式校准或阶段 B 就绪，stage A 与 live 恒未验收。

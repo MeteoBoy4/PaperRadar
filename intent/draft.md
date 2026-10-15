@@ -919,7 +919,7 @@ reports/
 logs/
 ~~~
 
-`settings.yaml` 只选择当前 Profile、主题、models 整份版本化文件、复用升级参数、正文提取配置、Read 分块配置、提示词和契约版本；带版本的内容文件创建后不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
+`settings.yaml` 只选择当前 Profile、主题、期刊信誉、models 整份版本化文件、分槽 adapter、复用升级参数、正文提取配置、Read 分块配置、提示词和契约版本；已登记的带版本内容文件不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
 
 A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约；A2-03 增加 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪；A2-04 增加 escalation、reuse 提示词、reuse-assessment 和 decision-reasons 契约，判断 reuse/suggestion 配置就绪，不要求 PDF、正文解析或 value 输出；A2-05 增加 extraction 的受控工具链、按阶段模型文件身份、有效解析策略与 normalization v1，单独判断 extraction 配置完整性，不安装解析器、下载模型或执行 PDF 解析。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
 
@@ -932,6 +932,13 @@ Read 恒未就绪并列出 `read_contract` 及模型、提示词、适配器占�
 不新增权威 Read 输出契约、不执行分块或模型调用。输出语言和正文制品仍由后续
 阶段输入指纹组合，不进入运行配置快照。#23 已实现单快照六投影与校准基线重建，
 Read 配置变化只影响 read 投影；公共服务与只读比较见 `docs/contracts/config-projections.md`。
+
+A2-07–A2-09 已交付期刊配置冻结、六投影/基线只读比较和配置事务并发中断恢复；
+#26 的 adapter 配置及 #27 的历史快照发现也纳入完整配置验收。#25 在同一次完整
+离线执行中追加独立 A2 结论，与 #12、A1、A2-01 共用 run_id 和证据哈希；迁移
+revision 来自真实临时验收库，格式版本与固定合成材料逐项记录，正文与凭据不进入
+验收摘要。固定覆盖和未验收项见 `docs/verification/offline-evidence.md`。
+此结论只证明配置切片，不代表完整阶段 A、正式校准、阶段 B 或 live 验收通过。
 
 `tools/pi/` 保存 §7.8 的固定供给材料，清单、官方锁文件、release 元数据和校验依据提交版本控制；`.tools/pi/` 是由它们生成的项目专属安装目录，安装树、staging 和缓存不提交 Git。`supply_id` 是供给清单规范载荷的哈希，包含固定材料哈希、工具链、平台、安装参数及预期安装树校验身份，不由目录路径或 Pi 版本号单独确定。项目专属缓存可以作为另一安装位置，但必须保持相同的固定身份与独立生命周期；这些目录不是 settings 的新增配置槽。
 

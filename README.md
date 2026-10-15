@@ -142,7 +142,7 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 公共 `project_config(snapshot)` 对一个已验证快照纯计算六投影及基线，与数据库和 CLI
 解耦，供后续校准或诊断复用；没有单快照 CLI。接口与依赖矩阵见
 [阶段配置投影与比较](docs/contracts/config-projections.md)。保存和比较均不启用精读，
-自动运行前仍需接入完整校准变更工作流；完整 A2 验收结论由 #25 交付。
+自动运行前仍需接入完整校准变更工作流；完整 A2 通过由独立的离线结论记录。
 
 ## Screening 输出验证
 
@@ -214,7 +214,13 @@ pytest 测试（包括冻结契约导出与只读检查测试），最后用一�
 不会联网补装。
 
 每次运行在 `verification-runs/` 下生成新的 `<run_id>.json` 离线证据、
-`<run_id>.a1.json` 独立 A1 结论与 `<run_id>.a2.json` A2-01 结论。入口仅在
-两份结论都通过时返回 0；阶段 A 剩余能力、真实来源和自动精读仍未验收。
+`<run_id>.a1.json` 独立 A1 结论、`<run_id>.a2.json` 历史范围的 A2-01 结论，
+以及 `<run_id>.a2-full.json` 完整 A2 结论。四份文件共用本次 `run_id`，不重复
+执行整套检查。入口仅在本次 A1 与完整 A2 都通过时返回 0；A2-01 独立保留。
+测试与迁移验收使用临时 SQLite，不操作用户数据库。完整 A2 固定覆盖版本登记、
+配置快照、六阶段投影、校准语义基线、只读查询、CLI 与并发中断恢复；只保存
+固定测试/源码/合成材料的哈希及实际迁移与格式版本，不保存配置正文或凭据。
+阶段输入指纹、全量业务事实、任务与共享接口、doctor、备份恢复、真实来源、
+模型执行、正式校准和自动精读仍未验收；完整 A2 不等于阶段 A 或阶段 B 通过。
 该目录不进入版本控制；格式、失败表示与使用方法见
 [离线验证证据](docs/verification/offline-evidence.md)。
