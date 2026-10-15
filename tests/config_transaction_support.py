@@ -32,6 +32,18 @@ def profile_inputs(root: Path, *, version: str = "profile-v1") -> Path:
     return settings
 
 
+def recovery_inputs(root: Path) -> tuple[Path, Path]:
+    """为恢复场景追加 Profile 与 Prompt 两种 v2 材料。"""
+    settings = profile_inputs(root, version="profile-v2")
+    prompt = root / "prompts/screening/boundary-v2.md"
+    prompt.parent.mkdir(parents=True)
+    prompt.write_bytes(b"PRIVATE_PROMPT_MARKER\n")
+    settings.write_text(
+        "profile: profile-v2\nprompts:\n  boundary: v2\n", encoding="utf-8"
+    )
+    return settings, prompt
+
+
 def config_facts(database: Path) -> tuple[list[tuple[object, ...]], ...]:
     """重开独立连接观察全部提交事实及字节与创建时间。"""
     with sqlite3.connect(database) as connection:

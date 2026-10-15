@@ -14,6 +14,7 @@ from tests.config_transaction_support import (
     config_facts,
     paused_compile,
     profile_inputs,
+    recovery_inputs,
 )
 
 
@@ -85,13 +86,7 @@ def test_killed_compile_rolls_back_every_fact_and_can_be_rerun(
     upgrade_database(database)
     historical = compile_config(settings, database)
     before = config_facts(database)
-    settings = profile_inputs(tmp_path, version="profile-v2")
-    prompt = tmp_path / "prompts/screening/boundary-v2.md"
-    prompt.parent.mkdir(parents=True)
-    prompt.write_bytes(b"PRIVATE_PROMPT_MARKER\n")
-    settings.write_text(
-        "profile: profile-v2\nprompts:\n  boundary: v2\n", encoding="utf-8"
-    )
+    settings, prompt = recovery_inputs(tmp_path)
     inputs = {
         p: p.read_bytes() for p in (settings, prompt, *settings.parent.rglob("*.yaml"))
     }

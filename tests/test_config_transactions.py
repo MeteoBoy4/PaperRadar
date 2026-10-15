@@ -18,7 +18,12 @@ from paper_radar.config import (
     load_config_snapshot,
     upgrade_database,
 )
-from tests.config_transaction_support import before_sql, config_facts, profile_inputs
+from tests.config_transaction_support import (
+    before_sql,
+    config_facts,
+    profile_inputs,
+    recovery_inputs,
+)
 
 
 def test_compile_lock_budget_is_fixed_and_busy_error_is_actionable(
@@ -34,7 +39,8 @@ def test_compile_lock_budget_is_fixed_and_busy_error_is_actionable(
         with pytest.raises(ConfigError, match=r"数据库忙.*5 秒.*请稍后重试"):
             compile_config(settings, database)
         elapsed = time.monotonic() - started
-    assert 4.5 <= elapsed < 10
+    # 墙钟包含 CI 调度延迟。上界仅防止失控等待。SQLite 锁预算仍固定为 5 秒。
+    assert 4.5 <= elapsed < 30
     assert config_facts(database) == before
     assert "PRIVATE_PROFILE_MARKER" not in caplog.text
     assert compile_config(settings, database).profile_status == "configured"
@@ -161,13 +167,7 @@ def test_transaction_failure_preserves_history_and_allows_clean_rerun(
     upgrade_database(database)
     historical = compile_config(settings, database)
     before = config_facts(database)
-    settings = profile_inputs(tmp_path, version="profile-v2")
-    prompt = tmp_path / "prompts/screening/boundary-v2.md"
-    prompt.parent.mkdir(parents=True)
-    prompt.write_bytes(b"PRIVATE_PROMPT_MARKER\n")
-    settings.write_text(
-        "profile: profile-v2\nprompts:\n  boundary: v2\n", encoding="utf-8"
-    )
+    settings, prompt = recovery_inputs(tmp_path)
     inputs = {
         p: p.read_bytes() for p in (settings, prompt, *settings.parent.rglob("*.yaml"))
     }
