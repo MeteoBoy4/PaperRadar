@@ -92,7 +92,7 @@ def default_checks() -> tuple[Check, ...]:
         ),
         planned_check(
             "tests",
-            (*uv, "pytest"),
+            (*uv, "python", "-m", "pytest", "-p", "scripts.a2_test_receipt"),
             "定位失败用例。",
         ),
         planned_check(
@@ -253,6 +253,10 @@ def _run_checks(
                 environment = os.environ.copy()
                 if check.id == "tests":
                     environment.pop("PYTEST_ADDOPTS", None)
+                    environment["PAPER_RADAR_TEST_RUN_ID"] = evidence["run_id"]
+                    environment["PAPER_RADAR_TEST_RECEIPT"] = str(
+                        path.with_suffix(".pytest.json").resolve()
+                    )
                 result = subprocess.run(
                     check.command,
                     cwd=root,

@@ -25,4 +25,4 @@ if [[ "$#" -ne 0 ]]; then
 fi
 
 export UV_NO_PROGRESS=1
-exec uv run --offline --locked python -m scripts.a2_full_acceptance
+exec uv run --offline --locked python -m scripts.a1_acceptance

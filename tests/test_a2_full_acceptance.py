@@ -14,6 +14,7 @@ import pytest
 from scripts.a1_acceptance import capture_identity
 from scripts.a2_full_acceptance import write_full_a2_conclusion
 from scripts.offline_evidence import default_checks, file_sha256
+from tests.a2_full_support import passed_receipt
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -54,6 +55,10 @@ def same_run(tmp_path: Path) -> tuple[Path, Path, dict[str, Any]]:
     }
     a1_path = tmp_path / f"{run_id}.a1.json"
     a1_path.write_text(json.dumps(a1), encoding="utf-8")
+    evidence_path.with_suffix(".pytest.json").write_text(
+        json.dumps(passed_receipt(run_id)),
+        encoding="utf-8",
+    )
     return evidence_path, a1_path, a1
 
 
@@ -67,6 +72,7 @@ def test_full_a2_records_independent_scope_formats_fixtures_and_actual_migration
     assert json.loads(path.read_bytes()) == result
     assert result["scope"] == "a2_versioned_config_snapshots"
     assert result["issue"] == 25
+    assert result["format_version"] == 2
     assert result["a2_verified"] is True
     assert result["stage_a_verified"] is result["live_verified"] is False
     assert result["migration_revision"] == "a201_profile_snapshot"
@@ -91,6 +97,10 @@ def test_full_a2_records_independent_scope_formats_fixtures_and_actual_migration
     assert all(result["environment"]["dependencies"].values())
     assert result["evidence_sha256"] == file_sha256(evidence)
     assert result["a1_conclusion_sha256"] == file_sha256(a1_path)
+    assert result["pytest_receipt_sha256"] == file_sha256(
+        evidence.with_suffix(".pytest.json")
+    )
+    assert all(record["result"] == "passed" for record in result["test_execution"])
     assert result["fixture_files"]
     assert all(item["result"] == "passed" for item in result["fixture_files"])
     assert {
@@ -389,3 +399,48 @@ def test_evidence_replacement_during_validation_cannot_bind_an_unchecked_payload
     _, result = write_full_a2_conclusion(ROOT, evidence, a1_path, a1, tmp_path)
     assert result["status"] == "failed"
     assert "binding_mismatch" in {r["code"] for r in result["reasons"]}
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "missing",
+        "skipped",
+        "deselected",
+        "partial",
+        "old_format",
+        "wrong_run",
+        "incomplete",
+    ],
+)
+def test_fixed_tests_must_have_same_run_execution_not_only_a_successful_exit(
+    tmp_path: Path,
+    case: str,
+) -> None:
+    evidence, a1_path, a1 = same_run(tmp_path)
+    receipt_path = evidence.with_suffix(".pytest.json")
+    receipt = json.loads(receipt_path.read_bytes())
+    if case == "missing":
+        receipt_path.unlink()
+    else:
+        record = receipt["modules"]["tests/test_config_service.py"]
+        if case == "skipped":
+            record.update(skipped=record["collected"], passed=0)
+        elif case == "deselected":
+            record.update(deselected=record["collected"], collected=0, passed=0)
+        elif case == "partial":
+            record["collected"] -= 1
+            record["passed"] -= 1
+        elif case == "old_format":
+            receipt["format_version"] = 0
+        elif case == "wrong_run":
+            receipt["run_id"] = "historical-run"
+        elif case == "incomplete":
+            receipt["completed"] = False
+        receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+    _, result = write_full_a2_conclusion(ROOT, evidence, a1_path, a1, tmp_path)
+    assert result["status"] == ("incomplete" if case == "incomplete" else "failed")
+    assert not result["a2_verified"]
+    assert "test_execution_not_passed" in {
+        reason["code"] for reason in result["reasons"]
+    }

@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.metadata
 import json
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -77,7 +78,7 @@ def test_one_plan_produces_four_bound_files_and_never_inherits_previous_success(
     assert payloads[2]["a2_01_verified"] is (stop == "passed")
     commands = log.read_text(encoding="utf-8").splitlines()
     assert len(commands) == (6 if passed else 5)
-    assert sum(command.endswith(" pytest") for command in commands) == 1
+    assert sum(" pytest" in command for command in commands) == 1
     assert (output / "historical.a2-full.json").read_text(encoding="utf-8") == (
         '{"status":"passed","a2_verified":true}'
     )
@@ -135,5 +136,45 @@ def test_interruption_while_generating_legacy_conclusion_keeps_four_files_incomp
     _, full = run_full_verification(root, output)
     assert full["status"] == "incomplete"
     assert not full["a2_verified"]
-    assert len(list(output.glob("*.json"))) == 4
+    assert len(list(output.glob("*.json"))) == 5
     assert len(log.read_text(encoding="utf-8").splitlines()) == 6
+
+
+def test_real_skipped_suite_cannot_pass_complete_entry_even_when_pytest_returns_zero(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = repository_copy(tmp_path / "repo")
+    (root / "conftest.py").write_text(
+        "import pytest\ndef pytest_collection_modifyitems(items):\n"
+        "    for item in items:\n"
+        "        item.add_marker(pytest.mark.skip(reason='PRIVATE_SKIP_REASON'))\n",
+        encoding="utf-8",
+    )
+    binary, log = fake_checks(tmp_path)
+    uv = binary / "uv"
+    invocation = (
+        f"{shlex.quote(sys.executable)} "
+        f"{shlex.quote(str(tmp_path / 'write_receipt.py'))}"
+    )
+    uv.write_text(
+        uv.read_text(encoding="utf-8").replace(
+            invocation,
+            f"{shlex.quote(sys.executable)} -m pytest -q -p scripts.a2_test_receipt",
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
+    monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
+    output = tmp_path / "runs"
+    _, full = run_full_verification(root, output)
+    evidence = json.loads((output / full["evidence_file"]).read_bytes())
+    assert evidence["overall"] == "passed"
+    assert full["status"] == "failed"
+    assert not full["a2_verified"]
+    assert "test_execution_not_passed" in {reason["code"] for reason in full["reasons"]}
+    assert all(
+        record["passed"] == 0 and record["skipped"] > 0
+        for record in full["test_execution"]
+    )
+    assert "PRIVATE_SKIP_REASON" not in json.dumps(full)

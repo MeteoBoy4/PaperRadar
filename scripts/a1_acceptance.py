@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import signal
 import stat
 import subprocess
 import sys
@@ -443,24 +442,10 @@ def run_a1_verification(root: Path, output_dir: Path) -> tuple[Path, dict[str, A
 
 
 def main() -> int:
-    """执行一次固定离线计划并给出独立 A1、A2-01 结论。"""
-    signal.signal(signal.SIGTERM, _interrupt)
-    root = Path(__file__).resolve().parent.parent
-    output_dir = root / "verification-runs"
-    a1_path, a1 = run_a1_verification(root, output_dir)
-    from scripts.a2_acceptance import write_a2_conclusion
+    """保留既有启动入口。结论编排由完整 A2 入口负责。"""
+    from scripts.a2_full_acceptance import main as full_main
 
-    evidence_path = output_dir / f"{a1['run_id']}.json"
-    a2_path, a2 = write_a2_conclusion(root, evidence_path, a1_path, a1, output_dir)
-    print(f"[A2-01 验收] 结论：{a2_path}")
-    print(f"[A2-01 验收] 结果：{a2['status']}")
-    for reason in a2["reasons"]:
-        print(f"[A2-01 验收] 原因：{reason['code']}：{reason['message_zh']}")
-    return 0 if a1["a1_verified"] and a2["a2_01_verified"] else 1
-
-
-def _interrupt(_signum: int, _frame: object) -> None:
-    raise KeyboardInterrupt
+    return full_main()
 
 
 if __name__ == "__main__":

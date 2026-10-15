@@ -6,7 +6,8 @@
 运行会在被 Git 忽略的 `verification-runs/<run_id>.json` 生成 #12 离线证据，
 并在 `verification-runs/<run_id>.a1.json` 生成独立的 #13 A1 结论，
 在 `<run_id>.a2.json` 生成 #16 A2-01 结论，在 `<run_id>.a2-full.json` 生成
-#25 完整 A2 结论；终端打印本次四个路径及结果。整套检查仅执行一次，四份文件
+#25 完整 A2 结论；终端打印本次四个主要路径及结果。测试另外生成同次
+`<run_id>.pytest.json` 脱敏执行回执。整套检查仅执行一次，各文件
 共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1 与完整 A2 均通过时入口返回 0，
 A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时数据库，不操作用户数据库。
 重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
@@ -143,9 +144,10 @@ SQL 失败、连接中断、提交前进程终止、来源文件替换和脱敏�
 
 ## 完整 A2 独立结论
 
-`<run_id>.a2-full.json` 的格式为 **1**，scope 固定为
+`<run_id>.a2-full.json` 的格式为 **2**，scope 固定为
 `a2_versioned_config_snapshots`、issue 为 25。生产入口是
-`scripts/check-offline` → `scripts.a2_full_acceptance`，复用原有 A1 执行器，
+`scripts/check-offline` → 原有 `scripts.a1_acceptance` 启动入口 →
+`scripts.a2_full_acceptance`，复用原有 A1 执行器，
 完整六项计划只执行一次。A2-01 仍写 `<run_id>.a2.json`，保留自己的 scope、
 固定测试字节与历史未覆盖项；它的结果不能代替完整 A2，也不再决定完整入口退出码。
 #12 格式 1、五个原有依赖字段和 A1 固定测试及 `not_assessed` 保持原义。
@@ -156,6 +158,7 @@ SQL 失败、连接中断、提交前进程终止、来源文件替换和脱敏�
 | `a1_conclusion_file`、`a1_conclusion_sha256` | 同次 A1 实际文件和哈希；文件内容须与执行器返回的结论一致，且本次 A1 必须通过。 |
 | `required_checks` | 固定 lockfile/format/lint/types/tests/contracts 顺序，每项本次实际通过、reason 为 none、exit_code 为整数 0；缺项、跳过或失败均拒绝。 |
 | `test_modules`、`source_modules` | 固定路径、expected_sha256、actual_sha256 和 passed/failed；缺文件或字节漂移不能通过。 |
+| `pytest_receipt_file`、`pytest_receipt_sha256`、`test_execution` | 绑定本次 pytest 原始脱敏回执的文件名与实际哈希；逐个固定模块核对收集、通过、失败、跳过、取消选择和未完成计数，只有收集与完整通过数量均等于固定数量，其他四项均为 0 才通过。 |
 | `fixture_files` | `examples/` 固定合成材料逐文件的 SHA-256 身份与核对结果，不保存配置或 Prompt 正文。测试材料工厂和进程哨兵的字节另列在 source_modules。 |
 | `environment` | 当前锁定 Python 及 Alembic、SQLAlchemy、PyYAML 的实际安装版本；版本缺失失败，新依赖不追加到 #12。 |
 | `migration_revision` | 另建临时 SQLite、真实 base→head 后从库内 alembic_version 读取唯一 revision，并核对随包 head 与固定的 a201_profile_snapshot；未登记新 head、升级失败或读取失败均拒绝。无用户数据库参数。 |
@@ -171,6 +174,19 @@ SQL 失败、连接中断、提交前进程终止、来源文件替换和脱敏�
 不得借此重标。当前源码绑定因完整入口帮助变化只更新 A2-01 的 wrapper 源码哈希，
 原五个固定测试、scope 和历史格式 null 不变。
 
+完整 A2 格式 2 增加必需的实际执行回执绑定，替代开发中的仅文件哈希/总退出码判据。
+回执格式独立为 1，由 `scripts.a2_test_receipt` 插件在本次唯一 pytest 进程中生成；
+不修改 #12 或 A1 的格式、字段和历史结论。固定测试模块及其用例数量一并显式冻结，
+包括 A1 原固定范围；根 conftest、插件或筛选参数使固定用例少收集、skip、xfail、
+取消选择或未完整经过 setup/call/teardown 时，即使 pytest 总退出 0，完整 A2 也失败。
+旧格式、旧 run_id、缺回执或回执在核对期间漂移都不能通过；收集中断保留 incomplete。
+仅收集不执行也不能通过。新增或变动固定用例须先人工核对，再显式更新固定计数与字节，
+运行时不会自动收集后刷新期望。
+
+回执仅保存固定模块路径和整数计数，不保存测试名、参数化 ID、skip 原因、捕获输出、
+traceback 或原始异常。进程启动即写 incomplete 初态，收集后更新，最终记录结束状态；
+没有配置时直接加载插件不写文件，不改变普通子集测试的使用方式。
+
 ### 父规格与评论覆盖
 
 下列模块均在完整 A2 固定测试清单中；表内模块名省略 `tests/` 和 `.py`。
@@ -185,7 +201,7 @@ SQL 失败、连接中断、提交前进程终止、来源文件替换和脱敏�
 | Decision 4、补充二 29 | `test_config_journals`、`test_config_journals_validation/persistence/cli`：ISSN 格式、校验位、规范化后冲突、期刊冻结与回放；不进入评分或投影。 |
 | Decisions 8、15–16、补充一 15、18、补充二 33–34、37 | `test_config_transactions`、`test_config_transaction_cli`：独立连接竞争、跨进程握手、固定 5 秒锁等待、SQL/连接/进程故障、恢复重试、材料替换、孤儿引用拒绝；compile 与 check 的一致读视图。 |
 | Decisions 15–17、补充二 36–41、46 | 原 A1 固定模块与 I/O 哨兵不变；所有 `test_config_*cli` 与架构模块、`test_a2_full_entry`：真实配置入口只拒网络，help 拒网络与数据库；公共 Contract、CLI、布局、投影依赖与版本演进、迁移及恢复文档交叉引用。#27 已交付 CLI 唯一前缀，公共 diff 仍为完整 ID。 |
-| Decision 17、Testing Decisions/DoD、补充一 20、补充二 36–38、45–46、#25 澄清评论 | `test_a2_full_acceptance/entry/examples`：四文件同次绑定、一次计划、实际临时库 head、完整格式与依赖、固定材料哈希、旧格式/缺项/漂移/中断拒绝、无覆盖旧结论、真实示例回放和 CLI；保留 A2-01 共存和 A1 历史含义。 |
+| Decision 17、Testing Decisions/DoD、补充一 20、补充二 36–38、45–46、#25 澄清评论 | `test_a2_full_acceptance/entry/examples` 与 `test_a2_test_receipt`：同次结论及执行回执绑定、一次计划、实际临时库 head、完整格式与依赖、固定材料哈希、旧格式/缺项/漂移/中断拒绝、固定用例 skip/deselect 拒绝、无覆盖旧结论、真实示例回放和 CLI；保留 A2-01 共存和 A1 历史含义。 |
 
 配置、持久化、投影与 CLI 的公共契约分别见
 [运行配置](../contracts/runtime-config.md)、[阶段投影](../contracts/config-projections.md)、

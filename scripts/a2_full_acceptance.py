@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.a1_acceptance import capture_identity, run_a1_verification
+from scripts.a1_scope import REQUIRED_TEST_MODULES as A1_TEST_MODULES
 from scripts.a2_full_scope import (
     FORMAT_VERSION,
     FORMAT_VERSIONS,
@@ -23,6 +24,7 @@ from scripts.a2_full_scope import (
     REQUIRED_DEPENDENCIES,
     REQUIRED_FIXTURE_FILES,
     REQUIRED_SOURCE_MODULES,
+    REQUIRED_TEST_CASE_COUNTS,
     REQUIRED_TEST_MODULES,
     SCOPE,
 )
@@ -40,6 +42,9 @@ _HELP = {
     "config_format_drift": "配置格式身份变化；请审查并显式版本化验收范围。",
     "identity_changed": "运行期间代码、工作树或 lockfile 变化；请重跑完整入口。",
     "run_incomplete": "本次运行中断或未完成；请重新执行完整入口。",
+    "test_execution_not_passed": (
+        "本次测试回执缺失、不一致或固定用例未全部执行通过；请重跑完整入口。"
+    ),
 }
 
 
@@ -141,6 +146,75 @@ def _migrated_revision() -> str | None:
         return str(revisions[0])
 
 
+def _test_execution(
+    path: Path,
+    run_id: str,
+    reasons: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    receipt = _read_json(path)
+    if receipt is None:
+        reasons.append(_reason("test_execution_not_passed"))
+        return []
+    if (
+        receipt.get("format_version") != 1
+        or receipt.get("run_id") != run_id
+        or receipt.get("completed") is not True
+        or type(receipt.get("exit_code")) is not int
+        or receipt.get("exit_code") != 0
+    ):
+        reasons.append(_reason("test_execution_not_passed"))
+    if receipt.get("completed") is False:
+        reasons.append(_reason("run_incomplete"))
+    required = {name for name, _ in (*A1_TEST_MODULES, *REQUIRED_TEST_MODULES)}
+    if set(REQUIRED_TEST_CASE_COUNTS) != required:
+        reasons.append(_reason("scope_drift"))
+    modules = receipt.get("modules")
+    if not isinstance(modules, dict):
+        reasons.append(_reason("test_execution_not_passed"))
+        modules = {}
+    records = []
+    for name in sorted(required):
+        raw = modules.get(name)
+        if not isinstance(raw, dict):
+            raw = {}
+        counts = {
+            key: raw.get(key) if type(raw.get(key)) is int and raw[key] >= 0 else None
+            for key in (
+                "collected",
+                "passed",
+                "failed",
+                "skipped",
+                "deselected",
+                "incomplete",
+            )
+        }
+        expected = REQUIRED_TEST_CASE_COUNTS.get(name)
+        passed = (
+            type(expected) is int
+            and expected > 0
+            and counts
+            == {
+                "collected": expected,
+                "passed": expected,
+                "failed": 0,
+                "skipped": 0,
+                "deselected": 0,
+                "incomplete": 0,
+            }
+        )
+        records.append(
+            {
+                "path": name,
+                "expected_cases": expected,
+                **counts,
+                "result": "passed" if passed else "failed",
+            }
+        )
+        if not passed:
+            reasons.append(_reason("test_execution_not_passed", name))
+    return records
+
+
 def _validate_run(
     evidence_path: Path,
     a1_path: Path,
@@ -230,6 +304,9 @@ def write_full_a2_conclusion(
         "test_modules": [],
         "source_modules": [],
         "fixture_files": [],
+        "pytest_receipt_file": evidence_path.with_suffix(".pytest.json").name,
+        "pytest_receipt_sha256": None,
+        "test_execution": [],
         "environment": None,
         "migration_revision": None,
         "format_versions": None,
@@ -249,6 +326,9 @@ def write_full_a2_conclusion(
             ("fixture_files", REQUIRED_FIXTURE_FILES),
         ):
             result[key] = _files(root, required, reasons)
+        receipt_path = evidence_path.with_suffix(".pytest.json")
+        result["pytest_receipt_sha256"] = file_sha256(receipt_path)
+        result["test_execution"] = _test_execution(receipt_path, run_id, reasons)
         result["environment"] = _environment(reasons)
         try:
             result["migration_revision"] = _migrated_revision()
@@ -285,6 +365,7 @@ def write_full_a2_conclusion(
             or file_sha256(a1_path) != result["a1_conclusion_sha256"]
             or result["evidence_sha256"] != a1_conclusion.get("evidence_sha256")
             or _read_json(a1_path) != a1_conclusion
+            or file_sha256(receipt_path) != result["pytest_receipt_sha256"]
         ):
             reasons.append(_reason("binding_mismatch"))
     except KeyboardInterrupt:

@@ -4,11 +4,35 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def passed_receipt(run_id: str) -> dict[str, object]:
+    from scripts.a2_full_scope import REQUIRED_TEST_CASE_COUNTS
+
+    return {
+        "format_version": 1,
+        "run_id": run_id,
+        "completed": True,
+        "exit_code": 0,
+        "modules": {
+            name: {
+                "collected": count,
+                "passed": count,
+                "failed": 0,
+                "skipped": 0,
+                "deselected": 0,
+                "incomplete": 0,
+            }
+            for name, count in REQUIRED_TEST_CASE_COUNTS.items()
+        },
+    }
 
 
 def repository_copy(target: Path) -> Path:
@@ -47,6 +71,14 @@ def fake_checks(tmp_path: Path) -> tuple[Path, Path]:
     binary = tmp_path / "bin"
     binary.mkdir()
     uv = binary / "uv"
+    writer = tmp_path / "write_receipt.py"
+    writer.write_text(
+        "import json, os\nfrom pathlib import Path\n"
+        f"payload = {passed_receipt('fixture')!r}\n"
+        'payload["run_id"] = os.environ["PAPER_RADAR_TEST_RUN_ID"]\n'
+        'Path(os.environ["PAPER_RADAR_TEST_RECEIPT"]).write_text(json.dumps(payload))\n',
+        encoding="utf-8",
+    )
     environment = json.dumps(
         {
             "python": "3.14.0",
@@ -65,7 +97,8 @@ def fake_checks(tmp_path: Path) -> tuple[Path, Path]:
         'case "$*" in\n'
         '  *" pytest"*)\n'
         '    if [ "${A2_TEST_STOP:-}" = failed ]; then exit 1; fi\n'
-        '    if [ "${A2_TEST_STOP:-}" = interrupted ]; then kill -TERM $$; fi ;;\n'
+        '    if [ "${A2_TEST_STOP:-}" = interrupted ]; then kill -TERM $$; fi\n'
+        f"    {shlex.quote(sys.executable)} {shlex.quote(str(writer))} ;;\n"
         "esac\nexit 0\n",
         encoding="utf-8",
     )

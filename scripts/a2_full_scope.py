@@ -2,10 +2,76 @@
 
 SCOPE = "a2_versioned_config_snapshots"
 ISSUE = 25
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2
 MIGRATION_REVISION = "a201_profile_snapshot"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
+# 固定用例数量在独立收集核对后登记。回执必须同时证明收集和三阶段通过。
+REQUIRED_TEST_CASE_COUNTS: dict[str, int] = {
+    "tests/test_a1_acceptance.py": 11,
+    "tests/test_a2_acceptance.py": 3,
+    "tests/test_a2_full_acceptance.py": 34,
+    "tests/test_a2_full_entry.py": 7,
+    "tests/test_a2_full_examples.py": 9,
+    "tests/test_a2_test_receipt.py": 4,
+    "tests/test_boundary_validation.py": 39,
+    "tests/test_cli_help.py": 5,
+    "tests/test_config_adapter_architecture.py": 1,
+    "tests/test_config_adapter_cli.py": 13,
+    "tests/test_config_adapter_persistence.py": 11,
+    "tests/test_config_adapter_validation.py": 55,
+    "tests/test_config_adapters.py": 10,
+    "tests/test_config_architecture.py": 3,
+    "tests/test_config_boundary.py": 16,
+    "tests/test_config_cli.py": 9,
+    "tests/test_config_diff_cli.py": 20,
+    "tests/test_config_diff_review.py": 2,
+    "tests/test_config_diff_service.py": 20,
+    "tests/test_config_escalation.py": 41,
+    "tests/test_config_extraction.py": 14,
+    "tests/test_config_extraction_architecture.py": 1,
+    "tests/test_config_extraction_cli.py": 14,
+    "tests/test_config_extraction_persistence.py": 8,
+    "tests/test_config_extraction_validation.py": 82,
+    "tests/test_config_journals.py": 5,
+    "tests/test_config_journals_architecture.py": 1,
+    "tests/test_config_journals_cli.py": 16,
+    "tests/test_config_journals_persistence.py": 10,
+    "tests/test_config_journals_validation.py": 48,
+    "tests/test_config_projection_adapters.py": 9,
+    "tests/test_config_projection_algorithms.py": 11,
+    "tests/test_config_projection_architecture.py": 1,
+    "tests/test_config_projection_formats.py": 10,
+    "tests/test_config_projections.py": 36,
+    "tests/test_config_prompt_identity.py": 4,
+    "tests/test_config_prompt_only.py": 3,
+    "tests/test_config_read.py": 12,
+    "tests/test_config_read_architecture.py": 1,
+    "tests/test_config_read_cli.py": 18,
+    "tests/test_config_read_persistence.py": 9,
+    "tests/test_config_read_validation.py": 28,
+    "tests/test_config_reuse.py": 15,
+    "tests/test_config_reuse_cli.py": 16,
+    "tests/test_config_reuse_persistence.py": 19,
+    "tests/test_config_service.py": 13,
+    "tests/test_config_snapshot_architecture.py": 1,
+    "tests/test_config_snapshot_cli.py": 30,
+    "tests/test_config_snapshot_queries.py": 24,
+    "tests/test_config_transaction_cli.py": 11,
+    "tests/test_config_transactions.py": 13,
+    "tests/test_config_validation.py": 26,
+    "tests/test_config_value.py": 63,
+    "tests/test_config_value_cli.py": 8,
+    "tests/test_contract_check.py": 32,
+    "tests/test_contract_cli.py": 37,
+    "tests/test_contract_export.py": 22,
+    "tests/test_contract_schema.py": 11,
+    "tests/test_decision_reason_validation.py": 63,
+    "tests/test_offline_evidence.py": 11,
+    "tests/test_reuse_assessment_validation.py": 49,
+    "tests/test_screening_architecture.py": 3,
+    "tests/test_value_prediction_validation.py": 88,
+}
 FORMAT_VERSIONS = {
     "snapshot": 1,
     "stage_projections": {
@@ -46,15 +112,19 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_full_acceptance.py",
-        "08e3dc86c42a9f3c311c88f65bfb3bb3f13feb5cca38a90fe4490541a6f8da3b",
+        "88c33228ef99380bb5e0482f5ab530896986062b469894085e7f862dfcbf239d",
     ),
     (
         "tests/test_a2_full_entry.py",
-        "051858418a100327cf837621ac3af56a07ad77e8ba1e6a8a9430711bcafb258d",
+        "10e845497d7242ef1bafe1d63a4a6cb349085c35324e4923a255b07189181279",
     ),
     (
         "tests/test_a2_full_examples.py",
         "fd05db2bc50dddfed4de21f978e73c88fd02662f6a3adc38efe1abdd98a693fa",
+    ),
+    (
+        "tests/test_a2_test_receipt.py",
+        "cc0ea032dfda4b3c4ae3193c16238b7be0ea75ad0bc5dd309c6e45e95ec41563",
     ),
     (
         "tests/test_config_adapter_architecture.py",
@@ -248,7 +318,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a1_acceptance.py",
-        "123e9de1d949c25b308ff580c7d186f50707736ae1228e7d6f47c4bdbbd1201e",
+        "04f5e0b514a83fb0372753b51ad0cf89b95c37c3f6def88870031b6aa0c1fc66",
     ),
     (
         "scripts/a1_scope.py",
@@ -260,15 +330,19 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "97e34fe7aa4cb122d6cca2088f3e5748150e81c518eec1d460012590e9370059",
+        "9e174ca9d618f610b629b9d650c541f78c6b74098cd943bd9a07eb9cacfa5a43",
+    ),
+    (
+        "scripts/a2_test_receipt.py",
+        "7f9b69396023209b87ad34e18a4172029628c2a4c19d9a4291028b8196f00d7a",
     ),
     (
         "scripts/check-offline",
-        "d91a262b0dc840f7b9b0a5a5b9117e9775618d5a3fdb12cc4293792742a14ef6",
+        "c55af709edd817a2ae0a1cd914cfc18c689e8cbb2ebb962f006847bbe813c221",
     ),
     (
         "scripts/offline_evidence.py",
-        "9afe51879e06a620a998cc9c0a14d4da9344d43cb20d462450245e5d26560051",
+        "0c613ee51748db53ebba7a9c9c260faa74391be0f3043646ee09867b420f6362",
     ),
     (
         "src/paper_radar/cli.py",
@@ -408,7 +482,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/a2_full_support.py",
-        "eec18ce67f75fe3744356f30a1468b2c6728ecc58828eebf964d71437430e569",
+        "e812b481fd61138e429a42fe135020c6c47310df0c44a167fafe8e5083b0c691",
     ),
     (
         "tests/config_adapter_support.py",
