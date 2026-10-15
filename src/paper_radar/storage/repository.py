@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+import sqlite3
 from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import Connection, Engine, select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
+from paper_radar.storage.database import BUSY_TIMEOUT_SECONDS
 from paper_radar.storage.errors import StorageError
 from paper_radar.storage.records import VersionRecord
 from paper_radar.storage.schema import (
@@ -35,6 +37,17 @@ def _version_row(connection: Connection, material: VersionRecord) -> Any:
 def _check_version(connection: Connection, material: VersionRecord) -> bool:
     row = _version_row(connection, material)
     if row is None:
+        referenced = connection.execute(
+            select(snapshot_version_refs.c.snapshot_id)
+            .where(
+                snapshot_version_refs.c.kind == material.kind,
+                snapshot_version_refs.c.name == material.name,
+                snapshot_version_refs.c.declared_version == material.version,
+            )
+            .limit(1)
+        ).first()
+        if referenced is not None:
+            raise StorageError("快照版本引用损坏；请检查数据库，不从来源文件修复历史")
         return False
     if row["raw_sha256"] != material.raw_sha256 or row["raw_content"] != material.raw:
         raise StorageError(
@@ -48,6 +61,9 @@ def check_version(engine: Engine, materials: tuple[VersionRecord, ...]) -> None:
         return
     try:
         with engine.connect() as connection:
+            # sqlite3 的 legacy 模式不会为 SELECT 开启事务。显式固定只读视图以
+            # 避免并发提交恰好发生在版本与孤儿引用两次读取之间。
+            connection.exec_driver_sql("BEGIN")
             for material in materials:
                 _check_version(connection, material)
     except SQLAlchemyError:
@@ -128,7 +144,15 @@ def save_snapshot(
                 raise
     except StorageError:
         raise
-    except SQLAlchemyError:
+    except SQLAlchemyError as error:
+        if (
+            isinstance(error, DBAPIError)
+            and isinstance(error.orig, sqlite3.Error)
+            and getattr(error.orig, "sqlite_errorcode", 0) & 0xFF == sqlite3.SQLITE_BUSY
+        ):
+            raise StorageError(
+                f"数据库忙（锁等待上限 {BUSY_TIMEOUT_SECONDS} 秒）；请稍后重试"
+            ) from None
         raise StorageError("数据库写入失败；配置事实已回滚，请检查数据库") from None
 
 

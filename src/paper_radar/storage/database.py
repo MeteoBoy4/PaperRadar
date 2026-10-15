@@ -17,6 +17,7 @@ from sqlalchemy.pool import NullPool
 from paper_radar.storage.errors import StorageError
 
 _MIGRATIONS = Path(__file__).parent / "migrations"
+BUSY_TIMEOUT_SECONDS = 5
 
 
 class DatabaseMode(StrEnum):
@@ -50,9 +51,9 @@ def open_database(path: Path, *, mode: DatabaseMode) -> Engine:
 
     def connect() -> sqlite3.Connection:
         uri = f"file:{quote(str(absolute))}?mode={mode.value}"
-        connection = sqlite3.connect(uri, uri=True, timeout=5)
+        connection = sqlite3.connect(uri, uri=True, timeout=BUSY_TIMEOUT_SECONDS)
         connection.execute("PRAGMA foreign_keys=ON")
-        connection.execute("PRAGMA busy_timeout=5000")
+        connection.execute(f"PRAGMA busy_timeout={BUSY_TIMEOUT_SECONDS * 1000}")
         return connection
 
     engine = create_engine("sqlite://", creator=connect, poolclass=NullPool)

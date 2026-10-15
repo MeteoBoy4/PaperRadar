@@ -10,6 +10,7 @@ MIGRATION_REVISION = "a201_profile_snapshot"
 # 哈希在完成本票改动后固定。预期值不能从被检查文件动态生成。
 # #27 复核快照发现与前缀 CLI 接入后的源码绑定。
 # scope、A2-01 固定测试及其历史未覆盖范围保持不变。完整 A2 结论归 #25。
+# #24 复核固定锁等待、受控忙错误与 compile 恢复帮助后的源码绑定。
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_config_service.py",
@@ -44,7 +45,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/cli.py",
-        "76a362f5d24e5cca81e0c4f652240d42fe97cdd8c3cedfc94f995e4e4cab32e8",
+        "5abbc08655fc6fb37382dd0794fab7e3500b6c5e4973afa699c1f9614582b41d",
     ),
     (
         "src/paper_radar/config/compile.py",
@@ -80,7 +81,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/database.py",
-        "a39818047f903ebc7674d0f49ed28f4167068c695f7cb1c47fd694cf94de5793",
+        "738eb3c1923a39fdf49594df070bd4a6f7d1b69ff18ce0d8ab31c6c05dbcb847",
     ),
     (
         "src/paper_radar/storage/errors.py",
@@ -92,7 +93,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/repository.py",
-        "a964954d9b0ea152beb411145c88d21dd8c2149319d77bd48601a271dba98765",
+        "91a48152f1f2fdd840471f81c6db13ca87dc533a8ce4fa03f5b396b08019f5bf",
     ),
     (
         "src/paper_radar/storage/schema.py",

@@ -59,6 +59,12 @@ uv run --offline --locked paper-radar config compile \
 身份格式、未就绪范围和迁移行为见
 [运行配置快照契约](docs/contracts/runtime-config.md)。
 
+并发编译相同材料会等待并复用同一已提交快照，成功输出与首次一致（退出 0）；
+同声明身份不同字节返回版本冲突（退出 2），须新建版本。写锁等待固定为 5 秒，
+超时提示“数据库忙”，请稍后显式重试。提交前失败或进程中断不会留下部分配置
+事实；排除故障后用原输入重跑即可。编译只保存已读取并校验的材料，不写回来源
+文件；完整结果与恢复约定见契约中的“并发、失败与恢复”。
+
 `settings-read.yaml` 使用新增的 `models-read-v1`、独立 `config/read/read-v1.yaml`
 和 `prompts/reading/v1.md`，演示 Read 模型、业务提示词和受控 chunking v1 的
 版本登记与历史回放。`settings.read` 选择分块配置，`prompts.reading` 选择提示词；

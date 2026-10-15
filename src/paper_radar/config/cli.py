@@ -147,6 +147,10 @@ def config_check(
     "compile",
     help=(
         "原子保存不可变快照；只打开既有数据库。"
+        "并发锁等待上限固定为 5 秒；数据库忙时请稍后重试。"
+        "同材料重复或并发编译返回同一身份与成功输出（退出 0）；"
+        "同声明身份不同字节为版本冲突（退出 2），须新建版本。"
+        "中断后可用原输入重跑；不写回来源文件。"
         "示例：paper-radar config compile --settings config/settings.yaml "
         "--database data/db.sqlite3"
     ),
