@@ -443,9 +443,14 @@ def run_a1_verification(root: Path, output_dir: Path) -> tuple[Path, dict[str, A
 
 def main() -> int:
     """保留既有启动入口。结论编排由完整 A2 入口负责。"""
-    from scripts.a2_full_acceptance import main as full_main
-
-    return full_main()
+    try:
+        os.execv(
+            sys.executable,
+            (sys.executable, "-m", "scripts.a2_full_acceptance"),
+        )
+    except OSError:
+        print("完整离线入口无法启动；请检查项目 Python 环境。", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

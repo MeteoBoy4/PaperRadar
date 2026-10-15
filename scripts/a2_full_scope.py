@@ -116,7 +116,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_full_entry.py",
-        "10e845497d7242ef1bafe1d63a4a6cb349085c35324e4923a255b07189181279",
+        "c231dc508286935d50a853aafb6400cdd51e99745152059a0d5cbffd3a570daf",
     ),
     (
         "tests/test_a2_full_examples.py",
@@ -318,7 +318,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a1_acceptance.py",
-        "04f5e0b514a83fb0372753b51ad0cf89b95c37c3f6def88870031b6aa0c1fc66",
+        "4373d4a2e9129f2f78f162179fa4da499090f65cf40eac7946b968622fdc6dec",
     ),
     (
         "scripts/a1_scope.py",

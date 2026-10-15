@@ -49,7 +49,7 @@ def test_one_plan_produces_four_bound_files_and_never_inherits_previous_success(
         encoding="utf-8",
     )
     executed = subprocess.run(
-        (sys.executable, "-m", "scripts.a2_full_acceptance"),
+        (sys.executable, "-m", "scripts.a1_acceptance"),
         cwd=root,
         capture_output=True,
         text=True,
