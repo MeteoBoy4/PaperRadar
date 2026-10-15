@@ -6,12 +6,11 @@ from pathlib import Path
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from paper_radar.config.adapters import ADAPTER_NAME, SYSTEM_PROMPT_NAME
 from paper_radar.config.compile import MaterialKind
 from paper_radar.config.errors import ConfigError
-from paper_radar.config.schema import PromptName, valid_declared_version
+from paper_radar.config.material_names import MATERIAL_NAMES
+from paper_radar.config.schema import valid_declared_version
 from paper_radar.config.snapshot_summary import ConfigSnapshotSummary, SnapshotVersion
-from paper_radar.contracts import ContractName
 from paper_radar.storage.database import (
     DatabaseMode,
     open_database,
@@ -47,19 +46,7 @@ def _short_references(ids: tuple[str, ...]) -> dict[str, str]:
 
 def _version(kind: str, name: str, version: str) -> SnapshotVersion:
     controlled_kind = MaterialKind(kind)
-    allowed: tuple[str, ...]
-    if controlled_kind is MaterialKind.ADAPTER:
-        allowed = (ADAPTER_NAME,)
-    elif controlled_kind is MaterialKind.PROMPT:
-        allowed = (*PromptName, SYSTEM_PROMPT_NAME)
-    elif controlled_kind in (
-        MaterialKind.CONTRACT_SCHEMA,
-        MaterialKind.CONTRACT_MANIFEST,
-    ):
-        allowed = tuple(ContractName)
-    else:
-        allowed = (controlled_kind.value,)
-    if name not in allowed:
+    if name not in MATERIAL_NAMES[controlled_kind]:
         raise ValueError
     return SnapshotVersion(controlled_kind, name, valid_declared_version(version))
 
@@ -93,7 +80,10 @@ def list_config_snapshots(database: Path) -> tuple[ConfigSnapshotSummary, ...]:
                 record.snapshot_id,
                 references[record.snapshot_id],
                 _created_at(record.created_at),
-                tuple(_version(*version) for version in record.versions),
+                tuple(
+                    _version(version.kind, version.name, version.declared_version)
+                    for version in record.versions
+                ),
             )
             for record in records
         ]

@@ -68,7 +68,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/service.py",
-        "5680ff29ec4f1c448881f394aef486e645d37783260633e902829eabf443abab",
+        "e01c9988bdbde872e204fccca662767fd46fcdd47aa4ae2898715bc463a24373",
     ),
     (
         "src/paper_radar/config/topics.py",
@@ -185,6 +185,43 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/config_projection_support.py",
         "1a3aa9a7ce2535a9a52c3fde9dc18cde964d1de8b89654e3d50e566aae79ef2a",
+    ),
+    # #27 新实现与测试文件仅绑定字节。不扩展上方 A2-01 固定测试验收范围。
+    (
+        "src/paper_radar/config/material_names.py",
+        "3b9d6d1317ceb2fcaf6f4a27a03a17a1489856009e18a853c7fa08c5204cc959",
+    ),
+    (
+        "src/paper_radar/config/snapshot_queries.py",
+        "6464b7693dfe69530eebf64db78849889481cd04c8e2f88c5d8838f0347de9e3",
+    ),
+    (
+        "src/paper_radar/config/snapshot_cli.py",
+        "b6afba96f094800598419763ef8688bebbe59fd5125dd623e27b404169d19420",
+    ),
+    (
+        "src/paper_radar/config/snapshot_summary.py",
+        "a882ac057edcfded0b31fcb4c06a376590cdbb5e77c7bd058b22e81312b0b379",
+    ),
+    (
+        "src/paper_radar/storage/snapshot_queries.py",
+        "e394fb3bbc2e70e5bc92f4c539481e7d9660c026f60d709ef990763022f6acf1",
+    ),
+    (
+        "tests/test_config_snapshot_queries.py",
+        "69b042430c90b1245a366c333aa69fb384b792ac9eaf36e039e30315501c478c",
+    ),
+    (
+        "tests/test_config_snapshot_cli.py",
+        "d12f1f17109d8695d189b7de8c89fece870a54fb60da42e1b3811d8432db3f37",
+    ),
+    (
+        "tests/test_config_snapshot_architecture.py",
+        "30b7f1779cc500793fb1920b21c2016e118c395df4d7e13504f49f4bf1e84e49",
+    ),
+    (
+        "tests/config_snapshot_support.py",
+        "454ac40c3cdcb4846ffce9e59dc3e9b075f21100aa9bf0ca952457b19690632b",
     ),
 )
 

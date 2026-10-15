@@ -8,7 +8,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_reference_rules_do_not_enter_projection_or_diff_core() -> None:
-    for module in ("compile", "projections", "diff", "snapshot_summary"):
+    for module in (
+        "compile",
+        "projections",
+        "diff",
+        "snapshot_summary",
+        "material_names",
+    ):
         imports = imported_modules(ROOT / f"src/paper_radar/config/{module}.py")
         assert not any(
             name.startswith(

@@ -28,6 +28,10 @@ SHA-256 仍是权威身份；便捷引用不参与快照、阶段投影或校准
 存储索引查询位于 `storage/snapshot_queries.py`，公共查询服务位于
 `config/snapshot_queries.py`，摘要类型与薄 CLI 分别独立。纯投影和 diff 核心
 不消费前缀，也不复制历史加载或校准差异判据。
+受控逻辑名称由纯配置模块 `config/material_names.py` 统一维护，列表摘要与历史加载
+共用同一集合。存储层用不可变 `VersionRefRecord(kind, name, declared_version)`
+传递版本引用，不依赖配置类型。索引与引用在显式只读事务内取得同一读视图；
+sqlite3 的 legacy 模式下，SQLAlchemy autobegin 不为 SELECT 启动底层事务。
 
 ## 引用规则
 

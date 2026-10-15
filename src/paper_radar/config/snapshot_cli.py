@@ -8,7 +8,16 @@ from typer.core import TyperCommand
 
 from paper_radar.config.errors import ConfigError
 
-SNAPSHOTS_HELP = """只读发现指定数据库内的历史配置快照。
+SNAPSHOTS_HELP = """只读发现历史配置快照。
+
+参数与选项：list 必须提供 --database，以选择档案库；详情见 list --help。
+副作用：不建库、不迁移、不联网或调用模型；帮助不打开数据库，消耗 0 次自动配额。
+输出去向：终端；成功返回 0，参数或数据库错误返回 2。
+常见失败：缺库或未迁移时，须先通过 db upgrade 显式初始化；不隐式修复数据库。
+示例：paper-radar config snapshots list --database data/paperradar.sqlite3
+"""
+
+SNAPSHOT_LIST_HELP = """只读发现指定数据库内的历史配置快照。
 
 数据库选择档案库，快照引用选择其中的历史配置。
 必须显式提供 --database；不读取当前配置或凭据，不联网、不调用模型，消耗 0 次配额。
@@ -43,7 +52,8 @@ class _SnapshotListCommand(TyperCommand):
 @snapshots_app.command(
     "list",
     cls=_SnapshotListCommand,
-    help=SNAPSHOTS_HELP + "\n前缀从 8 位开始按需延长，无法在 63 位内唯一时展示完整 ID。"
+    help=SNAPSHOT_LIST_HELP
+    + "\n前缀从 8 位开始按需延长，无法在 63 位内唯一时展示完整 ID。"
     "新增快照可能使旧前缀不再唯一，使用时重新解析；长期记录、脚本和审计请保留完整 ID。",
 )
 def snapshots_list(

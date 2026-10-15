@@ -9,11 +9,18 @@ from paper_radar.storage.errors import StorageError
 from paper_radar.storage.schema import runtime_config_snapshots, snapshot_version_refs
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class VersionRefRecord:
+    kind: str
+    name: str
+    declared_version: str
+
+
 @dataclass(frozen=True, slots=True)
 class SnapshotIndexRecord:
     snapshot_id: str
     created_at: str | None
-    versions: tuple[tuple[str, str, str], ...]
+    versions: tuple[VersionRefRecord, ...]
 
 
 def read_snapshot_ids(engine: Engine) -> tuple[str, ...]:
@@ -33,7 +40,8 @@ def read_snapshot_ids(engine: Engine) -> tuple[str, ...]:
 def read_snapshot_index(engine: Engine) -> tuple[SnapshotIndexRecord, ...]:
     try:
         with engine.connect() as connection:
-            # 固定同一读视图。避免列表与引用来自不同的提交。
+            # sqlite3 的 legacy 模式不为 SELECT 发出 BEGIN。
+            # SQLAlchemy autobegin 只改变其自身状态。显式 BEGIN 固定两次查询的读视图。
             connection.exec_driver_sql("BEGIN")
             snapshots = connection.execute(
                 select(
@@ -53,9 +61,11 @@ def read_snapshot_index(engine: Engine) -> tuple[SnapshotIndexRecord, ...]:
                     snapshot_version_refs.c.declared_version,
                 )
             ).all()
-            versions: dict[str, list[tuple[str, str, str]]] = {}
+            versions: dict[str, list[VersionRefRecord]] = {}
             for snapshot_id, kind, name, version in refs:
-                versions.setdefault(snapshot_id, []).append((kind, name, version))
+                versions.setdefault(snapshot_id, []).append(
+                    VersionRefRecord(kind=kind, name=name, declared_version=version)
+                )
             return tuple(
                 SnapshotIndexRecord(
                     snapshot_id, created_at, tuple(versions.get(snapshot_id, ()))

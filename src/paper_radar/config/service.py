@@ -13,7 +13,7 @@ from paper_radar.config.adapter_loading import (
     adapter_semantics,
     selected_adapter_materials,
 )
-from paper_radar.config.adapters import ADAPTER_NAME, SYSTEM_PROMPT_NAME, PiAdapter
+from paper_radar.config.adapters import SYSTEM_PROMPT_NAME, PiAdapter
 from paper_radar.config.compile import (
     FORMAT_VERSION,
     CompiledMaterial,
@@ -29,6 +29,7 @@ from paper_radar.config.escalation import Escalation
 from paper_radar.config.extraction import Extraction
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.journals import Journals
+from paper_radar.config.material_names import MATERIAL_NAMES
 from paper_radar.config.read import ReadConfig
 from paper_radar.config.schema import Models, Profile, PromptName, Settings
 from paper_radar.config.topics import Topics
@@ -364,6 +365,8 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
             key = (entry["kind"], entry["name"], entry["version"])
             raw_hash, raw = by_key.pop(key)
             material = Material(MaterialKind(key[0]), key[1], key[2], raw)
+            if material.name not in MATERIAL_NAMES[material.kind]:
+                raise ValueError
             if material.raw_sha256 != raw_hash or raw_hash != entry["raw_sha256"]:
                 raise ValueError
             if key[:2] == _PROFILE_KEY:
@@ -422,9 +425,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 ):
                     raise ValueError
                 additional.append(CompiledMaterial(material, entry["config"]))
-            elif (
-                material.kind is MaterialKind.ADAPTER and material.name == ADAPTER_NAME
-            ):
+            elif material.kind is MaterialKind.ADAPTER:
                 adapter = validate_yaml_bytes(raw, PiAdapter, "adapter")
                 if (
                     adapter.version != key[2]
@@ -433,10 +434,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                     raise ValueError
                 adapters[key[2]] = adapter
                 additional.append(CompiledMaterial(material, entry["config"]))
-            elif material.kind is MaterialKind.PROMPT and material.name in (
-                SYSTEM_PROMPT_NAME,
-                *_PROMPT_NAMES,
-            ):
+            elif material.kind is MaterialKind.PROMPT:
                 if {"text": raw.decode("utf-8")} != entry["config"]:
                     raise ValueError
                 if material.name == SYSTEM_PROMPT_NAME:
@@ -444,10 +442,9 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 elif key[2] != getattr(settings.prompts, material.name):
                     raise ValueError
                 additional.append(CompiledMaterial(material, entry["config"]))
-            elif (
-                material.kind
-                in (MaterialKind.CONTRACT_SCHEMA, MaterialKind.CONTRACT_MANIFEST)
-                and material.name in _CONTRACT_NAMES.values()
+            elif material.kind in (
+                MaterialKind.CONTRACT_SCHEMA,
+                MaterialKind.CONTRACT_MANIFEST,
             ):
                 selector = next(
                     selector
