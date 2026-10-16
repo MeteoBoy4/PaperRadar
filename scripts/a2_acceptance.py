@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import importlib.metadata
 import json
-import os
-import uuid
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -22,6 +20,8 @@ from scripts.a2_scope import (
     SNAPSHOT_FORMAT_VERSION,
 )
 from scripts.offline_evidence import default_checks, file_sha256
+from scripts.verification_publication import publish_conclusion
+from scripts.verification_run import AcceptanceGroup, VerificationRun
 
 
 class A2ReasonCode(StrEnum):
@@ -230,18 +230,32 @@ def write_a2_conclusion(
         "stage_a_verified": False,
         "reasons": reasons,
     }
-    output_dir.mkdir(parents=True, exist_ok=True)
-    path = output_dir / f"{run_id}.a2.json"
-    temporary = output_dir / f".{run_id}.{uuid.uuid4().hex}.tmp"
-    payload = (
-        json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
-    ).encode()
-    try:
-        with temporary.open("xb") as stream:
-            stream.write(payload)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.link(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
+    path = publish_conclusion(output_dir, run_id, ".a2.json", result)
     return path, result
+
+
+def _write_group(
+    run: VerificationRun, interrupted: bool
+) -> tuple[Path, dict[str, Any]]:
+    a1_path, a1 = run.conclusions["A1"]
+    return write_a2_conclusion(run.root, run.evidence_path, a1_path, a1, run.output_dir)
+
+
+def _recover_group(
+    run: VerificationRun, published: Path
+) -> tuple[Path, dict[str, Any]]:
+    saved = _load_json(published)
+    if saved is not None:
+        return published, saved
+    # 历史切片只判断自己的范围; 中断事实由组织模块继续传给后续组。
+    return _write_group(run, True)
+
+
+A2_01_GROUP = AcceptanceGroup(
+    name="A2-01",
+    suffix=".a2.json",
+    write=_write_group,
+    required=False,
+    dependencies=("A1",),
+    recover=_recover_group,
+)

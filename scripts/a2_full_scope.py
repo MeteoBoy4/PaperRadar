@@ -22,6 +22,10 @@ REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 # 固定用例数量在独立收集核对后登记。回执必须同时证明收集和三阶段通过。
 REQUIRED_TEST_CASE_COUNTS: dict[str, int] = {
+    "tests/test_verification_integrity.py": 3,
+    "tests/test_verification_publication.py": 2,
+    "tests/test_verification_run.py": 5,
+    "tests/test_verification_compatibility.py": 9,
     "tests/test_a1_acceptance.py": 11,
     "tests/test_a2_acceptance.py": 3,
     "tests/test_a2_full_acceptance.py": 34,
@@ -120,6 +124,22 @@ NOT_ASSESSED = (
 
 # 在首次范围审查完成后固定以下三类文件的字节身份。
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/test_verification_integrity.py",
+        "ddb226f5e3e34166cee32a710bb3f45c52149974ed4f076d69eb26426638785c",
+    ),
+    (
+        "tests/test_verification_publication.py",
+        "daddcf17b47a0ef946ea6d4a7faa1232252a85dad50a185c5d622e6aae4d5366",
+    ),
+    (
+        "tests/test_verification_run.py",
+        "c7acee58e34f17a704464425ea9efc085e51d8878516676f97619aa95d48154f",
+    ),
+    (
+        "tests/test_verification_compatibility.py",
+        "e4ec4ab011249efee5563a49f97d72ea61b349854636af8bd1b63b40a194ee81",
+    ),
     (
         "tests/test_a2_acceptance.py",
         "b62393bd8e9b906b06feae75e5cc25ad4a8dae7dd712d5248a3eb52340f95743",
@@ -327,12 +347,24 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 )
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
+        "scripts/verification_identity.py",
+        "27ebdd057098256f0419c34cb9dbc410e0c6f0c7a8c3c931f62cc6942ca8d7b5",
+    ),
+    (
+        "scripts/verification_publication.py",
+        "337c9efb7ee906486e9de9bb5ec4d60bd9bde7fe358f60098036862e1ac77072",
+    ),
+    (
+        "scripts/verification_run.py",
+        "b16a9dbf5dfb4e54a6231e3177353091ed60ab092ab33478343554df69b143d0",
+    ),
+    (
         "pyproject.toml",
         "54b2aa6156f697b3a7fd640899f5f5556ae0d65b6146332dd579ae5ff5b9375d",
     ),
     (
         "scripts/a1_acceptance.py",
-        "4373d4a2e9129f2f78f162179fa4da499090f65cf40eac7946b968622fdc6dec",
+        "6d823619d4a139c5df7d19be39f7c5ec409af2a7d7d1864d757dcc7fa697b4df",
     ),
     (
         "scripts/a1_scope.py",
@@ -340,11 +372,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_acceptance.py",
-        "bf1bf762bdd8f44c679e429c37afb6e989ab821dd7771e3aee5e8919afbfc85b",
+        "0843f426d5d59f9d53d718cd7962cee769d0308eda47138d79f0766f43e01c0b",
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "f8588faa9ab866a6bfff826be0fbd2ad69071aa743c43125fb5e94df12fefbbd",
+        "78353a80530960cba800f8759990afa2cf9642c556aa063d1fd1d9be64e47973",
     ),
     (
         "scripts/a2_test_receipt.py",
@@ -548,6 +580,10 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/fixtures/verification_transcripts.json",
+        "ffa51f43b5468bf530173cd4f6196bb1e1ef2a2b86846d8f0642760fc7e58a7c",
+    ),
     (
         "examples/config/adapters/pi-v1.yaml",
         "4266c0a79632ffb9bfe17ae217893d25f80a0c498690698ebe3e80aaf31ab382",

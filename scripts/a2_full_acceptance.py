@@ -4,17 +4,17 @@ from __future__ import annotations
 
 import importlib.metadata
 import json
-import os
 import signal
 import sys
 import tempfile
-import uuid
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-from scripts.a1_acceptance import capture_identity, run_a1_verification
+from scripts import a1_acceptance
+from scripts.a1_acceptance import capture_identity
 from scripts.a1_scope import REQUIRED_TEST_MODULES as A1_TEST_MODULES
+from scripts.a2_acceptance import A2_01_GROUP
 from scripts.a2_full_scope import (
     FORMAT_VERSION,
     FORMAT_VERSIONS,
@@ -37,6 +37,8 @@ from scripts.offline_evidence import (
     OverallStatus,
     file_sha256,
 )
+from scripts.verification_publication import publish_conclusion
+from scripts.verification_run import AcceptanceGroup, VerificationRun, run_verification
 
 
 class A2FullReasonCode(StrEnum):
@@ -411,59 +413,53 @@ def write_full_a2_conclusion(
     ):
         status = OverallStatus.INCOMPLETE
     result.update(status=status.value, a2_verified=status is OverallStatus.PASSED)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    path = output_dir / f"{run_id}.a2-full.json"
-    temporary = output_dir / f".{run_id}.{uuid.uuid4().hex}.tmp"
-    payload = (
-        json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
-    ).encode()
-    try:
-        with temporary.open("xb") as stream:
-            stream.write(payload)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.link(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
+    path = publish_conclusion(output_dir, run_id, ".a2-full.json", result)
     return path, result
 
 
-def run_full_verification(root: Path, output_dir: Path) -> tuple[Path, dict[str, Any]]:
-    """完整检查只执行一次。A2-01 保留独立范围。"""
-    from scripts.a2_acceptance import write_a2_conclusion
-
-    a1_path, a1 = run_a1_verification(root, output_dir)
-    evidence = output_dir / f"{a1['run_id']}.json"
-    interrupted = False
-    try:
-        legacy_path, legacy = write_a2_conclusion(
-            root, evidence, a1_path, a1, output_dir
-        )
-    except KeyboardInterrupt:
-        interrupted = True
-        legacy_path = output_dir / f"{a1['run_id']}.a2.json"
-        published = _read_json(legacy_path)
-        if published is None:
-            legacy_path, legacy = write_a2_conclusion(
-                root, evidence, a1_path, a1, output_dir
-            )
-        else:
-            legacy = published
-    print(f"[A2-01 验收] 结论：{legacy_path}")
-    print(f"[A2-01 验收] 结果：{legacy['status']}")
-    path, full = write_full_a2_conclusion(
-        root,
-        evidence,
+def _write_group(
+    run: VerificationRun, interrupted: bool
+) -> tuple[Path, dict[str, Any]]:
+    a1_path, a1 = run.conclusions["A1"]
+    return write_full_a2_conclusion(
+        run.root,
+        run.evidence_path,
         a1_path,
         a1,
-        output_dir,
+        run.output_dir,
         interrupted=interrupted,
     )
-    print(f"[完整 A2 验收] 结论：{path}")
-    print(f"[完整 A2 验收] 结果：{full['status']}")
-    for reason in full["reasons"]:
-        print(f"[完整 A2 验收] 原因：{reason['code']}：{reason['message_zh']}")
-    return path, full
+
+
+def acceptance_groups() -> tuple[AcceptanceGroup, ...]:
+    """生产登记处: 发布顺序与是否决定整体通过分别声明。"""
+    return (
+        a1_acceptance.A1_GROUP,
+        A2_01_GROUP,
+        AcceptanceGroup(
+            name="完整 A2",
+            suffix=".a2-full.json",
+            write=_write_group,
+            required=True,
+            dependencies=("A1",),
+            show_reasons=True,
+        ),
+    )
+
+
+def _run_verification(root: Path, output_dir: Path) -> VerificationRun:
+    return run_verification(
+        root,
+        output_dir,
+        acceptance_groups(),
+        capture=a1_acceptance.capture_identity,
+        execute=a1_acceptance.execute_checks,
+    )
+
+
+def run_full_verification(root: Path, output_dir: Path) -> tuple[Path, dict[str, Any]]:
+    """兼容完整入口; 组织模块执行一次固定计划及全部已登记验收组。"""
+    return _run_verification(root, output_dir).conclusions["完整 A2"]
 
 
 def _interrupt(_signum: int, _frame: object) -> None:
@@ -473,8 +469,8 @@ def _interrupt(_signum: int, _frame: object) -> None:
 def main() -> int:
     signal.signal(signal.SIGTERM, _interrupt)
     root = Path(__file__).resolve().parents[1]
-    _, full = run_full_verification(root, root / "verification-runs")
-    return 0 if full["a2_verified"] else 1
+    run = _run_verification(root, root / "verification-runs")
+    return 0 if run.passed else 1
 
 
 if __name__ == "__main__":

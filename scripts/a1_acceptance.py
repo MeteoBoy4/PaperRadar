@@ -5,11 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import stat
-import subprocess
 import sys
-import uuid
-from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -26,13 +22,19 @@ from scripts.offline_evidence import (
     CONTRACT_VERSION,
     CheckReason,
     CheckStatus,
-    CodeIdentity,
     OverallStatus,
     default_checks,
     file_sha256,
-    git_metadata,
     run_offline_verification,
 )
+from scripts.verification_identity import (
+    RunIdentity as RunIdentity,
+)
+from scripts.verification_identity import (
+    capture_identity as capture_identity,
+)
+from scripts.verification_publication import publish_conclusion
+from scripts.verification_run import AcceptanceGroup, VerificationRun, run_verification
 
 _NOT_ASSESSED = (
     "runtime_plan",
@@ -99,53 +101,6 @@ _REASON_HELP: dict[A1ReasonCode, str] = {
         "锁定环境版本信息不完整；修复环境后重新运行。"
     ),
 }
-
-
-@dataclass(frozen=True, slots=True)
-class RunIdentity:
-    code: CodeIdentity
-    lockfile_sha256: str | None
-    worktree_sha256: str | None
-
-
-def _worktree_sha256(root: Path) -> str | None:
-    """哈希 Git 管理及非忽略文件的路径、类型和字节; 不保存内容。"""
-    try:
-        result = subprocess.run(
-            ("git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"),
-            cwd=root,
-            capture_output=True,
-            check=True,
-        )
-        digest = hashlib.sha256()
-        for relative in sorted(set(result.stdout.split(b"\0")) - {b""}):
-            path = root / os.fsdecode(relative)
-            digest.update(len(relative).to_bytes(8, "big"))
-            digest.update(relative)
-            if not os.path.lexists(path):
-                digest.update(b"missing\0")
-                continue
-            digest.update(stat.S_IMODE(path.lstat().st_mode).to_bytes(2, "big"))
-            if path.is_symlink():
-                digest.update(b"link\0")
-                digest.update(os.fsencode(os.readlink(path)))
-            elif path.is_file():
-                digest.update(b"file\0")
-                digest.update(hashlib.sha256(path.read_bytes()).digest())
-            else:
-                digest.update(b"other\0")
-        return digest.hexdigest()
-    except (OSError, subprocess.CalledProcessError):
-        return None
-
-
-def capture_identity(root: Path) -> RunIdentity:
-    """采集一次运行的 HEAD、工作树与锁文件身份。"""
-    return RunIdentity(
-        code=git_metadata(root),
-        lockfile_sha256=file_sha256(root / "uv.lock"),
-        worktree_sha256=_worktree_sha256(root),
-    )
 
 
 def _reason(code: A1ReasonCode, item: str | None = None) -> dict[str, str]:
@@ -391,54 +346,54 @@ def write_a1_conclusion(
         "lockfile_sha256": current.lockfile_sha256,
         "reasons": reasons,
     }
-    output_dir.mkdir(parents=True, exist_ok=True)
-    path = output_dir / f"{expected_run_id}.a1.json"
-    temporary = output_dir / f".{expected_run_id}.{uuid.uuid4().hex}.tmp"
-    payload = (
-        json.dumps(conclusion, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
-    ).encode()
-    try:
-        with temporary.open("xb") as stream:
-            stream.write(payload)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.link(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
+    path = publish_conclusion(output_dir, expected_run_id, ".a1.json", conclusion)
     return path, conclusion
+
+
+def _write_group(
+    run: VerificationRun, interrupted: bool
+) -> tuple[Path, dict[str, Any]]:
+    return write_a1_conclusion(
+        run.root,
+        run.evidence_path,
+        run.output_dir,
+        run.baseline,
+        expected_run_id=run.run_id,
+        interrupted=interrupted,
+    )
+
+
+def _recover_group(
+    run: VerificationRun, published: Path
+) -> tuple[Path, dict[str, Any]]:
+    if published.exists():
+        return published, json.loads(published.read_text())
+    return _write_group(run, True)
+
+
+A1_GROUP = AcceptanceGroup(
+    name="A1",
+    suffix=".a1.json",
+    write=_write_group,
+    required=True,
+    recover=_recover_group,
+    propagate_interrupt=False,
+    show_evidence=True,
+    show_reasons=True,
+)
+
+
+def execute_checks(root: Path, output_dir: Path) -> tuple[Path, dict[str, Any]]:
+    """兼容既有模块处的检查计划与执行器注入。"""
+    return run_offline_verification(root, default_checks(), output_dir)
 
 
 def run_a1_verification(root: Path, output_dir: Path) -> tuple[Path, dict[str, Any]]:
-    """运行固定计划, 并以同一次运行身份写出 A1 结论。"""
-    baseline = capture_identity(root)
-    evidence_path, evidence = run_offline_verification(
-        root, default_checks(), output_dir
+    """保留单独 A1 入口; 运行身份与收尾统一交给组织模块。"""
+    run = run_verification(
+        root, output_dir, (A1_GROUP,), capture=capture_identity, execute=execute_checks
     )
-    run_id = evidence["run_id"]
-    try:
-        path, conclusion = write_a1_conclusion(
-            root, evidence_path, output_dir, baseline, expected_run_id=run_id
-        )
-    except KeyboardInterrupt:
-        published = output_dir / f"{run_id}.a1.json"
-        if published.exists():
-            path = published
-            conclusion = json.loads(path.read_text())
-        else:
-            path, conclusion = write_a1_conclusion(
-                root,
-                evidence_path,
-                output_dir,
-                baseline,
-                expected_run_id=run_id,
-                interrupted=True,
-            )
-    print(f"[A1 验收] 离线证据：{evidence_path}")
-    print(f"[A1 验收] 结论：{path}")
-    print(f"[A1 验收] 结果：{conclusion['status']}")
-    for reason in conclusion["reasons"]:
-        print(f"[A1 验收] 原因：{reason['code']}：{reason['message_zh']}")
-    return path, conclusion
+    return run.conclusions[A1_GROUP.name]
 
 
 def main() -> int:

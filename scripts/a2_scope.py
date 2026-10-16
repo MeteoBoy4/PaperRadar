@@ -36,6 +36,18 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
+        "scripts/verification_identity.py",
+        "27ebdd057098256f0419c34cb9dbc410e0c6f0c7a8c3c931f62cc6942ca8d7b5",
+    ),
+    (
+        "scripts/verification_publication.py",
+        "337c9efb7ee906486e9de9bb5ec4d60bd9bde7fe358f60098036862e1ac77072",
+    ),
+    (
+        "scripts/verification_run.py",
+        "b16a9dbf5dfb4e54a6231e3177353091ed60ab092ab33478343554df69b143d0",
+    ),
+    (
         "src/paper_radar/cli.py",
         "1ee532aae68e9ecd111919759b8220c22f5a38d98a8011f0e306e6ff5db1abf0",
     ),
@@ -125,7 +137,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_acceptance.py",
-        "bf1bf762bdd8f44c679e429c37afb6e989ab821dd7771e3aee5e8919afbfc85b",
+        "0843f426d5d59f9d53d718cd7962cee769d0308eda47138d79f0766f43e01c0b",
     ),
     (
         "src/paper_radar/config/extraction.py",

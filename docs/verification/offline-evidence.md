@@ -47,6 +47,49 @@ A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时�
 新增已实现冻结契约或声明版本时，同步更新脚本的 `CONTRACT_NAMES`
 和 `CONTRACT_VERSION`，使检查命令与证据范围一起更新；测试会与权威注册表核对。
 
+## 运行组织与验收组登记
+
+`scripts/verification_run.py` 负责一次运行的身份基线、同次证据、验收组发布顺序、
+中断传递、终端结果和整体通过判断；`scripts/verification_identity.py` 维护原有
+HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续执行固定六项
+子进程检查、失败停止、脱敏输出和运行中证据更新；回执仍由
+`scripts/a2_test_receipt.py` 在唯一 pytest 进程中记录。这两个底层实现未作重构。
+
+生产登记位置是 `scripts/a2_full_acceptance.py` 的 `acceptance_groups()`。
+`AcceptanceGroup` 显式声明名称、输出后缀、结论入口、前置结论及是否影响整体通过；
+重复名称、重复输出或缺少前置组会在检查前拒绝。顺序只决定发布先后，不隐含通过依赖：
+
+| 验收组 | 输出后缀 | 前置结论 | 影响整体通过 |
+| --- | --- | --- | --- |
+| A1 | `.a1.json` | 无 | 是 |
+| A2-01 | `.a2.json` | 同次 A1 | 否 |
+| 完整 A2 | `.a2-full.json` | 同次 A1 | 是 |
+
+完整 A2 另由自己的判据验证同次 pytest 回执、证据和已发布 A1，并在发布前再次
+核对这些文件的实际字节绑定；它没有 A2-01 通过依赖。各组的原因、格式、严格性与
+中断恢复继续由自己的验收模块维护。A1 恢复沿用自己的结论状态；A2-01 发布中断
+即使补写为 passed，也继续把中断传给完整 A2。最后发布阶段的中断仍可能没有
+完整结论，不会覆盖已发布文件来修复状态。
+
+三组的 `write_*_conclusion` 兼容入口共用
+`scripts/verification_publication.py` 的 `publish_conclusion`：保持原 JSON
+序列化规则，临时文件独占创建、flush/fsync 后通过 `os.link` 原子发布；目标已存在
+即失败，finally 清理临时文件。运行中证据与回执仍可原子更新，不使用此最终发布入口。
+
+新验收组以显式代码加入登记，提供自己的判据，调用同一个最终发布函数；可选提供
+组内中断恢复规则，无需在组织核心增加组名称分支。当前回执只记录 `a1_scope` 和
+`a2_full_scope` 的固定测试模块合集。新增组若需要扩大逐模块执行证明，必须在
+后续任务中显式扩展回执范围；本轮没有自动发现插件、独立检查计划或动态调度。
+测试中的合成组只证明组织扩展能力，不代表新增产品验收能力。
+
+#28 保留原 A1/A2-01 固定测试字节，只更新经审查的验收源码哈希，登记提取出的
+运行身份、组织、发布模块，以及新回归模块、固定用例数量和终端输出 fixture。
+`tests/fixtures/verification_transcripts.json` 的八种输出取自重构前 `e3a7ff3`
+及当时已有的配置材料组装工作树；仅替换输出目录和随机 run_id，逐字节比较正常、
+检查失败、检查中断、旧切片失败和 A1/A2-01 发布前后中断的终端输出及退出码。
+新增回归另覆盖合成组的整体通过设置、发布失败清理、最终发布中断、仅收集、取消
+选择和发布前回执替换；原真实子进程、临时 SQLite、脱敏和旧入口回归继续执行。
+
 ## A1 独立结论
 
 `<run_id>.a1.json` 的格式版本为 `1`，字段如下：
@@ -147,7 +190,7 @@ SQL 失败、连接中断、提交前进程终止、来源文件替换和脱敏�
 `<run_id>.a2-full.json` 的格式为 **2**，scope 固定为
 `a2_versioned_config_snapshots`、issue 为 25。生产入口是
 `scripts/check-offline` → 原有 `scripts.a1_acceptance` 启动入口 →
-`scripts.a2_full_acceptance`，复用原有 A1 执行器，
+`scripts.a2_full_acceptance` → `scripts.verification_run`，
 完整六项计划只执行一次。A2-01 仍写 `<run_id>.a2.json`，保留自己的 scope、
 固定测试字节与历史未覆盖项；它的结果不能代替完整 A2，也不再决定完整入口退出码。
 #12 格式 1、五个原有依赖字段和 A1 固定测试及 `not_assessed` 保持原义。
