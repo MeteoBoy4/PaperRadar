@@ -268,7 +268,7 @@ def test_file_publication_before_database_commit_can_be_retried(
     assert store.read_artifact(saved.artifact_id) == {"payload": b"abc"}
 
 
-def test_bad_expected_hash_and_extraction_are_rejected_without_registration(
+def test_bad_expected_hash_and_incomplete_extraction_leave_no_registration(
     tmp_path: Path,
 ) -> None:
     from paper_radar.storage.artifact_contract import ArtifactError, ArtifactReason

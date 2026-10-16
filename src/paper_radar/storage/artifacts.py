@@ -6,7 +6,7 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 from paper_radar.storage.artifact_contract import (
-    SINGLE_FILE_KINDS,
+    KIND_ROLES,
     ArtifactError,
     ArtifactMember,
     ArtifactReason,
@@ -53,10 +53,15 @@ class ArtifactStore:
         *,
         expected_sha256: Mapping[str, str] | None = None,
     ) -> ArtifactRecord:
-        if kind not in SINGLE_FILE_KINDS or set(members) != {"payload"}:
+        roles = tuple(members)
+        if (
+            kind not in KIND_ROLES
+            or len(roles) != len(set(roles))
+            or set(roles) != set(KIND_ROLES[kind])
+        ):
             raise ArtifactError(
                 ArtifactReason.INVALID_MANIFEST,
-                "本接口当前仅开放四种单文件制品，且必须恰有 payload 成员",
+                "制品必须提供已开放种类的完整且不重复的角色集合",
             )
         if expected_sha256 is not None and not set(expected_sha256) <= set(members):
             raise ArtifactError(ArtifactReason.INVALID_MANIFEST, "预期哈希包含未知角色")
@@ -74,13 +79,13 @@ class ArtifactStore:
                     (expected_sha256 or {}).get(role),
                     check_registration=check_existing,
                 )
-                for role in sorted(members)
+                for role in sorted(roles)
             )
             identities = tuple(
                 ArtifactMember(
                     role=role, sha256=blob.sha256, size_bytes=blob.size_bytes
                 )
-                for role, blob in zip(sorted(members), published, strict=True)
+                for role, blob in zip(sorted(roles), published, strict=True)
             )
             artifact_manifest(kind, identities)
             return save_registration(engine, kind, identities, published)
