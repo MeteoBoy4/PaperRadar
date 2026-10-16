@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib.metadata
-import json
 import signal
 import sys
 import tempfile
@@ -21,7 +20,6 @@ from scripts.a2_full_scope import (
     ISSUE,
     MIGRATION_REVISION,
     NOT_ASSESSED,
-    RECEIPT_COUNTERS,
     REQUIRED_CHECKS,
     REQUIRED_DEPENDENCIES,
     REQUIRED_FIXTURE_FILES,
@@ -29,13 +27,21 @@ from scripts.a2_full_scope import (
     REQUIRED_TEST_CASE_COUNTS,
     REQUIRED_TEST_MODULES,
     SCOPE,
-    ReceiptCounter,
 )
 from scripts.offline_evidence import (
     CheckReason,
     CheckStatus,
     OverallStatus,
     file_sha256,
+)
+from scripts.verification_checks import (
+    file_records,
+    files_unchanged,
+    identity_matches,
+    read_json,
+    receipt_completed,
+    receipt_records,
+    same_run_document,
 )
 from scripts.verification_publication import publish_conclusion
 from scripts.verification_run import AcceptanceGroup, VerificationRun, run_verification
@@ -94,40 +100,6 @@ def _reason(code: A2FullReasonCode, item: str | None = None) -> dict[str, str]:
         "message_zh": _HELP[code],
         **({"item": item} if item else {}),
     }
-
-
-def _read_json(path: Path) -> dict[str, Any] | None:
-    try:
-        value = json.loads(path.read_bytes())
-    except (OSError, ValueError):
-        return None
-    return value if isinstance(value, dict) else None
-
-
-def _files(
-    root: Path,
-    required: tuple[tuple[str, str], ...],
-    reasons: list[dict[str, str]],
-) -> list[dict[str, Any]]:
-    if not required:
-        reasons.append(_reason(A2FullReasonCode.SCOPE_DRIFT))
-    records = []
-    for relative, expected in required:
-        actual = file_sha256(root / relative)
-        matched = actual == expected
-        records.append(
-            {
-                "path": relative,
-                "expected_sha256": expected,
-                "actual_sha256": actual,
-                "result": CheckStatus.PASSED.value
-                if matched
-                else CheckStatus.FAILED.value,
-            }
-        )
-        if not matched:
-            reasons.append(_reason(A2FullReasonCode.SCOPE_DRIFT, relative))
-    return records
 
 
 def _environment(reasons: list[dict[str, str]]) -> dict[str, Any]:
@@ -197,17 +169,11 @@ def _test_execution(
     run_id: str,
     reasons: list[dict[str, str]],
 ) -> list[dict[str, Any]]:
-    receipt = _read_json(path)
+    receipt = read_json(path)
     if receipt is None:
         reasons.append(_reason(A2FullReasonCode.TEST_EXECUTION_NOT_PASSED))
         return []
-    if (
-        receipt.get("format_version") != 1
-        or receipt.get("run_id") != run_id
-        or receipt.get("completed") is not True
-        or type(receipt.get("exit_code")) is not int
-        or receipt.get("exit_code") != 0
-    ):
+    if not receipt_completed(receipt, run_id):
         reasons.append(_reason(A2FullReasonCode.TEST_EXECUTION_NOT_PASSED))
     if receipt.get("completed") is False:
         reasons.append(_reason(A2FullReasonCode.RUN_INCOMPLETE))
@@ -218,35 +184,15 @@ def _test_execution(
     if not isinstance(modules, dict):
         reasons.append(_reason(A2FullReasonCode.TEST_EXECUTION_NOT_PASSED))
         modules = {}
-    records = []
-    for name in sorted(required):
-        raw = modules.get(name)
-        if not isinstance(raw, dict):
-            raw = {}
-        counts: dict[str, int | None] = {
-            key: raw.get(key) if type(raw.get(key)) is int and raw[key] >= 0 else None
-            for key in RECEIPT_COUNTERS
-        }
-        expected = REQUIRED_TEST_CASE_COUNTS.get(name)
-        expected_counts: dict[str, int | None] = {
-            key: expected
-            if key in (ReceiptCounter.COLLECTED, ReceiptCounter.PASSED)
-            else 0
-            for key in RECEIPT_COUNTERS
-        }
-        passed = type(expected) is int and expected > 0 and counts == expected_counts
-        records.append(
-            {
-                "path": name,
-                "expected_cases": expected,
-                **counts,
-                "result": CheckStatus.PASSED.value
-                if passed
-                else CheckStatus.FAILED.value,
-            }
-        )
-        if not passed:
-            reasons.append(_reason(A2FullReasonCode.TEST_EXECUTION_NOT_PASSED, name))
+    records = receipt_records(
+        modules,
+        {name: REQUIRED_TEST_CASE_COUNTS.get(name) for name in required},
+    )
+    for record in records:
+        if record["result"] != CheckStatus.PASSED:
+            reasons.append(
+                _reason(A2FullReasonCode.TEST_EXECUTION_NOT_PASSED, record["path"])
+            )
     return records
 
 
@@ -256,15 +202,14 @@ def _validate_run(
     a1: dict[str, Any],
     reasons: list[dict[str, str]],
 ) -> dict[str, Any]:
-    evidence = _read_json(evidence_path)
+    evidence = read_json(evidence_path)
     if evidence is None:
         reasons.append(_reason(A2FullReasonCode.EVIDENCE_UNAVAILABLE))
         evidence = {}
     run_id = a1["run_id"]
     if (
-        _read_json(a1_path) != a1
+        not same_run_document(a1_path, run_id, ".a1.json", a1)
         or evidence_path.name != f"{run_id}.json"
-        or a1_path.name != f"{run_id}.a1.json"
         or evidence.get("run_id") != run_id
         or a1.get("evidence_sha256") != file_sha256(evidence_path)
         or a1.get("scope") != "a1_screening_authoritative_contracts"
@@ -360,7 +305,14 @@ def write_full_a2_conclusion(
             ("source_modules", REQUIRED_SOURCE_MODULES),
             ("fixture_files", REQUIRED_FIXTURE_FILES),
         ):
-            result[key] = _files(root, required, reasons)
+            result[key] = file_records(root, required)
+            if not required:
+                reasons.append(_reason(A2FullReasonCode.SCOPE_DRIFT))
+            for record in result[key]:
+                if record["result"] != CheckStatus.PASSED:
+                    reasons.append(
+                        _reason(A2FullReasonCode.SCOPE_DRIFT, record["path"])
+                    )
         receipt_path = evidence_path.with_suffix(".pytest.json")
         result["pytest_receipt_sha256"] = file_sha256(receipt_path)
         result["test_execution"] = _test_execution(receipt_path, run_id, reasons)
@@ -381,26 +333,19 @@ def write_full_a2_conclusion(
             worktree_sha256=current.worktree_sha256,
             lockfile_sha256=current.lockfile_sha256,
         )
-        if (
-            current.code["commit"] is None
-            or current.code["dirty"] is None
-            or current.worktree_sha256 is None
-            or current.lockfile_sha256 is None
-            or evidence.get("code") != current.code
-            or evidence.get("lockfile_sha256") != current.lockfile_sha256
-            or any(
-                a1_conclusion.get(key) != result[key]
-                for key in ("code", "worktree_sha256", "lockfile_sha256")
-            )
-        ):
+        if not identity_matches(current, evidence, a1_conclusion):
             reasons.append(_reason(A2FullReasonCode.IDENTITY_CHANGED))
         # 结论发布前再次核对绑定文件, 不能接受检查期间替换的证据。
         if (
-            file_sha256(evidence_path) != result["evidence_sha256"]
-            or file_sha256(a1_path) != result["a1_conclusion_sha256"]
+            not files_unchanged(
+                (
+                    (evidence_path, result["evidence_sha256"]),
+                    (a1_path, result["a1_conclusion_sha256"]),
+                    (receipt_path, result["pytest_receipt_sha256"]),
+                )
+            )
             or result["evidence_sha256"] != a1_conclusion.get("evidence_sha256")
-            or _read_json(a1_path) != a1_conclusion
-            or file_sha256(receipt_path) != result["pytest_receipt_sha256"]
+            or read_json(a1_path) != a1_conclusion
         ):
             reasons.append(_reason(A2FullReasonCode.BINDING_MISMATCH))
     except KeyboardInterrupt:
