@@ -15,7 +15,7 @@ ARTIFACT_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_artifact_store.py",
-        "7b3070d5daece329b0ee4d9a0f8c4f6b1560bcbe859532b635edca8734600051",
+        "4845e90c554214cedb26edbf3c5d018aacc9618e81e71c21e3063b2e3b83486a",
     ),
     (
         "tests/test_storage_migrations.py",
@@ -34,7 +34,7 @@ ARTIFACT_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/artifacts.py",
-        "26c04d4a915a9ec29fd6db4086ff5eccb50cd2ee32397242178baa445e82503b",
+        "45f08248581aaaa2681b9851e96039dd24a0743deabebc7c36fbb42535537681",
     ),
     (
         "src/paper_radar/storage/blob_store.py",
@@ -50,6 +50,31 @@ ARTIFACT_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
 )
 
+EXTRACTION_TEST_MODULES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/test_extraction_artifacts.py",
+        "30598e956ed5c4edb1a9bd856dd9fd40d1fced6f6e9b07d5952c7ba7d4958d1f",
+    ),
+)
+
+EXTRACTION_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/extraction_support.py",
+        "bce97c2f5d2f9bafd0c7c02f3318f26f3234c58363355382321bfa08ba320ab8",
+    ),
+    (
+        "tests/extraction_process/sitecustomize.py",
+        "83663351d5dfb4a4d852427bb69d910a225cd851468cf18958bf7e8e9a39b814",
+    ),
+    (
+        "tests/extraction_process/publish.py",
+        "c5635659f003aa8fae601b1d8a0c51405a67571b2ccaed88f8f21a2d96252344",
+    ),
+    (
+        "tests/fixtures/extraction_artifact_vectors.json",
+        "efb9f44cbe705bdb5550d330b215907a5da43d6ca07bf743dc156b6521c52db4",
+    ),
+)
 
 BACKUP_TEST_CASE_COUNTS = {
     "tests/test_backup_service.py": 5,

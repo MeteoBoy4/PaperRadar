@@ -1,0 +1,68 @@
+[
+  {
+    "name": "base",
+    "payload_hex": {
+      "document": "616263",
+      "evidence_map": "",
+      "manifest": "",
+      "reading": "616263"
+    },
+    "canonical_json": "{\"domain\":\"paper-radar.artifact\",\"format_version\":1,\"kind\":\"extraction\",\"members\":[{\"role\":\"document\",\"sha256\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"size_bytes\":3},{\"role\":\"evidence_map\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"size_bytes\":0},{\"role\":\"manifest\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"size_bytes\":0},{\"role\":\"reading\",\"sha256\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"size_bytes\":3}]}",
+    "artifact_id": "b461c859afffb63c837b556746fd0ab9cfe892bcd1a58a912da46799b1738d87"
+  },
+  {
+    "name": "changed-document",
+    "payload_hex": {
+      "document": "616264",
+      "evidence_map": "",
+      "manifest": "",
+      "reading": "616263"
+    },
+    "canonical_json": "{\"domain\":\"paper-radar.artifact\",\"format_version\":1,\"kind\":\"extraction\",\"members\":[{\"role\":\"document\",\"sha256\":\"a52d159f262b2c6ddb724a61840befc36eb30c88877a4030b65cbe86298449c9\",\"size_bytes\":3},{\"role\":\"evidence_map\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"size_bytes\":0},{\"role\":\"manifest\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"size_bytes\":0},{\"role\":\"reading\",\"sha256\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"size_bytes\":3}]}",
+    "artifact_id": "00bc73333c24b6918037bfd8476259b4d384b20c6a9a96a3d996bb13dfe96d22"
+  },
+  {
+    "name": "changed-evidence_map",
+    "payload_hex": {
+      "document": "616263",
+      "evidence_map": "78",
+      "manifest": "",
+      "reading": "616263"
+    },
+    "canonical_json": "{\"domain\":\"paper-radar.artifact\",\"format_version\":1,\"kind\":\"extraction\",\"members\":[{\"role\":\"document\",\"sha256\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"size_bytes\":3},{\"role\":\"evidence_map\",\"sha256\":\"2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881\",\"size_bytes\":1},{\"role\":\"manifest\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"size_bytes\":0},{\"role\":\"reading\",\"sha256\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"size_bytes\":3}]}",
+    "artifact_id": "4f9473b8314d6e6f328b7773067feab92d0f700a118c08fea0485b275a2f4b16"
+  },
+  {
+    "name": "changed-manifest",
+    "payload_hex": {
+      "document": "616263",
+      "evidence_map": "",
+      "manifest": "78",
+      "reading": "616263"
+    },
+    "canonical_json": "{\"domain\":\"paper-radar.artifact\",\"format_version\":1,\"kind\":\"extraction\",\"members\":[{\"role\":\"document\",\"sha256\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"size_bytes\":3},{\"role\":\"evidence_map\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"size_bytes\":0},{\"role\":\"manifest\",\"sha256\":\"2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881\",\"size_bytes\":1},{\"role\":\"reading\",\"sha256\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"size_bytes\":3}]}",
+    "artifact_id": "43d5765cb43d783c0919a4ed45d55f93200e6675718a05f61a833fa5ba926eb9"
+  },
+  {
+    "name": "changed-reading",
+    "payload_hex": {
+      "document": "616263",
+      "evidence_map": "",
+      "manifest": "",
+      "reading": "616264"
+    },
+    "canonical_json": "{\"domain\":\"paper-radar.artifact\",\"format_version\":1,\"kind\":\"extraction\",\"members\":[{\"role\":\"document\",\"sha256\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"size_bytes\":3},{\"role\":\"evidence_map\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"size_bytes\":0},{\"role\":\"manifest\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"size_bytes\":0},{\"role\":\"reading\",\"sha256\":\"a52d159f262b2c6ddb724a61840befc36eb30c88877a4030b65cbe86298449c9\",\"size_bytes\":3}]}",
+    "artifact_id": "2be4a7bf041a38ee0ca5f1f6a4117a3559aab88526dfbd325a43715c5dd77947"
+  },
+  {
+    "name": "swapped-roles",
+    "payload_hex": {
+      "document": "",
+      "evidence_map": "",
+      "manifest": "616263",
+      "reading": "616263"
+    },
+    "canonical_json": "{\"domain\":\"paper-radar.artifact\",\"format_version\":1,\"kind\":\"extraction\",\"members\":[{\"role\":\"document\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"size_bytes\":0},{\"role\":\"evidence_map\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"size_bytes\":0},{\"role\":\"manifest\",\"sha256\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"size_bytes\":3},{\"role\":\"reading\",\"sha256\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"size_bytes\":3}]}",
+    "artifact_id": "5cba9ff7ee923c45032b7beecd66601c41171d08dd6fb89a9a51a252f5fb474c"
+  }
+]

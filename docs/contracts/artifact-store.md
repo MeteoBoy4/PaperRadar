@@ -1,7 +1,7 @@
 # 不可变制品存储 Contract v1
 
 本 Contract 固定内容对象身份、制品清单格式、纯内容布局及公共发布/读取边界。
-本轮只完成四种单文件制品；extraction、多文件发布、备份与恢复的实施各由后续票负责。
+现已完成四种单文件制品与完整 extraction 多文件发布；备份与恢复由各自的后续票交付。
 存储成功表示原字节完整保存，业务接收不在这个边界：不判断来源是否贡献事实、PDF
 是否合法取得或模型输出是否通过权威接收。上游必须先完成相应验证；不提供通用人工导入 CLI。
 
@@ -21,7 +21,7 @@ artifact 身份是规范清单 UTF-8 字节的 SHA-256，不包含时间、路�
 | original_pdf | payload | 已开放 |
 | model_success_response | payload | 已开放 |
 | reference_tei | payload | 已开放 |
-| extraction | document、evidence_map、manifest、reading | 只冻结 Contract，#32 开放 |
+| extraction | document、evidence_map、manifest、reading | 已开放完整集合 |
 
 extraction 的 manifest 是上游正文材料成员，与这里的制品清单不同，不能循环包含自身哈希。
 同一 artifact 内不同角色允许引用同一个 blob。媒体类型由 kind/role 推导，不由调用方传入，
@@ -53,7 +53,8 @@ artifact ID：`accf50f8375b85b3f2105c3904cf05db0d56922a0bffe9cafb0f1e8bf6e57afa`
 ```
 
 artifact ID：`b461c859afffb63c837b556746fd0ab9cfe892bcd1a58a912da46799b1738d87`。
-这个向量冻结共享 blob 和角色排序；不代表多文件发布接口已经开放。
+这个向量冻结共享 blob 和角色排序。成员字节或角色分配变化的六组完整规范清单与身份
+另外固定在 `tests/fixtures/extraction_artifact_vectors.json`；期望不从被测服务生成。
 
 ## 路径、权限与发布
 
@@ -77,8 +78,10 @@ artifact ID：`b461c859afffb63c837b556746fd0ab9cfe892bcd1a58a912da46799b1738d87`
 
 `paper_radar.storage.artifacts.ArtifactStore(database: Path, data_root: Path)` 的构造不建库、不
 创建目录；仅解析根。公共发布入口 `publish_single(kind, chunks, expected_sha256=None)` 与
-`publish_artifact(kind, members, expected_sha256=None)` 都仅接受四种已开放 kind。
+`publish_artifact(kind, members, expected_sha256=None)` 分别接收单文件 kind 与全部五种已开放 kind。
 chunks 为 bytes 分段 iterable；members 为角色到分段 iterable 的映射。
+`publish_single` 只接受单 payload 集合；`publish_artifact` 对 extraction 恰要求四角色，
+拒绝缺项、未知/额外角色或重复枚举的角色。成员枚举顺序不改变身份。
 
 返回不可变 `ArtifactRecord(artifact_id, kind, format_version, members, created_at)`，其中
 members 是 `ArtifactMember(role, sha256, size_bytes)` 集合。
@@ -135,3 +138,21 @@ save_snapshot 的事务语义不变。空库初始化和重复升级可用；升
 | registration_corrupt | 清单身份/成员/位置登记损坏；检查数据库，不修补历史 |
 | database_busy | 5 秒锁等待超时；稍后重试 |
 | database_failed | 登记读取/提交失败；事实回滚后排除故障重试 |
+
+## 多文件集合原子性与失败恢复
+
+extraction 的 `manifest` 成员是上游正文制品原字节，与进入制品身份的 `ArtifactManifest`
+规范清单、备份清单是三个不同对象；它不能循环包含当前制品自身的哈希。存储层只验证
+完整集合和字节，不运行 Docling，也不验证正文或 evidence 的业务语义。
+
+成员按固定角色顺序逐个分段发布，document 与 reading 可以共享同一 blob，仍保留
+两条独立角色引用；跨 extraction 和单文件种类也共享相同内容。全部文件完整发布并验证
+后才开始一次登记事务，写入完整 artifact 与全部成员。公开枚举仍按数据库成员引用闭包
+工作，没有 extraction 专属目录、自由角色或阶段指纹查找旁路。
+
+临时写入、部分成员已发布、全部文件已发布但登记前、成员行写入中途和 commit 前的
+异常或强杀，都不产生可查询的半集合，旧制品保持可读。未登记的已发布文件允许保留，
+重试逐个验证后复用；本轮不做 GC。读取先验证登记身份并完整读取全部成员，任一成员
+缺失、同长度损坏、路径链接或成员行篡改都会拒绝整个集合，不向调用方交出部分结果，
+也不能用重新发布输入补写历史。进程竞争用管道屏障固定到真实发布/SQL 边界，无 sleep
+排序；输入测试用拒绝无界读取的流包装为 bounded 分段生成器。
