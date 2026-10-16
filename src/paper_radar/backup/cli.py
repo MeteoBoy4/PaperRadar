@@ -18,7 +18,7 @@ verify 成功和失败都不写批次。
 输出去向：完成批次写入 output；终端仅显示批次 ID、清单 SHA-256、
 按 kind 的数量与字节汇总。
 常见失败：缺失、损坏、版本不支持、目标冲突或空间不足返回 2；不会覆盖已有批次。
-示例：paper-radar backup create --database data/paperradar.sqlite3 
+示例：paper-radar backup create --database data/paperradar.sqlite3
         --data-root data --output backups
 """
 
@@ -37,7 +37,7 @@ contracts/ 导出目录、
 reports/logs。配置文件本身请用 git 保管。
 常见失败：旧库须先 db upgrade；内容缺失、损坏、格式不支持、空间或发布失败返回 2。
 拒绝 output 位于本 data-root 的 blobs 或 tmp 子树中，不扫描源目录来猜测事实。
-示例：paper-radar backup create --database data/paperradar.sqlite3 
+示例：paper-radar backup create --database data/paperradar.sqlite3
         --data-root data --output backups
 """
 

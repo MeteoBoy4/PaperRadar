@@ -115,7 +115,7 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
 BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/backup/__init__.py",
-        "d11cae9747406968a106eb7e94a3d96d36f85808f1b28867801cab3d75a1c8c8",
+        "b03e71f04496d78aceb9ab27b399945c72d4ac150db3a47f45e52a6696558078",
     ),
     (
         "src/paper_radar/backup/manifest.py",
@@ -131,10 +131,58 @@ BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/cli.py",
-        "3bd4b1c567638fcd16ed76685e2c6c8e0540383cbbdfb3c5555ac29c38d54cd9",
+        "2b9b7340a7548be7f625aed12c350200dbeb772ca95d01ac3b1b2c3d4fcad5ae",
     ),
     (
         "tests/backup_support.py",
         "f1ee3e3febb10bcf68212af621c79d0d25951fa1464cd11e23d2afe139e8cc37",
+    ),
+)
+
+RESTORE_TEST_CASE_COUNTS = {
+    "tests/test_restore_service.py": 4,
+    "tests/test_restore_failures.py": 25,
+    "tests/test_restore_cli.py": 11,
+}
+
+RESTORE_TEST_MODULES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/test_restore_service.py",
+        "43111ca84d5314ea4a792c36c966c0b9e79371431f6c0182fb6dc9fd0eff286f",
+    ),
+    (
+        "tests/test_restore_failures.py",
+        "2b836f517c6d26bf28365efec000af4b484f8d245c7b9c4d411be050ef3d9f02",
+    ),
+    (
+        "tests/test_restore_cli.py",
+        "cf55452b2085cd79270e288efdf6cb667ec7a7b5cf11432765c6b2d00600e99d",
+    ),
+)
+
+RESTORE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
+    (
+        "src/paper_radar/backup/restore.py",
+        "13d80b3ce3239dcc8159d02cc91ac50ac6abec1f526a8337b16fad8aba77b46f",
+    ),
+    (
+        "src/paper_radar/backup/restore_contract.py",
+        "9f251dd2aa193d3a6908361fd813c184d6dbe605aec122a7cf0de0db9262bb13",
+    ),
+    (
+        "src/paper_radar/backup/restore_cli.py",
+        "9ad63d654c4e7b96e9edeaba0e08cc9c6b3d4f7daa58d9f4fc626f01cf791caa",
+    ),
+    (
+        "tests/restore_support.py",
+        "89271ffd6bfd49a8844a09bb446c3252b296a57ebc050ecab3a1f1f88f4fbe13",
+    ),
+    (
+        "tests/restore_process/sitecustomize.py",
+        "bac18aeb70c29cfa677b594507f601353471a389b0bc02905b422eb7e43644d7",
+    ),
+    (
+        "tests/restore_process/query.py",
+        "aaaf457c74e2c996b69b748a81066b0a2f1982a43ac050586413eb576a941877",
     ),
 )

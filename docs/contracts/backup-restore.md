@@ -1,7 +1,8 @@
 # 自包含备份批次 Contract v1
 
-#33 开放 `backup create` 与只读 `backup verify`。隔离恢复由 #34 接入，不把本票
-的创建/校验通过当作恢复、NAS、完整阶段 A、业务任务续跑或自动精读已验收。
+现已开放 `backup create`、只读 `backup verify` 和会写入完整副本的 `restore verify`。
+隔离恢复只证明本 Contract 的配置/制品范围，不代表 NAS、完整阶段 A、业务任务续跑
+或自动精读已验收。
 备份服务组合 storage/config 公共服务，不增加 `backup_runs`，不写源执行记录。
 
 ## 公开边界与使用
@@ -10,6 +11,7 @@
 uv run --offline --locked paper-radar backup create \
   --database data/paperradar.sqlite3 --data-root data --output backups
 uv run --offline --locked paper-radar backup verify backups/<backup-batch>
+uv run --offline --locked paper-radar restore verify backups/<backup-batch> --target restored
 ```
 
 `<backup-batch>` 是已发布批次目录，不是运行配置快照 ID。公共 Python 服务为
@@ -18,7 +20,7 @@ uv run --offline --locked paper-radar backup verify backups/<backup-batch>
 路径不是身份，结果的 batch_dir 为绝对路径；清单不保存绝对源位置。
 `verify_contents(root, manifest)` 只负责同一套完整内容解释，不判定根 basename；
 `copy_verified_contents(result, destination)` 重新校验来源后向既有空私有 staging
-分段复制独立字节并重新校验，不发布目标。它们供后续恢复组合，不是额外产品命令。
+分段复制独立字节并重新校验，不发布目标。它们供恢复服务组合，不是额外产品命令。
 
 create 只接受当前 head；已知祖先指向显式 `db upgrade`，未知/未来或安装包异常拒绝。
 源库通过 SQLite `mode=ro` 读取，不 checkpoint 或升级源库。活动 WAL 的临时协调文件
@@ -127,3 +129,59 @@ selector、未登记草稿、contracts/ 导出目录、reports、logs、缓存�
 | copy_failed | I/O/空间等复制失败，排除故障重试 |
 | publication_failed | 原子发布不可用，检查同文件系统和系统支持 |
 | interrupted | 操作中断，重新创建/校验，不继承旧成功 |
+
+## 隔离恢复
+
+`paper_radar.backup.restore_backup(batch_dir, target)` 只消费已发布批次，返回不可变
+`RestoreResult(target_dir, manifest_sha256, manifest)`；target_dir 是绝对位置，不是身份。
+目标根可以整体移动，成员仍按新根解析；恢复目标无需沿用批次名。
+`RestoreError.reason` 复用下表与原 BackupReason，CLI 错误统一为中文脱敏原因，不回显
+路径、原始异常、配置、Prompt、正文、模型结果或凭据。
+
+源批次先经 `verify_backup` 严格验证，再由 `copy_verified_contents` 重新核对源并复制
+数据库、全部登记 blob 和原清单，使用同一 `verify_contents` 规则完整校验副本；不维护
+第二套清单/配置/制品解释器，不读取原数据或配置根，不补写缺项。完整但未发布的 staging、
+改名批次、损坏和任何清单外条目都拒绝。复制使用独立 inode，不以硬链接依赖源字节。
+
+目标可以不存在，或为非符号链接的空目录；拒绝普通文件、非空目录、目标自身符号链接
+（含断链）、与批次相同或位于批次内部的位置。重叠检查仅针对批次，清单不加绝对源
+位置，也不探测活动数据目录。目标父路径解析一次，**父目录必须预先存在**，不存在时
+报 parent_unavailable，不创建任何层级。父目录已有权限不改写；所有本次新目录 0700，
+数据库/清单 0600、blob 0400。
+
+在目标父目录创建唯一 `.restore-staging-<随机名>` 同级目录，完整复制并验证后用 POSIX
+`rename` 原子发布。允许原子替换空目标目录；发布前重新检查目标，且最终 rename 本身
+拒绝被并发写成非空的目录，因此不会递归清空或覆盖用户数据。源/目标必须适用同文件系统
+重命名，失败受控，不降级为逐文件发布。发布后 fsync 父目录。
+
+失败或中断不生成成功恢复结论；只尽力清理本次独占创建的 staging，不清理别人的
+staging，也不扫描 GC。强杀在发布前发生时残留由人工处理；若与原子提交同时或之后
+发生，可能已有完整已验证的目标，不能从缺少终端成功输出推断发布未发生。目标已有
+内容时请保留检查，向合适的新空目标重试，不通过清空目录绕过保护。
+
+恢复库与批次库原字节完全一致，保持 `journal_mode=DELETE`；list/diff/完整 ID load
+及制品读取不会自动迁移、重编译、激活快照或启动任务。历史 ID、配置原字节、创建
+时间、六投影和校准基线保持不变。要把副本作为工作库，另显式运行：
+
+```bash
+uv run --offline --locked paper-radar db upgrade --database restored/database.sqlite3
+```
+
+此操作 head 不变，恢复 WAL；事实与身份不变，数据库物理字节可能变化。原备份批次
+始终独立保留 DELETE 模式。恢复不安装 Pi、不续跑任务、不修改校准或自动精读门禁，
+不声称能重建尚未实现的业务报告。配置文件本身仍请用 git 保管。
+
+| RestoreReason | 原因与下一步 |
+| --- | --- |
+| target_unavailable | 目标不可用、为文件或链接；选择不存在位置或普通空目录 |
+| target_not_empty | 目标非空或发布时被占用；保留已有内容，选择新目标 |
+| target_overlap | 目标与批次相同或位于其内部；选择批次以外的位置 |
+| parent_unavailable | 父目录不存在或不可用；先创建可写父目录 |
+| restore_copy_failed | 复制/空间/权限失败；排除原因后向合适空目标重试 |
+| restore_publication_failed | 原子目录发布失败；检查文件系统和目标状态 |
+| restore_interrupted | 操作中断；检查目标与本次残留，不能继承旧成功 |
+
+批次错误保留原 BackupReason（如 file_missing、file_corrupt、unexpected_entry），不以
+一个通用恢复错误抹掉原因。成功退出 0；参数/业务失败退出 2，中断非零。成功输出与
+backup verify 一样只给批次 ID、清单 SHA-256 及按 kind 汇总，不逐条输出制品或研究内容。
+帮助直接说明“写入完整副本”和父目录 staging；帮助无外部 I/O，不依赖配置、凭据或数据库。

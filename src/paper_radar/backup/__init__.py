@@ -1,4 +1,4 @@
-"""自包含备份创建与只读完整性校验;帮助导入不加载数据库模块。"""
+"""自包含备份、只读校验与隔离恢复;帮助导入不加载数据库模块。"""
 
 from pathlib import Path
 
@@ -8,14 +8,23 @@ from paper_radar.backup.manifest import (
     BackupReason,
     BackupResult,
 )
+from paper_radar.backup.restore_contract import (
+    RestoreError,
+    RestoreReason,
+    RestoreResult,
+)
 
 __all__ = [
     "BackupError",
     "BackupManifest",
     "BackupReason",
     "BackupResult",
+    "RestoreError",
+    "RestoreReason",
+    "RestoreResult",
     "copy_verified_contents",
     "create_backup",
+    "restore_backup",
     "verify_backup",
     "verify_contents",
 ]
@@ -43,3 +52,9 @@ def copy_verified_contents(result: BackupResult, destination: Path) -> None:
     from paper_radar.backup.service import copy_verified_contents as copy
 
     copy(result, destination)
+
+
+def restore_backup(batch_dir: Path, target: Path) -> RestoreResult:
+    from paper_radar.backup.restore import restore_backup as restore
+
+    return restore(batch_dir, target)

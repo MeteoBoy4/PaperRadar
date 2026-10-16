@@ -40,7 +40,7 @@ uv run --offline --locked paper-radar --help
 帮助命令只向标准输出写文本；它不读取配置或凭据，不访问网络或数据库，
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
 当前注册 `contracts export/check`、`db upgrade`、`config check/compile/diff/snapshots list`
-与 `backup create/verify`。
+与 `backup create/verify`、会写入副本的 `restore verify`。
 不注册尚未实现的业务命令。
 
 ## 数据库升级
@@ -95,9 +95,38 @@ renameat2(RENAME_NOREPLACE)，不支持时受控失败。
 批次数据库为 `journal_mode=DELETE` 的独立单文件，不依赖原 WAL/SHM；这使 verify
 在成功和失败时都不改字节或目录条目。verify 全量核对 SHA-256、数据库 integrity/FK、
 登记双向闭包及每份历史配置回放，不补文件、不迁移，原数据和配置根不可访问时仍可用。
-批次移动时保留自身目录名。隔离恢复由后续票开放；若日后将恢复副本作为工作库，先显式
-运行一次 `db upgrade` 恢复 WAL，查询与历史事实不变。详见
-[备份 Contract](docs/contracts/backup-restore.md)。本票未验证 NAS 或全 A3。
+批次移动时保留自身目录名。详见
+[备份与隔离恢复 Contract](docs/contracts/backup-restore.md)。未验证 NAS 或全阶段 A。
+
+## 隔离恢复
+
+`restore verify` 会向 `--target` **写入完整副本**；只读检查请使用 `backup verify`。
+目标父目录须预先存在，目标可以不存在或为非符号链接的空目录。命令在父目录临时创建
+唯一隐藏 staging，复制全部登记闭包并完整验证后原子发布；拒绝非空目标、目标符号链接
+及批次内部位置，不清空目录，也不读取原数据库、制品根或配置文件。
+以下示例的批次名请替换为实际已发布目录名：
+
+```bash
+uv run --offline --locked paper-radar restore verify \
+  backups/20261017T000000Z-1234abcd --target restored
+uv run --offline --locked paper-radar config snapshots list \
+  --database restored/database.sqlite3
+```
+
+恢复库保持与批次相同的 DELETE 单文件字节；历史配置 ID、原字节、创建时间、六投影与
+校准基线不变，制品随新根解析。原配置/数据不可访问及移动恢复根后仍可查询和读取。
+复制使用独立 inode，修改副本不会修改原批次。失败只尽力清理自己创建的 staging；
+强杀残留由人工处理。原子发布附近中断可能已留下完整目标，请检查已有内容，向新的
+空目标重试。成功只输出批次 ID、清单 SHA-256 与按 kind 汇总。
+
+要把恢复副本作为工作库，另显式运行下面的命令使其恢复 WAL；head、历史身份和事实不变：
+
+```bash
+uv run --offline --locked paper-radar db upgrade --database restored/database.sqlite3
+```
+
+恢复不会自动升级、激活配置、启动任务、安装 Pi 或修改校准/自动精读门禁；当前也不
+声称恢复尚未实现的报告。**配置文件本身请用 git 保管**，本轮不验证 NAS。
 
 ## 不可变制品存储
 

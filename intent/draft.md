@@ -1249,7 +1249,7 @@ paper-radar report verify <report-id>
 
 paper-radar backup create --database <database> --data-root <data-root> --output <backup-root>
 paper-radar backup verify <backup-batch>
-paper-radar restore verify <snapshot> --target <empty-directory>
+paper-radar restore verify <backup-batch> --target <empty-directory>
 ~~~
 
 命令名可以在实现时统一风格，但必须覆盖这些用户能力，且不得重新暴露主状态、综合 Rank、主题权重或自由标签。
@@ -1376,6 +1376,14 @@ A3 批次内，配置文件本身请用 git 保管。A3 不建 backup_runs，报
 未验收；NAS 的更广保管范围按下一节另行实施。详见 docs/contracts/backup-restore.md。
 
 数据库快照与所引用永久制品作为同一备份批次记录。复制过程中产生的新事实属于下一批，不用伪造跨文件系统事务。
+
+`restore verify <backup-batch> --target ...` 会写入完整副本，不是只读校验。目标父目录
+必须预先存在，目标只能不存在或为非符号链接的空目录；拒绝批次内部位置，不探测活动
+源路径。在目标父目录创建唯一隐藏 staging，复用批次完整校验后以 rename 原子发布；
+目标被并发写成非空时拒绝，失败只尽力清理本次 staging。副本保持原 DELETE 字节，
+原数据与配置不可访问、移动恢复根后仍须可回放旧 ID、原字节、时间、六投影和基线，
+并读取全部制品；要作为工作库另显式 db upgrade 恢复 WAL。恢复不激活配置、不续跑
+任务，不自动改变门禁；报告重建与 NAS 仍单列未验收。
 
 ### 9.2 NAS
 
