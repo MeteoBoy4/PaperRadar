@@ -17,7 +17,7 @@ RECEIPT_COUNTERS = tuple(ReceiptCounter)
 SCOPE = "a2_versioned_config_snapshots"
 ISSUE = 25
 FORMAT_VERSION = 2
-MIGRATION_REVISION = "a201_profile_snapshot"
+MIGRATION_REVISION = "a302_artifact_store"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 # 固定用例数量在独立收集核对后登记。回执必须同时证明收集和三阶段通过。
@@ -147,11 +147,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_acceptance.py",
-        "b62393bd8e9b906b06feae75e5cc25ad4a8dae7dd712d5248a3eb52340f95743",
+        "d937fdb81ddc3063f92a682ea7948f211017895cc12131ab762387d80f68d654",
     ),
     (
         "tests/test_a2_full_acceptance.py",
-        "6eb204e70671623fbc67a5c3ea1b2a06c9bd29fd5dc22187b12943cb6e986a36",
+        "412934e31876842524cf872dce2cd4212c71443bb387ef20b722600f30dc18ec",
     ),
     (
         "tests/test_a2_full_entry.py",
@@ -413,7 +413,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/cli.py",
-        "5abbc08655fc6fb37382dd0794fab7e3500b6c5e4973afa699c1f9614582b41d",
+        "69f06e69b312af4c4d3ab07652789e20e17bf0d07ee73351ad0d61c2b6872234",
     ),
     (
         "src/paper_radar/config/compile.py",
@@ -505,11 +505,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/database.py",
-        "738eb3c1923a39fdf49594df070bd4a6f7d1b69ff18ce0d8ab31c6c05dbcb847",
+        "ed8aba07f31eb6019c6d656a9147c682d74073bbdf4d268cd488bdb79ff3b7b1",
     ),
     (
         "src/paper_radar/storage/errors.py",
-        "de9f19854cb3d4e58a2bd6f6eeeb6f4afff68e9cea4e4896474c9f9389d1c0d3",
+        "a8c859bb0d8a415599887d380218a46490c6e10afa9910c0360a4dda037db19f",
     ),
     (
         "src/paper_radar/storage/migrations/env.py",
@@ -529,7 +529,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/schema.py",
-        "a6da0e4436a89a4cea105ef7fb3647cb342afcf107aa41ffe7258e1f528d6353",
+        "87269ef0935fc2de63e2f948d8066ee5d9f28163ca42a8e4afdbdc25e83393ad",
     ),
     (
         "src/paper_radar/storage/snapshot_queries.py",

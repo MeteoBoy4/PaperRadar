@@ -4,6 +4,7 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓
 研究边界、摘要层价值预测、复用可行性升级和筛选原因组合的公共验证，以及
 四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
 只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
+现已开放四种单文件制品的不可变内容寻址存储与完整校验回读。
 网络来源和论文处理命令尚未实现。
 期刊身份与信誉集合也可版本化登记，校验 ISSN 与冲突，并从 SQLite 回放历史。
 另可登记 Pi adapter 的三个独立选择、完整有效系统指令、资源哈希、推理档位与
@@ -40,6 +41,49 @@ uv run --offline --locked paper-radar --help
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
 当前注册 `contracts export/check`、`db upgrade` 与 `config check/compile/diff`。
 不注册尚未实现的业务命令。
+
+## 数据库升级
+
+A2 的 `a201_profile_snapshot` 可显式升级至 A3 的 `a302_artifact_store`。升级只追加
+内容对象、制品与成员表及索引，全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
+失败或进程中断完整回滚后可以重试。配置历史的 ID、原字节、创建时间、六投影和基线不变。
+已知旧库上的 `config check/compile/diff/snapshots list` 会提示先执行升级，不自动修改库。
+不在随包迁移图中的 revision 无法判断是较新版本还是损坏，须使用匹配程序检查。
+
+升级前需要手工保护副本时，使用 SQLite backup API，确保目标文件尚不存在；不能只复制
+活动主文件，因为已提交的事实可能仍在 WAL 中。以下命令完全离线，不打印配置正文：
+
+```bash
+uv run --offline --locked python - <<'PYTHON'
+import sqlite3
+from pathlib import Path
+from urllib.parse import quote
+source = Path("data/paperradar.sqlite3").resolve()
+target = Path("data/pre-a3.sqlite3")
+with target.open("xb"):
+    pass
+with sqlite3.connect(f"file:{quote(str(source))}?mode=ro", uri=True) as src:
+    with sqlite3.connect(target) as dst:
+        src.backup(dst)
+PYTHON
+uv run --offline --locked paper-radar db upgrade --database data/paperradar.sqlite3
+```
+
+重复 `db upgrade` 保持事实和身份不变，并将工作库设为 WAL。数据库路径与制品数据根
+无需互相包含。备份恢复能力在后续 A3 票交付；上述手工命令只保护数据库。
+
+## 不可变制品存储
+
+公共 `paper_radar.storage.artifacts.ArtifactStore` 可发布 `source_snapshot`、
+`original_pdf`、`model_success_response`、`reference_tei` 四种单文件制品，每种恰含
+`payload`。输入可分段；读取先完整校验登记身份与全部文件，再返回角色到原字节的映射。
+相同内容重复发布保持原创建时间；跨种类共享内容对象。已登记内容缺失、损坏或位置不符
+会受控失败，不从当前来源重建历史；根内符号链接一律拒绝。新建目录仅属主访问，文件只读。
+
+存储成功只表示完整保存；来源接收、PDF 合法性与模型权威输出验证仍由上游负责。
+当前不注册通用制品人工导入 CLI，不执行模型或 PDF 检查。`extraction` 四角色 Contract
+已冻结，完整多文件发布留给后续票。身份向量、公共 API、错误码与迁移边界见
+[制品存储 Contract](docs/contracts/artifact-store.md)。
 
 ## 运行配置快照
 

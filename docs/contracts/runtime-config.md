@@ -439,10 +439,14 @@ A2-01 的历史测试字节及四份 v1 契约。测试只用合成材料与真�
 版本标签隔离、停用主题、模型/adapter 槽隔离、精确契约字节、只读方式、ISSN
 冲突、受控算法、并发与中断恢复均有固定测试范围。验收另建临时库执行 base→head，
 从库内 `alembic_version` 读取实际 revision，不将脚本声明的 head 当作已运行迁移。
-迁移与快照格式仍为 `a201_profile_snapshot` / 1，各阶段投影、校准基线及 adapter
+A3 的存储迁移 head 为 `a302_artifact_store`，快照格式仍为 1，各阶段投影、校准基线及 adapter
 语义格式分别登记；未登记的迁移 head 或格式变化不能通过。
 
 配置就绪、固定 fixture 与完整 A2 结论都不能证明正式校准或阶段 B 就绪。
 该结论不验收 SQLite 之外的 artifact 发布、全量业务事实、阶段输入指纹、任务/
 共享资格与可见性接口、doctor、备份恢复、真实来源及 Pi/Docling/模型执行。
 证据、失败状态和父规格覆盖表见[离线验证证据](../verification/offline-evidence.md#完整-a2-独立结论)。
+
+已知旧 revision（如 `a201_profile_snapshot`）上的 check/compile/diff/list 均提示先显式运行
+`db upgrade --database`，不会自动创建或迁移。revision 分类及原子升级见
+[制品存储 Contract](artifact-store.md)。

@@ -15,6 +15,7 @@ from paper_radar.config.snapshot_cli import snapshots_app
 DB_HELP = """显式初始化或升级配置数据库。
 
 必须提供 --database；upgrade 可创建数据库并启用 WAL，重复执行保持幂等。
+可从随包迁移图内的已知旧版本显式升级；未知 revision 拒绝修改。
 帮助不打开数据库。命令不访问网络、模型，也不消耗自动配额。
 错误返回 2；结果写入终端。
 示例：paper-radar db upgrade --database data/db.sqlite3
@@ -98,7 +99,7 @@ def _report(snapshot: RuntimeConfigSnapshot) -> None:
 @db_app.command(
     "upgrade",
     help=(
-        "显式创建或升级数据库；启用 WAL。"
+        "显式创建或从随包迁移图内的已知旧版本升级数据库；启用 WAL。"
         "示例：paper-radar db upgrade --database data/db.sqlite3"
     ),
 )

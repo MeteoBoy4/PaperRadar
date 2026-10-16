@@ -14,7 +14,7 @@ from sqlalchemy import Engine, create_engine, event, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import NullPool
 
-from paper_radar.storage.errors import StorageError
+from paper_radar.storage.errors import StorageError, StorageReason
 
 _MIGRATIONS = Path(__file__).parent / "migrations"
 BUSY_TIMEOUT_SECONDS = 5
@@ -37,16 +37,25 @@ def current_revision() -> str:
     try:
         head = ScriptDirectory.from_config(_migration_config()).get_current_head()
     except Exception:
-        raise StorageError("迁移脚本无法读取或存在多个 head；请检查安装包") from None
+        raise StorageError(
+            "迁移脚本无法读取或存在多个 head；请检查安装包",
+            reason=StorageReason.PACKAGE_MIGRATIONS_INVALID,
+        ) from None
     if head is None:
-        raise StorageError("迁移脚本没有 head；请检查安装包")
+        raise StorageError(
+            "迁移脚本没有 head；请检查安装包",
+            reason=StorageReason.PACKAGE_MIGRATIONS_INVALID,
+        )
     return head
 
 
 def open_database(path: Path, *, mode: DatabaseMode) -> Engine:
     """只有显式 upgrade 可以使用 CREATE 模式。"""
     if mode is not DatabaseMode.CREATE and not path.is_file():
-        raise StorageError("数据库不存在；请先运行 paper-radar db upgrade --database")
+        raise StorageError(
+            "数据库不存在；请先运行 paper-radar db upgrade --database",
+            reason=StorageReason.DATABASE_MISSING,
+        )
     absolute = path.resolve()
 
     def connect() -> sqlite3.Connection:
@@ -75,18 +84,41 @@ def _revision(engine: Engine) -> str | None:
                 text("SELECT version_num FROM alembic_version")
             ).all()
     except (sqlite3.Error, OSError, SQLAlchemyError):
-        raise StorageError("数据库无法读取；请检查路径和权限") from None
+        raise StorageError(
+            "数据库无法读取；请检查路径和权限", reason=StorageReason.DATABASE_UNREADABLE
+        ) from None
     if len(rows) != 1:
-        raise StorageError("数据库 revision 缺失或损坏；请检查数据库")
+        raise StorageError(
+            "数据库 revision 缺失或损坏；请检查数据库",
+            reason=StorageReason.DATABASE_REVISION_CORRUPT,
+        )
     return str(rows[0][0])
 
 
 def require_current_revision(engine: Engine) -> None:
     revision = _revision(engine)
     if revision is None:
-        raise StorageError("数据库未初始化；请先运行 paper-radar db upgrade --database")
+        raise StorageError(
+            "数据库未初始化；请先运行 paper-radar db upgrade --database",
+            reason=StorageReason.DATABASE_UNINITIALIZED,
+        )
     if revision != current_revision():
-        raise StorageError("数据库 revision 未知或较新；请使用匹配版本的程序检查数据库")
+        known = {
+            item.revision
+            for item in ScriptDirectory.from_config(
+                _migration_config()
+            ).walk_revisions()
+        }
+        if revision in known:
+            raise StorageError(
+                "数据库 revision 是已知旧版本；请先运行 "
+                "paper-radar db upgrade --database",
+                reason=StorageReason.UPGRADE_REQUIRED,
+            )
+        raise StorageError(
+            "数据库 revision 未知或较新；请使用匹配版本的程序检查数据库",
+            reason=StorageReason.UNKNOWN_REVISION,
+        )
 
 
 def upgrade_database(path: Path) -> str:
@@ -95,23 +127,42 @@ def upgrade_database(path: Path) -> str:
     try:
         head = current_revision()
         revision = _revision(engine)
-        if revision is not None and revision != head:
+        known = {
+            item.revision
+            for item in ScriptDirectory.from_config(
+                _migration_config()
+            ).walk_revisions()
+        }
+        if revision is not None and revision not in known:
             raise StorageError(
-                "数据库 revision 未知或较新；拒绝升级，请使用匹配版本的程序"
+                "数据库 revision 未知或较新；拒绝升级，请使用匹配版本的程序",
+                reason=StorageReason.UNKNOWN_REVISION,
             )
         config = _migration_config()
         with engine.connect() as connection:
+            # 只对迁移连接关闭 pysqlite legacy DDL 模式。普通 save_snapshot
+            # 继续保留自己的 BEGIN IMMEDIATE 事务。
+            driver = connection.connection.driver_connection
+            assert driver is not None
+            driver.isolation_level = None
+            connection.exec_driver_sql("BEGIN IMMEDIATE")
             config.attributes["connection"] = connection
             command.upgrade(config, "head")
             connection.commit()
         with engine.connect() as connection:
             mode = connection.exec_driver_sql("PRAGMA journal_mode=WAL").scalar()
             if mode != "wal":
-                raise StorageError("数据库无法启用 WAL；请检查存储介质和权限")
+                raise StorageError(
+                    "数据库无法启用 WAL；请检查存储介质和权限",
+                    reason=StorageReason.WAL_UNAVAILABLE,
+                )
         return head
     except StorageError:
         raise
     except Exception:
-        raise StorageError("数据库升级失败；请检查数据库状态和迁移脚本") from None
+        raise StorageError(
+            "数据库升级失败；请检查数据库状态和迁移脚本",
+            reason=StorageReason.UPGRADE_FAILED,
+        ) from None
     finally:
         engine.dispose()

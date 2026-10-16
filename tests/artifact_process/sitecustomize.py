@@ -1,0 +1,14 @@
+"""A3 独立的真实 SQLite 进程中断哨兵。"""
+
+import os
+
+from sqlalchemy import Engine, event
+
+prefix = os.environ.get("A3_PAUSE_SQL")
+if prefix:
+
+    @event.listens_for(Engine, "before_cursor_execute")
+    def pause(connection, cursor, statement, parameters, context, executemany):  # type: ignore[no-untyped-def]
+        if statement.startswith(prefix):
+            os.write(int(os.environ["A3_READY_FD"]), b"R")
+            os.read(int(os.environ["A3_RELEASE_FD"]), 1)

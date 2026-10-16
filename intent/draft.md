@@ -818,7 +818,7 @@ paper-radar review submit --queue [--limit N]
 |逻辑实体|核心内容|关键约束|
 |---|---|---|
 |fulltext_files|paper version、PDF 哈希、来源、取得方式、许可证据、文件位置、验证结果|内容哈希去重；原 PDF 永久保留|
-|extraction_artifacts|PDF、解析输入指纹、backend_id、backend_version、backend_config_hash、model_artifacts_hash、normalization version、manifest/document/reading/evidence-map 路径、质量结果|只有通过质量门槛的制品可成为当前；资源失败与永久失败分开|
+|extraction_artifacts|PDF、解析输入指纹、backend_id、backend_version、backend_config_hash、model_artifacts_hash、normalization version、制品成员引用（manifest/document/reading/evidence_map 角色→内容对象），阶段指纹作为索引列指向 artifact ID、质量结果|只有通过质量门槛的制品可成为当前；资源失败与永久失败分开|
 |analyses|Read 输入指纹、chunking version、输出语言、模型/提示词/Profile/契约、完整结构输出、原始成功响应|同一指纹一个成功分析；历史不覆盖；语言变化不重做事实采集；Profile 变化不自动重跑历史分析|
 |analysis_evidence|analysis 内字段路径、evidence ID、所属正文制品/extraction fingerprint、支持片段|evidence 引用携带制品身份；必须能解析到该分析当时使用的 evidence-map|
 |analysis_reviews|用户对 Read 的两项评分、重大误述、证据问题和笔记|只用于抽查，不构成门禁|
@@ -906,11 +906,8 @@ tools/
 data/
   paperradar.sqlite3
   blobs/sha256/
-  artifacts/extraction/<backend_id>/<extraction_fingerprint>/
-  artifacts/grobid/<reference_fingerprint>/
   cache/
   tmp/
-  backup-staging/
 reports/
   daily/YYYY-MM-DD.md
   papers/<paper_uuid>/<analysis_id>.md
@@ -942,7 +939,7 @@ revision 来自真实临时验收库，格式版本与固定合成材料逐项�
 
 `tools/pi/` 保存 §7.8 的固定供给材料，清单、官方锁文件、release 元数据和校验依据提交版本控制；`.tools/pi/` 是由它们生成的项目专属安装目录，安装树、staging 和缓存不提交 Git。`supply_id` 是供给清单规范载荷的哈希，包含固定材料哈希、工具链、平台、安装参数及预期安装树校验身份，不由目录路径或 Pi 版本号单独确定。项目专属缓存可以作为另一安装位置，但必须保持相同的固定身份与独立生命周期；这些目录不是 settings 的新增配置槽。
 
-blob 和 artifact 路径只由哈希、UUID 与受控枚举构造。数据库保存相对路径；根目录由配置决定，以便 NAS 恢复到不同挂载点。
+内容对象统一按 `<data-root>/blobs/sha256/<前2位>/<64位SHA-256>` 纯内容寻址；制品只存在于数据库登记，以受控 kind、版本和“角色→内容对象”成员引用确定身份，不另存制品清单正文。阶段输入指纹只作为业务索引列引用 artifact ID，不参与磁盘路径或制品身份（ADR-0027）。数据库保存受控相对位置并要求等于布局推导值；根目录由配置决定，以便恢复到不同挂载点。备份 staging 位于 output 根内的 `.staging-<批次ID>`，与最终目录同文件系统。
 
 永久保留：
 
@@ -1363,7 +1360,7 @@ paper trace 从数据库事实和审计事件重建过程，普通日志不是�
 
 ### 9.1 本机一致性快照
 
-从阶段 A 开始，用 SQLite 在线 backup API 把活动数据库复制到 backup-staging。快照完成后验证：
+从阶段 A 开始，用 SQLite 在线 backup API 把活动数据库复制到 output 根内的 `.staging-<批次ID>`。快照完成后验证：
 
 - PRAGMA integrity_check；
 - PRAGMA foreign_key_check；
