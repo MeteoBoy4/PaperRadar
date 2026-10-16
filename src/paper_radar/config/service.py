@@ -25,14 +25,10 @@ from paper_radar.config.compile import (
 )
 from paper_radar.config.diff import ConfigSnapshotDiff, compare_config_snapshots
 from paper_radar.config.errors import ConfigError
-from paper_radar.config.escalation import Escalation
-from paper_radar.config.extraction import Extraction
 from paper_radar.config.identity import canonical_json, sha256
-from paper_radar.config.journals import Journals
+from paper_radar.config.material_assembly import MaterialAssembly, selected_yaml_paths
 from paper_radar.config.material_names import MATERIAL_NAMES
-from paper_radar.config.read import ReadConfig
-from paper_radar.config.schema import Models, Profile, PromptName, Settings
-from paper_radar.config.topics import Topics
+from paper_radar.config.schema import PromptName, Settings
 from paper_radar.config.yaml_loader import read_prompt, read_yaml, validate_yaml_bytes
 from paper_radar.contracts import (
     ContractCheckError,
@@ -52,13 +48,6 @@ from paper_radar.storage.records import VersionRecord
 from paper_radar.storage.repository import check_version, read_snapshot, save_snapshot
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_PROFILE_KEY = (MaterialKind.PROFILE, "profile")
-_MODELS_KEY = (MaterialKind.MODELS, "models")
-_TOPICS_KEY = (MaterialKind.TOPICS, "topics")
-_JOURNALS_KEY = (MaterialKind.JOURNALS, "journals")
-_ESCALATION_KEY = (MaterialKind.ESCALATION, "escalation")
-_EXTRACTION_KEY = (MaterialKind.EXTRACTION, "extraction")
-_READ_KEY = (MaterialKind.READ, "read")
 _PROMPT_NAMES = tuple(PromptName)
 _PROMPT_PATHS = {
     PromptName.BOUNDARY: "prompts/screening/boundary-{version}.md",
@@ -145,95 +134,18 @@ def _contract_materials(
     )
 
 
-def _versioned_yaml_material[
-    T: (Profile, Models, Topics, Journals, Escalation, Extraction, ReadConfig)
-](
-    path: Path, model: type[T], kind: MaterialKind, selected: str
-) -> tuple[T, CompiledMaterial]:
-    label = kind.value
-    raw, config = read_yaml(path, model, label)
-    if config.version != selected:
-        raise ConfigError(
-            f"{label}.version：与 settings.{label} 不一致；请选择匹配版本"
-        )
-    return config, CompiledMaterial(
-        Material(kind, label, selected, raw),
-        config.compiled_config()
-        if isinstance(config, Extraction)
-        else config.model_dump(mode="json"),
-    )
-
-
 def _selected_materials(settings_path: Path) -> SelectedMaterials:
     _, settings = read_yaml(settings_path, Settings, "settings")
     _unsupported(settings)
     root = settings_path.parent.parent
-    profile: Profile | None = None
-    profile_material: Material | None = None
-    if settings.profile is not None:
-        profile, compiled = _versioned_yaml_material(
-            settings_path.parent / "profiles" / f"{settings.profile}.yaml",
-            Profile,
-            MaterialKind.PROFILE,
-            settings.profile,
-        )
-        profile_material = compiled.material
-
-    models: Models | None = None
+    assembly = MaterialAssembly(settings)
+    for kind, version, relative in selected_yaml_paths(settings):
+        try:
+            raw = (settings_path.parent / relative).read_bytes()
+        except OSError:
+            raise ConfigError(f"{kind.value}：无法读取文件；请检查路径和权限") from None
+        assembly.add_selected(Material(kind, kind.value, version, raw))
     additional: list[CompiledMaterial] = []
-    if settings.models is not None:
-        models, compiled = _versioned_yaml_material(
-            settings_path.parent / "models" / f"{settings.models}.yaml",
-            Models,
-            MaterialKind.MODELS,
-            settings.models,
-        )
-        additional.append(compiled)
-    topics: Topics | None = None
-    if settings.topics is not None:
-        topics, compiled = _versioned_yaml_material(
-            settings_path.parent / "topics" / f"{settings.topics}.yaml",
-            Topics,
-            MaterialKind.TOPICS,
-            settings.topics,
-        )
-        additional.append(compiled)
-    escalation: Escalation | None = None
-    journals: Journals | None = None
-    if settings.journals is not None:
-        journals, compiled = _versioned_yaml_material(
-            settings_path.parent / "journals" / f"{settings.journals}.yaml",
-            Journals,
-            MaterialKind.JOURNALS,
-            settings.journals,
-        )
-        additional.append(compiled)
-    if settings.escalation is not None:
-        escalation, compiled = _versioned_yaml_material(
-            settings_path.parent / "screening" / f"{settings.escalation}.yaml",
-            Escalation,
-            MaterialKind.ESCALATION,
-            settings.escalation,
-        )
-        additional.append(compiled)
-    extraction: Extraction | None = None
-    if settings.extraction is not None:
-        extraction, compiled = _versioned_yaml_material(
-            settings_path.parent / "extraction" / f"{settings.extraction}.yaml",
-            Extraction,
-            MaterialKind.EXTRACTION,
-            settings.extraction,
-        )
-        additional.append(compiled)
-    read: ReadConfig | None = None
-    if settings.read is not None:
-        read, compiled = _versioned_yaml_material(
-            settings_path.parent / "read" / f"{settings.read}.yaml",
-            ReadConfig,
-            MaterialKind.READ,
-            settings.read,
-        )
-        additional.append(compiled)
     for name in _PROMPT_NAMES:
         version = getattr(settings.prompts, name)
         if version is not None:
@@ -252,22 +164,10 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
                 _contract_materials(root, selector, contract_name, version)
             )
     adapter_materials, adapters = selected_adapter_materials(
-        settings_path.parent, settings, models
+        settings_path.parent, settings, assembly.models
     )
     additional.extend(adapter_materials)
-    return SelectedMaterials(
-        settings=settings,
-        profile=profile,
-        profile_material=profile_material,
-        models=models,
-        topics=topics,
-        additional=tuple(additional),
-        escalation=escalation,
-        extraction=extraction,
-        adapters=adapters,
-        read=read,
-        journals=journals,
-    )
+    return assembly.finish(tuple(additional), adapters)
 
 
 def _records(materials: SelectedMaterials) -> tuple[VersionRecord, ...]:
@@ -350,14 +250,7 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         }
         if len(by_key) != len(stored):
             raise ValueError
-        profile: Profile | None = None
-        profile_material: Material | None = None
-        models: Models | None = None
-        topics: Topics | None = None
-        journals: Journals | None = None
-        escalation: Escalation | None = None
-        extraction: Extraction | None = None
-        read: ReadConfig | None = None
+        assembly = MaterialAssembly(settings)
         adapters: dict[str, PiAdapter] = {}
         system_prompts: dict[str, bytes] = {}
         additional: list[CompiledMaterial] = []
@@ -369,63 +262,9 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 raise ValueError
             if material.raw_sha256 != raw_hash or raw_hash != entry["raw_sha256"]:
                 raise ValueError
-            if key[:2] == _PROFILE_KEY:
-                profile = validate_yaml_bytes(raw, Profile, "profile")
-                if (
-                    profile.version != settings.profile
-                    or profile.model_dump() != entry["config"]
-                ):
-                    raise ValueError
-                profile_material = material
-            elif key[:2] == _MODELS_KEY:
-                models = validate_yaml_bytes(raw, Models, "models")
-                if (
-                    models.version != settings.models
-                    or models.model_dump(mode="json") != entry["config"]
-                ):
-                    raise ValueError
-                additional.append(CompiledMaterial(material, entry["config"]))
-            elif key[:2] == _TOPICS_KEY:
-                topics = validate_yaml_bytes(raw, Topics, "topics")
-                if (
-                    topics.version != settings.topics
-                    or topics.model_dump(mode="json") != entry["config"]
-                ):
-                    raise ValueError
-                additional.append(CompiledMaterial(material, entry["config"]))
-            elif key[:2] == _JOURNALS_KEY:
-                journals = validate_yaml_bytes(raw, Journals, "journals")
-                if (
-                    journals.version != settings.journals
-                    or journals.model_dump(mode="json") != entry["config"]
-                ):
-                    raise ValueError
-                additional.append(CompiledMaterial(material, entry["config"]))
-            elif key[:2] == _ESCALATION_KEY:
-                escalation = validate_yaml_bytes(raw, Escalation, "escalation")
-                if (
-                    escalation.version != settings.escalation
-                    or escalation.model_dump(mode="json") != entry["config"]
-                ):
-                    raise ValueError
-                additional.append(CompiledMaterial(material, entry["config"]))
-            elif key[:2] == _EXTRACTION_KEY:
-                extraction = validate_yaml_bytes(raw, Extraction, "extraction")
-                if (
-                    extraction.version != settings.extraction
-                    or extraction.compiled_config() != entry["config"]
-                ):
-                    raise ValueError
-                additional.append(CompiledMaterial(material, entry["config"]))
-            elif key[:2] == _READ_KEY:
-                read = validate_yaml_bytes(raw, ReadConfig, "read")
-                if (
-                    read.version != settings.read
-                    or read.model_dump(mode="json") != entry["config"]
-                ):
-                    raise ValueError
-                additional.append(CompiledMaterial(material, entry["config"]))
-            elif material.kind is MaterialKind.ADAPTER:
+            if assembly.accept_stored(material, entry):
+                continue
+            if material.kind is MaterialKind.ADAPTER:
                 adapter = validate_yaml_bytes(raw, PiAdapter, "adapter")
                 if (
                     adapter.version != key[2]
@@ -459,17 +298,9 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
                 additional.append(CompiledMaterial(material, entry["config"]))
             else:
                 raise ValueError
-        if (
-            by_key
-            or (settings.profile is None) != (profile is None)
-            or (settings.models is None) != (models is None)
-            or (settings.topics is None) != (topics is None)
-            or (settings.journals is None) != (journals is None)
-            or (settings.escalation is None) != (escalation is None)
-            or (settings.extraction is None) != (extraction is None)
-            or (settings.read is None) != (read is None)
-        ):
+        if by_key:
             raise ValueError
+        assembly.require_complete()
         expected_keys = {
             (MaterialKind.PROMPT, name, version)
             for name in _PROMPT_NAMES
@@ -493,18 +324,9 @@ def load_config_snapshot(database: Path, snapshot_id: str) -> RuntimeConfigSnaps
         }
         if expected_keys != actual_keys:
             raise ValueError
-        materials = SelectedMaterials(
-            settings=settings,
-            profile=profile,
-            profile_material=profile_material,
-            models=models,
-            topics=topics,
-            additional=tuple(additional),
-            escalation=escalation,
-            extraction=extraction,
-            adapters=adapter_semantics(settings, models, adapters, system_prompts),
-            read=read,
-            journals=journals,
+        materials = assembly.finish(
+            tuple(additional),
+            adapter_semantics(settings, assembly.models, adapters, system_prompts),
         )
         rebuilt = compile_snapshot(materials)
         if rebuilt.snapshot_id != snapshot_id or rebuilt.payload_json != saved_json:

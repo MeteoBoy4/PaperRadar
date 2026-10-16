@@ -89,11 +89,24 @@ ID 必须匹配 `^[a-z][a-z0-9-]{0,63}$`，不接受大小写或空白变体，�
 未选择 topics 版本时即使磁盘有文件也仍未配置，不能与合法空集合混同。
 新增版本可切换选择，旧快照仍从 SQLite 中回放，不读取当前文件。
 
-读取所选材料和历史回放共用纯配置层的 frozen `SelectedMaterials` 具名对象，
-交给 `compile_snapshot(materials)` 编译；对象不包含路径、连接或执行计划。
-Profile/models/topics/journals/escalation/extraction/read 的活跃 YAML 装载共享声明版本一致性检查，
-版本格式由公开 `valid_declared_version` 统一校验。公共 check/compile/load
-服务参数、持久包络格式与身份序列化保持一致，无需 migration。
+当前装载与历史回放通过 `config/material_assembly.py` 的 `MaterialAssembly`
+共用 Profile/models/topics/journals/escalation/extraction/read 的解析、声明版本核对、
+编译值生成与选择完整性检查。调用方交入原始 `Material`；配置对象和对应材料记录
+由同一次验证配对，并集中组装为纯配置层的 frozen `SelectedMaterials`，交给
+`compile_snapshot(materials)` 编译。调用方不再分别构造七类配置对象和材料集合。
+`SelectedMaterials` 不包含路径、连接或执行计划；frozen 外壳不表示内部
+Pydantic 对象或编译字典具有深度不可变性。
+
+来源仍负责文件读取或历史包络、哈希与引用检查；提示词、冻结契约和 Pi 材料仍由
+各自逻辑验证后参与组装。新模块的入口接收材料及历史条目，不采用七个固定配置
+参数；当前 YAML 种类、模型与文件布局集中在内部目录中，后续可在该模块内增加
+材料解码方式，不要求调用方提供两套配对数据，也不预建通用插件机制。
+模型适配器仍可取得已验证的 `Models` 做协议检查；正文提取的
+`compiled_config()` 特殊语义保留，纯编译器不引入 YAML、存储或 CLI 依赖。
+
+版本格式继续由公开 `valid_declared_version` 统一校验。当前来源的字段级错误与
+历史来源的损坏错误保持原检查顺序和中文文本。公共 check/compile/load 参数、
+持久包络格式、快照身份序列化及阶段配置投影保持一致，无需 migration。
 
 ## 期刊身份与信誉
 

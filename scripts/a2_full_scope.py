@@ -56,6 +56,7 @@ REQUIRED_TEST_CASE_COUNTS: dict[str, int] = {
     "tests/test_config_journals_cli.py": 16,
     "tests/test_config_journals_persistence.py": 10,
     "tests/test_config_journals_validation.py": 48,
+    "tests/test_config_material_compatibility.py": 152,
     "tests/test_config_projection_adapters.py": 9,
     "tests/test_config_projection_algorithms.py": 11,
     "tests/test_config_projection_architecture.py": 1,
@@ -139,6 +140,10 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_verification_compatibility.py",
         "e4ec4ab011249efee5563a49f97d72ea61b349854636af8bd1b63b40a194ee81",
+    ),
+    (
+        "tests/test_config_material_compatibility.py",
+        "5774fbef77755da67fad42d1310a2a537ba8ad0f0a1fb19a8b200f290d5e7699",
     ),
     (
         "tests/test_a2_acceptance.py",
@@ -467,8 +472,12 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
         "31d98d427c1c14922f08d455324a87bd1674749442d80edc4efdd94e29a6417c",
     ),
     (
+        "src/paper_radar/config/material_assembly.py",
+        "42223faf33b7e05519164909cfe111639d8f7d8dfe0c2bf26252da7f20f9d894",
+    ),
+    (
         "src/paper_radar/config/service.py",
-        "e01c9988bdbde872e204fccca662767fd46fcdd47aa4ae2898715bc463a24373",
+        "c9b1e320b42fd840ff091829bcccf8e62e413f006899e6618bd57417e23b1791",
     ),
     (
         "src/paper_radar/config/snapshot_cli.py",
@@ -583,6 +592,10 @@ REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
     (
         "tests/fixtures/verification_transcripts.json",
         "ffa51f43b5468bf530173cd4f6196bb1e1ef2a2b86846d8f0642760fc7e58a7c",
+    ),
+    (
+        "tests/fixtures/config_material_compatibility.json",
+        "01efe4124e80e671e4db621322da1a3c9e34253f0528015b640d529eff1dc8d5",
     ),
     (
         "examples/config/adapters/pi-v1.yaml",

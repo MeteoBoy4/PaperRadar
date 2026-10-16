@@ -7,6 +7,7 @@ ISSUE = 16
 SNAPSHOT_FORMAT_VERSION = 1
 MIGRATION_REVISION = "a201_profile_snapshot"
 
+# 材料组装重构只更新 service 并登记 material_assembly, 原固定测试不变。
 # 哈希在完成本票改动后固定。预期值不能从被检查文件动态生成。
 # #27 复核快照发现与前缀 CLI 接入后的源码绑定。
 # scope、A2-01 固定测试及其历史未覆盖范围保持不变。完整 A2 结论归 #25。
@@ -80,8 +81,12 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
         "31d98d427c1c14922f08d455324a87bd1674749442d80edc4efdd94e29a6417c",
     ),
     (
+        "src/paper_radar/config/material_assembly.py",
+        "42223faf33b7e05519164909cfe111639d8f7d8dfe0c2bf26252da7f20f9d894",
+    ),
+    (
         "src/paper_radar/config/service.py",
-        "e01c9988bdbde872e204fccca662767fd46fcdd47aa4ae2898715bc463a24373",
+        "c9b1e320b42fd840ff091829bcccf8e62e413f006899e6618bd57417e23b1791",
     ),
     (
         "src/paper_radar/config/topics.py",

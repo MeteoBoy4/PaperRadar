@@ -273,3 +273,18 @@ completed=false，同样不能继承历史成功。已有结论不可覆盖，�
 共享资格/可见性接口、doctor、运行日志、备份恢复、真实来源审计、Pi 供给与 RPC、
 实际算法/Docling/Read、校准工作流/门禁、阶段 B 与自动精读。合成 fixture、配置
 ready 和 A2 passed 都不能证明正式校准或阶段 B 就绪，stage A 与 live 恒未验收。
+
+## 配置材料组装重构的兼容证据
+
+`test_config_material_compatibility` 通过公共 check/compile/load 入口验证七类
+YAML 材料。`tests/fixtures/config_material_compatibility.json` 的期望结果在修改
+生产代码前，由 `e3a7ff3` 实现生成并固定：含 16 种选择组合的快照身份和 126 条
+当前装载／历史回放的完整中文错误文本。测试以 UTF-8 字节比较错误与身份，
+并核对快照正文哈希、删除来源后的回放、混合错误的首条消息，以及历史条目缺少
+编译值时仍优先报告原始内容解码错误。新增模块共 152 个用例，另在旧实现上通过
+同一套用例，避免把新实现的行为误当成兼容期望。
+
+本次仅更新经审查的 `config/service.py` 源码绑定，登记新的
+`config/material_assembly.py`，并在完整 A2 登记新增测试、用例数量与固定 fixture。
+原 A1／A2-01 固定测试、冻结契约、快照格式、投影身份与 migration 均不变。
+范围哈希只证明已审查的文件内容，不替代行为测试或真实执行回执。
