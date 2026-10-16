@@ -49,3 +49,67 @@ ARTIFACT_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
         "279ca4aee0a554dd5477d6fc29ed4ddc4a21b80945d2ab19d389dc7f667c103c",
     ),
 )
+
+
+BACKUP_TEST_CASE_COUNTS = {
+    "tests/test_backup_service.py": 5,
+    "tests/test_backup_integrity.py": 31,
+    "tests/test_backup_failures.py": 22,
+    "tests/test_backup_cli.py": 10,
+    "tests/test_backup_wheel.py": 1,
+    "tests/test_backup_architecture.py": 1,
+}
+
+BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/test_backup_service.py",
+        "2441188d51266e0faa3beeee4ab7cd8cbead67b08ca7c80e151751f2b5c3996e",
+    ),
+    (
+        "tests/test_backup_integrity.py",
+        "e6e56d22851119a3aadb2a4fc1b4f32d6567897e1d22f1a84562cbf32432f51b",
+    ),
+    (
+        "tests/test_backup_failures.py",
+        "e8178f418c0582f3f23baf2085755e7379d032d7da41df53c047f60ad6d9dcbb",
+    ),
+    (
+        "tests/test_backup_cli.py",
+        "28e0ed205fffc033b0d08b6b46efbe733b27ab9376e12b73e4865869cae73f4a",
+    ),
+    (
+        "tests/test_backup_wheel.py",
+        "4e7b6aaff1cfc41b74b3bae993ac3b74e6ff6e14b252a6767783858e0674c338",
+    ),
+    (
+        "tests/test_backup_architecture.py",
+        "9a5fc57a6c40d2ac487a399c778c3c130aac1d6ae0d51ece2189374f77ee4558",
+    ),
+)
+
+BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
+    (
+        "src/paper_radar/backup/__init__.py",
+        "d11cae9747406968a106eb7e94a3d96d36f85808f1b28867801cab3d75a1c8c8",
+    ),
+    (
+        "src/paper_radar/backup/manifest.py",
+        "696f76c0fa36189876666147728e77d6ae17c5decf8a143e263de6b97634816a",
+    ),
+    (
+        "src/paper_radar/backup/files.py",
+        "b641f85bae36522e4f797a9880ee950377a336b3c76c4d87434010bbccfbe78a",
+    ),
+    (
+        "src/paper_radar/backup/service.py",
+        "9199f46bf7316bb8b236193f07472ae3ef81ad4433df02dcd59baff65d812537",
+    ),
+    (
+        "src/paper_radar/backup/cli.py",
+        "3bd4b1c567638fcd16ed76685e2c6c8e0540383cbbdfb3c5555ac29c38d54cd9",
+    ),
+    (
+        "tests/backup_support.py",
+        "f1ee3e3febb10bcf68212af621c79d0d25951fa1464cd11e23d2afe139e8cc37",
+    ),
+)

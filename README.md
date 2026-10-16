@@ -39,7 +39,8 @@ uv run --offline --locked paper-radar --help
 
 帮助命令只向标准输出写文本；它不读取配置或凭据，不访问网络或数据库，
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
-当前注册 `contracts export/check`、`db upgrade` 与 `config check/compile/diff`。
+当前注册 `contracts export/check`、`db upgrade`、`config check/compile/diff/snapshots list`
+与 `backup create/verify`。
 不注册尚未实现的业务命令。
 
 ## 数据库升级
@@ -70,7 +71,33 @@ uv run --offline --locked paper-radar db upgrade --database data/paperradar.sqli
 ```
 
 重复 `db upgrade` 保持事实和身份不变，并将工作库设为 WAL。数据库路径与制品数据根
-无需互相包含。备份恢复能力在后续 A3 票交付；上述手工命令只保护数据库。
+无需互相包含。下列备份命令创建含制品的完整批次；上述手工命令只保护数据库。
+
+## 备份批次与校验
+
+```bash
+uv run --offline --locked paper-radar backup create \
+  --database data/paperradar.sqlite3 --data-root data --output backups
+uv run --offline --locked paper-radar backup verify backups/<backup-batch>
+```
+
+`<backup-batch>` 是已发布批次目录，不是运行配置快照 ID。创建要求源库已升级到当前
+head；只读固定 SQLite 在线副本，再按其全部登记闭包复制不可变制品。固定之后的新提交
+留给下一批，不扫描数据根复制孤立文件。output 不存在时按属主权限创建，staging 在
+output 内；全部验证后原子不覆盖发布，包括空目录碰撞也拒绝。系统须支持 Linux
+renameat2(RENAME_NOREPLACE)，不支持时受控失败。
+
+批次包含数据库中已登记的配置原字节和全部登记制品；不包含 `config/` 树、
+`settings.yaml`/selector、未登记草稿、`contracts/` 导出目录、reports/logs、认证或缓存。
+**配置文件本身请用 git 保管**。终端只显示批次 ID、清单 SHA-256 和按种类汇总，
+不输出配置、正文或模型响应。
+
+批次数据库为 `journal_mode=DELETE` 的独立单文件，不依赖原 WAL/SHM；这使 verify
+在成功和失败时都不改字节或目录条目。verify 全量核对 SHA-256、数据库 integrity/FK、
+登记双向闭包及每份历史配置回放，不补文件、不迁移，原数据和配置根不可访问时仍可用。
+批次移动时保留自身目录名。隔离恢复由后续票开放；若日后将恢复副本作为工作库，先显式
+运行一次 `db upgrade` 恢复 WAL，查询与历史事实不变。详见
+[备份 Contract](docs/contracts/backup-restore.md)。本票未验证 NAS 或全 A3。
 
 ## 不可变制品存储
 
@@ -87,7 +114,7 @@ uv run --offline --locked paper-radar db upgrade --database data/paperradar.sqli
 
 ## 运行配置快照
 
-`db upgrade` 是唯一可创建数据库的命令；`config check` 只读，`config compile`
+`db upgrade` 是唯一可初始化/升级工作数据库的命令（backup 只创建独立副本）；`config check` 只读，`config compile`
 只打开已迁移的既有库。三个命令均要求明确路径：
 
 ```bash

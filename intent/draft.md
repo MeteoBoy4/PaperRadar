@@ -1247,8 +1247,8 @@ paper-radar report render-daily --date YYYY-MM-DD
 paper-radar report rebuild <report-id>
 paper-radar report verify <report-id>
 
-paper-radar backup create
-paper-radar backup verify <snapshot>
+paper-radar backup create --database <database> --data-root <data-root> --output <backup-root>
+paper-radar backup verify <backup-batch>
 paper-radar restore verify <snapshot> --target <empty-directory>
 ~~~
 
@@ -1365,8 +1365,15 @@ paper trace 从数据库事实和审计事件重建过程，普通日志不是�
 - PRAGMA integrity_check；
 - PRAGMA foreign_key_check；
 - 所有永久制品路径存在；
-- 抽样哈希与清单一致；
-- report entries 可以重新渲染。
+- 全部内容的长度与完整 SHA-256、登记与清单双向一致；
+- 全部历史配置经公共加载完整回放。
+
+A3 批次副本在 staging 中转为 journal_mode=DELETE 的独立单文件，关闭并持久化后
+才哈希；全部验证后同文件系统原子不覆盖发布。完成批次目录名为 UTC 时间加 8 位
+密码学随机 hex，verify 只接受完成批次，拒绝任何清单外条目。配置材料原字节随数据库
+保留；config/ 树、settings.yaml、未登记草稿、contracts/ 导出目录与 reports/logs 不在
+A3 批次内，配置文件本身请用 git 保管。A3 不建 backup_runs，报告重建与任务续跑单列
+未验收；NAS 的更广保管范围按下一节另行实施。详见 docs/contracts/backup-restore.md。
 
 数据库快照与所引用永久制品作为同一备份批次记录。复制过程中产生的新事实属于下一批，不用伪造跨文件系统事务。
 

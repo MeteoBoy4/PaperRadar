@@ -303,3 +303,12 @@ YAML 材料。`tests/fixtures/config_material_compatibility.json` 的期望结�
 共享 helper 的完整字节与新增公共边界回归纳入完整 A2 固定清单，不扩展 A2 的
 业务能力范围。原固定测试、兼容终端 fixture、A1/A2-01 格式、revision 和冻结契约
 保持原身份；此重构不登记 A3 组，也不声明 A3 已通过。
+
+
+## A3 备份创建与校验切片（#33）
+
+新增独立备份服务/真实CLI/wheel/WAL与损坏拒绝回归，固定登记在
+`scripts/a3_scope.py` 的 BACKUP 清单，未接入 A3 独立结论之前不声明全 A3 通过。
+本票只更新经审查的根 CLI 在两份旧 A2 scope 的源码哈希，其他既有绑定与固定测试
+保持原字节。完整离线测试实际执行备份回归；#35 将显式并入 A3 回执范围。
+批次 Contract 与既有组的判定责任分开，不新增运行组织器或改变旧结论格式。

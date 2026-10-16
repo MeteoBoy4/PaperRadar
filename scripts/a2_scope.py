@@ -50,7 +50,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/cli.py",
-        "1ee532aae68e9ecd111919759b8220c22f5a38d98a8011f0e306e6ff5db1abf0",
+        "229376ff50006f814c26461a9374b6a24c7787d41958cebda360e8f61cb826a1",
     ),
     (
         "src/paper_radar/config/__init__.py",

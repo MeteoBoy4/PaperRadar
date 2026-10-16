@@ -7,6 +7,7 @@ from typing import Annotated
 
 import typer
 
+from paper_radar.backup.cli import backup_app
 from paper_radar.config.cli import config_app, db_app
 from paper_radar.contracts import (
     ContractBatchCheckResult,
@@ -47,6 +48,7 @@ ROOT_HELP = """\
 PaperRadar 工程入口。
 
 当前用途：管理冻结契约；显式迁移配置数据库，检查、编译、只读列出或比较配置快照。
+创建并只读校验包含已登记配置材料和制品的备份批次。
 未实现的模型与流程配置会明确显示未就绪。
 
 参数与选项：使用 `--help` 查看命令组；业务操作的参数由子命令明确提供。
@@ -57,7 +59,7 @@ PaperRadar 工程入口。
 自动配额：帮助、契约和配置命令消耗 0 次 Screening、复用升级和全文精读配额。
 
 输出去向：帮助写入标准输出；冻结契约写入 export 目标目录，配置快照写入
---database 指定的既有数据库。
+--database 指定的既有数据库；备份批次写入 --output 指定目录。
 
 常见失败：若 shell 提示找不到命令，请先在仓库中执行 `uv sync --locked`；
 若依赖尚未准备好，离线检查会明确失败，不会联网补装。
@@ -169,6 +171,7 @@ contracts_app = typer.Typer(
 app.add_typer(contracts_app, name="contracts")
 app.add_typer(db_app, name="db")
 app.add_typer(config_app, name="config")
+app.add_typer(backup_app, name="backup")
 
 
 def _write_export_item(item: ContractExportItemResult) -> None:
