@@ -1,18 +1,8 @@
 """#25 独立完整 A2 固定范围。修改清单须逐项审查。不在运行时重算期望。"""
 
-from enum import StrEnum
-
-
-class ReceiptCounter(StrEnum):
-    COLLECTED = "collected"
-    PASSED = "passed"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-    DESELECTED = "deselected"
-    INCOMPLETE = "incomplete"
-
-
-RECEIPT_COUNTERS = tuple(ReceiptCounter)
+# 保留既有导入入口; 回执格式词表归共享核对模块所有。
+from scripts.verification_checks import RECEIPT_COUNTERS as RECEIPT_COUNTERS
+from scripts.verification_checks import ReceiptCounter as ReceiptCounter
 
 SCOPE = "a2_versioned_config_snapshots"
 ISSUE = 25
@@ -22,6 +12,7 @@ REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 # 固定用例数量在独立收集核对后登记。回执必须同时证明收集和三阶段通过。
 REQUIRED_TEST_CASE_COUNTS: dict[str, int] = {
+    "tests/test_verification_checks.py": 6,
     "tests/test_verification_integrity.py": 3,
     "tests/test_verification_publication.py": 2,
     "tests/test_verification_run.py": 5,
@@ -125,6 +116,10 @@ NOT_ASSESSED = (
 
 # 在首次范围审查完成后固定以下三类文件的字节身份。
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/test_verification_checks.py",
+        "b12b3246d524e1c855b9f851a284e522e15587912be67d387c839ca814f098cc",
+    ),
     (
         "tests/test_verification_integrity.py",
         "ddb226f5e3e34166cee32a710bb3f45c52149974ed4f076d69eb26426638785c",
@@ -352,6 +347,10 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 )
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
+        "scripts/verification_checks.py",
+        "73486e83dbeb8fd71738593a6cd48a45eb311aca29bbfc6af8dab8be2d9ea266",
+    ),
+    (
         "scripts/verification_identity.py",
         "27ebdd057098256f0419c34cb9dbc410e0c6f0c7a8c3c931f62cc6942ca8d7b5",
     ),
@@ -381,7 +380,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "78353a80530960cba800f8759990afa2cf9642c556aa063d1fd1d9be64e47973",
+        "4eb6b14df9d586aa6c4273c25175893229a44c66a9afbe55c8c4f921f5e186fb",
     ),
     (
         "scripts/a2_test_receipt.py",
