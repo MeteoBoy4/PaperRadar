@@ -261,3 +261,26 @@ def test_sqlite_enforces_storage_hex_size_and_foreign_keys(
         connection.execute("PRAGMA foreign_keys=ON")
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(bad_sql)
+
+
+@pytest.mark.parametrize("table", ["content_objects", "artifacts", "artifact_members"])
+def test_sqlite_enforces_registered_storage_primary_keys(
+    tmp_path: Path, table: str
+) -> None:
+    from paper_radar.storage.artifacts import ArtifactStore
+
+    database = tmp_path / "db.sqlite3"
+    upgrade_database(database)
+    ArtifactStore(database, tmp_path / "root").publish_single(
+        "source_snapshot", [b"abc"]
+    )
+    with sqlite3.connect(database) as connection:
+        connection.execute("PRAGMA foreign_keys=ON")
+        with pytest.raises(sqlite3.IntegrityError):
+            connection.execute(f"INSERT INTO {table} SELECT * FROM {table}")
+        with pytest.raises(sqlite3.IntegrityError):
+            connection.execute(
+                "INSERT INTO content_objects SELECT ?,size_bytes,layout_version,"
+                "relative_path,created_at FROM content_objects",
+                ("b" * 64,),
+            )

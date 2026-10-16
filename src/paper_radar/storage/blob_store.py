@@ -92,7 +92,12 @@ class BlobStore:
     def verify(self, record: BlobRecord) -> Path:
         try:
             path = self.path_for(record)
-            if not stat.S_ISREG(path.stat().st_mode):
+            mode = path.stat().st_mode
+            if mode & 0o222:
+                raise ArtifactError(
+                    ArtifactReason.BLOB_CORRUPT, "内容对象具有写权限；请检查不可变存储"
+                )
+            if not stat.S_ISREG(mode):
                 raise ArtifactError(ArtifactReason.BLOB_CORRUPT, "内容对象不是普通文件")
             digest = hashlib.sha256()
             size = 0

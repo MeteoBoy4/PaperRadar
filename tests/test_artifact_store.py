@@ -136,6 +136,7 @@ def test_corrupt_registered_history_is_rejected_without_repair(
     elif damage == "same_length":
         path.chmod(0o600)
         path.write_bytes(b"abd")
+        path.chmod(0o400)
     else:
         with sqlite3.connect(database) as connection:
             if damage == "member":
@@ -282,3 +283,50 @@ def test_bad_expected_hash_and_extraction_are_rejected_without_registration(
         store.publish_artifact("extraction", {})
     assert unsupported.value.reason == ArtifactReason.INVALID_MANIFEST
     assert store.list_artifacts() == ()
+
+
+def test_existing_matching_writable_blob_is_not_adopted_as_immutable(
+    tmp_path: Path,
+) -> None:
+    from paper_radar.storage.artifact_contract import ArtifactError, ArtifactReason
+
+    database = tmp_path / "db.sqlite3"
+    upgrade_database(database)
+    root = tmp_path / "root"
+    blob = (
+        root / "blobs/sha256/ba/"
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    )
+    blob.parent.mkdir(parents=True)
+    blob.write_bytes(b"abc")
+    blob.chmod(0o600)
+    store = ArtifactStore(database, root)
+    with pytest.raises(ArtifactError) as failure:
+        store.publish_single("source_snapshot", [b"abc"])
+    assert failure.value.reason == ArtifactReason.BLOB_CORRUPT
+    assert blob.stat().st_mode & 0o777 == 0o600
+    assert store.list_artifacts() == ()
+
+
+def test_writer_lock_is_bounded_and_returns_controlled_retry_reason(
+    tmp_path: Path,
+) -> None:
+    import sqlite3
+    import time
+
+    from paper_radar.storage.artifact_contract import ArtifactError, ArtifactReason
+
+    database = tmp_path / "db.sqlite3"
+    upgrade_database(database)
+    store = ArtifactStore(database, tmp_path / "root")
+    with sqlite3.connect(database) as owner:
+        owner.execute("BEGIN IMMEDIATE")
+        started = time.monotonic()
+        with pytest.raises(ArtifactError) as failure:
+            store.publish_single("source_snapshot", [b"abc"])
+        elapsed = time.monotonic() - started
+    assert failure.value.reason == ArtifactReason.DATABASE_BUSY
+    assert 4.5 <= elapsed < 30
+    assert store.list_artifacts() == ()
+    saved = store.publish_single("source_snapshot", [b"abc"])
+    assert store.read_artifact(saved.artifact_id) == {"payload": b"abc"}
