@@ -28,6 +28,7 @@ from scripts.a2_full_scope import (
     REQUIRED_TEST_MODULES,
     SCOPE,
 )
+from scripts.a3_acceptance import write_group as write_a3_group
 from scripts.offline_evidence import (
     CheckReason,
     CheckStatus,
@@ -387,6 +388,14 @@ def acceptance_groups() -> tuple[AcceptanceGroup, ...]:
             write=_write_group,
             required=True,
             dependencies=("A1",),
+            show_reasons=True,
+        ),
+        AcceptanceGroup(
+            name="A3",
+            suffix=".a3.json",
+            write=write_a3_group,
+            required=True,
+            dependencies=("A1", "完整 A2"),
             show_reasons=True,
         ),
     )

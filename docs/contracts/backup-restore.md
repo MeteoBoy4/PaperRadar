@@ -185,3 +185,7 @@ uv run --offline --locked paper-radar db upgrade --database restored/database.sq
 一个通用恢复错误抹掉原因。成功退出 0；参数/业务失败退出 2，中断非零。成功输出与
 backup verify 一样只给批次 ID、清单 SHA-256 及按 kind 汇总，不逐条输出制品或研究内容。
 帮助直接说明“写入完整副本”和父目录 staging；帮助无外部 I/O，不依赖配置、凭据或数据库。
+
+
+同次离线存储/恢复范围由 [A3 独立结论](../verification/offline-evidence.md#a3-独立结论)
+记录；它绑定实际运行和固定回执，不替代 NAS 验收，也不开放业务任务或自动精读门禁。

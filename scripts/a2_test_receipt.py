@@ -15,6 +15,7 @@ from scripts.a2_full_scope import (
     REQUIRED_TEST_MODULES,
     ReceiptCounter,
 )
+from scripts.a3_scope import REQUIRED_TEST_MODULES as A3_TEST_MODULES
 
 
 class TestReceipt:
@@ -24,7 +25,7 @@ class TestReceipt:
         self.nodes: dict[str, dict[str, str]] = {}
         self.modules = {
             name: dict.fromkeys(RECEIPT_COUNTERS, 0)
-            for name, _ in (*A1_TEST_MODULES, *REQUIRED_TEST_MODULES)
+            for name, _ in (*A1_TEST_MODULES, *REQUIRED_TEST_MODULES, *A3_TEST_MODULES)
         }
 
     def _write(self, *, completed: bool = False, exit_code: int | None = None) -> None:

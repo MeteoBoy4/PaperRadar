@@ -6,9 +6,10 @@
 运行会在被 Git 忽略的 `verification-runs/<run_id>.json` 生成 #12 离线证据，
 并在 `verification-runs/<run_id>.a1.json` 生成独立的 #13 A1 结论，
 在 `<run_id>.a2.json` 生成 #16 A2-01 结论，在 `<run_id>.a2-full.json` 生成
-#25 完整 A2 结论；终端打印本次四个主要路径及结果。测试另外生成同次
+#25 完整 A2 结论，在 `<run_id>.a3.json` 生成 #29/#35 独立 A3 结论；
+终端打印本次五个主要路径及结果。测试另外生成同次
 `<run_id>.pytest.json` 脱敏执行回执。整套检查仅执行一次，各文件
-共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1 与完整 A2 均通过时入口返回 0，
+共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2 与 A3 均通过时入口返回 0，
 A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时数据库，不操作用户数据库。
 重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
@@ -64,6 +65,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 | A1 | `.a1.json` | 无 | 是 |
 | A2-01 | `.a2.json` | 同次 A1 | 否 |
 | 完整 A2 | `.a2-full.json` | 同次 A1 | 是 |
+| A3 | `.a3.json` | 同次 A1、完整 A2 | 是 |
 
 完整 A2 另由自己的判据验证同次 pytest 回执、证据和已发布 A1，并在发布前再次
 核对这些文件的实际字节绑定；它没有 A2-01 通过依赖。各组的原因、格式、严格性与
@@ -71,15 +73,14 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 即使补写为 passed，也继续把中断传给完整 A2。最后发布阶段的中断仍可能没有
 完整结论，不会覆盖已发布文件来修复状态。
 
-三组的 `write_*_conclusion` 兼容入口共用
+四组的 `write_*_conclusion` 兼容入口共用
 `scripts/verification_publication.py` 的 `publish_conclusion`：保持原 JSON
 序列化规则，临时文件独占创建、flush/fsync 后通过 `os.link` 原子发布；目标已存在
 即失败，finally 清理临时文件。运行中证据与回执仍可原子更新，不使用此最终发布入口。
 
 新验收组以显式代码加入登记，提供自己的判据，调用同一个最终发布函数；可选提供
-组内中断恢复规则，无需在组织核心增加组名称分支。当前回执只记录 `a1_scope` 和
-`a2_full_scope` 的固定测试模块合集。新增组若需要扩大逐模块执行证明，必须在
-后续任务中显式扩展回执范围；本轮没有自动发现插件、独立检查计划或动态调度。
+组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope` 与 `a3_scope` 的固定测试模块合集。
+新增组仍须显式扩展执行范围；没有自动发现插件、独立检查计划或动态调度。
 测试中的合成组只证明组织扩展能力，不代表新增产品验收能力。
 
 #28 保留原 A1/A2-01 固定测试字节，只更新经审查的验收源码哈希，登记提取出的
@@ -118,7 +119,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 
 缺快照、版本漂移、证据与当前快照哈希不一致、测试模块缺失或漂移、检查跳过/失败
 均为 `failed`；可捕获的运行中断为 `incomplete`。修复后完整重跑会得到新的
-`run_id` 和结论，旧结果保留。完整入口另须本次完整 A2 通过才返回 0。
+`run_id` 和结论，旧结果保留。完整入口另须本次完整 A2 与 A3 通过才返回 0。
 若 uv 尚未启动 Python 或进程被强制终止，可能没有本次结论文件；前者保留 uv 的
 非零退出码，后者已有的 #12 证据仍不能作为 A1 通过。
 
@@ -204,7 +205,7 @@ SQL 失败、连接中断、提交前进程终止、来源文件替换和脱敏�
 | `pytest_receipt_file`、`pytest_receipt_sha256`、`test_execution` | 绑定本次 pytest 原始脱敏回执的文件名与实际哈希；逐个固定模块核对收集、通过、失败、跳过、取消选择和未完成计数，只有收集与完整通过数量均等于固定数量，其他四项均为 0 才通过。 |
 | `fixture_files` | `examples/` 固定合成材料逐文件的 SHA-256 身份与核对结果，不保存配置或 Prompt 正文。测试材料工厂和进程哨兵的字节另列在 source_modules。 |
 | `environment` | 当前锁定 Python 及 Alembic、SQLAlchemy、PyYAML 的实际安装版本；版本缺失失败，新依赖不追加到 #12。 |
-| `migration_revision` | 另建临时 SQLite、真实 base→head 后从库内 alembic_version 读取唯一 revision，并核对随包 head 与固定的 a201_profile_snapshot；未登记新 head、升级失败或读取失败均拒绝。无用户数据库参数。 |
+| `migration_revision` | 另建临时 SQLite、真实 base→head 后从库内 alembic_version 读取唯一 revision，并核对随包 head 与显式固定的 a302_artifact_store；未登记新 head、升级失败或读取失败均拒绝。无用户数据库参数。 |
 | `format_versions` | snapshot 为 1；stage_projections 分别记录 boundary/value/reuse/extraction/read/suggestion，各为 1；calibration_baseline 为 1；adapter_semantics 为 1。逐项独立匹配，不能只写一个总版本。 |
 | `code`、`worktree_sha256`、`lockfile_sha256` | 本次实际身份，须与 A1 运行前后核对过的身份及 #12 一致。材料与代码在运行期间变化均拒绝。 |
 | `status`、`a2_verified`、`reasons` | passed/failed/incomplete；只在无失败原因时 a2_verified=true。原因仅受控代码、中文指引及可选受控文件路径/依赖名称，不保存原始异常、SQL、输入值或进程输出。 |
@@ -263,7 +264,7 @@ A2-01 写出期间发生中断后，若本次检查已经全部通过，补写�
 短事务协议；它不是备份恢复。目录与领域定义核对 `intent/draft.md` §6 和 `CONTEXT.md`；
 没有新增领域决策或变更快照/投影身份算法。
 
-完整入口只有本次 A1 与完整 A2 通过时返回 0，否则非零。运行中断记为 incomplete；
+完整入口只有本次 A1、完整 A2 与 A3 通过时返回 0，否则非零。运行中断记为 incomplete；
 在发布完整 A2 前发生的可捕获中断会得到 incomplete 结论。进程被强制终止或在最终
 原子发布中被终止时可能没有完整结论，缺结论绝不等于通过；已有 #12 若仍
 completed=false，同样不能继承历史成功。已有结论不可覆盖，修复后须用新 run_id
@@ -308,7 +309,93 @@ YAML 材料。`tests/fixtures/config_material_compatibility.json` 的期望结�
 ## A3 备份创建与校验切片（#33）
 
 新增独立备份服务/真实CLI/wheel/WAL与损坏拒绝回归，固定登记在
-`scripts/a3_scope.py` 的 BACKUP 清单，未接入 A3 独立结论之前不声明全 A3 通过。
+`scripts/a3_scope.py` 的 BACKUP 清单；本切片结果由 #35 的同次 A3 结论聚合。
 本票只更新经审查的根 CLI 在两份旧 A2 scope 的源码哈希，其他既有绑定与固定测试
-保持原字节。完整离线测试实际执行备份回归；#35 将显式并入 A3 回执范围。
+保持原字节。完整离线测试实际执行备份回归；#35 已显式并入 A3 回执范围。
 批次 Contract 与既有组的判定责任分开，不新增运行组织器或改变旧结论格式。
+
+## A3 独立结论
+
+`<run_id>.a3.json` 的格式为 **1**，scope 固定为 `a3_artifact_backup_restore`，
+`parent_issue=29`、`issue=35`。它通过原有唯一 `acceptance_groups()` 最后追加：
+`required=True`、`dependencies=("A1", "完整 A2")`。依赖只安排顺序；A3 自己检查两份
+同次前置均 `status=passed`、各自 verified 严格为 true，A2-01 仍为非必需历史组。
+
+五份主要文件是基础证据、A1、A2-01、完整 A2、A3；`<run_id>.pytest.json` 是另一份
+绑定对象，所以正常运行有六个 JSON 文件。没有回执、没有结论或没有完整执行都不能
+宣称通过。完整计划只执行一次；A3 不自行再启动 pytest 或复制运行组织器。
+
+| 字段 | 判据与含义 |
+| --- | --- |
+| format_version、scope、parent_issue、issue | A3 自身固定格式/范围；不重标 A1/A2 历史格式 |
+| run_id、evidence_file/sha256 | 本次文件名、内容身份、#12 固定 scope 与字节哈希一致 |
+| a1_conclusion_file/sha256 | 同次 A1 文件；内容须等于执行器返回值，格式 1、issue 13、原 scope、verified true |
+| a2_full_conclusion_file/sha256 | 同次完整 A2 文件；格式 2、issue 25、原 scope、verified true；它记录的证据/A1/回执名字与哈希也必须匹配 |
+| pytest_receipt_file/sha256、test_execution | 同次回执格式 1；必须 completed=true、整数退出码 0，逐个 A3 模块收集/完整通过等于固定数，其余四计数为 0；布尔、浮点、字符串、负数与缺失均拒绝 |
+| required_checks | 原六项固定顺序，status=passed、reason=none、严格整数退出码 0；缺项/跳过/失败拒绝 |
+| test_modules、source_modules、fixture_files | 每个显式路径的 expected/actual SHA-256 与受控结果；清单非空，测试清单和计数键集合必须一致 |
+| environment | 实际 Python、SQLite、Alembic、SQLAlchemy、PyYAML、Pydantic、Typer 版本；缺依赖失败，不追加 #12 字段 |
+| migration_revision | 另建临时 SQLite，真实 base→head 后读取唯一 alembic_version，并核对实际随包 head 与固定 a302_artifact_store；失败/未知新 head 拒绝，无用户库参数 |
+| format_versions | artifact=1、blob_layout=1、backup=1、backup_database_revision=a302_artifact_store，逐项核对实际常量 |
+| code、worktree_sha256、lockfile_sha256 | 本次实际身份完整、等于运行前基线、等于两份前置和基础证据的对应身份 |
+| status、a3_verified、capabilities | 仅无任何失败原因时 passed/true；六项保守共用整组状态，不根据部分通过或空集合独立宣称业务能力 |
+| stage_a_verified、live_verified、not_assessed | 前两项恒 false；后者明确列出全部尚未验收能力 |
+
+`capabilities` 明确分为 artifact_publication、migration、wal_backup、
+manifest_verification、isolated_restore、restored_queries。它们只描述本次固定离线范围；
+不从磁盘空集合推导论文事实、阶段指纹、attempt/lease、共享资格/校准可见性、报告重建、
+任务续跑、doctor/日志、Pi 执行/环境恢复、Docling/Read、真实来源、NAS、阶段 B 或自动
+精读资格。这些名称均在 `not_assessed` 保留，A3 passed 不自动关闭/改写父 Issue #29。
+
+共享 `verification_checks` 真正承担同次文件绑定、固定文件哈希、回执头/计数与身份核对；
+各组继续负责范围、版本和原因。发布前复查证据、两份前置与回执的字节，并重新比较两份
+前置文件内容与返回值。捕获中断为 incomplete；最终发布中断/强杀可能没有 A3 文件，
+已有 A1/A2 结论保留，入口不能把完整 A2 passed 当作整体成功。A3 使用同一不可覆盖的
+`publish_conclusion`，不覆写旧结论来修复失败。
+
+原因词表由 `A3ReasonCode` 定义，只有受控中文指引与可选的已登记文件/模块/依赖名，
+不保存测试名、参数 ID、skip 理由、捕获输出、原始异常、配置、Prompt、正文或凭据：
+
+| code | 含义 |
+| --- | --- |
+| evidence_unavailable | 本次基础证据不可读 |
+| binding_mismatch | 同次文件名/run_id/字节哈希/返回值或前置的反向绑定不一致 |
+| format_mismatch | 基础证据、前置或回执格式不受支持，包括布尔版本 |
+| prerequisite_not_passed | A1 或完整 A2 本次未通过，依赖登记不提供通过继承 |
+| check_not_passed | 固定六项未全部实际通过 |
+| scope_drift | 显式清单缺失、字节漂移或计数键集合不符 |
+| dependency_unavailable | 必需实际依赖版本不可得 |
+| migration_unavailable | 实际临时库迁移失败/读取失败/出现未登记 head |
+| storage_format_drift | 存储/备份格式常量与固定版本不符 |
+| identity_changed | 运行基线、当前身份或前置身份不一致 |
+| run_incomplete | 捕获中断、前置/证据/回执未完成，优先得 incomplete |
+| test_execution_not_passed | 固定模块实际执行不足，或回执缺失/无效 |
+
+### 父规格与三轮裁决覆盖
+
+固定范围在 `scripts/a3_scope.py`：已有分票清单显式聚合，逐模块用例数独立收集核对后
+登记，运行时不扫描目录生成自己的期望。回执插件只增加这组显式模块，完整 A2 继续仅
+校验自身固定集合，允许回执包含 A3。当前三个 scope 的 revision 各自显式登记为 a302；
+新 migration 字节只进入 A3 清单，不扩大 A2 的业务范围，旧 a201 文件保持原字节。
+
+| 父规格/裁决 | 本次固定公共回归 |
+| --- | --- |
+| Decisions 3–5、评论二/三的固定词表、身份向量与严格角色 | test_artifact_contract、test_extraction_artifacts：独立字面量 SHA-256/制品向量、完整角色、共享内容、格式/非法输入拒绝 |
+| Decisions 6–8、评论一/二的文件先发布与路径权限 | test_artifact_store、test_extraction_artifacts：分段输入、只读不可变、无覆盖、根内链接拒绝、真实登记、幂等、独立进程竞争与部分发布/事务中断重试 |
+| Decision 9/19、评论一的原子迁移、评论三的绑定边界 | test_storage_migrations：真实 a201→a302、base→head、原子 DDL/stamp 回滚重试、旧快照字节/身份/回放、约束与非法 revision 分类；test_a3_acceptance 另拒未登记新 head |
+| Decisions 10–12、评论一 WAL/DELETE 陷阱、评论三并发收缩 | test_backup_service：主文件复制负对照确实丢已提交事实；在线副本保留提交、排除未提交，固定后新提交留以后；不新增备份×并发发布专门测试 |
+| Decision 13、评论一/三只读与清单外条目 | test_backup_integrity、test_backup_service：全量哈希、登记双向匹配、配置公共回放、staging/WAL/SHM/journal/多余空目录拒绝；成功和失败均比较字节和目录集合 |
+| Decisions 14–15、评论二的隔离恢复/目标规则 | test_restore_service、test_restore_failures：原库/配置/内容根改名后新进程查询、回放、读取；独立 inode、移动根、目标保护、正常并发占用与复制/发布强杀；显式 upgrade 回 WAL，历史事实不变 |
+| Decisions 16–18、评论三 help 六锚点 | test_backup_cli、test_restore_cli、test_backup_wheel：真实安装 CLI、隐私/中文/0或2、原 I/O 哨兵下 help、本次 wheel 无 Git，未运行 NAS 或模型 |
+| Decision 20、评论一第五部分/评论三的同次证据 | test_a3_acceptance、test_a3_test_receipt、test_a3_entry：严格计数、回执/前置/材料/身份漂移、旧格式/旧运行/缺失/中断拒绝、最终发布无覆盖；原 entry/compatibility/integrity/run 回归同步覆盖第五份主要文件 |
+| Decision 21、完整并行切片组合 | test_a3_combination：两个完整配置快照、单文件＋extraction 四角色共享 blob；原根移走，新进程 CLI/公共服务完整回放/读取、升级后保持历史事实；未来业务能力显式未验收 |
+
+#35 仅对本次追加组所必需的旧入口测试/终端 fixture、验收脚本与 wrapper 字节逐项重绑；
+原 A1 固定资产、旧 A2 support/哨兵、四份契约与旧 migration 保持原字节。新 A3 support
+组合历史材料工厂，只重写临时 fake-check 回执 writer，既不修改 copied scope 来放宽
+生产判据，也不 stub A3、删除必需组或动态刷新期望。终端 fixture 保留八个历史 case 的
+全部原有行，只按本票声明的原因/状态追加 A3 行，并继续完整字节比较。
+
+范围与公共行为交叉引用：[制品](../contracts/artifact-store.md)、
+[备份/恢复](../contracts/backup-restore.md)、[运行配置](../contracts/runtime-config.md)、
+[阶段投影](../contracts/config-projections.md)。

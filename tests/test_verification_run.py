@@ -12,7 +12,8 @@ import pytest
 from scripts.a2_full_acceptance import acceptance_groups
 from scripts.verification_publication import publish_conclusion
 from scripts.verification_run import AcceptanceGroup, VerificationRun, run_verification
-from tests.a2_full_support import fake_checks, repository_copy
+from tests.a2_full_support import repository_copy
+from tests.a3_acceptance_support import fake_checks
 
 
 @pytest.mark.parametrize("required", [False, True])
@@ -44,9 +45,10 @@ def test_registered_group_publishes_same_run_and_can_affect_overall_result(
     assert path.name == f"{run.run_id}.extra.json"
     assert json.loads(path.read_bytes()) == result
     assert run.conclusions["完整 A2"][1]["a2_verified"]
+    assert run.conclusions["A3"][1]["a3_verified"]
     assert run.passed is (not required)
     assert len(log.read_text(encoding="utf-8").splitlines()) == 6
-    assert len(list(run.output_dir.glob("*.json"))) == 6
+    assert len(list(run.output_dir.glob("*.json"))) == 7
 
 
 @pytest.mark.parametrize(

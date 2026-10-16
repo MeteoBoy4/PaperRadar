@@ -186,3 +186,163 @@ RESTORE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
         "aaaf457c74e2c996b69b748a81066b0a2f1982a43ac050586413eb576a941877",
     ),
 )
+
+# #35 显式聚合;只读这些已审查清单,不扫描测试目录生成期望。
+SCOPE = "a3_artifact_backup_restore"
+ISSUE = 35
+PARENT_ISSUE = 29
+FORMAT_VERSION = 1
+SUFFIX = ".a3.json"
+REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
+REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic", "typer")
+FORMAT_VERSIONS = {
+    "artifact": 1,
+    "blob_layout": 1,
+    "backup": 1,
+    "backup_database_revision": "a302_artifact_store",
+}
+CAPABILITIES = (
+    "artifact_publication",
+    "migration",
+    "wal_backup",
+    "manifest_verification",
+    "isolated_restore",
+    "restored_queries",
+)
+NOT_ASSESSED = (
+    "paper_business_facts",
+    "stage_input_fingerprints",
+    "attempts_and_leases",
+    "shared_eligibility",
+    "calibration_visibility",
+    "report_rebuild",
+    "task_resume",
+    "pi_execution",
+    "pi_environment_recovery",
+    "docling_execution",
+    "read_execution",
+    "doctor",
+    "structured_logs",
+    "live_source_audit",
+    "nas_restore",
+    "automatic_fulltext_reading",
+    "stage_b",
+)
+# 独立收集核对: 制品15/25、迁移23、extraction34;不从运行时收集结果刷新。
+REQUIRED_TEST_CASE_COUNTS = {
+    "tests/test_artifact_contract.py": 15,
+    "tests/test_artifact_store.py": 25,
+    "tests/test_storage_migrations.py": 23,
+    "tests/test_extraction_artifacts.py": 34,
+    **BACKUP_TEST_CASE_COUNTS,
+    **RESTORE_TEST_CASE_COUNTS,
+    "tests/test_a3_acceptance.py": 46,
+    "tests/test_a3_combination.py": 1,
+    "tests/test_a3_test_receipt.py": 6,
+    "tests/test_a3_entry.py": 4,
+}
+ACCEPTANCE_TEST_MODULES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/test_a3_acceptance.py",
+        "945a121f0f1620739cb05a607fb5c544e127ba388379037d7e3f772a58ccd78d",
+    ),
+    (
+        "tests/test_a3_combination.py",
+        "1c24e24f093f7352ca2a115348db2074cd78e46ed8f34f2bf8ab004765992813",
+    ),
+    (
+        "tests/test_a3_test_receipt.py",
+        "e17200e1def799e8d0c7fd4709a7cf919cc2e4ab39d0d149a49521b968f15cda",
+    ),
+    (
+        "tests/test_a3_entry.py",
+        "287672af3d88e88c5696e5f73d7d546b709f9704991f332fcaea5fd804cbe6dc",
+    ),
+)
+ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
+    (
+        "scripts/a3_acceptance.py",
+        "bee7e6b29c2fe1ef4e96311a3c1626e24c7266e440c2e1a685afba1a0448229e",
+    ),
+    (
+        "scripts/verification_checks.py",
+        "73486e83dbeb8fd71738593a6cd48a45eb311aca29bbfc6af8dab8be2d9ea266",
+    ),
+    (
+        "scripts/verification_identity.py",
+        "27ebdd057098256f0419c34cb9dbc410e0c6f0c7a8c3c931f62cc6942ca8d7b5",
+    ),
+    (
+        "scripts/verification_publication.py",
+        "337c9efb7ee906486e9de9bb5ec4d60bd9bde7fe358f60098036862e1ac77072",
+    ),
+    (
+        "scripts/verification_run.py",
+        "b16a9dbf5dfb4e54a6231e3177353091ed60ab092ab33478343554df69b143d0",
+    ),
+    (
+        "scripts/a2_full_acceptance.py",
+        "e0a4ae1886025cfada7aa76fa932dc88f67372b5ea0cc49399f96a0899d1f1de",
+    ),
+    (
+        "scripts/a2_test_receipt.py",
+        "ae57161b128927697c6bc947f6dcd502482aa388bb3493a7681a1167e5ec58c2",
+    ),
+    (
+        "scripts/offline_evidence.py",
+        "0c613ee51748db53ebba7a9c9c260faa74391be0f3043646ee09867b420f6362",
+    ),
+    (
+        "scripts/a2_full_scope.py",
+        "3ca27a840daa8682fe0a175bee5c7b686479c8b47a89b3ffb817cff709e98102",
+    ),
+    (
+        "scripts/check-offline",
+        "7c1d116c0e9684a40193d33eb5b8f3862e690e83bd66183dfc00a4ceccd658c9",
+    ),
+    (
+        "src/paper_radar/storage/database.py",
+        "ed8aba07f31eb6019c6d656a9147c682d74073bbdf4d268cd488bdb79ff3b7b1",
+    ),
+    (
+        "src/paper_radar/storage/errors.py",
+        "a8c859bb0d8a415599887d380218a46490c6e10afa9910c0360a4dda037db19f",
+    ),
+    (
+        "src/paper_radar/storage/schema.py",
+        "87269ef0935fc2de63e2f948d8066ee5d9f28163ca42a8e4afdbdc25e83393ad",
+    ),
+    (
+        "src/paper_radar/storage/migrations/env.py",
+        "f22dfaeade1105d7eb46dda731916406fe521051ec0a76b7eeb1e915d42ffd27",
+    ),
+    (
+        "src/paper_radar/cli.py",
+        "4fc6e1daf4fe4539a1503fda8a1fc15cdef4515f9c17c2958fd2e311377c2dd5",
+    ),
+    (
+        "tests/a3_acceptance_support.py",
+        "86868063437584e26e02a90f64d4f4c0dc73d5a21292bd501e9bba2af7065f70",
+    ),
+)
+REQUIRED_TEST_MODULES = (
+    *ARTIFACT_TEST_MODULES,
+    *EXTRACTION_TEST_MODULES,
+    *BACKUP_TEST_MODULES,
+    *RESTORE_TEST_MODULES,
+    *ACCEPTANCE_TEST_MODULES,
+)
+REQUIRED_SOURCE_MODULES = (
+    *ARTIFACT_MIGRATION_MODULES,
+    *ARTIFACT_SOURCE_MODULES,
+    *EXTRACTION_SOURCE_MODULES,
+    *BACKUP_SOURCE_MODULES,
+    *RESTORE_SOURCE_MODULES,
+    *ACCEPTANCE_SOURCE_MODULES,
+)
+REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/fixtures/a3_storage_recovery.json",
+        "c052613cfcbd88f4021d3b16375f194e2b33baf09c1cb749492989a5e3df6c0b",
+    ),
+)

@@ -11,7 +11,8 @@ from pathlib import Path
 import pytest
 
 from scripts.a2_full_acceptance import run_full_verification
-from tests.a2_full_support import fake_checks, repository_copy
+from tests.a2_full_support import repository_copy
+from tests.a3_acceptance_support import fake_checks
 
 
 @pytest.mark.parametrize("mode", ["collect_only", "deselected"])

@@ -10,7 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from tests.a2_full_support import ROOT, fake_checks, repository_copy
+from tests.a2_full_support import ROOT, repository_copy
+from tests.a3_acceptance_support import fake_checks
 
 
 @pytest.mark.parametrize(
@@ -82,7 +83,7 @@ sys.exit(main())
         5 if case in {"failed", "interrupted"} else 6
     )
     assert len(list(output.glob("*.json"))) == (
-        4 if case in {"failed", "interrupted"} else 5
+        5 if case in {"failed", "interrupted"} else 6
     )
     assert not list(output.glob("*.tmp"))
     legacy = json.loads(next(output.glob("*.a2.json")).read_bytes())
