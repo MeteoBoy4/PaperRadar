@@ -5,7 +5,7 @@
 ## 环境与验证
 
 - Python 环境由 `uv` 管理；命令统一用 `uv run --offline --locked …`。
-- 完成门槛：`./scripts/check-offline` 返回 0（lockfile、Ruff、mypy、全部 pytest、冻结契约）。开发中先跑相关的 `pytest` 子集。
+- 涉及代码改动时需进行验证，完成门槛：`./scripts/check-offline` 返回 0（lockfile、Ruff、mypy、全部 pytest、冻结契约）。开发中先跑相关的 `pytest` 子集。
 
 ## 必读文档
 
