@@ -25,6 +25,10 @@ ARTIFACT_TEST_MODULES: tuple[tuple[str, str], ...] = (
 
 ARTIFACT_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
+        "src/paper_radar/storage/filesystem.py",
+        "b0904b630bb476eb4a7286ec9b6623176e83549be8c0a33faec7e29a1480e91e",
+    ),
+    (
         "src/paper_radar/storage/artifact_contract.py",
         "2287ecd3a20534fe543e9bb76a9f3f340ffce56f032d02bbac95a2242605c52c",
     ),
@@ -38,7 +42,7 @@ ARTIFACT_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/blob_store.py",
-        "269fad3788d4ba61469aede9a4f265515d37d3366ae496c378cfb476be44fd0b",
+        "3507cc6db2ea5b4848790e5a2e25cc7d9f6e38a0f5a1371e18cb20d11953ad29",
     ),
     (
         "tests/artifact_support.py",
@@ -114,6 +118,10 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
 
 BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
+        "src/paper_radar/backup/cli_support.py",
+        "76712aa1788041f06909ccf4e553dc45a689f0b1903c36607939e9e3d36acc1c",
+    ),
+    (
         "src/paper_radar/backup/__init__.py",
         "b03e71f04496d78aceb9ab27b399945c72d4ac150db3a47f45e52a6696558078",
     ),
@@ -123,15 +131,15 @@ BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/files.py",
-        "05cef914693f98bf5fb0bf274c2db3f1e312e13533fb91db5046f63842945cc7",
+        "8bf4f05fea2085b1e6b25bb0ae426db2c13da47aa314dd695a1cd5c5259d36b8",
     ),
     (
         "src/paper_radar/backup/service.py",
-        "23a42010800feee8d547707c637d204bc993dd8784b3eb072a9f220c113f441a",
+        "558795cd55c8a38d85d443a1706ba8c46c8a6eee911cd666a88319d231f94b00",
     ),
     (
         "src/paper_radar/backup/cli.py",
-        "32b23de19d0cda6af6c7b7e54a42585e910964c3cc0eb03e013950273de96635",
+        "440dfa1ebaed4d9ece76f48d68b6ada8ccd393e8d54c55ef54bba91e352a30aa",
     ),
     (
         "tests/backup_support.py",
@@ -171,7 +179,7 @@ RESTORE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/restore_cli.py",
-        "9ad63d654c4e7b96e9edeaba0e08cc9c6b3d4f7daa58d9f4fc626f01cf791caa",
+        "fd2c22d11b9d8e2ef1d22d64c5214186f3b488b4517fee2326274417b52aa084",
     ),
     (
         "tests/restore_support.py",
@@ -294,7 +302,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "3ca27a840daa8682fe0a175bee5c7b686479c8b47a89b3ffb817cff709e98102",
+        "3753c37b47adc8aa35efd1b2c5711c5f6381d684201318a1311203f04015d64d",
     ),
     (
         "scripts/check-offline",
@@ -310,7 +318,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/schema.py",
-        "87269ef0935fc2de63e2f948d8066ee5d9f28163ca42a8e4afdbdc25e83393ad",
+        "291db5e419f3a5a7fd88afab7f369569d0b8e754fa36932210418c0938050a0f",
     ),
     (
         "src/paper_radar/storage/migrations/env.py",

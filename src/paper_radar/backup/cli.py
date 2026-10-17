@@ -1,12 +1,12 @@
 """备份的参数与中文输出薄层;完整性由公共服务统一负责。"""
 
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated
 
 import typer
-from typer.core import TyperCommand, TyperGroup
 
-from paper_radar.backup.manifest import BackupError, BackupReason, BackupResult
+from paper_radar.backup.cli_support import BatchCommand, BatchGroup, show_result
+from paper_radar.backup.manifest import BackupError, BackupReason
 
 BACKUP_HELP = """管理自包含备份批次。
 
@@ -54,37 +54,15 @@ VERIFY_HELP = """只读校验已发布备份批次的全部文件与登记。
 """
 
 
-class _BackupGroup(TyperGroup):
-    def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
-        try:
-            return super().parse_args(ctx, args)
-        except (typer.Exit, typer.Abort):
-            raise
-        except Exception:
-            typer.echo("备份参数错误：请查看 paper-radar backup --help。", err=True)
-            raise typer.Exit(2) from None
-
-    def get_command(self, ctx: Any, cmd_name: str) -> Any:
-        command = super().get_command(ctx, cmd_name)
-        if command is None:
-            typer.echo("备份命令无效：请查看 paper-radar backup --help。", err=True)
-            raise typer.Exit(2)
-        return command
+class _BackupGroup(BatchGroup):
+    parameter_error = "备份参数错误：请查看 paper-radar backup --help。"
+    unknown_command_error = "备份命令无效：请查看 paper-radar backup --help。"
 
 
-class _BackupCommand(TyperCommand):
-    def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
-        try:
-            return super().parse_args(ctx, args)
-        except (typer.Exit, typer.Abort):
-            raise
-        except Exception:
-            typer.echo(
-                "备份参数错误：请显式提供帮助中要求的路径；"
-                "参见 paper-radar backup --help。",
-                err=True,
-            )
-            raise typer.Exit(2) from None
+class _BackupCommand(BatchCommand):
+    parameter_error = (
+        "备份参数错误：请显式提供帮助中要求的路径；参见 paper-radar backup --help。"
+    )
 
 
 backup_app = typer.Typer(
@@ -94,16 +72,6 @@ backup_app = typer.Typer(
     add_completion=False,
     rich_markup_mode="markdown",
 )
-
-
-def _show_result(result: BackupResult) -> None:
-    typer.echo(f"备份批次：{result.manifest.batch_id}")
-    typer.echo(f"清单 SHA-256：{result.manifest_sha256}")
-    for kind, count in result.manifest.counts.by_kind.items():
-        typer.echo(
-            f"{kind}：制品 {count.artifacts}；"
-            f"成员 {count.members}；字节 {count.size_bytes}"
-        )
 
 
 def _failed(error: BackupError) -> None:
@@ -126,7 +94,7 @@ def backup_create(
     from paper_radar.backup.service import create_backup
 
     try:
-        _show_result(create_backup(database, data_root, output))
+        show_result(create_backup(database, data_root, output))
     except BackupError as error:
         _failed(error)
     except KeyboardInterrupt:
@@ -145,7 +113,7 @@ def backup_verify(
     from paper_radar.backup.service import verify_backup
 
     try:
-        _show_result(verify_backup(backup_batch))
+        show_result(verify_backup(backup_batch))
     except BackupError as error:
         _failed(error)
     except KeyboardInterrupt:

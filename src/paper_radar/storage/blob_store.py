@@ -17,6 +17,11 @@ from paper_radar.storage.artifact_contract import (
     blob_relative_path,
     require_sha256,
 )
+from paper_radar.storage.filesystem import (
+    UnsafePathError,
+    controlled_path,
+    sync_directory,
+)
 
 CHUNK_SIZE = 1024 * 1024
 
@@ -30,14 +35,6 @@ class BlobStore:
             raise ArtifactError(
                 ArtifactReason.UNSAFE_PATH, "数据根无法解析；请检查路径"
             ) from None
-
-    @staticmethod
-    def _sync_directory(path: Path) -> None:
-        descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
-        try:
-            os.fsync(descriptor)
-        finally:
-            os.close(descriptor)
 
     @classmethod
     def _mkdir(cls, path: Path) -> None:
@@ -54,28 +51,17 @@ class BlobStore:
                     ArtifactReason.UNSAFE_PATH, "受控目录位置不是目录"
                 ) from None
         # 将本级目录项同步到父目录。每级新建均执行,包含 root 与前缀目录。
-        cls._sync_directory(path.parent)
+        sync_directory(path.parent)
 
     def _path(self, relative: str, *, create_parents: bool = False) -> Path:
-        parts = Path(relative).parts
-        if (
-            not parts
-            or Path(relative).is_absolute()
-            or any(p in (".", "..") for p in parts)
-        ):
-            raise ArtifactError(ArtifactReason.UNSAFE_PATH, "内容对象路径不安全")
-        current = self.root
-        if create_parents:
-            self._mkdir(current)
-        for index, part in enumerate(parts):
-            current = current / part
-            if current.is_symlink():
-                raise ArtifactError(
-                    ArtifactReason.UNSAFE_PATH, "数据根内不允许符号链接；请检查受控目录"
-                )
-            if create_parents and index < len(parts) - 1:
-                self._mkdir(current)
-        return current
+        try:
+            return controlled_path(
+                self.root,
+                relative,
+                create_directory=self._mkdir if create_parents else None,
+            )
+        except UnsafePathError as error:
+            raise ArtifactError(ArtifactReason.UNSAFE_PATH, str(error)) from None
 
     def path_for(self, record: BlobRecord) -> Path:
         expected = blob_relative_path(record.sha256, record.layout_version)
@@ -180,7 +166,7 @@ class BlobStore:
             except FileExistsError:
                 self.verify(record)
             # 对新发布目录项持久化;已有同名对象也只核验,不覆盖。
-            self._sync_directory(destination.parent)
+            sync_directory(destination.parent)
             return record
         except ArtifactError:
             raise

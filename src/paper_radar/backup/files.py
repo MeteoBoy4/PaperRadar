@@ -16,6 +16,9 @@ from paper_radar.backup.manifest import (
     BackupReason,
     FileEntry,
 )
+from paper_radar.storage.filesystem import UnsafePathError
+from paper_radar.storage.filesystem import controlled_path as storage_controlled_path
+from paper_radar.storage.filesystem import sync_directory as sync_directory
 
 CHUNK_SIZE = 1024 * 1024
 
@@ -31,15 +34,10 @@ def file_entry(path: Path, relative: str) -> FileEntry:
 
 
 def controlled_path(root: Path, relative: str) -> Path:
-    parts = relative.split("/")
-    if not parts or any(part in ("", ".", "..") for part in parts):
-        raise BackupError(BackupReason.UNSAFE_PATH)
-    current = root
-    for part in parts:
-        current = current / part
-        if current.is_symlink():
-            raise BackupError(BackupReason.UNSAFE_PATH)
-    return current
+    try:
+        return storage_controlled_path(root, relative)
+    except UnsafePathError:
+        raise BackupError(BackupReason.UNSAFE_PATH) from None
 
 
 def read_manifest(root: Path) -> bytes:
@@ -106,14 +104,6 @@ def mkdir_private(path: Path) -> None:
     except FileExistsError:
         if not path.is_dir() or path.is_symlink():
             raise BackupError(BackupReason.UNSAFE_PATH) from None
-
-
-def sync_directory(path: Path) -> None:
-    descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
-    try:
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
 
 
 def copy_file(source: Path, destination: Path, entry: FileEntry, *, mode: int) -> None:

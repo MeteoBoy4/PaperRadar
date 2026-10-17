@@ -60,6 +60,12 @@ from paper_radar.storage.database import (
 )
 from paper_radar.storage.errors import StorageError, StorageReason
 
+# SQLite 文件头偏移 18/19 分别为写/读格式版本;1 表示 rollback,2 表示 WAL。
+_SQLITE_WRITE_VERSION_OFFSET = 18
+_SQLITE_READ_VERSION_OFFSET = 19
+_SQLITE_HEADER_PREFIX_SIZE = _SQLITE_READ_VERSION_OFFSET + 1
+_SQLITE_ROLLBACK_VERSIONS = b"\x01\x01"
+
 
 def _storage_failure(error: StorageError) -> BackupError:
     reasons = {
@@ -89,7 +95,12 @@ def _require_head(database: Path) -> None:
 
 def _database_integrity(database: Path) -> None:
     with database.open("rb") as stream:
-        if stream.read(20)[18:20] != b"\x01\x01":
+        if (
+            stream.read(_SQLITE_HEADER_PREFIX_SIZE)[
+                _SQLITE_WRITE_VERSION_OFFSET : _SQLITE_READ_VERSION_OFFSET + 1
+            ]
+            != _SQLITE_ROLLBACK_VERSIONS
+        ):
             raise BackupError(BackupReason.DATABASE_INVALID)
     uri = f"file:{quote(str(database.resolve()))}?mode=ro"
     try:

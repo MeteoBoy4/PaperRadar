@@ -1,4 +1,4 @@
-"""配置事实的 SQLAlchemy Core 元数据。"""
+"""配置事实与不可变制品登记的 SQLAlchemy Core 元数据。"""
 
 from sqlalchemy import (
     CheckConstraint,

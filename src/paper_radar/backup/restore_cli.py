@@ -1,11 +1,11 @@
 """验证性恢复的薄 CLI;帮助仅加载纯类型与静态中文文本。"""
 
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated
 
 import typer
-from typer.core import TyperCommand, TyperGroup
 
+from paper_radar.backup.cli_support import BatchCommand, BatchGroup, show_result
 from paper_radar.backup.restore_contract import RestoreError, RestoreReason
 
 RESTORE_HELP = """向空隔离位置验证性恢复备份批次。
@@ -37,37 +37,16 @@ RESTORE_VERIFY_HELP = """向 --target 写入完整副本并验证，不是只读
 """
 
 
-class _RestoreGroup(TyperGroup):
-    def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
-        try:
-            return super().parse_args(ctx, args)
-        except (typer.Exit, typer.Abort):
-            raise
-        except Exception:
-            typer.echo("恢复参数错误：请查看 paper-radar restore --help。", err=True)
-            raise typer.Exit(2) from None
-
-    def get_command(self, ctx: Any, cmd_name: str) -> Any:
-        command = super().get_command(ctx, cmd_name)
-        if command is None:
-            typer.echo("恢复命令无效：请查看 paper-radar restore --help。", err=True)
-            raise typer.Exit(2)
-        return command
+class _RestoreGroup(BatchGroup):
+    parameter_error = "恢复参数错误：请查看 paper-radar restore --help。"
+    unknown_command_error = "恢复命令无效：请查看 paper-radar restore --help。"
 
 
-class _RestoreCommand(TyperCommand):
-    def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
-        try:
-            return super().parse_args(ctx, args)
-        except (typer.Exit, typer.Abort):
-            raise
-        except Exception:
-            typer.echo(
-                "恢复参数错误：请提供备份批次目录与 --target；"
-                "参见 paper-radar restore verify --help。",
-                err=True,
-            )
-            raise typer.Exit(2) from None
+class _RestoreCommand(BatchCommand):
+    parameter_error = (
+        "恢复参数错误：请提供备份批次目录与 --target；"
+        "参见 paper-radar restore verify --help。"
+    )
 
 
 restore_app = typer.Typer(
@@ -97,14 +76,7 @@ def restore_verify(
     from paper_radar.backup import restore_backup
 
     try:
-        result = restore_backup(backup_batch, target)
-        typer.echo(f"备份批次：{result.manifest.batch_id}")
-        typer.echo(f"清单 SHA-256：{result.manifest_sha256}")
-        for kind, count in result.manifest.counts.by_kind.items():
-            typer.echo(
-                f"{kind}：制品 {count.artifacts}；成员 {count.members}；"
-                f"字节 {count.size_bytes}"
-            )
+        show_result(restore_backup(backup_batch, target))
     except RestoreError as error:
         typer.echo(f"恢复失败 [{error.reason.value}]：{error}", err=True)
         raise typer.Exit(2) from None

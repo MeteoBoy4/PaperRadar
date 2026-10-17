@@ -114,7 +114,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/schema.py",
-        "87269ef0935fc2de63e2f948d8066ee5d9f28163ca42a8e4afdbdc25e83393ad",
+        "291db5e419f3a5a7fd88afab7f369569d0b8e754fa36932210418c0938050a0f",
     ),
     (
         "src/paper_radar/storage/migrations/env.py",
