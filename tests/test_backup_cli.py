@@ -74,6 +74,7 @@ def test_create_and_verify_report_only_identity_and_kind_summaries(
         ["create", "--SECRET-invalid"],
         ["verify", "SECRET-invalid-batch"],
         ["SECRET-unknown"],
+        ["--SECRET-A3-SYNTHETIC-PRIVATE"],
     ],
 )
 def test_input_errors_are_controlled_and_do_not_echo_values(

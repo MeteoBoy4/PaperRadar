@@ -179,3 +179,75 @@ def test_complete_staging_and_renamed_batch_cannot_be_accepted(tmp_path: Path) -
         verify_backup(renamed)
     assert failure.value.reason.value == "not_published"
     assert tree(renamed) == before
+
+
+@pytest.mark.parametrize("operation", ["verify_backup", "verify_contents", "restore"])
+def test_fifo_manifest_is_rejected_in_a_bounded_process_without_changes(
+    tmp_path: Path, operation: str
+) -> None:
+    import os
+    import subprocess
+    import sys
+
+    database, root, _ = populated(tmp_path / "source")
+    result = create_backup(database, root, tmp_path / "output")
+    manifest = result.batch_dir / "manifest.json"
+    reference = tmp_path / "reference.json"
+    reference.write_bytes(manifest.read_bytes())
+    manifest.unlink()
+    os.mkfifo(manifest, mode=0o600)
+    before = tree(result.batch_dir)
+    target = tmp_path / "SECRET-restored"
+    if operation == "restore":
+        command = [
+            str(Path(sys.executable).with_name("paper-radar")),
+            "restore",
+            "verify",
+            str(result.batch_dir),
+            "--target",
+            str(target),
+        ]
+    else:
+        code = (
+            "from pathlib import Path;import sys;"
+            "from paper_radar.backup import BackupError,verify_backup,verify_contents;"
+            "from paper_radar.backup.manifest import parse_manifest\n"
+            "try:\n"
+            " if sys.argv[1]=='verify_backup': verify_backup(Path(sys.argv[2]))\n"
+            " else: verify_contents(Path(sys.argv[2]),"
+            "parse_manifest(Path(sys.argv[3]).read_bytes()))\n"
+            "except BackupError as error:\n"
+            " assert error.reason.value=='unsafe_path'\n"
+            " print(error.reason.value)\n"
+            "else: raise AssertionError('must reject FIFO')\n"
+        )
+        command = [
+            sys.executable,
+            "-c",
+            code,
+            operation,
+            str(result.batch_dir),
+            str(reference),
+        ]
+    completed = subprocess.run(
+        command,
+        cwd=tmp_path,
+        env={
+            "PATH": os.environ["PATH"],
+            "PYTHONPATH": str(Path(__file__).parent / "deny_network"),
+            "PYTHONDONTWRITEBYTECODE": "1",
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=5,
+    )
+    assert completed.returncode == (2 if operation == "restore" else 0), (
+        completed.stderr
+    )
+    assert "unsafe_path" in completed.stdout + completed.stderr
+    assert "SECRET" not in completed.stdout + completed.stderr
+    assert "Traceback" not in completed.stderr
+    assert manifest.is_fifo()
+    assert tree(result.batch_dir) == before
+    assert not target.exists()

@@ -21,6 +21,7 @@ from paper_radar.backup.files import (
     file_entry,
     mkdir_private,
     publish_directory,
+    read_manifest,
     sync_directory,
     verify_file,
     verify_tree,
@@ -145,10 +146,7 @@ def verify_contents(root: Path, manifest: BackupManifest) -> None:
             or stat.S_IMODE(root.stat().st_mode) & 0o077
         ):
             raise BackupError(BackupReason.UNSAFE_PATH)
-        if (
-            controlled_path(root, MANIFEST_FILE).read_bytes()
-            != manifest.canonical_bytes
-        ):
+        if read_manifest(root) != manifest.canonical_bytes:
             raise BackupError(BackupReason.INVALID_MANIFEST)
         verify_tree(root, manifest)
         verify_file(root, manifest.database)
@@ -181,7 +179,7 @@ def verify_backup(batch_dir: Path) -> BackupResult:
             raise BackupError(BackupReason.BATCH_UNAVAILABLE)
         if BATCH_ID.fullmatch(batch_dir.name) is None:
             raise BackupError(BackupReason.NOT_PUBLISHED)
-        raw = controlled_path(batch_dir, MANIFEST_FILE).read_bytes()
+        raw = read_manifest(batch_dir)
         manifest = parse_manifest(raw)
         if batch_dir.name != manifest.batch_id:
             raise BackupError(BackupReason.NOT_PUBLISHED)

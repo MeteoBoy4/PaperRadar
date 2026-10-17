@@ -42,6 +42,14 @@ def controlled_path(root: Path, relative: str) -> Path:
     return current
 
 
+def read_manifest(root: Path) -> bytes:
+    """读取前拒绝特殊文件,避免 FIFO 等阻塞;复用受控路径约束。"""
+    path = controlled_path(root, MANIFEST_FILE)
+    if not stat.S_ISREG(path.stat().st_mode):
+        raise BackupError(BackupReason.UNSAFE_PATH)
+    return path.read_bytes()
+
+
 def verify_file(root: Path, entry: FileEntry, *, blob: bool = False) -> None:
     path = controlled_path(root, entry.path)
     try:

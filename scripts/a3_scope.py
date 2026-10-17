@@ -78,9 +78,9 @@ EXTRACTION_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
 
 BACKUP_TEST_CASE_COUNTS = {
     "tests/test_backup_service.py": 5,
-    "tests/test_backup_integrity.py": 31,
+    "tests/test_backup_integrity.py": 34,
     "tests/test_backup_failures.py": 22,
-    "tests/test_backup_cli.py": 10,
+    "tests/test_backup_cli.py": 11,
     "tests/test_backup_wheel.py": 1,
     "tests/test_backup_architecture.py": 1,
 }
@@ -92,7 +92,7 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_backup_integrity.py",
-        "e6e56d22851119a3aadb2a4fc1b4f32d6567897e1d22f1a84562cbf32432f51b",
+        "d3e9f2e0c0946b30ed91848d4684d4847c85b6d47666f22a919d9976ddf87e72",
     ),
     (
         "tests/test_backup_failures.py",
@@ -100,7 +100,7 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_backup_cli.py",
-        "28e0ed205fffc033b0d08b6b46efbe733b27ab9376e12b73e4865869cae73f4a",
+        "a816f90c9835dc98b0a41d6e15e9ead4229bf1ae12322ac409e5fa2e748dab24",
     ),
     (
         "tests/test_backup_wheel.py",
@@ -123,15 +123,15 @@ BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/files.py",
-        "b641f85bae36522e4f797a9880ee950377a336b3c76c4d87434010bbccfbe78a",
+        "05cef914693f98bf5fb0bf274c2db3f1e312e13533fb91db5046f63842945cc7",
     ),
     (
         "src/paper_radar/backup/service.py",
-        "9199f46bf7316bb8b236193f07472ae3ef81ad4433df02dcd59baff65d812537",
+        "23a42010800feee8d547707c637d204bc993dd8784b3eb072a9f220c113f441a",
     ),
     (
         "src/paper_radar/backup/cli.py",
-        "2b9b7340a7548be7f625aed12c350200dbeb772ca95d01ac3b1b2c3d4fcad5ae",
+        "32b23de19d0cda6af6c7b7e54a42585e910964c3cc0eb03e013950273de96635",
     ),
     (
         "tests/backup_support.py",

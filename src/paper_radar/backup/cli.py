@@ -55,6 +55,15 @@ VERIFY_HELP = """只读校验已发布备份批次的全部文件与登记。
 
 
 class _BackupGroup(TyperGroup):
+    def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
+        try:
+            return super().parse_args(ctx, args)
+        except (typer.Exit, typer.Abort):
+            raise
+        except Exception:
+            typer.echo("备份参数错误：请查看 paper-radar backup --help。", err=True)
+            raise typer.Exit(2) from None
+
     def get_command(self, ctx: Any, cmd_name: str) -> Any:
         command = super().get_command(ctx, cmd_name)
         if command is None:
