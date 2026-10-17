@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import os
-import select
 import subprocess
 import sys
 from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
+
+from tests.a3_process_support import paused_subprocess
 
 PAYLOADS = {
     "document": b"PRIVATE_DOCUMENT",
@@ -30,9 +30,7 @@ def chunked(values: Mapping[str, bytes]) -> dict[str, Iterable[bytes]]:
 def paused_extraction(
     database: Path, root: Path, phase: str, *, variant: bool = False
 ) -> Iterator[tuple[subprocess.Popen[str], int]]:
-    ready_read, ready_write = os.pipe()
-    release_read, release_write = os.pipe()
-    process = subprocess.Popen(
+    with paused_subprocess(
         [
             sys.executable,
             "-m",
@@ -41,32 +39,12 @@ def paused_extraction(
             str(root),
             "variant" if variant else "same",
         ],
-        env={
-            "PATH": os.environ["PATH"],
-            "PYTHONPATH": str(Path(__file__).parent / "extraction_process"),
-            "PYTHONDONTWRITEBYTECODE": "1",
-            "A3_EXTRACTION_PHASE": phase,
-            "A3_READY_FD": str(ready_write),
-            "A3_RELEASE_FD": str(release_read),
-        },
-        pass_fds=(ready_write, release_read),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    os.close(ready_write)
-    os.close(release_read)
-    try:
-        readable, _, _ = select.select([ready_read], [], [], 15)
-        assert readable, "正文制品子进程未到达屏障"
-        assert os.read(ready_read, 1) == b"R", "正文制品子进程提前退出"
-        yield process, release_write
-    finally:
-        if process.poll() is None:
-            process.kill()
-        process.communicate(timeout=15)
-        os.close(ready_read)
-        os.close(release_write)
+        Path(__file__).parent / "extraction_process",
+        {"A3_EXTRACTION_PHASE": phase},
+        "正文制品子进程未到达屏障",
+        "正文制品子进程提前退出",
+    ) as paused:
+        yield paused
 
 
 @contextmanager

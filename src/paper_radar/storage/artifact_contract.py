@@ -31,7 +31,6 @@ KIND_ROLES = {
     "reference_tei": ("payload",),
     "extraction": ("document", "evidence_map", "manifest", "reading"),
 }
-SINGLE_FILE_KINDS = frozenset(KIND_ROLES) - {"extraction"}
 
 
 class ArtifactReason(StrEnum):

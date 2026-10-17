@@ -3,14 +3,11 @@
 import os
 from typing import Any
 
+from tests.a3_process_support import checkpoint
+
 phase = os.environ.get("A3_RESTORE_PHASE")
 original_open = os.open
 original_rename = os.rename
-
-
-def checkpoint() -> None:
-    os.write(int(os.environ["A3_READY_FD"]), b"R")
-    os.read(int(os.environ["A3_RELEASE_FD"]), 1)
 
 
 def open_file(path: Any, flags: int, *args: Any, **kwargs: Any) -> int:

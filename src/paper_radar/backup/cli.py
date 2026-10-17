@@ -5,7 +5,12 @@ from typing import Annotated
 
 import typer
 
-from paper_radar.backup.cli_support import BatchCommand, BatchGroup, show_result
+from paper_radar.backup.cli_support import (
+    BatchCommand,
+    BatchGroup,
+    show_failure,
+    show_result,
+)
 from paper_radar.backup.manifest import BackupError, BackupReason
 
 BACKUP_HELP = """管理自包含备份批次。
@@ -74,11 +79,6 @@ backup_app = typer.Typer(
 )
 
 
-def _failed(error: BackupError) -> None:
-    typer.echo(f"备份失败 [{error.reason.value}]：{error}", err=True)
-    raise typer.Exit(2)
-
-
 @backup_app.command("create", cls=_BackupCommand, help=CREATE_HELP)
 def backup_create(
     database: Annotated[
@@ -96,9 +96,9 @@ def backup_create(
     try:
         show_result(create_backup(database, data_root, output))
     except BackupError as error:
-        _failed(error)
+        show_failure("备份", error)
     except KeyboardInterrupt:
-        _failed(BackupError(BackupReason.INTERRUPTED))
+        show_failure("备份", BackupError(BackupReason.INTERRUPTED))
 
 
 @backup_app.command("verify", cls=_BackupCommand, help=VERIFY_HELP)
@@ -115,6 +115,6 @@ def backup_verify(
     try:
         show_result(verify_backup(backup_batch))
     except BackupError as error:
-        _failed(error)
+        show_failure("备份", error)
     except KeyboardInterrupt:
-        _failed(BackupError(BackupReason.INTERRUPTED))
+        show_failure("备份", BackupError(BackupReason.INTERRUPTED))

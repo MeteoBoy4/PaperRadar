@@ -5,12 +5,9 @@ from typing import Any
 
 from sqlalchemy import Engine, event
 
+from tests.a3_process_support import checkpoint
+
 phase = os.environ.get("A3_EXTRACTION_PHASE")
-
-
-def checkpoint() -> None:
-    os.write(int(os.environ["A3_READY_FD"]), b"R")
-    os.read(int(os.environ["A3_RELEASE_FD"]), 1)
 
 
 if phase == "partial_files":

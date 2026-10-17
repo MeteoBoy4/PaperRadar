@@ -25,12 +25,16 @@ ARTIFACT_TEST_MODULES: tuple[tuple[str, str], ...] = (
 
 ARTIFACT_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
+        "tests/a3_process_support.py",
+        "4c0ca963d2513532060c5f122f92b09933e234c4c65e342b78d3fd5d06880d74",
+    ),
+    (
         "src/paper_radar/storage/filesystem.py",
         "b0904b630bb476eb4a7286ec9b6623176e83549be8c0a33faec7e29a1480e91e",
     ),
     (
         "src/paper_radar/storage/artifact_contract.py",
-        "2287ecd3a20534fe543e9bb76a9f3f340ffce56f032d02bbac95a2242605c52c",
+        "ab8284b17b5710fe9e537f6edb88fff7fc84f686417f96e3558405699f1fa999",
     ),
     (
         "src/paper_radar/storage/artifact_repository.py",
@@ -46,11 +50,11 @@ ARTIFACT_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/artifact_support.py",
-        "5683437b39720416313c52836ceb956ec3cff266e07a0e04c6e0ce985c47d437",
+        "2771734fb913cb279be6aa9b9518b7d7e2bf70e2b7982f28e47b78be89000664",
     ),
     (
         "tests/artifact_process/sitecustomize.py",
-        "279ca4aee0a554dd5477d6fc29ed4ddc4a21b80945d2ab19d389dc7f667c103c",
+        "93a006ce86ff483ac1bd6fdb574533acc859faf82dca5fae074bb173395f2bc4",
     ),
 )
 
@@ -64,15 +68,15 @@ EXTRACTION_TEST_MODULES: tuple[tuple[str, str], ...] = (
 EXTRACTION_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/extraction_support.py",
-        "bce97c2f5d2f9bafd0c7c02f3318f26f3234c58363355382321bfa08ba320ab8",
+        "80256c1af3b704e3af144e86b824a977814ad33e9fc44416cb66a27400db1a62",
     ),
     (
         "tests/extraction_process/sitecustomize.py",
-        "83663351d5dfb4a4d852427bb69d910a225cd851468cf18958bf7e8e9a39b814",
+        "d578b4442de5f5cd067856dce0bae7b0ef2b0cdfcc64e4dacf478a28d6399e73",
     ),
     (
         "tests/extraction_process/publish.py",
-        "c5635659f003aa8fae601b1d8a0c51405a67571b2ccaed88f8f21a2d96252344",
+        "8352771231a938a6f8b0668d7c7773913ce234bb0727feb6652e5e002820b90e",
     ),
     (
         "tests/fixtures/extraction_artifact_vectors.json",
@@ -119,7 +123,7 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
 BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/backup/cli_support.py",
-        "76712aa1788041f06909ccf4e553dc45a689f0b1903c36607939e9e3d36acc1c",
+        "08b5de8379ea9c357d7ed05c1d4a33f145d56066842e993a8cc0e7301dcb298e",
     ),
     (
         "src/paper_radar/backup/__init__.py",
@@ -139,7 +143,7 @@ BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/cli.py",
-        "440dfa1ebaed4d9ece76f48d68b6ada8ccd393e8d54c55ef54bba91e352a30aa",
+        "731e05af4659eefa8c52707516525e27244265ae0bdbd4a6a364228fda92d838",
     ),
     (
         "tests/backup_support.py",
@@ -164,7 +168,7 @@ RESTORE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_restore_cli.py",
-        "cf55452b2085cd79270e288efdf6cb667ec7a7b5cf11432765c6b2d00600e99d",
+        "909a836ceb590aa3767b016300343cb37403d3266df896cdaf6756d708e5c12d",
     ),
 )
 
@@ -179,15 +183,15 @@ RESTORE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/restore_cli.py",
-        "fd2c22d11b9d8e2ef1d22d64c5214186f3b488b4517fee2326274417b52aa084",
+        "d168d5159b481ac48fdeff10c2931052a490cb1eea58b784a8494ce2cf81b6e5",
     ),
     (
         "tests/restore_support.py",
-        "89271ffd6bfd49a8844a09bb446c3252b296a57ebc050ecab3a1f1f88f4fbe13",
+        "0ab9a716354d3c7481596a59e2ea20aac453de1602bc88712f119f1bab726736",
     ),
     (
         "tests/restore_process/sitecustomize.py",
-        "bac18aeb70c29cfa677b594507f601353471a389b0bc02905b422eb7e43644d7",
+        "5db3ad1399ca9d83f4a8143f6724f45dd632b72fd6b246feab9dc75f35b713ae",
     ),
     (
         "tests/restore_process/query.py",

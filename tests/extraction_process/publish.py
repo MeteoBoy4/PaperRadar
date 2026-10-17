@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 from paper_radar.storage.artifacts import ArtifactStore
+from tests.a3_process_support import checkpoint
 from tests.extraction_support import PAYLOADS, chunked
 
 values = dict(PAYLOADS)
@@ -17,8 +18,7 @@ if os.environ["A3_EXTRACTION_PHASE"] == "temporary":
 
     def temporary_chunks() -> Iterator[bytes]:
         yield b"PRI"
-        os.write(int(os.environ["A3_READY_FD"]), b"R")
-        os.read(int(os.environ["A3_RELEASE_FD"]), 1)
+        checkpoint()
         yield values["document"][3:]
 
     members["document"] = temporary_chunks()

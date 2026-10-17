@@ -2,13 +2,13 @@
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, Literal, NoReturn
 
 import typer
 from typer.core import TyperCommand, TyperGroup
 
-from paper_radar.backup.manifest import BackupResult
-from paper_radar.backup.restore_contract import RestoreResult
+from paper_radar.backup.manifest import BackupError, BackupResult
+from paper_radar.backup.restore_contract import RestoreError, RestoreResult
 
 
 @contextmanager
@@ -44,6 +44,13 @@ class BatchCommand(TyperCommand):
     def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
         with _redact_argument_errors(self.parameter_error):
             return super().parse_args(ctx, args)
+
+
+def show_failure(
+    operation: Literal["备份", "恢复"], error: BackupError | RestoreError
+) -> NoReturn:
+    typer.echo(f"{operation}失败 [{error.reason.value}]：{error}", err=True)
+    raise typer.Exit(2) from None
 
 
 def show_result(result: BackupResult | RestoreResult) -> None:

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import select
 import sqlite3
 import subprocess
 import sys
@@ -12,6 +10,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from sqlalchemy import Connection, Engine, event
+
+from tests.a3_process_support import paused_subprocess
 
 
 def registration_facts(database: Path) -> tuple[list[tuple[object, ...]], ...]:
@@ -46,33 +46,11 @@ def fail_sql(prefix: str) -> Iterator[None]:
 def paused_operation(
     code: str, arguments: list[str], prefix: str
 ) -> Iterator[subprocess.Popen[str]]:
-    ready_read, ready_write = os.pipe()
-    release_read, release_write = os.pipe()
-    process = subprocess.Popen(
+    with paused_subprocess(
         [sys.executable, "-c", code, *arguments],
-        env={
-            "PATH": os.environ["PATH"],
-            "PYTHONPATH": str(Path(__file__).parent / "artifact_process"),
-            "PYTHONDONTWRITEBYTECODE": "1",
-            "A3_PAUSE_SQL": prefix,
-            "A3_READY_FD": str(ready_write),
-            "A3_RELEASE_FD": str(release_read),
-        },
-        pass_fds=(ready_write, release_read),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    os.close(ready_write)
-    os.close(release_read)
-    try:
-        readable, _, _ = select.select([ready_read], [], [], 15)
-        assert readable, "子进程未到达 A3 屏障"
-        assert os.read(ready_read, 1) == b"R", "子进程提前退出"
+        Path(__file__).parent / "artifact_process",
+        {"A3_PAUSE_SQL": prefix},
+        "子进程未到达 A3 屏障",
+        "子进程提前退出",
+    ) as (process, _):
         yield process
-    finally:
-        if process.poll() is None:
-            process.kill()
-        process.communicate(timeout=15)
-        os.close(ready_read)
-        os.close(release_write)

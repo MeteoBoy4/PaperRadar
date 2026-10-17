@@ -1,7 +1,5 @@
 """恢复独立事实视图与真实子进程支撑,不重写配置或制品身份算法。"""
 
-import os
-import select
 import subprocess
 import sys
 from collections.abc import Iterator
@@ -15,6 +13,7 @@ from paper_radar.config import (
     project_config,
 )
 from paper_radar.storage.artifacts import ArtifactStore
+from tests.a3_process_support import paused_subprocess
 from tests.config_transaction_support import config_facts
 
 
@@ -75,9 +74,7 @@ def history_view(database: Path, data_root: Path) -> dict[str, Any]:
 def paused_restore(
     batch: Path, target: Path, phase: str
 ) -> Iterator[tuple[subprocess.Popen[str], int]]:
-    ready_read, ready_write = os.pipe()
-    release_read, release_write = os.pipe()
-    process = subprocess.Popen(
+    with paused_subprocess(
         [
             str(Path(sys.executable).with_name("paper-radar")),
             "restore",
@@ -86,29 +83,9 @@ def paused_restore(
             "--target",
             str(target),
         ],
-        env={
-            "PATH": os.environ["PATH"],
-            "PYTHONPATH": str(Path(__file__).parent / "restore_process"),
-            "PYTHONDONTWRITEBYTECODE": "1",
-            "A3_RESTORE_PHASE": phase,
-            "A3_READY_FD": str(ready_write),
-            "A3_RELEASE_FD": str(release_read),
-        },
-        pass_fds=(ready_write, release_read),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    os.close(ready_write)
-    os.close(release_read)
-    try:
-        readable, _, _ = select.select([ready_read], [], [], 15)
-        assert readable, "恢复子进程未到达文件系统屏障"
-        assert os.read(ready_read, 1) == b"R", "恢复子进程提前退出"
-        yield process, release_write
-    finally:
-        if process.poll() is None:
-            process.kill()
-        process.communicate(timeout=15)
-        os.close(ready_read)
-        os.close(release_write)
+        Path(__file__).parent / "restore_process",
+        {"A3_RESTORE_PHASE": phase},
+        "恢复子进程未到达文件系统屏障",
+        "恢复子进程提前退出",
+    ) as paused:
+        yield paused

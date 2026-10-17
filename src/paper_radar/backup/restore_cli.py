@@ -5,7 +5,12 @@ from typing import Annotated
 
 import typer
 
-from paper_radar.backup.cli_support import BatchCommand, BatchGroup, show_result
+from paper_radar.backup.cli_support import (
+    BatchCommand,
+    BatchGroup,
+    show_failure,
+    show_result,
+)
 from paper_radar.backup.restore_contract import RestoreError, RestoreReason
 
 RESTORE_HELP = """向空隔离位置验证性恢复备份批次。
@@ -78,9 +83,6 @@ def restore_verify(
     try:
         show_result(restore_backup(backup_batch, target))
     except RestoreError as error:
-        typer.echo(f"恢复失败 [{error.reason.value}]：{error}", err=True)
-        raise typer.Exit(2) from None
+        show_failure("恢复", error)
     except KeyboardInterrupt:
-        interrupted = RestoreError(RestoreReason.INTERRUPTED)
-        typer.echo(f"恢复失败 [{interrupted.reason.value}]：{interrupted}", err=True)
-        raise typer.Exit(2) from None
+        show_failure("恢复", RestoreError(RestoreReason.INTERRUPTED))

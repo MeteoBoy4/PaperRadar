@@ -78,7 +78,12 @@ def test_real_cli_io_failures_are_controlled_and_private(
         ],
         env={
             "PATH": os.environ["PATH"],
-            "PYTHONPATH": str(Path(__file__).parent / "restore_process"),
+            "PYTHONPATH": os.pathsep.join(
+                (
+                    str(Path(__file__).parent / "restore_process"),
+                    str(Path(__file__).parent.parent),
+                )
+            ),
             "PYTHONDONTWRITEBYTECODE": "1",
             "A3_RESTORE_PHASE": phase,
         },
