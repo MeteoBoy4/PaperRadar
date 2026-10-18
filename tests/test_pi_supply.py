@@ -239,6 +239,7 @@ def test_concurrent_different_entry_cannot_freeze_second_supply(tmp_path: Path) 
             env: dict[str, str],
             timeout: int,
             limit: int,
+            pass_fds: tuple[int, ...] = (),
         ) -> bytes:
             output = super().run(argv, cwd=cwd, env=env, timeout=timeout, limit=limit)
             if "ci" in argv:

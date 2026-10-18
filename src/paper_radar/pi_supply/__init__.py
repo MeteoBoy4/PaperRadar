@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,18 +17,23 @@ from paper_radar.pi_supply.models import (
 )
 
 if TYPE_CHECKING:
+    from paper_radar.pi_supply.protection import InstallUse, ProtectionObservation
     from paper_radar.pi_supply.transport import Downloader, Runner
 
 __all__ = [
     "SupplyError",
+    "acquire_install",
     "activate_supply",
     "activation_history",
     "available_installs",
     "doctor_supply",
+    "exclusive_install",
     "list_supplies",
     "prepare_supply",
+    "probe_install",
     "rebuild_supply",
     "show_supply",
+    "use_install",
     "verify_supply",
 ]
 
@@ -134,3 +140,35 @@ def doctor_supply(database: Path, snapshot_reference: str) -> DoctorReport:
     from paper_radar.pi_supply.execution import doctor_supply as diagnose
 
     return diagnose(database, snapshot_reference)
+
+
+def use_install(
+    database: Path, snapshot_reference: str
+) -> AbstractContextManager[InstallUse]:
+    from paper_radar.pi_supply.protection import use_install as use
+
+    return use(database, snapshot_reference)
+
+
+def acquire_install(
+    database: Path, supply_id: str, install_id: str
+) -> AbstractContextManager[InstallUse]:
+    from paper_radar.pi_supply.protection import acquire_install as acquire
+
+    return acquire(database, supply_id, install_id)
+
+
+def exclusive_install(
+    database: Path, supply_id: str, install_id: str
+) -> AbstractContextManager[InstallUse]:
+    from paper_radar.pi_supply.protection import exclusive_install as exclusive
+
+    return exclusive(database, supply_id, install_id)
+
+
+def probe_install(
+    database: Path, supply_id: str, install_id: str
+) -> ProtectionObservation:
+    from paper_radar.pi_supply.protection import probe_install as probe
+
+    return probe(database, supply_id, install_id)

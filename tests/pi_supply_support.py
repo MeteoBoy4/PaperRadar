@@ -109,6 +109,7 @@ class Run:
         env: dict[str, str],
         timeout: int,
         limit: int,
+        pass_fds: tuple[int, ...] = (),
     ) -> bytes:
         self.calls.append((argv, cwd, env))
         if "ci" in argv:

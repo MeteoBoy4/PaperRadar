@@ -31,6 +31,7 @@ class Runner(Protocol):
         env: dict[str, str],
         timeout: int,
         limit: int,
+        pass_fds: tuple[int, ...] = (),
     ) -> bytes: ...
 
 
@@ -79,6 +80,7 @@ class ProcessRunner:
         env: dict[str, str],
         timeout: int,
         limit: int,
+        pass_fds: tuple[int, ...] = (),
     ) -> bytes:
         """并发消费两条管道、限制合计输出;任何中断终止整个进程组。"""
         try:
@@ -91,6 +93,7 @@ class ProcessRunner:
                 stderr=subprocess.PIPE,
                 start_new_session=True,
                 umask=0o022,
+                pass_fds=pass_fds,
             )
         except OSError:
             raise SupplyError("process_failed") from None
