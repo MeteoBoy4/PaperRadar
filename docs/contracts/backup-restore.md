@@ -62,7 +62,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。根内任何路径组件符号�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 a403_pi_activation，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 a404_pi_cleanup_plans，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -194,7 +194,7 @@ backup verify 一样只给批次 ID、清单 SHA-256 及按 kind 汇总，不逐
 
 ## Pi 供给事实与 a302 旧批次
 
-当前 head `a403_pi_activation` 将供给清单、官方/派生/补充校验材料、D5 证据与引用、
+当前 head `a404_pi_cleanup_plans` 将供给清单、官方/派生/补充校验材料、D5 证据与引用、
 安装根归属、安装实例、scope 为 install_check 的历史事实、重建失败、
 激活事件及单库唯一当前选择一并存入数据库。
 备份 format 仍为 1，不增清单字段、blob kind 或安装树副本。
@@ -210,3 +210,9 @@ create/verify/restore 均经供给公共查询完整语义回放，材料摘要�
 原根缺失时 doctor 指向 rebuild 后显式 activate，且旧根历史无需修回才能匹配新当前选择。
 如恢复活动副本继续共用原安装根，旧副本退役前不得执行后续 gc execute；
 flock 不能区分两个空闲活动副本。详见 [供给 Contract](pi-supply.md)。
+
+`a404_pi_cleanup_plans` 的不可变安装清理计划和最小退役识别事实也随数据库完整保留。
+计划规范字节/ID/严格格式、事实引用闭包、受控实例位置、选择与保护理由均在公共供给历史回放中校验。
+后来的激活/检查/退役不改写旧计划，事实版本不同只影响执行适用性，不否决合法历史备份。
+恢复不读取现场树，也不执行计划；原根失去访问后仍可按完整 plan_id 回查原规范字节。
+计划损坏属于 supply_invalid，悬空外键优先属于 database_invalid；备份 format 继续为 1。

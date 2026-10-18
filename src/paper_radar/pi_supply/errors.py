@@ -3,6 +3,9 @@
 from typing import Literal
 
 SupplyReason = Literal[
+    "cleanup_plan_invalid",
+    "cleanup_plan_missing",
+    "cleanup_facts_changed",
     "install_busy",
     "protection_unknown",
     "selection_changed",
@@ -70,6 +73,11 @@ SupplyReason = Literal[
 ]
 
 GUIDANCE: dict[SupplyReason, str] = {
+    "cleanup_plan_invalid": "清理计划字节、格式或引用损坏；请保留数据库并检查完整性。",
+    "cleanup_plan_missing": (
+        "未找到完整清理计划ID；请使用 gc --dry-run 生成并核对计划。"
+    ),
+    "cleanup_facts_changed": "计划生成期间安全事实变化；请重新运行 gc --dry-run。",
     "install_busy": "安装正被保护或清理占用；请稍后重试，不会绕过实例锁。",
     "protection_unknown": "无法安全确认安装保护；请检查原根与锁文件，保守拒绝清理。",
     "selection_changed": "取得安装时当前选择已改变；请使用明确快照重新取得句柄。",

@@ -6,6 +6,7 @@ from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from paper_radar.pi_supply.cleanup_models import CleanupPlan
 from paper_radar.pi_supply.errors import SupplyError
 from paper_radar.pi_supply.models import (
     Activation,
@@ -26,12 +27,15 @@ __all__ = [
     "activate_supply",
     "activation_history",
     "available_installs",
+    "create_cleanup_plan",
     "doctor_supply",
     "exclusive_install",
+    "list_cleanup_plans",
     "list_supplies",
     "prepare_supply",
     "probe_install",
     "rebuild_supply",
+    "show_cleanup_plan",
     "show_supply",
     "use_install",
     "verify_supply",
@@ -172,3 +176,28 @@ def probe_install(
     from paper_radar.pi_supply.protection import probe_install as probe
 
     return probe(database, supply_id, install_id)
+
+
+def create_cleanup_plan(
+    database: Path, *, data_root: Path, config_root: Path, material_root: Path
+) -> CleanupPlan:
+    from paper_radar.pi_supply.cleanup import create_cleanup_plan as create
+
+    return create(
+        database,
+        data_root=data_root,
+        config_root=config_root,
+        material_root=material_root,
+    )
+
+
+def show_cleanup_plan(database: Path, plan_id: str) -> CleanupPlan:
+    from paper_radar.pi_supply.cleanup import show_cleanup_plan as show
+
+    return show(database, plan_id)
+
+
+def list_cleanup_plans(database: Path) -> tuple[CleanupPlan, ...]:
+    from paper_radar.pi_supply.cleanup import list_cleanup_plans as discover
+
+    return discover(database)

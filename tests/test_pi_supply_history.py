@@ -52,7 +52,7 @@ def test_real_a302_nonempty_upgrade_preserves_all_old_bytes(tmp_path: Path) -> N
                 previous.executemany(
                     f"INSERT INTO {table} VALUES ({placeholders})", values
                 )
-    assert upgrade_database(old) == "a403_pi_activation"
+    assert upgrade_database(old) == "a404_pi_cleanup_plans"
     assert load_config_snapshot(old, snapshot_id).snapshot_id == snapshot_id
     assert (
         ArtifactStore(old, data).list_artifacts()

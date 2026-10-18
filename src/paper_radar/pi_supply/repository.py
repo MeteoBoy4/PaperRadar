@@ -93,6 +93,13 @@ def read_state(
     try:
         with database_engine(database) as engine, engine.connect() as connection:
             connection.exec_driver_sql("BEGIN")
+            from paper_radar.pi_supply.cleanup_history import safety_facts
+
+            cleanup_facts = safety_facts(connection)
+            cleanup_rows = [
+                dict(row)
+                for row in connection.execute(select(tables.cleanup_plans)).mappings()
+            ]
             owner_rows = (
                 connection.execute(select(tables.database_identity)).mappings().all()
             )
@@ -375,6 +382,9 @@ def read_state(
             ):
                 raise SupplyError("supply_corrupt")
             current = history[-1]
+        from paper_radar.pi_supply.cleanup_history import validate_plan_history
+
+        validate_plan_history(cleanup_rows, cleanup_facts, tuple(result.values()))
         return (
             tuple(
                 sorted(result.values(), key=lambda row: (row.created_at, row.supply_id))
