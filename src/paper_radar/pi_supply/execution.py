@@ -1,23 +1,27 @@
 """唯一执行选择与只读现场诊断;不运行程序,不授予业务资格。"""
 
 import stat
+from contextlib import ExitStack
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
 from paper_radar.pi_supply.errors import SupplyError, SupplyReason
 from paper_radar.pi_supply.filesystem import (
-    local_filesystem,
     no_symlink_components,
-    tree_hash,
 )
 from paper_radar.pi_supply.models import (
     Activation,
     DoctorReport,
-    InstallInstance,
     InstanceDiagnosis,
     RetentionProtection,
     SupplyRecord,
+)
+from paper_radar.pi_supply.protection import (
+    acquire_install,
+    check_platform,
+    inspect_instance,
+    probe_install,
 )
 from paper_radar.pi_supply.repository import commit_activation, read_state
 from paper_radar.pi_supply.selection import (
@@ -26,28 +30,9 @@ from paper_radar.pi_supply.selection import (
     selected_pi_version,
 )
 from paper_radar.pi_supply.service import (
-    _check_root_marker,
-    _platform,
     available_installs,
     show_supply,
 )
-
-
-def inspect_instance(
-    database: Path, record: SupplyRecord, instance: InstallInstance
-) -> None:
-    """静态核验边界;后续实例共享锁应覆盖它与激活提交,不在SQL事务里等锁。"""
-    if not instance.path.is_dir():
-        raise SupplyError("install_unavailable")
-    local_filesystem(instance.path.parent.parent)
-    _check_root_marker(database, instance.path.parent.parent, instance.root_id)
-    no_symlink_components(instance.path)
-    if tree_hash(instance.path) != record.manifest.expected_tree:
-        raise SupplyError("tree_mismatch")
-    for entry in (record.manifest.node_entry, record.manifest.pi_entry):
-        target = instance.path / entry
-        if not target.is_file() or not target.resolve().is_relative_to(instance.path):
-            raise SupplyError("entry_invalid")
 
 
 def activate_supply(
@@ -56,13 +41,18 @@ def activate_supply(
     record = show_supply(database, supply_id)
     snapshot = load_snapshot(database, snapshot_reference)
     match_snapshot(snapshot, record.manifest.pi_version)
-    _platform(record.manifest)
+    check_platform(record.manifest)
     for instance in available_installs(database, supply_id):
-        try:
-            inspect_instance(database, record, instance)
-        except (SupplyError, OSError):
-            continue
-        return commit_activation(database, record, instance, snapshot.snapshot_id)
+        with ExitStack() as resources:
+            try:
+                handle = resources.enter_context(
+                    acquire_install(database, supply_id, instance.install_id)
+                )
+            except (SupplyError, OSError):
+                continue
+            return commit_activation(
+                database, handle.record, handle.instance, snapshot.snapshot_id
+            )
     raise SupplyError("install_unavailable")
 
 
@@ -110,7 +100,7 @@ def doctor_supply(database: Path, snapshot_reference: str) -> DoctorReport:
             d5 = record.manifest.d5
             try:
                 match_snapshot(snapshot, record.manifest.pi_version)
-                _platform(record.manifest)
+                check_platform(record.manifest)
             except SupplyError as error:
                 blockers.append(error.reason)
         for instance in record.installs:
@@ -144,6 +134,11 @@ def doctor_supply(database: Path, snapshot_reference: str) -> DoctorReport:
                 )
             if instance.install_id in acceptance:
                 protection.append("latest_install_check")
+            observation = probe_install(database, record.supply_id, instance.install_id)
+            if observation.state == "in_flight":
+                protection.append("in_flight")
+            elif observation.state == "unknown":
+                protection.append("protection_unknown")
             diagnoses.append(
                 InstanceDiagnosis(
                     record.supply_id,
@@ -151,6 +146,8 @@ def doctor_supply(database: Path, snapshot_reference: str) -> DoctorReport:
                     reason,
                     present,
                     tuple(protection),
+                    observation.state,
+                    observation.reason,
                 )
             )
     present_count = sum(item.present is True for item in diagnoses)
