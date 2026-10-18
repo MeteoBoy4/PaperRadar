@@ -276,6 +276,7 @@ def test_rebuild_refuses_frozen_toolchain_lock_and_tree_drift(
             env: dict[str, str],
             timeout: int,
             limit: int,
+            pass_fds: tuple[int, ...] = (),
         ) -> bytes:
             result = super().run(argv, cwd=cwd, env=env, timeout=timeout, limit=limit)
             if argv[-1] == "--version" and (

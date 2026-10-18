@@ -9,7 +9,7 @@ import shutil
 import tempfile
 import uuid
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path, PurePosixPath
@@ -56,6 +56,9 @@ from paper_radar.pi_supply.models import (
     SupplyRequest,
     VerificationResult,
 )
+from paper_radar.pi_supply.protection import acquire_install, publication_protection
+from paper_radar.pi_supply.protection import check_platform as _platform
+from paper_radar.pi_supply.protection import check_root_marker as _check_root_marker
 from paper_radar.pi_supply.repository import (
     append_check,
     append_rebuild_failure,
@@ -110,20 +113,14 @@ def show_supply(database: Path, supply_id: str) -> SupplyRecord:
     raise SupplyError("supply_not_found")
 
 
-def _platform(manifest: SupplyManifest) -> None:
-    try:
-        libc_info = os.confstr("CS_GNU_LIBC_VERSION") or ""
-    except (AttributeError, OSError, ValueError):
-        raise SupplyError("platform_mismatch") from None
-    if (
-        platform.system() != "Linux"
-        or platform.machine() != manifest.platform.arch
-        or libc_info != f"{manifest.platform.libc} {manifest.libc_version}"
-    ):
-        raise SupplyError("platform_mismatch")
-
-
-def _inspect(tree: Path, work: Path, manifest: SupplyManifest, process: Runner) -> None:
+def _inspect(
+    tree: Path,
+    work: Path,
+    manifest: SupplyManifest,
+    process: Runner,
+    *,
+    pass_fds: tuple[int, ...] = (),
+) -> None:
     if tree_hash(tree) != manifest.expected_tree:
         raise SupplyError("tree_mismatch")
     node, npm, pi = (
@@ -151,7 +148,12 @@ def _inspect(tree: Path, work: Path, manifest: SupplyManifest, process: Runner) 
     for argv, expected, reason in probes:
         if (
             process.run(
-                argv, cwd=work / "cwd", env=env, timeout=240, limit=OUTPUT_LIMIT
+                argv,
+                cwd=work / "cwd",
+                env=env,
+                timeout=240,
+                limit=OUTPUT_LIMIT,
+                pass_fds=pass_fds,
             ).strip()
             != expected.encode()
         ):
@@ -162,6 +164,7 @@ def _inspect(tree: Path, work: Path, manifest: SupplyManifest, process: Runner) 
         env=env,
         timeout=240,
         limit=OUTPUT_LIMIT,
+        pass_fds=pass_fds,
     )
     if any((work / "sessions").iterdir()) or tree_hash(tree) != manifest.expected_tree:
         raise SupplyError("startup_side_effect")
@@ -175,29 +178,35 @@ def verify_supply(
     _platform(record.manifest)
     results = []
     for instance in record.installs:
-        reason: SupplyReason | None = None
-        try:
-            root = instance.path.parent.parent
-            _check_root_marker(database, root, instance.root_id)
-            no_symlink_components(instance.path)
-            with tempfile.TemporaryDirectory(prefix="paperradar-pi-verify-") as work:
-                _inspect(
-                    instance.path,
-                    Path(work),
-                    record.manifest,
-                    runner or ProcessRunner(),
+        with ExitStack() as resources:
+            reason: SupplyReason | None = None
+            try:
+                handle = resources.enter_context(
+                    acquire_install(database, supply_id, instance.install_id)
                 )
-        except SupplyError as error:
-            reason = error.reason
-        except (OSError, ValueError):
-            reason = "verify_failed"
-        except KeyboardInterrupt:
-            append_check(database, instance.install_id, "operation_interrupted")
-            raise
-        append_check(database, instance.install_id, reason)
-        results.append(
-            VerificationResult(instance.install_id, reason is None, reason or "passed")
-        )
+                work = resources.enter_context(
+                    tempfile.TemporaryDirectory(prefix="paperradar-pi-verify-")
+                )
+                _inspect(
+                    handle.instance.path,
+                    Path(work),
+                    handle.record.manifest,
+                    runner or ProcessRunner(),
+                    pass_fds=handle.pass_fds,
+                )
+            except SupplyError as error:
+                reason = error.reason
+            except (OSError, ValueError):
+                reason = "verify_failed"
+            except KeyboardInterrupt:
+                append_check(database, instance.install_id, "operation_interrupted")
+                raise
+            append_check(database, instance.install_id, reason)
+            results.append(
+                VerificationResult(
+                    instance.install_id, reason is None, reason or "passed"
+                )
+            )
     return tuple(results)
 
 
@@ -207,10 +216,8 @@ def available_installs(database: Path, supply_id: str) -> tuple[InstallInstance,
     available = []
     for instance in record.installs:
         try:
-            _check_root_marker(database, instance.path.parent.parent, instance.root_id)
-            no_symlink_components(instance.path)
-            if tree_hash(instance.path) == record.manifest.expected_tree:
-                available.append(instance)
+            with acquire_install(database, supply_id, instance.install_id) as handle:
+                available.append(handle.instance)
         except (SupplyError, OSError):
             continue
     return tuple(
@@ -424,19 +431,6 @@ def _cleanup_staging(path: Path) -> None:
         shutil.rmtree(path)
 
 
-def _check_root_marker(database: Path, root: Path, root_id: str) -> None:
-    no_symlink_components(root)
-    marker = root / ".paper-radar-install-root"
-    if marker.is_symlink():
-        raise SupplyError("root_foreign")
-    with database_engine(database) as engine, engine.connect() as connection:
-        owner = connection.execute(
-            select(tables.database_identity.c.database_id)
-        ).scalar_one()
-    if object_bytes(_read_small(marker)) != {"database_id": owner, "root_id": root_id}:
-        raise SupplyError("root_foreign")
-
-
 def _publish_tree(
     root: Path, manifest: SupplyManifest, tree: Path, install_id: str
 ) -> Path:
@@ -485,9 +479,13 @@ def _publish(
             if record.manifest.canonical_bytes != manifest.canonical_bytes:
                 raise SupplyError("concurrent_supply_conflict")
             existing = record.installs[0]
-            if tree_hash(existing.path) != manifest.expected_tree:
-                raise SupplyError("concurrent_tree_conflict")
-            return PrepareResult(record.supply_id, existing.install_id, True)
+            try:
+                with acquire_install(database, record.supply_id, existing.install_id):
+                    return PrepareResult(record.supply_id, existing.install_id, True)
+            except SupplyError as error:
+                if error.reason == "tree_mismatch":
+                    raise SupplyError("concurrent_tree_conflict") from None
+                raise
         pending = root / f".pending-{manifest.material_key}.json"
         install_id = uuid.uuid4().hex
         if pending.exists() or pending.is_symlink():
@@ -512,8 +510,9 @@ def _publish(
                 output.flush()
                 os.fsync(output.fileno())
             fsync_directory(root)
-        _publish_tree(root, manifest, tree, install_id)
-        commit_supply(database, manifest, materials, root_id, install_id)
+        with publication_protection(database, root, root_id, install_id):
+            _publish_tree(root, manifest, tree, install_id)
+            commit_supply(database, manifest, materials, root_id, install_id)
         pending.unlink()
         fsync_directory(root)
         return PrepareResult(manifest.supply_id, install_id)
@@ -556,10 +555,11 @@ def _publish_rebuild(
                 output.flush()
                 os.fsync(output.fileno())
             fsync_directory(root)
-        target = _publish_tree(root, manifest, tree, install_id)
-        with tempfile.TemporaryDirectory(prefix="paperradar-pi-rebuild-") as work:
-            _inspect(target, Path(work), manifest, process)
-        commit_install(database, manifest, root_id, install_id)
+        with publication_protection(database, root, root_id, install_id) as pass_fds:
+            target = _publish_tree(root, manifest, tree, install_id)
+            with tempfile.TemporaryDirectory(prefix="paperradar-pi-rebuild-") as work:
+                _inspect(target, Path(work), manifest, process, pass_fds=pass_fds)
+            commit_install(database, manifest, root_id, install_id)
         residuals = False
         try:
             pending.unlink()

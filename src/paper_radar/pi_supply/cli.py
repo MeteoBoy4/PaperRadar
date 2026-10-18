@@ -424,7 +424,9 @@ def doctor_command(
     for item in report.instances:
         typer.echo(
             f"历史现场 install_id={item.install_id} reason={item.reason} "
-            f"present={item.present} protection={','.join(item.protection) or '无'}"
+            f"present={item.present} protection={','.join(item.protection) or '无'} "
+            f"protection_state={item.protection_state} "
+            f"protection_reason={item.protection_reason or '无'}"
         )
     typer.echo(
         "RPC、真实模型/凭据、参数映射、生产隔离、校准与自动精读未验证："

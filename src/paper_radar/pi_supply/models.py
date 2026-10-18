@@ -249,6 +249,8 @@ class InstanceDiagnosis:
     reason: SupplyReason | Literal["passed"]
     present: bool | None
     protection: tuple[str, ...]
+    protection_state: Literal["in_flight", "idle", "unknown"] = "unknown"
+    protection_reason: SupplyReason | None = None
 
 
 @dataclass(frozen=True)
@@ -271,7 +273,6 @@ class DoctorReport:
         "production_isolation",
         "calibration",
         "automatic_read",
-        "in_flight_protection",
     )
 
 

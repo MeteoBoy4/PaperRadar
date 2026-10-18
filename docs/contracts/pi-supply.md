@@ -128,6 +128,7 @@ executable 为任一 x 位的布尔值，目录也计；链接目标保留原文
 
 ```text
 <install-root>/.paper-radar-install-root       # 本库稳定随机身份与随机根身份
+<install-root>/.locks/<install_id>.lock        # 树外持久锁，永不清理
 <install-root>/.staging-<随机>/tree/{node,app} # 发布树
 <install-root>/.staging-<随机>/work/           # 本次私有临时环境，发布树外
 <install-root>/<supply_id>/<install_id>/       # 只读完整实例
@@ -290,7 +291,7 @@ uv run --offline --locked paper-radar doctor --scope pi-supply \
 D5 decision 与 basis 原文只读显示，不推断 minor/major 或校准兼容。
 库级保留查询按最新激活事件向前去重，保护当前和最近三个不同旧 install_id；
 同供给不同实例分别计数，同实例反复激活不扩窗。叠加已实施 scope 最近通过对象，
-本票仅有 install_check，RPC 与在途共享锁保护如实未验证；不伪造记录或预建清理表。
+当前仅有 install_check，RPC 如实未验证；在途保护由下述真实共享锁观察，不伪造记录或预建清理表。
 未激活但现场存在的已登记完整树也计入实际占用，首次部署不要求补齐三个旧实例。
 `execution.retention_protection(records, history)` 是后续锁/清理共用的纯查询；
 `selection.match_snapshot` 与 `execution.inspect_instance` 分别提供全部槽匹配和现场核验边界。
@@ -302,3 +303,38 @@ D5 decision 与 basis 原文只读显示，不推断 minor/major 或校准兼容
 新根激活后旧根可永久缺失，历史诊断仍披露缺项。
 恢复活动副本若共用原根，旧副本退役前不得执行后续 gc execute；
 共享锁只保护在途进程，不能识别另一个空闲副本的 current。
+
+## 安装使用保护与回收互斥
+
+公共服务 `use_install(database, snapshot_reference)` 返回上下文管理器。
+先共享锁、重新读取登记及当前选择、比对调用方快照全部已选槽，再完整核对冻结树；
+选择在领取过程中变化给 `selection_changed`，调用方须重新明确领取。
+句柄 `InstallUse` 固定 `record/instance/supply_id/install_id/node/npm/pi/pass_fds`，
+入口均为已核验绝对路径，退出后不得再使用句柄或 fd；在上下文中切换选择不会改变旧入口。
+`acquire_install(database, supply_id, install_id)` 给 verify/activate 等明确实例消费者
+同一共享保护与可用性复核，不依赖过去激活时的配置来代替执行器自己的快照。
+
+锁文件位于 `<install-root>/.locks/<install_id>.lock`，不进入树身份或任何删除候选，
+只由显式发布/执行路径安全初始化。共享持有期间的每次真实程序检查都传递
+`Runner.run(..., pass_fds=(fd,))`，`ProcessRunner` 将它原样交给 `Popen`。
+只 close，不显式 LOCK_UN；父正常退出或 SIGKILL 后子仍持 fd 就仍受保护。
+最后持有者退出才释放，不使用 PID/TTL 或业务 lease。详见
+[ADR-0029](../adr/0029-protect-installations-through-inherited-flock.md)。
+
+`probe_install(database, supply_id, install_id)` 只读返回
+`ProtectionObservation(state, reason)`：`in_flight` 表示真实排他竞争，`idle` 只代表
+本次独立探测瞬间无人持有，`unknown` 表示无法安全确认，须保守保护。
+doctor 不创建目录/锁、不写事实；逐实例显示 protection_state/protection_reason，
+真实持有追加 `in_flight` 理由，无法确认追加 `protection_unknown`。已有保留窗口与
+install_check 保护独立叠加，超过四棵仍报告超限，绝不自动删除。
+
+`exclusive_install(database, supply_id, install_id)` 给后续 GC 非阻塞排他上下文；
+竞争给 `install_busy`，缺失或不安全锁给 `protection_unknown`。
+取得后仍须持锁完成复核及移出可用集合，不得把探测过的 idle 当成未来执行许可。
+`handle.recheck(database) -> str` 重读登记/归属/安全位置并返回实际 tree-v1；
+它允许安全坏树，后续 GC 必须与计划实际 hash 比对。共享执行则严格要求冻结预期树。
+本票不新增退役状态、清理表或删除动作。所有失败先关闭本次 fd 再返回受控错误，
+不回显底层异常、子进程输出、环境或秘密，不提供强制绕过参数。
+
+只支持契约既定本地文件系统；恢复活动副本共用原根时旧副本退役前不得 gc execute。
+锁身份不进入清单、六投影、校准基线、预算或门禁，也不声称生产 OS 隔离。

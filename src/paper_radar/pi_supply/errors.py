@@ -6,6 +6,9 @@ SupplyReason = Literal[
     "export_conflict",
     "export_evidence_collision",
     "export_failed",
+    "install_busy",
+    "protection_unknown",
+    "selection_changed",
     "adapter_versions_mixed",
     "selection_version_mismatch",
     "install_unavailable",
@@ -77,6 +80,9 @@ GUIDANCE: dict[SupplyReason, str] = {
     "export_failed": (
         "材料导出未完成；请检查安全文件能力、目录权限及空间后重试，同字节文件会跳过。"
     ),
+    "install_busy": "安装正被保护或清理占用；请稍后重试，不会绕过实例锁。",
+    "protection_unknown": "无法安全确认安装保护；请检查原根与锁文件，保守拒绝清理。",
+    "selection_changed": "取得安装时当前选择已改变；请使用明确快照重新取得句柄。",
     "adapter_versions_mixed": (
         "槽版本不一致，当前无任何可激活供给；请显式选择全部槽版本一致的快照。"
     ),
