@@ -4,14 +4,18 @@ from datetime import datetime
 from typing import Literal
 
 from paper_radar.pi_supply.cleanup_models import ProtectionReason
-from paper_radar.pi_supply.models import Activation, SupplyRecord
+from paper_radar.pi_supply.models import Activation, RetentionProtection, SupplyRecord
+
+_SCOPE_REASONS: tuple[tuple[str, ProtectionReason], ...] = (
+    ("install_check", "latest_install_check"),
+    ("rpc_compatibility", "latest_rpc_compatibility"),
+)
 
 
-def protection_reasons(
+def _retention_facts(
     records: tuple[SupplyRecord, ...],
     history: tuple[Activation, ...],
-    observations: dict[str, Literal["idle", "in_flight", "unknown"]],
-) -> dict[str, tuple[ProtectionReason, ...]]:
+) -> tuple[tuple[str, ...], dict[str, str]]:
     retained = tuple(dict.fromkeys(event.install_id for event in reversed(history)))[:4]
     latest: dict[str, tuple[datetime, int, str]] = {}
     for record in records:
@@ -25,6 +29,26 @@ def protection_reasons(
                     )
                     if check.scope not in latest or candidate > latest[check.scope]:
                         latest[check.scope] = candidate
+    return retained, {scope: candidate[2] for scope, candidate in latest.items()}
+
+
+def retention_protection(
+    records: tuple[SupplyRecord, ...], history: tuple[Activation, ...]
+) -> RetentionProtection:
+    """当前及最近三个不同旧实例,叠加各已知 scope 最近通过对象。"""
+    retained, latest = _retention_facts(records, history)
+    acceptance = tuple(
+        dict.fromkeys(latest[scope] for scope, _ in _SCOPE_REASONS if scope in latest)
+    )
+    return RetentionProtection(retained, acceptance)
+
+
+def protection_reasons(
+    records: tuple[SupplyRecord, ...],
+    history: tuple[Activation, ...],
+    observations: dict[str, Literal["idle", "in_flight", "unknown"]],
+) -> dict[str, tuple[ProtectionReason, ...]]:
+    retained, latest = _retention_facts(records, history)
     result = {}
     for record in records:
         for instance in record.installs:
@@ -36,12 +60,8 @@ def protection_reasons(
                     if history and identity == history[-1].install_id
                     else "recent_activation"
                 )
-            scope_reasons: tuple[tuple[str, ProtectionReason], ...] = (
-                ("install_check", "latest_install_check"),
-                ("rpc_compatibility", "latest_rpc_compatibility"),
-            )
-            for scope, reason in scope_reasons:
-                if scope in latest and latest[scope][2] == identity:
+            for scope, reason in _SCOPE_REASONS:
+                if latest.get(scope) == identity:
                     reasons.append(reason)
             observation = observations.get(identity)
             if observation == "in_flight":

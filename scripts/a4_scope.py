@@ -64,7 +64,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_pi_supply_export_history.py": 1,
     "tests/test_pi_supply_history.py": 10,
     "tests/test_pi_supply_process.py": 3,
-    "tests/test_pi_supply_protection.py": 15,
+    "tests/test_pi_supply_protection.py": 16,
     "tests/test_pi_supply_rebuild.py": 20,
     "tests/test_pi_supply_rebuild_cli.py": 8,
     "tests/test_pi_supply_rebuild_history.py": 5,
@@ -102,7 +102,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_cleanup.py",
-        "2f5f7409304057ac3026b5d7910726784cdaee3fb9cd2f2e82e40fc009c77170",
+        "2920dcf0a746377d97d50df8474be58b25223c1524531c9558369155d7936c50",
     ),
     (
         "tests/test_pi_supply_cleanup_cli.py",
@@ -146,7 +146,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_protection.py",
-        "5a26a0acb9676f87038ef0f505bfc7163ffa7e8bc99a54d45de98815e23a88c3",
+        "1af4c0f43138492d376de360a981b32482081790a081082ed8892de048a0b334",
     ),
     (
         "tests/test_pi_supply_rebuild.py",
@@ -236,7 +236,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/pi_supply/execution.py",
-        "707842f24159e257eaf3c7490d2302f40d56d86f30e00a88275efdb2a2947869",
+        "17906a691ababa7127074bc3c05ea87a12713965975a18d51c51da92a362214d",
     ),
     (
         "src/paper_radar/pi_supply/export.py",
@@ -264,7 +264,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/pi_supply/retention.py",
-        "3fdbcd0769d0a9e8131f1cd40f29cf8a0e67efd9f77a3acec287199c28bf919f",
+        "ef7d2b59419d15865be23903209666b242397b5c68bb10201266cb205c0f79e0",
     ),
     (
         "src/paper_radar/pi_supply/selection.py",
@@ -272,7 +272,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/pi_supply/service.py",
-        "c3478e191d76396eea061e21c8590cb1283482c3718648f713f142464c08a467",
+        "1d241e444c1c99b163d980cec8e270a3c04bd7b7dbe07a7dd77302af122a4749",
     ),
     (
         "src/paper_radar/pi_supply/source_policy.py",

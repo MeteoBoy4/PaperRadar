@@ -145,7 +145,7 @@
 | 5 并发同请求 | #38：唯一冻结身份先提交胜，后到者树一致才幂等指向、清理自有 staging，无第二实例 |
 | 6 固定安装策略 | #38：install-policy-v1 进入清单，无自由扩展参数 |
 | 7 trash 残留 | #42/#43：已退役待删单列，新显式计划回收；未知 staging/trash 始终人工 |
-| 8 doctor scope/退出/D5 | #40：固定 pi-supply、未知/缺项退出2、全通过0，D5 原文/摘要只展示 |
+| 8 doctor scope/退出/D5 | #40：固定 pi-supply、未知/缺项退出2、当前锁缺失 protection_unknown 退出2，历史 unknown 独立披露；protection 公共服务/CLI 回归；全通过0，D5 原文/摘要只展示 |
 | 9 平台作用域 | #38–44：运行时 arch/libc 比对，仅 prepare/rebuild/activate/verify；list/show/export/备份恢复无平台前置 |
 | 10 空间预检/占用 | #38/#42：下载前 statvfs 失败前移，真实 allocated/logical 遍历、回收估计不进身份 |
 | 11 固定导出名 | #44：package.json、package-lock.json、release.json、supply-manifest.json、integrity-supplements.json、SHASUMS256.txt、d5-evidence/<sha前16>.bin |

@@ -62,7 +62,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。根内任何路径组件符号�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 a404_pi_cleanup_plans，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 a405_pi_cleanup_execution，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -192,18 +192,19 @@ backup verify 一样只给批次 ID、清单 SHA-256 及按 kind 汇总，不逐
 同次离线存储/恢复范围由 [A3 独立结论](../verification/offline-evidence.md#a3-独立结论)
 记录；它绑定实际运行和固定回执，不替代 NAS 验收，也不开放业务任务或自动精读门禁。
 
-## Pi 供给事实与 a302 旧批次
+## Pi 供给事实与旧 revision 批次
 
-当前 head `a404_pi_cleanup_plans` 将供给清单、官方/派生/补充校验材料、D5 证据与引用、
+当前 head `a405_pi_cleanup_execution` 将供给清单、官方/派生/补充校验材料、D5 证据与引用、
 安装根归属、安装实例、scope 为 install_check 的历史事实、重建失败、
-激活事件及单库唯一当前选择一并存入数据库。
+激活事件及单库唯一当前选择、不可变清理计划与追加的清理执行进展一并存入数据库。
 备份 format 仍为 1，不增清单字段、blob kind 或安装树副本。
 create/verify/restore 均经供给公共查询完整语义回放，材料摘要、供给身份、派生规则与 D5
 闭包（含事件对供给/实例/完整快照/根的交叉引用与唯一选择）损坏返回 `supply_invalid`；
 若先违反 SQLite 外键完整性则返回 `database_invalid`；不读取现场树，不启动 Node/Pi，不联网，不激活。
 
-版本门槛不接受已知祖先：a302 批次以当前程序 verify/restore 返回 unsupported_revision。
-保留该批次，checkout 匹配 A3 程序先 verify/restore，切回当前程序后显式 db upgrade，
+版本门槛不接受已知祖先：a302 或 `a404_pi_cleanup_plans` 批次以当前程序 verify/restore
+返回 unsupported_revision。保留原批次，checkout 匹配该 revision 的程序先 verify/restore
+（a302 对应匹配 A3 程序），切回当前程序后对恢复库显式 db upgrade，
 随后新做当前版本备份。原始配置/制品身份与原字节保持不变。
 供给历史路径只是本机审计事实；恢复副本可以离线查询，不表示原安装仍存在。
 同机原实例完好且 doctor 现场核验通过可继续使用，不增加恢复标记；

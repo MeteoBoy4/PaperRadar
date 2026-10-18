@@ -2,7 +2,6 @@
 
 import stat
 from contextlib import ExitStack
-from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
@@ -25,6 +24,9 @@ from paper_radar.pi_supply.protection import (
 )
 from paper_radar.pi_supply.repository import commit_activation, read_state
 from paper_radar.pi_supply.retention import protection_reasons
+from paper_radar.pi_supply.retention import (
+    retention_protection as _retention_protection,
+)
 from paper_radar.pi_supply.selection import (
     load_snapshot,
     match_snapshot,
@@ -65,17 +67,7 @@ def retention_protection(
     records: tuple[SupplyRecord, ...], history: tuple[Activation, ...]
 ) -> RetentionProtection:
     """库级纯查询:当前加最近三个不同旧实例,叠加已实施scope最近通过对象。"""
-    retained = tuple(dict.fromkeys(item.install_id for item in reversed(history)))[:4]
-    # 每个已实施scope最近一次通过的实例。RPC无事实,不虚造保护。
-    checks = [
-        (datetime.fromisoformat(check.created_at), check.check_id, instance.install_id)
-        for record in records
-        for instance in record.installs
-        for check in instance.checks
-        if check.passed
-    ]
-    acceptance = (max(checks)[2],) if checks else ()
-    return RetentionProtection(retained, acceptance)
+    return _retention_protection(records, history)
 
 
 def doctor_supply(database: Path, snapshot_reference: str) -> DoctorReport:
@@ -136,6 +128,12 @@ def doctor_supply(database: Path, snapshot_reference: str) -> DoctorReport:
                 blockers.append(reason)
             protection = protections[instance.install_id]
             observation = observations[instance.install_id]
+            if (
+                current is not None
+                and instance.install_id == current.install_id
+                and observation.state == "unknown"
+            ):
+                blockers.append("protection_unknown")
             diagnoses.append(
                 InstanceDiagnosis(
                     record.supply_id,
