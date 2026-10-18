@@ -52,14 +52,14 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_pi_supply_activation.py": 12,
     "tests/test_pi_supply_activation_cli.py": 7,
     "tests/test_pi_supply_activation_history.py": 7,
-    "tests/test_pi_supply_boundaries.py": 21,
+    "tests/test_pi_supply_boundaries.py": 24,
     "tests/test_pi_supply_cleanup.py": 9,
     "tests/test_pi_supply_cleanup_cli.py": 3,
-    "tests/test_pi_supply_cleanup_execute.py": 24,
+    "tests/test_pi_supply_cleanup_execute.py": 32,
     "tests/test_pi_supply_cleanup_execute_history.py": 6,
     "tests/test_pi_supply_cleanup_history.py": 11,
     "tests/test_pi_supply_cleanup_unreadable.py": 1,
-    "tests/test_pi_supply_cli.py": 10,
+    "tests/test_pi_supply_cli.py": 13,
     "tests/test_pi_supply_export.py": 24,
     "tests/test_pi_supply_export_history.py": 1,
     "tests/test_pi_supply_history.py": 10,
@@ -98,7 +98,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_boundaries.py",
-        "73fb95885925b3d502595339c008f1341da3f427e1503b112a7f3ebe1e9a8dc2",
+        "e2cf8fb4c73fdb00364136352f63cf484b10eddeae2dac0cb5b343321786c1d0",
     ),
     (
         "tests/test_pi_supply_cleanup.py",
@@ -110,7 +110,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_cleanup_execute.py",
-        "66b7c035a57a62040a5fc2d053a2750aa9eee5ec83fe7f0dac3d37403845fe1b",
+        "7b4cdc43b843dd0843d88d532302af45117884e2765d7e7cb9e677050c2028ab",
     ),
     (
         "tests/test_pi_supply_cleanup_execute_history.py",
@@ -126,7 +126,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_cli.py",
-        "2764d777eb2bcf7947efa3eeab0cd06a10b29e838eb45eed58a0bdf84d517aaa",
+        "98c3221db57e475be21f9569a8fbee9710fea66693439420d68228719d1892db",
     ),
     (
         "tests/test_pi_supply_export.py",
@@ -208,7 +208,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/pi_supply/cleanup.py",
-        "027fab941d5a2b858cb1aafe66fcf826408d9303d8ec94f3e9390f25eb8e7fb8",
+        "1ddbb2730d089ffd95cf867b2321f5f5883c030b23807b6d19a0413282de8170",
     ),
     (
         "src/paper_radar/pi_supply/cleanup_delete.py",
@@ -216,19 +216,19 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/pi_supply/cleanup_execute.py",
-        "4205e391d87ec442abb9520fc4527981d7e55d2d98795f66ec89fc741a153aaf",
+        "c5a26ecd0e5646aa99f12add02f4e7a36447511a539a25ea82799c8e815355f6",
     ),
     (
         "src/paper_radar/pi_supply/cleanup_history.py",
-        "338188c97db0355f794bc91c18d5002ece95945db9461375f40aa5ebd7508f47",
+        "302e864f0c51a8d343282f1ac566995e007aab6cce0191fed1d239f9c057240e",
     ),
     (
         "src/paper_radar/pi_supply/cleanup_models.py",
-        "9ecd5026defa653798fc08d21e15249aa0a6d00260ef3647d921e734a4595387",
+        "79d07bb9aea0a0aeb568f050eab1ef261d5db1aec6f44ed283d136f36bdbd392",
     ),
     (
         "src/paper_radar/pi_supply/cli.py",
-        "a72915b625c96ba7ca5e8fc792d58aaad412a46ad5d53c53e3270472c077b8ad",
+        "40e012d487187a2b6828632df0f043dc69a9be84ab66a57744e1f851129cd246",
     ),
     (
         "src/paper_radar/pi_supply/errors.py",
@@ -248,19 +248,19 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/pi_supply/materials.py",
-        "b8e7cfa20d0a18f4d3fcbbe51fd71541fa88d6f6b905c3f83a798fd430c7003b",
+        "51aca4864e1aadfed9b13dc0cf2577adb95816c4f1a460a6302f6aecb5566d8e",
     ),
     (
         "src/paper_radar/pi_supply/models.py",
-        "4f59921fea118597ff946fc77afa73cec5a722e4c77e8da53f1ffaa0807da960",
+        "3c9d16b75ec97f448e743d4dbccb5c1164021a1d13126f039040513f9fd07afd",
     ),
     (
         "src/paper_radar/pi_supply/protection.py",
-        "3ed32eee2610343d10dfc482e48fa859af07781c590ce6d29c3e2d3240b8b570",
+        "515c62247f5bcb989b72a1c2a7a846747ffe5be4f77488adfc237492e9ee436b",
     ),
     (
         "src/paper_radar/pi_supply/repository.py",
-        "45d7d0c878614539a4aa1995790d6bdce5072947947489dc008ab83457007b2e",
+        "8e989a1df579c0892957b8f5fa0f119cf3719874e7a88000a647a43a70ef5464",
     ),
     (
         "src/paper_radar/pi_supply/retention.py",
@@ -272,7 +272,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/pi_supply/service.py",
-        "1d241e444c1c99b163d980cec8e270a3c04bd7b7dbe07a7dd77302af122a4749",
+        "e1d6d8641e334685f5371c62e78f1183100a263749bee2b449886ce008479155",
     ),
     (
         "src/paper_radar/pi_supply/source_policy.py",

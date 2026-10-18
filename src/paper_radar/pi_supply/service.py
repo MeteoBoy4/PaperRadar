@@ -56,9 +56,12 @@ from paper_radar.pi_supply.models import (
     SupplyRequest,
     VerificationResult,
 )
-from paper_radar.pi_supply.protection import acquire_install, publication_protection
-from paper_radar.pi_supply.protection import check_platform as _platform
-from paper_radar.pi_supply.protection import check_root_marker as _check_root_marker
+from paper_radar.pi_supply.protection import (
+    acquire_install,
+    check_platform,
+    check_root_marker,
+    publication_protection,
+)
 from paper_radar.pi_supply.repository import (
     append_check,
     append_rebuild_failure,
@@ -175,7 +178,7 @@ def verify_supply(
 ) -> tuple[VerificationResult, ...]:
     """逐实例完整检查并追加事实;失败不隐藏其他实例的结果。"""
     record = show_supply(database, supply_id)
-    _platform(record.manifest)
+    check_platform(record.manifest)
     results = []
     for instance in record.installs:
         with ExitStack() as resources:
@@ -381,7 +384,11 @@ def _freeze_d5(
         digest = None
         if item.kind == "evidence_file":
             assert item.path is not None
-            raw = _read_small(request_path.parent / item.path)
+            directory = request_path.parent.resolve()
+            evidence_path = (directory / item.path).resolve()
+            if not evidence_path.is_relative_to(directory):
+                raise SupplyError("request_invalid")
+            raw = _read_small(evidence_path)
             digest = sha256(raw)
             materials[f"d5-evidence/{digest}.bin"] = raw
         elif item.kind == "supply_material":
@@ -495,7 +502,7 @@ def _publish(
         _lock(root / ".root.lock"),
         _lock(root / f".prepare-{manifest.material_key}.lock"),
     ):
-        _check_root_marker(database, root, root_id)
+        check_root_marker(database, root, root_id)
         for record in read_records(database):
             if record.manifest.material_key != manifest.material_key:
                 continue
@@ -535,7 +542,7 @@ def _publish_rebuild(
         _lock(database.with_name(database.name + ".pi-supply.lock")),
         _lock(root / ".root.lock"),
     ):
-        _check_root_marker(database, root, root_id)
+        check_root_marker(database, root, root_id)
         pending = root / f".pending-rebuild-{manifest.supply_id}.json"
         install_id = _publication_intent(pending, manifest.supply_id)
         with publication_protection(
@@ -573,7 +580,7 @@ def rebuild_supply(
     result = None
     cleanup_incomplete = False
     try:
-        _platform(manifest)
+        check_platform(manifest)
         proxy = checked_proxy(proxy)
         root = safe_roots(database, install_root, data_root, config_root, material_root)
         database = database.resolve()

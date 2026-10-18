@@ -54,6 +54,10 @@ class RequestEvidence(Frozen):
             valid = self.supply_id is not None and self.path is self.material is None
         if not valid or (self.kind == "evidence_file" and self.check_id is not None):
             raise ValueError("evidence shape")
+        if self.path is not None and (
+            Path(self.path).is_absolute() or ".." in Path(self.path).parts
+        ):
+            raise ValueError("evidence path must be relative within request directory")
         return self
 
 
@@ -197,6 +201,11 @@ class InstallInstance:
     path: Path
     created_at: str
     checks: tuple[InstallCheck, ...]
+
+    @property
+    def root(self) -> Path:
+        """登记实例的安装根,不访问现场且不改变持久化路径。"""
+        return self.path.parent.parent
 
 
 @dataclass(frozen=True)

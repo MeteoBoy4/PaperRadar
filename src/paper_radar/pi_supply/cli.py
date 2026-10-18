@@ -9,6 +9,14 @@ import typer
 from typer.core import TyperCommand, TyperGroup
 
 from paper_radar.pi_supply.cleanup_models import CleanupExecution, CleanupPlan
+from paper_radar.pi_supply.models import Decision
+
+
+def _d5_guidance(decision: Decision) -> None:
+    if decision in {"may_change", "unknown"}:
+        typer.echo(
+            "D5：需要后续相关语义评估；安装检查不代表校准兼容，不自动判定 minor/major。"
+        )
 
 
 @contextmanager
@@ -68,6 +76,19 @@ list/show/export 不检查现场。
 示例：paper-radar pi supply list --database data/paperradar.sqlite3
 """
 )
+PI_HELP = (
+    """管理项目独立 Pi 的本地命令组。
+
+当前用途：supply 管理固定供给；具体操作请查看 paper-radar pi supply --help。
+参数与选项：由 supply 子命令显式指定数据库、快照与根目录。
+副作用：本命令组只分派操作，具体下载、核验或清理由子命令说明。
+"""
+    + COMMON
+    + """
+常见失败：未知命令请查看 paper-radar pi --help。
+示例：paper-radar pi supply --help
+"""
+)
 PREPARE_HELP = (
     """下载、校验、安装并冻结一份 Pi 供给（不激活）。
 
@@ -90,7 +111,7 @@ PREPARE_HELP = (
 )
 
 pi_app = typer.Typer(
-    cls=SupplyGroup, help=GROUP_HELP, no_args_is_help=True, add_completion=False
+    cls=SupplyGroup, help=PI_HELP, no_args_is_help=True, add_completion=False
 )
 supply_app = typer.Typer(
     cls=SupplyGroup, help=GROUP_HELP, no_args_is_help=True, add_completion=False
@@ -174,6 +195,7 @@ def list_command(
                 f"supply_id={record.supply_id} pi={record.manifest.pi_version} "
                 f"instances={len(record.installs)} scope=install_check"
             )
+        typer.echo("以上实例计数为历史登记；未核验现场，不代表当前可用。")
     except SupplyError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(2) from None
@@ -202,6 +224,7 @@ def show_command(
     try:
         record = show_supply(database, supply_id)
         typer.echo(record.manifest.canonical_bytes.decode())
+        _d5_guidance(record.manifest.d5.decision)
         for install in record.installs:
             for check in install.checks:
                 typer.echo(
@@ -421,6 +444,7 @@ def doctor_command(
     )
     if report.d5:
         typer.echo(f"D5原文 decision={report.d5.decision} basis={report.d5.basis}")
+        _d5_guidance(report.d5.decision)
     typer.echo(
         f"保留：当前及最近三旧={len(report.retained_install_ids)}，已有验收保护={len(report.acceptance_install_ids)}，现场树数={report.present_count}，上限=4"
     )
@@ -575,6 +599,8 @@ def _show_execution(execution: CleanupExecution) -> None:
         f"result={'passed' if execution.passed else 'incomplete'}"
     )
     for item in execution.items:
+        if item.phase == "not_run" and item.reason != "not_run":
+            typer.echo("库级前置阻断：该候选未运行，未归因为候选自身失败。")
         typer.echo(
             f"install_id={item.install_id} phase={item.phase} reason={item.reason}"
         )

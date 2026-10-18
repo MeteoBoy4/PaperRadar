@@ -21,7 +21,9 @@ uv run --offline --locked paper-radar pi supply show <完整supply_id> --databas
 request_path、install_root；三个其他实际根为必填 keyword 参数。
 可注入 downloader/runner 仅替换网络和外部程序。真实实现为 HttpDownloader/ProcessRunner。
 请求严格 YAML/JSON：拒绝未知键、重复键、锚点、合并、多文档、非有限数和任意命令/参数；
-整数格式版本严格为 1，布尔不算整数。证据文件相对请求文件解析。
+整数格式版本严格为 1，布尔不算整数。证据文件相对请求文件所在目录解析，
+拒绝绝对路径、任何 `..` 组件和解析后落在该目录外的链接；合法子目录可用。
+这是本次对请求读取边界的补强；既有冻结证据仍按库内原字节回放，不重新读取源路径。
 
 ```json
 {
@@ -47,6 +49,7 @@ request_path、install_root；三个其他实际根为必填 keyword 参数。
 
 D5 三态为 `no_change/may_change/unknown`，依据必填且非空白，上限 16384 字符；
 后两态都需要后续语义评估，不自动决定 minor/major 或开启校准门禁。
+show 与 doctor 遇到这两态明确显示「需要后续相关语义评估」「不代表校准兼容」。
 baseline_supply_id 可空；非空须指向冻结前已有供给，空基线拒绝 no_change。
 证据非空，仅支持以下三种（可用 note 保存非秘密附注，包括 URL）：
 
@@ -128,6 +131,8 @@ executable 为任一 x 位的布尔值，目录也计；链接目标保留原文
 仅支持本地 ext2/3/4、xfs、btrfs、zfs、tmpfs、overlay，按 Linux 实际挂载点识别；不支持 NFS/CIFS。
 mountinfo 路径完整解码三位八进制转义；最长挂载点有多个不同文件系统类型时保守拒绝，不按字串挑选。
 512 MiB 可用空间预检只前移空间不足，不能取代后续校验或保证真实安装空间足够。
+这是下载前的固定粗略门槛，不是 npm 展开量或峰值估计；发布在同文件系统内改名，
+不复制第二份新树。较大的合法归档、npm 包、缓存及并发写入仍可在之后耗尽空间并受控失败。
 
 ```text
 <install-root>/.paper-radar-install-root       # 本库稳定随机身份与随机根身份
@@ -139,6 +144,11 @@ mountinfo 路径完整解码三位八进制转义；最长挂载点有多个不�
 
 首次空根通过 flock 串行认领并与数据库稳定 owner 绑定；他库根、非空无主根拒绝。
 DB旁发布锁→根锁→固定输入锁在写事务外取得，昂贵下载/安装不持写事务。
+协调锁精确位置为 `<database>.pi-supply.lock`、`<install-root>/.root.lock`、
+`<install-root>/.prepare-<material_key>.lock`；rebuild 只取前两个。
+这些空的持久文件只协调发布/认领，不承载供给或业务事实，不属于备份、导出或清理候选，
+不进入供给身份。释放只关闭描述符，正常运行不 unlink，避免仍持旧 inode 的进程
+与新建同名锁失去互斥；不能把手工删除锁当作解锁方式。
 完整树与发布意图 fsync 后以 Linux renameat2(RENAME_NOREPLACE) 发布，连既有空目录也不覆盖。
 Linux 移动目录时顶层短暂保留写位，发布后撤去并 fsync，之后才能短事务原子登记材料/清单/实例/成功检查。
 根与意图等本机管理文件不进入供给身份；不把 .staging/.pending 或未登记树当可用安装。
@@ -147,7 +157,10 @@ Linux 移动目录时顶层短暂保留写位，发布后撤去并 fsync，之�
 普通重复 prepare 在再次安装前拒绝并指向 rebuild，即使改 D5 也不能重冻。
 同时开始的相同完整请求先提交者胜；输者比对清单和现场树后返回既有 supply_id/install_id，
 清理自己的 staging，不登记第二实例。相同固定输入得到不同树或 D5 时受控冲突。
-list/show/export 只回查历史，不检查现场，不要求 Node/Pi、网络或受支持平台，不能把历史 passed 当作当前可用。
+list/show/export 只回查历史，不检查现场，不要求 Node/Pi、网络或受支持的 Pi 部署平台；
+export 另需下述安全文件能力。list 明示计数为历史登记、未核验现场，
+show 同样披露未核验现场；不能把历史 passed 当作当前可用。声称当前可用的 doctor、
+activate 与使用句柄必须现场核验。此区分落实父票后续对历史查询和隔离恢复的要求。
 检查 scope 当前唯一为 install_check；不导入任意用户声明成功记录。
 
 数据库 head 为 a405_pi_cleanup_execution；既有 migration 原字节保持，
@@ -194,8 +207,9 @@ supply_material/supply_record 只保留清单中的引用，不递归导出别�
 导出不检查 Pi 部署的 OS/arch/libc，但安全发布需要 Python/文件系统支持目录句柄及 dir_fd、
 O_DIRECTORY/O_NOFOLLOW/O_NONBLOCK、普通文件硬链接不覆盖发布与 fsync；缺少能力受控失败，
 不退回可被路径替换的普通路径写入。list/show 与库内历史读取不需要这些导出写入能力。
-原生 Windows 导出未验证；当前缺少上述 Python 安全文件能力时会受控失败，
-不宣称任意操作系统或文件系统均能完成安全导出。
+2026-10-18 用户裁决：本次 A4 接受上述必要安全文件能力边界，保持能力不足时的安全拒绝。
+原生 Windows 安全导出另由 [#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 交付与验收，
+本次未实现/未验证 Windows 后端；#46 不阻塞已裁定的本次平台范围，#36 仍保持 OPEN。
 这不是跨文件事务：运行中 I/O 故障或强杀可留下部分完整项；保留后重试补齐，不删除用户文件。
 `export_conflict/export_failed` 均给中文原因和下一步；CLI 成功0、失败2、中断130，配额消耗0。
 导出是数据库的版本控制投影，不作为恢复、导入或修复数据库的权威。
@@ -425,6 +439,11 @@ CLI `gc --execute <plan-id> --database <db>` 不接受另外的根路径；与 `
 
 每次执行追加一个 run_id（32位小写十六进制）、plan_id、created_at，以及按 event_id 排序的
 逐项进展：`not_run → retired → moved → completed`，失败追加 `failed` 与受控原因。
+单项核验失败只归因于实际失败候选。库级前置未通过时，同一短事务为所有尚未启动候选
+追加 `not_run` 阻断事件，reason 限定为 `cleanup_facts_changed/database_unavailable/operation_interrupted/cleanup_failed`；
+CLI 明示库级阻断、候选未运行。此终止批次必须整组同原因，不接受部分追加或后续继续运行。
+该语义使用既有 a405 表与受控字段，不改变 plan 格式/原字节或旧事件；旧历史照常回放。
+退役提交之后中断按库内实际最后进展记录失败，不回退为 not_run；已 completed/failed 不再追加失败。
 强杀可能仅留 `not_run/retired/moved`，如实表示未完成，不能报告成功。
 `CleanupExecution.events` 保留全部事件；`items` 投影每个候选最新状态，`passed` 只表示本计划全部候选完成，
 不表示未知人工残留也已删除。候选为空不会删除任何对象。无模型、预算、配置或业务制品变化。

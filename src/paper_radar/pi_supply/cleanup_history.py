@@ -10,6 +10,7 @@ from sqlalchemy import Connection, select
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.pi_supply import tables
 from paper_radar.pi_supply.cleanup_models import (
+    PREFLIGHT_REASONS,
     CleanupExecution,
     CleanupPlan,
     CleanupProgress,
@@ -102,7 +103,7 @@ def validate_plan_history(
                 if (
                     item.supply_id != record.supply_id
                     or item.root_id != instance.root_id
-                    or item.root_path != str(instance.path.parent.parent)
+                    or item.root_path != str(instance.root)
                     or item.relative_path != relative
                     or item.expected_tree_hash != record.manifest.expected_tree
                 ):
@@ -135,14 +136,18 @@ def validate_plan_history(
         raise SupplyError("cleanup_plan_invalid") from None
 
 
+def _fact_rows(plan: CleanupPlan, name: str) -> list[dict[str, JsonValue]]:
+    values = plan.facts[name]
+    if not isinstance(values, list) or any(not isinstance(v, dict) for v in values):
+        raise ValueError
+    return [v for v in values if isinstance(v, dict)]
+
+
 def _historical_reasons(
     plan: CleanupPlan, records: tuple[SupplyRecord, ...]
 ) -> dict[str, tuple[ProtectionReason, ...]]:
     def rows(name: str) -> list[dict[str, JsonValue]]:
-        values = plan.facts[name]
-        if not isinstance(values, list) or any(not isinstance(v, dict) for v in values):
-            raise ValueError
-        return [v for v in values if isinstance(v, dict)]
+        return _fact_rows(plan, name)
 
     events = sorted(
         rows(tables.activations.name), key=lambda v: int(str(v["activation_id"]))
@@ -210,10 +215,7 @@ def _historical_reasons(
 
 def _validate_layout(plan: CleanupPlan) -> None:
     def rows(name: str) -> list[dict[str, JsonValue]]:
-        value = plan.facts[name]
-        if not isinstance(value, list) or any(not isinstance(v, dict) for v in value):
-            raise ValueError
-        return [v for v in value if isinstance(v, dict)]
+        return _fact_rows(plan, name)
 
     roots = {str(r["root_id"]): str(r["path"]) for r in rows(tables.roots.name)}
     retired = {str(r["install_id"]) for r in rows(tables.retirements.name)}
@@ -324,6 +326,7 @@ def validate_execution_history(
             ):
                 raise ValueError
             state: dict[str, str] = {}
+            blocked: dict[str, str] = {}
             candidates = {item.install_id: item for item in plan.candidates}
             for event in progress:
                 moment = datetime.fromisoformat(event.created_at)
@@ -334,6 +337,18 @@ def validate_execution_history(
                 ):
                     raise ValueError
                 previous = state.get(event.install_id)
+                if event.install_id in blocked:
+                    raise ValueError
+                if previous == "not_run" and event.phase == "not_run":
+                    if (
+                        event.reason not in PREFLIGHT_REASONS
+                        or set(state) != set(candidates)
+                        or any(phase != "not_run" for phase in state.values())
+                    ):
+                        raise ValueError
+                    blocked[event.install_id] = event.reason
+                    created = moment
+                    continue
                 allowed = {
                     None: {"not_run"},
                     "not_run": {"retired", "failed"},
@@ -360,6 +375,12 @@ def validate_execution_history(
                 state[event.install_id] = event.phase
                 created = moment
             if set(state) != set(candidates):
+                raise ValueError
+            if blocked and (
+                set(blocked) != set(candidates)
+                or len(set(blocked.values())) != 1
+                or any(phase != "not_run" for phase in state.values())
+            ):
                 raise ValueError
             result.append(execution)
         return tuple(result)
