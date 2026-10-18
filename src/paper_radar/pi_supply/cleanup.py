@@ -131,10 +131,21 @@ def create_cleanup_plan(
                 "retired_pending" if instance.install_id in retired else "installed"
             )
             path = instance.path
-            if state == "retired_pending" and os.path.lexists(
-                path.parent.parent / ".trash" / instance.install_id
-            ):
-                path = path.parent.parent / ".trash" / instance.install_id
+            collision = False
+            if state == "retired_pending" and safe[instance.root_id]:
+                trash_path = path.parent.parent / ".trash" / instance.install_id
+                if os.path.lexists(trash_path):
+                    collision = os.path.lexists(path)
+                    if collision:
+                        manual.append(
+                            ManualCleanup(
+                                root_id=instance.root_id,
+                                relative_path=f".trash/{instance.install_id}",
+                                reason="unknown_trash",
+                            )
+                        )
+                    else:
+                        path = trash_path
             disposition: Literal["candidate", "protected", "unverifiable", "absent"] = (
                 "unverifiable"
             )
@@ -148,6 +159,9 @@ def create_cleanup_plan(
             if safe[instance.root_id]:
                 try:
                     no_symlink_components(path)
+                    if collision:
+                        present = stat.S_ISDIR(path.lstat().st_mode)
+                        raise SupplyError("publication_conflict")
                     if not os.path.lexists(path):
                         disposition, reason = "absent", "install_unavailable"
                         present = False
@@ -323,13 +337,17 @@ def _manual(
 
 
 def list_cleanup_plans(database: Path) -> tuple[CleanupPlan, ...]:
+    before = _facts(database)
     records = read_state(database)[0]
     with database_engine(database) as engine, engine.connect() as connection:
         connection.exec_driver_sql("BEGIN")
         rows = [
             dict(r) for r in connection.execute(select(tables.cleanup_plans)).mappings()
         ]
-        return validate_plan_history(rows, safety_facts(connection), records)
+        facts = safety_facts(connection)
+        if facts != before:
+            raise SupplyError("cleanup_facts_changed")
+        return validate_plan_history(rows, facts, records)
 
 
 def show_cleanup_plan(database: Path, plan_id: str) -> CleanupPlan:

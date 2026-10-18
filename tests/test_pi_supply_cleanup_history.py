@@ -224,3 +224,51 @@ def test_registered_retired_trash_is_separate_from_unknown_trash(
         ).canonical_bytes
         == pending.canonical_bytes
     )
+
+
+def test_retired_original_and_trash_collision_is_not_a_cleanup_candidate(
+    tmp_path: Path,
+) -> None:
+    import shutil
+
+    from paper_radar.pi_supply import rebuild_supply
+    from tests.pi_supply_support import Run
+
+    source = inputs(tmp_path)
+    first = prepare(tmp_path, source)
+    rebuild_supply(
+        source[0],
+        first.supply_id,
+        tmp_path / "install",
+        data_root=tmp_path / "data",
+        config_root=tmp_path / "config",
+        material_root=tmp_path / "materials",
+        downloader=source[3],
+        runner=Run(),
+    )
+    args = dict(
+        data_root=tmp_path / "data",
+        config_root=tmp_path / "config",
+        material_root=tmp_path / "materials",
+    )
+    original_plan = create_cleanup_plan(source[0], **args)
+    original = next(
+        i
+        for i in show_supply(source[0], first.supply_id).installs
+        if i.install_id == first.install_id
+    ).path
+    with sqlite3.connect(source[0]) as connection:
+        connection.execute(
+            "INSERT INTO pi_install_retirements VALUES (?, ?, ?)",
+            (first.install_id, original_plan.plan_id, "2099-01-01T00:00:00+00:00"),
+        )
+    trash = tmp_path / "install/.trash"
+    trash.mkdir()
+    shutil.copytree(original, trash / first.install_id, symlinks=True)
+    plan = create_cleanup_plan(source[0], **args)
+    assert plan.candidates == ()
+    pending = plan.retired_pending[0]
+    assert pending.reason == "publication_conflict"
+    assert pending.disposition == "unverifiable"
+    assert plan.manual[0].relative_path == f".trash/{first.install_id}"
+    assert original.exists() and (trash / first.install_id).exists()

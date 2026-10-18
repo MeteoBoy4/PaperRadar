@@ -80,7 +80,9 @@ GUIDANCE: dict[SupplyReason, str] = {
     "cleanup_plan_missing": (
         "未找到完整清理计划ID；请使用 gc --dry-run 生成并核对计划。"
     ),
-    "cleanup_facts_changed": "计划生成期间安全事实变化；请重新运行 gc --dry-run。",
+    "cleanup_facts_changed": (
+        "计划读取或生成期间安全事实变化；请重新运行 gc --dry-run。"
+    ),
     "export_conflict": "导出目标含异字节、链接或特殊条目；请保留原文件并选择空目标。",
     "export_evidence_collision": (
         "D5 证据摘要前 16 位冲突；请保留数据库并核对证据，不能覆盖或改名。"
