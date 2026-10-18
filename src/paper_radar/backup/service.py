@@ -145,6 +145,12 @@ def _registered_contents(
             load_config_snapshot(database, snapshot_id)
     except (ConfigError, StorageError):
         raise BackupError(BackupReason.CONFIG_INVALID) from None
+    from paper_radar.pi_supply import SupplyError, list_supplies
+
+    try:
+        list_supplies(database)
+    except SupplyError:
+        raise BackupError(BackupReason.SUPPLY_INVALID) from None
     return tuple(blobs[key] for key in sorted(blobs)), artifacts, snapshot_ids
 
 

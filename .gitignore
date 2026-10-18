@@ -222,3 +222,5 @@ __marimo__/
 
 # Scratch
 .scratch/
+# 项目独立 Node/Pi 安装、staging 与私有缓存。
+.tools/

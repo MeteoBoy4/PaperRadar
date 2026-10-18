@@ -1,6 +1,6 @@
 """A3 固定范围的分票登记。完整结论由 #35 追加,不提前声明通过。"""
 
-MIGRATION_REVISION = "a302_artifact_store"
+MIGRATION_REVISION = "a401_pi_supply"
 ARTIFACT_MIGRATION_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/storage/migrations/versions/a302_artifact_store.py",
@@ -19,7 +19,7 @@ ARTIFACT_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_storage_migrations.py",
-        "cbf935e97369de7e8a4d91ae9b9bf0204b97843758b35fddd7843282c4c634a1",
+        "c7b4a0f480475f9137814cd7b43e5c715fc2fe247c10ca778be26f2f8a54f4a1",
     ),
 )
 
@@ -104,7 +104,7 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_backup_failures.py",
-        "e8178f418c0582f3f23baf2085755e7379d032d7da41df53c047f60ad6d9dcbb",
+        "3f6d4eb7adc19cc0c3dd21c1072eecb0a86cc17fcb1e935051dde4fb75b7dbb6",
     ),
     (
         "tests/test_backup_cli.py",
@@ -131,7 +131,7 @@ BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "696f76c0fa36189876666147728e77d6ae17c5decf8a143e263de6b97634816a",
+        "ae2111c5ea33ceb55a9c5a709119cd34c0c625169d81877e9150cfde23857485",
     ),
     (
         "src/paper_radar/backup/files.py",
@@ -139,7 +139,7 @@ BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/service.py",
-        "558795cd55c8a38d85d443a1706ba8c46c8a6eee911cd666a88319d231f94b00",
+        "82a303457d149beb586dca413688312540b37b3ad317b8777627b87e262672f7",
     ),
     (
         "src/paper_radar/backup/cli.py",
@@ -160,7 +160,7 @@ RESTORE_TEST_CASE_COUNTS = {
 RESTORE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_restore_service.py",
-        "43111ca84d5314ea4a792c36c966c0b9e79371431f6c0182fb6dc9fd0eff286f",
+        "435e369d318a874ec7793bdbc9c0ee2eebeeebb0abea96025ab7e27ce0e25946",
     ),
     (
         "tests/test_restore_failures.py",
@@ -211,7 +211,7 @@ FORMAT_VERSIONS = {
     "artifact": 1,
     "blob_layout": 1,
     "backup": 1,
-    "backup_database_revision": "a302_artifact_store",
+    "backup_database_revision": "a401_pi_supply",
 }
 CAPABILITIES = (
     "artifact_publication",
@@ -256,7 +256,7 @@ REQUIRED_TEST_CASE_COUNTS = {
 ACCEPTANCE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_a3_acceptance.py",
-        "945a121f0f1620739cb05a607fb5c544e127ba388379037d7e3f772a58ccd78d",
+        "5d141f3048812edf4e7b90d270a234027c945d0b19cdea8ecc190fa5e7e50e27",
     ),
     (
         "tests/test_a3_combination.py",
@@ -306,7 +306,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "3753c37b47adc8aa35efd1b2c5711c5f6381d684201318a1311203f04015d64d",
+        "463b094251dc54f8f2d06c73a599882846b852f3a2ea99cfe71443219fe94657",
     ),
     (
         "scripts/check-offline",
@@ -330,7 +330,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/cli.py",
-        "4fc6e1daf4fe4539a1503fda8a1fc15cdef4515f9c17c2958fd2e311377c2dd5",
+        "5e4474fdeb5fae4fa510b1349d9fef4557784a0d069a3648420f79de5ac2d298",
     ),
     (
         "tests/a3_acceptance_support.py",
