@@ -104,7 +104,7 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_backup_failures.py",
-        "3f6d4eb7adc19cc0c3dd21c1072eecb0a86cc17fcb1e935051dde4fb75b7dbb6",
+        "cd6499af76317ad895c7cc999a09d48a03b860309e4e4c4e0df68adf039cb31a",
     ),
     (
         "tests/test_backup_cli.py",
@@ -160,7 +160,7 @@ RESTORE_TEST_CASE_COUNTS = {
 RESTORE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_restore_service.py",
-        "435e369d318a874ec7793bdbc9c0ee2eebeeebb0abea96025ab7e27ce0e25946",
+        "19c90027f1536bb76b6eae1520eab7a266cd6e971d179264349d12bc2c7f957e",
     ),
     (
         "tests/test_restore_failures.py",
@@ -306,7 +306,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "1192eb91764a9e0f87c9b1fc181710c57ac075d45895f3d9e648d0bb4aaeafd7",
+        "e26b0d48e5335d8b082f15f1d6a5e4476eefe6583f5c270c9c31cf4389923c4e",
     ),
     (
         "scripts/check-offline",

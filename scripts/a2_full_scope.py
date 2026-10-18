@@ -142,11 +142,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_acceptance.py",
-        "06422237f8cfbf89e0519d19d41e516a9be078ea9c0e90e488e6f8421b0ad993",
+        "113ccc8fc7ee42dae32ecc11756ca2430e3f15791f0118d8f2f2e58e8ead958c",
     ),
     (
         "tests/test_a2_full_acceptance.py",
-        "6da7bbc7bbcd6d6897d59c8874f8e483923ef17349c5d73188979313fff800d6",
+        "de86795e445159481a196829b324d7d965df7458cb550ffeb827bfd985751358",
     ),
     (
         "tests/test_a2_full_entry.py",

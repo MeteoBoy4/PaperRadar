@@ -31,7 +31,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_acceptance.py",
-        "06422237f8cfbf89e0519d19d41e516a9be078ea9c0e90e488e6f8421b0ad993",
+        "113ccc8fc7ee42dae32ecc11756ca2430e3f15791f0118d8f2f2e58e8ead958c",
     ),
 )
 
