@@ -62,6 +62,18 @@ def test_activation_verify_and_doctor_share_the_use_boundary(tmp_path: Path) -> 
     assert report.instances[0].protection_state == "unknown"
     assert "protection_unknown" in report.instances[0].protection
     assert sorted(path.relative_to(root) for path in root.rglob("*")) == before
+    from paper_radar.pi_supply import rebuild_supply
+
+    prepared = rebuild_supply(
+        source[0],
+        prepared.supply_id,
+        tmp_path / "install",
+        data_root=tmp_path / "data",
+        config_root=tmp_path / "config",
+        material_root=tmp_path / "materials",
+        downloader=source[3],
+        runner=source[4],
+    )
     activate_supply(source[0], prepared.supply_id, source[1])
     with exclusive_install(source[0], prepared.supply_id, prepared.install_id):
         with pytest.raises(SupplyError, match=r"install_unavailable|install_busy"):
@@ -72,11 +84,17 @@ def test_activation_verify_and_doctor_share_the_use_boundary(tmp_path: Path) -> 
         ):
             pytest.fail("exclusive collector must exclude new users")
         checks = verify_supply(source[0], prepared.supply_id, runner=source[4])
-        assert not checks[0].passed and checks[0].reason == "install_busy"
+        checked = next(
+            check for check in checks if check.install_id == prepared.install_id
+        )
+        assert not checked.passed and checked.reason == "install_busy"
     with use_install(source[0], source[1]):
         report = doctor_supply(source[0], source[1])
-        assert report.instances[0].protection_state == "in_flight"
-        assert "in_flight" in report.instances[0].protection
+        active = next(
+            item for item in report.instances if item.install_id == prepared.install_id
+        )
+        assert active.protection_state == "in_flight"
+        assert "in_flight" in active.protection
     assert (
         probe_install(source[0], prepared.supply_id, prepared.install_id).state
         == "idle"
@@ -254,6 +272,18 @@ def test_unsafe_or_missing_lock_observation_is_read_only_and_conservative(
         exclusive_install(source[0], prepared.supply_id, prepared.install_id),
     ):
         pytest.fail("absent lock is not evidence of no user")
+    from paper_radar.pi_supply import rebuild_supply
+
+    prepared = rebuild_supply(
+        source[0],
+        prepared.supply_id,
+        tmp_path / "install",
+        data_root=tmp_path / "data",
+        config_root=tmp_path / "config",
+        material_root=tmp_path / "materials",
+        downloader=source[3],
+        runner=source[4],
+    )
     activate_supply(source[0], prepared.supply_id, source[1])
     lock = tmp_path / "install/.locks" / f"{prepared.install_id}.lock"
     lock.unlink()

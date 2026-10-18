@@ -114,7 +114,9 @@ class InstallUse:
 
     def recheck(self, database: Path) -> str:
         """排他持有者在执行破坏性操作前重新确认登记、归属与实际树。"""
-        record, instance = _registered(database, self.supply_id, self.install_id)
+        record, instance = _registered(
+            database, self.supply_id, self.install_id, collection=True
+        )
         if (
             record.manifest != self.record.manifest
             or instance.path != self.instance.path
@@ -123,10 +125,11 @@ class InstallUse:
             raise SupplyError("install_unavailable")
         local_filesystem(instance.path.parent.parent)
         check_root_marker(database, instance.path.parent.parent, instance.root_id)
-        no_symlink_components(instance.path)
-        if not instance.path.is_dir():
+        path = collection_path(database, instance)
+        no_symlink_components(path)
+        if not path.is_dir():
             raise SupplyError("install_unavailable")
-        return tree_hash(instance.path)
+        return tree_hash(path)
 
 
 @dataclass(frozen=True)
@@ -136,9 +139,18 @@ class ProtectionObservation:
 
 
 def _registered(
-    database: Path, supply_id: str, install_id: str
+    database: Path, supply_id: str, install_id: str, *, collection: bool = False
 ) -> tuple[SupplyRecord, InstallInstance]:
-    for record in read_state(database)[0]:
+    records = read_state(database)[0]
+    if not collection:
+        with database_engine(database) as engine, engine.connect() as connection:
+            if connection.execute(
+                select(tables.retirements).where(
+                    tables.retirements.c.install_id == install_id
+                )
+            ).first():
+                raise SupplyError("install_unavailable")
+    for record in records:
         if record.supply_id == supply_id:
             for instance in record.installs:
                 if instance.install_id == install_id and any(
@@ -246,7 +258,7 @@ def _acquire(
         candidate.root_id,
         candidate.install_id,
         exclusive=False,
-        create=True,
+        create=False,
     ) as descriptor:
         record, instance = _registered(database, supply_id, install_id)
         if candidate.path != instance.path or candidate.root_id != instance.root_id:
@@ -291,7 +303,7 @@ def exclusive_install(
     database: Path, supply_id: str, install_id: str
 ) -> Iterator[InstallUse]:
     """GC 非阻塞排他取得;保持上下文直到复核/退役/移出可用集合。"""
-    _, candidate = _registered(database, supply_id, install_id)
+    _, candidate = _registered(database, supply_id, install_id, collection=True)
     with _locked(
         database,
         candidate.path.parent.parent,
@@ -300,7 +312,7 @@ def exclusive_install(
         exclusive=True,
         create=False,
     ) as descriptor:
-        record, instance = _registered(database, supply_id, install_id)
+        record, instance = _registered(database, supply_id, install_id, collection=True)
         handle = InstallUse(record, instance, (descriptor,))
         handle.recheck(database)
         yield handle
@@ -311,7 +323,7 @@ def probe_install(
 ) -> ProtectionObservation:
     """独立只读 open 探测现有锁;瞬时 idle 不是未来删除许可。"""
     try:
-        _, instance = _registered(database, supply_id, install_id)
+        _, instance = _registered(database, supply_id, install_id, collection=True)
         with _locked(
             database,
             instance.path.parent.parent,
@@ -329,10 +341,49 @@ def probe_install(
 
 @contextmanager
 def publication_protection(
-    database: Path, root: Path, root_id: str, install_id: str
+    database: Path, root: Path, root_id: str, install_id: str, *, supply_id: str
 ) -> Iterator[tuple[int, ...]]:
-    """仅供发布路径:实例身份已分配,初始化树外锁并保护发布/复检/短事务。"""
+    """仅首次新目标可初始化锁;既有目标/登记只打开原锁,重入不能替换旧 inode。"""
+    with database_engine(database) as engine, engine.connect() as connection:
+        registered = (
+            connection.execute(
+                select(tables.installs).where(
+                    tables.installs.c.install_id == install_id
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+    if registered is not None and (
+        registered["supply_id"] != supply_id or registered["root_id"] != root_id
+    ):
+        raise SupplyError("publication_conflict")
+    initialize = (
+        registered is None
+        and not os.path.lexists(root / supply_id / install_id)
+        and not os.path.lexists(root / ".trash" / install_id)
+    )
     with _locked(
-        database, root, root_id, install_id, exclusive=False, create=True
+        database, root, root_id, install_id, exclusive=False, create=initialize
     ) as descriptor:
+        if registered is not None:
+            _registered(database, supply_id, install_id)
         yield (descriptor,)
+
+
+def collection_path(database: Path, instance: InstallInstance) -> Path:
+    """只按退役事实定位原位或 trash;两处冲突不挑选。"""
+    with database_engine(database) as engine, engine.connect() as connection:
+        retired = connection.execute(
+            select(tables.retirements).where(
+                tables.retirements.c.install_id == instance.install_id
+            )
+        ).first()
+    if not retired:
+        return instance.path
+    trash = instance.path.parent.parent / ".trash" / instance.install_id
+    if os.path.lexists(trash):
+        if os.path.lexists(instance.path):
+            raise SupplyError("publication_conflict")
+        return trash
+    return instance.path

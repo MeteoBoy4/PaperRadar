@@ -6,7 +6,7 @@ from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from paper_radar.pi_supply.cleanup_models import CleanupPlan
+from paper_radar.pi_supply.cleanup_models import CleanupExecution, CleanupPlan
 from paper_radar.pi_supply.errors import SupplyError
 from paper_radar.pi_supply.models import (
     Activation,
@@ -31,12 +31,15 @@ __all__ = [
     "create_cleanup_plan",
     "doctor_supply",
     "exclusive_install",
+    "execute_cleanup_plan",
     "export_supply",
+    "list_cleanup_executions",
     "list_cleanup_plans",
     "list_supplies",
     "prepare_supply",
     "probe_install",
     "rebuild_supply",
+    "show_cleanup_execution",
     "show_cleanup_plan",
     "show_supply",
     "use_install",
@@ -209,3 +212,23 @@ def list_cleanup_plans(database: Path) -> tuple[CleanupPlan, ...]:
     from paper_radar.pi_supply.cleanup import list_cleanup_plans as discover
 
     return discover(database)
+
+
+def execute_cleanup_plan(database: Path, plan_id: str) -> CleanupExecution:
+    from paper_radar.pi_supply.cleanup_execute import execute_cleanup_plan as execute
+
+    return execute(database, plan_id)
+
+
+def list_cleanup_executions(database: Path) -> tuple[CleanupExecution, ...]:
+    from paper_radar.pi_supply.cleanup_execute import (
+        list_cleanup_executions as discover,
+    )
+
+    return discover(database)
+
+
+def show_cleanup_execution(database: Path, run_id: str) -> CleanupExecution:
+    from paper_radar.pi_supply.cleanup_execute import show_cleanup_execution as show
+
+    return show(database, run_id)

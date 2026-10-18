@@ -510,7 +510,9 @@ def _publish(
                 output.flush()
                 os.fsync(output.fileno())
             fsync_directory(root)
-        with publication_protection(database, root, root_id, install_id):
+        with publication_protection(
+            database, root, root_id, install_id, supply_id=manifest.supply_id
+        ):
             _publish_tree(root, manifest, tree, install_id)
             commit_supply(database, manifest, materials, root_id, install_id)
         pending.unlink()
@@ -555,7 +557,9 @@ def _publish_rebuild(
                 output.flush()
                 os.fsync(output.fileno())
             fsync_directory(root)
-        with publication_protection(database, root, root_id, install_id) as pass_fds:
+        with publication_protection(
+            database, root, root_id, install_id, supply_id=manifest.supply_id
+        ) as pass_fds:
             target = _publish_tree(root, manifest, tree, install_id)
             with tempfile.TemporaryDirectory(prefix="paperradar-pi-rebuild-") as work:
                 _inspect(target, Path(work), manifest, process, pass_fds=pass_fds)

@@ -124,3 +124,30 @@ class CleanupPlan(Frozen):
             for item in self.items
             if item.state == "retired_pending" and item.disposition != "absent"
         )
+
+
+CleanupPhase = Literal["not_run", "retired", "moved", "completed", "failed"]
+
+
+class CleanupProgress(Frozen):
+    event_id: Annotated[int, Field(ge=1)]
+    install_id: LocalId
+    phase: CleanupPhase
+    reason: SupplyReason | Literal["passed", "not_run"]
+    created_at: str
+
+
+class CleanupExecution(Frozen):
+    run_id: LocalId
+    plan_id: Hash
+    created_at: str
+    events: tuple[CleanupProgress, ...]
+
+    @property
+    def items(self) -> tuple[CleanupProgress, ...]:
+        latest = {event.install_id: event for event in self.events}
+        return tuple(latest.values())
+
+    @property
+    def passed(self) -> bool:
+        return all(item.phase == "completed" for item in self.items)

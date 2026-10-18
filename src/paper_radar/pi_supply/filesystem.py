@@ -7,6 +7,7 @@ import errno
 import hashlib
 import io
 import os
+import re
 import stat
 import tarfile
 from collections.abc import Iterator
@@ -51,10 +52,14 @@ def local_filesystem(path: Path) -> None:
         for line in Path("/proc/self/mountinfo").read_text().splitlines():
             fields = line.split()
             split = fields.index("-")
-            mount = Path(fields[4].replace("\\040", " ").replace("\\134", "\\"))
+            mount = Path(
+                re.sub(r"\\([0-7]{3})", lambda m: chr(int(m[1], 8)), fields[4])
+            )
             if path.is_relative_to(mount):
                 candidates.append((len(mount.parts), fields[split + 1]))
-        if not candidates or max(candidates)[1] not in {
+        depth = max((candidate[0] for candidate in candidates), default=-1)
+        filesystems = {kind for level, kind in candidates if level == depth}
+        if len(filesystems) != 1 or not filesystems <= {
             "ext2",
             "ext3",
             "ext4",

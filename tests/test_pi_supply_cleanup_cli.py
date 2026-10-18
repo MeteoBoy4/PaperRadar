@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from tests.config_test_support import run_cli
-from tests.pi_supply_support import inputs, prepare
+from tests.pi_supply_support import SupplyRoots, inputs, prepare
 
 
 def test_gc_dry_run_explains_plan_write_and_show_cross_process(tmp_path: Path) -> None:
@@ -72,3 +72,66 @@ def test_help_is_pure_and_unsafe_gc_arguments_are_rejected(tmp_path: Path) -> No
     )
     assert result.returncode == 2
     assert "cleanup_plan_missing" in result.stderr
+
+
+def test_execute_cross_process_and_saved_item_results(tmp_path: Path) -> None:
+    from paper_radar.pi_supply import (
+        create_cleanup_plan,
+        list_cleanup_executions,
+        rebuild_supply,
+    )
+
+    source = inputs(tmp_path)
+    first = prepare(tmp_path, source)
+    roots: SupplyRoots = dict(
+        data_root=tmp_path / "data",
+        config_root=tmp_path / "config",
+        material_root=tmp_path / "materials",
+    )
+    rebuild_supply(
+        source[0],
+        first.supply_id,
+        tmp_path / "install",
+        **roots,
+        downloader=source[3],
+        runner=source[4],
+    )
+    plan = create_cleanup_plan(source[0], **roots)
+    before = source[0].read_bytes()
+    for args in [
+        ("--execute", "/tmp/SECRET"),
+        ("--execute", "*"),
+        ("--execute", plan.plan_id, "--force"),
+        ("--execute", plan.plan_id, "--dry-run"),
+        ("--execute", plan.plan_id, "--data-root", "/tmp/SECRET"),
+    ]:
+        rejected = run_cli(
+            tmp_path, "pi", "supply", "gc", "--database", str(source[0]), *args
+        )
+        assert rejected.returncode == 2
+        assert "SECRET" not in rejected.stderr + rejected.stdout
+        assert source[0].read_bytes() == before
+    result = run_cli(
+        tmp_path,
+        "pi",
+        "supply",
+        "gc",
+        "--execute",
+        plan.plan_id,
+        "--database",
+        str(source[0]),
+    )
+    assert result.returncode == 0, result.stderr
+    execution = list_cleanup_executions(source[0])[0]
+    assert f"run_id={execution.run_id}" in result.stdout
+    assert "phase=completed reason=passed" in result.stdout
+    history = run_cli(
+        tmp_path,
+        "pi",
+        "supply",
+        "show-plan",
+        plan.plan_id,
+        "--database",
+        str(source[0]),
+    )
+    assert history.returncode == 0 and f"run_id={execution.run_id}" in history.stdout

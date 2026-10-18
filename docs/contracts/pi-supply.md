@@ -126,6 +126,7 @@ executable 为任一 x 位的布尔值，目录也计；链接目标保留原文
 
 安装根须与显式 data/config/materials 根两两互不包含，且不能含数据库；路径组件拒绝符号链接。
 仅支持本地 ext2/3/4、xfs、btrfs、zfs、tmpfs、overlay，按 Linux 实际挂载点识别；不支持 NFS/CIFS。
+mountinfo 路径完整解码三位八进制转义；最长挂载点有多个不同文件系统类型时保守拒绝，不按字串挑选。
 512 MiB 可用空间预检只前移空间不足，不能取代后续校验或保证真实安装空间足够。
 
 ```text
@@ -149,12 +150,13 @@ Linux 移动目录时顶层短暂保留写位，发布后撤去并 fsync，之�
 list/show/export 只回查历史，不检查现场，不要求 Node/Pi、网络或受支持平台，不能把历史 passed 当作当前可用。
 检查 scope 当前唯一为 install_check；不导入任意用户声明成功记录。
 
-数据库 head 为 a404_pi_cleanup_plans；既有 migration 原字节保持，
+数据库 head 为 a405_pi_cleanup_execution；既有 migration 原字节保持，
 a404 追加不可变 `pi_cleanup_plans` 及其消费者所需的 `pi_install_retirements` 识别事实；
-a403 激活事件与唯一选择、a402 重建失败事实保持不变。本切片不提供退役写入操作。
+a405 追加 `pi_cleanup_executions` 与 `pi_cleanup_progress`，执行复用 a404 退役事实；
+a403 激活事件与唯一选择、a402 重建失败事实保持不变。
 供给小型材料与 D5 证据随数据库备份，backup format 仍为 1，语义回放同时校验供给闭包。
 恢复不安装、不下载、不激活。a302 旧批次须先用匹配 A3 程序恢复，再切新程序 db upgrade；
-不放宽 head gate。恢复副本共用原根时，旧副本退役前禁止未来 gc execute；flock 仅保护在途进程，
+不放宽 head gate。恢复副本共用原根时，旧副本退役前不得 gc execute；flock 仅保护在途进程，
 不能区分两个空闲活动副本。
 
 导出固定集合为 package.json、package-lock.json、release.json、supply-manifest.json、
@@ -319,7 +321,8 @@ D5 decision 与 basis 原文只读显示，不推断 minor/major 或校准兼容
 同一共享保护与可用性复核，不依赖过去激活时的配置来代替执行器自己的快照。
 
 锁文件位于 `<install-root>/.locks/<install_id>.lock`，不进入树身份或任何删除候选，
-只由显式发布/执行路径安全初始化。共享持有期间的每次真实程序检查都传递
+只由新实例发布路径安全初始化；已登记实例缺锁时不得补建同名 inode，
+否则仍持旧 fd 的子进程无法与新锁互斥。缺锁 unknown，必须 rebuild 新实例。共享持有期间的每次真实程序检查都传递
 `Runner.run(..., pass_fds=(fd,))`，`ProcessRunner` 将它原样交给 `Popen`。
 只 close，不显式 LOCK_UN；父正常退出或 SIGKILL 后子仍持 fd 就仍受保护。
 最后持有者退出才释放，不使用 PID/TTL 或业务 lease。详见
@@ -332,11 +335,11 @@ doctor 不创建目录/锁、不写事实；逐实例显示 protection_state/pro
 真实持有追加 `in_flight` 理由，无法确认追加 `protection_unknown`。已有保留窗口与
 install_check 保护独立叠加，超过四棵仍报告超限，绝不自动删除。
 
-`exclusive_install(database, supply_id, install_id)` 给后续 GC 非阻塞排他上下文；
+`exclusive_install(database, supply_id, install_id)` 给 GC 非阻塞排他上下文；
 竞争给 `install_busy`，缺失或不安全锁给 `protection_unknown`。
 取得后仍须持锁完成复核及移出可用集合，不得把探测过的 idle 当成未来执行许可。
 `handle.recheck(database) -> str` 重读登记/归属/安全位置并返回实际 tree-v1；
-它允许安全坏树，后续 GC 必须与计划实际 hash 比对。共享执行则严格要求冻结预期树。
+它允许安全坏树，GC 必须与计划实际 hash 比对。共享执行则严格要求冻结预期树。
 保护机制自身不执行退役或删除。所有失败先关闭本次 fd 再返回受控错误，
 不回显底层异常、子进程输出、环境或秘密，不提供强制绕过参数。
 
@@ -358,7 +361,7 @@ uv run --offline --locked paper-radar pi supply show-plan <完整plan_id> \
 `create_cleanup_plan(database, *, data_root, config_root, material_root)` 从本库登记根推导全部目标，
 只写不可变计划，不删除树、不改变安装可用性、执行选择、配置、预算或门禁。
 `show_cleanup_plan(database, plan_id)` 和 `list_cleanup_plans(database)` 完整回放计划历史；
-查询不检查现场、不联网、不运行程序。CLI 必须显式 `--dry-run`，拒绝路径/glob/force。
+查询不检查现场、不联网、不运行程序。CLI 生成计划必须显式 `--dry-run`；执行仅接受 `--execute <完整plan_id>`，拒绝路径/glob/force。
 `show-plan --canonical` 输出保存的规范 JSON 字节再附终端换行；摘要不包含此终端换行。
 
 权威类型为 `pi_supply/cleanup_models.py::CleanupPlan`：严格格式版本 1、未知键拒绝，
@@ -393,7 +396,7 @@ uv run --offline --locked paper-radar pi supply show-plan <完整plan_id> \
 每个根重查整组 safe_roots、普通 marker 归属与本地文件系统；父路径拒绝符号链接。
 他库根或无法确认的根标注原因且不扫描；数据、数据库、配置、固定材料、控制锁不进入候选。
 未知 staging/未登记树/未知 trash 不能按名字自动认领，始终人工处理。
-已登记退役残留只能从既有实例和退役来源计划推导位置；本切片不提供退役或执行入口。
+已登记退役残留只能从既有实例和退役来源计划推导位置；执行入口见下节；有已完成删除审计的身份重新出现时属于未知材料，不能认领为待删残留。
 
 占用真实遍历 lstat 的 `(st_dev, st_ino)`，同树与跨树去重分配块 `st_blocks*512`，
 不跟随链接。稀疏文件分别报告逻辑长度与分配量；文件硬链接数超过候选集合内已知名字数时，
@@ -404,7 +407,53 @@ reflink/压缩/文件系统元数据及并发占用不可精确归因，所以�
 历史完整性与执行适用性分开：新激活、检查或退役可以使旧计划不再适用，
 但不会使原规范字节、引用闭包正确的历史计划成为腐坏。query/backup/restore 不要求当前 facts_version
 或现场 hash 仍相等；它们拒绝规范字节/ID/格式、受控路径、理由或引用闭包损坏。
-未来执行必须取得非阻塞 EX 后重读安全事实、根归属和实际树 hash；漂移必须新计划，不能刷新旧预期。
+执行必须取得非阻塞 EX 后重读安全事实、根归属和实际树 hash；漂移必须新计划，不能刷新旧预期。
 瞬时 idle 不是删除授权。仍持有的新句柄必须阻止删除；已完全释放且其他安全事实未变的瞬时句柄历史
 无需新增 generation/PID/TTL 记录，flock 不声称追溯已结束持有。
 恢复活动副本若仍共用原根，旧副本退役前不得执行清理；本机制不提供生产 OS 隔离。
+
+
+## 安装清理执行与中断恢复
+
+`execute_cleanup_plan(database, plan_id) -> CleanupExecution` 只接受已保存、完整且可回放的计划 ID。
+`list_cleanup_executions(database)` 与 `show_cleanup_execution(database, run_id)` 只读回放全部逐项审计；
+CLI `gc --execute <plan-id> --database <db>` 不接受另外的根路径；与 `--dry-run` 互斥。
+`show-plan` 显示该计划所有 run_id、逐项 phase/reason；`--canonical` 仍仅输出原计划字节。
+
+每次执行追加一个 run_id（32位小写十六进制）、plan_id、created_at，以及按 event_id 排序的
+逐项进展：`not_run → retired → moved → completed`，失败追加 `failed` 与受控原因。
+强杀可能仅留 `not_run/retired/moved`，如实表示未完成，不能报告成功。
+`CleanupExecution.events` 保留全部事件；`items` 投影每个候选最新状态，`passed` 只表示本计划全部候选完成，
+不表示未知人工残留也已删除。候选为空不会删除任何对象。无模型、预算、配置或业务制品变化。
+
+先完整回放原计划与材料闭包，比对全部数据库安全事实，再取得所有候选的非阻塞 EX。
+持 EX 后重复核验根归属、整组危险路径、本地文件系统、当前位置与计划实际 tree-v1。
+安全事实保持原样才进入短 `BEGIN IMMEDIATE`：一次追加全部候选永久退役与 retired 进展。
+事务不等待 flock，不执行昂贵哈希。此事务后新共享取得、verify、activate 与 available_installs 都排除退役实例；
+probe/GC 仍可按登记身份定位树外锁与退役原位/trash，未复制另一套保护协议。
+
+执行仅允许自己刚提交的精确退役增量；其他激活、检查、根、实例或退役变化均拒绝旧计划。
+逐项再核对安全事实和实际树，不通过刷新旧计划预期接纳漂移。安全坏树可删除，实际 hash 与冻结预期不同本身不是拒绝理由。
+当前选择、最近三旧、各 scope 最近通过、仍持有的新共享句柄与未知保护不能绕过。
+已有共享持有者令 EX 返回 busy，父被强杀后子仍持继承 fd 仍会阻止清理。
+
+退役提交后，使用同文件系统不覆盖原子 rename 进入 `.trash/<install_id>` 并 fsync 两个父目录，
+再逐项删除。目录 fd 固定实际 inode；目录打开拒绝链接，删除采用 fd 相对操作，拒绝链接/目录替换。
+仅对已确认实例的目录恢复删除所需写位，含跨父改名所需顶层目录写位；
+不增加无关执行位，不改变计划 tree-v1 身份；普通文件不 chmod，避免改变树外硬链接。
+先按依赖顺序删除 symlink 引用者，再删除被引用的 symlink（含目标路径经过的目录链接），
+最后删除普通文件和目录；每次删除后 fsync 父目录，使合法半删除残留仍满足严格 tree-v1。
+锁文件、根标记、供给父目录、未知树、staging 与其他项目材料不删除。
+
+退役未移动、已移动未删完均由下一 `gc --dry-run` 的新实际 hash 单列“已退役待删”，须显式执行新计划。
+删完但 completed 事件尚未提交时，新计划按可信退役与现场缺失显示 absent/无残留，原执行保留 incomplete，
+不会伪造旧执行成功。已完成删除事实存在而路径重新出现时，单列人工未知材料并拒绝执行。
+旧计划字节、期望、供给/实例/检查/激活历史均不改写，不重复登记供给或安装事实。
+
+当前备份语义回放验证 plan/run/候选/退役引用、带时区时间、受控 phase/reason 与事件顺序；
+非空 a404 升级与包含完整/中断清理历史的 backup/restore 均保留原字节，回查无需原安装根。
+恢复不会复制安装树或恢复已退役实例可用性。共用原根的恢复活动副本在旧活动副本退役前不得清理；
+flock 无法识别另一个空闲副本的选择。此限制与同用户恶意文件替换不属于生产 OS 隔离承诺。
+
+CLI 参数或失败返回 2，中断返回 130；失败只输出身份、受控原因与新计划恢复步骤，不包含底层路径、秘密或程序输出。
+帮助完全本地且不创建文件、数据库、锁或计划。所有普通测试只用临时库与目录；本票未验证新的真实 Node/Pi、RPC、网络或用户安装根删除。

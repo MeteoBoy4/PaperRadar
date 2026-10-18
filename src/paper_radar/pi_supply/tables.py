@@ -130,7 +130,7 @@ cleanup_plans = Table(
     Column("payload", LargeBinary, nullable=False, unique=True),
     Column("created_at", Text, nullable=False),
 )
-# 计划消费者需要识别已退役残留;本票不提供退役写入口。
+# 不可撤销的退役事实;执行进展独立追加,不改写计划安全视图。
 retirements = Table(
     "pi_install_retirements",
     metadata,
@@ -144,4 +144,32 @@ retirements = Table(
         "plan_id", String(64), ForeignKey("pi_cleanup_plans.plan_id"), nullable=False
     ),
     Column("created_at", Text, nullable=False),
+)
+
+cleanup_executions = Table(
+    "pi_cleanup_executions",
+    metadata,
+    Column("run_id", String(32), primary_key=True),
+    Column(
+        "plan_id", String(64), ForeignKey("pi_cleanup_plans.plan_id"), nullable=False
+    ),
+    Column("created_at", Text, nullable=False),
+)
+cleanup_progress = Table(
+    "pi_cleanup_progress",
+    metadata,
+    Column("event_id", Integer, primary_key=True, autoincrement=True),
+    Column(
+        "run_id", String(32), ForeignKey("pi_cleanup_executions.run_id"), nullable=False
+    ),
+    Column(
+        "install_id",
+        String(32),
+        ForeignKey("pi_install_instances.install_id"),
+        nullable=False,
+    ),
+    Column("phase", String(32), nullable=False),
+    Column("reason", String(64), nullable=False),
+    Column("created_at", Text, nullable=False),
+    CheckConstraint("phase IN ('not_run', 'retired', 'moved', 'completed', 'failed')"),
 )
