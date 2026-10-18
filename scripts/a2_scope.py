@@ -138,7 +138,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/check-offline",
-        "7c1d116c0e9684a40193d33eb5b8f3862e690e83bd66183dfc00a4ceccd658c9",
+        "bbce8140a002e7fbf4a7cb8af13fb033bfd69b5c85790759e40a0b790ca4a1d2",
     ),
     (
         "scripts/a2_acceptance.py",

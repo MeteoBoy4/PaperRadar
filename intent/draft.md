@@ -944,7 +944,8 @@ revision 来自真实临时验收库，格式版本与固定合成材料逐项�
 此结论只证明配置切片，不代表完整阶段 A、正式校准、阶段 B 或 live 验收通过。
 #29/#35 在同次固定计划中另追加 A3 存储/恢复结论，绑定同次基础证据、A1、完整 A2、
 实际执行回执、运行身份、真实临时库 revision、版本和固定材料哈希；缺失、少执行、
-skip/deselect/collect-only、漂移或中断不能借历史成功通过。五份主要文件共享 run_id，
+skip/deselect/collect-only、漂移或中断不能借历史成功通过。#36/#45 同次另追加必需 A4
+供给生命周期结论，绑定 A1、完整 A2、A3、真实格式和固定执行范围。六份主要文件共享 run_id，
 pytest 回执另行绑定；A2-01 仍为可选历史组。A3 不声明论文事实、指纹、任务/可见性、
 报告重建、Pi/Docling、真实来源或 NAS 已验收，stage_a_verified/live_verified 恒 false。
 

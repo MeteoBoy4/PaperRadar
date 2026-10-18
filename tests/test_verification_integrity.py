@@ -12,7 +12,7 @@ import pytest
 
 from scripts.a2_full_acceptance import run_full_verification
 from tests.a2_full_support import repository_copy
-from tests.a3_acceptance_support import fake_checks
+from tests.a4_acceptance_support import fake_checks
 
 
 @pytest.mark.parametrize("mode", ["collect_only", "deselected"])
@@ -48,6 +48,9 @@ def test_zero_pytest_exit_cannot_replace_actual_fixed_test_execution(
     assert full["status"] == "failed"
     assert not full["a2_verified"]
     assert "test_execution_not_passed" in {r["code"] for r in full["reasons"]}
+    a4 = json.loads(next(output.glob("*.a4.json")).read_bytes())
+    assert a4["status"] == "failed" and not a4["a4_verified"]
+    assert "test_execution_not_passed" in {reason["code"] for reason in a4["reasons"]}
     assert len(log.read_text(encoding="utf-8").splitlines()) == 6
 
 

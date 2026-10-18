@@ -1,0 +1,425 @@
+"""A4 是同次必需结论,不从前置或退出零继承能力。"""
+
+import json
+from pathlib import Path
+
+import pytest
+
+from scripts.a2_full_acceptance import acceptance_groups
+from scripts.offline_evidence import file_sha256
+from tests.a4_acceptance_support import conclude, same_a4_run
+
+
+def test_a4_is_required_and_declares_all_same_run_predecessors() -> None:
+    group = next(group for group in acceptance_groups() if group.name == "A4")
+    assert group.required is True
+    assert group.dependencies == ("A1", "完整 A2", "A3")
+    assert group.suffix == ".a4.json"
+
+
+def test_a4_records_complete_independent_capabilities_and_live_boundaries(
+    tmp_path: Path,
+) -> None:
+    _, result = conclude(tmp_path, same_a4_run(tmp_path))
+    assert result["status"] == "passed", result["reasons"]
+    assert result["a4_verified"] is True
+    assert result["live_install_verified"] is False
+    assert result["capabilities"] == dict.fromkeys(
+        (
+            "prepare",
+            "verify",
+            "rebuild",
+            "activate",
+            "install_protection",
+            "cleanup_plan",
+            "cleanup_execute",
+            "doctor",
+            "export",
+            "isolated_restore",
+        ),
+        "passed",
+    )
+
+    assert result["migration_revision"] == "a405_pi_cleanup_execution"
+    assert result["scope"] == "a4_pi_supply_lifecycle"
+    assert (result["format_version"], result["parent_issue"], result["issue"]) == (
+        1,
+        36,
+        45,
+    )
+    assert result["stage_a_verified"] is result["live_verified"] is False
+    assert {
+        "rpc_compatibility",
+        "stage_a",
+        "live_install",
+        "live_source_audit",
+        "nas_restore",
+        "automatic_fulltext_reading",
+    } <= set(result["not_assessed"])
+    assert result["format_versions"] == {
+        "supply_manifest": 1,
+        "derived_lock": "derived-lock-v1",
+        "tree": "tree-v1",
+        "install_policy": "install-policy-v1",
+        "cleanup_plan": 1,
+        "retention_rule": "library-install-window-v1",
+        "cleanup_tree": "tree-v1",
+        "occupancy_rule": "allocated-inode-v1",
+    }
+    assert result["environment"]["dependencies"]["httpx"]
+    assert all(row["result"] == "passed" for row in result["test_execution"])
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "missing_a1",
+        "missing_full",
+        "missing_evidence",
+        "returned_value",
+        "a1_failed",
+        "full_failed",
+        "verified_not_bool",
+        "a1_old_format",
+        "full_old_format",
+        "evidence_old_format",
+        "old_run",
+        "wrong_file",
+        "wrong_scope",
+        "wrong_evidence_hash",
+        "wrong_a1_hash",
+        "bool_check_exit",
+        "skipped_check",
+        "missing_check",
+        "incomplete",
+    ],
+)
+def test_same_run_and_predecessor_success_are_independent_requirements(
+    tmp_path: Path, case: str
+) -> None:
+    inputs = same_a4_run(tmp_path)
+    evidence, a1_path, a1, full_path, full, _, _, _ = inputs
+    raw = json.loads(evidence.read_bytes())
+    expected = "binding_mismatch"
+    if case == "missing_a1":
+        a1_path.unlink()
+    elif case == "missing_full":
+        full_path.unlink()
+    elif case == "missing_evidence":
+        evidence.unlink()
+        expected = "evidence_unavailable"
+    elif case == "returned_value":
+        a1["a1_verified"] = False
+    elif case == "a1_failed":
+        a1.update(status="failed", a1_verified=False)
+        expected = "prerequisite_not_passed"
+    elif case == "full_failed":
+        full.update(status="failed", a2_verified=False)
+        expected = "prerequisite_not_passed"
+    elif case == "verified_not_bool":
+        full["a2_verified"] = 1
+        expected = "prerequisite_not_passed"
+    elif case.endswith("old_format"):
+        selected = (
+            a1
+            if case == "a1_old_format"
+            else full
+            if case == "full_old_format"
+            else raw
+        )
+        selected["format_version"] = 0
+        expected = "format_mismatch"
+    elif case == "old_run":
+        full["run_id"] = "old-run"
+    elif case == "wrong_file":
+        full["evidence_file"] = "old-run.json"
+    elif case == "wrong_scope":
+        full["scope"] = "a2_01_profile_runtime_config_snapshots"
+    elif case == "wrong_evidence_hash":
+        full["evidence_sha256"] = "0" * 64
+    elif case == "wrong_a1_hash":
+        full["a1_conclusion_sha256"] = "0" * 64
+    elif case in {"bool_check_exit", "skipped_check", "missing_check"}:
+        expected = "check_not_passed"
+        if case == "bool_check_exit":
+            raw["checks"][0]["exit_code"] = False
+        elif case == "skipped_check":
+            raw["checks"][0].update(status="not_run", reason="skipped", exit_code=None)
+        else:
+            raw["checks"].pop()
+    elif case == "incomplete":
+        full["status"] = "incomplete"
+        expected = "run_incomplete"
+    if evidence.exists():
+        evidence.write_text(json.dumps(raw), encoding="utf-8")
+    if case not in {"missing_a1", "returned_value"}:
+        a1_path.write_text(json.dumps(a1), encoding="utf-8")
+    if case != "missing_full":
+        full_path.write_text(json.dumps(full), encoding="utf-8")
+    path, result = conclude(tmp_path, inputs)
+    assert result["status"] == ("incomplete" if case == "incomplete" else "failed")
+    assert result["a4_verified"] is False
+    assert expected in {reason["code"] for reason in result["reasons"]}
+    assert "PRIVATE" not in path.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "missing",
+        "old_run",
+        "old_format",
+        "bool_format",
+        "bool_exit",
+        "float_exit",
+        "incomplete",
+        "missing_module",
+        "bool_count",
+        "negative_count",
+        "text_count",
+        "float_count",
+        "missing_count",
+        "skip",
+        "deselect",
+        "collect_only",
+        "modules_not_object",
+    ],
+)
+def test_a4_requires_real_complete_integer_execution_counts(
+    tmp_path: Path, case: str
+) -> None:
+    inputs = same_a4_run(tmp_path)
+    evidence, _, _, full_path, full, a3_path, a3, _ = inputs
+    receipt = evidence.with_suffix(".pytest.json")
+    raw = json.loads(receipt.read_bytes())
+    module = raw["modules"]["tests/test_pi_supply.py"]
+    if case == "old_run":
+        raw["run_id"] = "old-run"
+    elif case == "old_format":
+        raw["format_version"] = 0
+    elif case == "bool_format":
+        raw["format_version"] = True
+    elif case in {"bool_exit", "float_exit"}:
+        raw["exit_code"] = False if case == "bool_exit" else 0.0
+    elif case == "incomplete":
+        raw["completed"] = False
+    elif case == "missing_module":
+        raw["modules"].pop("tests/test_pi_supply.py")
+    elif case == "bool_count":
+        module["failed"] = False
+    elif case == "negative_count":
+        module["failed"] = -1
+    elif case == "text_count":
+        module["failed"] = "0"
+    elif case == "float_count":
+        module["failed"] = 0.0
+    elif case == "missing_count":
+        module.pop("failed")
+    elif case == "skip":
+        module.update(passed=14, skipped=1)
+    elif case == "deselect":
+        module.update(collected=14, passed=14, deselected=1)
+    elif case == "collect_only":
+        module["passed"] = 0
+    elif case == "modules_not_object":
+        raw["modules"] = []
+    receipt.write_text(json.dumps(raw), encoding="utf-8")
+    if case == "missing":
+        receipt.unlink()
+    # 前置可在自己的固定范围通过;A3必须另外核对这部分计数。
+    full["pytest_receipt_sha256"] = file_sha256(receipt)
+    full_path.write_text(json.dumps(full), encoding="utf-8")
+    a3["pytest_receipt_sha256"] = file_sha256(receipt)
+    a3["a2_full_conclusion_sha256"] = file_sha256(full_path)
+    a3_path.write_text(json.dumps(a3), encoding="utf-8")
+    _, result = conclude(tmp_path, inputs)
+    assert result["status"] == ("incomplete" if case == "incomplete" else "failed")
+    assert result["a4_verified"] is False
+    expected = (
+        "format_mismatch" if case == "bool_format" else "test_execution_not_passed"
+    )
+    assert expected in {reason["code"] for reason in result["reasons"]}
+
+
+@pytest.mark.parametrize("case", ["source", "helper", "fixture", "baseline"])
+def test_fixed_bytes_and_running_identity_cannot_drift(
+    tmp_path: Path, case: str
+) -> None:
+    from dataclasses import replace
+
+    from tests.a2_full_support import repository_copy
+
+    root = repository_copy(tmp_path / "repo")
+    material = tmp_path / "material"
+    material.mkdir()
+    inputs = same_a4_run(material, root=root)
+    if case == "source":
+        selected = root / "src/paper_radar/pi_supply/service.py"
+        selected.write_bytes(selected.read_bytes() + b"\n# changed\n")
+    elif case == "helper":
+        (root / "scripts/verification_checks.py").unlink()
+    elif case == "fixture":
+        (root / "tests/fixtures/pi_supply/manifest-vector.json").unlink()
+    else:
+        inputs = (
+            inputs[0],
+            inputs[1],
+            inputs[2],
+            inputs[3],
+            inputs[4],
+            inputs[5],
+            inputs[6],
+            replace(inputs[7], lockfile_sha256="0" * 64),
+        )
+    _, result = conclude(material, inputs, root=root)
+    assert result["status"] == "failed"
+    assert "identity_changed" in {reason["code"] for reason in result["reasons"]}
+    if case != "baseline":
+        assert "scope_drift" in {reason["code"] for reason in result["reasons"]}
+
+
+def test_a4_records_missing_dependencies_and_captured_interrupt_without_raw_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import importlib.metadata
+
+    inputs = same_a4_run(tmp_path)
+    original = importlib.metadata.version
+
+    def unavailable(name: str) -> str:
+        if name == "alembic":
+            raise importlib.metadata.PackageNotFoundError("PRIVATE_METADATA")
+        return original(name)
+
+    monkeypatch.setattr(importlib.metadata, "version", unavailable)
+    path, result = conclude(tmp_path, inputs)
+    assert result["status"] == "failed"
+    assert "dependency_unavailable" in {reason["code"] for reason in result["reasons"]}
+    assert "PRIVATE" not in path.read_text()
+
+
+def test_actual_new_migration_head_is_rejected_until_explicitly_registered(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import shutil
+
+    from paper_radar.storage import database
+
+    inputs = same_a4_run(tmp_path)
+    migrations = tmp_path / "migrations"
+    shutil.copytree(Path(database.__file__).parent / "migrations", migrations)
+    (migrations / "versions/unregistered.py").write_text(
+        "revision='unregistered'\ndown_revision='a405_pi_cleanup_execution'\n"
+        "def upgrade():pass\ndef downgrade():pass\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(database, "_MIGRATIONS", migrations)
+    _, result = conclude(tmp_path, inputs)
+    assert result["migration_revision"] == "unregistered"
+    assert result["status"] == "failed"
+    assert "migration_unavailable" in {reason["code"] for reason in result["reasons"]}
+
+
+def test_a4_captured_interrupt_is_incomplete_and_existing_conclusion_is_immutable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import importlib.metadata
+
+    inputs = same_a4_run(tmp_path)
+
+    def interrupt(name: str) -> str:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(importlib.metadata, "version", interrupt)
+    path, result = conclude(tmp_path, inputs)
+    assert result["status"] == "incomplete"
+    assert result["a4_verified"] is False
+    old = path.read_bytes()
+    with pytest.raises(FileExistsError):
+        conclude(tmp_path, inputs)
+    assert path.read_bytes() == old
+
+
+@pytest.mark.parametrize("predecessor", ["a1", "full", "a3"])
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "missing",
+        "returned",
+        "run",
+        "file",
+        "scope",
+        "issue",
+        "bool_format",
+        "status",
+        "verified",
+        "hash",
+        "identity",
+    ],
+)
+def test_every_predecessor_must_independently_bind_and_pass(
+    tmp_path: Path,
+    predecessor: str,
+    fault: str,
+) -> None:
+    inputs = same_a4_run(tmp_path)
+    offset = {"a1": 1, "full": 3, "a3": 5}[predecessor]
+    path, value = inputs[offset], inputs[offset + 1]
+    assert isinstance(path, Path) and isinstance(value, dict)
+    if fault == "missing":
+        path.unlink()
+    else:
+        key, replacement = {
+            "returned": ("private_returned_mismatch", True),
+            "run": ("run_id", "historical"),
+            "file": ("evidence_file", "historical.json"),
+            "scope": ("scope", "historical"),
+            "issue": ("issue", 0),
+            "bool_format": ("format_version", True),
+            "status": ("status", "failed"),
+            "verified": (
+                {"a1": "a1_verified", "full": "a2_verified", "a3": "a3_verified"}[
+                    predecessor
+                ],
+                1,
+            ),
+            "hash": ("evidence_sha256", "0" * 64),
+            "identity": ("worktree_sha256", "0" * 64),
+        }[fault]
+        value[key] = replacement
+        if fault != "returned":
+            path.write_text(json.dumps(value))
+    _, result = conclude(tmp_path, inputs)
+    assert result["status"] == "failed"
+    assert result["a4_verified"] is False
+
+
+@pytest.mark.parametrize(
+    "kind", ["manifest", "derived", "tree", "policy", "plan", "bool_plan"]
+)
+def test_actual_production_formats_are_verified_independently(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    kind: str,
+) -> None:
+    from paper_radar.pi_supply.cleanup_models import CleanupPlan
+    from paper_radar.pi_supply.models import SupplyManifest
+
+    inputs = same_a4_run(tmp_path)
+    model = CleanupPlan if kind in {"plan", "bool_plan"} else SupplyManifest
+    schema = model.model_json_schema()
+    field = {
+        "manifest": "format_version",
+        "derived": "derived_lock_rule",
+        "tree": "tree_rule",
+        "policy": "install_policy",
+        "plan": "format_version",
+        "bool_plan": "format_version",
+    }[kind]
+    schema["properties"][field]["const"] = (
+        True if kind == "bool_plan" else "unknown-format"
+    )
+    monkeypatch.setattr(model, "model_json_schema", lambda: schema)
+    _, result = conclude(tmp_path, inputs)
+    assert result["status"] == "failed"
+    assert "storage_format_drift" in {reason["code"] for reason in result["reasons"]}

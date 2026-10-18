@@ -294,11 +294,11 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "e0a4ae1886025cfada7aa76fa932dc88f67372b5ea0cc49399f96a0899d1f1de",
+        "00525c108e46d3295b64b14e0347e16358747f2bd011631fa5af30104b33fceb",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "ae57161b128927697c6bc947f6dcd502482aa388bb3493a7681a1167e5ec58c2",
+        "60073cb71c01c949ee05dd54b7556f598f5f3e8a11a700e51f88e51ac5bb700a",
     ),
     (
         "scripts/offline_evidence.py",
@@ -306,11 +306,11 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "6701fdf6d7c6bded03d4cb9bd701d5344e202acf627c256158c098701590103e",
+        "cabe2e8a2a0f2b55f7715b762b6dd53447786784d5d84de9a58f3ace1be9fbbd",
     ),
     (
         "scripts/check-offline",
-        "7c1d116c0e9684a40193d33eb5b8f3862e690e83bd66183dfc00a4ceccd658c9",
+        "bbce8140a002e7fbf4a7cb8af13fb033bfd69b5c85790759e40a0b790ca4a1d2",
     ),
     (
         "src/paper_radar/storage/database.py",

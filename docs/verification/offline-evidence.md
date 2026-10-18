@@ -6,10 +6,10 @@
 运行会在被 Git 忽略的 `verification-runs/<run_id>.json` 生成 #12 离线证据，
 并在 `verification-runs/<run_id>.a1.json` 生成独立的 #13 A1 结论，
 在 `<run_id>.a2.json` 生成 #16 A2-01 结论，在 `<run_id>.a2-full.json` 生成
-#25 完整 A2 结论，在 `<run_id>.a3.json` 生成 #29/#35 独立 A3 结论；
-终端打印本次五个主要路径及结果。测试另外生成同次
+#25 完整 A2 结论，在 `<run_id>.a3.json` 生成 #29/#35 独立 A3 结论，
+在 `<run_id>.a4.json` 生成 #36/#45 独立 A4 结论；终端打印六个主要路径及结果。测试另外生成同次
 `<run_id>.pytest.json` 脱敏执行回执。整套检查仅执行一次，各文件
-共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2 与 A3 均通过时入口返回 0，
+共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3 与 A4 均通过时入口返回 0，
 A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时数据库，不操作用户数据库。
 重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
@@ -66,6 +66,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 | A2-01 | `.a2.json` | 同次 A1 | 否 |
 | 完整 A2 | `.a2-full.json` | 同次 A1 | 是 |
 | A3 | `.a3.json` | 同次 A1、完整 A2 | 是 |
+| A4 | `.a4.json` | 同次 A1、完整 A2、A3 | 是 |
 
 完整 A2 另由自己的判据验证同次 pytest 回执、证据和已发布 A1，并在发布前再次
 核对这些文件的实际字节绑定；它没有 A2-01 通过依赖。各组的原因、格式、严格性与
@@ -73,13 +74,13 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 即使补写为 passed，也继续把中断传给完整 A2。最后发布阶段的中断仍可能没有
 完整结论，不会覆盖已发布文件来修复状态。
 
-四组的 `write_*_conclusion` 兼容入口共用
+五组的 `write_*_conclusion` 兼容入口共用
 `scripts/verification_publication.py` 的 `publish_conclusion`：保持原 JSON
 序列化规则，临时文件独占创建、flush/fsync 后通过 `os.link` 原子发布；目标已存在
 即失败，finally 清理临时文件。运行中证据与回执仍可原子更新，不使用此最终发布入口。
 
 新验收组以显式代码加入登记，提供自己的判据，调用同一个最终发布函数；可选提供
-组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope` 与 `a3_scope` 的固定测试模块合集。
+组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope`、`a3_scope` 与 `a4_scope` 的固定测试模块合集。
 新增组仍须显式扩展执行范围；没有自动发现插件、独立检查计划或动态调度。
 测试中的合成组只证明组织扩展能力，不代表新增产品验收能力。
 
@@ -119,7 +120,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 
 缺快照、版本漂移、证据与当前快照哈希不一致、测试模块缺失或漂移、检查跳过/失败
 均为 `failed`；可捕获的运行中断为 `incomplete`。修复后完整重跑会得到新的
-`run_id` 和结论，旧结果保留。完整入口另须本次完整 A2 与 A3 通过才返回 0。
+`run_id` 和结论，旧结果保留。完整入口另须本次完整 A2、A3 与 A4 通过才返回 0。
 若 uv 尚未启动 Python 或进程被强制终止，可能没有本次结论文件；前者保留 uv 的
 非零退出码，后者已有的 #12 证据仍不能作为 A1 通过。
 
@@ -205,7 +206,7 @@ SQL 失败、连接中断、提交前进程终止、来源文件替换和脱敏�
 | `pytest_receipt_file`、`pytest_receipt_sha256`、`test_execution` | 绑定本次 pytest 原始脱敏回执的文件名与实际哈希；逐个固定模块核对收集、通过、失败、跳过、取消选择和未完成计数，只有收集与完整通过数量均等于固定数量，其他四项均为 0 才通过。 |
 | `fixture_files` | `examples/` 固定合成材料逐文件的 SHA-256 身份与核对结果，不保存配置或 Prompt 正文。测试材料工厂和进程哨兵的字节另列在 source_modules。 |
 | `environment` | 当前锁定 Python 及 Alembic、SQLAlchemy、PyYAML 的实际安装版本；版本缺失失败，新依赖不追加到 #12。 |
-| `migration_revision` | 另建临时 SQLite、真实 base→head 后从库内 alembic_version 读取唯一 revision，并核对随包 head 与显式固定的 a302_artifact_store；未登记新 head、升级失败或读取失败均拒绝。无用户数据库参数。 |
+| `migration_revision` | 另建临时 SQLite、真实 base→head 后从库内 alembic_version 读取唯一 revision，并核对随包 head 与显式固定的 a405_pi_cleanup_execution；未登记新 head、升级失败或读取失败均拒绝。无用户数据库参数。 |
 | `format_versions` | snapshot 为 1；stage_projections 分别记录 boundary/value/reuse/extraction/read/suggestion，各为 1；calibration_baseline 为 1；adapter_semantics 为 1。逐项独立匹配，不能只写一个总版本。 |
 | `code`、`worktree_sha256`、`lockfile_sha256` | 本次实际身份，须与 A1 运行前后核对过的身份及 #12 一致。材料与代码在运行期间变化均拒绝。 |
 | `status`、`a2_verified`、`reasons` | passed/failed/incomplete；只在无失败原因时 a2_verified=true。原因仅受控代码、中文指引及可选受控文件路径/依赖名称，不保存原始异常、SQL、输入值或进程输出。 |
@@ -264,7 +265,7 @@ A2-01 写出期间发生中断后，若本次检查已经全部通过，补写�
 短事务协议；它不是备份恢复。目录与领域定义核对 `intent/draft.md` §6 和 `CONTEXT.md`；
 没有新增领域决策或变更快照/投影身份算法。
 
-完整入口只有本次 A1、完整 A2 与 A3 通过时返回 0，否则非零。运行中断记为 incomplete；
+完整入口只有本次 A1、完整 A2、A3 与 A4 通过时返回 0，否则非零。运行中断记为 incomplete；
 在发布完整 A2 前发生的可捕获中断会得到 incomplete 结论。进程被强制终止或在最终
 原子发布中被终止时可能没有完整结论，缺结论绝不等于通过；已有 #12 若仍
 completed=false，同样不能继承历史成功。已有结论不可覆盖，修复后须用新 run_id
@@ -317,12 +318,12 @@ YAML 材料。`tests/fixtures/config_material_compatibility.json` 的期望结�
 ## A3 独立结论
 
 `<run_id>.a3.json` 的格式为 **1**，scope 固定为 `a3_artifact_backup_restore`，
-`parent_issue=29`、`issue=35`。它通过原有唯一 `acceptance_groups()` 最后追加：
+`parent_issue=29`、`issue=35`。它通过原有唯一 `acceptance_groups()` 追加：
 `required=True`、`dependencies=("A1", "完整 A2")`。依赖只安排顺序；A3 自己检查两份
 同次前置均 `status=passed`、各自 verified 严格为 true，A2-01 仍为非必需历史组。
 
-五份主要文件是基础证据、A1、A2-01、完整 A2、A3；`<run_id>.pytest.json` 是另一份
-绑定对象，所以正常运行有六个 JSON 文件。没有回执、没有结论或没有完整执行都不能
+当前六份主要文件是基础证据、A1、A2-01、完整 A2、A3、A4；
+`<run_id>.pytest.json` 是额外第七份绑定对象。没有回执、没有结论或没有完整执行都不能
 宣称通过。完整计划只执行一次；A3 不自行再启动 pytest 或复制运行组织器。
 
 | 字段 | 判据与含义 |
@@ -335,8 +336,8 @@ YAML 材料。`tests/fixtures/config_material_compatibility.json` 的期望结�
 | required_checks | 原六项固定顺序，status=passed、reason=none、严格整数退出码 0；缺项/跳过/失败拒绝 |
 | test_modules、source_modules、fixture_files | 每个显式路径的 expected/actual SHA-256 与受控结果；清单非空，测试清单和计数键集合必须一致 |
 | environment | 实际 Python、SQLite、Alembic、SQLAlchemy、PyYAML、Pydantic、Typer 版本；缺依赖失败，不追加 #12 字段 |
-| migration_revision | 另建临时 SQLite，真实 base→head 后读取唯一 alembic_version，并核对实际随包 head 与固定 a302_artifact_store；失败/未知新 head 拒绝，无用户库参数 |
-| format_versions | artifact=1、blob_layout=1、backup=1、backup_database_revision=a302_artifact_store，逐项核对实际常量 |
+| migration_revision | 另建临时 SQLite，真实 base→head 后读取唯一 alembic_version，并核对实际随包 head 与固定 a405_pi_cleanup_execution；失败/未知新 head 拒绝，无用户库参数 |
+| format_versions | artifact=1、blob_layout=1、backup=1、backup_database_revision=a405_pi_cleanup_execution，逐项核对实际常量 |
 | code、worktree_sha256、lockfile_sha256 | 本次实际身份完整、等于运行前基线、等于两份前置和基础证据的对应身份 |
 | status、a3_verified、capabilities | 仅无任何失败原因时 passed/true；六项保守共用整组状态，不根据部分通过或空集合独立宣称业务能力 |
 | stage_a_verified、live_verified、not_assessed | 前两项恒 false；后者明确列出全部尚未验收能力 |
@@ -375,7 +376,7 @@ manifest_verification、isolated_restore、restored_queries。它们只描述本
 
 固定范围在 `scripts/a3_scope.py`：已有分票清单显式聚合，逐模块用例数独立收集核对后
 登记，运行时不扫描目录生成自己的期望。回执插件只增加这组显式模块，完整 A2 继续仅
-校验自身固定集合，允许回执包含 A3。当前三个 scope 的 revision 各自显式登记为 a302；
+校验自身固定集合，允许回执包含 A3。当前各 scope 的 revision 显式登记为 a405_pi_cleanup_execution；
 新 migration 字节只进入 A3 清单，不扩大 A2 的业务范围，旧 a201 文件保持原字节。
 
 | 父规格/裁决 | 本次固定公共回归 |
@@ -399,3 +400,47 @@ manifest_verification、isolated_restore、restored_queries。它们只描述本
 范围与公共行为交叉引用：[制品](../contracts/artifact-store.md)、
 [备份/恢复](../contracts/backup-restore.md)、[运行配置](../contracts/runtime-config.md)、
 [阶段投影](../contracts/config-projections.md)。
+
+
+## A4 独立结论（#36/#45）
+
+`<run_id>.a4.json` 格式 1、scope `a4_pi_supply_lifecycle`、parent_issue=36、issue=45。
+沿用唯一固定计划和回执插件，A4 不再启动 pytest；最终入口要求所有 required 组本次通过。
+六份主要文件另加 `.pytest.json` 共七份；测试前失败可无回执，仍尽力发布失败/未完成结论。
+最终发布中断或 I/O 错误传播非零，已有前置与历史文件保持原字节，不覆盖或借用历史成功。
+
+A4 独立核对本次基础证据、A1、完整 A2、A3、回执文件名/run_id/实际 SHA-256，前置
+内容必须等于写出器返回值。A1/fullA2/A3 的范围、issue、严格整数格式、passed/verified
+以及相互反向绑定均须匹配。证据仍是原六项固定检查，全部真实整数 exit_code=0。
+发布前重查全部输入文件字节、三份前置返回值和运行前后 HEAD/dirty/工作树/lockfile。
+环境记录实际 Python、SQLite 与六项依赖版本；真实独立临时库 base→head 后读取唯一 revision，
+必须等于随包 head 和已登记 `a405_pi_cleanup_execution`，不读取用户库或接受任意新 head。
+
+`format_versions` 从生产 SupplyManifest/CleanupPlan 的权威 Schema 读取实际 const，
+核对 supply_manifest=1、derived-lock-v1、tree-v1、install-policy-v1、cleanup_plan=1、
+library-install-window-v1、cleanup_tree=tree-v1、allocated-inode-v1；整数与布尔不混用。
+`scripts/a4_scope.py` 固定登记每个实际 source/test/fixture 的完整字节哈希和逐模块正整数用例数，
+由开发时独立收集和审查后写入；交付运行不扫描目录生成 expected、不刷新预期或降低分母。
+回执 completed=true/整数 exit_code=0，每模块 collected=passed=固定N，其余 failed/skipped/
+deselected/incomplete=0；缺失、少跑、仅收集、跳过、非法计数、漂移与中断均失败。
+
+capabilities 单独列 prepare、verify、rebuild、activate、install_protection、cleanup_plan、
+cleanup_execute、doctor、export、isolated_restore；十项保守共用整组状态，全部通过才完整 A4。
+未批准 A4a/A4b 截断，不以空集合推断缺少能力通过。组合用例经公共服务准备/核验/重建、
+激活、真实 flock 保护、生成并执行非空清理，再导出材料和备份隔离恢复配置、制品、检查/
+激活/计划/清理审计；退役实例不复活，原根不可达仍能导出同字节 D5 证据。
+
+`live_install_verified`、`rpc_verified`、`stage_a_verified`、`live_verified` 恒 false。
+真实 prepare 的 install_check 只能在用户库 `pi supply show` 回查；#37 的一次性机制 spike
+不替代完整离线能力或真实供给验收。not_assessed 保留 live/RPC、阶段 A/B、真实来源、NAS、
+自动精读与实际 Pi 模型执行；没有成功布尔导入捷径。
+
+原因沿用受控词表 evidence_unavailable、binding_mismatch、format_mismatch、
+prerequisite_not_passed、check_not_passed、scope_drift、dependency_unavailable、
+migration_unavailable、storage_format_drift、identity_changed、run_incomplete、
+test_execution_not_passed；A4 中文建议独立，run_incomplete 优先 incomplete，其他原因 failed。
+不回显原始异常、参数、测试名称、skip 理由、模型输入或子进程输出。
+
+本次只对必要受影响的 A2/A3 源码、入口/兼容 fixture 字节重新审查绑定；旧业务范围、
+optional A2-01、旧 migration、A1 固定测试与四份冻结契约保留。全部需求逐条归属见
+[A4 父规格与评论对照](a4-requirements.md)。
