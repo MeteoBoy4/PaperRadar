@@ -80,8 +80,11 @@ def test_cli_rebuild_success_and_failure_use_same_public_history(
         env: dict[str, str],
         timeout: int,
         limit: int,
+        pass_fds: tuple[int, ...] = (),
     ) -> bytes:
-        return runner.run(argv, cwd=cwd, env=env, timeout=timeout, limit=limit)
+        return runner.run(
+            argv, cwd=cwd, env=env, timeout=timeout, limit=limit, pass_fds=pass_fds
+        )
 
     monkeypatch.setattr(HttpDownloader, "fetch", download)
     monkeypatch.setattr(ProcessRunner, "run", execute)
@@ -138,6 +141,7 @@ def test_cli_verify_timeout_and_interrupt_are_controlled(
         env: dict[str, str],
         timeout: int,
         limit: int,
+        pass_fds: tuple[int, ...] = (),
     ) -> bytes:
         if interrupted:
             raise KeyboardInterrupt("SECRET-interrupt")
