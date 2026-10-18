@@ -119,4 +119,8 @@ class CleanupPlan(Frozen):
 
     @property
     def retired_pending(self) -> tuple[CleanupItem, ...]:
-        return tuple(item for item in self.items if item.state == "retired_pending" and item.disposition != "absent")
+        return tuple(
+            item
+            for item in self.items
+            if item.state == "retired_pending" and item.disposition != "absent"
+        )
