@@ -210,3 +210,28 @@ create/verify/restore 均经供给公共查询完整语义回放，材料摘要�
 原根缺失时 doctor 指向 rebuild 后显式 activate，且旧根历史无需修回才能匹配新当前选择。
 如恢复活动副本继续共用原安装根，旧副本退役前不得执行后续 gc execute；
 flock 不能区分两个空闲活动副本。详见 [供给 Contract](pi-supply.md)。
+
+### 供给隔离恢复操作
+
+1. 在原库创建并 verify 批次；供给、D5、实例、检查、失败与激活事实均在 SQLite，
+   安装树、导出目录、Node/npm 大包和认证不进入 format 1。原库有未 checkpoint 的 WAL 时，
+   备份仍通过 SQLite 在线备份取得包含已提交事实的一致副本。
+2. 原数据库、配置、request/evidence、导出材料及安装根均可撤销访问，再对批次运行
+   `restore verify <batch> --target <新空目标>`。恢复及随后 list/show/export 不联网、不探测
+   Node/Pi、不安装、不自动激活，不追加恢复标记。可立即在不支持部署的平台回查原身份、
+   材料字节、三种 D5 引用、旧配置/六投影/基线及制品；export 可另选新材料根。
+3. 只有准备恢复执行时，在支持的平台对恢复库显式运行
+   `doctor --scope pi-supply --database <恢复库> --snapshot <已有快照>`。
+   原安装缺失会给 `install_unavailable` 并指向 rebuild 后 activate；历史缺根保留。
+4. 向新的本库独立安全根显式 `pi supply rebuild <supply_id>`，提供分离的
+   `--data-root <恢复根>`、`--config-root <新配置根>`、`--material-root <新材料根>`。
+   该步按冻结哈希重新联网下载大包，不读取旧 request，也不重新取 release/SHASUMS；
+   不承诺上游永久可用或脱网重建。新实例成功后仍须显式 `pi supply activate`，
+   用所需匹配快照切换当前选择，再运行 doctor。旧实例/激活与全部供给材料保持。
+
+一根仅服务一库，归属他库拒绝。恢复副本继续用原根时，先退役旧活动副本再允许清理；
+flock 保护在途进程，无法保护另一个空闲副本的 current。恢复到新根可避开这一共享纪律。
+任何材料摘要、supply_id、D5 基线/证据或激活闭包损坏，即使 SQLite integrity 为 ok 也拒绝；
+不联网补齐，不读导出文件修复。a302 旧批次仍须由匹配 A3 程序先 verify/restore，
+再切换新程序显式 db upgrade 并重做备份；新程序的 unsupported_revision 是预期，
+不得改写原批次清单 revision 或放宽 head gate。

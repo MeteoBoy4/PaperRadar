@@ -41,7 +41,7 @@ uv run --offline --locked paper-radar --help
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
 当前注册 `contracts export/check`、`db upgrade`、`config check/compile/diff/snapshots list`
 与 `backup create/verify`、会写入副本的 `restore verify`。
-`pi supply prepare/verify/rebuild/list/show` 可准备、核验、联网重建并查询项目独立 Pi 供给，
+`pi supply prepare/verify/rebuild/list/show/export` 可准备、核验、联网重建、查询并导出项目独立 Pi 供给，
 `activate` 显式切换每库唯一执行选择，`doctor --scope pi-supply` 只读核对显式快照与现场。
 不注册尚未实现的业务命令。
 
@@ -349,6 +349,9 @@ A3 另外固定覆盖单/多文件制品、真实迁移、WAL 备份、全量只
 及其 bundled npm，在私有 staging 安装并执行无模型检查，完整树只读发布后原子登记。
 `list/show` 只读回查材料、D5 与历史 install_check，不依赖本机 Pi、Node、平台或网络；
 历史检查不等于现场仍可用。prepare 无需真实 Profile/模型，不激活、不调用模型、不替代 RPC/校准。
+`export` 同样只取已核验库材料，向 `tools/pi/<supply_id>/` 输出六个顶层文件与去重 D5 证据，
+整组预检后不覆盖发布，同字节重试无操作；不导出内部派生锁或安装归档。
+`tools/pi/` 可提交版本控制，`.tools/pi/` 是被 Git 忽略的安装树，两者分开。
 `verify` 逐实例全树检查并探测 Node/npm/Pi，只追加检查事实；任一失败返回 2。
 `rebuild` 从库内冻结材料重新联网取得固定大包，要求原预期树、工具链与 libc 完全一致，
 成功新增随机实例和检查，失败另记供给级审计，旧坏实例保持不变；不重取小材料，不支持脱网恢复。
@@ -364,6 +367,8 @@ uv run --offline --locked paper-radar pi supply prepare \
   --request supply.json --install-root .tools/pi --data-root data \
   --config-root config --material-root tools/pi
 uv run --offline --locked paper-radar pi supply list --database data/paperradar.sqlite3
+uv run --offline --locked paper-radar pi supply export <supply_id> \
+  --database data/paperradar.sqlite3 --target tools/pi
 uv run --offline --locked paper-radar pi supply verify <supply_id> --database data/paperradar.sqlite3
 uv run --offline --locked paper-radar pi supply rebuild <supply_id> \
   --database data/paperradar.sqlite3 --install-root .tools/pi --data-root data \

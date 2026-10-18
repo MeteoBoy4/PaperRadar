@@ -3,6 +3,9 @@
 from typing import Literal
 
 SupplyReason = Literal[
+    "export_conflict",
+    "export_evidence_collision",
+    "export_failed",
     "adapter_versions_mixed",
     "selection_version_mismatch",
     "install_unavailable",
@@ -67,6 +70,13 @@ SupplyReason = Literal[
 ]
 
 GUIDANCE: dict[SupplyReason, str] = {
+    "export_conflict": "导出目标含异字节、链接或特殊条目；请保留原文件并选择空目标。",
+    "export_evidence_collision": (
+        "D5 证据摘要前 16 位冲突；请保留数据库并核对证据，不能覆盖或改名。"
+    ),
+    "export_failed": (
+        "材料导出未完成；请检查目录类型、权限及空间后重试，同字节文件会跳过。"
+    ),
     "adapter_versions_mixed": (
         "槽版本不一致，当前无任何可激活供给；请显式选择全部槽版本一致的快照。"
     ),
