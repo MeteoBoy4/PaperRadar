@@ -45,7 +45,8 @@ def check_engine(engine: object, node_version: str) -> None:
         raise SupplyError("engines_unsupported") from None
     wanted = tuple(map(int, lower.split(".")))
     actual = tuple(map(int, node_version.split(".")))
-    if actual < wanted if engine.startswith(">=") else actual != wanted:
+    mismatch = actual < wanted if engine.startswith(">=") else actual != wanted
+    if mismatch:
         raise SupplyError("engines_mismatch")
 
 

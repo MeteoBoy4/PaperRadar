@@ -127,6 +127,14 @@ class CleanupPlan(Frozen):
 
 
 CleanupPhase = Literal["not_run", "retired", "moved", "completed", "failed"]
+PREFLIGHT_REASONS: frozenset[SupplyReason] = frozenset(
+    {
+        "cleanup_facts_changed",
+        "database_unavailable",
+        "operation_interrupted",
+        "cleanup_failed",
+    }
+)
 
 
 class CleanupProgress(Frozen):

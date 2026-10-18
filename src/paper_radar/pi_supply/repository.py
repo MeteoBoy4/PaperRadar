@@ -29,6 +29,7 @@ from paper_radar.pi_supply.models import (
     SupplyManifest,
     SupplyRecord,
 )
+from paper_radar.pi_supply.selection import load_snapshot, match_snapshot
 from paper_radar.storage.database import (
     DatabaseMode,
     open_database,
@@ -357,8 +358,6 @@ def read_state(
             )
         ):
             raise SupplyError("supply_corrupt")
-        from paper_radar.pi_supply.selection import load_snapshot, match_snapshot
-
         history = []
         for row in activation_rows:
             _date(row["created_at"])
@@ -377,7 +376,7 @@ def read_state(
                 or not re.fullmatch(r"[0-9a-f]{64}", row["snapshot_id"])
                 or instance is None
                 or instance.root_id != row["root_id"]
-                or str(instance.path.parent.parent) != row["root_path"]
+                or str(instance.root) != row["root_path"]
             ):
                 raise SupplyError("supply_corrupt")
             try:
@@ -598,7 +597,7 @@ def commit_activation(
             if (
                 stored != record.manifest.canonical_bytes
                 or registered is None
-                or root_path != str(instance.path.parent.parent)
+                or root_path != str(instance.root)
             ):
                 raise SupplyError("supply_corrupt")
             timestamp = now()
@@ -608,7 +607,7 @@ def commit_activation(
                     install_id=instance.install_id,
                     snapshot_id=snapshot_id,
                     root_id=instance.root_id,
-                    root_path=str(instance.path.parent.parent),
+                    root_path=str(instance.root),
                     created_at=timestamp,
                 )
             )
@@ -628,7 +627,7 @@ def commit_activation(
         instance.install_id,
         snapshot_id,
         instance.root_id,
-        instance.path.parent.parent,
+        instance.root,
         timestamp,
     )
 

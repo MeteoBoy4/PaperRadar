@@ -16,6 +16,230 @@ from tests.pi_supply_process_support import inherited_child
 from tests.pi_supply_support import SupplyRoots, inputs, prepare
 
 
+@pytest.mark.parametrize("stage", ["retired", "completed"])
+@pytest.mark.filterwarnings(
+    "ignore:transaction already deassociated from connection:sqlalchemy.exc.SAWarning"
+)
+def test_interruption_after_progress_commit_keeps_replayable_progress(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stage: str
+) -> None:
+    import sqlite3
+
+    from sqlalchemy.engine import RootTransaction
+
+    from paper_radar.pi_supply import (
+        create_cleanup_plan,
+        execute_cleanup_plan,
+        list_cleanup_executions,
+        rebuild_supply,
+    )
+
+    source = inputs(tmp_path)
+    first = prepare(tmp_path, source)
+    rebuild_supply(
+        source[0],
+        first.supply_id,
+        tmp_path / "install",
+        data_root=tmp_path / "data",
+        config_root=tmp_path / "config",
+        material_root=tmp_path / "materials",
+        downloader=source[3],
+        runner=source[4],
+    )
+    plan = create_cleanup_plan(
+        source[0],
+        data_root=tmp_path / "data",
+        config_root=tmp_path / "config",
+        material_root=tmp_path / "materials",
+    )
+    commit = RootTransaction.commit
+    interrupted = False
+
+    def interrupt_after_commit(connection: RootTransaction) -> None:
+        nonlocal interrupted
+        commit(connection)
+        with sqlite3.connect(source[0]) as database:
+            committed = database.execute(
+                "SELECT COUNT(*) FROM pi_cleanup_progress WHERE phase=?", (stage,)
+            ).fetchone()[0]
+        if committed and not interrupted:
+            interrupted = True
+            raise KeyboardInterrupt
+
+    with monkeypatch.context() as context:
+        context.setattr(RootTransaction, "commit", interrupt_after_commit)
+        with pytest.raises(KeyboardInterrupt):
+            execute_cleanup_plan(source[0], plan.plan_id)
+    execution = list_cleanup_executions(source[0])[0]
+    if stage == "retired":
+        assert [(i.phase, i.reason) for i in execution.items] == [
+            ("failed", "operation_interrupted")
+        ]
+        assert [e.phase for e in execution.events] == ["not_run", "retired", "failed"]
+        assert not execution.passed
+    else:
+        assert [(i.phase, i.reason) for i in execution.items] == [
+            ("completed", "passed")
+        ]
+        assert execution.passed
+
+
+@pytest.mark.parametrize("corruption", ["partial", "wrong_reason", "resume", "atomic"])
+def test_batch_block_history_rejects_partial_or_resumed_events(
+    tmp_path: Path, corruption: str
+) -> None:
+    import sqlite3
+
+    from paper_radar.pi_supply import (
+        create_cleanup_plan,
+        execute_cleanup_plan,
+        list_cleanup_executions,
+        rebuild_supply,
+        show_cleanup_execution,
+    )
+
+    source = inputs(tmp_path)
+    first = prepare(tmp_path, source)
+    for _ in range(2):
+        rebuild_supply(
+            source[0],
+            first.supply_id,
+            tmp_path / "install",
+            data_root=tmp_path / "data",
+            config_root=tmp_path / "config",
+            material_root=tmp_path / "materials",
+            downloader=source[3],
+            runner=source[4],
+        )
+    plan = create_cleanup_plan(
+        source[0],
+        data_root=tmp_path / "data",
+        config_root=tmp_path / "config",
+        material_root=tmp_path / "materials",
+    )
+    activate_supply(source[0], first.supply_id, source[1])
+    if corruption == "atomic":
+        with sqlite3.connect(source[0]) as database:
+            database.execute(
+                "CREATE TRIGGER reject_second_block BEFORE INSERT "
+                "ON pi_cleanup_progress "
+                "WHEN NEW.reason='cleanup_facts_changed' AND NEW.install_id='"
+                + plan.candidates[1].install_id
+                + "' BEGIN SELECT RAISE(ABORT, 'injected persistence failure'); END"
+            )
+        with pytest.raises(SupplyError, match="failure_record_failed"):
+            execute_cleanup_plan(source[0], plan.plan_id)
+        execution = list_cleanup_executions(source[0])[0]
+        assert len(execution.events) == 2
+        assert all(
+            i.phase == "not_run" and i.reason == "not_run" for i in execution.items
+        )
+        return
+    execution = execute_cleanup_plan(source[0], plan.plan_id)
+    assert all(i.phase == "not_run" for i in execution.items)
+    with sqlite3.connect(source[0]) as database:
+        if corruption == "partial":
+            database.execute(
+                "DELETE FROM pi_cleanup_progress WHERE event_id=?",
+                (execution.events[-1].event_id,),
+            )
+        elif corruption == "wrong_reason":
+            database.execute(
+                "UPDATE pi_cleanup_progress SET reason='tree_mismatch' "
+                "WHERE event_id>?",
+                (execution.events[1].event_id,),
+            )
+        else:
+            database.execute(
+                "INSERT INTO pi_cleanup_progress"
+                "(run_id,install_id,phase,reason,created_at) "
+                "VALUES(?,?,'failed','cleanup_failed',?)",
+                (
+                    execution.run_id,
+                    execution.items[0].install_id,
+                    execution.events[-1].created_at,
+                ),
+            )
+    with pytest.raises(SupplyError, match="cleanup_history_invalid"):
+        show_cleanup_execution(source[0], execution.run_id)
+
+
+@pytest.mark.parametrize("drift", ["tree", "facts"])
+def test_preflight_failure_identifies_item_or_blocks_whole_batch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, drift: str
+) -> None:
+    import fcntl
+
+    from paper_radar.backup import create_backup, restore_backup
+    from paper_radar.pi_supply import (
+        create_cleanup_plan,
+        execute_cleanup_plan,
+        rebuild_supply,
+        show_cleanup_execution,
+    )
+
+    source = inputs(tmp_path)
+    first = prepare(tmp_path, source)
+    for _ in range(2):
+        rebuild_supply(
+            source[0],
+            first.supply_id,
+            tmp_path / "install",
+            data_root=tmp_path / "data",
+            config_root=tmp_path / "config",
+            material_root=tmp_path / "materials",
+            downloader=source[3],
+            runner=source[4],
+        )
+    plan = create_cleanup_plan(
+        source[0],
+        data_root=tmp_path / "data",
+        config_root=tmp_path / "config",
+        material_root=tmp_path / "materials",
+    )
+    assert len(plan.candidates) == 2
+    original = fcntl.flock
+    acquired = 0
+
+    def lock(fd: int, operation: int) -> None:
+        nonlocal acquired
+        original(fd, operation)
+        if operation & fcntl.LOCK_EX:
+            acquired += 1
+            if acquired == 2:
+                if drift == "tree":
+                    item = plan.candidates[0]
+                    path = Path(item.root_path) / item.relative_path / "node/bin/node"
+                    path.chmod(0o755)
+                    path.write_bytes(b"changed during group lock acquisition")
+                else:
+                    activate_supply(source[0], first.supply_id, source[1])
+
+    # The OS lock boundary controls a real change between the two preflight passes.
+    with monkeypatch.context() as context:
+        context.setattr(fcntl, "flock", lock)
+        result = execute_cleanup_plan(source[0], plan.plan_id)
+    assert not result.passed
+    if drift == "tree":
+        assert [(i.phase, i.reason) for i in result.items] == [
+            ("failed", "cleanup_tree_changed"),
+            ("not_run", "not_run"),
+        ]
+    else:
+        assert [(i.phase, i.reason) for i in result.items] == [
+            ("not_run", "cleanup_facts_changed"),
+            ("not_run", "cleanup_facts_changed"),
+        ]
+    assert all((Path(i.root_path) / i.relative_path).exists() for i in plan.candidates)
+    batch = create_backup(source[0], tmp_path / "data", tmp_path / "backups")
+    restored = restore_backup(batch.batch_dir, tmp_path / "restored")
+    (tmp_path / "install").rename(tmp_path / "unavailable-root")
+    assert (
+        show_cleanup_execution(restored.target_dir / "database.sqlite3", result.run_id)
+        == result
+    )
+
+
 def test_missing_registered_lock_cannot_bypass_child_holding_old_inode(
     tmp_path: Path,
 ) -> None:

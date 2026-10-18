@@ -70,7 +70,7 @@ def inspect_instance(
     """调用方须持实例锁;全树工作在 SQL 写事务之外。"""
     if not instance.path.is_dir():
         raise SupplyError("install_unavailable")
-    root = instance.path.parent.parent
+    root = instance.root
     local_filesystem(root)
     check_root_marker(database, root, instance.root_id)
     no_symlink_components(instance.path)
@@ -123,8 +123,8 @@ class InstallUse:
             or instance.root_id != self.instance.root_id
         ):
             raise SupplyError("install_unavailable")
-        local_filesystem(instance.path.parent.parent)
-        check_root_marker(database, instance.path.parent.parent, instance.root_id)
+        local_filesystem(instance.root)
+        check_root_marker(database, instance.root, instance.root_id)
         path = collection_path(database, instance)
         no_symlink_components(path)
         if not path.is_dir():
@@ -254,7 +254,7 @@ def _acquire(
     _, candidate = _registered(database, supply_id, install_id)
     with _locked(
         database,
-        candidate.path.parent.parent,
+        candidate.root,
         candidate.root_id,
         candidate.install_id,
         exclusive=False,
@@ -306,7 +306,7 @@ def exclusive_install(
     _, candidate = _registered(database, supply_id, install_id, collection=True)
     with _locked(
         database,
-        candidate.path.parent.parent,
+        candidate.root,
         candidate.root_id,
         candidate.install_id,
         exclusive=True,
@@ -326,7 +326,7 @@ def probe_install(
         _, instance = _registered(database, supply_id, install_id, collection=True)
         with _locked(
             database,
-            instance.path.parent.parent,
+            instance.root,
             instance.root_id,
             instance.install_id,
             exclusive=True,
@@ -381,7 +381,7 @@ def collection_path(database: Path, instance: InstallInstance) -> Path:
         ).first()
     if not retired:
         return instance.path
-    trash = instance.path.parent.parent / ".trash" / instance.install_id
+    trash = instance.root / ".trash" / instance.install_id
     if os.path.lexists(trash):
         if os.path.lexists(instance.path):
             raise SupplyError("publication_conflict")

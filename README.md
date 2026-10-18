@@ -352,8 +352,13 @@ A4 另外绑定三份前置、真实生产格式、供给全生命周期、清�
 及其 bundled npm，在私有 staging 安装并执行无模型检查，完整树只读发布后原子登记。
 `list/show` 只读回查材料、D5 与历史 install_check，不依赖本机 Pi、Node、平台或网络；
 历史检查不等于现场仍可用。prepare 无需真实 Profile/模型，不激活、不调用模型、不替代 RPC/校准。
+list 明示实例计数为历史登记、未核验现场；verify、doctor、activate 与使用句柄会核验当前现场。
 `export` 同样只取已核验库材料，向 `tools/pi/<supply_id>/` 输出六个顶层文件与去重 D5 证据，
 整组预检后不覆盖发布，同字节重试无操作；不导出内部派生锁或安装归档。
+2026-10-18 用户裁决：本次 A4 接受导出所需的目录句柄、nofollow、硬链接不覆盖发布与 fsync
+等安全文件能力边界，能力不足继续安全拒绝。Windows 安全导出由
+[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 后续交付，本次未实现/未验证；
+#46 不阻塞已裁定的本次平台范围，#36 保持 OPEN。
 `tools/pi/` 可提交版本控制，`.tools/pi/` 是被 Git 忽略的安装树，两者分开。
 `verify` 逐实例全树检查并探测 Node/npm/Pi，只追加检查事实；任一失败返回 2。
 `rebuild` 从库内冻结材料重新联网取得固定大包，要求原预期树、工具链与 libc 完全一致，
@@ -392,7 +397,11 @@ uv run --offline --locked paper-radar doctor --scope pi-supply \
 ```
 
 请求必须填写精确 Node/npm、Node 官方摘要、Linux x86_64/glibc 及 D5 三态/依据/证据。
+证据路径相对请求所在目录，拒绝绝对路径、`..` 或链接解析越界；show/doctor 对
+may_change/unknown 明示需要后续相关语义评估，安装检查不代表校准兼容。
 安装根与 data/config/materials 根互不包含；首次空根绑定本库，不支持网络文件系统。
+发布协调使用数据库旁 `<database>.pi-supply.lock` 及安装根内 `.root.lock`、
+`.prepare-<material_key>.lock`；它们不是事实源、备份或清理对象，关闭释放、不删除锁文件。
 普通重复材料要求 rebuild，改变 D5 也不能重冻；同时开始的同请求只登记一个实例。
 实际下载/进程实现已存在，普通测试仅用网络/程序 fake，真实 Pi 机制记录见
 [1.3.0 spike](docs/research/pi-1.3.0-supply-spike.md)，它不是项目 live 供给验收。
@@ -429,4 +438,6 @@ uv run --offline --locked paper-radar pi supply gc --execute <完整plan_id> \
 已完成身份的重现路径、未知 staging/树/trash 均需人工处理。恢复活动副本共用原根时，旧副本退役前不得执行清理。
 安装锁缺失不补建，请 rebuild 新实例；只恢复删除所需目录权限，不改变普通文件或树外硬链接权限。
 供给、D5、检查、激活与清理历史随数据库备份；不删除业务制品、blob、材料或其他安装。
+清理单项核验错误归因于实际候选；库级前置阻断整组保留 not_run 并原子追加原因，
+退役提交后中断依据实际进展记录，已完成项不回退为失败。旧计划与执行历史仍可回放。
 计划原字节随备份恢复，后来的选择变化不改写历史。详见 [清理计划 Contract](docs/contracts/pi-supply.md#不可变安装清理计划)。

@@ -25,6 +25,7 @@ from paper_radar.pi_supply.cleanup_history import (
     validate_plan_history,
 )
 from paper_radar.pi_supply.cleanup_models import (
+    PREFLIGHT_REASONS,
     CleanupExecution,
     CleanupItem,
     CleanupPhase,
@@ -70,10 +71,42 @@ def _record(
 
 
 def _record_failure(
-    database: Path, run_id: str, install_id: str, reason: SupplyReason
+    database: Path, run_id: str, install_id: str | None, reason: SupplyReason
 ) -> None:
     try:
-        _record(database, run_id, install_id, "failed", reason)
+        with (
+            database_engine(database, write=True) as engine,
+            engine.begin() as connection,
+        ):
+            progress = connection.execute(
+                select(tables.cleanup_progress)
+                .where(tables.cleanup_progress.c.run_id == run_id)
+                .order_by(tables.cleanup_progress.c.event_id)
+            ).mappings()
+            latest = {row["install_id"]: row for row in progress}
+            for candidate, event in latest.items():
+                phase = event["phase"]
+                if install_id is not None and candidate != install_id:
+                    continue
+                if phase in {"completed", "failed"} or (
+                    phase == "not_run" and event["reason"] != "not_run"
+                ):
+                    continue
+                # A batch prerequisite has no failing installation. Keep unstarted
+                # candidates unstarted, and persist the whole diagnosis atomically.
+                if install_id is None:
+                    blocked = (
+                        reason if reason in PREFLIGHT_REASONS else "cleanup_failed"
+                    )
+                    _event(
+                        connection,
+                        run_id,
+                        candidate,
+                        "not_run" if phase == "not_run" else "failed",
+                        blocked,
+                    )
+                else:
+                    _event(connection, run_id, candidate, "failed", reason)
     except SupplyError:
         raise SupplyError("failure_record_failed", execution_reason=reason) from None
 
@@ -84,7 +117,7 @@ def _check_item(
     with database_engine(database) as engine, engine.connect() as connection:
         if item.install_id in completed_installs(connection):
             raise SupplyError("cleanup_tree_changed")
-    root = handle.instance.path.parent.parent
+    root = handle.instance.root
     check_cleanup_root(
         database,
         root,
@@ -127,7 +160,7 @@ def execute_cleanup_plan(database: Path, plan_id: str) -> CleanupExecution:
             _event(connection, run_id, item.install_id, "not_run", "not_run")
     if not plan.candidates:
         return show_cleanup_execution(database, run_id)
-    active = plan.candidates[0]
+    active: CleanupItem | None = None
     try:
         with ExitStack() as locks:
             _assert_facts(read_cleanup_facts(database), plan.facts)
@@ -139,9 +172,12 @@ def execute_cleanup_plan(database: Path, plan_id: str) -> CleanupExecution:
                 )
                 _check_item(database, plan, item, handles[item.install_id])
             # Lock acquisition and expensive hashes never hold SQLite's writer lock.
+            active = None
             _assert_facts(read_cleanup_facts(database), plan.facts)
             for item in plan.candidates:
+                active = item
                 _check_item(database, plan, item, handles[item.install_id])
+            active = None
             with (
                 database_engine(database, write=True) as engine,
                 engine.connect() as connection,
@@ -189,11 +225,16 @@ def execute_cleanup_plan(database: Path, plan_id: str) -> CleanupExecution:
         _record_failure(
             database,
             run_id,
-            active.install_id,
+            active.install_id if active is not None else None,
             error.reason if isinstance(error, SupplyError) else "cleanup_failed",
         )
     except KeyboardInterrupt:
-        _record_failure(database, run_id, active.install_id, "operation_interrupted")
+        _record_failure(
+            database,
+            run_id,
+            active.install_id if active is not None else None,
+            "operation_interrupted",
+        )
         raise
     return show_cleanup_execution(database, run_id)
 

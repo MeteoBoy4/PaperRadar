@@ -13,6 +13,26 @@ from paper_radar.pi_supply import SupplyError, list_supplies, prepare_supply
 from tests.pi_supply_support import NODE, encoded, inputs, prepare
 
 
+@pytest.mark.parametrize("kind", ["absolute", "parent", "symlink"])
+def test_evidence_file_cannot_escape_request_directory(
+    tmp_path: Path, kind: str
+) -> None:
+    source = inputs(tmp_path / "request")
+    outside = tmp_path / "outside.txt"
+    outside.write_bytes(b"not requested evidence")
+    value = str(outside) if kind == "absolute" else "../outside.txt"
+    if kind == "symlink":
+        (source[2].parent / "linked.txt").symlink_to(outside)
+        value = "linked.txt"
+    payload = json.loads(source[2].read_bytes())
+    payload["d5"]["evidence"][0]["path"] = value
+    source[2].write_bytes(encoded(payload))
+    with pytest.raises(SupplyError, match="request_invalid"):
+        prepare(tmp_path / "request", source)
+    assert list_supplies(source[0]) == ()
+    assert outside.read_bytes() == b"not requested evidence"
+
+
 @pytest.mark.parametrize(
     "change",
     [

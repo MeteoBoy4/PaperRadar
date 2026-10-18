@@ -218,10 +218,8 @@ def create_cleanup_plan(
                     supply_id=record.supply_id,
                     install_id=instance.install_id,
                     root_id=instance.root_id,
-                    root_path=str(instance.path.parent.parent),
-                    relative_path=path.relative_to(
-                        instance.path.parent.parent
-                    ).as_posix(),
+                    root_path=str(instance.root),
+                    relative_path=path.relative_to(instance.root).as_posix(),
                     state=state,
                     disposition=disposition,
                     protection=protection,
@@ -301,7 +299,7 @@ def _manual(
         i.path.relative_to(root).as_posix()
         for r in records
         for i in r.installs
-        if i.path.parent.parent == root
+        if i.root == root
     }
     control_files = {".root.lock"} | {
         f".prepare-{r.manifest.material_key}.lock" for r in records
