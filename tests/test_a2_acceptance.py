@@ -50,7 +50,7 @@ def test_a2_conclusion_binds_fixed_scope_and_same_run(tmp_path: Path) -> None:
     assert result["status"] == "passed", result["reasons"]
     assert result["a2_01_verified"] is True
     assert result["evidence_sha256"] == a1["evidence_sha256"]
-    assert result["migration_revision"] == "a401_pi_supply"
+    assert result["migration_revision"] == "a402_pi_rebuild_failures"
     assert result["snapshot_format_version"] == 1
     assert result["stage_projection_format_version"] is None
     assert json.loads(path.read_text(encoding="utf-8")) == result

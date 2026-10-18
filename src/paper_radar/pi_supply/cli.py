@@ -47,9 +47,10 @@ COMMON = """
 GROUP_HELP = (
     """管理项目独立 Pi 固定供给。
 
-当前用途：prepare 准备且冻结固定材料和安装实例；list/show 只读回查。
+当前用途：prepare 准备；verify 逐实例核验；rebuild 联网重建；list/show 只读回查。
 参数与选项：数据库、快照、adapter 槽及根目录由子命令显式指定，无隐式最新。
-副作用：仅 prepare 下载并安装，不激活；list/show 不检查现场，不需要 Pi、平台或网络。
+副作用：prepare/rebuild 下载并安装，verify 运行无模型检查，均不激活；
+list/show 不检查现场。
 """
     + COMMON
     + """
@@ -69,7 +70,7 @@ PREPARE_HELP = (
 """
     + COMMON
     + """
-常见失败：仅支持 Linux x86_64/glibc；重复材料请用后续 rebuild，不能靠改 D5 重冻；
+常见失败：仅支持 Linux x86_64/glibc；重复材料请用 rebuild，不能靠改 D5 重冻；
 失败不覆盖旧树，未知残留保留人工处理。未验证 RPC、语义与校准。
 示例：paper-radar pi supply prepare --database data/paperradar.sqlite3 --snapshot <id>
   --adapter-slot screening --request supply.json --install-root .tools/pi
@@ -197,7 +198,118 @@ def show_command(
                     f"scope={check.scope} passed={str(check.passed).lower()} "
                     f"reason={check.reason}"
                 )
+        for failure in record.rebuild_failures:
+            typer.echo(
+                f"failure_id={failure.failure_id} operation=rebuild "
+                f"reason={failure.reason} created_at={failure.created_at}"
+            )
         typer.echo("以上为历史 install_check；未核验现场，尚无 RPC 或校准结论。")
     except SupplyError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(2) from None
+
+
+@supply_app.command(
+    "verify",
+    cls=SupplyCommand,
+    help="""逐一核验供给的全部已登记实例。
+
+参数与选项：<supply-id> 为完整供给 ID；--database 为已升级库。
+副作用：逐实例全树哈希、明确 Node/npm 版本和 Pi 无模型启动检查；每次追加 install_check。
+损坏树先拒绝执行，单实例失败后仍检查其他实例；不下载、不修复树、不改预期或激活。
+"""
+    + COMMON
+    + """
+常见失败：Linux x86_64/glibc 与冻结版本必须匹配；坏树或版本不符请 rebuild。
+示例：paper-radar pi supply verify <supply-id> --database data/paperradar.sqlite3
+""",
+)
+def verify_command(
+    supply_id: str,
+    database: Annotated[Path, typer.Option("--database", help="已升级数据库。")],
+) -> None:
+    from paper_radar.pi_supply import SupplyError, verify_supply
+
+    try:
+        results = verify_supply(database, supply_id)
+    except SupplyError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo("供给核验中断；历史检查保留，请重试。", err=True)
+        raise typer.Exit(130) from None
+    for item in results:
+        typer.echo(
+            f"install_id={item.install_id} scope=install_check "
+            f"passed={str(item.passed).lower()} reason={item.reason}"
+        )
+    if any(not item.passed for item in results):
+        typer.echo("部分实例核验失败；请保留现场并运行 rebuild 重建新实例。", err=True)
+        raise typer.Exit(2)
+    typer.echo("全部实例通过 install_check；RPC、模型语义与校准尚未验收。")
+
+
+@supply_app.command(
+    "rebuild",
+    cls=SupplyCommand,
+    help="""按库内历史固定材料联网重建新实例（不激活）。
+
+参数与选项：<supply-id> 为完整供给 ID；--database 为已升级库；
+四个根须显式提供且互不包含。
+--proxy 为可选无 userinfo 的 http/https 代理，不继承环境或保存。
+副作用：重新联网下载固定 Node 归档和 npm 包，核对原工具链、派生锁、入口与预期树；
+不是脱网重建。不重取 package/lock/release/SHASUMS 或 D5，
+不重新解析依赖、不更新供给身份。
+成功登记随机新实例与 install_check；失败追加供给级审计，不覆盖旧实例、不修改当前选择。
+"""
+    + COMMON
+    + """
+常见失败：仅支持匹配冻结 libc 的 Linux x86_64/glibc；材料缺失、摘要或树漂移立即拒绝。
+强杀后可重试完成可靠发布意图；未知 staging 或未登记树保留人工处理，不自动清理。
+示例：paper-radar pi supply rebuild <supply-id> --database data/paperradar.sqlite3
+  --install-root .tools/pi --data-root data --config-root config
+  --material-root tools/pi
+""",
+)
+def rebuild_command(
+    supply_id: str,
+    database: Annotated[Path, typer.Option("--database", help="已升级数据库。")],
+    install_root: Annotated[
+        Path, typer.Option("--install-root", help="项目独立安装根。")
+    ],
+    data_root: Annotated[Path, typer.Option("--data-root", help="实际数据根。")],
+    config_root: Annotated[Path, typer.Option("--config-root", help="实际配置根。")],
+    material_root: Annotated[
+        Path, typer.Option("--material-root", help="固定材料根。")
+    ],
+    proxy: Annotated[
+        str | None, typer.Option("--proxy", help="显式无凭据代理；不保存。")
+    ] = None,
+) -> None:
+    from paper_radar.pi_supply import SupplyError, rebuild_supply
+
+    try:
+        result = rebuild_supply(
+            database,
+            supply_id,
+            install_root,
+            data_root=data_root,
+            config_root=config_root,
+            material_root=material_root,
+            proxy=proxy,
+        )
+    except SupplyError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo("供给重建中断；旧实例保留，请检查残留后重试。", err=True)
+        raise typer.Exit(130) from None
+    typer.echo(
+        f"supply_id={result.supply_id} install_id={result.install_id} "
+        "scope=install_check result=passed"
+    )
+    typer.echo("已重建，尚未激活；RPC、模型语义与校准尚未验收。")
+    if result.residuals:
+        typer.echo(
+            "安装已成功登记；本次清理未完成，请保留残留人工检查，可重试可靠发布意图。"
+        )

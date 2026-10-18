@@ -5,7 +5,7 @@ from __future__ import annotations
 SCOPE = "a2_01_profile_runtime_config_snapshots"
 ISSUE = 16
 SNAPSHOT_FORMAT_VERSION = 1
-MIGRATION_REVISION = "a401_pi_supply"
+MIGRATION_REVISION = "a402_pi_rebuild_failures"
 
 # 材料组装重构只更新 service 并登记 material_assembly, 原固定测试不变。
 # 哈希在完成本票改动后固定。预期值不能从被检查文件动态生成。
@@ -31,7 +31,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_acceptance.py",
-        "06422237f8cfbf89e0519d19d41e516a9be078ea9c0e90e488e6f8421b0ad993",
+        "113ccc8fc7ee42dae32ecc11756ca2430e3f15791f0118d8f2f2e58e8ead958c",
     ),
 )
 

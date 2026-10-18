@@ -14,11 +14,12 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.config.identity import sha256
 from paper_radar.pi_supply import tables
-from paper_radar.pi_supply.errors import SupplyError
+from paper_radar.pi_supply.errors import GUIDANCE, SupplyError, SupplyReason
 from paper_radar.pi_supply.materials import derive_lock, object_bytes
 from paper_radar.pi_supply.models import (
     InstallCheck,
     InstallInstance,
+    RebuildFailure,
     SupplyManifest,
     SupplyRecord,
 )
@@ -113,6 +114,9 @@ def read_records(database: Path) -> tuple[SupplyRecord, ...]:
             )
             install_rows = connection.execute(select(tables.installs)).mappings().all()
             check_rows = connection.execute(select(tables.checks)).mappings().all()
+            failure_rows = (
+                connection.execute(select(tables.rebuild_failures)).mappings().all()
+            )
         result: dict[str, SupplyRecord] = {}
         for row in supply_rows:
             raw = row["manifest"]
@@ -191,7 +195,8 @@ def read_records(database: Path) -> tuple[SupplyRecord, ...]:
                     if (
                         check["scope"] != "install_check"
                         or check["passed"] not in (0, 1)
-                        or not re.fullmatch(r"[a-z_]{1,64}", check["reason"])
+                        or (check["passed"] == 1 and check["reason"] != "passed")
+                        or (check["passed"] == 0 and check["reason"] not in GUIDANCE)
                     ):
                         raise SupplyError("supply_corrupt")
                     checks.append(
@@ -226,7 +231,22 @@ def read_records(database: Path) -> tuple[SupplyRecord, ...]:
                     )
                 ),
                 row["created_at"],
+                tuple(
+                    RebuildFailure(
+                        failure["failure_id"], failure["reason"], failure["created_at"]
+                    )
+                    for failure in sorted(failure_rows, key=lambda f: f["failure_id"])
+                    if failure["supply_id"] == row["supply_id"]
+                ),
             )
+        for failure in failure_rows:
+            _date(failure["created_at"])
+            if (
+                failure["supply_id"] not in result
+                or failure["failure_id"] < 1
+                or failure["reason"] not in GUIDANCE
+            ):
+                raise SupplyError("supply_corrupt")
         # 构造引用 DAG。供给只引用冻结前已经存在的记录。
         visited: set[str] = set()
         first_checks = {
@@ -334,6 +354,86 @@ def commit_supply(
                     for role, raw in raw_materials.items()
                 ],
             )
+            connection.execute(
+                insert(tables.installs).values(
+                    install_id=install_id,
+                    supply_id=manifest.supply_id,
+                    root_id=root_id,
+                    created_at=timestamp,
+                )
+            )
+            connection.execute(
+                insert(tables.checks).values(
+                    install_id=install_id,
+                    scope="install_check",
+                    passed=1,
+                    reason="passed",
+                    created_at=timestamp,
+                )
+            )
+            connection.commit()
+        except BaseException:
+            connection.rollback()
+            raise
+
+
+def append_check(database: Path, install_id: str, reason: SupplyReason | None) -> None:
+    with database_engine(database, write=True) as engine, engine.begin() as connection:
+        connection.execute(
+            insert(tables.checks).values(
+                install_id=install_id,
+                scope="install_check",
+                passed=int(reason is None),
+                reason=reason or "passed",
+                created_at=now(),
+            )
+        )
+
+
+def append_rebuild_failure(
+    database: Path, supply_id: str, reason: SupplyReason
+) -> None:
+    with database_engine(database, write=True) as engine, engine.begin() as connection:
+        connection.execute(
+            insert(tables.rebuild_failures).values(
+                supply_id=supply_id, reason=reason, created_at=now()
+            )
+        )
+
+
+def commit_install(
+    database: Path, manifest: SupplyManifest, root_id: str, install_id: str
+) -> None:
+    with (
+        database_engine(database, write=True) as engine,
+        engine.connect() as connection,
+    ):
+        connection.exec_driver_sql("BEGIN IMMEDIATE")
+        try:
+            stored = connection.execute(
+                select(tables.supplies.c.manifest).where(
+                    tables.supplies.c.supply_id == manifest.supply_id
+                )
+            ).scalar_one()
+            if stored != manifest.canonical_bytes:
+                raise SupplyError("supply_corrupt")
+            existing = (
+                connection.execute(
+                    select(tables.installs).where(
+                        tables.installs.c.install_id == install_id
+                    )
+                )
+                .mappings()
+                .one_or_none()
+            )
+            if existing is not None:
+                if (
+                    existing["root_id"] != root_id
+                    or existing["supply_id"] != manifest.supply_id
+                ):
+                    raise SupplyError("publication_conflict")
+                return
+            timestamp = now()
             connection.execute(
                 insert(tables.installs).values(
                     install_id=install_id,

@@ -41,13 +41,13 @@ uv run --offline --locked paper-radar --help
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
 当前注册 `contracts export/check`、`db upgrade`、`config check/compile/diff/snapshots list`
 与 `backup create/verify`、会写入副本的 `restore verify`。
-`pi supply prepare/list/show` 可显式准备并查询项目独立 Pi 供给，准备不激活。
+`pi supply prepare/verify/rebuild/list/show` 可准备、核验、联网重建并查询项目独立 Pi 供给，均不激活。
 不注册尚未实现的业务命令。
 
 ## 数据库升级
 
 A2 的 `a201_profile_snapshot`、A3 的 `a302_artifact_store` 可显式升级至当前
-`a401_pi_supply`。升级只追加内容对象/制品及供给材料、安装根、实例与检查事实，
+`a402_pi_rebuild_failures`。升级只追加内容对象/制品及供给材料、安装根、实例、检查与重建失败事实，
 全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
 失败或进程中断完整回滚后可以重试。配置历史的 ID、原字节、创建时间、六投影和基线不变。
 已知旧库上的 `config check/compile/diff/snapshots list` 会提示先执行升级，不自动修改库。
@@ -348,6 +348,9 @@ A3 另外固定覆盖单/多文件制品、真实迁移、WAL 备份、全量只
 及其 bundled npm，在私有 staging 安装并执行无模型检查，完整树只读发布后原子登记。
 `list/show` 只读回查材料、D5 与历史 install_check，不依赖本机 Pi、Node、平台或网络；
 历史检查不等于现场仍可用。prepare 无需真实 Profile/模型，不激活、不调用模型、不替代 RPC/校准。
+`verify` 逐实例全树检查并探测 Node/npm/Pi，只追加检查事实；任一失败返回 2。
+`rebuild` 从库内冻结材料重新联网取得固定大包，要求原预期树、工具链与 libc 完全一致，
+成功新增随机实例和检查，失败另记供给级审计，旧坏实例保持不变；不重取小材料，不支持脱网恢复。
 
 ```bash
 uv run --offline --locked paper-radar pi supply prepare \
@@ -355,11 +358,15 @@ uv run --offline --locked paper-radar pi supply prepare \
   --request supply.json --install-root .tools/pi --data-root data \
   --config-root config --material-root tools/pi
 uv run --offline --locked paper-radar pi supply list --database data/paperradar.sqlite3
+uv run --offline --locked paper-radar pi supply verify <supply_id> --database data/paperradar.sqlite3
+uv run --offline --locked paper-radar pi supply rebuild <supply_id> \
+  --database data/paperradar.sqlite3 --install-root .tools/pi --data-root data \
+  --config-root config --material-root tools/pi
 ```
 
 请求必须填写精确 Node/npm、Node 官方摘要、Linux x86_64/glibc 及 D5 三态/依据/证据。
 安装根与 data/config/materials 根互不包含；首次空根绑定本库，不支持网络文件系统。
-普通重复材料要求后续 rebuild，改变 D5 也不能重冻；同时开始的同请求只登记一个实例。
+普通重复材料要求 rebuild，改变 D5 也不能重冻；同时开始的同请求只登记一个实例。
 实际下载/进程实现已存在，普通测试仅用网络/程序 fake，真实 Pi 机制记录见
 [1.3.0 spike](docs/research/pi-1.3.0-supply-spike.md)，它不是项目 live 供给验收。
 完整字段、固定来源、逐包完整性边界、树身份及故障恢复见

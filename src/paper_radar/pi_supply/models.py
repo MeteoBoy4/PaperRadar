@@ -199,12 +199,20 @@ class InstallInstance:
 
 
 @dataclass(frozen=True)
+class RebuildFailure:
+    failure_id: int
+    reason: str
+    created_at: str
+
+
+@dataclass(frozen=True)
 class SupplyRecord:
     supply_id: str
     manifest: SupplyManifest
     materials: dict[str, bytes]
     installs: tuple[InstallInstance, ...]
     created_at: str
+    rebuild_failures: tuple[RebuildFailure, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -212,3 +220,11 @@ class PrepareResult:
     supply_id: str
     install_id: str
     reused_concurrent: bool = False
+    residuals: bool = False
+
+
+@dataclass(frozen=True)
+class VerificationResult:
+    install_id: str
+    passed: bool
+    reason: str

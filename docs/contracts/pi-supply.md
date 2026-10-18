@@ -1,7 +1,8 @@
 # Pi 固定供给 Contract v1
 
-当前交付 `pi supply prepare/list/show` 和公共 Python 服务
-`paper_radar.pi_supply.prepare_supply/list_supplies/show_supply`。
+当前交付 `pi supply prepare/verify/rebuild/list/show` 和公共 Python 服务
+`paper_radar.pi_supply.prepare_supply/verify_supply/rebuild_supply/list_supplies/show_supply`，
+以及供后续激活选择使用的只读 `available_installs(database, supply_id)`。
 准备不激活，无需真实 Profile、模型配置或凭据，也不证明 RPC、模型语义或校准。
 `SupplyRequest`、`SupplyManifest` 为 `pi_supply/models.py` 的权威 Pydantic 类型。
 
@@ -139,13 +140,14 @@ Linux 移动目录时顶层短暂保留写位，发布后撤去并 fsync，之�
 根与意图等本机管理文件不进入供给身份；不把 .staging/.pending 或未登记树当可用安装。
 发布后事务失败/强杀只有残留完整树；相同完整意图与预期树重新核验后可重入登记，未知残留不删除。
 
-普通重复 prepare 在再次安装前拒绝并指向后续 rebuild，即使改 D5 也不能重冻。
+普通重复 prepare 在再次安装前拒绝并指向 rebuild，即使改 D5 也不能重冻。
 同时开始的相同完整请求先提交者胜；输者比对清单和现场树后返回既有 supply_id/install_id，
 清理自己的 staging，不登记第二实例。相同固定输入得到不同树或 D5 时受控冲突。
 list/show 只回查历史，不检查现场，不要求 Pi、网络或受支持平台，不能把历史 passed 当作当前可用。
 检查 scope 当前唯一为 install_check；不导入任意用户声明成功记录。
 
-数据库 head 为 a401_pi_supply，只增加当前实际消费的 owner/root/supply/material/instance/check 表。
+数据库 head 为 a402_pi_rebuild_failures；a401 原 migration 字节保持，
+本次只追加 `pi_rebuild_failures`，不为失败安装创建实例或把失败记到旧实例。
 供给小型材料与 D5 证据随数据库备份，backup format 仍为 1，语义回放同时校验供给闭包。
 恢复不安装、不下载、不激活。a302 旧批次须先用匹配 A3 程序恢复，再切新程序 db upgrade；
 不放宽 head gate。恢复副本共用原根时，旧副本退役前禁止未来 gc execute；flock 仅保护在途进程，
@@ -155,7 +157,52 @@ list/show 只回查历史，不检查现场，不要求 Pi、网络或受支持�
 integrity-supplements.json、SHASUMS256.txt 与 d5-evidence/<SHA前16位>.bin；
 derived-lock.json 是内部保存的确定性派生材料，不增加到已批准导出集合。
 版本控制目标 tools/pi/<supply_id>/，安装树 .tools/pi/<supply_id>/<install_id>/ 被 Git 忽略。
-后续 rebuild 重新联网下载固定摘要的 Node/tarball，不承诺脱网重建。
+rebuild 重新联网下载固定摘要的 Node/tarball，不承诺脱网重建。
+
+## 完整核验与固定材料重建
+
+```bash
+uv run --offline --locked paper-radar pi supply verify <完整supply_id> \
+  --database data/paperradar.sqlite3
+uv run --offline --locked paper-radar pi supply rebuild <完整supply_id> \
+  --database data/paperradar.sqlite3 --install-root .tools/pi \
+  --data-root data --config-root config --material-root tools/pi
+```
+
+`verify_supply(database, supply_id, *, runner=None)` 明确检查该供给全部已登记实例，
+返回逐实例 `VerificationResult(install_id, passed, reason)`；单实例失败不停止其他实例。
+先核对归属/安全路径与完整树，再用明确 Node/npm/Pi 入口探测精确版本及 Pi --help；
+最后再次核对完整树及空 session。verify 不执行 npm ci、不下载、不改变固定材料或安装树。
+所有已检查实例均追加 `scope=install_check` 的通过或受控失败事实，旧成功保持不变。
+执行门槛要求 Linux x86_64/glibc，且实际 libc 版本严格匹配冻结值；平台拒绝不执行实例。
+CLI 逐项输出实例/范围/结果，任一失败返回 2；中断返回 130。
+
+`rebuild_supply(database, supply_id, install_root, *, data_root, config_root, material_root,
+downloader=None, runner=None, proxy=None)` 首先完整回放库内材料、SHASUMS、派生策略及 D5，
+之后只重新下载固定 Node 归档并让固定 bundled npm 消费历史派生锁取得固定 tarball。
+不访问旧 request/evidence 路径、不重新取得 package/lock/release/SHASUMS，不接受新 D5。
+与 prepare 共享真实构建规则；精确工具链、libc、入口、package/派生锁字节和完整树必须等于历史预期。
+成功生成随机 install_id，supply_id/材料/D5/预期树不变；旧坏树/缺失实例和全部检查原样保留。
+可在本库另一个独立安全根重建，同一固定供给仍保持同一 supply_id。
+
+重建发布使用本根独立 `.pending-rebuild-<supply_id>.json` 意图，
+只包含完整 supply_id 与随机 install_id，不与首次 prepare 的意图混用。
+完整树先不覆盖发布并 fsync，再重新完整核验发布目标，最后短事务仅原子追加实例与成功检查；
+事务中再次核对冻结清单。登记前强杀或事务失败不产生半成功实例，重试核对可靠意图与完整目标后
+完成同一 install_id；登记后强杀重试也只完成该意图，不重复登记。
+登记提交后意图/staging 清理失败仍返回已提交成功，`PrepareResult.residuals=True`，
+CLI 明示残留需人工检查；它不会把已登记成功改报为构建失败。只清理本次 staging，未知残留保留。
+这不是自动 GC，也不证明强杀时必能追加失败记录。
+
+有可完整回放的目标供给后，受控重建失败追加供给级失败事实（failure_id/reason/created_at），
+既有 list/show 可回查；失败不新建实例、不修改其他实例。未知供给或损坏历史无法可靠绑定，直接拒绝。
+若失败审计自身不可写，返回 `failure_record_failed` 并保留受控 execution_reason，不声称已保存。
+备份/隔离恢复保留全部多实例、逐实例检查和供给级失败；回放拒绝孤儿引用、无时区时间或非受控原因。
+
+`available_installs` 不运行程序、不写检查，依次排除归属/路径/现场全树不符的实例，
+剩余按每实例最近通过检查的 `(created_at实际时刻, check_id)` 降序返回。
+check_id 全库单调且唯一，时间相同仍确定性破同；最近失败只供审计，不覆盖较早通过。
+查询返回空元组表示没有可用实例；这只是选择时事实，不是未来执行的并发保护。
 
 受控错误完整词表及中文下一步由 `pi_supply/errors.py::SupplyReason/GUIDANCE` 定义；
 常见组为 request/snapshot/adapter、来源/完整性/工具链、平台/根/树、进程配额、发布/并发和事实损坏。

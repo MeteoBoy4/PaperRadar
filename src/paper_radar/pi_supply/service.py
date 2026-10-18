@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-import fcntl
 import os
 import platform
 import re
 import shutil
+import tempfile
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
+from dataclasses import replace
+from datetime import datetime
 from pathlib import Path, PurePosixPath
 
 from sqlalchemy import insert, select
@@ -24,7 +26,7 @@ from paper_radar.config.compile import MaterialKind
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.yaml_loader import validate_yaml_bytes
 from paper_radar.pi_supply import tables
-from paper_radar.pi_supply.errors import SupplyError
+from paper_radar.pi_supply.errors import SupplyError, SupplyReason
 from paper_radar.pi_supply.filesystem import (
     check_space,
     durable_directories,
@@ -47,12 +49,17 @@ from paper_radar.pi_supply.materials import (
 from paper_radar.pi_supply.models import (
     D5,
     Evidence,
+    InstallInstance,
     PrepareResult,
     SupplyManifest,
     SupplyRecord,
     SupplyRequest,
+    VerificationResult,
 )
 from paper_radar.pi_supply.repository import (
+    append_check,
+    append_rebuild_failure,
+    commit_install,
     commit_supply,
     database_engine,
     read_records,
@@ -103,6 +110,122 @@ def show_supply(database: Path, supply_id: str) -> SupplyRecord:
     raise SupplyError("supply_not_found")
 
 
+def _platform(manifest: SupplyManifest) -> None:
+    try:
+        libc_info = os.confstr("CS_GNU_LIBC_VERSION") or ""
+    except (AttributeError, OSError, ValueError):
+        raise SupplyError("platform_mismatch") from None
+    if (
+        platform.system() != "Linux"
+        or platform.machine() != manifest.platform.arch
+        or libc_info != f"{manifest.platform.libc} {manifest.libc_version}"
+    ):
+        raise SupplyError("platform_mismatch")
+
+
+def _inspect(tree: Path, work: Path, manifest: SupplyManifest, process: Runner) -> None:
+    if tree_hash(tree) != manifest.expected_tree:
+        raise SupplyError("tree_mismatch")
+    node, npm, pi = (
+        tree / entry
+        for entry in (manifest.node_entry, manifest.npm_entry, manifest.pi_entry)
+    )
+    env = _environment(work, node, None)
+    probes: tuple[tuple[tuple[str, ...], str, SupplyReason], ...] = (
+        (
+            (str(node), "--version"),
+            "v" + manifest.node_version,
+            "node_version_mismatch",
+        ),
+        (
+            (str(node), str(npm), "--version"),
+            manifest.npm_version,
+            "npm_version_mismatch",
+        ),
+        (
+            (str(node), str(pi), *PI_FLAGS, "--version"),
+            manifest.pi_version,
+            "pi_version_mismatch",
+        ),
+    )
+    for argv, expected, reason in probes:
+        if (
+            process.run(
+                argv, cwd=work / "cwd", env=env, timeout=240, limit=OUTPUT_LIMIT
+            ).strip()
+            != expected.encode()
+        ):
+            raise SupplyError(reason)
+    process.run(
+        (str(node), str(pi), *PI_FLAGS, "--help"),
+        cwd=work / "cwd",
+        env=env,
+        timeout=240,
+        limit=OUTPUT_LIMIT,
+    )
+    if any((work / "sessions").iterdir()) or tree_hash(tree) != manifest.expected_tree:
+        raise SupplyError("startup_side_effect")
+
+
+def verify_supply(
+    database: Path, supply_id: str, *, runner: Runner | None = None
+) -> tuple[VerificationResult, ...]:
+    """逐实例完整检查并追加事实;失败不隐藏其他实例的结果。"""
+    record = show_supply(database, supply_id)
+    _platform(record.manifest)
+    results = []
+    for instance in record.installs:
+        reason: SupplyReason | None = None
+        try:
+            root = instance.path.parent.parent
+            _check_root_marker(database, root, instance.root_id)
+            no_symlink_components(instance.path)
+            with tempfile.TemporaryDirectory(prefix="paperradar-pi-verify-") as work:
+                _inspect(
+                    instance.path,
+                    Path(work),
+                    record.manifest,
+                    runner or ProcessRunner(),
+                )
+        except SupplyError as error:
+            reason = error.reason
+        except (OSError, ValueError):
+            reason = "verify_failed"
+        except KeyboardInterrupt:
+            append_check(database, instance.install_id, "operation_interrupted")
+            raise
+        append_check(database, instance.install_id, reason)
+        results.append(
+            VerificationResult(instance.install_id, reason is None, reason or "passed")
+        )
+    return tuple(results)
+
+
+def available_installs(database: Path, supply_id: str) -> tuple[InstallInstance, ...]:
+    """最近通过且现场完整的实例;同时间由全库单调 check_id 唯一破同。"""
+    record = show_supply(database, supply_id)
+    available = []
+    for instance in record.installs:
+        try:
+            _check_root_marker(database, instance.path.parent.parent, instance.root_id)
+            no_symlink_components(instance.path)
+            if tree_hash(instance.path) == record.manifest.expected_tree:
+                available.append(instance)
+        except (SupplyError, OSError):
+            continue
+    return tuple(
+        sorted(
+            available,
+            key=lambda instance: max(
+                (datetime.fromisoformat(check.created_at), check.check_id)
+                for check in instance.checks
+                if check.passed
+            ),
+            reverse=True,
+        )
+    )
+
+
 def _read_small(path: Path) -> bytes:
     try:
         with path.open("rb") as source:
@@ -116,6 +239,8 @@ def _read_small(path: Path) -> bytes:
 
 @contextmanager
 def _lock(path: Path) -> Iterator[None]:
+    import fcntl
+
     descriptor = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     try:
         fcntl.flock(descriptor, fcntl.LOCK_EX)
@@ -312,6 +437,31 @@ def _check_root_marker(database: Path, root: Path, root_id: str) -> None:
         raise SupplyError("root_foreign")
 
 
+def _publish_tree(
+    root: Path, manifest: SupplyManifest, tree: Path, install_id: str
+) -> Path:
+    parent = root / manifest.supply_id
+    no_symlink_components(parent)
+    parent.mkdir(exist_ok=True, mode=0o700)
+    target = parent / install_id
+    no_symlink_components(target)
+    if target.exists():
+        if tree_hash(target) != manifest.expected_tree:
+            raise SupplyError("publication_conflict")
+        freeze_tree(target)
+        durable_tree(target)
+    else:
+        freeze_tree(tree)
+        durable_tree(tree)
+        tree.chmod(0o755)
+        publish_directory(tree, target)
+        target.chmod(0o555)
+        fsync_directory(target)
+        fsync_directory(parent)
+        fsync_directory(root)
+    return target
+
+
 def _publish(
     database: Path,
     root: Path,
@@ -362,30 +512,219 @@ def _publish(
                 output.flush()
                 os.fsync(output.fileno())
             fsync_directory(root)
-        parent = root / manifest.supply_id
-        no_symlink_components(parent)
-        parent.mkdir(exist_ok=True, mode=0o700)
-        target = parent / install_id
-        no_symlink_components(target)
-        if target.exists():
-            if tree_hash(target) != manifest.expected_tree:
-                raise SupplyError("publication_conflict")
-            freeze_tree(target)
-            durable_tree(target)
-        else:
-            freeze_tree(tree)
-            durable_tree(tree)
-            # Linux 移动目录需要更新其 ..;发布后、登记前撤去此临时写位。
-            tree.chmod(0o755)
-            publish_directory(tree, target)
-            target.chmod(0o555)
-            fsync_directory(target)
-            fsync_directory(parent)
-            fsync_directory(root)
+        _publish_tree(root, manifest, tree, install_id)
         commit_supply(database, manifest, materials, root_id, install_id)
         pending.unlink()
         fsync_directory(root)
         return PrepareResult(manifest.supply_id, install_id)
+
+
+def _publish_rebuild(
+    database: Path,
+    root: Path,
+    root_id: str,
+    manifest: SupplyManifest,
+    tree: Path,
+    process: Runner,
+) -> PrepareResult:
+    with (
+        _lock(database.with_name(database.name + ".pi-supply.lock")),
+        _lock(root / ".root.lock"),
+    ):
+        _check_root_marker(database, root, root_id)
+        pending = root / f".pending-rebuild-{manifest.supply_id}.json"
+        install_id = uuid.uuid4().hex
+        if pending.exists() or pending.is_symlink():
+            if pending.is_symlink():
+                raise SupplyError("publication_conflict")
+            intent = object_bytes(_read_small(pending))
+            install_id = intent.get("install_id", "")
+            if (
+                set(intent) != {"install_id", "supply_id"}
+                or not isinstance(install_id, str)
+                or not re.fullmatch(r"[0-9a-f]{32}", install_id)
+                or intent["supply_id"] != manifest.supply_id
+            ):
+                raise SupplyError("publication_conflict")
+        else:
+            with pending.open("xb") as output:
+                output.write(
+                    canonical_json(
+                        {"install_id": install_id, "supply_id": manifest.supply_id}
+                    )
+                )
+                output.flush()
+                os.fsync(output.fileno())
+            fsync_directory(root)
+        target = _publish_tree(root, manifest, tree, install_id)
+        with tempfile.TemporaryDirectory(prefix="paperradar-pi-rebuild-") as work:
+            _inspect(target, Path(work), manifest, process)
+        commit_install(database, manifest, root_id, install_id)
+        residuals = False
+        try:
+            pending.unlink()
+            fsync_directory(root)
+        except OSError:
+            residuals = True
+        return PrepareResult(manifest.supply_id, install_id, residuals=residuals)
+
+
+def rebuild_supply(
+    database: Path,
+    supply_id: str,
+    install_root: Path,
+    *,
+    data_root: Path,
+    config_root: Path,
+    material_root: Path,
+    downloader: Downloader | None = None,
+    runner: Runner | None = None,
+    proxy: str | None = None,
+) -> PrepareResult:
+    """联网重新下载固定大包,由历史材料重建新实例,不重新冻结或激活。"""
+    record = show_supply(database, supply_id)
+    manifest = record.manifest
+    staging = None
+    result = None
+    cleanup_incomplete = False
+    try:
+        _platform(manifest)
+        proxy = checked_proxy(proxy)
+        root = safe_roots(database, install_root, data_root, config_root, material_root)
+        database = database.resolve()
+        local_filesystem(root)
+        check_space(root)
+        root_id = _owned_root(database, root)
+        staging = root / f".staging-{uuid.uuid4().hex}"
+        staging.mkdir(mode=0o700)
+        process = runner or ProcessRunner()
+        tree, _, _ = _build_tree(
+            staging,
+            record.materials,
+            manifest.node_version,
+            manifest.npm_version,
+            manifest.pi_version,
+            manifest.node_sha256,
+            downloader or HttpDownloader(),
+            process,
+            proxy,
+            frozen_tree=manifest.expected_tree,
+            frozen_entry=manifest.pi_entry,
+        )
+        result = _publish_rebuild(database, root, root_id, manifest, tree, process)
+    except SupplyError as error:
+        _record_rebuild_failure(database, supply_id, error.reason)
+        raise
+    except KeyboardInterrupt:
+        _record_rebuild_failure(database, supply_id, "operation_interrupted")
+        raise
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, UnicodeError):
+        _record_rebuild_failure(database, supply_id, "rebuild_failed")
+        raise SupplyError("rebuild_failed") from None
+    finally:
+        if staging is not None:
+            try:
+                _cleanup_staging(staging)
+            except OSError:
+                cleanup_incomplete = True
+    assert result is not None
+    return replace(result, residuals=result.residuals or cleanup_incomplete)
+
+
+def _record_rebuild_failure(
+    database: Path, supply_id: str, reason: SupplyReason
+) -> None:
+    try:
+        append_rebuild_failure(database, supply_id, reason)
+    except SupplyError:
+        raise SupplyError("failure_record_failed", execution_reason=reason) from None
+
+
+def _build_tree(
+    staging: Path,
+    materials: dict[str, bytes],
+    node_version: str,
+    npm_version: str,
+    pi_version: str,
+    node_sha256: str,
+    download: Downloader,
+    process: Runner,
+    proxy: str | None,
+    *,
+    frozen_tree: str | None = None,
+    frozen_entry: str | None = None,
+) -> tuple[Path, str, str]:
+    node_base = f"https://nodejs.org/dist/v{node_version}"
+    node_name = f"node-v{node_version}-linux-x64.tar.xz"
+    derived = materials["derived-lock.json"]
+    archive = download.fetch(
+        node_base + "/" + node_name, limit=ARCHIVE_LIMIT, proxy=proxy
+    )
+    if sha256(archive) != node_sha256:
+        raise SupplyError("node_checksum_mismatch")
+    tree, work = staging / "tree", staging / "work"
+    tree.mkdir()
+    extract_node(archive, tree / "node", node_version)
+    app = tree / "app"
+    app.mkdir()
+    (app / "package.json").write_bytes(materials["package.json"])
+    (app / "package-lock.json").write_bytes(derived)
+    node, npm = (
+        tree / "node/bin/node",
+        tree / "node/lib/node_modules/npm/bin/npm-cli.js",
+    )
+    if not node.is_file() or not npm.is_file() or not node.stat().st_mode & 0o111:
+        raise SupplyError("entry_invalid")
+    env = _environment(work, node, proxy)
+
+    def run(argv: tuple[str, ...], cwd: Path) -> bytes:
+        return process.run(argv, cwd=cwd, env=env, timeout=240, limit=OUTPUT_LIMIT)
+
+    if (
+        run((str(node), "--version"), work / "cwd").strip()
+        != ("v" + node_version).encode()
+    ):
+        raise SupplyError("node_version_mismatch")
+    if (
+        run((str(node), str(npm), "--version"), work / "cwd").strip()
+        != npm_version.encode()
+    ):
+        raise SupplyError("npm_version_mismatch")
+    run((str(node), str(npm), *NPM_FLAGS), app)
+    if (app / "package.json").read_bytes() != materials["package.json"] or (
+        app / "package-lock.json"
+    ).read_bytes() != derived:
+        raise SupplyError("installed_material_changed")
+    package_root = app / "node_modules" / PI_PACKAGE
+    installed = object_bytes(_read_small(package_root / "package.json"))
+    if installed.get("name") != PI_PACKAGE or installed.get("version") != pi_version:
+        raise SupplyError("pi_version_mismatch")
+    check_engine(installed.get("engines", {}).get("node"), node_version)
+    bin_value = installed.get("bin")
+    entry = bin_value.get("pi") if isinstance(bin_value, dict) else bin_value
+    if (
+        not isinstance(entry, str)
+        or PurePosixPath(entry).is_absolute()
+        or ".." in PurePosixPath(entry).parts
+    ):
+        raise SupplyError("entry_invalid")
+    pi = package_root / entry
+    if not pi.is_file() or not pi.resolve().is_relative_to(package_root.resolve()):
+        raise SupplyError("entry_invalid")
+    expected_tree = tree_hash(tree)
+    if frozen_tree is not None and expected_tree != frozen_tree:
+        raise SupplyError("tree_mismatch")
+    if frozen_entry is not None and pi.relative_to(tree).as_posix() != frozen_entry:
+        raise SupplyError("entry_invalid")
+    if (
+        run((str(node), str(pi), *PI_FLAGS, "--version"), work / "cwd").strip()
+        != pi_version.encode()
+    ):
+        raise SupplyError("pi_version_mismatch")
+    run((str(node), str(pi), *PI_FLAGS, "--help"), work / "cwd")
+    if any((work / "sessions").iterdir()) or tree_hash(tree) != expected_tree:
+        raise SupplyError("startup_side_effect")
+    return tree, expected_tree, pi.relative_to(tree).as_posix()
 
 
 def prepare_supply(
@@ -489,74 +828,19 @@ def prepare_supply(
                 }
             ):
                 raise SupplyError("already_prepared_use_rebuild")
-        archive = download.fetch(
-            node_base + "/" + node_name, limit=ARCHIVE_LIMIT, proxy=proxy
-        )
-        if sha256(archive) != request.node_sha256:
-            raise SupplyError("node_checksum_mismatch")
         staging = root / f".staging-{uuid.uuid4().hex}"
         staging.mkdir(mode=0o700)
-        tree, work = staging / "tree", staging / "work"
-        tree.mkdir()
-        extract_node(archive, tree / "node", request.node_version)
-        app = tree / "app"
-        app.mkdir()
-        (app / "package.json").write_bytes(materials["package.json"])
-        (app / "package-lock.json").write_bytes(derived)
-        node, npm = (
-            tree / "node/bin/node",
-            tree / "node/lib/node_modules/npm/bin/npm-cli.js",
+        tree, expected_tree, pi_entry = _build_tree(
+            staging,
+            materials,
+            request.node_version,
+            request.npm_version,
+            adapter.pi_version,
+            request.node_sha256,
+            download,
+            process,
+            proxy,
         )
-        if not node.is_file() or not npm.is_file() or not node.stat().st_mode & 0o111:
-            raise SupplyError("entry_invalid")
-        env = _environment(work, node, proxy)
-
-        def run(argv: tuple[str, ...], cwd: Path) -> bytes:
-            return process.run(argv, cwd=cwd, env=env, timeout=240, limit=OUTPUT_LIMIT)
-
-        if (
-            run((str(node), "--version"), work / "cwd").strip()
-            != ("v" + request.node_version).encode()
-        ):
-            raise SupplyError("node_version_mismatch")
-        if (
-            run((str(node), str(npm), "--version"), work / "cwd").strip()
-            != request.npm_version.encode()
-        ):
-            raise SupplyError("npm_version_mismatch")
-        run((str(node), str(npm), *NPM_FLAGS), app)
-        if (app / "package.json").read_bytes() != materials["package.json"] or (
-            app / "package-lock.json"
-        ).read_bytes() != derived:
-            raise SupplyError("installed_material_changed")
-        package_root = app / "node_modules" / PI_PACKAGE
-        installed = object_bytes(_read_small(package_root / "package.json"))
-        if (
-            installed.get("name") != PI_PACKAGE
-            or installed.get("version") != adapter.pi_version
-        ):
-            raise SupplyError("pi_version_mismatch")
-        check_engine(installed.get("engines", {}).get("node"), request.node_version)
-        bin_value = installed.get("bin")
-        entry = bin_value.get("pi") if isinstance(bin_value, dict) else bin_value
-        if (
-            not isinstance(entry, str)
-            or PurePosixPath(entry).is_absolute()
-            or ".." in PurePosixPath(entry).parts
-        ):
-            raise SupplyError("entry_invalid")
-        pi = package_root / entry
-        if not pi.is_file() or not pi.resolve().is_relative_to(package_root.resolve()):
-            raise SupplyError("entry_invalid")
-        expected_tree = tree_hash(tree)
-        if (
-            run((str(node), str(pi), *PI_FLAGS, "--version"), work / "cwd").strip()
-            != adapter.pi_version.encode()
-        ):
-            raise SupplyError("pi_version_mismatch")
-        run((str(node), str(pi), *PI_FLAGS, "--help"), work / "cwd")
-        if any((work / "sessions").iterdir()) or tree_hash(tree) != expected_tree:
-            raise SupplyError("startup_side_effect")
         manifest = SupplyManifest(
             pi_version=adapter.pi_version,
             node_version=request.node_version,
@@ -568,7 +852,7 @@ def prepare_supply(
             expected_tree=expected_tree,
             node_entry="node/bin/node",
             npm_entry="node/lib/node_modules/npm/bin/npm-cli.js",
-            pi_entry=pi.relative_to(tree).as_posix(),
+            pi_entry=pi_entry,
             d5=d5,
         )
         return _publish(database, root, root_id, manifest, materials, tree, old_ids)
