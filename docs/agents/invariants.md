@@ -27,5 +27,6 @@
 - 已版本化的 Profile、Prompt、Topic、Contract 和语义配置一经引用即冻结；需要变化时创建新版本。
 - Frozen Contract 从权威 Pydantic Schema 生成；Pydantic 定义是唯一的 Schema 来源。
 - Stage fingerprint 只包含能改变该阶段语义的输入（ADR-0008）。例如：
+  - supply_id、树哈希、install_id 与激活事件属于执行审计，不进入 Stage fingerprint 或校准基线；
   - volume、pages 等书目补全不使 Screening 或 Read 失效；
   - PDF 变化只按需使文档解析或 Read 失效。

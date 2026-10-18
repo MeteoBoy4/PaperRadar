@@ -1,0 +1,26 @@
+{
+  "format_version": 1,
+  "pi_version": "1.3.0",
+  "node_version": "22.19.0",
+  "npm_version": "10.9.3",
+  "node_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "platform": {"os": "linux", "arch": "x86_64", "libc": "glibc"},
+  "libc_version": "2.43",
+  "install_policy": "install-policy-v1",
+  "derived_lock_rule": "derived-lock-v1",
+  "tree_rule": "tree-v1",
+  "materials": {"package.json": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+  "expected_tree": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "node_entry": "node/bin/node",
+  "npm_entry": "node/lib/node_modules/npm/bin/npm-cli.js",
+  "pi_entry": "app/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+  "d5": {
+    "decision": "unknown", "basis": "Independent identity vector",
+    "baseline_supply_id": null,
+    "evidence": [{
+      "kind": "supply_material",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "material": "package.json", "supply_id": null, "check_id": null, "note": null
+    }]
+  }
+}

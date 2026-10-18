@@ -27,7 +27,7 @@ CLI 的契约命令从权威 Pydantic 定义生成 Schema；纯 Python 公共验
 Pydantic v2 校验已实现的三种 Screening 输出及原因组合。冻结结构契约就绪不表示
 后续业务流程已经就绪。
 
-当前无网络、LLM 或文档解析依赖。
+Pi 供给的官方下载使用 httpx；普通离线测试替换网络与外部程序，不依赖个人 Pi、Node、LLM 或文档解析器。
 
 ## 命令行帮助
 
@@ -41,12 +41,14 @@ uv run --offline --locked paper-radar --help
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
 当前注册 `contracts export/check`、`db upgrade`、`config check/compile/diff/snapshots list`
 与 `backup create/verify`、会写入副本的 `restore verify`。
+`pi supply prepare/list/show` 可显式准备并查询项目独立 Pi 供给，准备不激活。
 不注册尚未实现的业务命令。
 
 ## 数据库升级
 
-A2 的 `a201_profile_snapshot` 可显式升级至 A3 的 `a302_artifact_store`。升级只追加
-内容对象、制品与成员表及索引，全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
+A2 的 `a201_profile_snapshot`、A3 的 `a302_artifact_store` 可显式升级至当前
+`a401_pi_supply`。升级只追加内容对象/制品及供给材料、安装根、实例与检查事实，
+全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
 失败或进程中断完整回滚后可以重试。配置历史的 ID、原字节、创建时间、六投影和基线不变。
 已知旧库上的 `config check/compile/diff/snapshots list` 会提示先执行升级，不自动修改库。
 不在随包迁移图中的 revision 无法判断是较新版本还是损坏，须使用匹配程序检查。
@@ -197,7 +199,7 @@ uv run --offline --locked paper-radar config compile \
 ```
 
 该示例只证明 boundary、value、reuse 与 suggestion 配置完整；模型、Profile 和
-提示词仍为合成材料，Read 未就绪。当前没有 Pi RPC 执行器，也不检查 Pi/Node、
+提示词仍为合成材料，Read 未就绪。当前没有 Pi RPC 执行器，配置层也不检查 Pi/Node、
 认证、实际参数能力或运行隔离。旧 models 与示例选择保留，以维持历史版本和快照
 回放；配置层继续接受既有协议，不代表 Pi 会支持或自动切换这些协议。
 接入目标与边界见 [ADR-0026](docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。
@@ -339,3 +341,30 @@ A3 另外固定覆盖单/多文件制品、真实迁移、WAL 备份、全量只
 正式校准和自动精读仍未验收；A3 passed 不等于完整阶段 A 或阶段 B 通过。
 该目录不进入版本控制；格式、失败表示与使用方法见
 [离线验证证据](docs/verification/offline-evidence.md)。
+
+## Pi 固定供给
+
+`pi supply prepare` 显式选择历史快照、adapter 槽与严格请求，固定官方材料、独立 Node
+及其 bundled npm，在私有 staging 安装并执行无模型检查，完整树只读发布后原子登记。
+`list/show` 只读回查材料、D5 与历史 install_check，不依赖本机 Pi、Node、平台或网络；
+历史检查不等于现场仍可用。prepare 无需真实 Profile/模型，不激活、不调用模型、不替代 RPC/校准。
+
+```bash
+uv run --offline --locked paper-radar pi supply prepare \
+  --database data/paperradar.sqlite3 --snapshot <id> --adapter-slot screening \
+  --request supply.json --install-root .tools/pi --data-root data \
+  --config-root config --material-root tools/pi
+uv run --offline --locked paper-radar pi supply list --database data/paperradar.sqlite3
+```
+
+请求必须填写精确 Node/npm、Node 官方摘要、Linux x86_64/glibc 及 D5 三态/依据/证据。
+安装根与 data/config/materials 根互不包含；首次空根绑定本库，不支持网络文件系统。
+普通重复材料要求后续 rebuild，改变 D5 也不能重冻；同时开始的同请求只登记一个实例。
+实际下载/进程实现已存在，普通测试仅用网络/程序 fake，真实 Pi 机制记录见
+[1.3.0 spike](docs/research/pi-1.3.0-supply-spike.md)，它不是项目 live 供给验收。
+完整字段、固定来源、逐包完整性边界、树身份及故障恢复见
+[Pi 供给 Contract](docs/contracts/pi-supply.md)。安装树 `.tools/` 不提交 Git。
+
+供给小材料随数据库备份，backup format 仍为 1，verify/restore 重验供给与 D5 引用闭包。
+head gate 继续严格匹配：旧 a302 批次先 checkout 匹配的 A3 程序 verify/restore，
+再切回新程序执行 `db upgrade`，随后用新程序重做备份。恢复不会安装或激活 Pi。

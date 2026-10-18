@@ -21,6 +21,14 @@ _RESOURCE_HASH = re.compile(r"^[0-9a-f]{64}$")
 ThinkingLevel = Literal["off", "minimal", "low", "medium", "high", "xhigh", "max"]
 
 
+def exact_program_version(value: str) -> str:
+    """Pi、Node 与 bundled npm 共用的三段正式版本校验。"""
+    if not _PI_VERSION.fullmatch(value):
+        reason = ConfigValidationReason.PI_VERSION_INVALID.value
+        raise PydanticCustomError(reason, VALIDATION_GUIDANCE[reason])
+    return value
+
+
 def _tuple_or_passthrough(value: object) -> object:
     return tuple(value) if isinstance(value, list) else value
 
@@ -88,10 +96,7 @@ class PiAdapter(_FrozenConfig):
     @field_validator("pi_version")
     @classmethod
     def exact_pi_version(cls, value: str) -> str:
-        if not _PI_VERSION.fullmatch(value):
-            reason = ConfigValidationReason.PI_VERSION_INVALID.value
-            raise PydanticCustomError(reason, VALIDATION_GUIDANCE[reason])
-        return value
+        return exact_program_version(value)
 
     @field_validator("version", "adapter_version")
     @classmethod
