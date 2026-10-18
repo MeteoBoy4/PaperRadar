@@ -24,6 +24,7 @@ from paper_radar.pi_supply.protection import (
     probe_install,
 )
 from paper_radar.pi_supply.repository import commit_activation, read_state
+from paper_radar.pi_supply.retention import protection_reasons
 from paper_radar.pi_supply.selection import (
     load_snapshot,
     match_snapshot,
@@ -90,6 +91,14 @@ def doctor_supply(database: Path, snapshot_reference: str) -> DoctorReport:
     protection_inventory = retention_protection(records, history)
     retained = protection_inventory.retained_install_ids
     acceptance = protection_inventory.acceptance_install_ids
+    observations = {
+        i.install_id: probe_install(database, r.supply_id, i.install_id)
+        for r in records
+        for i in r.installs
+    }
+    protections = protection_reasons(
+        records, history, {key: value.state for key, value in observations.items()}
+    )
     diagnoses = []
     d5 = None
     for record in records:
@@ -125,20 +134,8 @@ def doctor_supply(database: Path, snapshot_reference: str) -> DoctorReport:
                 and reason != "passed"
             ):
                 blockers.append(reason)
-            protection = []
-            if instance.install_id in retained:
-                protection.append(
-                    "current"
-                    if current is not None and instance.install_id == current.install_id
-                    else "recent_activation"
-                )
-            if instance.install_id in acceptance:
-                protection.append("latest_install_check")
-            observation = probe_install(database, record.supply_id, instance.install_id)
-            if observation.state == "in_flight":
-                protection.append("in_flight")
-            elif observation.state == "unknown":
-                protection.append("protection_unknown")
+            protection = protections[instance.install_id]
+            observation = observations[instance.install_id]
             diagnoses.append(
                 InstanceDiagnosis(
                     record.supply_id,

@@ -8,6 +8,8 @@ from typing import Annotated, Any
 import typer
 from typer.core import TyperCommand, TyperGroup
 
+from paper_radar.pi_supply.cleanup_models import CleanupPlan
+
 
 @contextmanager
 def _arguments(command: str = "paper-radar pi supply") -> Iterator[None]:
@@ -54,7 +56,8 @@ GROUP_HELP = (
     """管理项目独立 Pi 固定供给。
 
 当前用途：prepare 准备；verify 逐实例核验；rebuild 联网重建；
-activate 显式切换唯一选择；list/show 只读回查；export 导出固定材料。
+activate 显式切换唯一选择；list/show 只读回查；export 导出固定材料；
+gc --dry-run 保存计划但不删除，show-plan 回查。
 参数与选项：数据库、快照、adapter 槽及根目录由子命令显式指定，无隐式最新。
 副作用：prepare/rebuild 下载并安装，verify 运行无模型检查，均不激活；
 list/show/export 不检查现场。
@@ -435,6 +438,129 @@ def doctor_command(
     typer.echo("0仅表示所选供给scope通过；不代表全项目就绪，不刷新预算或启用门禁。")
     if not report.passed:
         raise typer.Exit(2)
+
+
+GC_HELP = (
+    """生成可审阅的不可变安装清理计划，保存计划但不删除。
+
+参数与选项：必须给 --dry-run、--database 和实际
+--data-root/--config-root/--material-root。
+安装位置只来自本库登记的根和实例，不接受目标路径、glob 或 force。
+副作用：只追加计划事实，现场读取与锁探测不构成删除授权；不修改选择或安装可用性。
+保留窗口跨供给按 install_id 去重，当前和最近三个旧实例
+叠加在途、未知保护及各范围最近通过。
+未知 staging/未登记树人工处理；已退役残留单列；超过四棵仅报告，不绕过保护。
+分配占用来自真实 inode 遍历并去重，可回收量是估算，不保证实际释放字节数。
+"""
+    + COMMON
+    + """
+常见失败：根归属或路径不安全会标注无法核验；生成期间事实变化须重试。
+示例：paper-radar pi supply gc --dry-run --database data/paperradar.sqlite3
+  --data-root data --config-root config --material-root tools/pi
+"""
+)
+
+
+def _show_plan(plan: CleanupPlan) -> None:
+    typer.echo(f"plan_id={plan.plan_id} facts_version={plan.facts_version}")
+    typer.echo("保存计划但不删除；现场探测不是删除授权。")
+    typer.echo(
+        f"候选={len(plan.candidates)} 已退役待删={len(plan.retired_pending)} "
+        f"需人工处理={len(plan.manual)} 现场树数={plan.present_count} "
+        f"上限=4 超限={plan.over_limit}"
+    )
+    typer.echo(
+        f"遍历分配占用={plan.allocated_bytes} "
+        f"预计可回收={plan.reclaimable_bytes} 占用存在未知={plan.occupancy_unknown}"
+    )
+    for item in plan.items:
+        typer.echo(
+            f"install_id={item.install_id} supply_id={item.supply_id} "
+            f"state={item.state} ever_activated={item.ever_activated} "
+            f"disposition={item.disposition} reason={item.reason} "
+            f"protection={','.join(item.protection) or '无'} "
+            f"actual_tree_hash={item.actual_tree_hash or '未知'}"
+        )
+    for manual in plan.manual:
+        typer.echo(
+            f"人工处理 root_id={manual.root_id} reason={manual.reason} "
+            f"allocated_bytes={manual.allocated_bytes} "
+            f"logical_bytes={manual.logical_bytes} "
+            f"occupancy_reason={manual.occupancy_reason}"
+        )
+
+
+@supply_app.command("gc", cls=SupplyCommand, help=GC_HELP)
+def gc_command(
+    database: Annotated[
+        Path, typer.Option("--database", help="已升级数据库；本命令保存计划。")
+    ],
+    data_root: Annotated[Path, typer.Option("--data-root", help="实际数据根。")],
+    config_root: Annotated[Path, typer.Option("--config-root", help="实际配置根。")],
+    material_root: Annotated[
+        Path, typer.Option("--material-root", help="固定材料根。")
+    ],
+    dry_run: Annotated[
+        bool, typer.Option("--dry-run", help="保存计划但不删除，必须显式给出。")
+    ] = False,
+) -> None:
+    from paper_radar.pi_supply import SupplyError, create_cleanup_plan
+
+    if not dry_run:
+        typer.echo("必须显式使用 --dry-run；保存计划但不删除。", err=True)
+        raise typer.Exit(2)
+    try:
+        plan = create_cleanup_plan(
+            database,
+            data_root=data_root,
+            config_root=config_root,
+            material_root=material_root,
+        )
+    except SupplyError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo("计划生成中断；安装未删除，请重新生成计划。", err=True)
+        raise typer.Exit(130) from None
+    _show_plan(plan)
+
+
+@supply_app.command(
+    "show-plan",
+    cls=SupplyCommand,
+    help="""只读回查不可变清理计划的原有依据。
+
+参数与选项：<plan-id> 为完整64位计划ID；--database 为既有数据库；
+--canonical 输出保存的规范 JSON 原字节，终端附一个换行。
+副作用：只读历史回放，不检查现场，不写库、不联网、不运行程序。
+输出去向：终端显示计划汇总和理由，或规范 JSON。
+"""
+    + COMMON
+    + """
+常见失败：未知ID请先 gc --dry-run；损坏计划请保留数据库检查完整性。
+示例：paper-radar pi supply show-plan <plan-id> --database data/paperradar.sqlite3
+""",
+)
+def show_plan_command(
+    plan_id: str,
+    database: Annotated[
+        Path, typer.Option("--database", help="既有数据库，只读打开。")
+    ],
+    canonical: Annotated[
+        bool, typer.Option("--canonical", help="输出不可变规范JSON原字节。")
+    ] = False,
+) -> None:
+    from paper_radar.pi_supply import SupplyError, show_cleanup_plan
+
+    try:
+        plan = show_cleanup_plan(database, plan_id)
+    except SupplyError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    if canonical:
+        typer.echo(plan.canonical_bytes.decode())
+    else:
+        _show_plan(plan)
 
 
 @supply_app.command(

@@ -115,6 +115,8 @@ expected_tree、安装后解析的 pi_entry；保留其余字段及官方/补充
 `{path,kind:"file",sha256,executable}`；链接项 `{path,kind:"link",target}`。
 executable 为任一 x 位的布尔值，目录也计；链接目标保留原文本并须在树内、可解析且非绝对路径。
 拒绝特殊文件。规范 JSON 数组的 SHA-256 为树身份；不包含写/读位、mtime、uid/gid 或位置。
+实际枚举使用显式目录扫描，不抑制权限、缺失或其他读取错误；不可读子目录不能当作空目录，
+全树身份与占用都返回受控无法核验。此完整性检查不改变 tree-v1 的有效树编码与独立向量。
 
 独立向量：根与 `bin/` 可执行，`bin/run` 内容为 `hi\n` 且可执行，`run` 为 `bin/run` 的相对链接，
 树摘要为 `3ba7d3e8a26699a27360c5f3575eee704abe8cb77f572e0a21f768a798b96573`。
@@ -147,8 +149,9 @@ Linux 移动目录时顶层短暂保留写位，发布后撤去并 fsync，之�
 list/show/export 只回查历史，不检查现场，不要求 Node/Pi、网络或受支持平台，不能把历史 passed 当作当前可用。
 检查 scope 当前唯一为 install_check；不导入任意用户声明成功记录。
 
-数据库 head 为 a403_pi_activation；既有 migration 原字节保持，
-a403 追加 `pi_activation_events` 和 `pi_current_selection`，a402 重建失败事实保持不变。
+数据库 head 为 a404_pi_cleanup_plans；既有 migration 原字节保持，
+a404 追加不可变 `pi_cleanup_plans` 及其消费者所需的 `pi_install_retirements` 识别事实；
+a403 激活事件与唯一选择、a402 重建失败事实保持不变。本切片不提供退役写入操作。
 供给小型材料与 D5 证据随数据库备份，backup format 仍为 1，语义回放同时校验供给闭包。
 恢复不安装、不下载、不激活。a302 旧批次须先用匹配 A3 程序恢复，再切新程序 db upgrade；
 不放宽 head gate。恢复副本共用原根时，旧副本退役前禁止未来 gc execute；flock 仅保护在途进程，
@@ -291,9 +294,10 @@ uv run --offline --locked paper-radar doctor --scope pi-supply \
 D5 decision 与 basis 原文只读显示，不推断 minor/major 或校准兼容。
 库级保留查询按最新激活事件向前去重，保护当前和最近三个不同旧 install_id；
 同供给不同实例分别计数，同实例反复激活不扩窗。叠加已实施 scope 最近通过对象，
-当前仅有 install_check，RPC 如实未验证；在途保护由下述真实共享锁观察，不伪造记录或预建清理表。
+当前仅有 install_check，RPC 如实未验证；在途保护由下述真实共享锁观察，不伪造成功记录。
 未激活但现场存在的已登记完整树也计入实际占用，首次部署不要求补齐三个旧实例。
-`execution.retention_protection(records, history)` 是后续锁/清理共用的纯查询；
+`retention.protection_reasons(records, history, observations)` 是 doctor 与清理计划共用的纯规则；
+`execution.retention_protection(records, history)` 仍提供保留/安装检查保护摘要；
 `selection.match_snapshot` 与 `execution.inspect_instance` 分别提供全部槽匹配和现场核验边界。
 
 当前坏实例的修复路径是 `rebuild` 新实例后显式 `activate`，旧坏实例和历史保留。
@@ -333,8 +337,74 @@ install_check 保护独立叠加，超过四棵仍报告超限，绝不自动删
 取得后仍须持锁完成复核及移出可用集合，不得把探测过的 idle 当成未来执行许可。
 `handle.recheck(database) -> str` 重读登记/归属/安全位置并返回实际 tree-v1；
 它允许安全坏树，后续 GC 必须与计划实际 hash 比对。共享执行则严格要求冻结预期树。
-本票不新增退役状态、清理表或删除动作。所有失败先关闭本次 fd 再返回受控错误，
+保护机制自身不执行退役或删除。所有失败先关闭本次 fd 再返回受控错误，
 不回显底层异常、子进程输出、环境或秘密，不提供强制绕过参数。
 
 只支持契约既定本地文件系统；恢复活动副本共用原根时旧副本退役前不得 gc execute。
 锁身份不进入清单、六投影、校准基线、预算或门禁，也不声称生产 OS 隔离。
+
+## 不可变安装清理计划
+
+```bash
+uv run --offline --locked paper-radar pi supply gc --dry-run \
+  --database data/paperradar.sqlite3 --data-root data \
+  --config-root config --material-root tools/pi
+uv run --offline --locked paper-radar pi supply show-plan <完整plan_id> \
+  --database data/paperradar.sqlite3
+uv run --offline --locked paper-radar pi supply show-plan <完整plan_id> \
+  --database data/paperradar.sqlite3 --canonical
+```
+
+`create_cleanup_plan(database, *, data_root, config_root, material_root)` 从本库登记根推导全部目标，
+只写不可变计划，不删除树、不改变安装可用性、执行选择、配置、预算或门禁。
+`show_cleanup_plan(database, plan_id)` 和 `list_cleanup_plans(database)` 完整回放计划历史；
+查询不检查现场、不联网、不运行程序。CLI 必须显式 `--dry-run`，拒绝路径/glob/force。
+`show-plan --canonical` 输出保存的规范 JSON 字节再附终端换行；摘要不包含此终端换行。
+
+权威类型为 `pi_supply/cleanup_models.py::CleanupPlan`：严格格式版本 1、未知键拒绝，
+共享 UTF-8/排序键/紧凑分隔/无结尾换行规范 JSON；`plan_id=SHA-256(canonical_bytes)`。
+创建时间进入计划字节，同一现场多次计划各自留存；本地数据库归属、实际根位置属于计划审计。
+持久化保存原规范字节与 ID，跨进程查询和备份恢复不重生成、改写或刷新旧计划。
+计划包含：
+
+- `database_id`、`data_root/config_root/material_root`，规则版本
+  `library-install-window-v1`、`tree-v1`、`allocated-inode-v1`。
+- `facts` 与 `facts_version`：对数据库归属、根、供给清单摘要、安装实例、全部检查、激活历史、
+  当前选择和退役识别事实的完整规范视图取 SHA-256；不以时间或 MAX(id) 代替，不含计划自身。
+  生成前后及保存短事务内比较安全事实，变化返回 `cleanup_facts_changed` 并要求重新生成。
+- `items` 逐项固定供给/实例/root_id、登记绝对根与受控相对位置、installed/retired_pending、
+  曾否激活、瞬时 idle/in_flight/unknown、候选/保护/无法核验/缺失、具体理由和全部保护理由，
+  冻结预期 hash、计划时实际 hash、真实逻辑字节与分配占用。实际 hash 不要求等于预期；
+  安全坏树仍可候选，断链/越界链接/特殊文件等无法安全核验者排除。
+- `manual` 单列需人工处理的 staging、未登记树/未知 trash、不可核验根；可安全核验者
+  逐项保存 allocated_bytes/logical_bytes 并参与全计划实际占用去重，不进入预计回收；
+  无法安全统计者为 null 并保存 occupancy_reason。
+  `retired_pending` 单独投影已登记退役原位或 `.trash/<install_id>` 残留。
+- `present_count/over_limit`、去重后的 `allocated_bytes`、`reclaimable_bytes` 估算和
+  `occupancy_unknown`，未知占用不伪报为零或完整计数。
+
+窗口按最新激活事件逆序对 install_id 去重，保护当前和最近三个不同旧实例，**全库跨供给竞争四个位置**；
+同供给多实例分别计数，反复切换同一实例不多占位置。未激活实例也单独说明并纳入候选/占用。
+叠加各适用 scope 最近通过保护（按带时区时间/check_id）、真实在途保护和保护未知。
+`install_check` 不覆盖/冒充 `rpc_compatibility`；未来范围只在纯规则合成输入中测试，
+生产数据库仍仅接受既有 install_check 记录。doctor 与计划使用同一逐实例保留理由。
+超过四棵只报告，不绕过保护；prepare、doctor、计划和恢复均不自动清理。
+
+每个根重查整组 safe_roots、普通 marker 归属与本地文件系统；父路径拒绝符号链接。
+他库根或无法确认的根标注原因且不扫描；数据、数据库、配置、固定材料、控制锁不进入候选。
+未知 staging/未登记树/未知 trash 不能按名字自动认领，始终人工处理。
+已登记退役残留只能从既有实例和退役来源计划推导位置；本切片不提供退役或执行入口。
+
+占用真实遍历 lstat 的 `(st_dev, st_ino)`，同树与跨树去重分配块 `st_blocks*512`，
+不跟随链接。稀疏文件分别报告逻辑长度与分配量；文件硬链接数超过候选集合内已知名字数时，
+预计回收量不包含其数据块，防止将保留树/树外别名共享块算作必然释放。
+reflink/压缩/文件系统元数据及并发占用不可精确归因，所以它是预计回收量，不能用 statvfs 差值
+单独证明删除正确性；无法核验条目的占用明确未知；安全可读的未知残留只统计大小，仍需人工处理。
+
+历史完整性与执行适用性分开：新激活、检查或退役可以使旧计划不再适用，
+但不会使原规范字节、引用闭包正确的历史计划成为腐坏。query/backup/restore 不要求当前 facts_version
+或现场 hash 仍相等；它们拒绝规范字节/ID/格式、受控路径、理由或引用闭包损坏。
+未来执行必须取得非阻塞 EX 后重读安全事实、根归属和实际树 hash；漂移必须新计划，不能刷新旧预期。
+瞬时 idle 不是删除授权。仍持有的新句柄必须阻止删除；已完全释放且其他安全事实未变的瞬时句柄历史
+无需新增 generation/PID/TTL 记录，flock 不声称追溯已结束持有。
+恢复活动副本若仍共用原根，旧副本退役前不得执行清理；本机制不提供生产 OS 隔离。

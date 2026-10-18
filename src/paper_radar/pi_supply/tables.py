@@ -122,3 +122,26 @@ current_selection = Table(
     ),
     CheckConstraint("singleton = 1"),
 )
+
+cleanup_plans = Table(
+    "pi_cleanup_plans",
+    metadata,
+    Column("plan_id", String(64), primary_key=True),
+    Column("payload", LargeBinary, nullable=False, unique=True),
+    Column("created_at", Text, nullable=False),
+)
+# 计划消费者需要识别已退役残留;本票不提供退役写入口。
+retirements = Table(
+    "pi_install_retirements",
+    metadata,
+    Column(
+        "install_id",
+        String(32),
+        ForeignKey("pi_install_instances.install_id"),
+        primary_key=True,
+    ),
+    Column(
+        "plan_id", String(64), ForeignKey("pi_cleanup_plans.plan_id"), nullable=False
+    ),
+    Column("created_at", Text, nullable=False),
+)
