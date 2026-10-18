@@ -3,6 +3,11 @@
 from typing import Literal
 
 SupplyReason = Literal[
+    "adapter_versions_mixed",
+    "selection_version_mismatch",
+    "install_unavailable",
+    "selection_missing",
+    "retention_exceeded",
     "request_invalid",
     "adapter_missing",
     "snapshot_invalid",
@@ -62,6 +67,17 @@ SupplyReason = Literal[
 ]
 
 GUIDANCE: dict[SupplyReason, str] = {
+    "adapter_versions_mixed": (
+        "槽版本不一致，当前无任何可激活供给；请显式选择全部槽版本一致的快照。"
+    ),
+    "selection_version_mismatch": (
+        "当前供给与所给快照的全部已选槽不匹配；请显式 activate 匹配供给与快照。"
+    ),
+    "install_unavailable": "无最近通过且现场完整的安装实例；请 rebuild 后再 activate。",
+    "selection_missing": "尚无当前执行选择；请显式 activate 匹配供给与快照。",
+    "retention_exceeded": (
+        "实际安装树超过四棵保留上限；请检查保留保护并显式生成清理计划。"
+    ),
     "request_invalid": (
         "请求字段、类型或 D5 不合法；请按 pi-supply 契约修正严格 YAML/JSON。"
     ),

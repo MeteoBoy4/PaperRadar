@@ -25,7 +25,7 @@ from paper_radar.contracts import (
     export_frozen_contracts,
 )
 from paper_radar.contracts.schema import _SUPPORTED_CONTRACT_VERSIONS
-from paper_radar.pi_supply.cli import pi_app
+from paper_radar.pi_supply.cli import DOCTOR_HELP, DoctorCommand, doctor_command, pi_app
 
 _EXAMPLE_CONTRACT_NAME = ContractName.BOUNDARY.value
 _EXAMPLE_CONTRACT_VERSION = ContractVersion.V1.value
@@ -51,7 +51,8 @@ PaperRadar 工程入口。
 
 当前用途：管理冻结契约；显式迁移配置数据库，检查、编译、只读列出或比较配置快照。
 创建并只读校验包含已登记配置材料和制品的备份批次，向空隔离目标验证性恢复完整副本。
-pi supply 可显式准备独立 Pi 安装并只读回查固定供给；准备不激活，不调用模型。
+pi supply 可准备、核验、重建并显式激活独立 Pi；doctor --scope pi-supply 只读解释供给。
+准备与重建不激活，所有供给命令均不调用模型。
 未实现的模型与流程配置会明确显示未就绪。
 
 参数与选项：使用 `--help` 查看命令组；业务操作的参数由子命令明确提供。
@@ -177,6 +178,7 @@ app.add_typer(config_app, name="config")
 app.add_typer(backup_app, name="backup")
 app.add_typer(restore_app, name="restore")
 app.add_typer(pi_app, name="pi")
+app.command("doctor", cls=DoctorCommand, help=DOCTOR_HELP)(doctor_command)
 
 
 def _write_export_item(item: ContractExportItemResult) -> None:

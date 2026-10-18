@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
 from pydantic import ValidationError
-from sqlalchemy import Engine, insert, select
+from sqlalchemy import Connection, Engine, insert, select, update
 from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.config.identity import sha256
@@ -17,6 +17,7 @@ from paper_radar.pi_supply import tables
 from paper_radar.pi_supply.errors import GUIDANCE, SupplyError, SupplyReason
 from paper_radar.pi_supply.materials import derive_lock, object_bytes
 from paper_radar.pi_supply.models import (
+    Activation,
     InstallCheck,
     InstallInstance,
     RebuildFailure,
@@ -82,6 +83,12 @@ def _date(value: str) -> None:
 
 
 def read_records(database: Path) -> tuple[SupplyRecord, ...]:
+    return read_state(database)[0]
+
+
+def read_state(
+    database: Path,
+) -> tuple[tuple[SupplyRecord, ...], tuple[Activation, ...], Activation | None]:
     """重验原材料、派生规则、身份及 D5 闭包,不把自洽的坏清单当成事实。"""
     try:
         with database_engine(database) as engine, engine.connect() as connection:
@@ -116,6 +123,18 @@ def read_records(database: Path) -> tuple[SupplyRecord, ...]:
             check_rows = connection.execute(select(tables.checks)).mappings().all()
             failure_rows = (
                 connection.execute(select(tables.rebuild_failures)).mappings().all()
+            )
+            activation_rows = (
+                connection.execute(
+                    select(tables.activations).order_by(
+                        tables.activations.c.activation_id
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            selection_rows = (
+                connection.execute(select(tables.current_selection)).mappings().all()
             )
         result: dict[str, SupplyRecord] = {}
         for row in supply_rows:
@@ -305,8 +324,63 @@ def read_records(database: Path) -> tuple[SupplyRecord, ...]:
             )
         ):
             raise SupplyError("supply_corrupt")
-        return tuple(
-            sorted(result.values(), key=lambda row: (row.created_at, row.supply_id))
+        from paper_radar.pi_supply.selection import load_snapshot, match_snapshot
+
+        history = []
+        for row in activation_rows:
+            _date(row["created_at"])
+            record = result[row["supply_id"]]
+            instance = next(
+                (
+                    item
+                    for item in record.installs
+                    if item.install_id == row["install_id"]
+                ),
+                None,
+            )
+            if (
+                type(row["activation_id"]) is not int
+                or row["activation_id"] < 1
+                or not re.fullmatch(r"[0-9a-f]{64}", row["snapshot_id"])
+                or instance is None
+                or instance.root_id != row["root_id"]
+                or str(instance.path.parent.parent) != row["root_path"]
+            ):
+                raise SupplyError("supply_corrupt")
+            try:
+                match_snapshot(
+                    load_snapshot(database, row["snapshot_id"]),
+                    record.manifest.pi_version,
+                )
+            except SupplyError:
+                raise SupplyError("supply_corrupt") from None
+            history.append(
+                Activation(
+                    row["activation_id"],
+                    row["supply_id"],
+                    row["install_id"],
+                    row["snapshot_id"],
+                    row["root_id"],
+                    Path(row["root_path"]),
+                    row["created_at"],
+                )
+            )
+        if bool(history) != bool(selection_rows) or len(selection_rows) > 1:
+            raise SupplyError("supply_corrupt")
+        current = None
+        if selection_rows:
+            if (
+                selection_rows[0]["singleton"] != 1
+                or selection_rows[0]["activation_id"] != history[-1].activation_id
+            ):
+                raise SupplyError("supply_corrupt")
+            current = history[-1]
+        return (
+            tuple(
+                sorted(result.values(), key=lambda row: (row.created_at, row.supply_id))
+            ),
+            tuple(history),
+            current,
         )
     except (
         ValidationError,
@@ -455,3 +529,82 @@ def commit_install(
         except BaseException:
             connection.rollback()
             raise
+
+
+def commit_activation(
+    database: Path, record: SupplyRecord, instance: InstallInstance, snapshot_id: str
+) -> Activation:
+    """全树核验由调用方在事务外完成;短事务只发布完整事件和唯一选择。"""
+    with (
+        database_engine(database, write=True) as engine,
+        engine.connect() as connection,
+    ):
+        connection.exec_driver_sql("BEGIN IMMEDIATE")
+        try:
+            stored = connection.execute(
+                select(tables.supplies.c.manifest).where(
+                    tables.supplies.c.supply_id == record.supply_id
+                )
+            ).scalar_one()
+            registered = connection.execute(
+                select(tables.installs.c.install_id).where(
+                    tables.installs.c.install_id == instance.install_id,
+                    tables.installs.c.supply_id == record.supply_id,
+                    tables.installs.c.root_id == instance.root_id,
+                )
+            ).scalar_one_or_none()
+            root_path = connection.execute(
+                select(tables.roots.c.path).where(
+                    tables.roots.c.root_id == instance.root_id
+                )
+            ).scalar_one()
+            if (
+                stored != record.manifest.canonical_bytes
+                or registered is None
+                or root_path != str(instance.path.parent.parent)
+            ):
+                raise SupplyError("supply_corrupt")
+            timestamp = now()
+            inserted = connection.execute(
+                insert(tables.activations).values(
+                    supply_id=record.supply_id,
+                    install_id=instance.install_id,
+                    snapshot_id=snapshot_id,
+                    root_id=instance.root_id,
+                    root_path=str(instance.path.parent.parent),
+                    created_at=timestamp,
+                )
+            )
+            key = inserted.inserted_primary_key
+            if key is None:
+                raise SupplyError("database_unavailable")
+            activation_id = key[0]
+            assert isinstance(activation_id, int)
+            _select_activation(connection, activation_id)
+            connection.commit()
+        except BaseException:
+            connection.rollback()
+            raise
+    return Activation(
+        activation_id,
+        record.supply_id,
+        instance.install_id,
+        snapshot_id,
+        instance.root_id,
+        instance.path.parent.parent,
+        timestamp,
+    )
+
+
+def _select_activation(connection: Connection, activation_id: int) -> None:
+    result = connection.execute(
+        update(tables.current_selection)
+        .where(tables.current_selection.c.singleton == 1)
+        .values(activation_id=activation_id)
+    )
+    if not result.rowcount:
+        connection.execute(
+            insert(tables.current_selection).values(
+                singleton=1, activation_id=activation_id
+            )
+        )

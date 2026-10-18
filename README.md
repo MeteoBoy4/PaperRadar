@@ -41,13 +41,14 @@ uv run --offline --locked paper-radar --help
 不创建 `data/`、`reports/`、`logs/` 等业务目录，也不消耗自动处理配额。
 当前注册 `contracts export/check`、`db upgrade`、`config check/compile/diff/snapshots list`
 与 `backup create/verify`、会写入副本的 `restore verify`。
-`pi supply prepare/verify/rebuild/list/show` 可准备、核验、联网重建并查询项目独立 Pi 供给，均不激活。
+`pi supply prepare/verify/rebuild/list/show` 可准备、核验、联网重建并查询项目独立 Pi 供给，
+`activate` 显式切换每库唯一执行选择，`doctor --scope pi-supply` 只读核对显式快照与现场。
 不注册尚未实现的业务命令。
 
 ## 数据库升级
 
 A2 的 `a201_profile_snapshot`、A3 的 `a302_artifact_store` 可显式升级至当前
-`a402_pi_rebuild_failures`。升级只追加内容对象/制品及供给材料、安装根、实例、检查与重建失败事实，
+`a403_pi_activation`。升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败与激活事实，
 全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
 失败或进程中断完整回滚后可以重试。配置历史的 ID、原字节、创建时间、六投影和基线不变。
 已知旧库上的 `config check/compile/diff/snapshots list` 会提示先执行升级，不自动修改库。
@@ -351,6 +352,11 @@ A3 另外固定覆盖单/多文件制品、真实迁移、WAL 备份、全量只
 `verify` 逐实例全树检查并探测 Node/npm/Pi，只追加检查事实；任一失败返回 2。
 `rebuild` 从库内冻结材料重新联网取得固定大包，要求原预期树、工具链与 libc 完全一致，
 成功新增随机实例和检查，失败另记供给级审计，旧坏实例保持不变；不重取小材料，不支持脱网恢复。
+`activate` 要求所给快照全部已选槽 Pi 版本一致且匹配，选最近通过并现场完好的实例；
+只做全树哈希，不启动程序，不更改配置、预算或校准门禁。
+`doctor --scope pi-supply` 必须显式选择快照，只读显示当前匹配、D5 原文、历史现场与保留计数；
+供给缺项/损坏/超过四棵时返回2，0仅代表此scope通过。Profile/模型/Read缺项、
+RPC/真实模型/生产隔离/校准/自动精读未验证分别披露，不因此伪称全项目就绪。
 
 ```bash
 uv run --offline --locked paper-radar pi supply prepare \
@@ -364,6 +370,15 @@ uv run --offline --locked paper-radar pi supply rebuild <supply_id> \
   --config-root config --material-root tools/pi
 ```
 
+执行选择和诊断：
+
+```bash
+uv run --offline --locked paper-radar pi supply activate <supply_id> \
+  --database data/paperradar.sqlite3 --snapshot <id>
+uv run --offline --locked paper-radar doctor --scope pi-supply \
+  --database data/paperradar.sqlite3 --snapshot <id>
+```
+
 请求必须填写精确 Node/npm、Node 官方摘要、Linux x86_64/glibc 及 D5 三态/依据/证据。
 安装根与 data/config/materials 根互不包含；首次空根绑定本库，不支持网络文件系统。
 普通重复材料要求 rebuild，改变 D5 也不能重冻；同时开始的同请求只登记一个实例。
@@ -374,4 +389,5 @@ uv run --offline --locked paper-radar pi supply rebuild <supply_id> \
 
 供给小材料随数据库备份，backup format 仍为 1，verify/restore 重验供给与 D5 引用闭包。
 head gate 继续严格匹配：旧 a302 批次先 checkout 匹配的 A3 程序 verify/restore，
-再切回新程序执行 `db upgrade`，随后用新程序重做备份。恢复不会安装或激活 Pi。
+再切回新程序执行 `db upgrade`，随后用新程序重做备份。恢复不会安装或新增激活；原实例完好时可现场核验后继续使用，
+原根缺失时请 rebuild 到新根后显式 activate。活动恢复副本共用原根时，旧副本退役前不得清理。

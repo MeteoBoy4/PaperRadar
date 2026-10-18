@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from paper_radar.config.adapters import exact_program_version
 from paper_radar.config.identity import canonical_json, sha256
+from paper_radar.pi_supply.errors import SupplyReason
 
 Hash = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
 Decision = Literal["no_change", "may_change", "unknown"]
@@ -228,3 +229,53 @@ class VerificationResult:
     install_id: str
     passed: bool
     reason: str
+
+
+@dataclass(frozen=True)
+class Activation:
+    activation_id: int
+    supply_id: str
+    install_id: str
+    snapshot_id: str
+    root_id: str
+    root_path: Path
+    created_at: str
+
+
+@dataclass(frozen=True)
+class InstanceDiagnosis:
+    supply_id: str
+    install_id: str
+    reason: SupplyReason | Literal["passed"]
+    present: bool | None
+    protection: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class DoctorReport:
+    passed: bool
+    current: Activation | None
+    blockers: tuple[SupplyReason, ...]
+    configuration_missing: tuple[str, ...]
+    adapter_unconfigured: tuple[str, ...]
+    instances: tuple[InstanceDiagnosis, ...]
+    retained_install_ids: tuple[str, ...]
+    acceptance_install_ids: tuple[str, ...]
+    present_count: int
+    d5: D5 | None
+    not_assessed: tuple[str, ...] = (
+        "rpc_compatibility",
+        "provider_model",
+        "credentials",
+        "parameter_mapping",
+        "production_isolation",
+        "calibration",
+        "automatic_read",
+        "in_flight_protection",
+    )
+
+
+@dataclass(frozen=True)
+class RetentionProtection:
+    retained_install_ids: tuple[str, ...]
+    acceptance_install_ids: tuple[str, ...]

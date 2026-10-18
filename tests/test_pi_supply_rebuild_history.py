@@ -57,7 +57,7 @@ def test_nonempty_a401_migrates_without_changing_any_previous_fact(
                 previous.executemany(
                     f"INSERT INTO {table} VALUES ({placeholders})", values
                 )
-    assert upgrade_database(old) == "a402_pi_rebuild_failures"
+    assert upgrade_database(old) == "a403_pi_activation"
     assert show_supply(old, prepared.supply_id) == show_supply(
         source[0], prepared.supply_id
     )
