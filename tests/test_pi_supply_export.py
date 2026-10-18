@@ -276,3 +276,43 @@ def test_publication_race_rechecks_external_file_without_overwriting(
     assert {p.name: p.read_bytes() for p in directory.iterdir()} == {
         "package.json": b"external sentinel",
     }
+
+
+def test_missing_posix_filesystem_capability_is_controlled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = inputs(tmp_path / "source")
+    prepared = prepare(tmp_path / "source", source)
+    target = tmp_path / "materials"
+    monkeypatch.delattr(os, "O_DIRECTORY")
+    from paper_radar.pi_supply import list_supplies
+
+    assert show_supply(source[0], prepared.supply_id).supply_id == prepared.supply_id
+    assert len(list_supplies(source[0])) == 1
+    with pytest.raises(SupplyError, match="export_failed"):
+        export_supply(source[0], prepared.supply_id, target)
+    assert not target.exists()
+
+
+def test_unsupported_directory_handles_are_controlled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from typing import Any
+
+    source = inputs(tmp_path / "source")
+    prepared = prepare(tmp_path / "source", source)
+    target = tmp_path / "materials"
+    opened = os.open
+
+    def without_dir_fd(path: Any, flags: int, *args: Any, **kwargs: Any) -> int:
+        if "dir_fd" in kwargs:
+            raise NotImplementedError("SECRET unsupported directory handle")
+        return opened(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", without_dir_fd)
+    with pytest.raises(SupplyError, match="export_failed") as error:
+        export_supply(source[0], prepared.supply_id, target)
+    assert "SECRET" not in str(error.value)
+    assert not target.exists()

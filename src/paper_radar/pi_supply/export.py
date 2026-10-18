@@ -151,6 +151,10 @@ def export_supply(database: Path, supply_id: str, target: Path) -> ExportResult:
         contents[name] = record.materials[f"d5-evidence/{digest}.bin"]
     directory = target / supply_id
     try:
+        if not all(
+            hasattr(os, flag) for flag in ("O_DIRECTORY", "O_NOFOLLOW", "O_NONBLOCK")
+        ):
+            raise SupplyError("export_failed")
         missing = []
         for name, raw in contents.items():
             path = directory / name
@@ -165,5 +169,5 @@ def export_supply(database: Path, supply_id: str, target: Path) -> ExportResult:
                 if _publish(parent, path.name, contents[name]):
                     created.append(name)
         return ExportResult(supply_id, tuple(contents), tuple(created))
-    except (OSError, ValueError):
+    except (OSError, ValueError, NotImplementedError):
         raise SupplyError("export_failed") from None
