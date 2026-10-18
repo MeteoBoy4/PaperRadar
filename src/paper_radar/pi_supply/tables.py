@@ -73,3 +73,14 @@ checks = Table(
     CheckConstraint("scope = 'install_check'"),
     CheckConstraint("passed IN (0, 1)"),
 )
+
+rebuild_failures = Table(
+    "pi_rebuild_failures",
+    metadata,
+    Column("failure_id", Integer, primary_key=True, autoincrement=True),
+    Column(
+        "supply_id", String(64), ForeignKey("pi_supplies.supply_id"), nullable=False
+    ),
+    Column("reason", String(64), nullable=False),
+    Column("created_at", Text, nullable=False),
+)

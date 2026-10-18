@@ -54,6 +54,11 @@ SupplyReason = Literal[
     "supply_reference_invalid",
     "supply_not_found",
     "prepare_failed",
+    "tree_mismatch",
+    "verify_failed",
+    "rebuild_failed",
+    "operation_interrupted",
+    "failure_record_failed",
 ]
 
 GUIDANCE: dict[SupplyReason, str] = {
@@ -132,10 +137,19 @@ GUIDANCE: dict[SupplyReason, str] = {
     "supply_reference_invalid": "供给引用必须是完整小写 64 位 ID；请从 list 复制。",
     "supply_not_found": "未找到供给；请核对数据库并运行 pi supply list。",
     "prepare_failed": "本地准备步骤失败；请检查材料类型、空间和目录权限后重试。",
+    "tree_mismatch": "现场完整树与冻结预期不符；请保留旧树并使用 rebuild 重建新实例。",
+    "verify_failed": "本地核验步骤失败；请检查目录权限并使用 rebuild 重建。",
+    "rebuild_failed": "固定材料重建失败；请检查资源与权限后重试，旧实例保留。",
+    "operation_interrupted": "操作中断；历史事实保留，请检查现场并重试。",
+    "failure_record_failed": "执行失败且失败审计未能保存；请检查数据库可写性后重试。",
 }
 
 
 class SupplyError(Exception):
-    def __init__(self, reason: SupplyReason) -> None:
+    def __init__(
+        self, reason: SupplyReason, *, execution_reason: SupplyReason | None = None
+    ) -> None:
         self.reason = reason
-        super().__init__(f"[{reason}] {GUIDANCE[reason]}")
+        self.execution_reason = execution_reason
+        suffix = f" execution_reason={execution_reason}" if execution_reason else ""
+        super().__init__(f"[{reason}] {GUIDANCE[reason]}{suffix}")

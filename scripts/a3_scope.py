@@ -1,6 +1,6 @@
 """A3 固定范围的分票登记。完整结论由 #35 追加,不提前声明通过。"""
 
-MIGRATION_REVISION = "a401_pi_supply"
+MIGRATION_REVISION = "a402_pi_rebuild_failures"
 ARTIFACT_MIGRATION_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/storage/migrations/versions/a302_artifact_store.py",
@@ -19,7 +19,7 @@ ARTIFACT_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_storage_migrations.py",
-        "c7b4a0f480475f9137814cd7b43e5c715fc2fe247c10ca778be26f2f8a54f4a1",
+        "28e3ae7d9fc5ee8fffbfb658b37e3b2bb09a8de324aa1c59b2d63b6747f56d21",
     ),
 )
 
@@ -131,7 +131,7 @@ BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "ae2111c5ea33ceb55a9c5a709119cd34c0c625169d81877e9150cfde23857485",
+        "eb8c2737700ab27d3b42612a0c8bf799bf93cd737403267bd8342c9f0886d775",
     ),
     (
         "src/paper_radar/backup/files.py",
@@ -211,7 +211,7 @@ FORMAT_VERSIONS = {
     "artifact": 1,
     "blob_layout": 1,
     "backup": 1,
-    "backup_database_revision": "a401_pi_supply",
+    "backup_database_revision": "a402_pi_rebuild_failures",
 }
 CAPABILITIES = (
     "artifact_publication",
@@ -256,7 +256,7 @@ REQUIRED_TEST_CASE_COUNTS = {
 ACCEPTANCE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_a3_acceptance.py",
-        "5d141f3048812edf4e7b90d270a234027c945d0b19cdea8ecc190fa5e7e50e27",
+        "cbe5946f2633b87c285f8b1d0a2079de217f6cf7251eac4e55f89ab6598f7b4b",
     ),
     (
         "tests/test_a3_combination.py",
@@ -306,7 +306,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "463b094251dc54f8f2d06c73a599882846b852f3a2ea99cfe71443219fe94657",
+        "1192eb91764a9e0f87c9b1fc181710c57ac075d45895f3d9e648d0bb4aaeafd7",
     ),
     (
         "scripts/check-offline",
