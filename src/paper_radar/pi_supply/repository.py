@@ -86,6 +86,17 @@ def read_records(database: Path) -> tuple[SupplyRecord, ...]:
     return read_state(database)[0]
 
 
+def registered_roots(database: Path) -> tuple[Path, ...]:
+    """库内根位置,包括尚无安装实例的已认领根;不探测历史现场。"""
+    with database_engine(database) as engine, engine.connect() as connection:
+        return tuple(
+            Path(path)
+            for path in connection.execute(
+                select(tables.roots.c.path).order_by(tables.roots.c.path)
+            ).scalars()
+        )
+
+
 def read_state(
     database: Path,
 ) -> tuple[tuple[SupplyRecord, ...], tuple[Activation, ...], Activation | None]:

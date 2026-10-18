@@ -54,10 +54,10 @@ GROUP_HELP = (
     """管理项目独立 Pi 固定供给。
 
 当前用途：prepare 准备；verify 逐实例核验；rebuild 联网重建；
-activate 显式切换唯一选择；list/show 只读回查。
+activate 显式切换唯一选择；list/show 只读回查；export 导出固定材料。
 参数与选项：数据库、快照、adapter 槽及根目录由子命令显式指定，无隐式最新。
 副作用：prepare/rebuild 下载并安装，verify 运行无模型检查，均不激活；
-list/show 不检查现场。
+list/show/export 不检查现场。
 """
     + COMMON
     + """
@@ -435,3 +435,47 @@ def doctor_command(
     typer.echo("0仅表示所选供给scope通过；不代表全项目就绪，不刷新预算或启用门禁。")
     if not report.passed:
         raise typer.Exit(2)
+
+
+@supply_app.command(
+    "export",
+    cls=SupplyCommand,
+    help="""从已核验数据库导出可提交版本控制的固定小型材料。
+
+参数与选项：<supply-id> 为完整 ID；--database 为既有库；--target 为材料根。
+材料根须与库内全部已登记安装根及数据库位置分离，不从 cwd 猜配置或数据根。
+输出去向：target/<supply-id>/ 下六个顶层材料及 d5-evidence/<摘要前16位>.bin。
+不导出内部派生锁、安装树、Node/npm 归档、凭据、日志或 RPC。
+副作用：整组预检后不覆盖发布；同字节跳过，冲突拒绝，额外用户文件保留。
+list/show/export 无平台、网络、Node/Pi 或安装现场前置。
+材料 tools/pi/ 可提交 Git；安装 .tools/pi/ 被忽略，二者须分开。
+"""
+    + COMMON
+    + """
+常见失败：历史损坏、异字节、链接、特殊文件或证据短名冲突返回 2。
+请保留原文件并选择空目标；I/O 失败可重试，同字节文件不重复写入。
+示例：paper-radar pi supply export <supply-id> --database data/paperradar.sqlite3
+  --target tools/pi
+""",
+)
+def export_command(
+    supply_id: str,
+    database: Annotated[Path, typer.Option("--database", help="既有数据库。")],
+    target: Annotated[
+        Path, typer.Option("--target", help="可提交版本控制的固定材料根。")
+    ],
+) -> None:
+    from paper_radar.pi_supply import SupplyError, export_supply
+
+    try:
+        result = export_supply(database, supply_id, target)
+    except SupplyError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo("材料导出中断；请保留完整文件并重试，同字节文件会跳过。", err=True)
+        raise typer.Exit(130) from None
+    typer.echo(
+        f"supply_id={result.supply_id} files={len(result.files)} "
+        f"created={len(result.created)} result=passed"
+    )

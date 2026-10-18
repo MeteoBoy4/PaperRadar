@@ -17,6 +17,7 @@ from paper_radar.pi_supply.models import (
 )
 
 if TYPE_CHECKING:
+    from paper_radar.pi_supply.export import ExportResult
     from paper_radar.pi_supply.protection import InstallUse, ProtectionObservation
     from paper_radar.pi_supply.transport import Downloader, Runner
 
@@ -28,6 +29,7 @@ __all__ = [
     "available_installs",
     "doctor_supply",
     "exclusive_install",
+    "export_supply",
     "list_supplies",
     "prepare_supply",
     "probe_install",
@@ -36,6 +38,12 @@ __all__ = [
     "use_install",
     "verify_supply",
 ]
+
+
+def export_supply(database: Path, supply_id: str, target: Path) -> ExportResult:
+    from paper_radar.pi_supply.export import export_supply as export
+
+    return export(database, supply_id, target)
 
 
 def rebuild_supply(
