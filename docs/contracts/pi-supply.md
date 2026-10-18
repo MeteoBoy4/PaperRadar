@@ -171,6 +171,9 @@ uv run --offline --locked paper-radar pi supply export <完整supply_id> \
 返回不可变 `ExportResult(supply_id, files, created)`：files 为相对供给目录的完整固定集合，
 created 只含本次新增项；同字节重复运行 created 为空且不改文件或目录时间、inode、权限。
 供给目录为 `target/<完整supply_id>/`；清单为规范原字节，官方锁保持官方原字节。
+target 与本库全部已登记安装根（含尚无实例的已认领根）及数据库文件位置作纯路径
+双向包含检查，重叠给 `unsafe_root`，不探测或解析原安装现场。原根已缺失也保留隔离规则。
+未知的 data/config 根不从 cwd 推断；用户仍须选择分离的材料目录。
 顶层恒为前述六个文件，加全部 evidence_file 的原字节；完整摘要重复只输出一次。
 supply_material/supply_record 只保留清单中的引用，不递归导出别的供给。
 不导出 derived-lock.json、安装树、tarball/Node archive、认证、完整日志或 RPC。

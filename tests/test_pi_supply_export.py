@@ -316,3 +316,87 @@ def test_unsupported_directory_handles_are_controlled(
         export_supply(source[0], prepared.supply_id, target)
     assert "SECRET" not in str(error.value)
     assert not target.exists()
+
+
+@pytest.mark.parametrize(
+    "destination",
+    [
+        "install",
+        "inside_install",
+        "parent_install",
+        "database",
+        "database_parent",
+        "unavailable_install",
+        "empty_registered_root",
+        "other_supply",
+    ],
+)
+def test_export_root_stays_separate_from_all_registered_installs_and_database(
+    tmp_path: Path,
+    destination: str,
+) -> None:
+    from paper_radar.pi_supply import prepare_supply, rebuild_supply
+    from tests.pi_supply_support import Download, Run
+
+    root = tmp_path / "source"
+    source = inputs(root)
+    prepared = prepare(root, source)
+    other_root = tmp_path / "other-supply-install"
+    if destination == "other_supply":
+        source[3].content[
+            "https://pi.dev/api/installer/releases/1.3.0/package.json"
+        ] += b"\n"
+        prepare_supply(
+            source[0],
+            source[1],
+            "screening",
+            source[2],
+            other_root,
+            data_root=root / "data",
+            config_root=root / "config",
+            material_root=root / "materials",
+            downloader=source[3],
+            runner=source[4],
+        )
+    reserved = tmp_path / "reserved-install"
+    broken = Download()
+    archive = next(url for url in broken.content if url.endswith(".tar.xz"))
+    broken.content[archive] = b"invalid archive"
+    with pytest.raises(SupplyError, match="node_checksum_mismatch"):
+        rebuild_supply(
+            source[0],
+            prepared.supply_id,
+            reserved,
+            data_root=root / "data",
+            config_root=root / "config",
+            material_root=root / "materials",
+            downloader=broken,
+            runner=Run(),
+        )
+    targets = {
+        "install": root / "install",
+        "inside_install": root / "install/extra",
+        "parent_install": root,
+        "database": source[0],
+        "database_parent": source[0].parent,
+        "unavailable_install": root / "install",
+        "empty_registered_root": reserved,
+        "other_supply": other_root,
+    }
+    if destination == "unavailable_install":
+        (root / "install").rename(tmp_path / "unavailable-install")
+    target = targets[destination]
+
+    def files() -> dict[Path, bytes]:
+        # Read-only SQLite may create its own WAL shared-memory sidecars.
+        auxiliary = {source[0].name + suffix for suffix in ("-wal", "-shm")}
+        return {
+            p: p.read_bytes()
+            for p in target.rglob("*")
+            if p.is_file() and p.name not in auxiliary
+        }
+
+    before = files()
+    with pytest.raises(SupplyError, match="unsafe_root"):
+        export_supply(source[0], prepared.supply_id, target)
+    assert files() == before

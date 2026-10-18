@@ -133,9 +133,19 @@ def _publish(parent: int, name: str, raw: bytes) -> bool:
 
 
 def export_supply(database: Path, supply_id: str, target: Path) -> ExportResult:
+    from paper_radar.pi_supply.repository import registered_roots
     from paper_radar.pi_supply.service import show_supply
 
     record = show_supply(database, supply_id)
+    destination = target.absolute()
+    if ".." in destination.parts:
+        raise SupplyError("unsafe_path")
+    protected = (*registered_roots(database), database.absolute())
+    if any(
+        destination.is_relative_to(path) or path.is_relative_to(destination)
+        for path in protected
+    ):
+        raise SupplyError("unsafe_root")
     contents = {
         role: record.manifest.canonical_bytes
         if role == "supply-manifest.json"
