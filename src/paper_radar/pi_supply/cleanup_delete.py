@@ -50,9 +50,9 @@ def move_to_trash(path: Path, root: Path, install_id: str, expected: str) -> Pat
         target_parent = _open_directory(resources, trash)
         info = os.fstat(with_directory)
         # Updating '..' when renaming across parents needs write on this directory.
-        os.fchmod(with_directory, stat.S_IMODE(info.st_mode) | 0o700)
+        os.fchmod(with_directory, stat.S_IMODE(info.st_mode) | stat.S_IWUSR)
         parent_info = os.fstat(source_parent)
-        os.fchmod(source_parent, stat.S_IMODE(parent_info.st_mode) | 0o700)
+        os.fchmod(source_parent, stat.S_IMODE(parent_info.st_mode) | stat.S_IWUSR)
         if tree_hash(path) != expected or _identity(path.lstat()) != _identity(info):
             raise SupplyError("cleanup_tree_changed")
         publish_directory(
@@ -150,8 +150,10 @@ def delete_tree(path: Path, expected: str) -> None:
             relative = pending.pop()
             with _relative_directory(descriptor, relative, entries) as current:
                 info = os.fstat(current)
-                os.fchmod(current, stat.S_IMODE(info.st_mode) | 0o700)
-                for name in os.listdir(current):
+                names = os.listdir(current)
+                if names:
+                    os.fchmod(current, stat.S_IMODE(info.st_mode) | stat.S_IWUSR)
+                for name in names:
                     info = os.stat(name, dir_fd=current, follow_symlinks=False)
                     child = f"{relative}/{name}" if relative else name
                     entries[child] = info

@@ -657,3 +657,48 @@ def test_unregistered_existing_publication_target_with_missing_lock_is_unknown(
         )
     assert not (tmp_path / "install/.locks" / f"{install_id}.lock").exists()
     assert target.exists()
+
+
+def test_damaged_empty_tree_without_execute_bit_keeps_planned_identity_until_move(
+    tmp_path: Path,
+) -> None:
+    import shutil
+
+    from paper_radar.pi_supply import (
+        create_cleanup_plan,
+        execute_cleanup_plan,
+        rebuild_supply,
+        show_supply,
+    )
+
+    source = inputs(tmp_path)
+    first = prepare(tmp_path, source)
+    roots: SupplyRoots = dict(
+        data_root=tmp_path / "data",
+        config_root=tmp_path / "config",
+        material_root=tmp_path / "materials",
+    )
+    rebuild_supply(
+        source[0],
+        first.supply_id,
+        tmp_path / "install",
+        **roots,
+        downloader=source[3],
+        runner=source[4],
+    )
+    path = next(
+        i.path
+        for i in show_supply(source[0], first.supply_id).installs
+        if i.install_id == first.install_id
+    )
+    path.chmod(0o755)
+    for child in path.rglob("*"):
+        if child.is_dir() and not child.is_symlink():
+            child.chmod(0o755)
+    shutil.rmtree(path)
+    path.mkdir(mode=0o444)
+    plan = create_cleanup_plan(source[0], **roots)
+    assert len(plan.candidates) == 1
+    assert plan.candidates[0].actual_tree_hash != plan.candidates[0].expected_tree_hash
+    assert execute_cleanup_plan(source[0], plan.plan_id).passed
+    assert not path.exists()
