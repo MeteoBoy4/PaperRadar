@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 from paper_radar.pi_supply.errors import SupplyError
 from paper_radar.pi_supply.models import (
+    Activation,
+    DoctorReport,
     InstallInstance,
     PrepareResult,
     SupplyRecord,
@@ -18,7 +20,10 @@ if TYPE_CHECKING:
 
 __all__ = [
     "SupplyError",
+    "activate_supply",
+    "activation_history",
     "available_installs",
+    "doctor_supply",
     "list_supplies",
     "prepare_supply",
     "rebuild_supply",
@@ -109,3 +114,23 @@ def show_supply(database: Path, supply_id: str) -> SupplyRecord:
     from paper_radar.pi_supply.service import show_supply as show
 
     return show(database, supply_id)
+
+
+def activate_supply(
+    database: Path, supply_id: str, snapshot_reference: str
+) -> Activation:
+    from paper_radar.pi_supply.execution import activate_supply as activate
+
+    return activate(database, supply_id, snapshot_reference)
+
+
+def activation_history(database: Path) -> tuple[Activation, ...]:
+    from paper_radar.pi_supply.execution import activation_history as history
+
+    return history(database)
+
+
+def doctor_supply(database: Path, snapshot_reference: str) -> DoctorReport:
+    from paper_radar.pi_supply.execution import doctor_supply as diagnose
+
+    return diagnose(database, snapshot_reference)

@@ -36,13 +36,13 @@ def test_a3_records_its_independent_scope_actual_revision_and_all_bound_inputs(
     )
     assert result["a3_verified"] is True
     assert result["stage_a_verified"] is result["live_verified"] is False
-    assert result["migration_revision"] == "a402_pi_rebuild_failures"
+    assert result["migration_revision"] == "a403_pi_activation"
     assert result["environment"]["sqlite"]
     assert result["format_versions"] == {
         "artifact": 1,
         "blob_layout": 1,
         "backup": 1,
-        "backup_database_revision": "a402_pi_rebuild_failures",
+        "backup_database_revision": "a403_pi_activation",
     }
     for key, source in (
         ("evidence", evidence),
@@ -299,7 +299,7 @@ def test_actual_new_migration_head_is_rejected_until_explicitly_registered(
     migrations = tmp_path / "migrations"
     shutil.copytree(Path(database.__file__).parent / "migrations", migrations)
     (migrations / "versions/unregistered.py").write_text(
-        "revision='unregistered'\ndown_revision='a402_pi_rebuild_failures'\n"
+        "revision='unregistered'\ndown_revision='a403_pi_activation'\n"
         "def upgrade():pass\ndef downgrade():pass\n",
         encoding="utf-8",
     )

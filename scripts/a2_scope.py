@@ -5,7 +5,7 @@ from __future__ import annotations
 SCOPE = "a2_01_profile_runtime_config_snapshots"
 ISSUE = 16
 SNAPSHOT_FORMAT_VERSION = 1
-MIGRATION_REVISION = "a402_pi_rebuild_failures"
+MIGRATION_REVISION = "a403_pi_activation"
 
 # 材料组装重构只更新 service 并登记 material_assembly, 原固定测试不变。
 # 哈希在完成本票改动后固定。预期值不能从被检查文件动态生成。
@@ -31,7 +31,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_acceptance.py",
-        "113ccc8fc7ee42dae32ecc11756ca2430e3f15791f0118d8f2f2e58e8ead958c",
+        "7668a627359d9f7d3ab28550168a183cd08c2f3aa5dd18ba9a47e78490f9e473",
     ),
 )
 
@@ -50,7 +50,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/cli.py",
-        "5e4474fdeb5fae4fa510b1349d9fef4557784a0d069a3648420f79de5ac2d298",
+        "94c04ebeb26a8c9c02907902aa1301a5931b00552b659b65aa6b6c62a7199462",
     ),
     (
         "src/paper_radar/config/__init__.py",

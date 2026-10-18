@@ -10,13 +10,13 @@ from typer.core import TyperCommand, TyperGroup
 
 
 @contextmanager
-def _arguments() -> Iterator[None]:
+def _arguments(command: str = "paper-radar pi supply") -> Iterator[None]:
     try:
         yield
     except (typer.Exit, typer.Abort):
         raise
     except Exception:
-        typer.echo("供给参数无效；请查看 paper-radar pi supply --help。", err=True)
+        typer.echo(f"参数无效；请查看 {command} --help。", err=True)
         raise typer.Exit(2) from None
 
 
@@ -39,6 +39,12 @@ class SupplyCommand(TyperCommand):
             return super().parse_args(ctx, args)
 
 
+class DoctorCommand(TyperCommand):
+    def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
+        with _arguments("paper-radar doctor"):
+            return super().parse_args(ctx, args)
+
+
 COMMON = """
 自动配额：消耗 0 次 Screening、复用升级或精读配额，不调用模型。
 输出去向：终端仅显示身份、版本和检查范围；失败输出受控原因与下一步，返回 2。
@@ -47,7 +53,8 @@ COMMON = """
 GROUP_HELP = (
     """管理项目独立 Pi 固定供给。
 
-当前用途：prepare 准备；verify 逐实例核验；rebuild 联网重建；list/show 只读回查。
+当前用途：prepare 准备；verify 逐实例核验；rebuild 联网重建；
+activate 显式切换唯一选择；list/show 只读回查。
 参数与选项：数据库、快照、adapter 槽及根目录由子命令显式指定，无隐式最新。
 副作用：prepare/rebuild 下载并安装，verify 运行无模型检查，均不激活；
 list/show 不检查现场。
@@ -72,7 +79,8 @@ PREPARE_HELP = (
     + """
 常见失败：仅支持 Linux x86_64/glibc；重复材料请用 rebuild，不能靠改 D5 重冻；
 失败不覆盖旧树，未知残留保留人工处理。未验证 RPC、语义与校准。
-示例：paper-radar pi supply prepare --database data/paperradar.sqlite3 --snapshot <id>
+示例：paper-radar pi supply prepare --database data/paperradar.sqlite3
+  --snapshot <id>
   --adapter-slot screening --request supply.json --install-root .tools/pi
   --data-root data --config-root config --material-root tools/pi
 """
@@ -313,3 +321,115 @@ def rebuild_command(
         typer.echo(
             "安装已成功登记；本次清理未完成，请保留残留人工检查，可重试可靠发布意图。"
         )
+
+
+@supply_app.command(
+    "activate",
+    cls=SupplyCommand,
+    help="""显式将供给激活为每库唯一当前执行选择。
+
+参数与选项：<supply-id> 为完整供给ID；--database 为既有库；--snapshot 必须显式给出。
+所给快照至少选择一个adapter槽，全部已选槽Pi版本必须匹配；混用版本不能激活。
+副作用：只做全树哈希，不运行Node/npm/Pi；选最近通过且现场可用实例，短事务追加激活事件。
+不改selector、预算、enable或校准；回退也须显式匹配快照，无自动fallback。
+"""
+    + COMMON
+    + """
+常见失败：无可用实例时请 rebuild 后再 activate；准备与重建不会自动切换当前选择。
+示例：paper-radar pi supply activate <supply-id> --database data/paperradar.sqlite3
+  --snapshot <id>
+""",
+)
+def activate_command(
+    supply_id: str,
+    database: Annotated[Path, typer.Option("--database", help="已升级数据库。")],
+    snapshot: Annotated[
+        str, typer.Option("--snapshot", help="显式完整或唯一短快照引用。")
+    ],
+) -> None:
+    from paper_radar.pi_supply import SupplyError, activate_supply
+
+    try:
+        result = activate_supply(database, supply_id, snapshot)
+    except SupplyError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo("激活中断；请只读检查当前选择后重试。", err=True)
+        raise typer.Exit(130) from None
+    typer.echo(
+        f"activation_id={result.activation_id} supply_id={result.supply_id} "
+        f"install_id={result.install_id} snapshot_id={result.snapshot_id}"
+    )
+    typer.echo(
+        "已更新唯一执行选择；RPC、模型、隔离、校准与自动精读未验证，不产生启用资格。"
+    )
+
+
+DOCTOR_HELP = """只读诊断显式选定的范围，目前仅支持 pi-supply。
+
+参数与选项：--scope pi-supply、--database 和 --snapshot 均必填，无默认scope或隐式最新。
+副作用：只读库内全量材料/引用闭包与现场全树哈希；不运行程序、不联网、不写检查或激活事实。
+输出去向：终端分别显示当前匹配、配置缺项、历史现场、保留保护与未验证能力。
+供给必需项缺失、损坏或实际树超过四棵时返回2；0仅表示该scope通过。
+Profile/模型/Read配置缺项单独披露，不代表全项目就绪；不授予模型或校准资格。
+自动配额：消耗0次Screening、复用升级或精读配额。帮助不创建文件或连接数据库。
+常见失败：当前实例不可用请 rebuild 后再 activate；历史坏树/缺根单列，不自动回退。
+示例：paper-radar doctor --scope pi-supply --database data/paperradar.sqlite3
+  --snapshot <id>
+"""
+
+
+def doctor_command(
+    scope: Annotated[str, typer.Option("--scope", help="显式范围，仅pi-supply。")],
+    database: Annotated[
+        Path, typer.Option("--database", help="既有数据库，只读打开。")
+    ],
+    snapshot: Annotated[
+        str, typer.Option("--snapshot", help="显式完整或唯一短快照引用。")
+    ],
+) -> None:
+    from paper_radar.pi_supply import SupplyError, doctor_supply
+    from paper_radar.pi_supply.errors import GUIDANCE
+
+    if scope != "pi-supply":
+        typer.echo("诊断范围无效；请显式使用 --scope pi-supply。", err=True)
+        raise typer.Exit(2)
+    try:
+        report = doctor_supply(database, snapshot)
+    except SupplyError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo("只读诊断中断；请重试。", err=True)
+        raise typer.Exit(130) from None
+    typer.echo(f"scope=pi-supply result={'passed' if report.passed else 'failed'}")
+    if report.current:
+        typer.echo(
+            f"当前选择 activation_id={report.current.activation_id} "
+            f"supply_id={report.current.supply_id} "
+            f"install_id={report.current.install_id}"
+        )
+    for reason in report.blockers:
+        typer.echo(f"[{reason}] {GUIDANCE[reason]}")
+    typer.echo("adapter未配置槽：" + (", ".join(report.adapter_unconfigured) or "无"))
+    typer.echo(
+        "业务配置缺项（独立披露）：" + (", ".join(report.configuration_missing) or "无")
+    )
+    if report.d5:
+        typer.echo(f"D5原文 decision={report.d5.decision} basis={report.d5.basis}")
+    typer.echo(
+        f"保留：当前及最近三旧={len(report.retained_install_ids)}，已有验收保护={len(report.acceptance_install_ids)}，现场树数={report.present_count}，上限=4"
+    )
+    for item in report.instances:
+        typer.echo(
+            f"历史现场 install_id={item.install_id} reason={item.reason} "
+            f"present={item.present} protection={','.join(item.protection) or '无'}"
+        )
+    typer.echo(
+        "RPC、真实模型/凭据、参数映射、生产隔离、校准与自动精读未验证："
+        + ", ".join(report.not_assessed)
+    )
+    typer.echo("0仅表示所选供给scope通过；不代表全项目就绪，不刷新预算或启用门禁。")
+    if not report.passed:
+        raise typer.Exit(2)

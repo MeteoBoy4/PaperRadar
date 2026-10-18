@@ -1,8 +1,8 @@
 # Pi 固定供给 Contract v1
 
-当前交付 `pi supply prepare/verify/rebuild/list/show` 和公共 Python 服务
+当前交付 `pi supply prepare/verify/rebuild/activate/list/show`、`doctor --scope pi-supply` 和公共 Python 服务
 `paper_radar.pi_supply.prepare_supply/verify_supply/rebuild_supply/list_supplies/show_supply`，
-以及供后续激活选择使用的只读 `available_installs(database, supply_id)`。
+以及 `activate_supply/activation_history/doctor_supply` 和只读 `available_installs(database, supply_id)`。
 准备不激活，无需真实 Profile、模型配置或凭据，也不证明 RPC、模型语义或校准。
 `SupplyRequest`、`SupplyManifest` 为 `pi_supply/models.py` 的权威 Pydantic 类型。
 
@@ -146,8 +146,8 @@ Linux 移动目录时顶层短暂保留写位，发布后撤去并 fsync，之�
 list/show 只回查历史，不检查现场，不要求 Pi、网络或受支持平台，不能把历史 passed 当作当前可用。
 检查 scope 当前唯一为 install_check；不导入任意用户声明成功记录。
 
-数据库 head 为 a402_pi_rebuild_failures；a401 原 migration 字节保持，
-本次只追加 `pi_rebuild_failures`，不为失败安装创建实例或把失败记到旧实例。
+数据库 head 为 a403_pi_activation；既有 migration 原字节保持，
+a403 追加 `pi_activation_events` 和 `pi_current_selection`，a402 重建失败事实保持不变。
 供给小型材料与 D5 证据随数据库备份，backup format 仍为 1，语义回放同时校验供给闭包。
 恢复不安装、不下载、不激活。a302 旧批次须先用匹配 A3 程序恢复，再切新程序 db upgrade；
 不放宽 head gate。恢复副本共用原根时，旧副本退役前禁止未来 gc execute；flock 仅保护在途进程，
@@ -207,3 +207,63 @@ check_id 全库单调且唯一，时间相同仍确定性破同；最近失败�
 受控错误完整词表及中文下一步由 `pi_supply/errors.py::SupplyReason/GUIDANCE` 定义；
 常见组为 request/snapshot/adapter、来源/完整性/工具链、平台/根/树、进程配额、发布/并发和事实损坏。
 未知参数、URL/代理、底层异常、子进程输出不直接拼入错误文本。
+
+
+## 原子激活与只读诊断
+
+```bash
+uv run --offline --locked paper-radar pi supply activate <完整supply_id> \
+  --database data/paperradar.sqlite3 --snapshot <完整ID或唯一短引用>
+uv run --offline --locked paper-radar doctor --scope pi-supply \
+  --database data/paperradar.sqlite3 --snapshot <完整ID或唯一短引用>
+```
+
+`activate_supply(database, supply_id, snapshot_reference)` 比对显式快照中全部已选择的 adapter 槽，
+至少一槽且全部 `pi_version` 必须等于目标供给版本。真正未选择的槽不参与；
+已选择但 Prompt 占位的槽仍参与版本比对。混用版本给 `adapter_versions_mixed`，
+空选择给 `adapter_missing`，一致但不匹配给 `selection_version_mismatch`；
+不修改任何 selector，不提供任意 install_id 激活入口。
+
+目标取该供给最近成功 install_check 且现场可用的实例；成功检查按
+`(带时区created_at, 全库单调check_id)` 降序稳定排序。失败检查不抹去历史成功，
+现场坏树、缺失、根归属错误、非本地文件系统或完整树不符仍排除。
+激活再次做根归属、安全路径、本地文件系统、固定 Node/Pi 入口和全树哈希核验；
+只依赖已登记的通过检查，不执行 Node/npm/Pi，不重新检查 RPC。
+
+一个短 `BEGIN IMMEDIATE` 事务追加 activation event 并更新单行 current selection，
+完整记录 supply_id、install_id、据以比对的完整 snapshot_id、root_id、当时根的绝对路径与时间。
+中断和并发下只会读到完整旧或新选择；没有另一个 symlink 权威。
+上述身份都是执行审计，不进入供给身份、六投影、校准基线、预算或 enable。
+`activation_history(database)` 回查完整追加历史；当前选择必须指向最新完整事件。
+后续执行器必须使用自己持有的快照再次匹配全部已选槽，不能只信过去激活成功。
+
+`doctor_supply(database, snapshot_reference)` 和 CLI 均只读，CLI 必须显式 `--scope pi-supply`，
+裸命令、未知 scope 或参数错误返回 2。它完整回放全部库内材料、D5、实例与激活引用闭包，
+随后只做现场全树哈希，不执行程序、不联网、不写检查、使用记录或激活事件。
+诊断区分三个面：
+
+- 供给范围门槛：当前选择存在、所给快照全部槽匹配、平台/根/入口/全树当前可用，
+  库内全量事实闭包可信，实际已登记安装树占用不超过四棵；缺项、损坏或超限返回 2。
+- 业务配置：Profile、模型、Prompt、Read 契约等现有缺项独立列出；这些缺项不阻止供给安装，
+  也不让尚未实施的 Read 契约将窄供给范围永久判失败。RPC、真实 provider/model、凭据、
+  参数映射、生产隔离、正式校准与自动精读独立标注未实施/未验证，不授予任何资格。
+- 历史现场与保留：逐实例披露健康、缺失、坏树和无法确认，历史坏树或失去原根不自动否决
+  已显式激活的新根当前匹配；它们仍保留审计，实际存在的坏树仍计入四棵占用。
+  无法访问的历史现场计数不可确认，不伪造为健康。库内历史事实损坏始终拒绝，不属于此例外。
+
+0 仅表示所选供给 scope 通过，不表示全项目就绪。
+D5 decision 与 basis 原文只读显示，不推断 minor/major 或校准兼容。
+库级保留查询按最新激活事件向前去重，保护当前和最近三个不同旧 install_id；
+同供给不同实例分别计数，同实例反复激活不扩窗。叠加已实施 scope 最近通过对象，
+本票仅有 install_check，RPC 与在途共享锁保护如实未验证；不伪造记录或预建清理表。
+未激活但现场存在的已登记完整树也计入实际占用，首次部署不要求补齐三个旧实例。
+`execution.retention_protection(records, history)` 是后续锁/清理共用的纯查询；
+`selection.match_snapshot` 与 `execution.inspect_instance` 分别提供全部槽匹配和现场核验边界。
+
+当前坏实例的修复路径是 `rebuild` 新实例后显式 `activate`，旧坏实例和历史保留。
+回退同样须显式选择匹配供给与快照，不自动 fallback。
+恢复库保留激活历史和根的位置；同机原实例完整且现场核验通过可继续使用，无恢复标记。
+原根/实例不存在则明确指向 rebuild 后再 activate；重建尚未激活时当前选择保持旧值。
+新根激活后旧根可永久缺失，历史诊断仍披露缺项。
+恢复活动副本若共用原根，旧副本退役前不得执行后续 gc execute；
+共享锁只保护在途进程，不能识别另一个空闲副本的 current。

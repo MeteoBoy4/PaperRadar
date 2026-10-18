@@ -1,4 +1,4 @@
-"""当前 prepare/list/show 实际消费的最小持久化表。"""
+"""固定供给材料、安装检查与唯一执行选择的持久化表。"""
 
 from sqlalchemy import (
     CheckConstraint,
@@ -83,4 +83,42 @@ rebuild_failures = Table(
     ),
     Column("reason", String(64), nullable=False),
     Column("created_at", Text, nullable=False),
+)
+
+activations = Table(
+    "pi_activation_events",
+    metadata,
+    Column("activation_id", Integer, primary_key=True, autoincrement=True),
+    Column(
+        "supply_id", String(64), ForeignKey("pi_supplies.supply_id"), nullable=False
+    ),
+    Column(
+        "install_id",
+        String(32),
+        ForeignKey("pi_install_instances.install_id"),
+        nullable=False,
+    ),
+    Column(
+        "snapshot_id",
+        String(64),
+        ForeignKey("runtime_config_snapshots.snapshot_id"),
+        nullable=False,
+    ),
+    Column(
+        "root_id", String(32), ForeignKey("pi_supply_roots.root_id"), nullable=False
+    ),
+    Column("root_path", Text, nullable=False),
+    Column("created_at", Text, nullable=False),
+)
+current_selection = Table(
+    "pi_current_selection",
+    metadata,
+    Column("singleton", Integer, primary_key=True),
+    Column(
+        "activation_id",
+        Integer,
+        ForeignKey("pi_activation_events.activation_id"),
+        nullable=False,
+    ),
+    CheckConstraint("singleton = 1"),
 )
