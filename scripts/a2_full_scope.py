@@ -7,7 +7,7 @@ from scripts.verification_checks import ReceiptCounter as ReceiptCounter
 SCOPE = "a2_versioned_config_snapshots"
 ISSUE = 25
 FORMAT_VERSION = 2
-MIGRATION_REVISION = "a404_pi_cleanup_plans"
+MIGRATION_REVISION = "a405_pi_cleanup_execution"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 # 固定用例数量在独立收集核对后登记。回执必须同时证明收集和三阶段通过。
@@ -142,11 +142,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_acceptance.py",
-        "4f21328130b019ed1ff9758dd76100dc9757ecc40923f64a14499da54e78aae3",
+        "f2af0847115f44ec8ff73875a8a6a457dcc62cc6a0c59c8559600a9812501c76",
     ),
     (
         "tests/test_a2_full_acceptance.py",
-        "fbaae7eee916cc62641587feac7164f07419ce07206d680e126adab32441a86a",
+        "bb8c4138b025c70fa9511222bb24247cb2ccda9f2bbc500e4d5bdc62a25d9635",
     ),
     (
         "tests/test_a2_full_entry.py",

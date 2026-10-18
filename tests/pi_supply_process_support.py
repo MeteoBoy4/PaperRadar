@@ -21,10 +21,12 @@ os.read(release, 1)
 PARENT = """
 import os, sys, threading
 from pathlib import Path
-from paper_radar.pi_supply import use_install
+from paper_radar.pi_supply import use_install, acquire_install
 from paper_radar.pi_supply.transport import ProcessRunner
 ready, release, close_request, closed = map(int, sys.argv[3:7])
-with use_install(Path(sys.argv[1]), sys.argv[2]) as handle:
+context = (acquire_install(Path(sys.argv[1]), sys.argv[8], sys.argv[9])
+           if len(sys.argv) > 8 else use_install(Path(sys.argv[1]), sys.argv[2]))
+with context as handle:
     worker = threading.Thread(target=lambda: ProcessRunner().run(
         (sys.executable, '-c', sys.argv[7], str(handle.pass_fds[0]),
          str(ready), str(release)),
@@ -44,7 +46,7 @@ def received(descriptor: int) -> bytes:
 
 @contextmanager
 def inherited_child(
-    database: Path, snapshot: str
+    database: Path, snapshot: str, *, install: tuple[str, str] | None = None
 ) -> Iterator[tuple[subprocess.Popen[bytes], int, int, int, int]]:
     ready_r, ready_w = os.pipe()
     release_r, release_w = os.pipe()
@@ -62,6 +64,7 @@ def inherited_child(
             str(request_r),
             str(closed_w),
             CHILD,
+            *(install or ()),
         ),
         pass_fds=(ready_w, release_r, request_r, closed_w),
         stdout=subprocess.PIPE,

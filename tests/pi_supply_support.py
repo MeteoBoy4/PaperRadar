@@ -6,12 +6,19 @@ import io
 import json
 import tarfile
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from paper_radar.config import compile_config
 from paper_radar.pi_supply import prepare_supply
 from paper_radar.pi_supply.models import PrepareResult
 from tests.config_adapter_support import adapter_inputs
+
+
+class SupplyRoots(TypedDict):
+    data_root: Path
+    config_root: Path
+    material_root: Path
+
 
 PI = "1.3.0"
 NODE = "22.19.0"

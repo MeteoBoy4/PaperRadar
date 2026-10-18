@@ -48,7 +48,7 @@ uv run --offline --locked paper-radar --help
 ## 数据库升级
 
 A2 的 `a201_profile_snapshot`、A3 的 `a302_artifact_store` 可显式升级至当前
-`a404_pi_cleanup_plans`。升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划与退役识别事实，
+`a405_pi_cleanup_execution`。升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
 全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
 失败或进程中断完整回滚后可以重试。配置历史的 ID、原字节、创建时间、六投影和基线不变。
 已知旧库上的 `config check/compile/diff/snapshots list` 会提示先执行升级，不自动修改库。
@@ -400,7 +400,7 @@ head gate 继续严格匹配：旧 a302 批次先 checkout 匹配的 A3 程序 v
 再切回新程序执行 `db upgrade`，随后用新程序重做备份。恢复不会安装或新增激活；原实例完好时可现场核验后继续使用，
 原根缺失时请 rebuild 到新根后显式 activate。活动恢复副本共用原根时，旧副本退役前不得清理。
 
-安装清理先保存可审阅计划，本轮只提供计划生成与查询：
+安装清理先保存可审阅计划，再用完整计划 ID 显式执行：
 
 ```bash
 uv run --offline --locked paper-radar pi supply gc --dry-run \
@@ -412,4 +412,17 @@ uv run --offline --locked paper-radar pi supply show-plan <完整plan_id> \
 
 `--dry-run` **保存计划但不删除**；窗口全库跨供给按实例去重，当前、在途、未知保护和各范围最近通过均保留。
 计划输出实际身份、保护理由和真实占用/回收估算，未知残留需人工处理，超限不自动删树。
+执行只接受保存的计划 ID，不接受路径、glob 或 force：
+
+```bash
+uv run --offline --locked paper-radar pi supply gc --execute <完整plan_id> \
+  --database data/paperradar.sqlite3
+```
+
+安全事实、根归属、保护或实际树变化必须重新生成计划。执行在非阻塞排他锁下先永久退役，
+再不覆盖移入 `.trash/<install_id>` 后删除；`show-plan` 同时回查 run_id 与逐项结果。
+失败或强杀不恢复可用性；重新 `gc --dry-run` 单列已退役待删，再显式执行新计划。
+已完成身份的重现路径、未知 staging/树/trash 均需人工处理。恢复活动副本共用原根时，旧副本退役前不得执行清理。
+安装锁缺失不补建，请 rebuild 新实例；只恢复删除所需目录权限，不改变普通文件或树外硬链接权限。
+供给、D5、检查、激活与清理历史随数据库备份；不删除业务制品、blob、材料或其他安装。
 计划原字节随备份恢复，后来的选择变化不改写历史。详见 [清理计划 Contract](docs/contracts/pi-supply.md#不可变安装清理计划)。

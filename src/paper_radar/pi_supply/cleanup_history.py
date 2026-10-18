@@ -9,7 +9,12 @@ from sqlalchemy import Connection, select
 
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.pi_supply import tables
-from paper_radar.pi_supply.cleanup_models import CleanupPlan, ProtectionReason
+from paper_radar.pi_supply.cleanup_models import (
+    CleanupExecution,
+    CleanupPlan,
+    CleanupProgress,
+    ProtectionReason,
+)
 from paper_radar.pi_supply.errors import SupplyError
 from paper_radar.pi_supply.models import Activation, SupplyRecord
 from paper_radar.pi_supply.retention import protection_reasons
@@ -282,3 +287,91 @@ def _validate_layout(plan: CleanupPlan) -> None:
             or path.as_posix() != manual.relative_path
         ):
             raise ValueError
+
+
+def validate_execution_history(
+    runs: list[dict[str, object]],
+    events: list[dict[str, object]],
+    plans: tuple[CleanupPlan, ...],
+    facts: dict[str, JsonValue],
+) -> tuple[CleanupExecution, ...]:
+    """执行记录只追加;回放不读取原安装根,因此可用于备份恢复。"""
+    plan_map = {plan.plan_id: plan for plan in plans}
+    retired = facts[tables.retirements.name]
+    assert isinstance(retired, list)
+    retirement_map = {
+        str(row["install_id"]): row for row in retired if isinstance(row, dict)
+    }
+    result = []
+    try:
+        if any(
+            event["run_id"] not in {run["run_id"] for run in runs} for event in events
+        ):
+            raise ValueError
+        for row in runs:
+            plan = plan_map[str(row["plan_id"])]
+            progress = tuple(
+                CleanupProgress.model_validate(
+                    {key: value for key, value in event.items() if key != "run_id"}
+                )
+                for event in sorted(events, key=lambda e: int(str(e["event_id"])))
+                if event["run_id"] == row["run_id"]
+            )
+            execution = CleanupExecution.model_validate({**row, "events": progress})
+            created = datetime.fromisoformat(execution.created_at)
+            if created.tzinfo is None or created < datetime.fromisoformat(
+                plan.created_at
+            ):
+                raise ValueError
+            state: dict[str, str] = {}
+            candidates = {item.install_id: item for item in plan.candidates}
+            for event in progress:
+                moment = datetime.fromisoformat(event.created_at)
+                if (
+                    moment.tzinfo is None
+                    or moment < created
+                    or event.install_id not in candidates
+                ):
+                    raise ValueError
+                previous = state.get(event.install_id)
+                allowed = {
+                    None: {"not_run"},
+                    "not_run": {"retired", "failed"},
+                    "retired": {"moved", "failed"},
+                    "moved": {"completed", "failed"},
+                }
+                if event.phase not in allowed.get(previous, set()):
+                    raise ValueError
+                if (
+                    event.reason
+                    != ("not_run" if event.phase == "not_run" else "passed")
+                    and event.phase != "failed"
+                ):
+                    raise ValueError
+                if event.phase == "failed" and event.reason in {"passed", "not_run"}:
+                    raise ValueError
+                if event.phase in {"retired", "moved", "completed"}:
+                    retirement = retirement_map[event.install_id]
+                    if (
+                        candidates[event.install_id].state == "installed"
+                        and retirement["plan_id"] != plan.plan_id
+                    ) or datetime.fromisoformat(str(retirement["created_at"])) > moment:
+                        raise ValueError
+                state[event.install_id] = event.phase
+                created = moment
+            if set(state) != set(candidates):
+                raise ValueError
+            result.append(execution)
+        return tuple(result)
+    except (ValidationError, ValueError, TypeError, KeyError):
+        raise SupplyError("cleanup_history_invalid") from None
+
+
+def completed_installs(connection: Connection) -> set[str]:
+    return set(
+        connection.execute(
+            select(tables.cleanup_progress.c.install_id).where(
+                tables.cleanup_progress.c.phase == "completed"
+            )
+        ).scalars()
+    )

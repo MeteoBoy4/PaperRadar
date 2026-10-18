@@ -15,7 +15,11 @@ from sqlalchemy import insert, select
 
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.pi_supply import tables
-from paper_radar.pi_supply.cleanup_history import safety_facts, validate_plan_history
+from paper_radar.pi_supply.cleanup_history import (
+    completed_installs,
+    safety_facts,
+    validate_plan_history,
+)
 from paper_radar.pi_supply.cleanup_models import (
     CleanupItem,
     CleanupPlan,
@@ -35,7 +39,7 @@ from paper_radar.pi_supply.repository import database_engine, now, read_state
 from paper_radar.pi_supply.retention import protection_reasons
 
 
-def _facts(database: Path) -> dict[str, JsonValue]:
+def read_cleanup_facts(database: Path) -> dict[str, JsonValue]:
     with database_engine(database) as engine, engine.connect() as connection:
         connection.exec_driver_sql("BEGIN")
         return safety_facts(connection)
@@ -70,7 +74,7 @@ def _occupancy(
     return inodes, counts
 
 
-def _root(
+def check_cleanup_root(
     database: Path, root: Path, root_id: str, data: Path, config: Path, material: Path
 ) -> None:
     safe_roots(database, root, data, config, material)
@@ -86,10 +90,12 @@ def create_cleanup_plan(
             str(actual_root).encode("utf-8", errors="strict")
     except UnicodeError:
         raise SupplyError("unsafe_path") from None
-    before = _facts(database)
+    before = read_cleanup_facts(database)
     records, history, _ = read_state(database)
-    if _facts(database) != before:
+    if read_cleanup_facts(database) != before:
         raise SupplyError("cleanup_facts_changed")
+    with database_engine(database) as engine, engine.connect() as connection:
+        completed = completed_installs(connection)
     observations = {
         i.install_id: probe_install(database, r.supply_id, i.install_id).state
         for r in records
@@ -111,7 +117,9 @@ def create_cleanup_plan(
     manual = []
     for identity, root in sorted(roots.items()):
         try:
-            _root(database, root, identity, data_root, config_root, material_root)
+            check_cleanup_root(
+                database, root, identity, data_root, config_root, material_root
+            )
             safe[identity] = True
         except (SupplyError, OSError) as error:
             safe[identity] = False
@@ -170,6 +178,19 @@ def create_cleanup_plan(
                         present = False
                     else:
                         present = stat.S_ISDIR(path.lstat().st_mode)
+                        if instance.install_id in completed:
+                            manual.append(
+                                ManualCleanup(
+                                    root_id=instance.root_id,
+                                    relative_path=path.relative_to(
+                                        roots[instance.root_id]
+                                    ).as_posix(),
+                                    reason="unknown_trash"
+                                    if path.parent.name == ".trash"
+                                    else "unknown_entry",
+                                )
+                            )
+                            raise SupplyError("cleanup_tree_changed")
                         actual = tree_hash(path)
                         inodes, counts = _occupancy(path)
                         allocated = sum(v.allocated for v in inodes.values())
@@ -342,7 +363,7 @@ def _manual(
 
 
 def list_cleanup_plans(database: Path) -> tuple[CleanupPlan, ...]:
-    before = _facts(database)
+    before = read_cleanup_facts(database)
     records = read_state(database)[0]
     with database_engine(database) as engine, engine.connect() as connection:
         connection.exec_driver_sql("BEGIN")

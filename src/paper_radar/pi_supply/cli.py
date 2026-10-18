@@ -8,7 +8,7 @@ from typing import Annotated, Any
 import typer
 from typer.core import TyperCommand, TyperGroup
 
-from paper_radar.pi_supply.cleanup_models import CleanupPlan
+from paper_radar.pi_supply.cleanup_models import CleanupExecution, CleanupPlan
 
 
 @contextmanager
@@ -57,7 +57,7 @@ GROUP_HELP = (
 
 当前用途：prepare 准备；verify 逐实例核验；rebuild 联网重建；
 activate 显式切换唯一选择；list/show 只读回查；export 导出固定材料；
-gc --dry-run 保存计划但不删除，show-plan 回查。
+gc --dry-run 保存计划，gc --execute <plan-id> 显式清理；show-plan 回查。
 参数与选项：数据库、快照、adapter 槽及根目录由子命令显式指定，无隐式最新。
 副作用：prepare/rebuild 下载并安装，verify 运行无模型检查，均不激活；
 list/show/export 不检查现场。
@@ -441,12 +441,16 @@ def doctor_command(
 
 
 GC_HELP = (
-    """生成可审阅的不可变安装清理计划，保存计划但不删除。
+    """生成可审阅的不可变安装清理计划，或显式执行保存的计划。
 
-参数与选项：必须给 --dry-run、--database 和实际
---data-root/--config-root/--material-root。
+参数与选项：--database 必填；--dry-run 必须给实际
+--data-root/--config-root/--material-root；--execute <plan-id> 仅接受保存的完整计划ID。
+两种模式互斥，执行时不得传根路径；不接受 force。
 安装位置只来自本库登记的根和实例，不接受目标路径、glob 或 force。
-副作用：只追加计划事实，现场读取与锁探测不构成删除授权；不修改选择或安装可用性。
+副作用：dry-run 只追加计划事实，不删除；执行重新核验所有安全依据，
+非阻塞排他锁后短事务退役，再不覆盖移入受控 trash 后删除并记录逐项结果。
+退役不会撤销；失败或强杀后须用新 dry-run 计划显式回收，不能刷新旧预期。
+共用原安装根的恢复活动副本，在旧副本退役前不得清理。
 保留窗口跨供给按 install_id 去重，当前和最近三个旧实例
 叠加在途、未知保护及各范围最近通过。
 未知 staging/未登记树人工处理；已退役残留单列；超过四棵仅报告，不绕过保护。
@@ -492,37 +496,90 @@ def _show_plan(plan: CleanupPlan) -> None:
 
 @supply_app.command("gc", cls=SupplyCommand, help=GC_HELP)
 def gc_command(
-    database: Annotated[
-        Path, typer.Option("--database", help="已升级数据库；本命令保存计划。")
-    ],
-    data_root: Annotated[Path, typer.Option("--data-root", help="实际数据根。")],
-    config_root: Annotated[Path, typer.Option("--config-root", help="实际配置根。")],
+    database: Annotated[Path, typer.Option("--database", help="已升级数据库。")],
+    data_root: Annotated[
+        Path | None, typer.Option("--data-root", help="dry-run实际数据根。")
+    ] = None,
+    config_root: Annotated[
+        Path | None, typer.Option("--config-root", help="dry-run实际配置根。")
+    ] = None,
     material_root: Annotated[
-        Path, typer.Option("--material-root", help="固定材料根。")
-    ],
+        Path | None, typer.Option("--material-root", help="dry-run固定材料根。")
+    ] = None,
     dry_run: Annotated[
-        bool, typer.Option("--dry-run", help="保存计划但不删除，必须显式给出。")
+        bool, typer.Option("--dry-run", help="保存计划但不删除。")
     ] = False,
+    execute: Annotated[
+        str | None, typer.Option("--execute", help="仅执行保存的完整计划ID。")
+    ] = None,
 ) -> None:
-    from paper_radar.pi_supply import SupplyError, create_cleanup_plan
+    from paper_radar.pi_supply import (
+        SupplyError,
+        create_cleanup_plan,
+        execute_cleanup_plan,
+    )
 
-    if not dry_run:
-        typer.echo("必须显式使用 --dry-run；保存计划但不删除。", err=True)
+    if (dry_run and execute is not None) or (not dry_run and execute is None):
+        typer.echo(
+            "必须显式使用 --dry-run 或 --execute <plan-id>，两种模式互斥。", err=True
+        )
+        raise typer.Exit(2)
+    if execute is not None and any(
+        root is not None for root in (data_root, config_root, material_root)
+    ):
+        typer.echo(
+            "执行仅接受保存的计划ID，不接受根路径；请先核对 show-plan。", err=True
+        )
+        raise typer.Exit(2)
+    if dry_run and any(
+        root is None for root in (data_root, config_root, material_root)
+    ):
+        typer.echo(
+            "--dry-run 必须给实际 --data-root、--config-root、--material-root。",
+            err=True,
+        )
         raise typer.Exit(2)
     try:
-        plan = create_cleanup_plan(
-            database,
-            data_root=data_root,
-            config_root=config_root,
-            material_root=material_root,
-        )
+        if execute is not None:
+            result = execute_cleanup_plan(database, execute)
+            _show_execution(result)
+            if not result.passed:
+                raise typer.Exit(2)
+        else:
+            assert (
+                data_root is not None
+                and config_root is not None
+                and material_root is not None
+            )
+            _show_plan(
+                create_cleanup_plan(
+                    database,
+                    data_root=data_root,
+                    config_root=config_root,
+                    material_root=material_root,
+                )
+            )
     except SupplyError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(2) from None
     except KeyboardInterrupt:
-        typer.echo("计划生成中断；安装未删除，请重新生成计划。", err=True)
+        typer.echo(
+            "清理操作中断；退役不会撤销，请重新生成计划并显式回收残留。", err=True
+        )
         raise typer.Exit(130) from None
-    _show_plan(plan)
+
+
+def _show_execution(execution: CleanupExecution) -> None:
+    typer.echo(
+        f"run_id={execution.run_id} plan_id={execution.plan_id} "
+        f"result={'passed' if execution.passed else 'incomplete'}"
+    )
+    for item in execution.items:
+        typer.echo(
+            f"install_id={item.install_id} phase={item.phase} reason={item.reason}"
+        )
+    if not execution.passed:
+        typer.echo("清理未完成；退役不会撤销，请重新生成计划并显式回收残留。")
 
 
 @supply_app.command(
@@ -550,10 +607,15 @@ def show_plan_command(
         bool, typer.Option("--canonical", help="输出不可变规范JSON原字节。")
     ] = False,
 ) -> None:
-    from paper_radar.pi_supply import SupplyError, show_cleanup_plan
+    from paper_radar.pi_supply import (
+        SupplyError,
+        list_cleanup_executions,
+        show_cleanup_plan,
+    )
 
     try:
         plan = show_cleanup_plan(database, plan_id)
+        executions = () if canonical else list_cleanup_executions(database)
     except SupplyError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(2) from None
@@ -561,6 +623,9 @@ def show_plan_command(
         typer.echo(plan.canonical_bytes.decode())
     else:
         _show_plan(plan)
+        for execution in executions:
+            if execution.plan_id == plan.plan_id:
+                _show_execution(execution)
 
 
 @supply_app.command(
