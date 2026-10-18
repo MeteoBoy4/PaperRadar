@@ -77,6 +77,19 @@ def check_space(root: Path) -> None:
         raise SupplyError("space_insufficient")
 
 
+def durable_directories(path: Path) -> None:
+    """逐级持久化新根及其目录项, 避免只同步树内遗漏根的父目录。"""
+    missing = []
+    ancestor = path
+    while not ancestor.exists():
+        missing.append(ancestor)
+        ancestor = ancestor.parent
+    for directory in reversed(missing):
+        directory.mkdir(exist_ok=True, mode=0o700)
+        fsync_directory(directory)
+        fsync_directory(directory.parent)
+
+
 def extract_node(raw: bytes, destination: Path, version: str) -> None:
     prefix = f"node-v{version}-linux-x64"
     destination.mkdir()

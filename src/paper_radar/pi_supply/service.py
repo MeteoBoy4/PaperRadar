@@ -27,6 +27,7 @@ from paper_radar.pi_supply import tables
 from paper_radar.pi_supply.errors import SupplyError
 from paper_radar.pi_supply.filesystem import (
     check_space,
+    durable_directories,
     durable_tree,
     extract_node,
     freeze_tree,
@@ -124,7 +125,7 @@ def _lock(path: Path) -> Iterator[None]:
 
 
 def _owned_root(database: Path, root: Path) -> str:
-    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    durable_directories(root)
     with _lock(root / ".root.lock"):
         no_symlink_components(root)
         marker = root / ".paper-radar-install-root"

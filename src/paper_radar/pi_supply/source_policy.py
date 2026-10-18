@@ -1,6 +1,6 @@
 """固定官方来源与无凭据显式代理的纯规则。"""
 
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from paper_radar.pi_supply.errors import SupplyError
 
@@ -24,6 +24,9 @@ def checked_url(url: str, source: str | None = None) -> str:
             or parts.fragment
             or parts.query
             or not allowed
+            or any(part in {".", ".."} for part in unquote(parts.path).split("/"))
+            or any(character.isspace() for character in url)
+            or "\\" in url
             or (source == "registry" and parts.hostname != "registry.npmjs.org")
         ):
             raise ValueError

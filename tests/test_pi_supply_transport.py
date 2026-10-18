@@ -11,7 +11,7 @@ from paper_radar.pi_supply.transport import HttpDownloader, ProcessRunner
 from tests.pi_supply_support import inputs
 
 
-@pytest.mark.parametrize("failure", ["redirect", "oversized"])
+@pytest.mark.parametrize("failure", ["redirect", "traversal", "oversized"])
 def test_real_downloader_rejects_forbidden_hop_or_body(
     tmp_path: Path, failure: str
 ) -> None:
@@ -23,6 +23,10 @@ def test_real_downloader_rejects_forbidden_hop_or_body(
         if failure == "redirect":
             return httpx.Response(
                 302, headers={"location": "https://SECRET.example/hidden"}
+            )
+        if failure == "traversal":
+            return httpx.Response(
+                302, headers={"location": "https://nodejs.org/dist/../../SECRET"}
             )
         return httpx.Response(200, content=b"x" * (4 * 1024 * 1024 + 1))
 
@@ -41,7 +45,7 @@ def test_real_downloader_rejects_forbidden_hop_or_body(
             runner=source[4],
         )
     assert caught.value.reason == (
-        "source_forbidden" if failure == "redirect" else "download_limit"
+        "download_limit" if failure == "oversized" else "source_forbidden"
     )
     assert "SECRET" not in str(caught.value)
     assert len(seen) == 1
