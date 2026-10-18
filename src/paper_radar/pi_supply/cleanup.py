@@ -26,6 +26,7 @@ from paper_radar.pi_supply.filesystem import (
     local_filesystem,
     no_symlink_components,
     safe_roots,
+    tree_entries,
     tree_hash,
 )
 from paper_radar.pi_supply.models import SupplyRecord
@@ -51,7 +52,9 @@ class Occupancy:
 def _occupancy(
     path: Path,
 ) -> tuple[dict[tuple[int, int], Occupancy], Counter[tuple[int, int]]]:
-    nodes = [path, *path.rglob("*")]
+    nodes = [path]
+    if stat.S_ISDIR(path.lstat().st_mode):
+        nodes.extend(tree_entries(path))
     inodes = {}
     counts: Counter[tuple[int, int]] = Counter()
     for node in nodes:
@@ -183,8 +186,10 @@ def create_cleanup_plan(
                             candidate_inodes.update(inodes)
                 except SupplyError as error:
                     reason = error.reason
+                    actual = allocated = logical = None
                 except OSError:
                     reason = "tree_invalid"
+                    actual = allocated = logical = None
             if disposition == "unverifiable":
                 unknown = True
             items.append(

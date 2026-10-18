@@ -115,6 +115,8 @@ expected_tree、安装后解析的 pi_entry；保留其余字段及官方/补充
 `{path,kind:"file",sha256,executable}`；链接项 `{path,kind:"link",target}`。
 executable 为任一 x 位的布尔值，目录也计；链接目标保留原文本并须在树内、可解析且非绝对路径。
 拒绝特殊文件。规范 JSON 数组的 SHA-256 为树身份；不包含写/读位、mtime、uid/gid 或位置。
+实际枚举使用显式目录扫描，不抑制权限、缺失或其他读取错误；不可读子目录不能当作空目录，
+全树身份与占用都返回受控无法核验。此完整性检查不改变 tree-v1 的有效树编码与独立向量。
 
 独立向量：根与 `bin/` 可执行，`bin/run` 内容为 `hi\n` 且可执行，`run` 为 `bin/run` 的相对链接，
 树摘要为 `3ba7d3e8a26699a27360c5f3575eee704abe8cb77f572e0a21f768a798b96573`。

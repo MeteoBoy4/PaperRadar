@@ -9,6 +9,7 @@ import io
 import os
 import stat
 import tarfile
+from collections.abc import Iterator
 from pathlib import Path, PurePosixPath
 
 from paper_radar.config.identity import canonical_json
@@ -154,6 +155,19 @@ def extract_node(raw: bytes, destination: Path, version: str) -> None:
         raise SupplyError("archive_unsafe") from None
 
 
+def tree_entries(root: Path) -> Iterator[Path]:
+    """完整枚举普通目录,不跟随目录链接且不抑制扫描错误。"""
+    pending = [root]
+    while pending:
+        directory = pending.pop()
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                path = Path(entry.path)
+                if entry.is_dir(follow_symlinks=False):
+                    pending.append(path)
+                yield path
+
+
 def tree_hash(root: Path) -> str:
     """tree-v1:排序 POSIX UTF-8 路径,规范 JSON 条目,文件摘要和执行位布尔。"""
     try:
@@ -167,7 +181,7 @@ def tree_hash(root: Path) -> str:
             }
         ]
         for path in sorted(
-            root.rglob("*"), key=lambda p: p.relative_to(root).as_posix()
+            tree_entries(root), key=lambda p: p.relative_to(root).as_posix()
         ):
             relative = path.relative_to(root).as_posix()
             relative.encode("utf-8", errors="strict")
@@ -209,7 +223,7 @@ def tree_hash(root: Path) -> str:
 
 
 def freeze_tree(root: Path) -> None:
-    for path in root.rglob("*"):
+    for path in tree_entries(root):
         if not path.is_symlink():
             path.chmod(0o555 if path.is_dir() or path.stat().st_mode & 0o111 else 0o444)
     root.chmod(0o555)
@@ -244,10 +258,10 @@ def publish_directory(source: Path, destination: Path) -> None:
 
 
 def durable_tree(root: Path) -> None:
-    for path in root.rglob("*"):
+    for path in tree_entries(root):
         if path.is_file() and not path.is_symlink():
             with path.open("rb") as source:
                 os.fsync(source.fileno())
-    for path in sorted((p for p in root.rglob("*") if p.is_dir()), reverse=True):
+    for path in sorted((p for p in tree_entries(root) if p.is_dir()), reverse=True):
         fsync_directory(path)
     fsync_directory(root)
