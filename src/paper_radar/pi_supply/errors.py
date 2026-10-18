@@ -6,6 +6,9 @@ SupplyReason = Literal[
     "cleanup_plan_invalid",
     "cleanup_plan_missing",
     "cleanup_facts_changed",
+    "export_conflict",
+    "export_evidence_collision",
+    "export_failed",
     "install_busy",
     "protection_unknown",
     "selection_changed",
@@ -78,6 +81,13 @@ GUIDANCE: dict[SupplyReason, str] = {
         "未找到完整清理计划ID；请使用 gc --dry-run 生成并核对计划。"
     ),
     "cleanup_facts_changed": "计划生成期间安全事实变化；请重新运行 gc --dry-run。",
+    "export_conflict": "导出目标含异字节、链接或特殊条目；请保留原文件并选择空目标。",
+    "export_evidence_collision": (
+        "D5 证据摘要前 16 位冲突；请保留数据库并核对证据，不能覆盖或改名。"
+    ),
+    "export_failed": (
+        "材料导出未完成；请检查安全文件能力、目录权限及空间后重试，同字节文件会跳过。"
+    ),
     "install_busy": "安装正被保护或清理占用；请稍后重试，不会绕过实例锁。",
     "protection_unknown": "无法安全确认安装保护；请检查原根与锁文件，保守拒绝清理。",
     "selection_changed": "取得安装时当前选择已改变；请使用明确快照重新取得句柄。",

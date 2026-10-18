@@ -1,8 +1,8 @@
 # Pi 固定供给 Contract v1
 
-当前交付 `pi supply prepare/verify/rebuild/activate/list/show`、`doctor --scope pi-supply` 和公共 Python 服务
+当前交付 `pi supply prepare/verify/rebuild/activate/list/show/export`、`doctor --scope pi-supply` 和公共 Python 服务
 `paper_radar.pi_supply.prepare_supply/verify_supply/rebuild_supply/list_supplies/show_supply`，
-以及 `activate_supply/activation_history/doctor_supply` 和只读 `available_installs(database, supply_id)`。
+以及 `activate_supply/activation_history/doctor_supply/export_supply` 和只读 `available_installs(database, supply_id)`。
 准备不激活，无需真实 Profile、模型配置或凭据，也不证明 RPC、模型语义或校准。
 `SupplyRequest`、`SupplyManifest` 为 `pi_supply/models.py` 的权威 Pydantic 类型。
 
@@ -144,7 +144,7 @@ Linux 移动目录时顶层短暂保留写位，发布后撤去并 fsync，之�
 普通重复 prepare 在再次安装前拒绝并指向 rebuild，即使改 D5 也不能重冻。
 同时开始的相同完整请求先提交者胜；输者比对清单和现场树后返回既有 supply_id/install_id，
 清理自己的 staging，不登记第二实例。相同固定输入得到不同树或 D5 时受控冲突。
-list/show 只回查历史，不检查现场，不要求 Pi、网络或受支持平台，不能把历史 passed 当作当前可用。
+list/show/export 只回查历史，不检查现场，不要求 Node/Pi、网络或受支持平台，不能把历史 passed 当作当前可用。
 检查 scope 当前唯一为 install_check；不导入任意用户声明成功记录。
 
 数据库 head 为 a404_pi_cleanup_plans；既有 migration 原字节保持，
@@ -155,11 +155,46 @@ a403 激活事件与唯一选择、a402 重建失败事实保持不变。本切�
 不放宽 head gate。恢复副本共用原根时，旧副本退役前禁止未来 gc execute；flock 仅保护在途进程，
 不能区分两个空闲活动副本。
 
-未来导出固定集合为 package.json、package-lock.json、release.json、supply-manifest.json、
+导出固定集合为 package.json、package-lock.json、release.json、supply-manifest.json、
 integrity-supplements.json、SHASUMS256.txt 与 d5-evidence/<SHA前16位>.bin；
 derived-lock.json 是内部保存的确定性派生材料，不增加到已批准导出集合。
 版本控制目标 tools/pi/<supply_id>/，安装树 .tools/pi/<supply_id>/<install_id>/ 被 Git 忽略。
 rebuild 重新联网下载固定摘要的 Node/tarball，不承诺脱网重建。
+
+## 固定材料导出
+
+```bash
+uv run --offline --locked paper-radar pi supply export <完整supply_id> \
+  --database data/paperradar.sqlite3 --target tools/pi
+```
+
+`export_supply(database, supply_id, target)` 先经公共 show 完整核验全库材料、身份与引用闭包，
+再从数据库原字节导出；不读取原配置、request/evidence、安装树或先前导出目录。
+返回不可变 `ExportResult(supply_id, files, created)`：files 为相对供给目录的完整固定集合，
+created 只含本次新增项；同字节重复运行 created 为空且不改文件或目录时间、inode、权限。
+供给目录为 `target/<完整supply_id>/`；清单为规范原字节，官方锁保持官方原字节。
+target 与本库全部已登记安装根（含尚无实例的已认领根）及数据库文件位置作纯路径
+双向包含检查，重叠给 `unsafe_root`，不探测或解析原安装现场。原根已缺失也保留隔离规则。
+未知的 data/config 根不从 cwd 推断；用户仍须选择分离的材料目录。
+顶层恒为前述六个文件，加全部 evidence_file 的原字节；完整摘要重复只输出一次。
+supply_material/supply_record 只保留清单中的引用，不递归导出别的供给。
+不导出 derived-lock.json、安装树、tarball/Node archive、认证、完整日志或 RPC。
+公开纯布局 `pi_supply.export.export_evidence_layout(digests)` 接受完整小写 64 位摘要，
+输出按固定短名排序的 `(完整摘要, 相对路径)` 元组；不同摘要前16位相同则
+`export_evidence_collision`，不能覆盖、延长摘要或改固定命名。
+
+创建任何目录/文件前先预检整组既存路径：每级目录拒绝链接，既存目标必须为同字节普通文件；
+异字节、目录、链接（含断链）或特殊文件拒绝，全组不新增。额外用户文件保留，不计导出集合。
+预检后每个新文件先同目录私有临时文件写完并 fsync，再用不覆盖硬链接发布并 fsync 父目录；
+目录句柄与 nofollow 防止路径切换导向链接。并发既存文件重新核验，同字节跳过、冲突拒绝。
+导出不检查 Pi 部署的 OS/arch/libc，但安全发布需要 Python/文件系统支持目录句柄及 dir_fd、
+O_DIRECTORY/O_NOFOLLOW/O_NONBLOCK、普通文件硬链接不覆盖发布与 fsync；缺少能力受控失败，
+不退回可被路径替换的普通路径写入。list/show 与库内历史读取不需要这些导出写入能力。
+原生 Windows 导出未验证；当前缺少上述 Python 安全文件能力时会受控失败，
+不宣称任意操作系统或文件系统均能完成安全导出。
+这不是跨文件事务：运行中 I/O 故障或强杀可留下部分完整项；保留后重试补齐，不删除用户文件。
+`export_conflict/export_failed` 均给中文原因和下一步；CLI 成功0、失败2、中断130，配额消耗0。
+导出是数据库的版本控制投影，不作为恢复、导入或修复数据库的权威。
 
 ## 完整核验与固定材料重建
 
