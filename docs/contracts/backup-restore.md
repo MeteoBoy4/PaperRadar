@@ -240,3 +240,9 @@ flock 保护在途进程，无法保护另一个空闲副本的 current。恢复
 不联网补齐，不读导出文件修复。a302 旧批次仍须由匹配 A3 程序先 verify/restore，
 再切换新程序显式 db upgrade 并重做备份；新程序的 unsupported_revision 是预期，
 不得改写原批次清单 revision 或放宽 head gate。
+
+
+A4 同次完整离线组合还覆盖：非空供给准备/核验/重建与激活后，真实保护阻止候选，
+释放后显式计划清理，再导出固定原材料；备份隔离恢复仍保留供给检查、激活、原计划和
+逐项执行审计、D5 原字节与既有配置/制品，退役安装不恢复可用性。该组合不访问原根、
+不安装 Pi/Node、不启用模型，不替代 NAS/live 验收；见 [A4 证据](../verification/offline-evidence.md)。
