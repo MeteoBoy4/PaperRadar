@@ -233,6 +233,7 @@ def test_synthetic_scopes_protect_independently_without_rpc_import(
     from dataclasses import replace
 
     from paper_radar.pi_supply import rebuild_supply, show_supply
+    from paper_radar.pi_supply.execution import retention_protection
     from paper_radar.pi_supply.models import InstallCheck
     from paper_radar.pi_supply.retention import protection_reasons
     from tests.pi_supply_support import Run
@@ -277,6 +278,10 @@ def test_synthetic_scopes_protect_independently_without_rpc_import(
     reasons = protection_reasons((synthetic,), (), {})
     assert reasons[first.install_id] == ("latest_rpc_compatibility",)
     assert reasons[second.install_id] == ("latest_install_check",)
+    assert retention_protection((synthetic,), ()).acceptance_install_ids == (
+        second.install_id,
+        first.install_id,
+    )
 
 
 def test_foreign_marker_is_reported_without_scanning_root(tmp_path: Path) -> None:

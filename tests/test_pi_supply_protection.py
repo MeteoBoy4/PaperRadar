@@ -90,6 +90,7 @@ def test_activation_verify_and_doctor_share_the_use_boundary(tmp_path: Path) -> 
         assert not checked.passed and checked.reason == "install_busy"
     with use_install(source[0], source[1]):
         report = doctor_supply(source[0], source[1])
+        assert report.passed
         active = next(
             item for item in report.instances if item.install_id == prepared.install_id
         )
@@ -99,6 +100,45 @@ def test_activation_verify_and_doctor_share_the_use_boundary(tmp_path: Path) -> 
         probe_install(source[0], prepared.supply_id, prepared.install_id).state
         == "idle"
     )
+
+
+def test_doctor_rejects_current_install_with_missing_protection_lock(
+    tmp_path: Path,
+) -> None:
+    from typer.testing import CliRunner
+
+    from paper_radar.cli import app
+    from paper_radar.pi_supply import SupplyError, doctor_supply, use_install
+
+    source = inputs(tmp_path)
+    prepared = prepare(tmp_path, source)
+    activate_supply(source[0], prepared.supply_id, source[1])
+    lock = tmp_path / "install" / ".locks" / f"{prepared.install_id}.lock"
+    lock.unlink()
+    report = doctor_supply(source[0], source[1])
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--scope",
+            "pi-supply",
+            "--database",
+            str(source[0]),
+            "--snapshot",
+            source[1],
+        ],
+    )
+    with (
+        pytest.raises(SupplyError, match="protection_unknown"),
+        use_install(source[0], source[1]),
+    ):
+        pytest.fail("missing protection must prevent use")
+    assert not lock.exists()
+    assert report.instances[0].protection_state == "unknown"
+    assert not report.passed and report.blockers == ("protection_unknown",)
+    assert result.exit_code == 2
+    assert "scope=pi-supply result=failed" in result.output
+    assert "[protection_unknown]" in result.output
 
 
 def test_normal_parent_close_keeps_live_child_protected(tmp_path: Path) -> None:

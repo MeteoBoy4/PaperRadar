@@ -284,7 +284,8 @@ uv run --offline --locked paper-radar doctor --scope pi-supply \
 诊断区分三个面：
 
 - 供给范围门槛：当前选择存在、所给快照全部槽匹配、平台/根/入口/全树当前可用，
-  库内全量事实闭包可信，实际已登记安装树占用不超过四棵；缺项、损坏或超限返回 2。
+  当前实例的安装保护可确认，库内全量事实闭包可信，实际已登记安装树占用不超过四棵；
+  缺项、损坏、当前保护 unknown 或超限返回 2。
 - 业务配置：Profile、模型、Prompt、Read 契约等现有缺项独立列出；这些缺项不阻止供给安装，
   也不让尚未实施的 Read 契约将窄供给范围永久判失败。RPC、真实 provider/model、凭据、
   参数映射、生产隔离、正式校准与自动精读独立标注未实施/未验证，不授予任何资格。
@@ -299,7 +300,8 @@ D5 decision 与 basis 原文只读显示，不推断 minor/major 或校准兼容
 当前仅有 install_check，RPC 如实未验证；在途保护由下述真实共享锁观察，不伪造成功记录。
 未激活但现场存在的已登记完整树也计入实际占用，首次部署不要求补齐三个旧实例。
 `retention.protection_reasons(records, history, observations)` 是 doctor 与清理计划共用的纯规则；
-`execution.retention_protection(records, history)` 仍提供保留/安装检查保护摘要；
+`execution.retention_protection(records, history)` 仍提供保留/逐 scope 最近通过对象摘要，
+二者共用同一保留窗口与逐 scope 查询；
 `selection.match_snapshot` 与 `execution.inspect_instance` 分别提供全部槽匹配和现场核验边界。
 
 当前坏实例的修复路径是 `rebuild` 新实例后显式 `activate`，旧坏实例和历史保留。
@@ -333,7 +335,8 @@ D5 decision 与 basis 原文只读显示，不推断 minor/major 或校准兼容
 本次独立探测瞬间无人持有，`unknown` 表示无法安全确认，须保守保护。
 doctor 不创建目录/锁、不写事实；逐实例显示 protection_state/protection_reason，
 真实持有追加 `in_flight` 理由，无法确认追加 `protection_unknown`。已有保留窗口与
-install_check 保护独立叠加，超过四棵仍报告超限，绝不自动删除。
+install_check 保护独立叠加；当前实例 unknown 阻断所选供给 scope，历史实例 unknown
+独立披露，不自动否决已显式激活的新当前实例。超过四棵仍报告超限，绝不自动删除。
 
 `exclusive_install(database, supply_id, install_id)` 给 GC 非阻塞排他上下文；
 竞争给 `install_busy`，缺失或不安全锁给 `protection_unknown`。

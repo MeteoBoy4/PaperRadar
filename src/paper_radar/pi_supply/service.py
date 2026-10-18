@@ -456,6 +456,31 @@ def _publish_tree(
     return target
 
 
+def _publication_intent(pending: Path, supply_id: str) -> str:
+    install_id = uuid.uuid4().hex
+    if pending.exists() or pending.is_symlink():
+        if pending.is_symlink():
+            raise SupplyError("publication_conflict")
+        intent = object_bytes(_read_small(pending))
+        install_id = intent.get("install_id", "")
+        if (
+            set(intent) != {"install_id", "supply_id"}
+            or not isinstance(install_id, str)
+            or not re.fullmatch(r"[0-9a-f]{32}", install_id)
+            or intent["supply_id"] != supply_id
+        ):
+            raise SupplyError("publication_conflict")
+    else:
+        with pending.open("xb") as output:
+            output.write(
+                canonical_json({"install_id": install_id, "supply_id": supply_id})
+            )
+            output.flush()
+            os.fsync(output.fileno())
+        fsync_directory(pending.parent)
+    return install_id
+
+
 def _publish(
     database: Path,
     root: Path,
@@ -487,29 +512,7 @@ def _publish(
                     raise SupplyError("concurrent_tree_conflict") from None
                 raise
         pending = root / f".pending-{manifest.material_key}.json"
-        install_id = uuid.uuid4().hex
-        if pending.exists() or pending.is_symlink():
-            if pending.is_symlink():
-                raise SupplyError("publication_conflict")
-            intent = object_bytes(_read_small(pending))
-            install_id = intent.get("install_id", "")
-            if (
-                set(intent) != {"install_id", "supply_id"}
-                or not isinstance(install_id, str)
-                or not re.fullmatch(r"[0-9a-f]{32}", install_id)
-                or intent["supply_id"] != manifest.supply_id
-            ):
-                raise SupplyError("publication_conflict")
-        else:
-            with pending.open("xb") as output:
-                output.write(
-                    canonical_json(
-                        {"install_id": install_id, "supply_id": manifest.supply_id}
-                    )
-                )
-                output.flush()
-                os.fsync(output.fileno())
-            fsync_directory(root)
+        install_id = _publication_intent(pending, manifest.supply_id)
         with publication_protection(
             database, root, root_id, install_id, supply_id=manifest.supply_id
         ):
@@ -534,29 +537,7 @@ def _publish_rebuild(
     ):
         _check_root_marker(database, root, root_id)
         pending = root / f".pending-rebuild-{manifest.supply_id}.json"
-        install_id = uuid.uuid4().hex
-        if pending.exists() or pending.is_symlink():
-            if pending.is_symlink():
-                raise SupplyError("publication_conflict")
-            intent = object_bytes(_read_small(pending))
-            install_id = intent.get("install_id", "")
-            if (
-                set(intent) != {"install_id", "supply_id"}
-                or not isinstance(install_id, str)
-                or not re.fullmatch(r"[0-9a-f]{32}", install_id)
-                or intent["supply_id"] != manifest.supply_id
-            ):
-                raise SupplyError("publication_conflict")
-        else:
-            with pending.open("xb") as output:
-                output.write(
-                    canonical_json(
-                        {"install_id": install_id, "supply_id": manifest.supply_id}
-                    )
-                )
-                output.flush()
-                os.fsync(output.fileno())
-            fsync_directory(root)
+        install_id = _publication_intent(pending, manifest.supply_id)
         with publication_protection(
             database, root, root_id, install_id, supply_id=manifest.supply_id
         ) as pass_fds:
