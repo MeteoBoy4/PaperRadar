@@ -20,6 +20,8 @@ def test_stage_inputs_only_depend_on_public_domain_boundaries() -> None:
                     "hashlib",
                     "json",
                     "re",
+                    "collections",
+                    "types",
                     "dataclasses",
                     "enum",
                     "typing",

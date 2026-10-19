@@ -185,7 +185,7 @@ def test_future_stage_input_format_is_not_comparable_to_current(
     snapshot = compile_config(settings, database)
     facts = ScreeningFacts(title="T", abstract="A", abstract_truncated=False)
     before = build_stage_input(snapshot, StageName.BOUNDARY, facts)
-    monkeypatch.setattr(service, "_FORMAT_VERSIONS", {StageName.BOUNDARY: 2})
+    monkeypatch.setattr(service, "STAGE_INPUT_FORMAT_VERSIONS", {StageName.BOUNDARY: 2})
     after = build_stage_input(snapshot, StageName.BOUNDARY, facts)
     assert before.fingerprint != after.fingerprint
     diff = compare_stage_inputs(before, after)

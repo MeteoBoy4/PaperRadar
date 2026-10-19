@@ -268,7 +268,8 @@ manifest 审计变化，同次调用只允许一份一致正文。从相同摘�
 [阶段输入契约](docs/contracts/stage-inputs.md)。#53 已用真实非空备份、恢复历史快照与
 重新取得的制品成员验证四阶段重建；不同 hashseed、cwd 和无序集合构造顺序保持身份，
 纯构造、回放与比较不执行 I/O。独立复现命令见[离线证据说明](docs/verification/offline-evidence.md)。
-独立 A5 验收由后续工作包接入，check-offline 仍为六份主要文件；
+独立 A5 验收由 #54 接入，固定绑定四阶段、回放、比较与隔离恢复能力。
+check-offline 输出七份主要文件，另有实际 pytest 执行回执；
 本服务不调度任务或改写人工决定，也不证明 PDF/正文的真实质量。
 
 ## Screening 输出验证
@@ -343,8 +344,9 @@ pytest 测试（包括冻结契约导出与只读检查测试），最后用一�
 每次运行在 `verification-runs/` 下生成新的 `<run_id>.json` 离线证据、
 `<run_id>.a1.json` 独立 A1 结论、`<run_id>.a2.json` 历史范围的 A2-01 结论，
 `<run_id>.a2-full.json` 完整 A2、`<run_id>.a3.json` 存储/恢复 A3 与
-`<run_id>.a4.json` Pi 供给生命周期 A4 独立结论。六份主要文件共用本次 `run_id`，
-不重复执行整套检查。只有本次 A1、完整 A2、A3 与 A4 都通过时返回 0；A2-01 独立保留，仍不决定整体通过。
+`<run_id>.a4.json` Pi 供给生命周期 A4 与 `<run_id>.a5.json` 四阶段输入 A5 独立结论。
+七份主要文件共用本次 `run_id`，
+不重复执行整套检查。只有本次 A1、完整 A2、A3、A4 与 A5 都通过时返回 0；A2-01 独立保留，仍不决定整体通过。
 `<run_id>.pytest.json` 另行记录脱敏测试执行回执；固定范围的收集和完整通过数量
 必须与已审查清单一致，跳过、取消选择、未完成或缺回执均不能通过。
 一次运行由 `scripts/verification_run.py` 统一组织，验收组在
@@ -361,7 +363,11 @@ A3 另外固定覆盖单/多文件制品、真实迁移、WAL 备份、全量只
 A4 另外绑定三份前置、真实生产格式、供给全生命周期、清理后导出与非空隔离恢复；
 十项 capabilities 全部通过才声明完整 A4，live_install_verified/rpc_verified 恒 false。
 要求归属见 [A4 规格对照](docs/verification/a4-requirements.md)。
-仅依赖登记顺序或总测试退出码不能通过。阶段输入指纹、论文业务事实、attempt/lease、
+A5 独立绑定 A1、完整 A2、A3，核对生产输入/投影格式、固定源码/向量与严格整数回执；
+A4 仍决定整体通过，但不作为 A5 前置。七项 capabilities 共用整组状态，
+stage_a_verified/live_verified/rpc_verified 恒 false，范围映射见
+[独立 A5 结论](docs/verification/offline-evidence.md#a5-独立结论4754)。
+仅依赖登记顺序或总测试退出码不能通过。Read/suggestion/report 指纹、论文业务事实映射、attempt/lease、
 共享资格/可见性、报告重建与任务续跑、doctor、Pi/Docling/Read 执行、真实来源与 NAS、
 正式校准和自动精读仍未验收；A3 passed 不等于完整阶段 A 或阶段 B 通过。
 该目录不进入版本控制；格式、失败表示与使用方法见

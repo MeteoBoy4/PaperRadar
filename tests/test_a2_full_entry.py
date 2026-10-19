@@ -15,11 +15,11 @@ import pytest
 from scripts.a2_full_acceptance import run_full_verification
 from scripts.offline_evidence import file_sha256
 from tests.a2_full_support import ROOT, repository_copy
-from tests.a4_acceptance_support import fake_checks
+from tests.a5_acceptance_support import fake_checks
 
 
 @pytest.mark.parametrize("stop", ["passed", "failed", "interrupted", "legacy_mismatch"])
-def test_one_plan_produces_six_bound_files_and_never_inherits_previous_success(
+def test_one_plan_produces_seven_bound_files_and_never_inherits_previous_success(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     stop: str,
@@ -68,7 +68,7 @@ def test_one_plan_produces_six_bound_files_and_never_inherits_previous_success(
     run_id = full["run_id"]
     files = [
         output / f"{run_id}{suffix}.json"
-        for suffix in ("", ".a1", ".a2", ".a2-full", ".a3", ".a4")
+        for suffix in ("", ".a1", ".a2", ".a2-full", ".a3", ".a4", ".a5")
     ]
     assert all(p.is_file() for p in files)
     assert path == files[3]
@@ -96,6 +96,16 @@ def test_one_plan_produces_six_bound_files_and_never_inherits_previous_success(
     if passed:
         assert a4["pytest_receipt_sha256"] == file_sha256(
             output / a4["pytest_receipt_file"]
+        )
+    a5 = payloads[6]
+    assert a5["status"] == expected_status
+    assert a5["a5_verified"] is passed
+    assert a5["a1_conclusion_sha256"] == file_sha256(files[1])
+    assert a5["a2_full_conclusion_sha256"] == file_sha256(files[3])
+    assert a5["a3_conclusion_sha256"] == file_sha256(files[4])
+    if passed:
+        assert a5["pytest_receipt_sha256"] == file_sha256(
+            output / a5["pytest_receipt_file"]
         )
     assert payloads[2]["scope"] == "a2_01_profile_runtime_config_snapshots"
     assert payloads[2]["a2_01_verified"] is (stop == "passed")
@@ -131,14 +141,14 @@ def test_full_entry_help_is_local_and_does_not_create_evidence_or_databases(
     assert "临时数据库" in result.stdout
     assert "不操作用户数据库" in result.stdout
     assert "A2-01" in result.stdout and "完整 A2" in result.stdout
-    assert "A3" in result.stdout and "A4" in result.stdout
-    assert "六份主要文件" in result.stdout
+    assert all(group in result.stdout for group in ("A3", "A4", "A5"))
+    assert "七份主要文件" in result.stdout
     assert "[离线检查]" not in result.stdout
     assert set(tmp_path.iterdir()) == {scripts}
     assert set(scripts.iterdir()) == {wrapper}
 
 
-def test_interruption_while_generating_legacy_conclusion_keeps_six_files_incomplete(
+def test_interruption_while_generating_legacy_conclusion_keeps_seven_files_incomplete(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -161,7 +171,7 @@ def test_interruption_while_generating_legacy_conclusion_keeps_six_files_incompl
     _, full = run_full_verification(root, output)
     assert full["status"] == "incomplete"
     assert not full["a2_verified"]
-    assert len(list(output.glob("*.json"))) == 7
+    assert len(list(output.glob("*.json"))) == 8
     assert (
         json.loads(next(output.glob("*.a3.json")).read_bytes())["status"]
         == "incomplete"
