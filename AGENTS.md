@@ -9,7 +9,7 @@
 
 ## 必读文档
 
-- `CONTEXT.md`、`docs/adr/`：具体见 `docs/agents/domain.md`。
+- `GLOSSARY.md`、`docs/adr/`：具体见 `docs/agents/domain.md`。
 - `intent/draft.md`：V1 规格与验收依据，篇幅很长，按章节读与任务相关的部分。
 
 上述来源之间或与任务冲突时，保持已有安全行为，向用户指出冲突并由用户裁决。
@@ -35,6 +35,14 @@
 
 ## Agent skills
 
-- Issue tracker：GitHub Issues，见 `docs/agents/issue-tracker.md`。
-- Triage labels：默认五角色词表，见 `docs/agents/triage-labels.md`。
-- Domain docs：单 context 布局，见 `docs/agents/domain.md`。
+### Issue tracker
+
+Issues 与规格使用 GitHub Issues，见 `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+使用默认五角色标签，见 `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+使用 single-context 布局：根目录 `GLOSSARY.md` 与 `docs/adr/`，见 `docs/agents/domain.md`。

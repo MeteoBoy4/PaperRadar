@@ -1,6 +1,6 @@
 # Calibration 安全
 
-Calibration 是自动全文精读的门禁。术语见 `CONTEXT.md` 的 Evaluation 一节；门禁依据见 ADR-0002，变更分级流程见 ADR-0020。
+Calibration 是自动全文精读的门禁。术语见 `GLOSSARY.md` 的 Evaluation 一节；门禁依据见 ADR-0002，变更分级流程见 ADR-0020。
 
 - Blind calibration batch 揭示前，隐藏的 Agent 结果在任何输出中保持隐藏。
 - 用户决策优先于系统建议。

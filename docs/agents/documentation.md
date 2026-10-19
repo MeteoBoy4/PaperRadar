@@ -1,6 +1,6 @@
 # 文档维护
 
-以下改动在同一变更中同步更新文档：术语进 `CONTEXT.md`，决策进 `docs/adr/`，公共契约进 `docs/contracts/` 与 `README.md`。
+以下改动在同一变更中同步更新文档：术语进 `GLOSSARY.md`，决策进 `docs/adr/`，公共契约进 `docs/contracts/` 与 `README.md`。
 
 - 公共 CLI 或配置 Contract。
 - 领域不变量或受控 vocabulary。
