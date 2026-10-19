@@ -70,6 +70,7 @@ class InputField(StrEnum):
     INPUTS = "inputs"
     CONTEXT = "context"
     TITLE_LANGUAGE = "original_title_is_zh"
+    PDF_SHA256 = "facts.pdf_sha256"
     EXCERPTS = "facts.excerpts"
     EXCERPT_ID = "facts.excerpts.excerpt_id"
     EXCERPT_TEXT = "facts.excerpts.text"
@@ -246,6 +247,20 @@ class ReuseFacts:
 
 
 @dataclass(frozen=True, slots=True, init=False)
+class ExtractionFacts:
+    """上游计算的原始 PDF 完整字节身份。不读取文件或解析环境。"""
+
+    pdf_sha256: str = field(repr=False)
+
+    def __init__(self, *, pdf_sha256: Any = _MISSING, **extra: Any) -> None:
+        if extra:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.FACTS)
+        if not _valid_hash(pdf_sha256):
+            raise StageInputError(BuildReason.INVALID_HASH, InputField.PDF_SHA256)
+        object.__setattr__(self, "pdf_sha256", pdf_sha256)
+
+
+@dataclass(frozen=True, slots=True, init=False)
 class StageInput:
     """仅 build/replay 返回的对象是已验证输入。载荷是敏感业务数据。"""
 
@@ -253,7 +268,7 @@ class StageInput:
     format_version: int
     projection_format_version: int
     projection_id: str
-    facts: ScreeningFacts | ReuseFacts = field(repr=False)
+    facts: ScreeningFacts | ExtractionFacts | ReuseFacts = field(repr=False)
     payload_bytes: bytes = field(repr=False)
 
     def __init__(self, **unvalidated: Any) -> None:
@@ -304,6 +319,7 @@ class ChangeComponent(StrEnum):
     TITLE = "title"
     ABSTRACT = "abstract"
     ABSTRACT_TRUNCATED = "abstract_truncated"
+    PDF = "pdf"
     EXCERPTS = "excerpts"
     EXCERPT_SOURCES = "excerpt_sources"
 
@@ -322,7 +338,12 @@ class StageInputComparison:
 
 
 # 领取集合有意独立于 StageName。后续阶段随其业务票加入。
-_FORMAT_VERSIONS = {StageName.BOUNDARY: 1, StageName.VALUE: 1, StageName.REUSE: 1}
+_FORMAT_VERSIONS = {
+    StageName.BOUNDARY: 1,
+    StageName.VALUE: 1,
+    StageName.REUSE: 1,
+    StageName.EXTRACTION: 1,
+}
 
 
 def _canonical(value: object) -> bytes:
@@ -344,7 +365,11 @@ def _source_payload(source: SourceSnapshotRef) -> dict[str, Any]:
     }
 
 
-def _facts_payload(facts: ScreeningFacts | ReuseFacts) -> dict[str, Any]:
+def _facts_payload(
+    facts: ScreeningFacts | ExtractionFacts | ReuseFacts,
+) -> dict[str, Any]:
+    if isinstance(facts, ExtractionFacts):
+        return {"pdf_sha256": facts.pdf_sha256}
     if isinstance(facts, ReuseFacts):
         return {
             "excerpts": [
@@ -369,7 +394,7 @@ def _assemble(
     format_version: int,
     projection_format: int,
     projection_id: str,
-    facts: ScreeningFacts | ReuseFacts,
+    facts: ScreeningFacts | ExtractionFacts | ReuseFacts,
 ) -> StageInput:
     payload = _canonical(
         {
@@ -399,7 +424,7 @@ def _assemble(
 def build_stage_input(
     snapshot: RuntimeConfigSnapshot,
     stage: StageName,
-    facts: ScreeningFacts | ReuseFacts,
+    facts: ScreeningFacts | ExtractionFacts | ReuseFacts,
 ) -> StageInput:
     """只从已验证快照构造。配置完整性不代表 RPC 执行就绪。"""
     if type(stage) is not StageName or stage not in _FORMAT_VERSIONS:
@@ -411,7 +436,12 @@ def build_stage_input(
         raise StageInputError(
             BuildReason.NOT_READY, InputField.SNAPSHOT, readiness=readiness
         )
-    expected_type = ReuseFacts if stage is StageName.REUSE else ScreeningFacts
+    expected_type = {
+        StageName.BOUNDARY: ScreeningFacts,
+        StageName.VALUE: ScreeningFacts,
+        StageName.REUSE: ReuseFacts,
+        StageName.EXTRACTION: ExtractionFacts,
+    }[stage]
     if type(facts) is not expected_type:
         raise StageInputError(BuildReason.INVALID_FACTS, InputField.FACTS)
     projection = project_config(snapshot).projections[stage]
@@ -438,7 +468,16 @@ def _keys(value: object, expected: set[str]) -> bool:
     return type(value) is dict and value.keys() == expected
 
 
-def _replay_facts(stage: StageName, value: Any) -> ScreeningFacts | ReuseFacts | None:
+def _replay_facts(
+    stage: StageName, value: Any
+) -> ScreeningFacts | ExtractionFacts | ReuseFacts | None:
+    if stage is StageName.EXTRACTION:
+        if not _keys(value, {"pdf_sha256"}):
+            return None
+        try:
+            return ExtractionFacts(**value)
+        except StageInputError:
+            return None
     if stage is StageName.REUSE:
         if not _keys(value, {"excerpts"}) or type(value["excerpts"]) is not list:
             return None
@@ -586,6 +625,12 @@ def compare_stage_inputs(before: StageInput, after: StageInput) -> StageInputCom
                 tuple(_source_payload(item.source) for item in before.facts.excerpts),
                 tuple(_source_payload(item.source) for item in after.facts.excerpts),
             ),
+        )
+    elif isinstance(before.facts, ExtractionFacts) and isinstance(
+        after.facts, ExtractionFacts
+    ):
+        components += (
+            (ChangeComponent.PDF, before.facts.pdf_sha256, after.facts.pdf_sha256),
         )
     else:
         assert isinstance(before.facts, ScreeningFacts) and isinstance(
