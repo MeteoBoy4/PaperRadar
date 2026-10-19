@@ -208,8 +208,8 @@ supply_material/supply_record 只保留清单中的引用，不递归导出别�
 O_DIRECTORY/O_NOFOLLOW/O_NONBLOCK、普通文件硬链接不覆盖发布与 fsync；缺少能力受控失败，
 不退回可被路径替换的普通路径写入。list/show 与库内历史读取不需要这些导出写入能力。
 2026-10-18 用户裁决：本次 A4 接受上述必要安全文件能力边界，保持能力不足时的安全拒绝。
-原生 Windows 安全导出另由 [#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 交付与验收，
-本次未实现/未验证 Windows 后端；#46 不阻塞已裁定的本次平台范围，#36 仍保持 OPEN。
+#36 已关闭；[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 已以 NOT_PLANNED 关闭。
+原生 Windows 安全导出当前无交付计划，未实现/未验证 Windows 后端，能力不足继续安全拒绝。
 这不是跨文件事务：运行中 I/O 故障或强杀可留下部分完整项；保留后重试补齐，不删除用户文件。
 `export_conflict/export_failed` 均给中文原因和下一步；CLI 成功0、失败2、中断130，配额消耗0。
 导出是数据库的版本控制投影，不作为恢复、导入或修复数据库的权威。

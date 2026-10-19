@@ -1,4 +1,4 @@
-# 阶段输入载荷与指纹（#47 / #48 / #49 / #50 / #51 / #52）
+# 阶段输入载荷与指纹（#47 / #48 / #49 / #50 / #51 / #52 / #53）
 
 ## 公共边界与交付范围
 
@@ -123,7 +123,7 @@ reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列�
 | `ReplayReason` | invalid_payload、unsupported_stage、unsupported_format、invalid_fingerprint、fingerprint_mismatch、non_canonical、invalid_snapshot、projection_format_unverifiable、projection_mismatch |
 | `ComparisonReason` | different_stage、incompatible_format、invalid_input |
 
-事实、结果及其载荷引用不可变，repr 隐藏文本与载荷。载荷内嵌题名和摘要，按敏感业务
+事实、结果及其载荷引用不可变，repr 隐藏文本与载荷。载荷内嵌题名、摘要与摘录，按敏感业务
 数据处理，不得写入 repr、异常、stdout/stderr、普通日志或验收结论。显式 `.payload_bytes`
 仅供受控业务消费。后续 RPC 只能渲染已绑定的冻结事实；渲染语义变化需 adapter policy
 或阶段格式版本表达，不能额外读取未绑定字段。`original_title_is_zh` 由上游提供，属于
@@ -153,8 +153,10 @@ reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列�
 摘要来源/提供方、阶段二 artifact 链接同样是审计引用，不是指纹分量。
 `validate_output` 仍独立负责权威 Schema 与业务校验，校验通过不表示制品已发布或落库。
 
-本次通过两个实际消费者核对：公共头、编码/哈希、就绪与投影选择、严格回放、投影核对、
-比较前置与错误格式化共用一份实现，没有复制 boundary/value builder 或事实类型。
+四阶段共同契约核对：公共头、编码/哈希、就绪与投影选择、严格回放、投影核对、
+比较前置与错误格式化共用一份实现，没有按阶段复制公共载荷或通用错误规则。
+ScreeningFacts、ExtractionFacts、ReuseFacts 保留各自事实与来源业务校验，
+不把阶段差异扩散到新的公开构造入口。
 后续阶段或来源扩展从相同 build/replay/compare 入口进入，只扩展封闭阶段集合与独立
 格式、各阶段严格事实及局部一致性、固定比较组件和必要上下文派生；不改既有阶段配方，
 不新增“投影 + 事实”公开入口，不引入全可选字段桶、动态注册器或通用工作流。
@@ -314,3 +316,48 @@ build/replay 均返回不可直接构造的 `StageInput`，其受控 `stage` 固
 摘要变化不使正文提取失效的表述，并再次由用户裁决，不能由实现票自行改变。
 此未决问题不改变 reuse 的内容绑定义务：正文来源同时引用 extraction 指纹与实际
 消费的 reading/evidence-map 内容身份，避免把同一配方误当作具体输出字节证明。
+
+## 隔离恢复、跨进程与后续消费者义务
+
+#53 通过真实 compile/load、临时 SQLite、[ArtifactStore](artifact-store.md#公共服务)
+与[备份/恢复公共服务](backup-restore.md#公开边界与使用)验证历史输入重建。
+调用方明确传入合成规范事实、载荷和独立期望指纹；原配置、原数据库与原数据根移走后，
+新进程只从恢复库加载完整历史 snapshot_id，并从恢复后的 `get_artifact` 返回记录中
+重新取得 original_pdf/source_snapshot 的 payload 与 extraction 的 reading/evidence_map
+成员哈希，再组装引用。测试不会把旧成员哈希或旧 StageInput 对象作为恢复事实带入。
+恢复和纯计算均不隐式 compile、upgrade、安装、激活或任务续跑；恢复数据库保持 DELETE
+原字节，构造、回放和比较前后不变。此路径不修改 A3 备份算法或格式。
+
+不同 PYTHONHASHSEED、cwd、主题集合枚举及映射构造顺序均匹配同一独立固定向量；
+fixture 含两个启用主题，实际顺序变化受到断言。摘录/locator 顺序、精确 Unicode、空白
+与换行仍按其语义保留，不能为了跨进程稳定而归一化。四阶段共同测试还以文件、SQLite
+与网络 I/O 拒绝哨兵验证纯构造/回放/比较；架构检查保持 config/screening 公共面单向依赖。
+无日志设施时结合空 caplog、repr、异常和 stdout/stderr 检查敏感内容不外泄。
+
+[恢复固定向量](../../tests/fixtures/stage_inputs/recovery-v1.json)只含合成材料，
+配置投影按手写 Profile、模型默认值、冻结 Schema/manifest、Prompt、adapter 语义及两主题
+独立核算；extraction/reuse 复用先前已固定的投影 ID。阶段载荷和 SHA-256 未由 builder
+生成，普通测试不会重写期望：
+
+| 案例 | 输入格式 1 指纹 |
+| --- | --- |
+| boundary | `2f03c2722378c7d45971c9f3629884b962b806515f8625d0159fc2392de6aac3` |
+| value | `8604eb842877279a6aca4aa9174d180569ea4dc6341e90ab25fa148b070b9df7` |
+| extraction | `d108b2cc6e9ebe37a6cba1e832916c5d530c3b3fee0c2e795826eeb9ebf0e56d` |
+| 结构化 reuse | `8a457a1e793ada05122c1d02a718ef3969442b50f44be855fbdb80273541a6ac` |
+| 正文 reuse | `63debebc1c9dc39aef214ef8e663a2b5b2a13bd15636c2cae01d37dbf8e10644` |
+
+后续消费者须另存业务主体、明确历史快照及具体制品审计引用，并保存规范载荷与独立期望
+指纹；不能改用“当前 selector”或“最新制品”重解释历史。投影格式演进须保留匹配版本
+重建或提供显式迁移。RPC 只能渲染已绑定事实与 locator，新增渲染语义须有 adapter policy
+或阶段格式版本。来源存在、合法取得、正文质量、定位可回查、真实摘录范围和选择器顺序
+由生产者保证；本服务不代替这些检查。输入相同仍不证明成功缓存、跨 Paper 共享、任务
+资格、尝试预算或校准门禁；changed 不撤销人工决定、不改写正式分析或冻结校准事实。
+
+书目与供给身份仅通过封闭输入类型严格拒绝证明隔离，没有论文事实模型时不宣称
+“卷期页码更新到任务不重跑”已端到端验收；不为此创建 A4 安装记录。A2 的组件矩阵仍是
+[配置投影契约](config-projections.md)权威，本切片只核对各阶段一个代表传播及 Read、
+期刊 tier、adapter 审计版本和 screening thinking_level 的少量交叉变化。
+独立复现命令与验收边界见[离线证据说明](../verification/offline-evidence.md)。
+#53 不登记 A5 验收组，check-offline 继续输出六份主要文件；普通测试通过不表示完整
+A5、阶段 A、真实来源、RPC、NAS 或自动精读已验收。

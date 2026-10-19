@@ -163,7 +163,10 @@ staging，也不扫描 GC。强杀在发布前发生时残留由人工处理；�
 
 恢复库与批次库原字节完全一致，保持 `journal_mode=DELETE`；list/diff/完整 ID load
 及制品读取不会自动迁移、重编译、激活快照或启动任务。历史 ID、配置原字节、创建
-时间、六投影和校准基线保持不变。要把副本作为工作库，另显式运行：
+时间、六投影和校准基线保持不变。[阶段输入消费者](stage-inputs.md#隔离恢复跨进程与后续消费者义务)
+在原根不可访问时，从恢复库明确历史快照与重新 get_artifact 的成员重建四阶段身份；
+该验证只使用公共恢复服务，不改变备份算法，也不从内存旧成员哈希补项。
+要把副本作为工作库，另显式运行：
 
 ```bash
 uv run --offline --locked paper-radar db upgrade --database restored/database.sqlite3

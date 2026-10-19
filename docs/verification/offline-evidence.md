@@ -84,12 +84,33 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 新增组仍须显式扩展执行范围；没有自动发现插件、独立检查计划或动态调度。
 测试中的合成组只证明组织扩展能力，不代表新增产品验收能力。
 
-#48–#52 的 boundary/value/extraction/reuse 阶段输入服务由普通离线 pytest 验证，
+#48–#53 的 boundary/value/extraction/reuse 阶段输入服务由普通离线 pytest 验证，
 配方、固定向量及证明边界见[阶段输入契约](../contracts/stage-inputs.md)。extraction 测试
 不读取 PDF 或运行 Docling，包含纯未来 normalization fixture 与真实编译拒绝反例。
 正文 reuse 使用真实 ArtifactStore 的成员哈希验证 manifest 审计隔离与消费内容变化，
 另有正文/混合来源固定向量、同次来源一致性、不可变性与无 I/O 回放验证。
 这些测试通过不增加独立 A5 验收结论；完整 A5 仍由后续验收票登记，不改写既往结论范围。
+
+#53 新增四阶段参数化共同契约、薄配置传播检查和独立进程隔离恢复复现。恢复用例建立
+两份真实配置快照与非空 original_pdf/source_snapshot/extraction 制品，移走原根和恢复根后，
+新进程只从恢复库 load 明确历史快照，并重新 get_artifact 取得 payload/reading/evidence_map
+成员，重建 boundary/value/extraction、结构化 reuse 与正文 reuse；原成员哈希不跨进程。
+两个启用主题、不同 PYTHONHASHSEED/cwd/构造顺序均匹配独立固定向量，错误历史投影拒绝，
+精确文本与摘录顺序变化仍改变身份，恢复 DELETE 数据库字节保持不变。
+文件/数据库/网络拒绝哨兵与架构测试证明纯构造、回放和比较无隐式 I/O；
+caplog、repr、受控异常和 stdout/stderr 验证敏感内容不泄露。
+
+独立执行恢复路径（不依赖未来 A5 验收组）：
+
+```bash
+uv run --offline --locked pytest -q tests/test_stage_input_recovery.py::test_isolated_restore_rebuilds_all_stage_inputs_from_restored_members
+```
+
+共同契约与薄交叉检查在 `tests/test_stage_input_common_contract.py` 和
+`tests/test_stage_input_dependencies.py`，语义范围见[阶段输入契约](../contracts/stage-inputs.md#隔离恢复跨进程与后续消费者义务)。
+书目/供给隔离仅由严格拒绝额外字段和真实 adapter 审计版本变体证明，不创建安装记录，
+不声称“卷期页码更新到任务不重跑”已端到端验证。当前仍为六份主要文件，
+不改变 A1/A2/A3/A4 既有结论或提前声明完整 A5、阶段 A、RPC、NAS/live、自动精读通过。
 
 #28 保留原 A1/A2-01 固定测试字节，只更新经审查的验收源码哈希，登记提取出的
 运行身份、组织、发布模块，以及新回归模块、固定用例数量和终端输出 fixture。
