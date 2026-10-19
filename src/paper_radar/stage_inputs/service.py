@@ -5,8 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Any
 
 from pydantic import ValidationError
@@ -421,12 +423,14 @@ class StageInputComparison:
 
 
 # 领取集合有意独立于 StageName。后续阶段随其业务票加入。
-_FORMAT_VERSIONS = {
-    StageName.BOUNDARY: 1,
-    StageName.VALUE: 1,
-    StageName.REUSE: 1,
-    StageName.EXTRACTION: 1,
-}
+STAGE_INPUT_FORMAT_VERSIONS: Mapping[StageName, int] = MappingProxyType(
+    {
+        StageName.BOUNDARY: 1,
+        StageName.VALUE: 1,
+        StageName.REUSE: 1,
+        StageName.EXTRACTION: 1,
+    }
+)
 
 
 def _canonical(value: object) -> bytes:
@@ -518,7 +522,7 @@ def build_stage_input(
     facts: ScreeningFacts | ExtractionFacts | ReuseFacts,
 ) -> StageInput:
     """只从已验证快照构造。配置完整性不代表 RPC 执行就绪。"""
-    if type(stage) is not StageName or stage not in _FORMAT_VERSIONS:
+    if type(stage) is not StageName or stage not in STAGE_INPUT_FORMAT_VERSIONS:
         raise StageInputError(BuildReason.UNSUPPORTED_STAGE, InputField.STAGE)
     if type(snapshot) is not RuntimeConfigSnapshot:
         raise StageInputError(BuildReason.INVALID_SNAPSHOT, InputField.SNAPSHOT)
@@ -540,7 +544,7 @@ def build_stage_input(
         raise StageInputError(BuildReason.INVALID_HASH, InputField.PROJECTION_ID)
     return _assemble(
         stage,
-        _FORMAT_VERSIONS[stage],
+        STAGE_INPUT_FORMAT_VERSIONS[stage],
         projection.format_version,
         projection.projection_id,
         facts,
@@ -656,11 +660,13 @@ def replay_stage_input(
         raise StageInputError(ReplayReason.INVALID_PAYLOAD, InputField.PAYLOAD)
     if value["kind"] != "stage_input":
         raise StageInputError(ReplayReason.INVALID_PAYLOAD, InputField.KIND)
-    stage = next((s for s in _FORMAT_VERSIONS if s.value == value["stage"]), None)
+    stage = next(
+        (s for s in STAGE_INPUT_FORMAT_VERSIONS if s.value == value["stage"]), None
+    )
     if stage is None:
         raise StageInputError(ReplayReason.UNSUPPORTED_STAGE, InputField.STAGE)
     version = value["format_version"]
-    if type(version) is not int or version != _FORMAT_VERSIONS[stage]:
+    if type(version) is not int or version != STAGE_INPUT_FORMAT_VERSIONS[stage]:
         raise StageInputError(
             ReplayReason.UNSUPPORTED_FORMAT, InputField.FORMAT_VERSION
         )

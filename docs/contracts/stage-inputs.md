@@ -1,4 +1,4 @@
-# 阶段输入载荷与指纹（#47 / #48 / #49 / #50 / #51 / #52 / #53）
+# 阶段输入载荷与指纹（#47 / #48 / #49 / #50 / #51 / #52 / #53 / #54）
 
 ## 公共边界与交付范围
 
@@ -359,5 +359,16 @@ fixture 含两个启用主题，实际顺序变化受到断言。摘录/locator 
 [配置投影契约](config-projections.md)权威，本切片只核对各阶段一个代表传播及 Read、
 期刊 tier、adapter 审计版本和 screening thinking_level 的少量交叉变化。
 独立复现命令与验收边界见[离线证据说明](../verification/offline-evidence.md)。
-#53 不登记 A5 验收组，check-offline 继续输出六份主要文件；普通测试通过不表示完整
-A5、阶段 A、真实来源、RPC、NAS 或自动精读已验收。
+#53 单独交付时没有登记 A5 验收组；#54 追加独立 A5 结论后，check-offline 输出七份
+主要文件，另有实际 pytest 回执。固定范围及规格映射见
+[独立 A5 结论](../verification/offline-evidence.md#a5-独立结论4754)。
+A5 通过仅声明四阶段输入计算、回放、比较和隔离恢复，不代表阶段 A、真实来源、RPC、
+NAS 或自动精读通过。
+
+
+## 格式版本公开访问
+
+`paper_radar.stage_inputs.STAGE_INPUT_FORMAT_VERSIONS` 是只读映射，明确列出
+boundary/value/reuse/extraction 各自的当前配方版本 1；构造、回放和独立 A5 格式核对
+共同消费这一份生产权威数据。调用方不能修改映射，也不能把 StageName 的其余成员
+视为已支持阶段。公开版本不改变任何既有载荷字节、指纹向量或配置投影配方。

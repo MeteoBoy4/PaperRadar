@@ -7,9 +7,10 @@
 并在 `verification-runs/<run_id>.a1.json` 生成独立的 #13 A1 结论，
 在 `<run_id>.a2.json` 生成 #16 A2-01 结论，在 `<run_id>.a2-full.json` 生成
 #25 完整 A2 结论，在 `<run_id>.a3.json` 生成 #29/#35 独立 A3 结论，
-在 `<run_id>.a4.json` 生成 #36/#45 独立 A4 结论；终端打印六个主要路径及结果。测试另外生成同次
+在 `<run_id>.a4.json` 生成 #36/#45 独立 A4 结论，
+在 `<run_id>.a5.json` 生成 #47/#54 独立 A5 结论；终端打印七个主要路径及结果。测试另外生成同次
 `<run_id>.pytest.json` 脱敏执行回执。整套检查仅执行一次，各文件
-共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3 与 A4 均通过时入口返回 0，
+共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3、A4 与 A5 均通过时入口返回 0，
 A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时数据库，不操作用户数据库。
 重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
@@ -67,6 +68,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 | 完整 A2 | `.a2-full.json` | 同次 A1 | 是 |
 | A3 | `.a3.json` | 同次 A1、完整 A2 | 是 |
 | A4 | `.a4.json` | 同次 A1、完整 A2、A3 | 是 |
+| A5 | `.a5.json` | 同次 A1、完整 A2、A3 | 是 |
 
 完整 A2 另由自己的判据验证同次 pytest 回执、证据和已发布 A1，并在发布前再次
 核对这些文件的实际字节绑定；它没有 A2-01 通过依赖。各组的原因、格式、严格性与
@@ -74,13 +76,13 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 即使补写为 passed，也继续把中断传给完整 A2。最后发布阶段的中断仍可能没有
 完整结论，不会覆盖已发布文件来修复状态。
 
-五组的 `write_*_conclusion` 兼容入口共用
+六组的 `write_*_conclusion` 兼容入口共用
 `scripts/verification_publication.py` 的 `publish_conclusion`：保持原 JSON
 序列化规则，临时文件独占创建、flush/fsync 后通过 `os.link` 原子发布；目标已存在
 即失败，finally 清理临时文件。运行中证据与回执仍可原子更新，不使用此最终发布入口。
 
 新验收组以显式代码加入登记，提供自己的判据，调用同一个最终发布函数；可选提供
-组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope`、`a3_scope` 与 `a4_scope` 的固定测试模块合集。
+组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope`、`a3_scope`、`a4_scope` 与 `a5_scope` 的固定测试模块合集。
 新增组仍须显式扩展执行范围；没有自动发现插件、独立检查计划或动态调度。
 测试中的合成组只证明组织扩展能力，不代表新增产品验收能力。
 
@@ -89,7 +91,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 不读取 PDF 或运行 Docling，包含纯未来 normalization fixture 与真实编译拒绝反例。
 正文 reuse 使用真实 ArtifactStore 的成员哈希验证 manifest 审计隔离与消费内容变化，
 另有正文/混合来源固定向量、同次来源一致性、不可变性与无 I/O 回放验证。
-这些测试通过不增加独立 A5 验收结论；完整 A5 仍由后续验收票登记，不改写既往结论范围。
+#54 将这些固定测试显式登记进独立 A5 结论，不改写既往结论范围。
 
 #53 新增四阶段参数化共同契约、薄配置传播检查和独立进程隔离恢复复现。恢复用例建立
 两份真实配置快照与非空 original_pdf/source_snapshot/extraction 制品，移走原根和恢复根后，
@@ -100,7 +102,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 文件/数据库/网络拒绝哨兵与架构测试证明纯构造、回放和比较无隐式 I/O；
 caplog、repr、受控异常和 stdout/stderr 验证敏感内容不泄露。
 
-独立执行恢复路径（不依赖未来 A5 验收组）：
+独立执行恢复路径（只运行相关回归，不发布 A5 结论）：
 
 ```bash
 uv run --offline --locked pytest -q tests/test_stage_input_recovery.py::test_isolated_restore_rebuilds_all_stage_inputs_from_restored_members
@@ -109,8 +111,8 @@ uv run --offline --locked pytest -q tests/test_stage_input_recovery.py::test_iso
 共同契约与薄交叉检查在 `tests/test_stage_input_common_contract.py` 和
 `tests/test_stage_input_dependencies.py`，语义范围见[阶段输入契约](../contracts/stage-inputs.md#隔离恢复跨进程与后续消费者义务)。
 书目/供给隔离仅由严格拒绝额外字段和真实 adapter 审计版本变体证明，不创建安装记录，
-不声称“卷期页码更新到任务不重跑”已端到端验证。当前仍为六份主要文件，
-不改变 A1/A2/A3/A4 既有结论或提前声明完整 A5、阶段 A、RPC、NAS/live、自动精读通过。
+不声称“卷期页码更新到任务不重跑”已端到端验证。当前七份主要文件及额外 pytest 回执
+不改变 A1/A2/A3/A4 既有能力范围；阶段 A、RPC、NAS/live、自动精读仍未验收。
 
 #28 保留原 A1/A2-01 固定测试字节，只更新经审查的验收源码哈希，登记提取出的
 运行身份、组织、发布模块，以及新回归模块、固定用例数量和终端输出 fixture。
@@ -148,7 +150,7 @@ uv run --offline --locked pytest -q tests/test_stage_input_recovery.py::test_iso
 
 缺快照、版本漂移、证据与当前快照哈希不一致、测试模块缺失或漂移、检查跳过/失败
 均为 `failed`；可捕获的运行中断为 `incomplete`。修复后完整重跑会得到新的
-`run_id` 和结论，旧结果保留。完整入口另须本次完整 A2、A3 与 A4 通过才返回 0。
+`run_id` 和结论，旧结果保留。完整入口另须本次完整 A2、A3、A4 与 A5 通过才返回 0。
 若 uv 尚未启动 Python 或进程被强制终止，可能没有本次结论文件；前者保留 uv 的
 非零退出码，后者已有的 #12 证据仍不能作为 A1 通过。
 
@@ -293,7 +295,7 @@ A2-01 写出期间发生中断后，若本次检查已经全部通过，补写�
 短事务协议；它不是备份恢复。目录与领域定义核对 `intent/draft.md` §6 和 `CONTEXT.md`；
 没有新增领域决策或变更快照/投影身份算法。
 
-完整入口只有本次 A1、完整 A2、A3 与 A4 通过时返回 0，否则非零。运行中断记为 incomplete；
+完整入口只有本次 A1、完整 A2、A3、A4 与 A5 通过时返回 0，否则非零。运行中断记为 incomplete；
 在发布完整 A2 前发生的可捕获中断会得到 incomplete 结论。进程被强制终止或在最终
 原子发布中被终止时可能没有完整结论，缺结论绝不等于通过；已有 #12 若仍
 completed=false，同样不能继承历史成功。已有结论不可覆盖，修复后须用新 run_id
@@ -350,8 +352,8 @@ YAML 材料。`tests/fixtures/config_material_compatibility.json` 的期望结�
 `required=True`、`dependencies=("A1", "完整 A2")`。依赖只安排顺序；A3 自己检查两份
 同次前置均 `status=passed`、各自 verified 严格为 true，A2-01 仍为非必需历史组。
 
-当前六份主要文件是基础证据、A1、A2-01、完整 A2、A3、A4；
-`<run_id>.pytest.json` 是额外第七份绑定对象。没有回执、没有结论或没有完整执行都不能
+当前七份主要文件是基础证据、A1、A2-01、完整 A2、A3、A4、A5；
+`<run_id>.pytest.json` 是额外第八份绑定对象。没有回执、没有结论或没有完整执行都不能
 宣称通过。完整计划只执行一次；A3 不自行再启动 pytest 或复制运行组织器。
 
 | 字段 | 判据与含义 |
@@ -434,7 +436,8 @@ manifest_verification、isolated_restore、restored_queries。它们只描述本
 
 `<run_id>.a4.json` 格式 1、scope `a4_pi_supply_lifecycle`、parent_issue=36、issue=45。
 沿用唯一固定计划和回执插件，A4 不再启动 pytest；最终入口要求所有 required 组本次通过。
-六份主要文件另加 `.pytest.json` 共七份；测试前失败可无回执，仍尽力发布失败/未完成结论。
+A4 交付时六份主要文件另加回执共七份；追加 A5 后主要文件七份、含回执共八份。
+测试前失败可无回执，仍尽力发布失败/未完成结论。
 最终发布中断或 I/O 错误传播非零，已有前置与历史文件保持原字节，不覆盖或借用历史成功。
 
 A4 独立核对本次基础证据、A1、完整 A2、A3、回执文件名/run_id/实际 SHA-256，前置
@@ -472,3 +475,60 @@ test_execution_not_passed；A4 中文建议独立，run_incomplete 优先 incomp
 本次只对必要受影响的 A2/A3 源码、入口/兼容 fixture 字节重新审查绑定；旧业务范围、
 optional A2-01、旧 migration、A1 固定测试与四份冻结契约保留。全部需求逐条归属见
 [A4 父规格与评论对照](a4-requirements.md)。
+
+
+## A5 独立结论（#47/#54）
+
+`<run_id>.a5.json` 格式 1、scope `a5_stage_input_fingerprints`，issue=47、parent_issue=47。
+生产登记处以 required=true 追加；只依赖同次 A1、完整 A2、A3，不依赖 A4 通过。
+A4 仍是整体必需组：仅损坏 A4 专属供给向量时，A5 可以 passed，完整入口仍非零；
+仅损坏 A5 向量时，A1/完整 A2/A3/A4 可以 passed，完整入口仍非零。这与前置失败
+导致 A5 prerequisite_not_passed 的归因分别验证。
+
+七份主要 JSON 加同次 pytest 回执共八份，仍只执行一次固定六项离线计划。
+A5 不读取用户库，不另跑 pytest，不复制组织器。结论只保存格式、身份哈希与受控结果，
+不保存论文文本、摘录、Profile、Prompt 或完整载荷。固定向量内仅有合成文本，其字节
+以 fixture SHA-256 绑定，不复制到结论。原 A1 的 not_assessed（含 stage_fingerprints）
+保留其历史含义；A5 能力只由新结论声明。
+
+| 记录 | A5 独立判据 |
+| --- | --- |
+| run_id、输入文件名/SHA-256 | 基础证据、A1、完整 A2、A3、回执均来自本次；文件内容等于前置写出器返回值；前置的 evidence/A1/fullA2/receipt 反向链接同样一致 |
+| 前置身份、格式与状态 | A1 issue13/格式1、完整A2 issue25/格式2、A3 parent29/issue35/格式1，固定scope，status=passed、verified严格true；A4不进入本组前置 |
+| required_checks | lockfile/format/lint/types/tests/contracts 固定顺序全部通过，reason=none，严格整数exit_code=0；未执行、跳过或缺项失败 |
+| 固定范围 | a5_scope 显式登记11功能测试模块396例，以及本组验收/入口/回执测试、生产源码、支撑与13个阶段输入向量文件；清单非空且测试清单与数量key完全对应 |
+| test_execution | 回执格式1、同run、完成、严格整数exit_code=0；每模块collected=passed=固定正整数，其余四计数严格整数0；bool/float/str/负数/缺项、skip/deselect/collect-only均拒绝 |
+| format_versions | 从真实生产只读stage输入配方与原投影权威读取：boundary/value/reuse/extraction各1；嵌套版本严格整数，bool不能冒充1，不复制scope期望作为实际值 |
+| environment、migration_revision | 实际Python/SQLite/依赖版本，独立临时库真实base→head读取唯一a405_pi_cleanup_execution并与随包head匹配；不引入新migration |
+| code/worktree/lockfile | 当前身份完整，等于运行前baseline、证据和三份前置；code.dirty在所有身份及baseline中必须是真正bool；基础scope的false标志拒绝0冒充 |
+| 发布前复核 | 再查五份输入字节及三前置返回对象；篡改、串用和身份漂移拒绝；最终结论原子不可覆盖，捕获中断优先incomplete，发布I/O或强杀可能无结论并保持非零 |
+| capabilities、未覆盖项 | boundary/value/reuse/extraction/payload_replay/comparison/isolated_restore_replay七项共用整组状态；全部通过才a5_verified=true；stage_a_verified/live_verified/rpc_verified恒false |
+
+未验收项明确保留 Read/suggestion/report 指纹、论文事实映射、任务预算、资格选择、RPC、
+Pi/Docling实际执行、正式校准工作流、真实来源、NAS、阶段 A/live与自动精读。
+相同输入指纹不证明缓存存在或有资格复用，changed不刷新预算、不撤销人工决定、不改写正式分析。
+
+### #47 正文与三轮评论对照
+
+下表模块名省略 `tests/` 和 `.py`；输入契约与固定向量见
+[阶段输入](../contracts/stage-inputs.md)。三条评论分别是
+[实施前补充](https://github.com/MeteoBoy4/PaperRadar/issues/47#issuecomment-6265057026)、
+[C1裁决](https://github.com/MeteoBoy4/PaperRadar/issues/47#issuecomment-6265245363)、
+[第三轮补充](https://github.com/MeteoBoy4/PaperRadar/issues/47#issuecomment-6266736991)。
+#54 [最终澄清](https://github.com/MeteoBoy4/PaperRadar/issues/54#issuecomment-6268582853)
+固定本组依赖、七主要文件、历史范围与隐私边界。
+
+| 正文/评论要求 | 已登记行为与未验收边界 |
+| --- | --- |
+| Decisions1–5、14–16、19；Stories1–5、17–20、24–26 | test_stage_inputs/replay/comparison/common_contract/architecture：唯一快照门面、四阶段封闭集合、就绪门禁、身份域/格式、严格拒绝、不可变、无I/O、脱敏只读比较；没有临时Read Schema或新事实表 |
+| Decisions6–7；Stories1–7、20–23；补充一的薄配置矩阵/书目约束 | test_stage_input_value/comparison/dependencies/common_contract：精确Unicode/换行、截断标记、已启用主题仅value、真实投影传播、Read/期刊tier/adapter审计隔离；主题权重字段不存在，书目字段拒绝不等于论文事实映射端到端验收 |
+| Decisions8、11–12；Stories8–10、14；C1全文；第三轮一 | test_stage_input_extraction/extraction_reuse：PDF哈希+extraction投影、纯未来normalization fixture及真实compile拒绝；不消费题名/DOI/摘要，阶段F的封面识别质量分歧保留为Contract已知未决问题，不修改§4.9 |
+| Decisions9–13；Stories11–16；补充一来源/正文闭包；第三轮五 | test_stage_input_reuse/extraction_reuse：非空有序摘录、权威ID/kind、结构化payload内容身份、正文extraction指纹+reading/evidence_map、真实ArtifactStore的manifest审计隔离、同次一致正文、同源输出context；不判断来源存在/合法/质量或实现选段 |
+| Decisions14–17；Stories17–25；第三轮一/三/四/五 | test_stage_input_common_contract/replay/comparison/value：严格小写SHA-256、原因封闭脱敏、非法Unicode拒绝、回放不读配置/数据库/制品库、合成独立字面量向量、生产算法v2拒绝；stage_inputs只单向依赖config/screening公共面 |
+| Decisions15、18–19；Stories26–27；补充一历史恢复/副作用与第三轮五 | test_stage_input_recovery + stage_input_process/recovery_support：真实非空备份隔离移动、恢复后get_artifact成员、历史投影重建、不同hashseed/cwd/无序构造顺序、错误历史快照拒绝、数据库字节不变；不改人工决定/分析，后续消费者义务留在Contract |
+| Decisions20–21；Story28；补充一七/八、第三轮二/六、#54最终澄清 | test_a5_acceptance/entry/test_receipt及既有entry/integrity/compatibility/run：显式required登记、三前置、独立格式/实际迁移/固定哈希/严格回执、A4与A5归因、缺失漂移篡改中断拒绝、历史不覆盖、七主要文件、A1历史not_assessed原样；不宣称完整阶段A/live |
+
+#54 仅重绑接入影响的旧源码、wrapper、入口断言和终端fixture；旧用例分母保持原数。
+固定哈希按 a2_scope wrapper、完整A2 scope、A3 scope、A4 scope、A5 scope 顺序登记，
+避免循环绑定。终端fixture的八种历史case原有行保留，按已确定A5判据追加新行；
+交付运行不扫描目录生成expected，不刷新向量或降低分母。旧证据保留，任何修复用新run_id重跑。

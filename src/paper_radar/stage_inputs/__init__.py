@@ -1,6 +1,7 @@
 """不可变阶段输入、严格回放与只读比较的公共边界。"""
 
 from paper_radar.stage_inputs.service import (
+    STAGE_INPUT_FORMAT_VERSIONS,
     BuildReason,
     ChangeComponent,
     ComparisonReason,
@@ -22,6 +23,7 @@ from paper_radar.stage_inputs.service import (
 )
 
 __all__ = [
+    "STAGE_INPUT_FORMAT_VERSIONS",
     "BuildReason",
     "ChangeComponent",
     "ComparisonReason",
