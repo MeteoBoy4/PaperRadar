@@ -72,7 +72,8 @@ normalization_version、excerpt_selector_version、chunking_version、suggestion
 
 全部投影无论文题名、摘要、PDF、摘录、输出语言、时间、完整快照 ID、机器路径、
 凭据、执行计划或产物。reuse 与 read 不嵌套 extraction；后续论文侧输入指纹再组合
-实际使用的摘录或正文。得到六投影或基线不会使不完整配置变为 ready；Read 始终
+实际使用的摘录或正文。已交付阶段与规范组合规则见[阶段输入契约](stage-inputs.md)。
+得到六投影或基线不会使不完整配置变为 ready；Read 始终
 缺权威契约，不能据此推导执行就绪或校准通过。
 
 ## 身份载荷与格式演进

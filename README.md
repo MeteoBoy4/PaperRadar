@@ -250,6 +250,16 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 [阶段配置投影与比较](docs/contracts/config-projections.md)。保存和比较均不启用精读，
 自动运行前仍需接入完整校准变更工作流；完整 A2 通过由独立的离线结论记录。
 
+## 阶段输入
+
+`paper_radar.stage_inputs` 从已验证运行配置快照与严格阶段事实构造不可变的阶段输入载荷，
+提供规范字节、SHA-256 指纹、严格回放及安全比较。当前 #48 交付 boundary 格式 1：
+精确题名、非空论文摘要、严格布尔截断标记与 boundary 配置投影引用。配置缺项或占位
+保持拒绝；无 adapter 的历史快照按已有配置完整性判断，指纹不证明 RPC 可执行。
+载荷含敏感论文文本，不写终端或日志。接口、固定向量和证明边界见
+[阶段输入契约](docs/contracts/stage-inputs.md)。value/reuse/extraction 及独立 A5 验收
+由后续工作包接入；本服务不调度任务或改写人工决定。
+
 ## Screening 输出验证
 
 `paper_radar.screening.validate_output` 接受研究边界、摘要层价值预测或复用可行性
