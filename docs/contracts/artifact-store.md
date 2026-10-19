@@ -95,6 +95,9 @@ members 是 `ArtifactMember(role, sha256, size_bytes)` 集合。
 
 `read_artifact(id)` 返回角色到 bytes 的映射；在全部成员登记身份、位置、长度、哈希完整
 验证前不向调用方交出内容。本轮不提供流式读取 API。
+阶段输入消费者从 `get_artifact` 的明确成员取 payload/reading/evidence_map 哈希，
+而非把 artifact_id 当阶段输入身份；隔离恢复后必须从恢复库重新取得成员。
+四阶段配方、正文来源消费闭包与生产者义务见[阶段输入契约](stage-inputs.md)。
 `verified_blob_path(blob)` 完整校验文件后返回受控推导路径，供备份自行分段复制并再次
 核验哈希；这是完整性检查边界，不是将未校验字节交给业务的流式读取入口。
 

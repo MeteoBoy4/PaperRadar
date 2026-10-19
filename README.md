@@ -265,7 +265,10 @@ value 输入可从明确匹配的历史快照派生同源 `ValuePredictionContex
 manifest 审计变化，同次调用只允许一份一致正文。从相同摘录派生 `ReuseAssessmentContext`，
 不读取当前 extraction 就绪状态或静默更换引用。
 载荷含敏感论文文本，不写终端或日志。接口、固定向量和证明边界见
-[阶段输入契约](docs/contracts/stage-inputs.md)。独立 A5 验收由后续工作包接入；
+[阶段输入契约](docs/contracts/stage-inputs.md)。#53 已用真实非空备份、恢复历史快照与
+重新取得的制品成员验证四阶段重建；不同 hashseed、cwd 和无序集合构造顺序保持身份，
+纯构造、回放与比较不执行 I/O。独立复现命令见[离线证据说明](docs/verification/offline-evidence.md)。
+独立 A5 验收由后续工作包接入，check-offline 仍为六份主要文件；
 本服务不调度任务或改写人工决定，也不证明 PDF/正文的真实质量。
 
 ## Screening 输出验证
@@ -374,9 +377,9 @@ list 明示实例计数为历史登记、未核验现场；verify、doctor、act
 `export` 同样只取已核验库材料，向 `tools/pi/<supply_id>/` 输出六个顶层文件与去重 D5 证据，
 整组预检后不覆盖发布，同字节重试无操作；不导出内部派生锁或安装归档。
 2026-10-18 用户裁决：本次 A4 接受导出所需的目录句柄、nofollow、硬链接不覆盖发布与 fsync
-等安全文件能力边界，能力不足继续安全拒绝。Windows 安全导出由
-[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 后续交付，本次未实现/未验证；
-#46 不阻塞已裁定的本次平台范围，#36 保持 OPEN。
+等安全文件能力边界，能力不足继续安全拒绝。#36 已关闭；
+[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 已以 NOT_PLANNED 关闭，
+Windows 安全导出当前无交付计划，未实现/未验证 Windows 后端。
 `tools/pi/` 可提交版本控制，`.tools/pi/` 是被 Git 忽略的安装树，两者分开。
 `verify` 逐实例全树检查并探测 Node/npm/Pi，只追加检查事实；任一失败返回 2。
 `rebuild` 从库内冻结材料重新联网取得固定大包，要求原预期树、工具链与 libc 完全一致，

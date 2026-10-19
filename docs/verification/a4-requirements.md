@@ -146,7 +146,7 @@
 | 6 固定安装策略 | #38：install-policy-v1 进入清单，无自由扩展参数 |
 | 7 trash 残留 | #42/#43：已退役待删单列，新显式计划回收；未知 staging/trash 始终人工 |
 | 8 doctor scope/退出/D5 | #40：固定 pi-supply、未知/缺项退出2、当前锁缺失 protection_unknown 退出2，历史 unknown 独立披露；protection 公共服务/CLI 回归；全通过0，D5 原文/摘要只展示 |
-| 9 平台作用域 | #38–44：运行时 arch/libc 比对，仅 prepare/rebuild/activate/verify；list/show/库内备份恢复查询无 Pi 部署平台前置。2026-10-18 用户接受 export 必要安全文件能力边界，缺能力安全拒绝；Windows 安全导出由 [#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 后续交付，不阻塞本次已裁定范围；#36 仍 OPEN |
+| 9 平台作用域 | #38–44：运行时 arch/libc 比对，仅 prepare/rebuild/activate/verify；list/show/库内备份恢复查询无 Pi 部署平台前置。2026-10-18 用户接受 export 必要安全文件能力边界，缺能力安全拒绝；#36 已关闭，[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 已以 NOT_PLANNED 关闭，Windows 安全导出当前无交付计划，未实现/未验证 Windows 后端 |
 | 10 空间预检/占用 | #38/#42：下载前 statvfs 失败前移，真实 allocated/logical 遍历、回收估计不进身份 |
 | 11 固定导出名 | #44：package.json、package-lock.json、release.json、supply-manifest.json、integrity-supplements.json、SHASUMS256.txt、d5-evidence/<sha前16>.bin |
 | §三 测试 1–8 | #40 mixed/最近实例；#38/#42 他库根；#38 并发；#42/#43 trash；#40 doctor；#38 runtime platform/空间预检 |

@@ -1222,9 +1222,9 @@ Issue #26 只冻结适配器配置事实并接入版本登记和快照；本节�
 
 本次 #36 A4 的平台边界经用户裁决收口：list/show 与库内历史读取、隔离恢复查询不依赖
 本机 Pi/Node 或部署平台；export 仍须具备目录句柄、nofollow、不覆盖发布与 fsync 等必要
-安全文件能力，能力不足继续安全拒绝。Windows 安全导出另由
-[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 交付，本次不实现/不声称验证 Windows 后端；
-#46 不阻塞已裁定的本次平台范围，#36 保持 OPEN。具体能力边界见
+安全文件能力，能力不足继续安全拒绝。#36 已关闭；
+[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 已以 NOT_PLANNED 关闭，Windows 安全导出
+当前无交付计划，未实现/未验证 Windows 后端。具体能力边界见
 [Pi 供给 Contract](../docs/contracts/pi-supply.md#固定材料导出)。
 
 以下为用户对独立管理 Pi 升级问题的裁决（D1–D5），与本节前文同等有效；与此前任何可被读作相反含义的表述冲突时，以本节为准。这些决策仍是目标规格，不表示供给命令、安装器、RPC 执行器或验收已实现。

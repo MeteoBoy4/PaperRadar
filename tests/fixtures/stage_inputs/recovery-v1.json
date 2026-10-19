@@ -1,0 +1,22 @@
+{
+  "boundary": {
+    "payload": "{\"config_projection\":{\"format_version\":1,\"projection_id\":\"c27fd39eccb2407f8abe3f87e050eff0f75d3eb63c2c3c1679ba166c554315f8\"},\"facts\":{\"abstract\":\"Synthetic abstract\\n\",\"abstract_truncated\":false,\"title\":\"Synthetic title\"},\"format_version\":1,\"kind\":\"stage_input\",\"stage\":\"boundary\"}",
+    "fingerprint": "2f03c2722378c7d45971c9f3629884b962b806515f8625d0159fc2392de6aac3"
+  },
+  "value": {
+    "payload": "{\"config_projection\":{\"format_version\":1,\"projection_id\":\"f28f65953b9a56b6ae33b2539e565c4d124514dfd2a343148de5cf60d41a096b\"},\"facts\":{\"abstract\":\"Synthetic abstract\\n\",\"abstract_truncated\":false,\"title\":\"Synthetic title\"},\"format_version\":1,\"kind\":\"stage_input\",\"stage\":\"value\"}",
+    "fingerprint": "8604eb842877279a6aca4aa9174d180569ea4dc6341e90ab25fa148b070b9df7"
+  },
+  "extraction": {
+    "payload": "{\"config_projection\":{\"format_version\":1,\"projection_id\":\"b22ab98cea14fa830d125119b94c051403a7c01eced0ec526e172df74ebb0125\"},\"facts\":{\"pdf_sha256\":\"abdf7208c9267b126185ad0c3a05578f6c8b69849838dca05817d85894b30db9\"},\"format_version\":1,\"kind\":\"stage_input\",\"stage\":\"extraction\"}",
+    "fingerprint": "d108b2cc6e9ebe37a6cba1e832916c5d530c3b3fee0c2e795826eeb9ebf0e56d"
+  },
+  "structured": {
+    "payload": "{\"config_projection\":{\"format_version\":1,\"projection_id\":\"f2c879f0ea03e7292c028e6f7470fb0b1c78c4569ebbbb55d6e0a269520ea791\"},\"facts\":{\"excerpts\":[{\"excerpt_id\":\"availability-1\",\"kind\":\"availability\",\"source\":{\"content_sha256\":\"abdec00bc1f149e9b543ff79d5f4712097309c61136f95a2fbb52f0802139881\",\"kind\":\"source_snapshot\",\"locator\":[\"section\",\"block-1\"]},\"text\":\"Synthetic availability text\"},{\"excerpt_id\":\"methods-1\",\"kind\":\"methods\",\"source\":{\"content_sha256\":\"abdec00bc1f149e9b543ff79d5f4712097309c61136f95a2fbb52f0802139881\",\"kind\":\"source_snapshot\",\"locator\":[\"section\",\"block-2\"]},\"text\":\"Synthetic methods text\"}]},\"format_version\":1,\"kind\":\"stage_input\",\"stage\":\"reuse\"}",
+    "fingerprint": "8a457a1e793ada05122c1d02a718ef3969442b50f44be855fbdb80273541a6ac"
+  },
+  "body": {
+    "payload": "{\"config_projection\":{\"format_version\":1,\"projection_id\":\"f2c879f0ea03e7292c028e6f7470fb0b1c78c4569ebbbb55d6e0a269520ea791\"},\"facts\":{\"excerpts\":[{\"excerpt_id\":\"availability-1\",\"kind\":\"availability\",\"source\":{\"evidence_map_sha256\":\"95433304181cdcd2b91869696277a6774fc14c6036c6b76706a312f78e78459f\",\"extraction_fingerprint\":\"d108b2cc6e9ebe37a6cba1e832916c5d530c3b3fee0c2e795826eeb9ebf0e56d\",\"kind\":\"extraction\",\"locator\":[\"section\",\"block-1\"],\"reading_sha256\":\"94c1ffbf8e015cd4f327ef94d34976dab9eb32f4dc8013d3511bda7d12e25865\"},\"text\":\"Synthetic availability text\"},{\"excerpt_id\":\"methods-1\",\"kind\":\"methods\",\"source\":{\"evidence_map_sha256\":\"95433304181cdcd2b91869696277a6774fc14c6036c6b76706a312f78e78459f\",\"extraction_fingerprint\":\"d108b2cc6e9ebe37a6cba1e832916c5d530c3b3fee0c2e795826eeb9ebf0e56d\",\"kind\":\"extraction\",\"locator\":[\"section\",\"block-2\"],\"reading_sha256\":\"94c1ffbf8e015cd4f327ef94d34976dab9eb32f4dc8013d3511bda7d12e25865\"},\"text\":\"Synthetic methods text\"}]},\"format_version\":1,\"kind\":\"stage_input\",\"stage\":\"reuse\"}",
+    "fingerprint": "63debebc1c9dc39aef214ef8e663a2b5b2a13bd15636c2cae01d37dbf8e10644"
+  }
+}
