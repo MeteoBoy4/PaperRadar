@@ -19,7 +19,10 @@ from paper_radar.stage_inputs import (
 from tests.config_projection_support import full_inputs
 
 
-def test_boundary_uses_exact_text_and_its_own_projection(tmp_path: Path) -> None:
+@pytest.mark.parametrize("stage", [StageName.BOUNDARY, StageName.VALUE])
+def test_screening_uses_exact_text_and_its_own_projection(
+    tmp_path: Path, stage: StageName
+) -> None:
     settings, database = full_inputs(tmp_path)
     snapshot = compile_config(settings, database)
     facts = ScreeningFacts(
@@ -27,17 +30,15 @@ def test_boundary_uses_exact_text_and_its_own_projection(tmp_path: Path) -> None
         abstract="Synthetic abstract\n",
         abstract_truncated=False,
     )
-    result = build_stage_input(snapshot, StageName.BOUNDARY, facts)
+    result = build_stage_input(snapshot, stage, facts)
     payload = json.loads(result.payload_bytes)
     assert payload == {
         "kind": "stage_input",
-        "stage": "boundary",
+        "stage": stage.value,
         "format_version": 1,
         "config_projection": {
             "format_version": 1,
-            "projection_id": project_config(snapshot)
-            .projections[StageName.BOUNDARY]
-            .projection_id,
+            "projection_id": project_config(snapshot).projections[stage].projection_id,
         },
         "facts": {
             "title": "Synthetic title",
@@ -99,16 +100,18 @@ def test_strict_fact_rejections_are_safe(
     assert caught.value.__context__ is None
 
 
+@pytest.mark.parametrize("stage", [StageName.BOUNDARY, StageName.VALUE])
 def test_facts_and_result_are_frozen_and_do_not_print_text(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], caplog: pytest.LogCaptureFixture
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    caplog: pytest.LogCaptureFixture,
+    stage: StageName,
 ) -> None:
     settings, database = full_inputs(tmp_path)
     facts = ScreeningFacts(
         title="SECRET_TITLE", abstract="SECRET_ABSTRACT", abstract_truncated=False
     )
-    result = build_stage_input(
-        compile_config(settings, database), StageName.BOUNDARY, facts
-    )
+    result = build_stage_input(compile_config(settings, database), stage, facts)
     for item, field_name in ((facts, "title"), (result, "payload_bytes")):
         with pytest.raises(dataclasses.FrozenInstanceError) as caught:
             setattr(item, field_name, "SECRET_NEW_VALUE")
@@ -118,20 +121,23 @@ def test_facts_and_result_are_frozen_and_do_not_print_text(
     assert not caplog.records
 
 
-def test_missing_configuration_keeps_existing_readiness(tmp_path: Path) -> None:
+@pytest.mark.parametrize("stage", [StageName.BOUNDARY, StageName.VALUE])
+def test_missing_configuration_keeps_existing_readiness(
+    tmp_path: Path, stage: StageName
+) -> None:
     from tests.config_projection_support import empty_inputs
 
     settings, database = empty_inputs(tmp_path)
     snapshot = compile_config(settings, database)
     facts = ScreeningFacts(title="...", abstract="REQUIRED", abstract_truncated=False)
     with pytest.raises(StageInputError) as caught:
-        build_stage_input(snapshot, StageName.BOUNDARY, facts)
+        build_stage_input(snapshot, stage, facts)
     assert caught.value.reason is BuildReason.NOT_READY
-    assert caught.value.readiness == snapshot.stages[StageName.BOUNDARY]
+    assert caught.value.readiness == snapshot.stages[stage]
 
 
 @pytest.mark.parametrize(
-    "stage", [StageName.VALUE, StageName.READ, StageName.SUGGESTION, "secret-stage", {}]
+    "stage", [StageName.READ, StageName.SUGGESTION, "secret-stage", {}]
 )
 def test_unclaimed_stages_are_controlled_rejections(
     tmp_path: Path, stage: object

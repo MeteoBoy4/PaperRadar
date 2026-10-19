@@ -31,17 +31,18 @@ from tests.config_test_support import boundary_inputs
     ],
 )
 @pytest.mark.parametrize("field", ["title", "abstract"])
+@pytest.mark.parametrize("stage", [StageName.BOUNDARY, StageName.VALUE])
 def test_text_is_preserved_without_hidden_normalization(
-    tmp_path: Path, first: str, second: str, field: str
+    tmp_path: Path, first: str, second: str, field: str, stage: StageName
 ) -> None:
-    settings, database = boundary_inputs(tmp_path)
+    settings, database = full_inputs(tmp_path)
     snapshot = compile_config(settings, database)
     common = {"title": "T", "abstract": "A", "abstract_truncated": False}
     before = build_stage_input(
-        snapshot, StageName.BOUNDARY, ScreeningFacts(**{**common, field: first})
+        snapshot, stage, ScreeningFacts(**{**common, field: first})
     )
     after = build_stage_input(
-        snapshot, StageName.BOUNDARY, ScreeningFacts(**{**common, field: second})
+        snapshot, stage, ScreeningFacts(**{**common, field: second})
     )
     assert before.fingerprint != after.fingerprint
     assert compare_stage_inputs(before, after).changed_components == (field,)
@@ -93,19 +94,21 @@ def test_comparison_has_fixed_safe_component_order_and_no_business_effects(
     assert not compare_stage_inputs(before, before).changed_components
 
 
+@pytest.mark.parametrize("stage", [StageName.BOUNDARY, StageName.VALUE])
 def test_truncated_flag_changes_identity_while_placeholders_remain_exact_text(
     tmp_path: Path,
+    stage: StageName,
 ) -> None:
-    settings, database = boundary_inputs(tmp_path)
+    settings, database = full_inputs(tmp_path)
     snapshot = compile_config(settings, database)
     before = build_stage_input(
         snapshot,
-        StageName.BOUNDARY,
+        stage,
         ScreeningFacts(title="REQUIRED", abstract="...", abstract_truncated=False),
     )
     after = build_stage_input(
         snapshot,
-        StageName.BOUNDARY,
+        stage,
         ScreeningFacts(title="REQUIRED", abstract="...", abstract_truncated=True),
     )
     assert before.fingerprint != after.fingerprint
