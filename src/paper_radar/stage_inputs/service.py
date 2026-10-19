@@ -34,6 +34,7 @@ class BuildReason(StrEnum):
     INVALID_HASH = "invalid_hash"
     INVALID_CONTEXT = "invalid_context"
     DUPLICATE_EXCERPT_ID = "duplicate_excerpt_id"
+    INCONSISTENT_EXTRACTION_SOURCE = "inconsistent_extraction_source"
 
 
 class ReplayReason(StrEnum):
@@ -77,6 +78,10 @@ class InputField(StrEnum):
     EXCERPT_SOURCE = "facts.excerpts.source"
     SOURCE_HASH = "facts.excerpts.source.content_sha256"
     SOURCE_LOCATOR = "facts.excerpts.source.locator"
+    EXTRACTION_INPUT = "facts.excerpts.source.extraction_input"
+    EXTRACTION_FINGERPRINT = "facts.excerpts.source.extraction_fingerprint"
+    READING_HASH = "facts.excerpts.source.reading_sha256"
+    EVIDENCE_MAP_HASH = "facts.excerpts.source.evidence_map_sha256"
 
 
 class StageInputError(ValueError):
@@ -156,6 +161,19 @@ def _reuse_context(kinds: dict[str, Any]) -> ReuseAssessmentContext | None:
         return None
 
 
+def _frozen_locator(locator: Any) -> tuple[str, ...]:
+    if type(locator) not in (tuple, list) or not locator:
+        raise StageInputError(BuildReason.INVALID_FACTS, InputField.SOURCE_LOCATOR)
+    for part in locator:
+        if not _valid_text(part):
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.SOURCE_LOCATOR)
+        if not _utf8_valid(part):
+            raise StageInputError(
+                BuildReason.INVALID_ENCODING, InputField.SOURCE_LOCATOR
+            )
+    return tuple(locator)
+
+
 @dataclass(frozen=True, slots=True, init=False)
 class SourceSnapshotRef:
     """结构化快照 payload 成员内容身份与生产者定义的定位。"""
@@ -170,19 +188,70 @@ class SourceSnapshotRef:
             raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPT_SOURCE)
         if not _valid_hash(content_sha256):
             raise StageInputError(BuildReason.INVALID_HASH, InputField.SOURCE_HASH)
-        if type(locator) not in (tuple, list) or not locator:
-            raise StageInputError(BuildReason.INVALID_FACTS, InputField.SOURCE_LOCATOR)
-        for part in locator:
-            if not _valid_text(part):
-                raise StageInputError(
-                    BuildReason.INVALID_FACTS, InputField.SOURCE_LOCATOR
-                )
-            if not _utf8_valid(part):
-                raise StageInputError(
-                    BuildReason.INVALID_ENCODING, InputField.SOURCE_LOCATOR
-                )
+        frozen_locator = _frozen_locator(locator)
         object.__setattr__(self, "content_sha256", content_sha256)
-        object.__setattr__(self, "locator", tuple(locator))
+        object.__setattr__(self, "locator", frozen_locator)
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class ExtractionRef:
+    """明确正文配方及实际消费的两份内容身份。不查询当前制品。"""
+
+    extraction_fingerprint: str
+    reading_sha256: str
+    evidence_map_sha256: str
+    locator: tuple[str, ...] = field(repr=False)
+
+    def __init__(
+        self,
+        *,
+        extraction_input: Any = _MISSING,
+        reading_sha256: Any = _MISSING,
+        evidence_map_sha256: Any = _MISSING,
+        locator: Any = _MISSING,
+        **extra: Any,
+    ) -> None:
+        if extra:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPT_SOURCE)
+        if (
+            type(extraction_input) is not StageInput
+            or extraction_input.stage is not StageName.EXTRACTION
+        ):
+            raise StageInputError(
+                BuildReason.INVALID_FACTS, InputField.EXTRACTION_INPUT
+            )
+        _set_extraction_ref(
+            self,
+            extraction_input.fingerprint,
+            reading_sha256,
+            evidence_map_sha256,
+            locator,
+        )
+
+
+def _set_extraction_ref(
+    result: ExtractionRef,
+    extraction_fingerprint: Any,
+    reading_sha256: Any,
+    evidence_map_sha256: Any,
+    locator: Any,
+) -> None:
+    # 回放只验证哈希编码。仅公共构造检查 extraction 输入对象的身份域。
+    for value, location in (
+        (extraction_fingerprint, InputField.EXTRACTION_FINGERPRINT),
+        (reading_sha256, InputField.READING_HASH),
+        (evidence_map_sha256, InputField.EVIDENCE_MAP_HASH),
+    ):
+        if not _valid_hash(value):
+            raise StageInputError(BuildReason.INVALID_HASH, location)
+    frozen_locator = _frozen_locator(locator)
+    for name, value in (
+        ("extraction_fingerprint", extraction_fingerprint),
+        ("reading_sha256", reading_sha256),
+        ("evidence_map_sha256", evidence_map_sha256),
+        ("locator", frozen_locator),
+    ):
+        object.__setattr__(result, name, value)
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -192,7 +261,7 @@ class SelectedExcerpt:
     excerpt_id: str = field(repr=False)
     kind: ExcerptKind
     text: str = field(repr=False)
-    source: SourceSnapshotRef = field(repr=False)
+    source: SourceSnapshotRef | ExtractionRef = field(repr=False)
 
     def __init__(
         self,
@@ -217,7 +286,7 @@ class SelectedExcerpt:
             raise StageInputError(BuildReason.INVALID_TEXT, InputField.EXCERPT_TEXT)
         if not _utf8_valid(text):
             raise StageInputError(BuildReason.INVALID_ENCODING, InputField.EXCERPT_TEXT)
-        if type(source) is not SourceSnapshotRef:
+        if type(source) not in (SourceSnapshotRef, ExtractionRef):
             raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPT_SOURCE)
         object.__setattr__(self, "excerpt_id", excerpt_id)
         object.__setattr__(self, "kind", context.excerpt_kinds[excerpt_id])
@@ -235,6 +304,7 @@ class ReuseFacts:
         if extra or type(excerpts) not in (tuple, list) or not excerpts:
             raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPTS)
         seen: set[str] = set()
+        body_identity: tuple[str, str, str] | None = None
         for excerpt in excerpts:
             if type(excerpt) is not SelectedExcerpt:
                 raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPTS)
@@ -243,6 +313,19 @@ class ReuseFacts:
                     BuildReason.DUPLICATE_EXCERPT_ID, InputField.EXCERPTS
                 )
             seen.add(excerpt.excerpt_id)
+            if isinstance(excerpt.source, ExtractionRef):
+                source = excerpt.source
+                identity = (
+                    source.extraction_fingerprint,
+                    source.reading_sha256,
+                    source.evidence_map_sha256,
+                )
+                if body_identity is not None and identity != body_identity:
+                    raise StageInputError(
+                        BuildReason.INCONSISTENT_EXTRACTION_SOURCE,
+                        InputField.EXCERPT_SOURCE,
+                    )
+                body_identity = identity
         object.__setattr__(self, "excerpts", tuple(excerpts))
 
 
@@ -357,7 +440,15 @@ def _canonical(value: object) -> bytes:
     ).encode("utf-8")
 
 
-def _source_payload(source: SourceSnapshotRef) -> dict[str, Any]:
+def _source_payload(source: SourceSnapshotRef | ExtractionRef) -> dict[str, Any]:
+    if isinstance(source, ExtractionRef):
+        return {
+            "kind": "extraction",
+            "extraction_fingerprint": source.extraction_fingerprint,
+            "reading_sha256": source.reading_sha256,
+            "evidence_map_sha256": source.evidence_map_sha256,
+            "locator": list(source.locator),
+        }
     return {
         "kind": "source_snapshot",
         "content_sha256": source.content_sha256,
@@ -468,6 +559,42 @@ def _keys(value: object, expected: set[str]) -> bool:
     return type(value) is dict and value.keys() == expected
 
 
+def _replay_source(value: Any) -> SourceSnapshotRef | ExtractionRef | None:
+    try:
+        if (
+            _keys(value, {"kind", "content_sha256", "locator"})
+            and value["kind"] == "source_snapshot"
+        ):
+            return SourceSnapshotRef(
+                content_sha256=value["content_sha256"], locator=value["locator"]
+            )
+        if (
+            _keys(
+                value,
+                {
+                    "kind",
+                    "extraction_fingerprint",
+                    "reading_sha256",
+                    "evidence_map_sha256",
+                    "locator",
+                },
+            )
+            and value["kind"] == "extraction"
+        ):
+            result = object.__new__(ExtractionRef)
+            _set_extraction_ref(
+                result,
+                value["extraction_fingerprint"],
+                value["reading_sha256"],
+                value["evidence_map_sha256"],
+                value["locator"],
+            )
+            return result
+    except StageInputError:
+        return None
+    return None
+
+
 def _replay_facts(
     stage: StageName, value: Any
 ) -> ScreeningFacts | ExtractionFacts | ReuseFacts | None:
@@ -485,16 +612,10 @@ def _replay_facts(
         for item in value["excerpts"]:
             if not _keys(item, {"excerpt_id", "kind", "text", "source"}):
                 return None
-            source = item["source"]
-            if (
-                not _keys(source, {"kind", "content_sha256", "locator"})
-                or source["kind"] != "source_snapshot"
-            ):
+            reference = _replay_source(item["source"])
+            if reference is None:
                 return None
             try:
-                reference = SourceSnapshotRef(
-                    content_sha256=source["content_sha256"], locator=source["locator"]
-                )
                 excerpts.append(
                     SelectedExcerpt(
                         excerpt_id=item["excerpt_id"],
