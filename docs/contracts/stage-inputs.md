@@ -1,9 +1,10 @@
-# 阶段输入载荷与指纹（#47 / #48 / #49 / #50 / #51）
+# 阶段输入载荷与指纹（#47 / #48 / #49 / #50 / #51 / #52）
 
 ## 公共边界与交付范围
 
-公共入口从 `paper_radar.stage_inputs` 导入。当前交付 boundary/value/extraction 与结构化 reuse 各自独立格式 **1**；
-PDF 来源 reuse 随后续票接入，read/suggestion 不属于本次 A5。
+公共入口从 `paper_radar.stage_inputs` 导入。当前交付 boundary/value/extraction/reuse
+各自独立格式 **1**；reuse 的封闭来源联合包含结构化来源与正文来源，可显式组合。
+本票补全预定 reuse 格式 1，不发布另一份过渡生产格式；read/suggestion 不属于本次 A5。
 未领取的阶段、字符串冒充 `StageName` 或未知阶段均受控拒绝，不产生占位指纹。
 
 | 入口 / 类型 | 契约 |
@@ -11,8 +12,9 @@ PDF 来源 reuse 随后续票接入，read/suggestion 不属于本次 A5。
 | `ScreeningFacts(title=..., abstract=..., abstract_truncated=...)` | 冻结的精确论文文本与严格布尔事实；未知字段拒绝。 |
 | `ExtractionFacts(pdf_sha256=...)` | 冻结的原始 PDF 完整字节 SHA-256；未知字段拒绝，不读取 PDF。 |
 | `SourceSnapshotRef(content_sha256=..., locator=...)` | 严格结构化来源内容引用与冻结定位；不收 URL 或审计字段。 |
+| `ExtractionRef(extraction_input=..., reading_sha256=..., evidence_map_sha256=..., locator=...)` | 正文来源构造只接收 extraction 输入对象，再绑定实际消费成员与冻结定位；不查询制品库。 |
 | `SelectedExcerpt(excerpt_id=..., kind=..., text=..., source=...)` | 已选精确摘录；ID/种类由权威 ReuseAssessmentContext 校验。 |
-| `ReuseFacts(excerpts=...)` | 非空有序冻结摘录，重复 ID 在构造调用级映射前拒绝。 |
+| `ReuseFacts(excerpts=...)` | 非空有序冻结摘录，重复 ID 在构造调用级映射前拒绝；全部正文摘录共享同一配方与消费内容身份。 |
 | `reuse_input.reuse_assessment_context()` | 仅从该输入冻结摘录派生权威 ID/种类映射；不接收外部映射。 |
 | `build_stage_input(snapshot, stage, facts)` | 从已由 check/compile/load 验证的 `RuntimeConfigSnapshot` 选取同阶段 `project_config` 投影，返回不可变 `StageInput`。 |
 | `replay_stage_input(payload_bytes, expected_fingerprint, snapshot=None)` | 规范载荷字节与明确期望指纹的严格回放；可选核对明确历史快照。 |
@@ -109,12 +111,15 @@ reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列�
 `payload/kind/format_version/config_projection/config_projection.projection_id/`
 `expected_fingerprint/inputs/context/original_title_is_zh`，以及
 `facts.excerpts/facts.excerpts.excerpt_id/facts.excerpts.text/facts.excerpts.source/`
-`facts.excerpts.source.content_sha256/facts.excerpts.source.locator`；未知键折叠为所属受控容器位置，
+`facts.excerpts.source.content_sha256/facts.excerpts.source.locator/`
+`facts.excerpts.source.extraction_input/facts.excerpts.source.extraction_fingerprint/`
+`facts.excerpts.source.reading_sha256/facts.excerpts.source.evidence_map_sha256`；
+未知键折叠为所属受控容器位置，
 不含摘录下标、实际 ID 或自由键名。
 
 | 面 | 封闭原因 |
 | --- | --- |
-| `BuildReason` | unsupported_stage、invalid_snapshot、not_ready、invalid_facts、invalid_text、invalid_encoding、invalid_hash、invalid_context、duplicate_excerpt_id |
+| `BuildReason` | unsupported_stage、invalid_snapshot、not_ready、invalid_facts、invalid_text、invalid_encoding、invalid_hash、invalid_context、duplicate_excerpt_id、inconsistent_extraction_source |
 | `ReplayReason` | invalid_payload、unsupported_stage、unsupported_format、invalid_fingerprint、fingerprint_mismatch、non_canonical、invalid_snapshot、projection_format_unverifiable、projection_mismatch |
 | `ComparisonReason` | different_stage、incompatible_format、invalid_input |
 
@@ -210,9 +215,56 @@ reuse 阶段格式 1 指纹为
 
 后续 RPC 渲染只能使用载荷已绑定字段；需要页码、章节等时必须来自已绑定 locator，
 否则需显式演进 reuse 格式。渲染策略本身变化必须有 adapter policy 或阶段格式版本。
-本票不实现选段、触发规则、PDF 取得、模型或任务。PDF 来源预定由 #52 扩展封闭
-来源联合：绑定明确 extraction 输入对象及实际 reading/evidence_map 内容哈希和 locator；
-当前仍受控拒绝该来源，不接受裸 extraction 字符串冒充类型证明。
+本票不实现选段、触发规则、PDF 取得、模型或任务。正文来源沿同一来源联合接入，
+共用摘录集合、ID 去重、同源上下文、reuse 构造/回放与比较，没有 PDF 专用 reuse builder。
+
+## 正文与混合来源 reuse 格式 1
+
+`ExtractionRef` 的公共构造接收新构造或严格回放所得的 `StageInput`，同时要求对象类型
+与 `StageName.EXTRACTION`，取该对象的完整指纹作为正文配方依据。裸 PDF/来源哈希、
+结构化来源对象、boundary/value/reuse 输入均拒绝。序列化来源只包含以下封闭字段：
+
+```json
+{"evidence_map_sha256":"<evidence_map 成员原始字节 SHA-256>","extraction_fingerprint":"<完整 extraction 输入指纹>","kind":"extraction","locator":["section","block-1"],"reading_sha256":"<reading 成员原始字节 SHA-256>"}
+```
+
+三个哈希均严格为 64 位小写十六进制字符串；locator 与结构化来源共用同一非空、有序、
+精确保留的冻结规则。reading/evidence_map 哈希由上游从实际制品成员取得，不以整个
+artifact_id 代替。manifest 的时间、耗时等审计内容、document 原始后端输出、artifact_id、
+路径及另一种来源的字段一律不接收，不参与规范身份。真实 `ArtifactStore` 测试分别发布
+manifest 审计字节不同的制品，验证 artifact_id 不同但相同消费内容不改变 reuse 输入；
+改变 reading 或 evidence_map 实际成员则改变 reuse 指纹。
+
+同次调用的全部正文摘录必须共享相同 extraction_fingerprint、reading_sha256 与
+evidence_map_sha256。不同 extraction 指纹，或同一指纹配不同消费内容，均以
+`inconsistent_extraction_source` 拒绝，不输出具体指纹、摘录 ID 或原始值。定位可以不同，
+结构化来源可与这唯一一份正文显式组合；任何来源组合的重复 excerpt_id 仍先于上下文
+映射构造拒绝。回放通过同一来源字段验证与调用级一致性检查，不另建宽松入口。
+
+reuse 只核对自身配置就绪；正文依据来自明确来源对象，不读取当前 extraction 就绪状态。
+切换当前 PDF 或解析配置不会静默替换旧引用；只有调用方明确换用新 extraction 输入或
+新的实际消费内容，才改变对应来源依据。引用不变时，未被引用的 PDF、解析配置仍不影响
+reuse；正文与结构化来源的变化也不进入题名摘要 Screening 配方。
+
+回放里的裸哈希只能验证结构与编码，不能识别其真实来源域或证明 extraction 制品存在。
+来源合法取得、质量门槛、locator 真实有效、摘录确属该正文范围及次序符合选择器优先级，
+仍由生产者负责。输出验证只从同一冻结摘录派生 `ReuseAssessmentContext`，不能补入
+另一份映射。正文、混合来源沿用既有固定比较组件，不新增逐项 ID、下标或定位输出。
+
+同一 extraction 指纹若在两次独立调用中对应不同 reading/evidence_map 字节，会形成
+不同 reuse 输入；同次调用则因自相矛盾拒绝。上游必须固定使用已被历史引用的那份
+具体制品（[ADR-0017](../adr/0017-retain-only-source-and-analysis-bearing-artifacts.md)），
+不能任取“最新”解析输出，也不能借不确定重解析不断制造新输入
+以重开未来尝试预算。本服务不实现制品选择、缓存或预算。
+
+独立合成向量沿用固定 reuse 投影格式 1、ID
+`f2c879f0ea03e7292c028e6f7470fb0b1c78c4569ebbbb55d6e0a269520ea791`，
+并引用已登记的 extraction 格式 1 合成指纹；期望直接按载荷字面量独立核算：
+
+| 向量 | reuse 格式 1 指纹 |
+| --- | --- |
+| [正文来源](../../tests/fixtures/stage_inputs/reuse-body-v1.json) | `e2c035f114b5ae5ac7d598faea42f48dda0ac869809b1d3a25354f0bb1e978f6` |
+| [混合来源](../../tests/fixtures/stage_inputs/reuse-mixed-v1.json) | `4b6c273cfefa6b83532120b7f4b8dc22e6dbf0e64ac63fa5c3f2a84872d82c62` |
 
 
 ## extraction 格式 1 与正文来源消费义务
@@ -231,7 +283,7 @@ backend descriptor、组件版本、模型材料、完整解析配置与 `normal
 
 build/replay 均返回不可直接构造的 `StageInput`，其受控 `stage` 固定为
 `StageName.EXTRACTION`，`facts` 为独立强类型 `ExtractionFacts`。与 Screening 的文本
-事实错配会拒绝，不通过可空文本字段承载 PDF。后续正文来源构造 API 必须同时核对
+事实错配会拒绝，不通过可空文本字段承载 PDF。正文来源构造 API 同时核对
 `StageInput` 对象类型和 extraction 阶段，再读取其指纹；普通 PDF/来源哈希或 boundary
 对象不能冒充该输入。序列化中的裸哈希无法反推出原身份域，不宣称能从哈希字节识别冒用。
 
@@ -260,5 +312,5 @@ build/replay 均返回不可直接构造的 `StageInput`，其受控 `stage` 固
 证明文档内信号达不到“正文起点和前置杂页排除”质量门槛时，才允许讨论纳入论文元数据；
 届时必须提升 extraction 格式（格式 2），同步修订 §12 矩阵与领域不变量中书目补全/
 摘要变化不使正文提取失效的表述，并再次由用户裁决，不能由实现票自行改变。
-此未决问题不改变后续 reuse 的内容绑定义务：正文来源同时引用 extraction 指纹与实际
+此未决问题不改变 reuse 的内容绑定义务：正文来源同时引用 extraction 指纹与实际
 消费的 reading/evidence-map 内容身份，避免把同一配方误当作具体输出字节证明。

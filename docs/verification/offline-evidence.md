@@ -84,9 +84,11 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 新增组仍须显式扩展执行范围；没有自动发现插件、独立检查计划或动态调度。
 测试中的合成组只证明组织扩展能力，不代表新增产品验收能力。
 
-#48/#49/#50 的 boundary/value/extraction 阶段输入服务由普通离线 pytest 验证，
+#48–#52 的 boundary/value/extraction/reuse 阶段输入服务由普通离线 pytest 验证，
 配方、固定向量及证明边界见[阶段输入契约](../contracts/stage-inputs.md)。extraction 测试
 不读取 PDF 或运行 Docling，包含纯未来 normalization fixture 与真实编译拒绝反例。
+正文 reuse 使用真实 ArtifactStore 的成员哈希验证 manifest 审计隔离与消费内容变化，
+另有正文/混合来源固定向量、同次来源一致性、不可变性与无 I/O 回放验证。
 这些测试通过不增加独立 A5 验收结论；完整 A5 仍由后续验收票登记，不改写既往结论范围。
 
 #28 保留原 A1/A2-01 固定测试字节，只更新经审查的验收源码哈希，登记提取出的
