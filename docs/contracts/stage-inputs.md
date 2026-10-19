@@ -1,14 +1,15 @@
-# 阶段输入载荷与指纹（#47 / #48 / #49）
+# 阶段输入载荷与指纹（#47 / #48 / #49 / #50）
 
 ## 公共边界与交付范围
 
-公共入口从 `paper_radar.stage_inputs` 导入。#48/#49 当前交付 boundary/value 独立格式 **1**；
-reuse、extraction 随后续票接入，read/suggestion 不属于本次 A5。
+公共入口从 `paper_radar.stage_inputs` 导入。#48/#49/#50 当前交付 boundary/value/extraction
+各自独立格式 **1**；reuse 随后续票接入，read/suggestion 不属于本次 A5。
 未领取的阶段、字符串冒充 `StageName` 或未知阶段均受控拒绝，不产生占位指纹。
 
 | 入口 / 类型 | 契约 |
 | --- | --- |
 | `ScreeningFacts(title=..., abstract=..., abstract_truncated=...)` | 冻结的精确论文文本与严格布尔事实；未知字段拒绝。 |
+| `ExtractionFacts(pdf_sha256=...)` | 冻结的原始 PDF 完整字节 SHA-256；未知字段拒绝，不读取 PDF。 |
 | `build_stage_input(snapshot, stage, facts)` | 从已由 check/compile/load 验证的 `RuntimeConfigSnapshot` 选取同阶段 `project_config` 投影，返回不可变 `StageInput`。 |
 | `replay_stage_input(payload_bytes, expected_fingerprint, snapshot=None)` | 规范载荷字节与明确期望指纹的严格回放；可选核对明确历史快照。 |
 | `compare_stage_inputs(before, after)` | 返回不可变 `StageInputComparison`，只解释组件变化。 |
@@ -90,14 +91,15 @@ value 独立固定向量：完整合成载荷在
 
 ## 比较与受控拒绝
 
-`status` 为 `same/changed/incomparable`。同阶段且阶段/投影格式兼容时，组件固定按
-`config_projection`、`title`、`abstract`、`abstract_truncated` 排序，只列发生变化者。
+`status` 为 `same/changed/incomparable`。同阶段且阶段/投影格式兼容时，组件采用固定顺序：
+boundary/value 按 `config_projection`、`title`、`abstract`、`abstract_truncated` 排序，
+extraction 按 `config_projection`、`pdf` 排序，只列发生变化者。
 比较不输出原文、旧/新值或自由字段名。不同阶段或格式不兼容返回不可比，细粒度配置
 解释由 `compare_config_snapshots` 承担。boundary/value 跨阶段比较返回 `different_stage`，不会混用判断。
 
 构造/回放抛 `StageInputError`；其 `.reason`、`.field` 为封闭 StrEnum，`.readiness`
 仅在配置未就绪时携带已有受控配置事实。错误不保存输入值、未知键名或原始异常。
-安全位置集合是 `stage/snapshot/facts/facts.title/facts.abstract/facts.abstract_truncated/`
+安全位置集合是 `stage/snapshot/facts/facts.title/facts.abstract/facts.abstract_truncated/facts.pdf_sha256/`
 `payload/kind/format_version/config_projection/config_projection.projection_id/`
 `expected_fingerprint/inputs/context/original_title_is_zh`；未知键折叠为所属受控容器位置。
 
@@ -139,6 +141,54 @@ value 独立固定向量：完整合成载荷在
 
 本次通过两个实际消费者核对：公共头、编码/哈希、就绪与投影选择、严格回放、投影核对、
 比较前置与错误格式化共用一份实现，没有复制 boundary/value builder 或事实类型。
-后续 extraction/reuse 从相同 build/replay/compare 入口进入，只扩展封闭阶段集合与独立
+extraction 及后续 reuse 从相同 build/replay/compare 入口进入，只扩展封闭阶段集合与独立
 格式、各阶段严格事实及局部一致性、固定比较组件和必要上下文派生；不改既有阶段配方，
 不新增“投影 + 事实”公开入口，不引入全可选字段桶、动态注册器或通用工作流。
+
+## extraction 格式 1 与正文来源消费义务
+
+extraction 的规范头与编码沿用共享实现，事实只含原始 PDF 完整字节的 SHA-256：
+
+```json
+{"config_projection":{"format_version":1,"projection_id":"<完整 extraction projection_id>"},"facts":{"pdf_sha256":"<原始 PDF 完整 SHA-256>"},"format_version":1,"kind":"stage_input","stage":"extraction"}
+```
+
+PDF 哈希由上游计算，严格为 64 位小写十六进制字符串，不做大小写转换或其他归一化。
+backend descriptor、组件版本、模型材料、完整解析配置与 `normalization_version`
+均经既有 extraction 投影进入，不另设事实字段。不接收题名、DOI、论文摘要、路径、下载
+时间、耗时、安装/供给身份或其他额外字段。构造只检查 extraction 自身的 StageReadiness，
+不要求 Screening、Profile 或模型槽就绪；无关 Screening/Profile 变化不改变此输入。
+
+build/replay 均返回不可直接构造的 `StageInput`，其受控 `stage` 固定为
+`StageName.EXTRACTION`，`facts` 为独立强类型 `ExtractionFacts`。与 Screening 的文本
+事实错配会拒绝，不通过可空文本字段承载 PDF。后续正文来源构造 API 必须同时核对
+`StageInput` 对象类型和 extraction 阶段，再读取其指纹；普通 PDF/来源哈希或 boundary
+对象不能冒充该输入。序列化中的裸哈希无法反推出原身份域，不宣称能从哈希字节识别冒用。
+
+服务不打开 PDF、不探测 Docling、不调用解析器，不访问数据库或制品库。构造与回放只
+证明输入描述、规范编码与可选的明确历史投影绑定合法，不证明 PDF 存在、合法取得、
+解析成功或正文质量门槛通过；这些仍是上游义务。
+
+独立固定向量位于
+[`tests/fixtures/stage_inputs/extraction-v1.json`](../../tests/fixtures/stage_inputs/extraction-v1.json)，
+使用固定 `full_inputs` 合成快照的 extraction 投影（投影格式 1，
+`b22ab98cea14fa830d125119b94c051403a7c01eced0ec526e172df74ebb0125`）与合成 PDF 哈希。
+阶段输入格式 1 的指纹为
+`6ca4e413c842ded79f4d244ebf278fecc62009b3599aa0cd5e7c39084566b0df`。
+向量由独立载荷字面量及 SHA-256 核算固定，未用 builder 生成期望。
+未来 normalization 语义只用 `dataclasses.replace` 构造不经编译登记的纯 fixture；相同
+`fixture-v2` 经真实 `compile_config` 必须拒绝，不新增生产算法或第二套配置枚举校验。
+
+### C1 已知未决问题：封面识别的论文元数据依赖
+
+[`intent/draft.md` §4.9](../../intent/draft.md#49-docling-正文提取) 允许确定性后处理使用
+规范题名、DOI、摘要或首个正文节识别仓储封面，而 extraction 格式 1 不包含这些论文
+元数据。依 [#47 的 C1 用户裁决](https://github.com/MeteoBoy4/PaperRadar/issues/47#issuecomment-6265245363)，
+该分歧留待阶段 F 的 normalize 实现票解决，本票不修改 §4.9 原文或扩充格式 1 配方。
+
+阶段 F 优先仅用首个正文节、版面事实、可靠编号等文档内信号识别封面。只有四刊 fixture
+证明文档内信号达不到“正文起点和前置杂页排除”质量门槛时，才允许讨论纳入论文元数据；
+届时必须提升 extraction 格式（格式 2），同步修订 §12 矩阵与领域不变量中书目补全/
+摘要变化不使正文提取失效的表述，并再次由用户裁决，不能由实现票自行改变。
+此未决问题不改变后续 reuse 的内容绑定义务：正文来源同时引用 extraction 指纹与实际
+消费的 reading/evidence-map 内容身份，避免把同一配方误当作具体输出字节证明。
