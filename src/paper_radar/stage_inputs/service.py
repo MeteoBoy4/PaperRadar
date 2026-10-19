@@ -9,13 +9,19 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from pydantic import ValidationError
+
 from paper_radar.config import (
     RuntimeConfigSnapshot,
     StageName,
     StageReadiness,
     project_config,
 )
-from paper_radar.screening import ValuePredictionContext
+from paper_radar.screening import (
+    ExcerptKind,
+    ReuseAssessmentContext,
+    ValuePredictionContext,
+)
 
 
 class BuildReason(StrEnum):
@@ -27,6 +33,7 @@ class BuildReason(StrEnum):
     INVALID_ENCODING = "invalid_encoding"
     INVALID_HASH = "invalid_hash"
     INVALID_CONTEXT = "invalid_context"
+    DUPLICATE_EXCERPT_ID = "duplicate_excerpt_id"
 
 
 class ReplayReason(StrEnum):
@@ -63,6 +70,12 @@ class InputField(StrEnum):
     INPUTS = "inputs"
     CONTEXT = "context"
     TITLE_LANGUAGE = "original_title_is_zh"
+    EXCERPTS = "facts.excerpts"
+    EXCERPT_ID = "facts.excerpts.excerpt_id"
+    EXCERPT_TEXT = "facts.excerpts.text"
+    EXCERPT_SOURCE = "facts.excerpts.source"
+    SOURCE_HASH = "facts.excerpts.source.content_sha256"
+    SOURCE_LOCATOR = "facts.excerpts.source.locator"
 
 
 class StageInputError(ValueError):
@@ -135,6 +148,103 @@ class ScreeningFacts:
         object.__setattr__(self, "abstract_truncated", abstract_truncated)
 
 
+def _reuse_context(kinds: dict[str, Any]) -> ReuseAssessmentContext | None:
+    try:
+        return ReuseAssessmentContext(excerpt_kinds=kinds)
+    except ValidationError:
+        return None
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class SourceSnapshotRef:
+    """结构化快照 payload 成员内容身份与生产者定义的定位。"""
+
+    content_sha256: str
+    locator: tuple[str, ...] = field(repr=False)
+
+    def __init__(
+        self, *, content_sha256: Any = _MISSING, locator: Any = _MISSING, **extra: Any
+    ) -> None:
+        if extra:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPT_SOURCE)
+        if not _valid_hash(content_sha256):
+            raise StageInputError(BuildReason.INVALID_HASH, InputField.SOURCE_HASH)
+        if type(locator) not in (tuple, list) or not locator:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.SOURCE_LOCATOR)
+        for part in locator:
+            if not _valid_text(part):
+                raise StageInputError(
+                    BuildReason.INVALID_FACTS, InputField.SOURCE_LOCATOR
+                )
+            if not _utf8_valid(part):
+                raise StageInputError(
+                    BuildReason.INVALID_ENCODING, InputField.SOURCE_LOCATOR
+                )
+        object.__setattr__(self, "content_sha256", content_sha256)
+        object.__setattr__(self, "locator", tuple(locator))
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class SelectedExcerpt:
+    """一次模型输入中显式选定的摘录。不实现选段或来源回查。"""
+
+    excerpt_id: str = field(repr=False)
+    kind: ExcerptKind
+    text: str = field(repr=False)
+    source: SourceSnapshotRef = field(repr=False)
+
+    def __init__(
+        self,
+        *,
+        excerpt_id: Any = _MISSING,
+        kind: Any = _MISSING,
+        text: Any = _MISSING,
+        source: Any = _MISSING,
+        **extra: Any,
+    ) -> None:
+        if extra:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPTS)
+        # 先限制为可安全用作映射键的文本。ID/种类语义仍由权威上下文验证。
+        if type(excerpt_id) is not str:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPT_ID)
+        if not _utf8_valid(excerpt_id):
+            raise StageInputError(BuildReason.INVALID_ENCODING, InputField.EXCERPT_ID)
+        context = _reuse_context({excerpt_id: kind})
+        if context is None:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPTS)
+        if not _valid_text(text):
+            raise StageInputError(BuildReason.INVALID_TEXT, InputField.EXCERPT_TEXT)
+        if not _utf8_valid(text):
+            raise StageInputError(BuildReason.INVALID_ENCODING, InputField.EXCERPT_TEXT)
+        if type(source) is not SourceSnapshotRef:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPT_SOURCE)
+        object.__setattr__(self, "excerpt_id", excerpt_id)
+        object.__setattr__(self, "kind", context.excerpt_kinds[excerpt_id])
+        object.__setattr__(self, "text", text)
+        object.__setattr__(self, "source", source)
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class ReuseFacts:
+    """非空、有序且 ID 唯一的冻结摘录。"""
+
+    excerpts: tuple[SelectedExcerpt, ...] = field(repr=False)
+
+    def __init__(self, *, excerpts: Any = _MISSING, **extra: Any) -> None:
+        if extra or type(excerpts) not in (tuple, list) or not excerpts:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPTS)
+        seen: set[str] = set()
+        for excerpt in excerpts:
+            if type(excerpt) is not SelectedExcerpt:
+                raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPTS)
+            if excerpt.excerpt_id in seen:
+                raise StageInputError(
+                    BuildReason.DUPLICATE_EXCERPT_ID, InputField.EXCERPTS
+                )
+            seen.add(excerpt.excerpt_id)
+        object.__setattr__(self, "excerpts", tuple(excerpts))
+
+
 @dataclass(frozen=True, slots=True, init=False)
 class StageInput:
     """仅 build/replay 返回的对象是已验证输入。载荷是敏感业务数据。"""
@@ -143,7 +253,7 @@ class StageInput:
     format_version: int
     projection_format_version: int
     projection_id: str
-    facts: ScreeningFacts = field(repr=False)
+    facts: ScreeningFacts | ReuseFacts = field(repr=False)
     payload_bytes: bytes = field(repr=False)
 
     def __init__(self, **unvalidated: Any) -> None:
@@ -171,6 +281,19 @@ class StageInput:
             original_title_is_zh=original_title_is_zh,
         )
 
+    def reuse_assessment_context(self, **extra: object) -> ReuseAssessmentContext:
+        """唯一使用本输入冻结摘录派生权威 ID/种类映射。"""
+        if self.stage is not StageName.REUSE or not isinstance(self.facts, ReuseFacts):
+            raise StageInputError(BuildReason.INVALID_CONTEXT, InputField.STAGE)
+        if extra:
+            raise StageInputError(BuildReason.INVALID_CONTEXT, InputField.CONTEXT)
+        context = _reuse_context(
+            {item.excerpt_id: item.kind for item in self.facts.excerpts}
+        )
+        if context is None:
+            raise StageInputError(BuildReason.INVALID_CONTEXT, InputField.CONTEXT)
+        return context
+
     @property
     def fingerprint(self) -> str:
         return hashlib.sha256(self.payload_bytes).hexdigest()
@@ -181,6 +304,8 @@ class ChangeComponent(StrEnum):
     TITLE = "title"
     ABSTRACT = "abstract"
     ABSTRACT_TRUNCATED = "abstract_truncated"
+    EXCERPTS = "excerpts"
+    EXCERPT_SOURCES = "excerpt_sources"
 
 
 class ComparisonStatus(StrEnum):
@@ -197,7 +322,7 @@ class StageInputComparison:
 
 
 # 领取集合有意独立于 StageName。后续阶段随其业务票加入。
-_FORMAT_VERSIONS = {StageName.BOUNDARY: 1, StageName.VALUE: 1}
+_FORMAT_VERSIONS = {StageName.BOUNDARY: 1, StageName.VALUE: 1, StageName.REUSE: 1}
 
 
 def _canonical(value: object) -> bytes:
@@ -211,7 +336,27 @@ def _canonical(value: object) -> bytes:
     ).encode("utf-8")
 
 
-def _facts_payload(facts: ScreeningFacts) -> dict[str, str | bool]:
+def _source_payload(source: SourceSnapshotRef) -> dict[str, Any]:
+    return {
+        "kind": "source_snapshot",
+        "content_sha256": source.content_sha256,
+        "locator": list(source.locator),
+    }
+
+
+def _facts_payload(facts: ScreeningFacts | ReuseFacts) -> dict[str, Any]:
+    if isinstance(facts, ReuseFacts):
+        return {
+            "excerpts": [
+                {
+                    "excerpt_id": item.excerpt_id,
+                    "kind": item.kind.value,
+                    "text": item.text,
+                    "source": _source_payload(item.source),
+                }
+                for item in facts.excerpts
+            ]
+        }
     return {
         "title": facts.title,
         "abstract": facts.abstract,
@@ -224,7 +369,7 @@ def _assemble(
     format_version: int,
     projection_format: int,
     projection_id: str,
-    facts: ScreeningFacts,
+    facts: ScreeningFacts | ReuseFacts,
 ) -> StageInput:
     payload = _canonical(
         {
@@ -252,7 +397,9 @@ def _assemble(
 
 
 def build_stage_input(
-    snapshot: RuntimeConfigSnapshot, stage: StageName, facts: ScreeningFacts
+    snapshot: RuntimeConfigSnapshot,
+    stage: StageName,
+    facts: ScreeningFacts | ReuseFacts,
 ) -> StageInput:
     """只从已验证快照构造。配置完整性不代表 RPC 执行就绪。"""
     if type(stage) is not StageName or stage not in _FORMAT_VERSIONS:
@@ -264,7 +411,8 @@ def build_stage_input(
         raise StageInputError(
             BuildReason.NOT_READY, InputField.SNAPSHOT, readiness=readiness
         )
-    if type(facts) is not ScreeningFacts:
+    expected_type = ReuseFacts if stage is StageName.REUSE else ScreeningFacts
+    if type(facts) is not expected_type:
         raise StageInputError(BuildReason.INVALID_FACTS, InputField.FACTS)
     projection = project_config(snapshot).projections[stage]
     if not _valid_hash(projection.projection_id):
@@ -290,7 +438,38 @@ def _keys(value: object, expected: set[str]) -> bool:
     return type(value) is dict and value.keys() == expected
 
 
-def _replay_facts(value: Any) -> ScreeningFacts | None:
+def _replay_facts(stage: StageName, value: Any) -> ScreeningFacts | ReuseFacts | None:
+    if stage is StageName.REUSE:
+        if not _keys(value, {"excerpts"}) or type(value["excerpts"]) is not list:
+            return None
+        excerpts: list[SelectedExcerpt] = []
+        for item in value["excerpts"]:
+            if not _keys(item, {"excerpt_id", "kind", "text", "source"}):
+                return None
+            source = item["source"]
+            if (
+                not _keys(source, {"kind", "content_sha256", "locator"})
+                or source["kind"] != "source_snapshot"
+            ):
+                return None
+            try:
+                reference = SourceSnapshotRef(
+                    content_sha256=source["content_sha256"], locator=source["locator"]
+                )
+                excerpts.append(
+                    SelectedExcerpt(
+                        excerpt_id=item["excerpt_id"],
+                        kind=item["kind"],
+                        text=item["text"],
+                        source=reference,
+                    )
+                )
+            except StageInputError:
+                return None
+        try:
+            return ReuseFacts(excerpts=excerpts)
+        except StageInputError:
+            return None
     if not _keys(value, {"title", "abstract", "abstract_truncated"}):
         return None
     try:
@@ -337,7 +516,7 @@ def replay_stage_input(
         )
     if not _valid_hash(projection["projection_id"]):
         raise StageInputError(ReplayReason.INVALID_PAYLOAD, InputField.PROJECTION_ID)
-    facts = _replay_facts(value["facts"])
+    facts = _replay_facts(stage, value["facts"])
     if facts is None:
         raise StageInputError(ReplayReason.INVALID_PAYLOAD, InputField.FACTS)
     result = _assemble(
@@ -383,16 +562,44 @@ def compare_stage_inputs(before: StageInput, after: StageInput) -> StageInputCom
         return StageInputComparison(
             ComparisonStatus.INCOMPARABLE, reason=ComparisonReason.INCOMPATIBLE_FORMAT
         )
-    components = (
+    components: tuple[tuple[ChangeComponent, object, object], ...] = (
         (ChangeComponent.CONFIG_PROJECTION, before.projection_id, after.projection_id),
-        (ChangeComponent.TITLE, before.facts.title, after.facts.title),
-        (ChangeComponent.ABSTRACT, before.facts.abstract, after.facts.abstract),
-        (
-            ChangeComponent.ABSTRACT_TRUNCATED,
-            before.facts.abstract_truncated,
-            after.facts.abstract_truncated,
-        ),
     )
+    if before.stage is StageName.REUSE:
+        assert isinstance(before.facts, ReuseFacts) and isinstance(
+            after.facts, ReuseFacts
+        )
+        components += (
+            (
+                ChangeComponent.EXCERPTS,
+                tuple(
+                    (item.excerpt_id, item.kind, item.text)
+                    for item in before.facts.excerpts
+                ),
+                tuple(
+                    (item.excerpt_id, item.kind, item.text)
+                    for item in after.facts.excerpts
+                ),
+            ),
+            (
+                ChangeComponent.EXCERPT_SOURCES,
+                tuple(_source_payload(item.source) for item in before.facts.excerpts),
+                tuple(_source_payload(item.source) for item in after.facts.excerpts),
+            ),
+        )
+    else:
+        assert isinstance(before.facts, ScreeningFacts) and isinstance(
+            after.facts, ScreeningFacts
+        )
+        components += (
+            (ChangeComponent.TITLE, before.facts.title, after.facts.title),
+            (ChangeComponent.ABSTRACT, before.facts.abstract, after.facts.abstract),
+            (
+                ChangeComponent.ABSTRACT_TRUNCATED,
+                before.facts.abstract_truncated,
+                after.facts.abstract_truncated,
+            ),
+        )
     changed = tuple(name for name, old, new in components if old != new)
     return StageInputComparison(
         ComparisonStatus.CHANGED if changed else ComparisonStatus.SAME, changed
