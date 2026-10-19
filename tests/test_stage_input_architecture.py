@@ -23,6 +23,7 @@ def test_stage_inputs_only_depend_on_public_domain_boundaries() -> None:
                     "dataclasses",
                     "enum",
                     "typing",
+                    "pydantic",
                 }
     for layer in ("config", "screening"):
         for module in (source / layer).glob("*.py"):

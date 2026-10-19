@@ -1,15 +1,19 @@
-# 阶段输入载荷与指纹（#47 / #48 / #49 / #50）
+# 阶段输入载荷与指纹（#47 / #48 / #49 / #50 / #51）
 
 ## 公共边界与交付范围
 
-公共入口从 `paper_radar.stage_inputs` 导入。#48/#49/#50 当前交付 boundary/value/extraction
-各自独立格式 **1**；reuse 随后续票接入，read/suggestion 不属于本次 A5。
+公共入口从 `paper_radar.stage_inputs` 导入。当前交付 boundary/value/extraction 与结构化 reuse 各自独立格式 **1**；
+PDF 来源 reuse 随后续票接入，read/suggestion 不属于本次 A5。
 未领取的阶段、字符串冒充 `StageName` 或未知阶段均受控拒绝，不产生占位指纹。
 
 | 入口 / 类型 | 契约 |
 | --- | --- |
 | `ScreeningFacts(title=..., abstract=..., abstract_truncated=...)` | 冻结的精确论文文本与严格布尔事实；未知字段拒绝。 |
 | `ExtractionFacts(pdf_sha256=...)` | 冻结的原始 PDF 完整字节 SHA-256；未知字段拒绝，不读取 PDF。 |
+| `SourceSnapshotRef(content_sha256=..., locator=...)` | 严格结构化来源内容引用与冻结定位；不收 URL 或审计字段。 |
+| `SelectedExcerpt(excerpt_id=..., kind=..., text=..., source=...)` | 已选精确摘录；ID/种类由权威 ReuseAssessmentContext 校验。 |
+| `ReuseFacts(excerpts=...)` | 非空有序冻结摘录，重复 ID 在构造调用级映射前拒绝。 |
+| `reuse_input.reuse_assessment_context()` | 仅从该输入冻结摘录派生权威 ID/种类映射；不接收外部映射。 |
 | `build_stage_input(snapshot, stage, facts)` | 从已由 check/compile/load 验证的 `RuntimeConfigSnapshot` 选取同阶段 `project_config` 投影，返回不可变 `StageInput`。 |
 | `replay_stage_input(payload_bytes, expected_fingerprint, snapshot=None)` | 规范载荷字节与明确期望指纹的严格回放；可选核对明确历史快照。 |
 | `compare_stage_inputs(before, after)` | 返回不可变 `StageInputComparison`，只解释组件变化。 |
@@ -22,7 +26,8 @@ stage、format_version、projection_format_version、projection_id、facts、pay
 artifact kind 或产品 CLI。数据库 revision 保持 `a405_pi_cleanup_execution`。
 
 模块只通过 config 公共面消费快照、StageName、StageReadiness 与 project_config，
-通过 screening 公共面消费 `ValuePredictionContext`，保持既有输出 Schema 与业务规则。
+通过 screening 公共面消费 `ValuePredictionContext`、`ReuseAssessmentContext` 与 `ExcerptKind`，
+保持既有输出 Schema 与业务规则。
 编码/哈希、公共头校验、投影核对和比较前置各有一份权威实现；没有公共“投影 + 事实”
 构造入口。模块不读取 YAML、数据库、制品库、文件或网络，不调用 Pi/Docling。
 既有配置、Screening 输出与存储各自保持权威；本票不修改已有投影、基线或 Frozen Contract。
@@ -93,7 +98,8 @@ value 独立固定向量：完整合成载荷在
 
 `status` 为 `same/changed/incomparable`。同阶段且阶段/投影格式兼容时，组件采用固定顺序：
 boundary/value 按 `config_projection`、`title`、`abstract`、`abstract_truncated` 排序，
-extraction 按 `config_projection`、`pdf` 排序，只列发生变化者。
+extraction 按 `config_projection`、`pdf` 排序，
+reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列发生变化者。
 比较不输出原文、旧/新值或自由字段名。不同阶段或格式不兼容返回不可比，细粒度配置
 解释由 `compare_config_snapshots` 承担。boundary/value 跨阶段比较返回 `different_stage`，不会混用判断。
 
@@ -101,11 +107,14 @@ extraction 按 `config_projection`、`pdf` 排序，只列发生变化者。
 仅在配置未就绪时携带已有受控配置事实。错误不保存输入值、未知键名或原始异常。
 安全位置集合是 `stage/snapshot/facts/facts.title/facts.abstract/facts.abstract_truncated/facts.pdf_sha256/`
 `payload/kind/format_version/config_projection/config_projection.projection_id/`
-`expected_fingerprint/inputs/context/original_title_is_zh`；未知键折叠为所属受控容器位置。
+`expected_fingerprint/inputs/context/original_title_is_zh`，以及
+`facts.excerpts/facts.excerpts.excerpt_id/facts.excerpts.text/facts.excerpts.source/`
+`facts.excerpts.source.content_sha256/facts.excerpts.source.locator`；未知键折叠为所属受控容器位置，
+不含摘录下标、实际 ID 或自由键名。
 
 | 面 | 封闭原因 |
 | --- | --- |
-| `BuildReason` | unsupported_stage、invalid_snapshot、not_ready、invalid_facts、invalid_text、invalid_encoding、invalid_hash、invalid_context |
+| `BuildReason` | unsupported_stage、invalid_snapshot、not_ready、invalid_facts、invalid_text、invalid_encoding、invalid_hash、invalid_context、duplicate_excerpt_id |
 | `ReplayReason` | invalid_payload、unsupported_stage、unsupported_format、invalid_fingerprint、fingerprint_mismatch、non_canonical、invalid_snapshot、projection_format_unverifiable、projection_mismatch |
 | `ComparisonReason` | different_stage、incompatible_format、invalid_input |
 
@@ -141,9 +150,70 @@ extraction 按 `config_projection`、`pdf` 排序，只列发生变化者。
 
 本次通过两个实际消费者核对：公共头、编码/哈希、就绪与投影选择、严格回放、投影核对、
 比较前置与错误格式化共用一份实现，没有复制 boundary/value builder 或事实类型。
-extraction 及后续 reuse 从相同 build/replay/compare 入口进入，只扩展封闭阶段集合与独立
+后续阶段或来源扩展从相同 build/replay/compare 入口进入，只扩展封闭阶段集合与独立
 格式、各阶段严格事实及局部一致性、固定比较组件和必要上下文派生；不改既有阶段配方，
 不新增“投影 + 事实”公开入口，不引入全可选字段桶、动态注册器或通用工作流。
+
+
+## 结构化 reuse 格式 1
+
+reuse 只消费自身 `StageReadiness` 与既有 reuse 配置投影。没有 extraction 配置或正文
+制品时，合法结构化来源摘录仍可构造；未被引用的 PDF、解析配置、题名摘要、阶段二
+评分与旧会话不隐式加入输入。excerpt_selector_version 仅经既有投影传播，不复制规则。
+生产未知算法仍被 compile 拒绝；未来算法只用于未登记的 dataclass 纯投影 fixture。
+
+事实形状固定为 `{"excerpts":[...]}`。每项只有 excerpt_id、kind、text、source：
+
+```json
+{"excerpt_id":"availability-1","kind":"availability","source":{"content_sha256":"<payload 原始字节 SHA-256>","kind":"source_snapshot","locator":["data-availability","paragraph-1"]},"text":"Synthetic availability text"}
+```
+
+`ReuseFacts` 只收非空 list/tuple 并冻结为有序元组，集合顺序就是模型输入顺序。
+`SelectedExcerpt` 的 ID/种类沿用权威 `ReuseAssessmentContext`，ID 是严格字符串、
+strip 后非空但不归一化；单项只允许 availability/methods，both 是输出组合描述，
+data 由上游选择器归入 methods。构造前仅限制 ID 可安全作为文本映射键及可 UTF-8
+编码，不另写 ID 语义规则。重复 ID 在调用级映射生成之前拒绝，即使来自不同内容
+或 locator 也不能静默合并。text 非空且精确保留，不增加占位词过滤或隐式规范化。
+
+结构化来源构造只收 content_sha256 和 locator；序列化另有固定 kind=source_snapshot
+标签。哈希必须来自 `ArtifactStore.get_artifact` 返回的 source_snapshot 制品 payload
+成员 SHA-256，表示成员原始字节，不使用 artifact_id。artifact_id 属于审计引用，
+不进入规范载荷。相同内容哈希、定位、摘录与配置产生相同身份；不按 URL 推测等价，
+而是严格拒绝 url、observed_at、artifact_id、PDF 字段或其他未知字段。一个裸合法哈希
+不能证明来源存在或识别其身份域；上游须提供正确成员引用，本服务不查询库或伪造证明。
+
+locator 是不透明、有序、非空且每项非空白的严格字符串元组；构造可接收 list 并
+防御性冻结，回放从 JSON 数组重建。精确保留 Unicode、空白和次序，不收 dict、自由
+JSON 或 URL 特例。locator 与面向模型的 excerpt_id 不同；来源合法取得、真实存在、
+locator 可回查和摘录确属该范围均由生产者负责，不属于 A5 验收声明。
+
+从构造或回放得到的 reuse 输入调用 `reuse_assessment_context()`，始终从同一冻结
+摘录唯一派生权威 `ReuseAssessmentContext`。不能额外传入 excerpt_kinds 或另一份
+摘录映射；调用方事后修改原列表或 locator 不改变指纹、载荷、比较或上下文。现有
+`validate_output` 验证合法/未知引用与输出种类，成功不表示业务制品已发布。输入
+对象的 repr 隐藏摘录 ID、文本与定位；错误不保留 Pydantic 原始输入或异常链。
+
+比较中，ID/kind/text 及它们的有序序列变化归 `excerpts`，来源引用的有序序列变化
+归 `excerpt_sources`。换序至少改变 excerpts；若两项来源不同，也同时改变
+excerpt_sources，顺序始终固定。配置语义变化归 config_projection。比较不输出逐项
+下标、ID、locator、原文或原始值。
+
+独立固定向量在
+[`tests/fixtures/stage_inputs/reuse-structured-v1.json`](../../tests/fixtures/stage_inputs/reuse-structured-v1.json)。
+固定合成快照 reuse 投影格式 1、ID 为
+`f2c879f0ea03e7292c028e6f7470fb0b1c78c4569ebbbb55d6e0a269520ea791`；
+合成 source_snapshot payload 成员哈希为
+`abdec00bc1f149e9b543ff79d5f4712097309c61136f95a2fbb52f0802139881`；
+reuse 阶段格式 1 指纹为
+`3c9deffa8929d61e6cb2e96582b0c7af6e3c78ec958630b8be83986684e370b4`。
+完整载荷是人工字面量，期望哈希独立核算，不由 builder 生成。
+
+后续 RPC 渲染只能使用载荷已绑定字段；需要页码、章节等时必须来自已绑定 locator，
+否则需显式演进 reuse 格式。渲染策略本身变化必须有 adapter policy 或阶段格式版本。
+本票不实现选段、触发规则、PDF 取得、模型或任务。PDF 来源预定由 #52 扩展封闭
+来源联合：绑定明确 extraction 输入对象及实际 reading/evidence_map 内容哈希和 locator；
+当前仍受控拒绝该来源，不接受裸 extraction 字符串冒充类型证明。
+
 
 ## extraction 格式 1 与正文来源消费义务
 
