@@ -54,6 +54,7 @@ class InputField(StrEnum):
     TITLE = "facts.title"
     ABSTRACT = "facts.abstract"
     ABSTRACT_TRUNCATED = "facts.abstract_truncated"
+    PDF_SHA256 = "facts.pdf_sha256"
     PAYLOAD = "payload"
     KIND = "kind"
     FORMAT_VERSION = "format_version"
@@ -136,6 +137,20 @@ class ScreeningFacts:
 
 
 @dataclass(frozen=True, slots=True, init=False)
+class ExtractionFacts:
+    """上游计算的原始 PDF 完整字节身份。不读取文件或解析环境。"""
+
+    pdf_sha256: str = field(repr=False)
+
+    def __init__(self, *, pdf_sha256: Any = _MISSING, **extra: Any) -> None:
+        if extra:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.FACTS)
+        if not _valid_hash(pdf_sha256):
+            raise StageInputError(BuildReason.INVALID_HASH, InputField.PDF_SHA256)
+        object.__setattr__(self, "pdf_sha256", pdf_sha256)
+
+
+@dataclass(frozen=True, slots=True, init=False)
 class StageInput:
     """仅 build/replay 返回的对象是已验证输入。载荷是敏感业务数据。"""
 
@@ -143,7 +158,7 @@ class StageInput:
     format_version: int
     projection_format_version: int
     projection_id: str
-    facts: ScreeningFacts = field(repr=False)
+    facts: ScreeningFacts | ExtractionFacts = field(repr=False)
     payload_bytes: bytes = field(repr=False)
 
     def __init__(self, **unvalidated: Any) -> None:
@@ -181,6 +196,7 @@ class ChangeComponent(StrEnum):
     TITLE = "title"
     ABSTRACT = "abstract"
     ABSTRACT_TRUNCATED = "abstract_truncated"
+    PDF = "pdf"
 
 
 class ComparisonStatus(StrEnum):
@@ -197,7 +213,11 @@ class StageInputComparison:
 
 
 # 领取集合有意独立于 StageName。后续阶段随其业务票加入。
-_FORMAT_VERSIONS = {StageName.BOUNDARY: 1, StageName.VALUE: 1}
+_FORMAT_VERSIONS = {
+    StageName.BOUNDARY: 1,
+    StageName.VALUE: 1,
+    StageName.EXTRACTION: 1,
+}
 
 
 def _canonical(value: object) -> bytes:
@@ -211,7 +231,9 @@ def _canonical(value: object) -> bytes:
     ).encode("utf-8")
 
 
-def _facts_payload(facts: ScreeningFacts) -> dict[str, str | bool]:
+def _facts_payload(facts: ScreeningFacts | ExtractionFacts) -> dict[str, str | bool]:
+    if isinstance(facts, ExtractionFacts):
+        return {"pdf_sha256": facts.pdf_sha256}
     return {
         "title": facts.title,
         "abstract": facts.abstract,
@@ -224,7 +246,7 @@ def _assemble(
     format_version: int,
     projection_format: int,
     projection_id: str,
-    facts: ScreeningFacts,
+    facts: ScreeningFacts | ExtractionFacts,
 ) -> StageInput:
     payload = _canonical(
         {
@@ -252,7 +274,9 @@ def _assemble(
 
 
 def build_stage_input(
-    snapshot: RuntimeConfigSnapshot, stage: StageName, facts: ScreeningFacts
+    snapshot: RuntimeConfigSnapshot,
+    stage: StageName,
+    facts: ScreeningFacts | ExtractionFacts,
 ) -> StageInput:
     """只从已验证快照构造。配置完整性不代表 RPC 执行就绪。"""
     if type(stage) is not StageName or stage not in _FORMAT_VERSIONS:
@@ -264,7 +288,10 @@ def build_stage_input(
         raise StageInputError(
             BuildReason.NOT_READY, InputField.SNAPSHOT, readiness=readiness
         )
-    if type(facts) is not ScreeningFacts:
+    expected_facts = (
+        ExtractionFacts if stage is StageName.EXTRACTION else ScreeningFacts
+    )
+    if type(facts) is not expected_facts:
         raise StageInputError(BuildReason.INVALID_FACTS, InputField.FACTS)
     projection = project_config(snapshot).projections[stage]
     if not _valid_hash(projection.projection_id):
@@ -290,10 +317,19 @@ def _keys(value: object, expected: set[str]) -> bool:
     return type(value) is dict and value.keys() == expected
 
 
-def _replay_facts(value: Any) -> ScreeningFacts | None:
-    if not _keys(value, {"title", "abstract", "abstract_truncated"}):
+def _replay_facts(
+    stage: StageName, value: Any
+) -> ScreeningFacts | ExtractionFacts | None:
+    keys = (
+        {"pdf_sha256"}
+        if stage is StageName.EXTRACTION
+        else {"title", "abstract", "abstract_truncated"}
+    )
+    if not _keys(value, keys):
         return None
     try:
+        if stage is StageName.EXTRACTION:
+            return ExtractionFacts(**value)
         return ScreeningFacts(**value)
     except StageInputError:
         return None
@@ -337,7 +373,7 @@ def replay_stage_input(
         )
     if not _valid_hash(projection["projection_id"]):
         raise StageInputError(ReplayReason.INVALID_PAYLOAD, InputField.PROJECTION_ID)
-    facts = _replay_facts(value["facts"])
+    facts = _replay_facts(stage, value["facts"])
     if facts is None:
         raise StageInputError(ReplayReason.INVALID_PAYLOAD, InputField.FACTS)
     result = _assemble(
@@ -383,16 +419,27 @@ def compare_stage_inputs(before: StageInput, after: StageInput) -> StageInputCom
         return StageInputComparison(
             ComparisonStatus.INCOMPARABLE, reason=ComparisonReason.INCOMPATIBLE_FORMAT
         )
-    components = (
+    components: tuple[tuple[ChangeComponent, object, object], ...] = (
         (ChangeComponent.CONFIG_PROJECTION, before.projection_id, after.projection_id),
-        (ChangeComponent.TITLE, before.facts.title, after.facts.title),
-        (ChangeComponent.ABSTRACT, before.facts.abstract, after.facts.abstract),
-        (
-            ChangeComponent.ABSTRACT_TRUNCATED,
-            before.facts.abstract_truncated,
-            after.facts.abstract_truncated,
-        ),
     )
+    if isinstance(before.facts, ExtractionFacts) and isinstance(
+        after.facts, ExtractionFacts
+    ):
+        components += (
+            (ChangeComponent.PDF, before.facts.pdf_sha256, after.facts.pdf_sha256),
+        )
+    elif isinstance(before.facts, ScreeningFacts) and isinstance(
+        after.facts, ScreeningFacts
+    ):
+        components += (
+            (ChangeComponent.TITLE, before.facts.title, after.facts.title),
+            (ChangeComponent.ABSTRACT, before.facts.abstract, after.facts.abstract),
+            (
+                ChangeComponent.ABSTRACT_TRUNCATED,
+                before.facts.abstract_truncated,
+                after.facts.abstract_truncated,
+            ),
+        )
     changed = tuple(name for name, old, new in components if old != new)
     return StageInputComparison(
         ComparisonStatus.CHANGED if changed else ComparisonStatus.SAME, changed
