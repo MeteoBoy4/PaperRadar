@@ -15,6 +15,7 @@ from paper_radar.config import (
     StageReadiness,
     project_config,
 )
+from paper_radar.screening import ValuePredictionContext
 
 
 class BuildReason(StrEnum):
@@ -25,6 +26,7 @@ class BuildReason(StrEnum):
     INVALID_TEXT = "invalid_text"
     INVALID_ENCODING = "invalid_encoding"
     INVALID_HASH = "invalid_hash"
+    INVALID_CONTEXT = "invalid_context"
 
 
 class ReplayReason(StrEnum):
@@ -59,6 +61,8 @@ class InputField(StrEnum):
     PROJECTION_ID = "config_projection.projection_id"
     FINGERPRINT = "expected_fingerprint"
     INPUTS = "inputs"
+    CONTEXT = "context"
+    TITLE_LANGUAGE = "original_title_is_zh"
 
 
 class StageInputError(ValueError):
@@ -145,6 +149,28 @@ class StageInput:
     def __init__(self, **unvalidated: Any) -> None:
         raise StageInputError(BuildReason.INVALID_FACTS, InputField.INPUTS)
 
+    def value_prediction_context(
+        self,
+        snapshot: RuntimeConfigSnapshot,
+        *,
+        original_title_is_zh: Any = _MISSING,
+        **extra: object,
+    ) -> ValuePredictionContext:
+        """从匹配本次 value 输入的明确快照派生权威上下文。"""
+        if self.stage is not StageName.VALUE:
+            raise StageInputError(BuildReason.INVALID_CONTEXT, InputField.STAGE)
+        if extra:
+            raise StageInputError(BuildReason.INVALID_CONTEXT, InputField.CONTEXT)
+        if type(original_title_is_zh) is not bool:
+            raise StageInputError(
+                BuildReason.INVALID_CONTEXT, InputField.TITLE_LANGUAGE
+            )
+        _verify_projection(self, snapshot)
+        return ValuePredictionContext(
+            enabled_topic_ids=frozenset(topic.id for topic in snapshot.enabled_topics),
+            original_title_is_zh=original_title_is_zh,
+        )
+
     @property
     def fingerprint(self) -> str:
         return hashlib.sha256(self.payload_bytes).hexdigest()
@@ -171,7 +197,7 @@ class StageInputComparison:
 
 
 # 领取集合有意独立于 StageName。后续阶段随其业务票加入。
-_FORMAT_VERSIONS = {StageName.BOUNDARY: 1}
+_FORMAT_VERSIONS = {StageName.BOUNDARY: 1, StageName.VALUE: 1}
 
 
 def _canonical(value: object) -> bytes:
@@ -322,19 +348,22 @@ def replay_stage_input(
     if result.fingerprint != expected_fingerprint:
         raise StageInputError(ReplayReason.FINGERPRINT_MISMATCH, InputField.FINGERPRINT)
     if snapshot is not None:
-        if type(snapshot) is not RuntimeConfigSnapshot:
-            raise StageInputError(ReplayReason.INVALID_SNAPSHOT, InputField.SNAPSHOT)
-        known = project_config(snapshot).projections[stage]
-        if known.format_version != projection_version:
-            raise StageInputError(
-                ReplayReason.PROJECTION_FORMAT_UNVERIFIABLE,
-                InputField.CONFIG_PROJECTION,
-            )
-        if known.projection_id != result.projection_id:
-            raise StageInputError(
-                ReplayReason.PROJECTION_MISMATCH, InputField.CONFIG_PROJECTION
-            )
+        _verify_projection(result, snapshot)
     return result
+
+
+def _verify_projection(result: StageInput, snapshot: RuntimeConfigSnapshot) -> None:
+    if type(snapshot) is not RuntimeConfigSnapshot:
+        raise StageInputError(ReplayReason.INVALID_SNAPSHOT, InputField.SNAPSHOT)
+    known = project_config(snapshot).projections[result.stage]
+    if known.format_version != result.projection_format_version:
+        raise StageInputError(
+            ReplayReason.PROJECTION_FORMAT_UNVERIFIABLE, InputField.CONFIG_PROJECTION
+        )
+    if known.projection_id != result.projection_id:
+        raise StageInputError(
+            ReplayReason.PROJECTION_MISMATCH, InputField.CONFIG_PROJECTION
+        )
 
 
 def compare_stage_inputs(before: StageInput, after: StageInput) -> StageInputComparison:

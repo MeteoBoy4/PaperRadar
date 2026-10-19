@@ -165,6 +165,9 @@ mapping，并先将其验证为该受控类型；不会把自由键值直接传�
 “未启用”拒绝。零匹配合法，不会新增 `unclassified_value` 等模型输出字段。
 boundary 仍只接受 `None` 或空 mapping，上述价值预测上下文不能用于 boundary。
 
+绑定阶段输入时，应通过[阶段输入服务](stage-inputs.md#value-同源验证上下文与扩展义务)
+从匹配 value 投影的明确历史快照派生 `ValuePredictionContext`；原题名语言仍由上游提供。
+
 ### 价值类型 vocabulary
 
 | 序列化值 | 中文说明 |

@@ -253,11 +253,12 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 ## 阶段输入
 
 `paper_radar.stage_inputs` 从已验证运行配置快照与严格阶段事实构造不可变的阶段输入载荷，
-提供规范字节、SHA-256 指纹、严格回放及安全比较。当前 #48 交付 boundary 格式 1：
-精确题名、非空论文摘要、严格布尔截断标记与 boundary 配置投影引用。配置缺项或占位
+提供规范字节、SHA-256 指纹、严格回放及安全比较。当前 #48/#49 交付 boundary/value 独立格式 1：
+精确题名、非空论文摘要、严格布尔截断标记与各自配置投影引用。配置缺项或占位
 保持拒绝；无 adapter 的历史快照按已有配置完整性判断，指纹不证明 RPC 可执行。
-载荷含敏感论文文本，不写终端或日志。接口、固定向量和证明边界见
-[阶段输入契约](docs/contracts/stage-inputs.md)。value/reuse/extraction 及独立 A5 验收
+value 输入可从明确匹配的历史快照派生同源 `ValuePredictionContext`，原题名语言由调用方
+显式提供。载荷含敏感论文文本，不写终端或日志。接口、固定向量和证明边界见
+[阶段输入契约](docs/contracts/stage-inputs.md)。reuse/extraction 及独立 A5 验收
 由后续工作包接入；本服务不调度任务或改写人工决定。
 
 ## Screening 输出验证
