@@ -35,6 +35,8 @@ class BuildReason(StrEnum):
     INVALID_ENCODING = "invalid_encoding"
     INVALID_HASH = "invalid_hash"
     INVALID_CONTEXT = "invalid_context"
+    PROJECTION_FORMAT_UNVERIFIABLE = "projection_format_unverifiable"
+    PROJECTION_MISMATCH = "projection_mismatch"
     DUPLICATE_EXCERPT_ID = "duplicate_excerpt_id"
     INCONSISTENT_EXTRACTION_SOURCE = "inconsistent_extraction_source"
 
@@ -76,6 +78,7 @@ class InputField(StrEnum):
     PDF_SHA256 = "facts.pdf_sha256"
     EXCERPTS = "facts.excerpts"
     EXCERPT_ID = "facts.excerpts.excerpt_id"
+    EXCERPT_KIND = "facts.excerpts.kind"
     EXCERPT_TEXT = "facts.excerpts.text"
     EXCERPT_SOURCE = "facts.excerpts.source"
     SOURCE_HASH = "facts.excerpts.source.content_sha256"
@@ -230,6 +233,15 @@ class ExtractionRef:
             locator,
         )
 
+    @property
+    def identity(self) -> tuple[str, str, str]:
+        """正文消费身份不包含片段定位; 同次调用可选同一正文的多个片段。"""
+        return (
+            self.extraction_fingerprint,
+            self.reading_sha256,
+            self.evidence_map_sha256,
+        )
+
 
 def _set_extraction_ref(
     result: ExtractionRef,
@@ -283,7 +295,14 @@ class SelectedExcerpt:
             raise StageInputError(BuildReason.INVALID_ENCODING, InputField.EXCERPT_ID)
         context = _reuse_context({excerpt_id: kind})
         if context is None:
-            raise StageInputError(BuildReason.INVALID_FACTS, InputField.EXCERPTS)
+            # 用已知合法种类交由同一权威上下文区分 ID 与种类错误。
+            # 不复制其规则, 也不保留带实际 ID/值的 Pydantic 异常。
+            location = (
+                InputField.EXCERPT_ID
+                if _reuse_context({excerpt_id: ExcerptKind.AVAILABILITY}) is None
+                else InputField.EXCERPT_KIND
+            )
+            raise StageInputError(BuildReason.INVALID_FACTS, location)
         if not _valid_text(text):
             raise StageInputError(BuildReason.INVALID_TEXT, InputField.EXCERPT_TEXT)
         if not _utf8_valid(text):
@@ -316,12 +335,7 @@ class ReuseFacts:
                 )
             seen.add(excerpt.excerpt_id)
             if isinstance(excerpt.source, ExtractionRef):
-                source = excerpt.source
-                identity = (
-                    source.extraction_fingerprint,
-                    source.reading_sha256,
-                    source.evidence_map_sha256,
-                )
+                identity = excerpt.source.identity
                 if body_identity is not None and identity != body_identity:
                     raise StageInputError(
                         BuildReason.INCONSISTENT_EXTRACTION_SOURCE,
@@ -375,7 +389,7 @@ class StageInput:
             raise StageInputError(
                 BuildReason.INVALID_CONTEXT, InputField.TITLE_LANGUAGE
             )
-        _verify_projection(self, snapshot)
+        _verify_projection(self, snapshot, BuildReason)
         return ValuePredictionContext(
             enabled_topic_ids=frozenset(topic.id for topic in snapshot.enabled_topics),
             original_title_is_zh=original_title_is_zh,
@@ -431,6 +445,10 @@ STAGE_INPUT_FORMAT_VERSIONS: Mapping[StageName, int] = MappingProxyType(
         StageName.EXTRACTION: 1,
     }
 )
+
+# 描述回放已实现的历史投影格式。独立于 config 当前写出格式; 升级写出器不自动
+# 授权未知历史格式。扩展此集合前必须实现相应重建/核对策略并登记验收。
+_SUPPORTED_REPLAY_PROJECTION_FORMATS = frozenset({1})
 
 
 def _canonical(value: object) -> bytes:
@@ -676,7 +694,10 @@ def replay_stage_input(
             ReplayReason.INVALID_PAYLOAD, InputField.CONFIG_PROJECTION
         )
     projection_version = projection["format_version"]
-    if type(projection_version) is not int or projection_version != 1:
+    if (
+        type(projection_version) is not int
+        or projection_version not in _SUPPORTED_REPLAY_PROJECTION_FORMATS
+    ):
         raise StageInputError(
             ReplayReason.PROJECTION_FORMAT_UNVERIFIABLE, InputField.CONFIG_PROJECTION
         )
@@ -693,22 +714,24 @@ def replay_stage_input(
     if result.fingerprint != expected_fingerprint:
         raise StageInputError(ReplayReason.FINGERPRINT_MISMATCH, InputField.FINGERPRINT)
     if snapshot is not None:
-        _verify_projection(result, snapshot)
+        _verify_projection(result, snapshot, ReplayReason)
     return result
 
 
-def _verify_projection(result: StageInput, snapshot: RuntimeConfigSnapshot) -> None:
+def _verify_projection(
+    result: StageInput,
+    snapshot: RuntimeConfigSnapshot,
+    reasons: type[BuildReason] | type[ReplayReason],
+) -> None:
     if type(snapshot) is not RuntimeConfigSnapshot:
-        raise StageInputError(ReplayReason.INVALID_SNAPSHOT, InputField.SNAPSHOT)
+        raise StageInputError(reasons.INVALID_SNAPSHOT, InputField.SNAPSHOT)
     known = project_config(snapshot).projections[result.stage]
     if known.format_version != result.projection_format_version:
         raise StageInputError(
-            ReplayReason.PROJECTION_FORMAT_UNVERIFIABLE, InputField.CONFIG_PROJECTION
+            reasons.PROJECTION_FORMAT_UNVERIFIABLE, InputField.CONFIG_PROJECTION
         )
     if known.projection_id != result.projection_id:
-        raise StageInputError(
-            ReplayReason.PROJECTION_MISMATCH, InputField.CONFIG_PROJECTION
-        )
+        raise StageInputError(reasons.PROJECTION_MISMATCH, InputField.CONFIG_PROJECTION)
 
 
 def compare_stage_inputs(before: StageInput, after: StageInput) -> StageInputComparison:

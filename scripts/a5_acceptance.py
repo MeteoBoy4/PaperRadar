@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import importlib.metadata
-import sqlite3
-import sys
-import tempfile
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+from scripts import a2_full_scope, a3_scope
 from scripts.a5_scope import (
     CAPABILITIES,
     FORMAT_VERSION,
@@ -34,9 +31,11 @@ from scripts.offline_evidence import (
     file_sha256,
 )
 from scripts.verification_checks import (
+    environment_versions,
     file_records,
     files_unchanged,
     identity_matches,
+    migrated_revision,
     read_json,
     receipt_completed,
     receipt_records,
@@ -101,50 +100,11 @@ def _reason(code: A5ReasonCode, item: str | None = None) -> dict[str, str]:
 
 
 def _environment(reasons: list[dict[str, str]]) -> dict[str, Any]:
-    versions: dict[str, str | None] = {}
-    for name in REQUIRED_DEPENDENCIES:
-        try:
-            version = importlib.metadata.version(name)
-        except importlib.metadata.PackageNotFoundError:
-            version = None
-        versions[name] = (
-            version if isinstance(version, str) and version.strip() else None
-        )
-        if versions[name] is None:
+    environment = environment_versions(REQUIRED_DEPENDENCIES)
+    for name, version in environment["dependencies"].items():
+        if version is None:
             reasons.append(_reason(A5ReasonCode.DEPENDENCY_UNAVAILABLE, name))
-    return {
-        "python": sys.version.split()[0],
-        "sqlite": sqlite3.sqlite_version,
-        "dependencies": versions,
-    }
-
-
-def _migrated_revision() -> str | None:
-    from paper_radar.storage.database import (
-        DatabaseMode,
-        current_revision,
-        open_database,
-        upgrade_database,
-    )
-
-    with tempfile.TemporaryDirectory(prefix="paper-radar-a5-") as directory:
-        database = Path(directory) / "acceptance.sqlite3"
-        upgrade_database(database)
-        engine = open_database(database, mode=DatabaseMode.READ_ONLY)
-        try:
-            with engine.connect() as connection:
-                revisions = (
-                    connection.exec_driver_sql(
-                        "SELECT version_num FROM alembic_version"
-                    )
-                    .scalars()
-                    .all()
-                )
-        finally:
-            engine.dispose()
-        if len(revisions) != 1 or revisions[0] != current_revision():
-            return None
-        return str(revisions[0])
+    return environment
 
 
 def _formats() -> dict[str, Any]:
@@ -253,13 +213,13 @@ def write_a5_conclusion(
             or not same_run_document(a1_path, run_id, ".a1.json", a1)
             or not same_run_document(full_a2_path, run_id, ".a2-full.json", full_a2)
             or not same_run_document(a3_path, run_id, ".a3.json", a3)
-            or a3.get("scope") != "a3_artifact_backup_restore"
-            or a3.get("issue") != 35
-            or a3.get("parent_issue") != 29
+            or a3.get("scope") != a3_scope.SCOPE
+            or a3.get("issue") != a3_scope.ISSUE
+            or a3.get("parent_issue") != a3_scope.PARENT_ISSUE
             or a1.get("scope") != "a1_screening_authoritative_contracts"
             or a1.get("issue") != 13
-            or full_a2.get("scope") != "a2_versioned_config_snapshots"
-            or full_a2.get("issue") != 25
+            or full_a2.get("scope") != a2_full_scope.SCOPE
+            or full_a2.get("issue") != a2_full_scope.ISSUE
             or a1.get("evidence_file") != evidence_path.name
             or full_a2.get("evidence_file") != evidence_path.name
             or a1.get("evidence_sha256") != result["evidence_sha256"]
@@ -367,7 +327,9 @@ def write_a5_conclusion(
                     )
         result["environment"] = _environment(reasons)
         try:
-            result["migration_revision"] = _migrated_revision()
+            result["migration_revision"] = migrated_revision(
+                temp_prefix="paper-radar-a5-"
+            )
         except Exception:
             reasons.append(_reason(A5ReasonCode.MIGRATION_UNAVAILABLE))
         else:

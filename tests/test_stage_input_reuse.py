@@ -161,6 +161,28 @@ def test_excerpt_id_and_kind_use_authoritative_context_rejections(
 
 
 @pytest.mark.parametrize(
+    ("override", "field"),
+    [
+        ({"excerpt_id": " \t", "kind": "methods"}, InputField.EXCERPT_ID),
+        ({"kind": "both"}, "facts.excerpts.kind"),
+        ({"kind": "data"}, "facts.excerpts.kind"),
+        ({"kind": "SENSITIVE_KIND"}, "facts.excerpts.kind"),
+        ({"kind": True}, "facts.excerpts.kind"),
+        ({"excerpt_id": " \t", "kind": "both"}, InputField.EXCERPT_ID),
+    ],
+)
+def test_excerpt_context_rejections_locate_id_and_kind_without_exposing_values(
+    override: dict[str, object], field: str
+) -> None:
+    with pytest.raises(StageInputError) as caught:
+        _excerpt(**override)
+    assert caught.value.reason is BuildReason.INVALID_FACTS
+    assert caught.value.field == field
+    assert caught.value.__context__ is None
+    assert "SENSITIVE" not in str(caught.value) + repr(caught.value)
+
+
+@pytest.mark.parametrize(
     "excerpts", [[], (), {}, "SENSITIVE_INPUT", ["SENSITIVE_INPUT"]]
 )
 def test_reuse_requires_a_nonempty_ordered_typed_collection(excerpts: object) -> None:

@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import json
+import sqlite3
+import sys
+import tempfile
 from collections.abc import Mapping
 from enum import StrEnum
 from pathlib import Path
@@ -22,6 +26,53 @@ class ReceiptCounter(StrEnum):
 
 
 RECEIPT_COUNTERS = tuple(ReceiptCounter)
+
+
+def environment_versions(dependencies: tuple[str, ...]) -> dict[str, Any]:
+    """采集明确范围的实际版本; 缺项由调用组映射为自己的受控原因。"""
+    versions: dict[str, str | None] = {}
+    for name in dependencies:
+        try:
+            version = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            version = None
+        versions[name] = (
+            version if isinstance(version, str) and version.strip() else None
+        )
+    return {
+        "python": sys.version.split()[0],
+        "sqlite": sqlite3.sqlite_version,
+        "dependencies": versions,
+    }
+
+
+def migrated_revision(*, temp_prefix: str) -> str | None:
+    """在真实临时库迁移并核对唯一 head; 异常分类与登记版本由调用组维护。"""
+    from paper_radar.storage.database import (
+        DatabaseMode,
+        current_revision,
+        open_database,
+        upgrade_database,
+    )
+
+    with tempfile.TemporaryDirectory(prefix=temp_prefix) as directory:
+        database = Path(directory) / "acceptance.sqlite3"
+        upgrade_database(database)
+        engine = open_database(database, mode=DatabaseMode.READ_ONLY)
+        try:
+            with engine.connect() as connection:
+                revisions = (
+                    connection.exec_driver_sql(
+                        "SELECT version_num FROM alembic_version"
+                    )
+                    .scalars()
+                    .all()
+                )
+        finally:
+            engine.dispose()
+        if len(revisions) != 1 or revisions[0] != current_revision():
+            return None
+        return str(revisions[0])
 
 
 def read_json(path: Path) -> dict[str, Any] | None:

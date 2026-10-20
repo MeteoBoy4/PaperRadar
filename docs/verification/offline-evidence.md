@@ -86,6 +86,9 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 新增组仍须显式扩展执行范围；没有自动发现插件、独立检查计划或动态调度。
 测试中的合成组只证明组织扩展能力，不代表新增产品验收能力。
 
+A4/A5 的环境版本采集与真实临时库迁移探针共用 `verification_checks` 的原语；
+各组继续独立维护依赖清单、原因词表、异常分类、登记 head 与通过判据。
+
 #48–#53 的 boundary/value/extraction/reuse 阶段输入服务由普通离线 pytest 验证，
 配方、固定向量及证明边界见[阶段输入契约](../contracts/stage-inputs.md)。extraction 测试
 不读取 PDF 或运行 Docling，包含纯未来 normalization fixture 与真实编译拒绝反例。
@@ -496,7 +499,7 @@ A5 不读取用户库，不另跑 pytest，不复制组织器。结论只保存�
 | run_id、输入文件名/SHA-256 | 基础证据、A1、完整 A2、A3、回执均来自本次；文件内容等于前置写出器返回值；前置的 evidence/A1/fullA2/receipt 反向链接同样一致 |
 | 前置身份、格式与状态 | A1 issue13/格式1、完整A2 issue25/格式2、A3 parent29/issue35/格式1，固定scope，status=passed、verified严格true；A4不进入本组前置 |
 | required_checks | lockfile/format/lint/types/tests/contracts 固定顺序全部通过，reason=none，严格整数exit_code=0；未执行、跳过或缺项失败 |
-| 固定范围 | a5_scope 显式登记11功能测试模块396例，以及本组验收/入口/回执测试、生产源码、支撑与13个阶段输入向量文件；清单非空且测试清单与数量key完全对应 |
+| 固定范围 | a5_scope 显式登记11功能测试模块412例，以及本组验收/入口/回执测试、生产源码、支撑与13个阶段输入向量文件；清单非空且测试清单与数量key完全对应 |
 | test_execution | 回执格式1、同run、完成、严格整数exit_code=0；每模块collected=passed=固定正整数，其余四计数严格整数0；bool/float/str/负数/缺项、skip/deselect/collect-only均拒绝 |
 | format_versions | 从真实生产只读stage输入配方与原投影权威读取：boundary/value/reuse/extraction各1；嵌套版本严格整数，bool不能冒充1，不复制scope期望作为实际值 |
 | environment、migration_revision | 实际Python/SQLite/依赖版本，独立临时库真实base→head读取唯一a405_pi_cleanup_execution并与随包head匹配；不引入新migration |

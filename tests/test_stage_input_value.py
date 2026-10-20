@@ -142,7 +142,7 @@ def test_context_is_bound_to_the_explicit_value_projection_and_freezes_topic_ids
     assert context.enabled_topic_ids == frozenset({"active"})
     with pytest.raises(StageInputError) as caught:
         replayed.value_prediction_context(changed, original_title_is_zh=False)
-    assert caught.value.reason is ReplayReason.PROJECTION_MISMATCH
+    assert caught.value.reason is BuildReason.PROJECTION_MISMATCH
     with pytest.raises(StageInputError) as replay_error:
         replay_stage_input(value.payload_bytes, value.fingerprint, snapshot=changed)
     assert replay_error.value.reason is ReplayReason.PROJECTION_MISMATCH
@@ -295,7 +295,7 @@ def test_value_context_does_not_use_a_new_projection_format_as_historical_basis(
     monkeypatch.setattr(projections, "PROJECTION_FORMAT_VERSIONS", versions)
     with pytest.raises(StageInputError) as caught:
         value.value_prediction_context(snapshot, original_title_is_zh=False)
-    assert caught.value.reason is ReplayReason.PROJECTION_FORMAT_UNVERIFIABLE
+    assert caught.value.reason is BuildReason.PROJECTION_FORMAT_UNVERIFIABLE
 
 
 @pytest.mark.parametrize(
@@ -331,3 +331,24 @@ def test_value_context_requires_explicit_title_language(tmp_path: Path) -> None:
         value.value_prediction_context(snapshot)
     assert caught.value.reason is BuildReason.INVALID_CONTEXT
     assert caught.value.field is InputField.TITLE_LANGUAGE
+
+
+def test_value_context_rejects_invalid_snapshot_with_build_reason(
+    tmp_path: Path,
+) -> None:
+    settings, database = full_inputs(tmp_path)
+    snapshot = compile_config(settings, database)
+    value = build_stage_input(
+        snapshot,
+        StageName.VALUE,
+        ScreeningFacts(title="T", abstract="A", abstract_truncated=False),
+    )
+    with pytest.raises(StageInputError) as caught:
+        value.value_prediction_context(
+            {"PRIVATE_SNAPSHOT": "PRIVATE_VALUE"},  # type: ignore[arg-type]
+            original_title_is_zh=False,
+        )
+    assert caught.value.reason is BuildReason.INVALID_SNAPSHOT
+    assert caught.value.field is InputField.SNAPSHOT
+    assert caught.value.__context__ is None
+    assert "PRIVATE" not in str(caught.value) + repr(caught.value)

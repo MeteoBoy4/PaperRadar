@@ -130,6 +130,48 @@ def test_replay_rejects_equivalent_but_noncanonical_bytes(transform: object) -> 
 
 
 @pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        (b'"title":"Synthetic title"', b'"title":"SECRET_DUPLICATE"'),
+        (b'"format_version":1', b'"format_version":2'),
+        (b'"format_version":1', b'"format_version":1'),
+    ],
+)
+def test_replay_rejects_nested_and_conflicting_duplicate_keys_without_leaks(
+    key: bytes, value: bytes
+) -> None:
+    payload = (
+        (FIXTURES / "boundary-v1.json").read_bytes().replace(key, value + b"," + key, 1)
+    )
+    with pytest.raises(StageInputError) as caught:
+        replay_stage_input(payload, hashlib.sha256(payload).hexdigest())
+    assert caught.value.reason is ReplayReason.NON_CANONICAL
+    assert caught.value.__context__ is None
+    assert "SECRET" not in repr(caught.value) + str(caught.value)
+
+
+def test_current_projection_format_does_not_authorize_unknown_replay_format(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from paper_radar.config import projections
+
+    settings, database = full_inputs(tmp_path)
+    snapshot = compile_config(settings, database)
+    versions = dict(projections.PROJECTION_FORMAT_VERSIONS)
+    versions[StageName.BOUNDARY] = 2
+    monkeypatch.setattr(projections, "PROJECTION_FORMAT_VERSIONS", versions)
+    future = build_stage_input(
+        snapshot,
+        StageName.BOUNDARY,
+        ScreeningFacts(title="T", abstract="A", abstract_truncated=False),
+    )
+    for basis in (None, snapshot):
+        with pytest.raises(StageInputError) as caught:
+            replay_stage_input(future.payload_bytes, future.fingerprint, snapshot=basis)
+        assert caught.value.reason is ReplayReason.PROJECTION_FORMAT_UNVERIFIABLE
+
+
+@pytest.mark.parametrize(
     "payload", [b"secret invalid json", b"\xffsecret", b'{"secret":NaN}', b"[" * 1200]
 )
 def test_malformed_replay_is_safe(payload: bytes) -> None:

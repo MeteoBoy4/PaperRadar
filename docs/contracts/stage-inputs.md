@@ -13,6 +13,7 @@
 | `ExtractionFacts(pdf_sha256=...)` | 冻结的原始 PDF 完整字节 SHA-256；未知字段拒绝，不读取 PDF。 |
 | `SourceSnapshotRef(content_sha256=..., locator=...)` | 严格结构化来源内容引用与冻结定位；不收 URL 或审计字段。 |
 | `ExtractionRef(extraction_input=..., reading_sha256=..., evidence_map_sha256=..., locator=...)` | 正文来源构造只接收 extraction 输入对象，再绑定实际消费成员与冻结定位；不查询制品库。 |
+| `extraction_ref.identity` | 只读的 `(extraction_fingerprint, reading_sha256, evidence_map_sha256)` 正文消费身份；不含定位。 |
 | `SelectedExcerpt(excerpt_id=..., kind=..., text=..., source=...)` | 已选精确摘录；ID/种类由权威 ReuseAssessmentContext 校验。 |
 | `ReuseFacts(excerpts=...)` | 非空有序冻结摘录，重复 ID 在构造调用级映射前拒绝；全部正文摘录共享同一配方与消费内容身份。 |
 | `reuse_input.reuse_assessment_context()` | 仅从该输入冻结摘录派生权威 ID/种类映射；不接收外部映射。 |
@@ -92,7 +93,8 @@ value 独立固定向量：完整合成载荷在
 
 若提供 `snapshot`，只核对该明确快照的同阶段投影：投影格式不受支持或当前程序无法按
 同格式核对时为 `projection_format_unverifiable`；同格式 ID 不符为 `projection_mismatch`。
-两者不同，不静默改投影、迁移、重新编译或替换历史依据。当前只支持投影格式 1；未来
+两者不同，不静默改投影、迁移、重新编译或替换历史依据。本模块独立维护封闭的历史投影
+回放支持策略，当前只支持投影格式 1；配置当前写出格式提升不会自动扩大支持范围。未来
 消费者须保留匹配格式的重建实现或提供显式迁移。回放证明规范身份与可选配置绑定，
 不重新授予配置完整性或执行资格；新任务构造必须使用快照门面。
 
@@ -110,7 +112,7 @@ reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列�
 安全位置集合是 `stage/snapshot/facts/facts.title/facts.abstract/facts.abstract_truncated/facts.pdf_sha256/`
 `payload/kind/format_version/config_projection/config_projection.projection_id/`
 `expected_fingerprint/inputs/context/original_title_is_zh`，以及
-`facts.excerpts/facts.excerpts.excerpt_id/facts.excerpts.text/facts.excerpts.source/`
+`facts.excerpts/facts.excerpts.excerpt_id/facts.excerpts.kind/facts.excerpts.text/facts.excerpts.source/`
 `facts.excerpts.source.content_sha256/facts.excerpts.source.locator/`
 `facts.excerpts.source.extraction_input/facts.excerpts.source.extraction_fingerprint/`
 `facts.excerpts.source.reading_sha256/facts.excerpts.source.evidence_map_sha256`；
@@ -119,7 +121,7 @@ reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列�
 
 | 面 | 封闭原因 |
 | --- | --- |
-| `BuildReason` | unsupported_stage、invalid_snapshot、not_ready、invalid_facts、invalid_text、invalid_encoding、invalid_hash、invalid_context、duplicate_excerpt_id、inconsistent_extraction_source |
+| `BuildReason` | unsupported_stage、invalid_snapshot、not_ready、invalid_facts、invalid_text、invalid_encoding、invalid_hash、invalid_context、projection_format_unverifiable、projection_mismatch、duplicate_excerpt_id、inconsistent_extraction_source |
 | `ReplayReason` | invalid_payload、unsupported_stage、unsupported_format、invalid_fingerprint、fingerprint_mismatch、non_canonical、invalid_snapshot、projection_format_unverifiable、projection_mismatch |
 | `ComparisonReason` | different_stage、incompatible_format、invalid_input |
 
@@ -139,7 +141,9 @@ reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列�
 `value_input.value_prediction_context(snapshot, original_title_is_zh=...)` 从明确快照派生
 `ValuePredictionContext.enabled_topic_ids`，不接受调用方提供另一份启用主题集合。
 快照必须已由 check/compile/load 验证，且其 value 投影格式与完整 ID 必须匹配该输入；
-复用回放同一投影核对逻辑，格式不可核对与投影不符仍是两种受控原因。普通声明标签
+复用回放同一投影核对逻辑，但上下文派生属于构造面：非法快照、格式不可核对及投影不符
+均抛 `BuildReason`，回放核对仍抛 `ReplayReason`；同名原因的字符串值相同，枚举类型
+按调用面区分。普通声明标签
 不同但 value 投影相同的历史快照语义等价，可以提供同源上下文。
 
 该方法对新构造与纯载荷回放得到的 value 输入均适用；载荷不复制主题或快照包络，
@@ -181,6 +185,8 @@ strip 后非空但不归一化；单项只允许 availability/methods，both 是
 data 由上游选择器归入 methods。构造前仅限制 ID 可安全作为文本映射键及可 UTF-8
 编码，不另写 ID 语义规则。重复 ID 在调用级映射生成之前拒绝，即使来自不同内容
 或 locator 也不能静默合并。text 非空且精确保留，不增加占位词过滤或隐式规范化。
+ID/种类语义错误分别定位 `facts.excerpts.excerpt_id` 与 `facts.excerpts.kind`；两者都非法
+时先报 ID。位置判断仍委托同一权威上下文，不输出原 ID、种类值或原始校验异常。
 
 结构化来源构造只收 content_sha256 和 locator；序列化另有固定 kind=source_snapshot
 标签。哈希必须来自 `ArtifactStore.get_artifact` 返回的 source_snapshot 制品 payload
@@ -371,4 +377,6 @@ NAS 或自动精读通过。
 `paper_radar.stage_inputs.STAGE_INPUT_FORMAT_VERSIONS` 是只读映射，明确列出
 boundary/value/reuse/extraction 各自的当前配方版本 1；构造、回放和独立 A5 格式核对
 共同消费这一份生产权威数据。调用方不能修改映射，也不能把 StageName 的其余成员
-视为已支持阶段。公开版本不改变任何既有载荷字节、指纹向量或配置投影配方。
+视为已支持阶段。该映射只表达阶段输入格式，配置当前投影格式由 config 维护；历史投影
+回放是否受支持由本模块的封闭策略决定，核对时还要求明确快照能够重建匹配格式。
+公开版本不改变任何既有载荷字节、指纹向量或配置投影配方。

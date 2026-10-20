@@ -348,7 +348,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "scripts/verification_checks.py",
-        "73486e83dbeb8fd71738593a6cd48a45eb311aca29bbfc6af8dab8be2d9ea266",
+        "f93113dcaa037ed7b5992133320a58d36dcf438c1d82969c94611c54649788bc",
     ),
     (
         "scripts/verification_identity.py",

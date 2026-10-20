@@ -260,7 +260,8 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 与 extraction 投影，不读取 PDF 或运行 Docling，不接收论文元数据。配置缺项或占位
 保持拒绝；无 adapter 的历史快照按已有配置完整性判断，指纹不证明 RPC 可执行。
 value 输入可从明确匹配的历史快照派生同源 `ValuePredictionContext`，原题名语言由调用方
-显式提供。reuse 消费冻结的有序摘录与来源定位：结构化来源绑定 source_snapshot 的 payload
+显式提供；派生失败使用 `BuildReason`，载荷回放失败使用 `ReplayReason`。
+reuse 消费冻结的有序摘录与来源定位：结构化来源绑定 source_snapshot 的 payload
 成员内容哈希；正文来源从明确 extraction 输入绑定 reading/evidence_map 成员哈希，排除
 manifest 审计变化，同次调用只允许一份一致正文。从相同摘录派生 `ReuseAssessmentContext`，
 不读取当前 extraction 就绪状态或静默更换引用。

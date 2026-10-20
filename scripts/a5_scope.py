@@ -42,13 +42,13 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_stage_input_architecture.py": 1,
     "tests/test_stage_input_common_contract.py": 125,
     "tests/test_stage_input_comparison.py": 28,
-    "tests/test_stage_input_dependencies.py": 9,
+    "tests/test_stage_input_dependencies.py": 14,
     "tests/test_stage_input_extraction.py": 38,
     "tests/test_stage_input_extraction_reuse.py": 62,
     "tests/test_stage_input_recovery.py": 1,
-    "tests/test_stage_input_replay.py": 29,
-    "tests/test_stage_input_reuse.py": 57,
-    "tests/test_stage_input_value.py": 26,
+    "tests/test_stage_input_replay.py": 33,
+    "tests/test_stage_input_reuse.py": 63,
+    "tests/test_stage_input_value.py": 27,
     "tests/test_stage_inputs.py": 20,
     "tests/test_a5_acceptance.py": 106,
     "tests/test_a5_entry.py": 5,
@@ -69,7 +69,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_stage_input_dependencies.py",
-        "b8d6079541d7a4038c2af7dcfbe14693ea02751d9992690a62cdb509586cb534",
+        "5216b1cd3c5b87a612f6e6a73cd6eb0c76199b6e6fb53ae02ef1150f98728f83",
     ),
     (
         "tests/test_stage_input_extraction.py",
@@ -85,15 +85,15 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_stage_input_replay.py",
-        "829f0498efbc585086c8bb83c3640947156862c332516052039b3e46364862f4",
+        "87b904272f6129638ec481c8ff2cdad20fa754de0cb03ecd2e5eb07d3006c27f",
     ),
     (
         "tests/test_stage_input_reuse.py",
-        "2a5ad28f6ea0c08782c66c8f747efda70c86fb27bd87df2e2ddc35f52ff659c7",
+        "707bbe7c646607eba49bcbe9d6f933d0da627d6be36603b6e0ddc89727ba7d67",
     ),
     (
         "tests/test_stage_input_value.py",
-        "a963bbc624122fe60e61fcf8132d4bf58812c729fd122aacc235ea1b2b55ecba",
+        "9c03009b6f9db05ed58819adf9a8631648fb5d0bd4c5547c7ef77d9340c38296",
     ),
     (
         "tests/test_stage_inputs.py",
@@ -119,7 +119,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/stage_inputs/service.py",
-        "b8f27484e4fd8f09098f07ddff16d0d59f08d0eb671b38f184d9b049b9d8fd3f",
+        "d2dc724da98760240b6fa95e09619b2ca435e506c68a221976ae8c3ffba382da",
     ),
     (
         "src/paper_radar/config/__init__.py",
@@ -131,7 +131,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a5_acceptance.py",
-        "d7bcc54ead6d299f1a8fac7b69a1a60e3ce24e822ff202271b34f5cf07164cce",
+        "ed5517bec34993540c276c6136b7f30e685559f84a0e9dfd9c9fced3769a95d3",
     ),
     (
         "scripts/a1_scope.py",
@@ -139,15 +139,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "8e6c3848210d34da78240d81a37838953fe589810ca3a02ca1485aa2ea8302ca",
+        "9b8bf6e9e3e749f2ebc493e2566abba002ae742b4f80b7626880ac1838c85161",
     ),
     (
         "scripts/a3_scope.py",
-        "03e31b0bfd630a4107408f843d208ce21ac1e670f12cf0c10bd40153f5eacc66",
+        "d2a26aa3f0388ff6ffb02928c0382227b421efdbe78ea66333efc188d0c24609",
     ),
     (
         "scripts/a4_scope.py",
-        "4acaab9fba86e37134cd4d5cce4feb1ba89524bfe0cb72eb151c4e4795b3e8e0",
+        "573a0481576bc2cd87f36a85e98d83c974807dbde30fe002b8197ca3ad571bc4",
     ),
     (
         "scripts/a2_full_acceptance.py",
@@ -163,7 +163,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/verification_checks.py",
-        "73486e83dbeb8fd71738593a6cd48a45eb311aca29bbfc6af8dab8be2d9ea266",
+        "f93113dcaa037ed7b5992133320a58d36dcf438c1d82969c94611c54649788bc",
     ),
     (
         "scripts/verification_identity.py",

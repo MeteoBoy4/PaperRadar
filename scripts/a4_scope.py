@@ -332,15 +332,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a4_acceptance.py",
-        "c79d1c086dbab4b6f9953271be96cfd74acb29c53657260ea7cb87c0b1699321",
+        "1fff915ac03183daa659281ad3119e2281bd1f052fe4946a3062d70d454caae2",
     ),
     (
         "scripts/a3_scope.py",
-        "03e31b0bfd630a4107408f843d208ce21ac1e670f12cf0c10bd40153f5eacc66",
+        "d2a26aa3f0388ff6ffb02928c0382227b421efdbe78ea66333efc188d0c24609",
     ),
     (
         "scripts/a2_full_scope.py",
-        "8e6c3848210d34da78240d81a37838953fe589810ca3a02ca1485aa2ea8302ca",
+        "9b8bf6e9e3e749f2ebc493e2566abba002ae742b4f80b7626880ac1838c85161",
     ),
     (
         "scripts/a1_scope.py",
@@ -364,7 +364,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/verification_checks.py",
-        "73486e83dbeb8fd71738593a6cd48a45eb311aca29bbfc6af8dab8be2d9ea266",
+        "f93113dcaa037ed7b5992133320a58d36dcf438c1d82969c94611c54649788bc",
     ),
     (
         "scripts/verification_identity.py",
