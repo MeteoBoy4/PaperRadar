@@ -49,6 +49,47 @@ A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时�
 新增已实现冻结契约或声明版本时，同步更新脚本的 `CONTRACT_NAMES`
 和 `CONTRACT_VERSION`，使检查命令与证据范围一起更新；测试会与权威注册表核对。
 
+## 固定 scope 维护审计（#60）
+
+改动固定源码、支撑文件、测试或向量后，先运行独立开发入口：
+
+```bash
+./scripts/audit-verification-scope
+./scripts/audit-verification-scope --json
+./scripts/audit-verification-scope --collect --json
+```
+
+默认只读核对每个 writer 消费的显式路径和 SHA-256，显示登记值与当前值、缺失/
+不可读/漂移、重复路径、计数 key 与测试集合不一致、非法计数（含 bool）、scope
+引用链和拓扑处理顺序。每个 scope 的 downstream 列出修改它后需要重新核对登记的
+下游；affected_groups 同时包括直接问题及传播影响。循环和自引用拒绝提供处理顺序。
+source 中的 scripts/tests 路径另标为 support，fixture 类别保留向量/材料的具体路径。
+JSON 包含全部文件、固定计数和受控原因；文本显示问题和候选哈希，不显示文件内容。
+退出码 0 表示审计匹配，1 表示漂移或无法核验，2 表示参数错误。
+
+组清单从 `acceptance_groups()` 的每个 `write` 来源推导，包含 optional A2-01，
+不硬编码 A1–A5 模块列表。writer 对 `scripts.*_scope` 的显式导入是维护契约；
+只消费 `REQUIRED_TEST_MODULES`、`REQUIRED_SOURCE_MODULES`、
+`REQUIRED_FIXTURE_FILES`、`REQUIRED_TEST_CASE_COUNTS` 与明确允许的元数据。
+新常量、重命名、不支持的导入或表达式必须人工扩展工具契约后才能继续审计；不能因
+无法识别而当成空集合。支持 A3 的子清单展开，检查最终 writer 消费的汇总，避免
+把子清单和总清单重复计为登记。完整 A2 的计数包含它明确导入的 A1 测试。
+
+`--collect` 在哈希和登记校验成功后，用独立 pytest 进程、`--collect-only`、禁用
+cacheprovider/字节码及回执插件，核对有固定计数登记的模块。子进程清除
+`PAPER_RADAR_TEST_RECEIPT`、`PAPER_RADAR_TEST_RUN_ID`、`PYTEST_ADDOPTS`、
+`PYTEST_PLUGINS`，关闭第三方插件自动加载并清空配置 addopts。只在 `/tmp` 的独立
+临时文件中传递受控模块计数，退出后移除，不保存或回显原始 stdout/stderr。
+参数化按节点计数，模块级 skip、deselect、收集失败/超时均不能通过；函数级 skip
+标记仍算被收集节点，不宣称实际执行或通过。收集不写正式回执或验收文件，也不能
+代替真实测试执行，更不能将实测数量写成固定分母。
+
+本工具不扫描未登记文件以扩大 required 范围、不自动更新哈希或计数、不登记进任何
+scope，也不加入 `default_checks()` 的固定六项检查。人工审阅候选并按拓扑顺序修改
+scope 源码后，重新审计，再运行完整 `./scripts/check-offline`；正式入口保留独立
+漂移检查，历史证据与冻结判据保持原义。开发接口与 JSON 字段见
+[审计命令契约](../contracts/verification-scope-audit.md)。
+
 ## 运行组织与验收组登记
 
 `scripts/verification_run.py` 负责一次运行的身份基线、同次证据、验收组发布顺序、

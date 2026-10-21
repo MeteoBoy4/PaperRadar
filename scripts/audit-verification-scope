@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repository_root"
+
+# 与 dev-environment 相同, 只读入口不触发 uv 同步或字节码缓存写入。
+project_environment="${UV_PROJECT_ENVIRONMENT-.venv}"
+if [[ "$project_environment" != /* ]]; then
+  project_environment="$repository_root/$project_environment"
+fi
+project_python="$project_environment/bin/python"
+if [[ ! -x "$project_python" ]]; then
+  echo '无法启动审计：项目 Python 不可用；请先用 uv run --offline --locked 准备环境。' >&2
+  exit 1
+fi
+export PYTHONDONTWRITEBYTECODE=1
+exec "$project_python" -I -B -c '
+import runpy
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+runpy.run_module("scripts.audit_verification_scope", run_name="__main__", alter_sys=True)
+' "$repository_root" "$@"

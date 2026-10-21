@@ -335,6 +335,11 @@ uv run --offline --locked paper-radar contracts check \
 
 ## 完整离线验证
 
+修改固定验收材料时，可先运行 `./scripts/audit-verification-scope`（支持 `--json`、
+`--collect`），只读核对登记哈希、固定用例数及 scope 引用链，按报告顺序人工审查和
+重绑。收集仅核对分母，不执行测试或写正式回执，不代表验收通过；详见
+[维护入口](docs/verification/offline-evidence.md#固定-scope-维护审计60)。
+
 ```bash
 ./scripts/check-offline
 ```
