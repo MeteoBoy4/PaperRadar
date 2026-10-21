@@ -6,8 +6,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 from scripts.a1_acceptance import capture_identity
 from scripts.offline_evidence import file_sha256
 from scripts.verification_identity import RunIdentity
@@ -37,18 +35,6 @@ def passed_receipt(run_id: str) -> dict[str, Any]:
         }
     )
     return payload
-
-
-def fake_checks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
-    binary, log = a4_acceptance_support.fake_checks(tmp_path, monkeypatch)
-    (tmp_path / "write_receipt.py").write_text(
-        "import json, os\nfrom pathlib import Path\n"
-        f"payload = {passed_receipt('fixture')!r}\n"
-        'payload["run_id"] = os.environ["PAPER_RADAR_TEST_RUN_ID"]\n'
-        'Path(os.environ["PAPER_RADAR_TEST_RECEIPT"]).write_text(json.dumps(payload))\n',
-        encoding="utf-8",
-    )
-    return binary, log
 
 
 def same_a5_run(tmp_path: Path, *, root: Path = ROOT) -> Inputs:

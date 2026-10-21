@@ -18,8 +18,8 @@ import pytest
 
 from scripts.a2_full_acceptance import run_full_verification
 from scripts.offline_evidence import default_checks, run_offline_verification
-from tests.a2_full_support import repository_copy
-from tests.a5_acceptance_support import fake_checks
+from tests.a2_full_support import fake_checks, repository_copy
+from tests.a5_acceptance_support import passed_receipt
 
 
 @pytest.mark.parametrize("existing", [False, True])
@@ -236,7 +236,7 @@ def test_zero_pytest_exit_cannot_replace_actual_fixed_test_execution(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mode: str
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path, monkeypatch)
+    binary, log = fake_checks(tmp_path, monkeypatch, receipt=passed_receipt("fixture"))
     uv = binary / "uv"
     invocation = (
         f"{shlex.quote(sys.executable)} "
@@ -277,7 +277,7 @@ def test_receipt_replacement_before_final_publication_cannot_pass(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path, monkeypatch)
+    binary, log = fake_checks(tmp_path, monkeypatch, receipt=passed_receipt("fixture"))
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     output = tmp_path / "runs"

@@ -285,7 +285,7 @@ def _kill_and_wait_for_group(group: int) -> None:
                     pending.remove(fd)
 
 
-def _stop_process_group(process: subprocess.Popen[bytes]) -> None:
+def _stop_process_group(process: subprocess.Popen[bytes], process_group: int) -> None:
     """给整组退出宽限, 即使组长先退出也继续清理后代。"""
     previous = {
         signum: signal.signal(signum, signal.SIG_IGN)
@@ -293,12 +293,12 @@ def _stop_process_group(process: subprocess.Popen[bytes]) -> None:
     }
     try:
         with suppress(ProcessLookupError):
-            os.killpg(process.pid, signal.SIGTERM)
+            os.killpg(process_group, signal.SIGTERM)
         deadline = time.monotonic() + 2
         while True:
             process.poll()
             try:
-                os.killpg(process.pid, 0)
+                os.killpg(process_group, 0)
             except ProcessLookupError:
                 break
             remaining = deadline - time.monotonic()
@@ -306,8 +306,8 @@ def _stop_process_group(process: subprocess.Popen[bytes]) -> None:
                 break
             time.sleep(min(0.05, remaining))
         with suppress(ProcessLookupError):
-            os.killpg(process.pid, signal.SIGKILL)
-        _kill_and_wait_for_group(process.pid)
+            os.killpg(process_group, signal.SIGKILL)
+        _kill_and_wait_for_group(process_group)
         process.wait()
     finally:
         for signum, handler in previous.items():
@@ -323,13 +323,15 @@ def _run_check(check: Check, root: Path, environment: dict[str, str]) -> int:
         stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
+    # start_new_session 令检查进程成为会话和进程组组长; 在启动边界固定清理目标。
+    process_group = process.pid
     try:
         exit_code = process.wait()
     except KeyboardInterrupt:
-        _stop_process_group(process)
+        _stop_process_group(process, process_group)
         raise
     if exit_code < 0:
-        _stop_process_group(process)
+        _stop_process_group(process, process_group)
     return exit_code
 
 

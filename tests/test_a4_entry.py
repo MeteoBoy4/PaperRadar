@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 
 from scripts.a2_full_acceptance import run_full_verification
-from tests.a2_full_support import repository_copy
-from tests.a5_acceptance_support import fake_checks
+from tests.a2_full_support import fake_checks, repository_copy
+from tests.a5_acceptance_support import passed_receipt
 
 
 def test_a4_only_failure_blocks_real_entry_even_when_full_a2_passes(
@@ -19,7 +19,7 @@ def test_a4_only_failure_blocks_real_entry_even_when_full_a2_passes(
     root = repository_copy(tmp_path / "repo")
     vector = root / "tests/fixtures/pi_supply/manifest-vector.json"
     vector.write_bytes(vector.read_bytes() + b"\n")
-    binary, log = fake_checks(tmp_path, monkeypatch)
+    binary, log = fake_checks(tmp_path, monkeypatch, receipt=passed_receipt("fixture"))
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     executed = subprocess.run(
@@ -53,7 +53,7 @@ def test_real_entry_final_a4_publication_failure_preserves_all_previous_conclusi
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path, monkeypatch)
+    binary, log = fake_checks(tmp_path, monkeypatch, receipt=passed_receipt("fixture"))
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     output = root / "verification-runs"
@@ -108,7 +108,7 @@ def test_a4_rechecks_bound_bytes_before_final_publication(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, replaced: str
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path, monkeypatch)
+    binary, log = fake_checks(tmp_path, monkeypatch, receipt=passed_receipt("fixture"))
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     output = tmp_path / "runs"

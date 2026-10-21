@@ -75,7 +75,9 @@ def init_fixture_repository(path: Path) -> None:
     )
 
 
-def fake_checks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+def fake_checks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, receipt: dict[str, object]
+) -> tuple[Path, Path]:
     monkeypatch.delenv("PAPER_RADAR_TEST_RECEIPT", raising=False)
     monkeypatch.delenv("PAPER_RADAR_TEST_RUN_ID", raising=False)
     binary = tmp_path / "bin"
@@ -84,7 +86,7 @@ def fake_checks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, 
     writer = tmp_path / "write_receipt.py"
     writer.write_text(
         "import json, os\nfrom pathlib import Path\n"
-        f"payload = {passed_receipt('fixture')!r}\n"
+        f"payload = {receipt!r}\n"
         'payload["run_id"] = os.environ["PAPER_RADAR_TEST_RUN_ID"]\n'
         'Path(os.environ["PAPER_RADAR_TEST_RECEIPT"]).write_text(json.dumps(payload))\n',
         encoding="utf-8",

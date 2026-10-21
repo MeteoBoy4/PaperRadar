@@ -12,8 +12,8 @@ import pytest
 from scripts.a2_full_acceptance import acceptance_groups
 from scripts.verification_publication import publish_conclusion
 from scripts.verification_run import AcceptanceGroup, VerificationRun, run_verification
-from tests.a2_full_support import repository_copy
-from tests.a5_acceptance_support import fake_checks
+from tests.a2_full_support import fake_checks, repository_copy
+from tests.a5_acceptance_support import passed_receipt
 
 
 @pytest.mark.parametrize("required", [False, True])
@@ -21,7 +21,7 @@ def test_registered_group_publishes_same_run_and_can_affect_overall_result(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, required: bool
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path, monkeypatch)
+    binary, log = fake_checks(tmp_path, monkeypatch, receipt=passed_receipt("fixture"))
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
 

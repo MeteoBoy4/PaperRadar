@@ -182,23 +182,23 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a4_entry.py",
-        "01a51e1a7bc07f6b1715ad684d4da73df57a25e2e851d0d5c3ecacdeff9dc37d",
+        "2d5dfd183d44015cee066380d8e94825e5ffe339844e23575cd22e0b4d0e9572",
     ),
     (
         "tests/test_a2_full_entry.py",
-        "70a966b2ac91791824f95e7f0eea374c4b53b1dc261480ee3676130935bc6cf5",
+        "8b7dde0250043219fb1a11a01954e0f556b275d28d6fe20f8297c30cd6dbeb9f",
     ),
     (
         "tests/test_verification_run.py",
-        "e1f2a09a52dad8118711868be499926b33a50f9aa148a196cf4c25b0b182f83f",
+        "a2a0dafaeab21e86cfbc8560fc550f5238832a87805f54ff8de41402e587d72a",
     ),
     (
         "tests/test_verification_compatibility.py",
-        "1b54de1b9cab70d489775695608636d099b9c3209efe8200d6114a15e7a3917c",
+        "17dab6cec5f3e02b1411e17a22957e1f9d5288cf11898fbc1aa686d3d1b60b87",
     ),
     (
         "tests/test_verification_integrity.py",
-        "53a9bc821c72628a423355164627425c7024c5d941e59dac5f56dcf1528651a0",
+        "df9e411c23bec0d5c17f4734cf693645c277041b3e5bb16723403c5da3c95f96",
     ),
 )
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
@@ -336,11 +336,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a3_scope.py",
-        "9cb580eb43d4833b829e65a7e925da93aa5c04bee9c9994a44f417a4f5d885fd",
+        "a542200ab7db153c90c27491f421cf09f02096b485aab1088103653f6e80f259",
     ),
     (
         "scripts/a2_full_scope.py",
-        "f2162924b5e449a5e2674354ce2231bb6551f2d56c874f262b51a334c86240c3",
+        "6a9b14f6e6739c8166f4a2f8316a790511872126e781bed347e157e691103caa",
     ),
     (
         "scripts/a1_scope.py",
@@ -360,7 +360,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/offline_evidence.py",
-        "d3732222e07fc47f2e2e3620eebb2dad5d6a3840617dfcb4bdd1ab5ad5779aca",
+        "7c2585d4aec8416b496f6b2618e14a81a670b03806b10fc7fb3e48f3c7d08497",
     ),
     (
         "scripts/verification_checks.py",
@@ -396,15 +396,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/a4_acceptance_support.py",
-        "4799f426fba2cbc5522c644dca742af0ddd72b22f839267832400499f1bd6d6e",
+        "3e7457b20e193b1076b67c3d8394dcb0b9eebb60fcdc58d3abe44be4d50740cf",
     ),
     (
         "tests/a3_acceptance_support.py",
-        "c57fd755e813a50b8f1128d5cca2091feef079264cb8e34cc35d08c82279765d",
+        "d89e4dff6834d19562ffd9a3a5fde14c353962ee67a8c1df21113c75979b2545",
     ),
     (
         "tests/a2_full_support.py",
-        "cbf2b0885ad441dd6caeefd1a028efc2ef4d6b6b60dfadbd47307be8deab6e58",
+        "a15976749dc2ae52448d81ea794c2be1c2e0f53d4e2a09de20f9a9790c16dc38",
     ),
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (

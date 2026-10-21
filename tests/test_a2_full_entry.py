@@ -14,8 +14,8 @@ import pytest
 
 from scripts.a2_full_acceptance import run_full_verification
 from scripts.offline_evidence import file_sha256
-from tests.a2_full_support import ROOT, repository_copy
-from tests.a5_acceptance_support import fake_checks
+from tests.a2_full_support import ROOT, fake_checks, repository_copy
+from tests.a5_acceptance_support import passed_receipt
 
 
 @pytest.mark.parametrize("stop", ["passed", "failed", "interrupted", "legacy_mismatch"])
@@ -25,7 +25,7 @@ def test_one_plan_produces_seven_bound_files_and_never_inherits_previous_success
     stop: str,
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path, monkeypatch)
+    binary, log = fake_checks(tmp_path, monkeypatch, receipt=passed_receipt("fixture"))
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     monkeypatch.setenv("A2_TEST_STOP", stop)
@@ -153,7 +153,7 @@ def test_interruption_while_generating_legacy_conclusion_keeps_seven_files_incom
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path, monkeypatch)
+    binary, log = fake_checks(tmp_path, monkeypatch, receipt=passed_receipt("fixture"))
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     original_version = importlib.metadata.version
@@ -190,7 +190,7 @@ def test_real_skipped_suite_cannot_pass_complete_entry_even_when_pytest_returns_
         "        item.add_marker(pytest.mark.skip(reason='PRIVATE_SKIP_REASON'))\n",
         encoding="utf-8",
     )
-    binary, log = fake_checks(tmp_path, monkeypatch)
+    binary, log = fake_checks(tmp_path, monkeypatch, receipt=passed_receipt("fixture"))
     uv = binary / "uv"
     invocation = (
         f"{shlex.quote(sys.executable)} "

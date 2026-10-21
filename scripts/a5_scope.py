@@ -105,7 +105,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a5_entry.py",
-        "9afeed8bdf1c711626efb26c5239e80ba7261aa3feb0ba8b2635c7384be2c838",
+        "925a53bc7e5aceff01dc8efa3e64701dcd60fae99a16442c90b7f3b853c90b1d",
     ),
     (
         "tests/test_a5_test_receipt.py",
@@ -139,15 +139,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "f2162924b5e449a5e2674354ce2231bb6551f2d56c874f262b51a334c86240c3",
+        "6a9b14f6e6739c8166f4a2f8316a790511872126e781bed347e157e691103caa",
     ),
     (
         "scripts/a3_scope.py",
-        "9cb580eb43d4833b829e65a7e925da93aa5c04bee9c9994a44f417a4f5d885fd",
+        "a542200ab7db153c90c27491f421cf09f02096b485aab1088103653f6e80f259",
     ),
     (
         "scripts/a4_scope.py",
-        "5f9652ad2e21c1de24cc25a104c3a3cd0ab493577f4017a62bad55a6cf54dfff",
+        "621da3014fc45815609605bc5be4d52244db78d30a8a430241a3dba602ff2693",
     ),
     (
         "scripts/a2_full_acceptance.py",
@@ -159,7 +159,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/offline_evidence.py",
-        "d3732222e07fc47f2e2e3620eebb2dad5d6a3840617dfcb4bdd1ab5ad5779aca",
+        "7c2585d4aec8416b496f6b2618e14a81a670b03806b10fc7fb3e48f3c7d08497",
     ),
     (
         "scripts/verification_checks.py",
@@ -183,19 +183,19 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/a5_acceptance_support.py",
-        "4a2c880c075b962ec77666df104709aa414e242d311a06587171a825d2b2da09",
+        "528ab9bd6e1a71767083eb514378e028420691d0c61a81237cab85163b2ab1f5",
     ),
     (
         "tests/a4_acceptance_support.py",
-        "4799f426fba2cbc5522c644dca742af0ddd72b22f839267832400499f1bd6d6e",
+        "3e7457b20e193b1076b67c3d8394dcb0b9eebb60fcdc58d3abe44be4d50740cf",
     ),
     (
         "tests/a3_acceptance_support.py",
-        "c57fd755e813a50b8f1128d5cca2091feef079264cb8e34cc35d08c82279765d",
+        "d89e4dff6834d19562ffd9a3a5fde14c353962ee67a8c1df21113c75979b2545",
     ),
     (
         "tests/a2_full_support.py",
-        "cbf2b0885ad441dd6caeefd1a028efc2ef4d6b6b60dfadbd47307be8deab6e58",
+        "a15976749dc2ae52448d81ea794c2be1c2e0f53d4e2a09de20f9a9790c16dc38",
     ),
     (
         "tests/stage_input_process.py",
