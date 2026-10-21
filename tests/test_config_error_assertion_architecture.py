@@ -1,4 +1,9 @@
-"""ConfigError 负例须匹配目标原因或绑定异常供后续断言。"""
+"""检查 ConfigError 负例的 match 或绑定后断言形式。
+
+支持显式导入别名与局部简单赋值。只区分 if/else 互斥分支与后续绑定覆盖,
+不做一般控制流、导入名遮蔽或跨函数分析。仅泄漏断言也能通过本形式检查;
+受控字段路径或错误类别是否得到验证仍须人工审查。
+"""
 
 import ast
 from collections.abc import Iterator
@@ -17,18 +22,35 @@ def _local_nodes(scope: ast.AST) -> Iterator[ast.AST]:
         yield from _local_nodes(child)
 
 
+def _if_branches(node: ast.AST, parents: dict[ast.AST, ast.AST]) -> dict[ast.If, bool]:
+    branches = {}
+    while node in parents:
+        parent = parents[node]
+        if isinstance(parent, ast.If):
+            branches[parent] = node in parent.body
+        node = parent
+    return branches
+
+
 def _asserts_bound_error(
     statement: ast.With, binding: ast.Name, parents: dict[ast.AST, ast.AST]
 ) -> bool:
-    """只跟踪同作用域后续赋值与断言, 不分析控制流或跨函数传播。"""
+    """只跟踪同作用域后续赋值、with 绑定与断言。"""
     scope: ast.AST = statement
     while scope in parents:
         scope = parents[scope]
         if isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             break
     tracked = {binding.id}
+    branches = _if_branches(statement, parents)
     for node in sorted(_local_nodes(scope), key=lambda n: getattr(n, "lineno", 0)):
         if getattr(node, "lineno", 0) <= (statement.end_lineno or statement.lineno):
+            continue
+        later_branches = _if_branches(node, parents)
+        if any(
+            later_branches.get(parent, branch) != branch
+            for parent, branch in branches.items()
+        ):
             continue
         if isinstance(node, (ast.Assign, ast.AnnAssign)):
             if node.value is None:
@@ -42,6 +64,12 @@ def _asserts_bound_error(
             tracked.difference_update(names)
             if derived:
                 tracked.update(names)
+        elif isinstance(node, ast.With):
+            tracked.difference_update(
+                item.optional_vars.id
+                for item in node.items
+                if isinstance(item.optional_vars, ast.Name)
+            )
         elif isinstance(node, ast.Assert) and any(
             isinstance(reference, ast.Name) and reference.id in tracked
             for reference in ast.walk(node.test)
@@ -52,6 +80,29 @@ def _asserts_bound_error(
 
 def config_error_assertion_violations(source: str, filename: str) -> list[str]:
     tree = ast.parse(source, filename=filename)
+    pytest_modules = {"pytest"}
+    raises_functions: set[str] = set()
+    config_errors = {"ConfigError"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            pytest_modules.update(
+                alias.asname or alias.name
+                for alias in node.names
+                if alias.name == "pytest"
+            )
+        elif isinstance(node, ast.ImportFrom):
+            if node.module == "pytest":
+                raises_functions.update(
+                    alias.asname or alias.name
+                    for alias in node.names
+                    if alias.name == "raises"
+                )
+            elif node.module in {"paper_radar.config", "paper_radar.config.errors"}:
+                config_errors.update(
+                    alias.asname or alias.name
+                    for alias in node.names
+                    if alias.name == "ConfigError"
+                )
     parents = {
         child: parent
         for parent in ast.walk(tree)
@@ -69,15 +120,20 @@ def config_error_assertion_violations(source: str, filename: str) -> list[str]:
     for node in ast.walk(tree):
         if (
             isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Attribute)
-            and isinstance(node.func.value, ast.Name)
-            and node.func.value.id == "pytest"
-            and node.func.attr == "raises"
+            and (
+                (isinstance(node.func, ast.Name) and node.func.id in raises_functions)
+                or (
+                    isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id in pytest_modules
+                    and node.func.attr == "raises"
+                )
+            )
             and node.args
             and (
                 (
                     isinstance(node.args[0], ast.Name)
-                    and node.args[0].id == "ConfigError"
+                    and node.args[0].id in config_errors
                 )
                 or (
                     isinstance(node.args[0], ast.Attribute)
@@ -185,5 +241,88 @@ def test_bound_error_can_be_asserted_outside_a_block_through_its_message(
         "        compile_config()\n"
         "message: str = str(error.value)\n"
         'assert message.startswith("read.chunking_version：")\n'
+    )
+    assert config_error_assertion_violations(source, "tests/example.py") == []
+
+
+@pytest.mark.parametrize(
+    ("imports", "context", "expected"),
+    [
+        (
+            "from pytest import raises\nfrom paper_radar.config import ConfigError\n",
+            "raises(ConfigError)",
+            ["tests/example.py:3"],
+        ),
+        (
+            "import pytest as pt\nfrom paper_radar.config import ConfigError\n",
+            "pt.raises(ConfigError)",
+            ["tests/example.py:3"],
+        ),
+        (
+            "import pytest\nfrom paper_radar.config import ConfigError as CE\n",
+            "pytest.raises(CE)",
+            ["tests/example.py:3"],
+        ),
+        (
+            "from pytest import raises as expect\n"
+            "from paper_radar.config import ConfigError as CE\n",
+            'expect(CE, match="field")',
+            [],
+        ),
+        (
+            "import pytest as pt\n"
+            "from paper_radar.config.errors import ConfigError as CE\n",
+            "pt.raises(CE) as error",
+            [],
+        ),
+    ],
+)
+def test_explicit_import_aliases_keep_the_config_error_constraint(
+    imports: str, context: str, expected: list[str]
+) -> None:
+    source = (
+        imports
+        + f"with {context}:\n"
+        + "    compile_config()\n"
+        + 'assert str(error.value).startswith("field：")\n'
+    )
+    assert config_error_assertion_violations(source, "tests/example.py") == expected
+
+
+def test_rebinding_an_error_cannot_borrow_the_later_error_assertion() -> None:
+    source = (
+        "with pytest.raises(ConfigError) as error:\n"
+        "    first_operation()\n"
+        "with pytest.raises(ConfigError) as error:\n"
+        "    second_operation()\n"
+        'assert str(error.value).startswith("second.field：")\n'
+    )
+    assert config_error_assertion_violations(source, "tests/example.py") == [
+        "tests/example.py:1"
+    ]
+
+
+def test_alternative_branches_can_share_an_error_assertion() -> None:
+    source = (
+        "if enabled:\n"
+        "    with pytest.raises(ConfigError) as error:\n"
+        "        first_operation()\n"
+        "else:\n"
+        "    with pytest.raises(ConfigError) as error:\n"
+        "        second_operation()\n"
+        'assert str(error.value).startswith("field：")\n'
+    )
+    assert config_error_assertion_violations(source, "tests/example.py") == []
+
+
+def test_saved_error_can_be_asserted_after_the_capture_name_is_reused() -> None:
+    source = (
+        "with pytest.raises(ConfigError) as error:\n"
+        "    first_operation()\n"
+        "first = error\n"
+        "with pytest.raises(ConfigError) as error:\n"
+        "    second_operation()\n"
+        'assert str(first.value).startswith("first.field：")\n'
+        'assert str(error.value).startswith("second.field：")\n'
     )
     assert config_error_assertion_violations(source, "tests/example.py") == []
