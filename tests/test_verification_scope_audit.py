@@ -4,7 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from scripts.verification_scope_audit import Scope, audit_scopes
+from scripts.verification_scope_audit import (
+    AuditReason,
+    Scope,
+    audit_scopes,
+    collection_targets,
+    merge_collection,
+)
 
 EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
@@ -130,3 +136,86 @@ def test_conflicting_counts_across_groups_cannot_be_silently_overwritten(
     )
     assert report["exit_code"] == 1
     assert "conflicting_counts" in [r["reason"] for r in report["issues"]]
+
+
+@pytest.mark.parametrize(
+    "reason",
+    [
+        AuditReason.COLLECTION_UNAVAILABLE,
+        AuditReason.COLLECTION_TIMEOUT,
+        AuditReason.COLLECTION_FAILED,
+        AuditReason.INVALID_COUNTS,
+        AuditReason.COLLECTION_SKIPPED,
+        AuditReason.COLLECTION_DESELECTED,
+    ],
+)
+def test_incomplete_collection_preserves_existing_affected_groups(
+    tmp_path: Path,
+    reason: AuditReason,
+) -> None:
+    (tmp_path / "a.py").write_bytes(b"")
+    (tmp_path / "b.py").write_bytes(b"changed")
+    scopes = (
+        Scope("A", "a_scope.py", {"test": (("a.py", EMPTY_SHA256),)}, {"a.py": 1}),
+        Scope("B", "b_scope.py", {"source": (("b.py", EMPTY_SHA256),)}),
+    )
+    report = audit_scopes(tmp_path, scopes)
+    merged = merge_collection(
+        report,
+        scopes,
+        dict(
+            reason=reason,
+            execution="not_run",
+            modules={},
+        ),
+    )
+    assert merged["exit_code"] == 1
+    assert merged["affected_groups"] == ["B"]
+    assert report["collection"]["reason"] == "not_requested"
+
+
+def test_count_mismatch_adds_downstream_without_losing_previous_drift(
+    tmp_path: Path,
+) -> None:
+    for name in ("a.py", "a_scope.py", "unrelated.py"):
+        (tmp_path / name).write_bytes(b"")
+    scopes = (
+        Scope("A", "a_scope.py", {"test": (("a.py", EMPTY_SHA256),)}, {"a.py": 1}),
+        Scope("B", "b_scope.py", {"source": (("a_scope.py", EMPTY_SHA256),)}),
+        Scope("C", "c_scope.py", {"source": (("unrelated.py", EMPTY_SHA256),)}),
+    )
+    (tmp_path / "unrelated.py").write_bytes(b"changed")
+    report = audit_scopes(tmp_path, scopes)
+    assert report["affected_groups"] == ["C"]
+    merged = merge_collection(
+        report,
+        scopes,
+        dict(
+            reason=AuditReason.COUNT_MISMATCH,
+            execution="not_run",
+            modules={"a.py": 2},
+        ),
+    )
+    assert set(merged["affected_groups"]) == {"A", "B", "C"}
+    assert report["affected_groups"] == ["C"]
+
+
+@pytest.mark.parametrize("kind", ["test", "source"])
+@pytest.mark.parametrize("outside_link", [False, True])
+def test_missing_or_outside_material_cannot_enter_collection(
+    tmp_path: Path,
+    kind: str,
+    outside_link: bool,
+) -> None:
+    root = tmp_path / "repository"
+    root.mkdir()
+    (root / "valid_test.py").write_bytes(b"")
+    if outside_link:
+        external = tmp_path / "outside.py"
+        external.write_bytes(b"")
+        (root / "unavailable.py").symlink_to(external)
+    bindings: dict[str, object] = {"test": (("valid_test.py", EMPTY_SHA256),)}
+    bindings[kind] = (("unavailable.py", EMPTY_SHA256),)
+    report = audit_scopes(root, (Scope("A", "a_scope.py", bindings),))
+    assert report["exit_code"] == 1
+    assert collection_targets(report) is None

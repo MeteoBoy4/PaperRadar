@@ -12,21 +12,37 @@
 | `issues` | 登记/图结构异常的组、scope 或 writer 位置、受控原因；不含原始数据 |
 | `order` | scope 引用 DAG 的拓扑顺序；循环/自引用时为空 |
 | `downstream` | 修改某个 scope 后需重算登记的传递下游，不是正式结论依赖 |
-| `affected_groups` | 直接异常与 scope 修改传播可能影响的验收组 |
+| `affected_groups` | 直接异常与 scope 修改传播可能影响的验收组；收集超时/失败不推断所有模块漂移 |
 | `collection` | 默认 `not_requested`；显式收集返回模块节点计数及受控原因，`execution` 恒为 `not_run` |
 
 `kind` 使用登记种类 test/source/fixture；`role` 将 source 中的 scripts/tests 路径
 标为 support。fixture 包含固定向量，仍通过路径明确定位。文件原因仅为 ok、
 hash_drift、missing_file、unreadable_file。非法路径或哈希不原样回显。
 
-公开 Python 边界为 `audit_scopes(root, scopes)`、`load_scopes(root)` 和
-`collect_counts(root, expected)`。`Scope` 表达显式组、scope 位置、绑定和固定计数；
+公开 Python 边界为 `audit_scopes(root, scopes)`、`load_scopes(root, *, writers=None)`、
+`collect_counts(root, expected)`，以及确定性的 `collection_targets(report)` 和
+`merge_collection(report, scopes, result)`。`writers` 仅供显式合成登记或独立目录审计
+使用，不暴露 CLI 覆盖入口；默认始终读取生产 `acceptance_groups()`。
+`Scope` 表达显式组、scope 位置、原始绑定和固定计数；
 它不建立新的 required 集合。`load_scopes` 正常导入生产 registry，随后静态解释
 writer 导入的清单 AST。清单仅允许固定赋值、字面量、常量引用、tuple/list 展开与
 dict 展开；重复赋值、重复计数 key、动态增补和未知表达式失败。额外测试清单导入
 一并核对哈希；附加 scope 的源码、fixture、计数绑定明确拒绝，不能静默丢弃。
 模块式导入仅允许访问明确元数据属性。新增 writer/scope
 不必修改组列表，但改变导入命名约定或登记常量须同步审查解释契约与回归测试。
+
+`AuditReason`、`FileKind`、`FileRole` 约束受控值，输出记录使用 `TypedDict`。
+`Scope.bindings`/`counts` 保留原始 `object` 输入，以便审计非法登记而非假设其已合法；
+`parse_file_bindings` 和严格正整数校验是接收边界。测试清单只有 `bindings[test]`
+一份，不另存计数测试清单。
+
+显式 `--collect` 在文件哈希漂移或计数 key/分母错误时仍可收集已明确列入测试清单的
+模块。缺失、非法或冲突的预期分母以 `None` 传给收集接口，仅返回诊断计数；不会写成
+新分母。额外计数 key 不会扩展测试集合；缺失/不可读材料（含指向仓库外的链接）、
+未知登记形式、非法绑定或引用图错误仍阻止
+收集。原审计失败不会因收集成功变为通过。收集超时、不可用、失败、skip、deselect
+保留原 `affected_groups`；只有完整 `count_mismatch` 才追加可定位的组及其下游，
+同时保留已有影响。参数错误仅输出受控类别与中文说明，不回显原始参数。
 
 收集进程不执行测试体；测试模块和 conftest 导入仍执行普通 Python 收集代码，因此
 只对仓库已审查的固定模块运行。返回的数量不能证明 skip 测试实际通过。任何审计

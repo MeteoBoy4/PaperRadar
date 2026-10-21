@@ -5,19 +5,40 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import NoReturn
 
-from scripts.verification_scope_audit import audit_scopes
+from scripts.verification_scope_audit import (
+    AuditReason,
+    AuditReport,
+    CollectionResult,
+    Scope,
+    audit_scopes,
+    collection_targets,
+    merge_collection,
+)
 from scripts.verification_scope_collection import collect_counts
 from scripts.verification_scope_registry import load_scopes
 
 
 class _Parser(argparse.ArgumentParser):
     def error(self, message: str) -> NoReturn:
-        self.exit(2, "参数无效；请运行 ./scripts/audit-verification-scope --help。\n")
+        if message.startswith("unrecognized arguments:"):
+            reason = AuditReason.UNKNOWN_ARGUMENT
+            explanation = "存在不支持的参数"
+        elif message.startswith("argument "):
+            reason = AuditReason.INVALID_OPTION_VALUE
+            explanation = "选项值或组合无效"
+        else:
+            reason = AuditReason.INVALID_ARGUMENTS
+            explanation = "参数格式无效"
+        self.exit(
+            2,
+            f"{explanation}（{reason}）；"
+            "请运行 ./scripts/audit-verification-scope --help。\n",
+        )
 
 
-def _print_report(report: dict[str, Any]) -> None:
+def _print_report(report: AuditReport) -> None:
     print(
         "固定 scope 只读审计：" + ("匹配" if report["exit_code"] == 0 else "发现问题")
     )
@@ -26,7 +47,7 @@ def _print_report(report: dict[str, Any]) -> None:
     for path, downstream in report["downstream"].items():
         print(f"修改 {path} 后需重算下游登记：" + ("、".join(downstream) or "无"))
     for record in report["files"]:
-        if record["reason"] != "ok":
+        if record["reason"] != AuditReason.OK:
             print(
                 f"{record['group']} {record['role']} {record['path']}: "
                 f"{record['reason']}"
@@ -36,15 +57,13 @@ def _print_report(report: dict[str, Any]) -> None:
             )
     for issue in report["issues"]:
         print(f"{issue['group']} {issue['path']}: {issue['reason']}")
-    for record in report["counts"]:
-        print(
-            f"{record['group']} {record['path']}: 固定用例 {record['expected_cases']}"
-        )
+    for count in report["counts"]:
+        print(f"{count['group']} {count['path']}: 固定用例 {count['expected_cases']}")
     print("受影响组：" + ("、".join(report["affected_groups"]) or "无"))
     collection = report["collection"]
     print("收集结果：" + collection["reason"] + "；真实执行：not_run")
-    if collection["reason"] != "not_requested":
-        for path, actual in collection.get("modules", {}).items():
+    if collection["reason"] != AuditReason.NOT_REQUESTED:
+        for path, actual in collection["modules"].items():
             print(f"收集 {path}: {actual}")
     if report["exit_code"]:
         print(
@@ -69,31 +88,30 @@ def main() -> int:
     )
     arguments = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
+    scopes: tuple[Scope, ...] = ()
     try:
-        report = audit_scopes(root, load_scopes(root))
+        scopes = load_scopes(root)
+        report = audit_scopes(root, scopes)
     except Exception:
         # registry 导入失败也不得回显源码、参数或异常文本。
         report = audit_scopes(root, ())
         report["issues"] = [
-            dict(group="registry", path="scripts", reason="registry_unavailable")
+            dict(
+                group="registry",
+                path="scripts",
+                reason=AuditReason.REGISTRY_UNAVAILABLE,
+            )
         ]
-    report["collection"] = dict(reason="not_requested", execution="not_run")
     if arguments.collect:
-        if report["exit_code"]:
-            report["collection"]["reason"] = "audit_failed"
+        expected = collection_targets(report)
+        collection: CollectionResult
+        if expected is None:
+            collection = dict(
+                reason=AuditReason.AUDIT_FAILED, execution="not_run", modules={}
+            )
         else:
-            expected = {r["path"]: r["expected_cases"] for r in report["counts"]}
-            report["collection"] = collect_counts(root, expected)
-            if report["collection"]["reason"] != "ok":
-                report["exit_code"] = 1
-                mismatched = {
-                    p
-                    for p, n in expected.items()
-                    if report["collection"]["modules"].get(p) != n
-                }
-                report["affected_groups"] = sorted(
-                    {r["group"] for r in report["counts"] if r["path"] in mismatched}
-                )
+            collection = collect_counts(root, expected)
+        report = merge_collection(report, scopes, collection)
     if arguments.json:
         print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     else:

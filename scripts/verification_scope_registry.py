@@ -7,13 +7,13 @@ import inspect
 from pathlib import Path
 from typing import Any
 
-from scripts.verification_scope_audit import Scope
+from scripts.verification_scope_audit import AuditReason, FileKind, Scope
 
 # writer 与 scope 的显式维护契约。新常量/导入形式需人工审查此契约。
 BINDINGS = {
-    "REQUIRED_TEST_MODULES": "test",
-    "REQUIRED_SOURCE_MODULES": "source",
-    "REQUIRED_FIXTURE_FILES": "fixture",
+    "REQUIRED_TEST_MODULES": FileKind.TEST,
+    "REQUIRED_SOURCE_MODULES": FileKind.SOURCE,
+    "REQUIRED_FIXTURE_FILES": FileKind.FIXTURE,
 }
 COUNTS = "REQUIRED_TEST_CASE_COUNTS"
 METADATA = {
@@ -36,12 +36,16 @@ METADATA = {
 class RegistrationError(ValueError):
     """受控原因, 不携带文件内容或异常文本。"""
 
+    def __init__(self, reason: AuditReason) -> None:
+        self.reason = reason
+        super().__init__(reason.value)
+
 
 def _read_tree(root: Path, path: str) -> ast.Module:
     try:
         return ast.parse((root / path).read_bytes())
     except (OSError, ValueError, SyntaxError):
-        raise RegistrationError("registration_unavailable") from None
+        raise RegistrationError(AuditReason.REGISTRATION_UNAVAILABLE) from None
 
 
 class _Constants:
@@ -60,18 +64,18 @@ class _Constants:
             ):
                 continue
             else:
-                raise RegistrationError("unsupported_registration")
+                raise RegistrationError(AuditReason.UNSUPPORTED_REGISTRATION)
             for target in targets:
                 if not isinstance(target, ast.Name) or node.value is None:
-                    raise RegistrationError("unsupported_registration")
+                    raise RegistrationError(AuditReason.UNSUPPORTED_REGISTRATION)
                 if target.id in self.nodes:
-                    raise RegistrationError("duplicate_registration")
+                    raise RegistrationError(AuditReason.DUPLICATE_REGISTRATION)
                 self.nodes[target.id] = node.value
         self.active: set[str] = set()
 
     def get(self, name: str) -> Any:
         if name not in self.nodes or name in self.active:
-            raise RegistrationError("invalid_registration")
+            raise RegistrationError(AuditReason.INVALID_REGISTRATION)
         self.active.add(name)
         try:
             return self._value(self.nodes[name])
@@ -89,7 +93,7 @@ class _Constants:
                 if isinstance(child, ast.Starred):
                     expanded = self._value(child.value)
                     if not isinstance(expanded, (tuple, list)):
-                        raise RegistrationError("invalid_registration")
+                        raise RegistrationError(AuditReason.INVALID_REGISTRATION)
                     items.extend(expanded)
                 else:
                     items.append(self._value(child))
@@ -100,21 +104,21 @@ class _Constants:
                 if key is None:
                     entries = self._value(value)
                     if not isinstance(entries, dict):
-                        raise RegistrationError("invalid_registration")
+                        raise RegistrationError(AuditReason.INVALID_REGISTRATION)
                 else:
                     decoded = self._value(key)
                     if not isinstance(decoded, str):
-                        raise RegistrationError("invalid_registration")
+                        raise RegistrationError(AuditReason.INVALID_REGISTRATION)
                     entries = {decoded: self._value(value)}
                 if result.keys() & entries.keys():
-                    raise RegistrationError("duplicate_count_key")
+                    raise RegistrationError(AuditReason.DUPLICATE_COUNT_KEY)
                 result.update(entries)
             return result
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
             operand = self._value(node.operand)
             if type(operand) is int:
                 return -operand
-        raise RegistrationError("unsupported_registration")
+        raise RegistrationError(AuditReason.UNSUPPORTED_REGISTRATION)
 
 
 def _writer_scope(root: Path, group: str, writer: str) -> Scope:
@@ -130,7 +134,7 @@ def _writer_scope(root: Path, group: str, writer: str) -> Scope:
             if isinstance(node, ast.Import) and any(
                 alias.name.endswith("_scope") for alias in node.names
             ):
-                raise RegistrationError("unsupported_scope_import")
+                raise RegistrationError(AuditReason.UNSUPPORTED_SCOPE_IMPORT)
             # 明确的 writer 命名契约, 与常量值的形状无关。
             if (
                 isinstance(node, ast.ImportFrom)
@@ -153,14 +157,16 @@ def _writer_scope(root: Path, group: str, writer: str) -> Scope:
                         and n.id == (alias.asname or alias.name)
                     ]
                     if not uses:
-                        raise RegistrationError("unsupported_scope_import")
+                        raise RegistrationError(AuditReason.UNSUPPORTED_SCOPE_IMPORT)
                     for use in uses:
                         parent = parents[use]
                         if (
                             not isinstance(parent, ast.Attribute)
                             or parent.attr not in METADATA
                         ):
-                            raise RegistrationError("unsupported_scope_import")
+                            raise RegistrationError(
+                                AuditReason.UNSUPPORTED_SCOPE_IMPORT
+                            )
         primary = [
             path
             for path, aliases in imports.items()
@@ -170,7 +176,7 @@ def _writer_scope(root: Path, group: str, writer: str) -> Scope:
             )
         ]
         if len(primary) != 1:
-            raise RegistrationError("unsupported_writer_scope")
+            raise RegistrationError(AuditReason.UNSUPPORTED_WRITER_SCOPE)
         path = primary[0]
         bindings: dict[str, object] = {}
         tests: list[tuple[str, str]] = []
@@ -179,33 +185,37 @@ def _writer_scope(root: Path, group: str, writer: str) -> Scope:
             constants = _Constants(_read_tree(root, imported_path))
             names = {a.name for a in aliases}
             if names - (BINDINGS.keys() | METADATA | {COUNTS}):
-                raise RegistrationError("unsupported_scope_constant")
+                raise RegistrationError(AuditReason.UNSUPPORTED_SCOPE_CONSTANT)
             if imported_path == path:
                 expected = constants.nodes.keys() & (BINDINGS.keys() | {COUNTS})
                 if not expected <= names:
-                    raise RegistrationError("unconsumed_registration")
+                    raise RegistrationError(AuditReason.UNCONSUMED_REGISTRATION)
             for alias in aliases:
                 if alias.name in BINDINGS:
                     if imported_path != path and alias.name != "REQUIRED_TEST_MODULES":
-                        raise RegistrationError("unsupported_secondary_binding")
+                        raise RegistrationError(
+                            AuditReason.UNSUPPORTED_SECONDARY_BINDING
+                        )
                     raw = constants.get(alias.name)
                     if imported_path == path:
                         bindings[BINDINGS[alias.name]] = raw
                     if alias.name == "REQUIRED_TEST_MODULES":
                         if not isinstance(raw, tuple):
-                            raise RegistrationError("invalid_registration")
+                            raise RegistrationError(AuditReason.INVALID_REGISTRATION)
                         tests.extend(raw)
                 elif alias.name == COUNTS:
                     if imported_path != path:
-                        raise RegistrationError("unsupported_secondary_binding")
+                        raise RegistrationError(
+                            AuditReason.UNSUPPORTED_SECONDARY_BINDING
+                        )
                     counts = constants.get(COUNTS)
                     if not isinstance(counts, dict):
-                        raise RegistrationError("invalid_counts")
+                        raise RegistrationError(AuditReason.INVALID_COUNTS)
         # A2 完整回执明确消费 A1 测试; 同时核对这些导入的文件哈希。
-        bindings["test"] = tuple(tests)
-        return Scope(group, path, bindings, counts, tuple(tests))
+        bindings[FileKind.TEST] = tuple(tests)
+        return Scope(group, path, bindings, counts)
     except RegistrationError as error:
-        return Scope(group, writer, {}, errors=(str(error),))
+        return Scope(group, writer, {}, errors=(error.reason,))
 
 
 def load_scopes(
@@ -222,7 +232,12 @@ def load_scopes(
             source = inspect.getsourcefile(group.write)
             if source is None:
                 return (
-                    Scope(group.name, "scripts", {}, errors=("writer_unavailable",)),
+                    Scope(
+                        group.name,
+                        "scripts",
+                        {},
+                        errors=(AuditReason.WRITER_UNAVAILABLE,),
+                    ),
                 )
             writers_list.append(
                 (

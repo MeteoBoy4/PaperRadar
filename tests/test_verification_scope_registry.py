@@ -1,9 +1,11 @@
 """writer 登记来源契约, 包含旧切片与 A3 汇总清单。"""
 
+import importlib
 from pathlib import Path
 
 import pytest
 
+from scripts.a2_full_acceptance import acceptance_groups
 from scripts.verification_scope_audit import audit_scopes
 from scripts.verification_scope_registry import load_scopes
 
@@ -13,21 +15,35 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_real_registry_covers_all_writers_and_fixed_counts() -> None:
     scopes = load_scopes(ROOT)
     report = audit_scopes(ROOT, scopes)
-    assert [s.path for s in scopes] == [
-        "scripts/a1_scope.py",
-        "scripts/a2_scope.py",
-        "scripts/a2_full_scope.py",
-        "scripts/a3_scope.py",
-        "scripts/a4_scope.py",
-        "scripts/a5_scope.py",
-    ]
+    groups = acceptance_groups()
+    assert [scope.group for scope in scopes] == [group.name for group in groups]
     assert report["exit_code"] == 0, report["issues"]
-    # 不重复扫描 A3 子清单; 完整 A2 自身也消费 A1 的十二项测试哈希。
-    assert len(report["files"]) == 431
-    assert len({r["path"] for r in report["counts"]}) == 126
-    assert (
-        sum({r["path"]: r["expected_cases"] for r in report["counts"]}.values()) == 2519
-    )
+    # 与 writer 实际导入的权威常量逐项比对, 不再维护第二套固定总数。
+    for group in groups:
+        writer = importlib.import_module(group.write.__module__)
+        for kind, constant in (
+            ("test", "REQUIRED_TEST_MODULES"),
+            ("source", "REQUIRED_SOURCE_MODULES"),
+            ("fixture", "REQUIRED_FIXTURE_FILES"),
+        ):
+            expected_files = getattr(writer, constant, ())
+            if kind == "test":
+                expected_files = (
+                    *expected_files,
+                    *getattr(writer, "A1_TEST_MODULES", ()),
+                )
+            actual = [
+                (r["path"], r["expected_sha256"])
+                for r in report["files"]
+                if r["group"] == group.name and r["kind"] == kind
+            ]
+            assert sorted(actual) == sorted(expected_files)
+        expected_counts = getattr(writer, "REQUIRED_TEST_CASE_COUNTS", {})
+        assert {
+            r["path"]: r["expected_cases"]
+            for r in report["counts"]
+            if r["group"] == group.name
+        } == expected_counts
     assert "scripts/check-offline" in [
         f["path"] for f in report["files"] if f["group"] == "A2-01"
     ]

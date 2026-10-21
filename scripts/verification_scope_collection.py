@@ -7,28 +7,34 @@ import os
 import subprocess
 import sys
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
 
-from scripts.verification_scope_audit import valid_path
+from scripts.verification_scope_audit import (
+    AuditReason,
+    CollectionResult,
+    valid_case_count,
+    valid_path,
+)
 
 
 def collect_counts(
     root: Path,
-    expected: dict[str, int],
+    expected: Mapping[str, int | None],
     *,
     timeout: float = 120,
-) -> dict[str, Any]:
+) -> CollectionResult:
     """只收集显式模块; skip/deselect/失败与实际执行通过严格分离。"""
-    result: dict[str, Any] = dict(
-        reason="collection_unavailable",
+    result: CollectionResult = dict(
+        reason=AuditReason.COLLECTION_UNAVAILABLE,
         execution="not_run",
         modules={},
     )
     if not expected or any(
-        not valid_path(p) or type(n) is not int or n <= 0 for p, n in expected.items()
+        not valid_path(p) or (n is not None and not valid_case_count(n))
+        for p, n in expected.items()
     ):
-        result["reason"] = "invalid_counts"
+        result["reason"] = AuditReason.INVALID_COUNTS
         return result
     environment = dict(os.environ)
     for key in (
@@ -83,23 +89,25 @@ def collect_counts(
             ):
                 return result
         except subprocess.TimeoutExpired:
-            result["reason"] = "collection_timeout"
+            result["reason"] = AuditReason.COLLECTION_TIMEOUT
             return result
         except (OSError, ValueError, KeyError, TypeError):
             return result
-    result.update(
-        modules=modules, collection_skipped=raw["skipped"], deselected=raw["deselected"]
-    )
+    result["modules"] = modules
+    result["collection_skipped"] = raw["skipped"]
+    result["deselected"] = raw["deselected"]
     if process.returncode not in (0, 5):
-        result["reason"] = "collection_failed"
+        result["reason"] = AuditReason.COLLECTION_FAILED
     elif raw["skipped"]:
-        result["reason"] = "collection_skipped"
+        result["reason"] = AuditReason.COLLECTION_SKIPPED
     elif raw["deselected"]:
-        result["reason"] = "collection_deselected"
+        result["reason"] = AuditReason.COLLECTION_DESELECTED
     elif process.returncode != 0:
-        result["reason"] = "collection_failed"
+        result["reason"] = AuditReason.COLLECTION_FAILED
     else:
-        result["reason"] = "count_mismatch" if modules != expected else "ok"
+        result["reason"] = (
+            AuditReason.COUNT_MISMATCH if modules != expected else AuditReason.OK
+        )
     return result
 
 
