@@ -25,6 +25,7 @@ worktree 环境说明见[测试约定](docs/agents/testing.md#开发环境)。
 
 离线验证运行可用 `./scripts/verification-status <run_id> [--runs-dir <目录>] [--json]`
 只读查询；缺少控制方终态时不显示通过，历史结果与当前工作树适用性分别展示。
+历史检查按已发布的记录格式解释，不随当前执行计划改变。
 状态词表与终态记录格式见[状态查询契约](docs/contracts/verification-status.md)。
 
 运行依赖为 Pydantic v2、Typer、PyYAML、SQLAlchemy 和 Alembic；开发工具为

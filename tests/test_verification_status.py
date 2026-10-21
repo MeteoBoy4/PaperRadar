@@ -169,6 +169,45 @@ def test_history_is_separate_from_current_worktree(
     assert json.loads(query(completed_run).stdout)["status"] == "passed"
 
 
+def test_historical_checks_do_not_follow_current_execution_plan(
+    completed_run: VerificationRun,
+) -> None:
+    run = completed_run
+    source = run.root / "scripts/offline_evidence.py"
+    original = source.read_text()
+    updated = original.replace('"lockfile",', '"future-lockfile",', 1)
+    assert updated != original
+    source.write_text(updated)
+    before = {path: path.read_bytes() for path in run.output_dir.iterdir()}
+    result = query(run)
+    report = json.loads(result.stdout)
+    assert (report["status"], report["reason"]) == ("passed", "verified")
+    assert report["checks_passed"] == report["checks_total"] == 6
+    assert report["applicability"] == "different"
+    assert before == {path: path.read_bytes() for path in run.output_dir.iterdir()}
+
+
+@pytest.mark.parametrize("change", ["missing", "reordered", "unknown"])
+def test_format_one_rejects_checks_outside_its_historical_plan(
+    completed_run: VerificationRun, change: str
+) -> None:
+    run = completed_run
+    evidence = json.loads(run.evidence_path.read_bytes())
+    if change == "missing":
+        evidence["checks"].pop()
+    elif change == "reordered":
+        evidence["checks"].reverse()
+    else:
+        evidence["checks"].append(
+            {"id": "future-check", "status": "passed", "reason": "none", "exit_code": 0}
+        )
+    run.evidence_path.write_text(json.dumps(evidence))
+    result = query(run)
+    report = json.loads(result.stdout)
+    assert result.returncode == 1
+    assert (report["status"], report["reason"]) == ("failed", "invalid_document")
+
+
 def test_linked_receipt_must_have_well_formed_counters(
     completed_run: VerificationRun,
 ) -> None:

@@ -10,7 +10,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, Never
 
-from scripts.offline_evidence import default_checks, file_sha256
+from scripts.offline_evidence import file_sha256
 from scripts.verification_checks import (
     RECEIPT_COUNTERS,
     files_unchanged,
@@ -43,6 +43,19 @@ class Reason(StrEnum):
     INTERRUPTED = "interrupted"
 
 
+class Phase(StrEnum):
+    CHECKING = "checking"
+    PUBLISHING = "publishing"
+    FINISHED = "finished"
+    UNKNOWN = "unknown"
+
+
+class Applicability(StrEnum):
+    SAME = "same"
+    DIFFERENT = "different"
+    UNKNOWN = "unknown"
+
+
 STATUS_ZH = {
     Status.PASSED: "通过",
     Status.FAILED: "失败",
@@ -51,11 +64,13 @@ STATUS_ZH = {
     Status.UNCONFIRMED: "历史结果/终态未证实",
 }
 PHASE_ZH = {
-    "checking": "检查执行中（未证实存活）",
-    "publishing": "结论发布中（未证实存活）",
-    "finished": "已收尾",
-    "unknown": "未知",
+    Phase.CHECKING: "检查执行中（未证实存活）",
+    Phase.PUBLISHING: "结论发布中（未证实存活）",
+    Phase.FINISHED: "已收尾",
+    Phase.UNKNOWN: "未知",
 }
+# 格式 1 的已发布计划, 不随生产 default_checks 的将来调整改变历史含义。
+CHECK_IDS_V1 = ("lockfile", "format", "lint", "types", "tests", "contracts")
 # 历史解析能力表, 独立于当前生产 registry; 升级时保留已支持的旧格式。
 SUPPORTED_GROUP_FORMATS = {
     ".a1.json": (1,),
@@ -89,11 +104,8 @@ def _document(path: Path, run_id: str) -> dict[str, Any]:
     return value
 
 
-def _version(value: dict[str, Any], expected: int = 1) -> None:
-    if (
-        type(value.get("format_version")) is not int
-        or value["format_version"] != expected
-    ):
+def _version(value: dict[str, Any]) -> None:
+    if type(value.get("format_version")) is not int or value["format_version"] != 1:
         raise _Invalid(Reason.UNSUPPORTED_FORMAT)
 
 
@@ -102,8 +114,7 @@ def _checks(evidence: dict[str, Any]) -> list[dict[str, Any]]:
     if (
         not isinstance(checks, list)
         or not all(isinstance(item, dict) for item in checks)
-        or [item.get("id") for item in checks]
-        != [check.id for check in default_checks()]
+        or tuple(item.get("id") for item in checks) != CHECK_IDS_V1
         or any(
             item.get("status") not in ("passed", "failed", "not_run") for item in checks
         )
@@ -145,7 +156,7 @@ def _test_summary(receipt: dict[str, Any] | None, run_id: str) -> dict[str, int]
 
 
 def _terminal(
-    directory: Path, run_id: str, terminal: dict[str, Any], evidence: dict[str, Any]
+    directory: Path, run_id: str, terminal: dict[str, Any]
 ) -> tuple[Status, Reason]:
     _version(terminal)
     if (
@@ -271,14 +282,14 @@ def query_status(root: Path, directory: Path, run_id: str) -> dict[str, Any]:
         "format_version": 1,
         "status": Status.UNAVAILABLE,
         "reason": Reason.MATERIAL_UNAVAILABLE,
-        "phase": "unknown",
+        "phase": Phase.UNKNOWN,
         "current_check": None,
         "checks_passed": 0,
-        "checks_total": len(default_checks()),
+        "checks_total": len(CHECK_IDS_V1),
         "elapsed_seconds": None,
         "tests": None,
         "exit_code": None,
-        "applicability": "unknown",
+        "applicability": Applicability.UNKNOWN,
     }
     if not re.fullmatch("[0-9a-f]{32}", run_id):
         report["reason"] = Reason.RUN_ID_MISMATCH
@@ -303,7 +314,9 @@ def query_status(root: Path, directory: Path, run_id: str) -> dict[str, Any]:
             ),
             None,
         )
-        report["phase"] = "publishing" if evidence.get("finished_at") else "checking"
+        report["phase"] = (
+            Phase.PUBLISHING if evidence.get("finished_at") else Phase.CHECKING
+        )
         try:
             start = datetime.fromisoformat(evidence["started_at"])
             end = (
@@ -322,13 +335,13 @@ def query_status(root: Path, directory: Path, run_id: str) -> dict[str, Any]:
             return report
         terminal_digest = file_sha256(terminal_path)
         terminal = _document(terminal_path, run_id)
-        status, reason = _terminal(directory, run_id, terminal, evidence)
+        status, reason = _terminal(directory, run_id, terminal)
         if file_sha256(terminal_path) != terminal_digest:
             raise _Invalid(Reason.BINDING_MISMATCH)
         report.update(
             status=status,
             reason=reason,
-            phase="finished",
+            phase=Phase.FINISHED,
             exit_code=terminal["exit_code"],
         )
         current = capture_identity(root)
@@ -337,7 +350,9 @@ def query_status(root: Path, directory: Path, run_id: str) -> dict[str, Any]:
             and terminal.get("worktree_sha256") is not None
         ):
             report["applicability"] = (
-                "same" if identity_matches(current, evidence, terminal) else "different"
+                Applicability.SAME
+                if identity_matches(current, evidence, terminal)
+                else Applicability.DIFFERENT
             )
     except _Invalid as error:
         report.update(
@@ -355,6 +370,7 @@ class _Parser(argparse.ArgumentParser):
 
 
 def main() -> int:
+    root = Path(__file__).resolve().parents[1]
     parser = _Parser(
         prog="./scripts/verification-status",
         add_help=False,
@@ -372,17 +388,16 @@ def main() -> int:
     parser.add_argument(
         "--runs-dir",
         type=Path,
-        default=Path(__file__).resolve().parents[1] / "verification-runs",
+        default=root / "verification-runs",
         help="证据目录",
     )
     parser.add_argument("--json", action="store_true", help="输出脱敏 JSON")
     args = parser.parse_args()
-    report = query_status(
-        Path(__file__).resolve().parents[1], args.runs_dir, args.run_id
-    )
+    report = query_status(root, args.runs_dir, args.run_id)
     if args.json:
         print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     else:
+        print(f"输出格式：{report['format_version']}")
         print(
             f"状态：{STATUS_ZH[report['status']]}（{report['status']}）；原因：{report['reason']}"
         )
