@@ -53,7 +53,12 @@ def read_quota(path: Path) -> Quota | None:
         "i386",
         "i686",
         "armv7l",
+        "ppc64le",
+        "s390x",
     }:
+        return None
+    # x32 ABI 使用 __X32_SYSCALL_BIT, 不能把 443 直接传给 syscall。
+    if platform.machine() == "x86_64" and ctypes.sizeof(ctypes.c_void_p) != 8:
         return None
     try:
         libc = ctypes.CDLL(None, use_errno=True)

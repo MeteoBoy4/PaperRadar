@@ -5,9 +5,24 @@ repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"
 
 # 不调用 uv，避免只读检查触发环境同步或缓存写入。
-project_python="$repository_root/.venv/bin/python"
+project_environment="${UV_PROJECT_ENVIRONMENT-.venv}"
+if [[ "$project_environment" != /* ]]; then
+  project_environment="$repository_root/$project_environment"
+fi
+project_python="$project_environment/bin/python"
 if [[ ! -x "$project_python" ]]; then
-  project_python="python3"
+  project_python="$(command -v python3 || true)"
 fi
 export PYTHONDONTWRITEBYTECODE=1
-exec "$project_python" -B -m scripts.dev_environment "$@"
+if [[ -z "$project_python" ]] || ! "$project_python" -I -S -B -c \
+  'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)' \
+  >/dev/null 2>&1; then
+  echo '无法启动只读检查：需要可运行的 Python >=3.12；请检查项目环境或宿主 python3，并用 uv run --offline --locked 准备环境。' >&2
+  exit 1
+fi
+exec "$project_python" -I -S -B -c '
+import runpy
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+runpy.run_module("scripts.dev_environment", run_name="__main__", alter_sys=True)
+' "$repository_root" "$@"

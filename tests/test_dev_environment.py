@@ -5,6 +5,7 @@ import json
 import shlex
 import subprocess
 import sys
+from collections.abc import Iterator
 from dataclasses import replace
 from pathlib import Path
 from typing import NoReturn
@@ -104,11 +105,6 @@ def test_capacity_requires_known_quota_and_more_than_five_gib(
     [
         (replace(HEALTHY, writable=lambda path: False), "temporary", "not_writable"),
         (replace(HEALTHY, git_isolated=lambda path: False), "git", "git_not_isolated"),
-        (
-            replace(HEALTHY, capacity=lambda path: Capacity(9 * GIB, 0)),
-            "inodes",
-            "inodes_insufficient",
-        ),
     ],
 )
 def test_failed_environment_checks_are_reported(
@@ -151,6 +147,66 @@ def test_real_git_probe_rejects_symlink_into_worktree_with_spaces(
 
 def test_real_git_probe_accepts_directory_outside_any_worktree(tmp_path: Path) -> None:
     assert git_isolated(tmp_path)
+
+
+@pytest.mark.parametrize("inodes", [0, 1, 49_999])
+def test_inode_counts_are_advisory_without_an_invented_failure_threshold(
+    tmp_path: Path,
+    project: Path,
+    inodes: int,
+) -> None:
+    report = check_environment(
+        project,
+        tmp_path,
+        probes=replace(HEALTHY, capacity=lambda path: Capacity(9 * GIB, inodes)),
+    )
+
+    assert report.exit_code == 0
+    assert report.checks["inodes"].facts["available_inodes"] == inodes
+    assert "required_inodes" not in report.checks["inodes"].facts
+    assert report.checks["inodes"].reason == (
+        "inodes_insufficient" if inodes == 0 else "ok"
+    )
+
+
+def test_temporary_root_discloses_access_only_probe(
+    tmp_path: Path,
+    project: Path,
+) -> None:
+    report = check_environment(project, tmp_path, probes=HEALTHY)
+
+    assert report.checks["temporary"].facts["temporary_probe"] == "access_only"
+
+
+def test_unreadable_residue_retains_partial_size_and_remains_advisory(
+    tmp_path: Path,
+    project: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    residue = tmp_path / f"pytest-of-{getpass.getuser()}"
+    residue.mkdir()
+    (residue / "visible").write_bytes(b"x" * 65_536)
+    unreadable = residue / "unreadable"
+    unreadable.mkdir()
+    original_iterdir = Path.iterdir
+
+    def iterdir(path: Path) -> Iterator[Path]:
+        if path == unreadable:
+            raise PermissionError("synthetic-secret")
+        return original_iterdir(path)
+
+    monkeypatch.setattr(Path, "iterdir", iterdir)
+
+    report = check_environment(project, tmp_path, probes=HEALTHY)
+
+    assert report.exit_code == 0
+    check = report.checks["residue"]
+    assert check.reason == "residue_unknown"
+    assert isinstance(check.facts["allocated_bytes"], int)
+    assert check.facts["allocated_bytes"] >= 65_536
+    assert check.facts["unreadable_entries"] == 1
+    assert check.facts["size_complete"] is False
+    assert "synthetic-secret" not in str(report)
 
 
 def test_residue_is_reported_with_quoted_manual_cleanup_and_never_removed(
@@ -364,11 +420,18 @@ def test_pytest_residue_uses_the_same_user_resolution_as_pytest(
 
 def test_command_works_with_file_mutations_denied(
     tmp_path: Path,
+    project: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("TMPDIR", str(tmp_path))
+    temporary = tmp_path / "temporary"
+    temporary.mkdir()
+    monkeypatch.setenv("TMPDIR", str(temporary))
     root = Path(__file__).resolve().parent.parent
-    config_before = (root / ".venv/pyvenv.cfg").read_bytes()
+    config = project / ".venv/pyvenv.cfg"
+    config_before = config.read_bytes()
+    executable = project / ".venv/bin/python"
+    executable.unlink()
+    executable.symlink_to(sys.executable)
     code = """
 import os, sys
 def deny(event, args):
@@ -383,10 +446,11 @@ def deny(event, args):
         raise AssertionError('mutation forbidden')
 sys.addaudithook(deny)
 from scripts.dev_environment import main
-raise SystemExit(main(['check', '--json']))
+from pathlib import Path
+raise SystemExit(main(['check', '--json'], project=Path(sys.argv[1])))
 """
     result = subprocess.run(
-        [sys.executable, "-B", "-c", code],
+        [sys.executable, "-B", "-c", code, str(project)],
         cwd=root,
         text=True,
         capture_output=True,
@@ -396,8 +460,8 @@ raise SystemExit(main(['check', '--json']))
     assert result.returncode in {0, 1}, result.stderr
     assert json.loads(result.stdout)["exit_code"] == result.returncode
     assert result.stderr == ""
-    assert list(tmp_path.iterdir()) == []
-    assert (root / ".venv/pyvenv.cfg").read_bytes() == config_before
+    assert list(temporary.iterdir()) == []
+    assert config.read_bytes() == config_before
 
 
 def test_missing_temporary_root_and_residue_symlink_fail_safely(
@@ -415,6 +479,6 @@ def test_missing_temporary_root_and_residue_symlink_fail_safely(
     residue = root / f"pytest-of-{getpass.getuser()}"
     residue.symlink_to(outside, target_is_directory=True)
     report = check_environment(project, root, probes=HEALTHY)
-    assert report.exit_code == 1
+    assert report.exit_code == 0
     assert report.checks["residue"].reason == "residue_unknown"
     assert "cleanup_command" not in report.checks["residue"].facts

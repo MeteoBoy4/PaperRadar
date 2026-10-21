@@ -17,8 +17,8 @@ from typing import NoReturn
 
 from scripts.dev_environment_probes import Probes, read_temporary_root
 
-MIN_AVAILABLE_BYTES = 5 * 1024**3
-MIN_AVAILABLE_INODES = 50_000
+MIN_AVAILABLE_GIB = 5
+MIN_AVAILABLE_BYTES = MIN_AVAILABLE_GIB * 1024**3
 
 
 class Reason(StrEnum):
@@ -44,17 +44,25 @@ GUIDANCE = {
     Reason.GIT_NOT_ISOLATED: "临时根未与 Git 工作树隔离；请选择仓库外的临时根。",
     Reason.GIT_UNKNOWN: "无法核实 Git 隔离；请确认 git 可用并在该目录手动核对。",
     Reason.QUOTA_UNKNOWN: (
-        "配额未知；只能报告 statvfs 的文件系统余量，不能确认满足 5 GiB 阈值。"
+        "配额未知；只能报告 statvfs 的文件系统余量，"
+        f"不能确认满足 {MIN_AVAILABLE_GIB} GiB 阈值。"
         "请核实用户配额或选择可读取配额的临时根。"
     ),
     Reason.CAPACITY_UNKNOWN: "无法读取容量或 inode；请检查临时根的可访问性。",
-    Reason.SPACE_INSUFFICIENT: "有效可用空间未大于 5 GiB；请释放空间或选择其他临时根。",
-    Reason.INODES_INSUFFICIENT: "可用 inode 少于 50000；请释放残留或选择其他临时根。",
+    Reason.SPACE_INSUFFICIENT: (
+        f"有效可用空间未大于 {MIN_AVAILABLE_GIB} GiB；请释放空间或选择其他临时根。"
+    ),
+    Reason.INODES_INSUFFICIENT: (
+        "可用 inode 已耗尽；请释放残留或选择其他临时根。此项仅提示，不导致失败。"
+    ),
     Reason.RESIDUE_PRESENT: (
         "存在 pytest 残留（含正常保留的会话）；仅提示，不导致失败。"
         "如需清理，请确认没有 pytest 运行后手动执行 cleanup_command。"
     ),
-    Reason.RESIDUE_UNKNOWN: "无法完整统计 pytest 残留；请手动核对权限及符号链接。",
+    Reason.RESIDUE_UNKNOWN: (
+        "无法完整统计 pytest 残留；体积未知或仅为部分下界，请手动核对权限及符号链接。"
+        "此项仅提示，不导致失败；清理须在没有 pytest 运行时手动执行。"
+    ),
     Reason.PYTHON_UNKNOWN: (
         "项目解释器版本未知；请检查 .python-version 和环境中的 bin/python，"
         "再使用 uv run --offline --locked 同步环境。"
@@ -80,7 +88,13 @@ class Report:
     def exit_code(self) -> int:
         return int(
             any(
-                check.reason not in {Reason.OK, Reason.RESIDUE_PRESENT}
+                check.reason
+                not in {
+                    Reason.OK,
+                    Reason.RESIDUE_PRESENT,
+                    Reason.RESIDUE_UNKNOWN,
+                    Reason.INODES_INSUFFICIENT,
+                }
                 for check in self.checks.values()
             )
         )
@@ -141,24 +155,37 @@ def _residue(temporary: Path) -> CheckResult:
         pending = [path]
         seen: set[tuple[int, int]] = set()
         size = 0
+        unreadable = 0
         while pending:
             current = pending.pop()
-            info = current.lstat()
+            try:
+                info = current.lstat()
+            except OSError:
+                unreadable += 1
+                continue
             identity = (info.st_dev, info.st_ino)
             if identity in seen:
                 continue
             seen.add(identity)
             size += info.st_blocks * 512
             if stat.S_ISDIR(info.st_mode):
-                pending.extend(current.iterdir())
+                try:
+                    pending.extend(current.iterdir())
+                except OSError:
+                    unreadable += 1
         facts.update(
             allocated_bytes=size,
+            unreadable_entries=unreadable,
+            size_complete=unreadable == 0,
             cleanup_command=(
                 f"chmod -R u+w {shlex.quote(str(path))}"
                 f" && rm -rf -- {shlex.quote(str(path))}"
             ),
         )
-        return CheckResult(Reason.RESIDUE_PRESENT, facts)
+        return CheckResult(
+            Reason.RESIDUE_UNKNOWN if unreadable else Reason.RESIDUE_PRESENT,
+            facts,
+        )
     except (OSError, KeyError):
         return CheckResult(Reason.RESIDUE_UNKNOWN, {"allocated_bytes": None})
 
@@ -168,8 +195,8 @@ def _capacity(temporary: Path, probes: Probes) -> dict[str, CheckResult]:
         capacity = probes.capacity(temporary)
     except OSError:
         return {
-            "capacity": CheckResult(Reason.CAPACITY_UNKNOWN, {}),
-            "inodes": CheckResult(Reason.CAPACITY_UNKNOWN, {}),
+            name: CheckResult(Reason.CAPACITY_UNKNOWN, {})
+            for name in ("capacity", "inodes")
         }
     try:
         quota = probes.quota(temporary)
@@ -198,33 +225,35 @@ def _capacity(temporary: Path, probes: Probes) -> dict[str, CheckResult]:
             },
         ),
         "inodes": CheckResult(
-            Reason.OK
-            if capacity.available_inodes >= MIN_AVAILABLE_INODES
-            else Reason.INODES_INSUFFICIENT,
+            Reason.OK if capacity.available_inodes > 0 else Reason.INODES_INSUFFICIENT,
             {
                 "available_inodes": capacity.available_inodes,
-                "required_inodes": MIN_AVAILABLE_INODES,
             },
         ),
     }
 
 
 def check_environment(
-    project: Path, temporary: Path, *, probes: Probes | None = None
+    project: Path, temporary: Path | None = None, *, probes: Probes | None = None
 ) -> Report:
     """只读检查; 临时根与系统探测可注入, 不接触用户数据库。"""
     probes = probes or Probes()
     checks = {"interpreter": _interpreter(project)}
     try:
-        temporary = temporary.resolve(strict=True)
+        temporary = (
+            temporary if temporary is not None else read_temporary_root()
+        ).resolve(strict=True)
         if not temporary.is_dir():
             raise OSError("not_directory")
         checks["temporary"] = CheckResult(
             Reason.OK if probes.writable(temporary) else Reason.NOT_WRITABLE,
-            {"path": str(temporary)},
+            {"path": str(temporary), "temporary_probe": "access_only"},
         )
     except (OSError, RuntimeError):
-        checks["temporary"] = CheckResult(Reason.TEMPORARY_UNKNOWN, {})
+        checks["temporary"] = CheckResult(
+            Reason.TEMPORARY_UNKNOWN,
+            {"temporary_probe": "access_only"},
+        )
         return Report(checks)
     try:
         checks["git"] = CheckResult(
@@ -264,9 +293,10 @@ def main(
         ),
         epilog=(
             "不联网、不安装、不删除、不修改文件，不操作用户数据库，不消耗模型配额。"
-            "容量要求：有效可用空间大于 5 GiB、可用 inode 至少 50000；"
+            f"容量要求：有效可用空间大于 {MIN_AVAILABLE_GIB} GiB；"
             "配额未知不能通过。"
-            "残留仅提示；清理须在没有 pytest 运行时手动执行。"
+            "inode 与残留仅报告和提示；清理须在没有 pytest 运行时手动执行。"
+            "临时根为 access_only 权限探测，无法保证实际写入成功。"
             "输出到终端；全部满足返回 0，不满足返回 1，参数错误返回 2。"
             "常见失败：配额未知、空间不足、Git 未隔离或解释器不一致；请按输出处理。"
             "示例：./scripts/dev-environment check --json"
@@ -278,17 +308,7 @@ def main(
     parser.add_argument("--json", action="store_true", help="输出同样事实的 JSON")
     arguments = parser.parse_args(argv)
     project = project or Path(__file__).resolve().parent.parent
-    try:
-        temporary = read_temporary_root()
-    except (OSError, RuntimeError):
-        report = Report(
-            {
-                "interpreter": _interpreter(project),
-                "temporary": CheckResult(Reason.TEMPORARY_UNKNOWN, {}),
-            }
-        )
-    else:
-        report = check_environment(project, temporary, probes=probes)
+    report = check_environment(project, probes=probes)
     checks = {
         name: {
             "reason": item.reason.value,
