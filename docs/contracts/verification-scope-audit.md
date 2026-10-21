@@ -23,7 +23,9 @@ hash_drift、missing_file、unreadable_file。非法路径或哈希不原样回�
 `collect_counts(root, expected)`。`Scope` 表达显式组、scope 位置、绑定和固定计数；
 它不建立新的 required 集合。`load_scopes` 正常导入生产 registry，随后静态解释
 writer 导入的清单 AST。清单仅允许固定赋值、字面量、常量引用、tuple/list 展开与
-dict 展开；重复赋值、重复计数 key、动态增补和未知表达式失败。新增 writer/scope
+dict 展开；重复赋值、重复计数 key、动态增补和未知表达式失败。额外测试清单导入
+一并核对哈希；附加 scope 的源码、fixture、计数绑定明确拒绝，不能静默丢弃。
+模块式导入仅允许访问明确元数据属性。新增 writer/scope
 不必修改组列表，但改变导入命名约定或登记常量须同步审查解释契约与回归测试。
 
 收集进程不执行测试体；测试模块和 conftest 导入仍执行普通 Python 收集代码，因此

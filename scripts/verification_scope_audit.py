@@ -50,8 +50,41 @@ def _bindings(raw: object) -> list[tuple[str, str]] | None:
     return result
 
 
+def _read_files(
+    root: Path,
+    scopes: tuple[Scope, ...],
+) -> dict[str, tuple[str | None, str]]:
+    """唯一文件 I/O 边界, 采集已通过格式校验的显式路径。"""
+    identities: dict[str, tuple[str | None, str]] = {}
+    for scope in scopes:
+        for raw in scope.bindings.values():
+            for path, _ in _bindings(raw) or ():
+                if path in identities:
+                    continue
+                try:
+                    file_path = root / path
+                    if not file_path.resolve().is_relative_to(root.resolve()):
+                        raise OSError
+                    with file_path.open("rb") as stream:
+                        actual = hashlib.file_digest(stream, "sha256").hexdigest()
+                    identities[path] = (actual, "ok")
+                except FileNotFoundError:
+                    identities[path] = (None, "missing_file")
+                except (OSError, ValueError):
+                    identities[path] = (None, "unreadable_file")
+    return identities
+
+
 def audit_scopes(root: Path, scopes: tuple[Scope, ...]) -> dict[str, Any]:
-    """核对明确范围及绑定 DAG; 失败不隐藏为未登记的空集合。"""
+    """先采集文件事实, 再用纯逻辑核对固定登记与引用图。"""
+    return _audit(scopes, _read_files(root, scopes))
+
+
+def _audit(
+    scopes: tuple[Scope, ...],
+    identities: Mapping[str, tuple[str | None, str]],
+) -> dict[str, Any]:
+    """确定性校验; 不读取文件或刷新任何登记。"""
     files: list[dict[str, Any]] = []
     issues: list[dict[str, str]] = []
     counts: list[dict[str, Any]] = []
@@ -82,17 +115,9 @@ def audit_scopes(root: Path, scopes: tuple[Scope, ...]) -> dict[str, Any]:
                 if path in seen:
                     issue(scope, "duplicate_path")
                 seen.add(path)
-                try:
-                    file_path = root / path
-                    if not file_path.resolve().is_relative_to(root.resolve()):
-                        raise OSError
-                    with file_path.open("rb") as stream:
-                        actual = hashlib.file_digest(stream, "sha256").hexdigest()
-                    reason = "ok" if actual == expected else "hash_drift"
-                except FileNotFoundError:
-                    actual, reason = None, "missing_file"
-                except (OSError, ValueError):
-                    actual, reason = None, "unreadable_file"
+                actual, reason = identities[path]
+                if reason == "ok" and actual != expected:
+                    reason = "hash_drift"
                 files.append(
                     dict(
                         group=scope.group,

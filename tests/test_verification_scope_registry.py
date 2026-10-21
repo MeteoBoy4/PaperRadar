@@ -22,8 +22,8 @@ def test_real_registry_covers_all_writers_and_fixed_counts() -> None:
         "scripts/a5_scope.py",
     ]
     assert report["exit_code"] == 0, report["issues"]
-    # 一次性探针的 478 包括重复扫描的 A3 子清单; writer 消费汇总后为 419。
-    assert len(report["files"]) == 419
+    # 不重复扫描 A3 子清单; 完整 A2 自身也消费 A1 的十二项测试哈希。
+    assert len(report["files"]) == 431
     assert len({r["path"] for r in report["counts"]}) == 126
     assert (
         sum({r["path"]: r["expected_cases"] for r in report["counts"]}.values()) == 2519
@@ -71,3 +71,63 @@ def test_writer_binding_changes_fail_closed(tmp_path: Path, change: str) -> None
         "reassign": "duplicate_registration",
     }
     assert expected[change] in [r["reason"] for r in report["issues"]]
+
+
+@pytest.mark.parametrize("import_style", ["constant", "module"])
+def test_additional_scope_cannot_hide_unchecked_bindings(
+    tmp_path: Path,
+    import_style: str,
+) -> None:
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (tmp_path / "test_one.py").write_bytes(b"")
+    digest = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    writer = "from scripts.primary_scope import REQUIRED_TEST_MODULES\n"
+    if import_style == "constant":
+        writer += "from scripts.extra_scope import REQUIRED_SOURCE_MODULES\n"
+    else:
+        writer += (
+            "from scripts import extra_scope\n"
+            "value = extra_scope.REQUIRED_SOURCE_MODULES\n"
+        )
+    (scripts / "future_acceptance.py").write_text(writer)
+    (scripts / "primary_scope.py").write_text(
+        f"REQUIRED_TEST_MODULES = (('test_one.py', '{digest}'),)\n"
+    )
+    (scripts / "extra_scope.py").write_text(
+        f"REQUIRED_SOURCE_MODULES = (('missing_source.py', '{digest}'),)\n"
+    )
+    report = audit_scopes(
+        tmp_path,
+        load_scopes(
+            tmp_path,
+            writers=(("A6", "scripts/future_acceptance.py"),),
+        ),
+    )
+    assert report["exit_code"] == 1
+    assert report["issues"]
+
+
+def test_secondary_test_imports_are_also_hashed(tmp_path: Path) -> None:
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (tmp_path / "test_one.py").write_bytes(b"")
+    digest = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    (scripts / "future_acceptance.py").write_text(
+        "from scripts.primary_scope import REQUIRED_TEST_MODULES\n"
+        "from scripts.extra_scope import REQUIRED_TEST_MODULES as EXTRA_TESTS\n"
+    )
+    for scope, test in (("primary", "test_one.py"), ("extra", "missing_test.py")):
+        (scripts / f"{scope}_scope.py").write_text(
+            f"REQUIRED_TEST_MODULES = (('{test}', '{digest}'),)\n"
+        )
+    report = audit_scopes(
+        tmp_path,
+        load_scopes(
+            tmp_path,
+            writers=(("A6", "scripts/future_acceptance.py"),),
+        ),
+    )
+    assert report["exit_code"] == 1
+    assert report["files"][-1]["path"] == "missing_test.py"
+    assert report["files"][-1]["reason"] == "missing_file"

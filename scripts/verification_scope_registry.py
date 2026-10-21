@@ -120,7 +120,13 @@ class _Constants:
 def _writer_scope(root: Path, group: str, writer: str) -> Scope:
     imports: dict[str, list[ast.alias]] = {}
     try:
-        for node in ast.walk(_read_tree(root, writer)):
+        tree = _read_tree(root, writer)
+        parents = {
+            child: parent
+            for parent in ast.walk(tree)
+            for child in ast.iter_child_nodes(parent)
+        }
+        for node in ast.walk(tree):
             if isinstance(node, ast.Import) and any(
                 alias.name.endswith("_scope") for alias in node.names
             ):
@@ -135,6 +141,26 @@ def _writer_scope(root: Path, group: str, writer: str) -> Scope:
                 imports.setdefault(node.module.replace(".", "/") + ".py", []).extend(
                     node.names
                 )
+            if isinstance(node, ast.ImportFrom) and node.module == "scripts":
+                for alias in node.names:
+                    if not alias.name.endswith("_scope"):
+                        continue
+                    uses = [
+                        n
+                        for n in ast.walk(tree)
+                        if isinstance(n, ast.Name)
+                        and isinstance(n.ctx, ast.Load)
+                        and n.id == (alias.asname or alias.name)
+                    ]
+                    if not uses:
+                        raise RegistrationError("unsupported_scope_import")
+                    for use in uses:
+                        parent = parents[use]
+                        if (
+                            not isinstance(parent, ast.Attribute)
+                            or parent.attr not in METADATA
+                        ):
+                            raise RegistrationError("unsupported_scope_import")
         primary = [
             path
             for path, aliases in imports.items()
@@ -160,6 +186,8 @@ def _writer_scope(root: Path, group: str, writer: str) -> Scope:
                     raise RegistrationError("unconsumed_registration")
             for alias in aliases:
                 if alias.name in BINDINGS:
+                    if imported_path != path and alias.name != "REQUIRED_TEST_MODULES":
+                        raise RegistrationError("unsupported_secondary_binding")
                     raw = constants.get(alias.name)
                     if imported_path == path:
                         bindings[BINDINGS[alias.name]] = raw
@@ -168,9 +196,13 @@ def _writer_scope(root: Path, group: str, writer: str) -> Scope:
                             raise RegistrationError("invalid_registration")
                         tests.extend(raw)
                 elif alias.name == COUNTS:
+                    if imported_path != path:
+                        raise RegistrationError("unsupported_secondary_binding")
                     counts = constants.get(COUNTS)
                     if not isinstance(counts, dict):
                         raise RegistrationError("invalid_counts")
+        # A2 完整回执明确消费 A1 测试; 同时核对这些导入的文件哈希。
+        bindings["test"] = tuple(tests)
         return Scope(group, path, bindings, counts, tuple(tests))
     except RegistrationError as error:
         return Scope(group, writer, {}, errors=(str(error),))
