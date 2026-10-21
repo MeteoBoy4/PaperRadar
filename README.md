@@ -12,12 +12,16 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓
 
 ## 环境与安装
 
-项目支持 Python 3.12、3.13 和 3.14，并统一使用 `uv` 与已提交的
-`uv.lock`。首次准备环境可以联网：
+项目支持 Python 3.12、3.13 和 3.14，开发环境由 `.python-version` 固定为 3.14，
+并统一使用 `uv` 与已提交的 `uv.lock`。首次准备环境可以联网：
 
 ```bash
 uv sync --locked
 ```
+
+长时间测试前运行 `./scripts/dev-environment check`（可加 `--json`），只读检查解释器、
+临时根隔离、有效容量、inode 与 pytest 残留；使用与退出码见 `--help`，
+worktree 环境说明见[测试约定](docs/agents/testing.md#开发环境)。
 
 运行依赖为 Pydantic v2、Typer、PyYAML、SQLAlchemy 和 Alembic；开发工具为
 pytest、Ruff、mypy 和 PyYAML 类型声明。

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repository_root"
+
+# 不调用 uv，避免只读检查触发环境同步或缓存写入。
+project_python="$repository_root/.venv/bin/python"
+if [[ ! -x "$project_python" ]]; then
+  project_python="python3"
+fi
+export PYTHONDONTWRITEBYTECODE=1
+exec "$project_python" -B -m scripts.dev_environment "$@"
