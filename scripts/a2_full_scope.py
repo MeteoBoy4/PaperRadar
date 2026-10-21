@@ -130,11 +130,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_verification_run.py",
-        "a2a0dafaeab21e86cfbc8560fc550f5238832a87805f54ff8de41402e587d72a",
+        "6ef3e09170785c9a9465cbf397adb425a99b0f22111d46667d33dc73b4a40f16",
     ),
     (
         "tests/test_verification_compatibility.py",
-        "17dab6cec5f3e02b1411e17a22957e1f9d5288cf11898fbc1aa686d3d1b60b87",
+        "347bf5f6be01c7b6dfac23982888455ddd6a2c4645b45bb14a53e99caa3939ac",
     ),
     (
         "tests/test_config_material_compatibility.py",
@@ -150,7 +150,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_full_entry.py",
-        "8b7dde0250043219fb1a11a01954e0f556b275d28d6fe20f8297c30cd6dbeb9f",
+        "d37859b10e708c112a93639aee6335c4f47afe1e06423a7e0c871f09d745e9b6",
     ),
     (
         "tests/test_a2_full_examples.py",
@@ -360,7 +360,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/verification_run.py",
-        "b16a9dbf5dfb4e54a6231e3177353091ed60ab092ab33478343554df69b143d0",
+        "a4d08449eb65ac7e2c39d2fe972cccf28ec8af13dcf5d34795ac1c088212ae0a",
     ),
     (
         "pyproject.toml",
@@ -388,7 +388,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/check-offline",
-        "b08e2576e8968ea872a3dc44be4562adfb04cb7f99abe372a75469bbe6899cac",
+        "7d1db8d034c3d955e358a05aa718d2c49988db6648a4567ca38959be0bfb93d2",
     ),
     (
         "scripts/offline_evidence.py",
@@ -590,7 +590,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
     (
         "tests/fixtures/verification_transcripts.json",
-        "e900793f0280d586be4a1ccd0a814553528dc5e2dd48b3eec5b307bad09450e3",
+        "dbf6b2007e80ac124d930457d15bc5b5e89ac32ac4844ddff7319e3617668010",
     ),
     (
         "tests/fixtures/config_material_compatibility.json",

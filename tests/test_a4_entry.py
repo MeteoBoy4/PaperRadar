@@ -40,7 +40,7 @@ def test_a4_only_failure_blocks_real_entry_even_when_full_a2_passes(
     assert a4["status"] == "failed" and not a4["a4_verified"]
     assert {reason["code"] for reason in a4["reasons"]} == {"scope_drift"}
     assert all(value == "failed" for value in a4["capabilities"].values())
-    assert len(tuple(output.glob("*.json"))) == 8
+    assert len(tuple(output.glob("*.json"))) == 9
 
     # A4 仍阻止整体通过,但不是 A5 的直接前置。
     a5 = json.loads(next(output.glob("*.a5.json")).read_bytes())

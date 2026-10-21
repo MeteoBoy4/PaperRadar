@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from scripts.offline_evidence import default_checks, run_offline_verification
+from scripts.offline_evidence import (
+    default_checks,
+    file_sha256,
+    run_offline_verification,
+)
+from scripts.verification_checks import same_run_document
 from scripts.verification_identity import RunIdentity, capture_identity
+from scripts.verification_publication import publish_conclusion
 
 Conclusion = tuple[Path, dict[str, Any]]
 
@@ -64,6 +71,8 @@ def run_verification(
         if (
             group.name in names
             or group.suffix in suffixes
+            or not re.fullmatch(r"\.[a-z0-9-]+\.json", group.suffix)
+            or group.suffix in (".terminal.json", ".pytest.json")
             or not set(group.dependencies) <= names
         ):
             raise ValueError("验收组登记重复或缺少前置结论；请检查登记顺序。")
@@ -99,4 +108,47 @@ def run_verification(
                     f"[{group.name} 验收] 原因：{reason['code']}："
                     f"{reason['message_zh']}"
                 )
+    # 最后发布控制方观察到的退出决定; 旧证据及各组原有格式不变。
+    terminal_path = publish_conclusion(
+        output_dir,
+        run.run_id,
+        ".terminal.json",
+        {
+            "format_version": 1,
+            "run_id": run.run_id,
+            "exit_code": 0 if run.passed else 1,
+            "interrupted": run.interrupted,
+            "code": baseline.code,
+            "worktree_sha256": baseline.worktree_sha256,
+            "lockfile_sha256": baseline.lockfile_sha256,
+            "evidence_sha256": file_sha256(evidence_path),
+            "pytest_receipt_sha256": file_sha256(
+                output_dir / f"{run.run_id}.pytest.json"
+            ),
+            "materials_consistent": same_run_document(
+                evidence_path, run.run_id, ".json", evidence
+            )
+            and all(
+                same_run_document(
+                    run.conclusions[group.name][0],
+                    run.run_id,
+                    group.suffix,
+                    run.conclusions[group.name][1],
+                )
+                for group in groups
+            ),
+            "groups": [
+                {
+                    "suffix": group.suffix,
+                    "required": group.required,
+                    "sha256": file_sha256(run.conclusions[group.name][0]),
+                    "format_version": run.conclusions[group.name][1].get(
+                        "format_version"
+                    ),
+                }
+                for group in groups
+            ],
+        },
+    )
+    print(f"[离线验证] 终态：{terminal_path}")
     return run

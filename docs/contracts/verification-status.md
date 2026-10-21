@@ -1,0 +1,87 @@
+# 离线验证状态查询（#55）
+
+这是开发验收工具，不属于 V1 论文业务 CLI。运行：
+
+```bash
+./scripts/verification-status <32 位小写十六进制 run_id> \
+  --runs-dir verification-runs [--json]
+```
+
+默认目录是仓库的 `verification-runs/`。入口使用现有项目 Python，支持
+`UV_PROJECT_ENVIRONMENT`，不启动 uv 或同步环境；解释器缺失时提示先准备环境。
+`--help` 只打印中文帮助。查询只读文件和 Git 身份，不执行检查、迁移或补写历史记录。
+不保存、回显原始异常、未知参数、测试参数、论文或配置载荷。
+
+退出码：0 表示已核对的历史通过；1 表示失败、未完成、未证实或材料不可得；
+2 表示参数错误。历史通过的退出码与当前工作树适用性分开，自动化若要求适用于
+当前代码，还须核对 `applicability=same`。
+
+## 输出格式 1
+
+JSON 与中文文本展示相同事实。JSON 使用以下受控字段：
+
+| 字段 | 语义 |
+| --- | --- |
+| `format_version` | 严格整数 1 |
+| `status` | `passed` 通过；`failed` 失败；`incomplete` 中断/不完整；`unavailable` 材料不可得；`unconfirmed` 历史结果/终态未证实 |
+| `reason` | 见下表；永不包含原始异常正文 |
+| `phase` | `checking` 检查执行阶段；`publishing` 检查已收尾、结论发布阶段；`finished` 控制方终态已核对；`unknown` 无法判断 |
+| `current_check` | 固定计划中首个尚未完成的检查 ID，或 `null`；不是进程存活证明 |
+| `checks_passed`、`checks_total` | 固定计划的通过数和总数 |
+| `elapsed_seconds` | 基础检查的开始到结束时间差；未结束时相对查询时间；无法解析为 `null`。不含结论发布时间 |
+| `tests` | 回执各模块六个非负整数计数之和；不可解析为 `null`。仅供进度参考，不证明成功 |
+| `exit_code` | 核对终态后展示的控制方退出决定，其他情况为 `null` |
+| `applicability` | `same` 当前 HEAD、工作树和 lockfile 同身份；`different` 身份不同；`unknown` 无法核对 |
+
+| `reason` | 含义 |
+| --- | --- |
+| `verified` | 终态、执行事实、必需组、回执及字节/身份链接均通过 |
+| `terminal_missing` | 缺少终态；不区分旧协议、仍在运行、发布崩溃或被强杀 |
+| `material_unavailable` | 必需文件缺失或不可取得 |
+| `invalid_document` | 非对象、坏 JSON、错误字段类型或非法/重复组登记 |
+| `unsupported_format` | 基础证据、回执或终态格式未知，或组格式与本次登记不符 |
+| `run_id_mismatch` | 标识不合法，或内容不属于所查询运行 |
+| `binding_mismatch` | 材料哈希、身份、返回对象或文件反向链接不符 |
+| `checks_not_passed` | 固定检查未真实完整通过 |
+| `group_not_passed` | 本次登记的必需组未全部通过 |
+| `receipt_not_passed` | 回执未完整成功或缺少模块记录 |
+| `exit_nonzero` | 控制方退出决定非零 |
+| `interrupted` | 基础检查或发布被中断，或必需组不完整 |
+
+没有终态时，`phase` 仅描述最后可读证据的进度，不声称此刻仍在执行。
+`checking` 与 `publishing` 都可搭配 `unconfirmed`；已记录中断则为 `incomplete`。
+因此 pytest 的回执已完成、进程仍未退出，以及检查结束、结论尚未发布完，都不会
+显示整体 `passed`。查询不轮询、不检查 PID、不依赖文件时间。
+
+## 控制方终态格式 1
+
+`run_verification` 在实际等待固定检查执行器返回、依次取得全部登记组的发布结果后，
+最后使用既有不可覆盖原子发布原语写出 `<run_id>.terminal.json`：
+
+| 字段 | 语义 |
+| --- | --- |
+| `format_version`、`run_id` | 严格整数 1、同次运行标识 |
+| `exit_code` | 控制方将返回的严格整数退出码；全部必需组通过且控制方未中断时为 0，否则为 1 |
+| `interrupted` | 控制方是否记录了组发布中断；基础检查中断还要读取其自身证据 |
+| `code`、`worktree_sha256`、`lockfile_sha256` | 本次开始时采集的运行身份 |
+| `evidence_sha256`、`pytest_receipt_sha256` | 基础证据和回执的实际字节哈希；失败运行可能没有回执，哈希为 `null` |
+| `materials_consistent` | 发布文件名、run_id、磁盘对象与各写出器返回对象是否相符 |
+| `groups` | 本次按发布顺序冻结的全部组，含可选组；每项保存 `suffix`、严格布尔 `required`、`sha256`、`format_version` |
+
+组后缀限 `.[a-z0-9-]+.json`，不得重复或占用 `.pytest.json`、`.terminal.json`。
+查询以本次终态的登记清单为准，不导入当前验收组注册表；新增组会自动记录，
+以后增删生产组不改变历史范围。组格式由当次写出器提供并绑定，不复制各组业务判据。
+
+`passed` 必须同时满足：终态退出决定为 0；基础证据完整、固定六检查均为
+`passed/none` 且实际整数退出码为 0；全部必需组通过；回执格式 1、同次、完整且
+实际整数退出码为 0；基础证据、全部组、回执的字节链接及必需组身份均成立。
+可选组失败不会单独使整体失败，但其已登记文件仍须存在且字节不变。
+查询前后复核已绑定文件，材料失配或无法判断时不显示通过。
+
+终态是控制方完成发布后的退出决定，不是操作系统对控制方最终退出的事后证明。
+调用者仍应等待入口实际退出；若终态写出后控制方被强杀，以入口真实非零退出为准。
+终态记录依赖本机受信控制方；哈希用于同次材料完整性核对，不提供签名认证。
+
+发布失败或控制方在全部组完成前退出时可能没有终态；查询保持未证实，不修补记录。
+旧运行没有终态也不升级为新协议通过。旧基础证据和各组格式、原七份主要文件与
+pytest 回执的含义保持不变；本次只另增一份终态，正常成功共九份 JSON。

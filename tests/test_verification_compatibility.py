@@ -83,7 +83,7 @@ sys.exit(main())
         5 if case in {"failed", "interrupted"} else 6
     )
     assert len(list(output.glob("*.json"))) == (
-        7 if case in {"failed", "interrupted"} else 8
+        8 if case in {"failed", "interrupted"} else 9
     )
     assert not list(output.glob("*.tmp"))
     legacy = json.loads(next(output.glob("*.a2.json")).read_bytes())

@@ -23,6 +23,10 @@ uv sync --locked
 临时根隔离、有效容量、inode 与 pytest 残留；使用与退出码见 `--help`，
 worktree 环境说明见[测试约定](docs/agents/testing.md#开发环境)。
 
+离线验证运行可用 `./scripts/verification-status <run_id> [--runs-dir <目录>] [--json]`
+只读查询；缺少控制方终态时不显示通过，历史结果与当前工作树适用性分别展示。
+状态词表与终态记录格式见[状态查询契约](docs/contracts/verification-status.md)。
+
 运行依赖为 Pydantic v2、Typer、PyYAML、SQLAlchemy 和 Alembic；开发工具为
 pytest、Ruff、mypy 和 PyYAML 类型声明。
 精确解析版本以 `uv.lock` 为唯一权威，避免依赖升级后在说明文档中保留过期副本。
@@ -274,7 +278,7 @@ manifest 审计变化，同次调用只允许一份一致正文。从相同摘�
 重新取得的制品成员验证四阶段重建；不同 hashseed、cwd 和无序集合构造顺序保持身份，
 纯构造、回放与比较不执行 I/O。独立复现命令见[离线证据说明](docs/verification/offline-evidence.md)。
 独立 A5 验收由 #54 接入，固定绑定四阶段、回放、比较与隔离恢复能力。
-check-offline 输出七份主要文件，另有实际 pytest 执行回执；
+check-offline 输出七份主要文件，另有实际 pytest 执行回执与控制方终态记录；
 本服务不调度任务或改写人工决定，也不证明 PDF/正文的真实质量。
 
 ## Screening 输出验证

@@ -171,7 +171,7 @@ def test_interruption_while_generating_legacy_conclusion_keeps_seven_files_incom
     _, full = run_full_verification(root, output)
     assert full["status"] == "incomplete"
     assert not full["a2_verified"]
-    assert len(list(output.glob("*.json"))) == 8
+    assert len(list(output.glob("*.json"))) == 9
     assert (
         json.loads(next(output.glob("*.a3.json")).read_bytes())["status"]
         == "incomplete"
