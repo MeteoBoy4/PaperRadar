@@ -124,6 +124,8 @@ def test_interrupted_check_stops_entire_process_group_before_publication(
 ) -> None:
     address = "\0paperradar-61-" + uuid.uuid4().hex
     marker = tmp_path / "grandchild-wrote"
+    member = tmp_path / "grandchild-pid"
+    published_with_live_member = tmp_path / "published-with-live-member"
     later = tmp_path / "later-ran"
     output = tmp_path / "runs"
     worker = tmp_path / "worker.py"
@@ -135,6 +137,7 @@ def test_interrupted_check_stops_entire_process_group_before_publication(
         "    child.wait()\n"
         "else:\n"
         f"    if {ignore_term!r}: signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+        f"    Path({str(member)!r}).write_text(str(os.getpid()))\n"
         "    connection = socket.socket(socket.AF_UNIX)\n"
         f"    connection.connect({address!r})\n"
         "    connection.sendall(f'{os.getpid()} {os.getppid()} {os.getpgrp()} "
@@ -145,9 +148,25 @@ def test_interrupted_check_stops_entire_process_group_before_publication(
     )
     later_code = f"from pathlib import Path; Path({str(later)!r}).touch()"
     controller = f"""
-import signal
+import os, select, signal, sys
 from pathlib import Path
 from scripts.offline_evidence import Check, run_offline_verification
+# 同一 CPU 使 SIGKILL 返回后不能借另一 CPU 的调度掩盖退出等待缺失。
+os.sched_setaffinity(0, {{min(os.sched_getaffinity(0))}})
+def observe_publication(event, args):
+    if (event == 'open' and isinstance(args[0], str)
+        and args[0].startswith({str(output) + "/."!r})
+        and args[0].endswith('.tmp') and Path({str(member)!r}).exists()):
+        try:
+            death = os.pidfd_open(int(Path({str(member)!r}).read_text()))
+        except ProcessLookupError:
+            return
+        try:
+            if not select.select([death], [], [], 0)[0]:
+                Path({str(published_with_live_member)!r}).touch()
+        finally:
+            os.close(death)
+sys.addaudithook(observe_publication)
 def interrupt(signum, frame):
     raise KeyboardInterrupt
 signal.signal(signal.SIGTERM, interrupt)
@@ -190,6 +209,7 @@ raise SystemExit(0 if evidence['overall'] == 'passed' else 1)
                 assert len(dead) == len(deaths)
                 assert group == session and group != process.pid
                 assert not marker.exists()
+                assert not published_with_live_member.exists()
             evidence = json.loads(next(output.glob("*.json")).read_bytes())
             assert evidence["format_version"] == 1
             assert evidence["overall"] == "incomplete"

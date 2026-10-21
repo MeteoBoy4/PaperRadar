@@ -302,11 +302,11 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/offline_evidence.py",
-        "a72697689461f30ded07259534dd7c6d2fa679f26efa46ba32bca8bdd02012ee",
+        "d3732222e07fc47f2e2e3620eebb2dad5d6a3840617dfcb4bdd1ab5ad5779aca",
     ),
     (
         "scripts/a2_full_scope.py",
-        "f83be1400639502ff78a1d7205859c4ad5325fc8c17ec73436e1c2a95d33a78f",
+        "f2162924b5e449a5e2674354ce2231bb6551f2d56c874f262b51a334c86240c3",
     ),
     (
         "scripts/check-offline",

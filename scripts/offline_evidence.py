@@ -5,13 +5,14 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import select
 import shlex
 import signal
 import subprocess
 import sys
 import time
 import uuid
-from contextlib import suppress
+from contextlib import ExitStack, suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -243,6 +244,47 @@ def _write_evidence(path: Path, evidence: dict[str, Any]) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _kill_and_wait_for_group(group: int) -> None:
+    """用 Linux pidfd 等待成员退出, 不把发送 SIGKILL 当成退出确认。"""
+    empty_scan = False
+    while True:
+        with ExitStack() as descriptors:
+            poller = select.poll()
+            pending: set[int] = set()
+            for entry in Path("/proc").iterdir():
+                if not entry.name.isdecimal():
+                    continue
+                try:
+                    pid = int(entry.name)
+                    if os.getpgid(pid) != group:
+                        continue
+                    fd = os.pidfd_open(pid)
+                    descriptors.callback(os.close, fd)
+                    # 打开 fd 期间 PID 可能退出或被复用, 再确认归属。
+                    if os.getpgid(pid) != group:
+                        continue
+                except ProcessLookupError:
+                    continue
+                poller.register(fd, select.POLLIN)
+                pending.add(fd)
+            for fd, _ in poller.poll(0):
+                poller.unregister(fd)
+                pending.remove(fd)
+            if not pending:
+                # 再扫一次, 覆盖上次枚举期间组内 fork 后父进程退出的情况。
+                if empty_scan:
+                    return
+                empty_scan = True
+                continue
+            empty_scan = False
+            with suppress(ProcessLookupError):
+                os.killpg(group, signal.SIGKILL)
+            while pending:
+                for fd, _ in poller.poll():
+                    poller.unregister(fd)
+                    pending.remove(fd)
+
+
 def _stop_process_group(process: subprocess.Popen[bytes]) -> None:
     """给整组退出宽限, 即使组长先退出也继续清理后代。"""
     previous = {
@@ -265,6 +307,7 @@ def _stop_process_group(process: subprocess.Popen[bytes]) -> None:
             time.sleep(min(0.05, remaining))
         with suppress(ProcessLookupError):
             os.killpg(process.pid, signal.SIGKILL)
+        _kill_and_wait_for_group(process.pid)
         process.wait()
     finally:
         for signum, handler in previous.items():

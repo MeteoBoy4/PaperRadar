@@ -198,7 +198,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_verification_integrity.py",
-        "0d989e9d1054b051666a2a68cd0f7ede1d36a0d2fd70f643d68660cca92fda5c",
+        "53a9bc821c72628a423355164627425c7024c5d941e59dac5f56dcf1528651a0",
     ),
 )
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
@@ -336,11 +336,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a3_scope.py",
-        "40e05ae8a7f12c249f9701a64ef05c6d0c5fbb1cd77893980e3102b566c609e9",
+        "9cb580eb43d4833b829e65a7e925da93aa5c04bee9c9994a44f417a4f5d885fd",
     ),
     (
         "scripts/a2_full_scope.py",
-        "f83be1400639502ff78a1d7205859c4ad5325fc8c17ec73436e1c2a95d33a78f",
+        "f2162924b5e449a5e2674354ce2231bb6551f2d56c874f262b51a334c86240c3",
     ),
     (
         "scripts/a1_scope.py",
@@ -360,7 +360,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/offline_evidence.py",
-        "a72697689461f30ded07259534dd7c6d2fa679f26efa46ba32bca8bdd02012ee",
+        "d3732222e07fc47f2e2e3620eebb2dad5d6a3840617dfcb4bdd1ab5ad5779aca",
     ),
     (
         "scripts/verification_checks.py",
