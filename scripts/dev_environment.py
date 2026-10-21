@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
 import os
-import pwd
 import re
 import shlex
 import stat
@@ -56,7 +56,7 @@ GUIDANCE = {
     ),
     Reason.RESIDUE_UNKNOWN: "无法完整统计 pytest 残留；请手动核对权限及符号链接。",
     Reason.PYTHON_UNKNOWN: (
-        "项目解释器版本未知；请检查 .python-version 和环境中的 pyvenv.cfg，"
+        "项目解释器版本未知；请检查 .python-version 和环境中的 bin/python，"
         "再使用 uv run --offline --locked 同步环境。"
     ),
     Reason.PYTHON_MISMATCH: (
@@ -97,15 +97,21 @@ def _interpreter(project: Path) -> CheckResult:
     }
     try:
         expected = (project / ".python-version").read_text(encoding="utf-8").strip()
-        values = dict(
-            (key.strip(), value.strip())
-            for line in (environment / "pyvenv.cfg")
-            .read_text(encoding="utf-8")
-            .splitlines()
-            if (parts := line.partition("="))[1]
-            for key, value in [(parts[0], parts[2])]
+        result = subprocess.run(
+            [
+                str(environment / "bin/python"),
+                "-I",
+                "-S",
+                "-B",
+                "-c",
+                "import sys; print('.'.join(map(str, sys.version_info[:3])))",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=True,
         )
-        actual = values.get("version_info", values.get("version", ""))
+        actual = result.stdout.strip()
         if not re.fullmatch(r"\d+\.\d+", expected) or not re.fullmatch(
             r"\d+\.\d+\.\d+", actual
         ):
@@ -117,13 +123,16 @@ def _interpreter(project: Path) -> CheckResult:
             else Reason.PYTHON_MISMATCH
         )
         return CheckResult(reason, facts)
-    except (OSError, UnicodeError):
+    except (OSError, UnicodeError, subprocess.SubprocessError):
         return CheckResult(Reason.PYTHON_UNKNOWN, facts)
 
 
 def _residue(temporary: Path) -> CheckResult:
     try:
-        path = temporary / f"pytest-of-{pwd.getpwuid(os.getuid()).pw_name}"
+        username = getpass.getuser()
+        if not username or Path(username).name != username or "\0" in username:
+            return CheckResult(Reason.RESIDUE_UNKNOWN, {"allocated_bytes": None})
+        path = temporary / f"pytest-of-{username}"
         if not path.exists() and not path.is_symlink():
             return CheckResult(Reason.OK, {"path": str(path), "allocated_bytes": 0})
         facts: dict[str, object] = {"path": str(path), "allocated_bytes": None}
@@ -231,7 +240,15 @@ def check_environment(
 
 class _Parser(argparse.ArgumentParser):
     def error(self, message: str) -> NoReturn:
-        self.exit(2, "参数错误；请运行 ./scripts/dev-environment --help。\n")
+        if message.startswith("the following arguments are required:"):
+            cause = "缺少 check 子命令"
+        elif message.startswith("argument command: invalid choice:"):
+            cause = "仅支持 check 子命令"
+        elif message.startswith("unrecognized arguments:"):
+            cause = "未知选项或多余参数"
+        else:
+            cause = "参数格式不正确"
+        self.exit(2, f"参数错误：{cause}；请运行 ./scripts/dev-environment --help。\n")
 
 
 def main(
@@ -290,7 +307,7 @@ def main(
         )
     else:
         labels = {
-            "interpreter": "项目解释器（读取 pyvenv.cfg）",
+            "interpreter": "项目解释器（实际执行 bin/python）",
             "temporary": "临时根",
             "git": "Git 隔离",
             "capacity": "有效容量",

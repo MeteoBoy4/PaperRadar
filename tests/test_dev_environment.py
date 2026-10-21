@@ -1,8 +1,8 @@
 """开发环境检查的公开行为; 系统探测在 I/O 边界替换。"""
 
+import getpass
 import json
-import os
-import pwd
+import shlex
 import subprocess
 import sys
 from dataclasses import replace
@@ -24,14 +24,23 @@ HEALTHY = Probes(
 
 
 @pytest.fixture
-def project(tmp_path: Path) -> Path:
+def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.delenv("UV_PROJECT_ENVIRONMENT", raising=False)
     project = tmp_path / "project"
     project.mkdir()
     (project / ".python-version").write_text("3.14\n")
     environment = project / ".venv"
     environment.mkdir()
     (environment / "pyvenv.cfg").write_text("version_info = 3.14.4\n")
+    _python(environment, "3.14.4")
     return project
+
+
+def _python(environment: Path, version: str) -> None:
+    executable = environment / "bin/python"
+    executable.parent.mkdir(exist_ok=True)
+    executable.write_text(f"#!/bin/sh\nprintf '%s\\n' {shlex.quote(version)}\n")
+    executable.chmod(0o755)
 
 
 def test_healthy_environment_reports_capacity_without_changing_files(
@@ -149,7 +158,7 @@ def test_residue_is_reported_with_quoted_manual_cleanup_and_never_removed(
     project: Path,
 ) -> None:
     root = tmp_path / "temporary with spaces"
-    residue = root / f"pytest-of-{pwd.getpwuid(os.getuid()).pw_name}"
+    residue = root / f"pytest-of-{getpass.getuser()}"
     residue.mkdir(parents=True)
     old = residue / "garbage-one"
     old.mkdir()
@@ -185,7 +194,7 @@ def test_project_interpreter_version_is_checked(
     version: str,
     reason: str,
 ) -> None:
-    (project / ".venv/pyvenv.cfg").write_text(f"version_info = {version}\n")
+    _python(project / ".venv", version)
 
     report = check_environment(project, tmp_path, probes=HEALTHY)
 
@@ -268,6 +277,91 @@ def test_actual_entry_help_and_invalid_arguments_are_local_and_controlled() -> N
         assert "联网" in result.stdout or "参数错误" in result.stderr
 
 
+@pytest.mark.parametrize(
+    ("arguments", "explanation"),
+    [
+        ([], "缺少 check 子命令"),
+        (["prepare"], "仅支持 check 子命令"),
+        (["check", "--synthetic-secret"], "未知选项或多余参数"),
+    ],
+)
+def test_argument_errors_explain_controlled_causes(
+    arguments: list[str],
+    explanation: str,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from scripts.dev_environment import main
+
+    with pytest.raises(SystemExit) as caught:
+        main(arguments)
+
+    assert caught.value.code == 2
+    error = capsys.readouterr().err
+    assert explanation in error
+    assert "--help" in error
+    assert "synthetic-secret" not in error
+
+
+def test_explicit_project_environment_override_is_checked(
+    tmp_path: Path,
+    project: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    environment = project / "custom environment"
+    environment.mkdir()
+    (environment / "pyvenv.cfg").write_text("version_info = 3.12.14\n")
+    _python(environment, "3.12.14")
+    monkeypatch.setenv("UV_PROJECT_ENVIRONMENT", "custom environment")
+
+    report = check_environment(project, tmp_path, probes=HEALTHY)
+
+    assert report.checks["interpreter"].reason == "python_mismatch"
+    assert report.checks["interpreter"].facts["path"] == str(environment)
+
+
+def test_missing_interpreter_cannot_pass_using_stale_configuration(
+    tmp_path: Path,
+    project: Path,
+) -> None:
+    (project / ".venv/bin/python").unlink()
+    report = check_environment(project, tmp_path, probes=HEALTHY)
+    assert report.checks["interpreter"].reason == "python_unknown"
+
+
+def test_actual_interpreter_version_takes_precedence_over_stale_configuration(
+    tmp_path: Path,
+    project: Path,
+) -> None:
+    executable = project / ".venv/bin/python"
+    executable.unlink()
+    executable.symlink_to(sys.executable)
+    (project / ".venv/pyvenv.cfg").write_text("version_info = 0.0.0\n")
+    (project / ".python-version").write_text(
+        f"{sys.version_info.major}.{sys.version_info.minor}\n"
+    )
+
+    report = check_environment(project, tmp_path, probes=HEALTHY)
+
+    assert report.checks["interpreter"].reason == "ok"
+    assert report.checks["interpreter"].facts["actual"] != "0.0.0"
+
+
+def test_pytest_residue_uses_the_same_user_resolution_as_pytest(
+    tmp_path: Path,
+    project: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LOGNAME", "synthetic-pytest-user")
+    residue = tmp_path / "pytest-of-synthetic-pytest-user"
+    residue.mkdir()
+    (residue / "old").write_bytes(b"fixture")
+
+    report = check_environment(project, tmp_path, probes=HEALTHY)
+
+    assert report.checks["residue"].reason == "residue_present"
+    assert report.checks["residue"].facts["path"] == str(residue)
+
+
 def test_command_works_with_file_mutations_denied(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -318,7 +412,7 @@ def test_missing_temporary_root_and_residue_symlink_fail_safely(
     outside.mkdir()
     root = tmp_path / "temporary"
     root.mkdir()
-    residue = root / f"pytest-of-{pwd.getpwuid(os.getuid()).pw_name}"
+    residue = root / f"pytest-of-{getpass.getuser()}"
     residue.symlink_to(outside, target_is_directory=True)
     report = check_environment(project, root, probes=HEALTHY)
     assert report.exit_code == 1
