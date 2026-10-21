@@ -129,7 +129,7 @@ def test_future_normalization_is_a_pure_fixture_and_cannot_be_compiled(
     new_yaml_version(
         settings, "extraction", lambda c: c.update(normalization_version="fixture-v2")
     )
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigError, match=r"^extraction\.normalization_version："):
         compile_config(settings, database)
 
 

@@ -254,7 +254,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_config_projection_algorithms.py",
-        "15462ab3d7372eb7d2948f5091a22d3ffb841d4244c5b6221c857736aeb055c3",
+        "e9a7beeb12a41456181c856cf17067b30502e8c09463823ae5079a2e5fd961a6",
     ),
     (
         "tests/test_config_projection_architecture.py",

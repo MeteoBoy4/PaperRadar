@@ -108,7 +108,7 @@ def test_future_algorithm_semantics_are_isolated_in_pure_fixtures(
     assert result.calibration_changed == (field != "chunking_version")
     assert not result.identity_changes
     new_yaml_version(settings, group, lambda c: c.update({field: "fixture-v2"}))
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigError, match=rf"^{group}\.{field}："):
         compile_config(settings, database)
 
 
@@ -137,7 +137,7 @@ def test_ordered_excerpt_priority_preserves_order_in_a_pure_fixture(
         "escalation",
         lambda c: c.update(excerpt_priority=["methods", "availability"]),
     )
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigError, match=r"^escalation\.excerpt_priority："):
         compile_config(settings, database)
 
 

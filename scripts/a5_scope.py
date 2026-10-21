@@ -73,7 +73,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_stage_input_extraction.py",
-        "2b310243fd84b6fe84da748ce11e22bc90556b12add3287182444d4c9269b8c1",
+        "189658296a4cf4e4e0adbb6ba1beb6787f76e1985d90e87ce7bb4fc33c1a49ca",
     ),
     (
         "tests/test_stage_input_extraction_reuse.py",
@@ -89,7 +89,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_stage_input_reuse.py",
-        "707bbe7c646607eba49bcbe9d6f933d0da627d6be36603b6e0ddc89727ba7d67",
+        "45ccc5f0e016102a451f3b4cdab1fa4e7e31d175e24d59279b156af41130d40e",
     ),
     (
         "tests/test_stage_input_value.py",
@@ -139,15 +139,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "6a9b14f6e6739c8166f4a2f8316a790511872126e781bed347e157e691103caa",
+        "05502aea81f5edd0f5fb6d1cd6f827b2d5e0db28b29429f22e611ca9f6486398",
     ),
     (
         "scripts/a3_scope.py",
-        "a542200ab7db153c90c27491f421cf09f02096b485aab1088103653f6e80f259",
+        "f2d37ca51ce2df5db005a797b5469f39a3fe5ba966d482e2437d6c8d3d38303b",
     ),
     (
         "scripts/a4_scope.py",
-        "621da3014fc45815609605bc5be4d52244db78d30a8a430241a3dba602ff2693",
+        "56c494780cbda04e2cd5992455326c42f769dda27a65052f199ea2d5dc8830e7",
     ),
     (
         "scripts/a2_full_acceptance.py",

@@ -342,7 +342,7 @@ def test_structured_reuse_ignores_unrelated_extraction_and_has_selector_semantic
         "escalation",
         lambda c: c.update(excerpt_selector_version="fixture-v2"),
     )
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigError, match=r"^escalation\.excerpt_selector_version："):
         compile_config(settings, database)
 
 
