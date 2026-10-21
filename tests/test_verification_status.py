@@ -92,6 +92,7 @@ def query(
         ("terminal_missing", "unconfirmed", "terminal_missing"),
         ("missing_group", "unavailable", "material_unavailable"),
         ("bad_json", "failed", "invalid_document"),
+        ("deep_json", "failed", "invalid_document"),
         ("unknown_format", "failed", "unsupported_format"),
         ("wrong_run", "failed", "run_id_mismatch"),
         ("nonzero", "failed", "exit_nonzero"),
@@ -117,6 +118,8 @@ def test_query_rejects_unproven_or_changed_materials_without_writing(
         (run.output_dir / f"{run.run_id}.a5.json").unlink()
     elif case == "bad_json":
         path.write_text("{SECRET unexpected failure")
+    elif case == "deep_json":
+        path.write_text("[" * 2000 + "0" + "]" * 2000)
     elif case == "changed_group":
         (run.output_dir / f"{run.run_id}.a5.json").write_text("{}")
     elif case in ("changed_evidence", "changed_receipt"):
@@ -160,6 +163,10 @@ def test_history_is_separate_from_current_worktree(
     report = json.loads(query(completed_run).stdout)
     assert report["status"] == "passed"
     assert report["applicability"] == "different"
+    (completed_run.root / "scripts/a2_full_acceptance.py").write_text(
+        "SECRET invalid registry"
+    )
+    assert json.loads(query(completed_run).stdout)["status"] == "passed"
 
 
 def test_linked_receipt_must_have_well_formed_counters(
@@ -189,8 +196,41 @@ def test_linked_receipt_must_have_well_formed_counters(
     assert (report["status"], report["reason"]) == ("failed", "receipt_not_passed")
 
 
+@pytest.mark.parametrize("suffix", [".json", ".a5.json", ".pytest.json"])
+def test_unreadable_material_is_unavailable(
+    completed_run: VerificationRun, suffix: str
+) -> None:
+    path = completed_run.output_dir / f"{completed_run.run_id}{suffix}"
+    path.chmod(0)
+    try:
+        report = json.loads(query(completed_run).stdout)
+        assert (report["status"], report["reason"]) == (
+            "unavailable",
+            "material_unavailable",
+        )
+    finally:
+        path.chmod(0o600)
+
+
+def test_unknown_group_format_is_rejected_even_with_valid_byte_links(
+    completed_run: VerificationRun,
+) -> None:
+    run = completed_run
+    terminal_path = run.output_dir / f"{run.run_id}.terminal.json"
+    terminal = json.loads(terminal_path.read_bytes())
+    group = terminal["groups"][-1]
+    path = run.output_dir / f"{run.run_id}{group['suffix']}"
+    value = json.loads(path.read_bytes())
+    value["format_version"] = 999
+    path.write_text(json.dumps(value))
+    group.update(format_version=999, sha256=file_sha256(path))
+    terminal_path.write_text(json.dumps(terminal))
+    report = json.loads(query(run).stdout)
+    assert (report["status"], report["reason"]) == ("failed", "unsupported_format")
+
+
 @pytest.mark.parametrize("required", [False, True])
-def test_historical_group_registration_preserves_optional_semantics(
+def test_future_group_is_never_silently_skipped(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, required: bool
 ) -> None:
     root = repository_copy(tmp_path / "repo")
@@ -215,11 +255,48 @@ def test_historical_group_registration_preserves_optional_semantics(
         ),
     )
     report = json.loads(query(run).stdout)
-    assert report["status"] == ("failed" if required else "passed")
-    assert report["exit_code"] == (1 if required else 0)
+    assert (report["status"], report["reason"]) == ("failed", "unsupported_format")
+    terminal = json.loads((run.output_dir / f"{run.run_id}.terminal.json").read_bytes())
+    assert terminal["exit_code"] == (1 if required else 0)
     # 查询不从当前生产 registry 推导历史清单; 已登记未来组的缺失始终可见。
     (run.output_dir / f"{run.run_id}.future.json").unlink()
     assert json.loads(query(run).stdout)["reason"] == "material_unavailable"
+
+
+def test_optional_group_failure_does_not_override_required_groups(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = repository_copy(tmp_path / "repo")
+    scope = root / "scripts/a2_scope.py"
+    scope.write_text(
+        scope.read_text().replace(
+            "SNAPSHOT_FORMAT_VERSION = 1", "SNAPSHOT_FORMAT_VERSION = 0"
+        )
+    )
+    binary, log = fake_checks(tmp_path, monkeypatch, receipt=passed_receipt("fixture"))
+    monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
+    monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
+    result = subprocess.run(
+        (sys.executable, "-B", "-m", "scripts.a1_acceptance"),
+        cwd=root,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    output = root / "verification-runs"
+    a2_path = next(output.glob("*.a2.json"))
+    a2 = json.loads(a2_path.read_bytes())
+    assert a2["status"] == "failed"
+    run = VerificationRun(
+        root,
+        output,
+        capture_identity(root),
+        output / f"{a2['run_id']}.json",
+        a2["run_id"],
+        (),
+    )
+    report = json.loads(query(run).stdout)
+    assert (report["status"], report["reason"]) == ("passed", "verified")
 
 
 @pytest.mark.parametrize("suffix", [".a4.json", ".terminal.json"])

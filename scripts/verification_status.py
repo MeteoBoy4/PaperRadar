@@ -15,7 +15,6 @@ from scripts.verification_checks import (
     RECEIPT_COUNTERS,
     files_unchanged,
     identity_matches,
-    read_json,
     receipt_completed,
 )
 from scripts.verification_identity import RunIdentity, capture_identity
@@ -57,6 +56,15 @@ PHASE_ZH = {
     "finished": "已收尾",
     "unknown": "未知",
 }
+# 历史解析能力表, 独立于当前生产 registry; 升级时保留已支持的旧格式。
+SUPPORTED_GROUP_FORMATS = {
+    ".a1.json": (1,),
+    ".a2.json": (1,),
+    ".a2-full.json": (2,),
+    ".a3.json": (1,),
+    ".a4.json": (1,),
+    ".a5.json": (1,),
+}
 
 
 class _Invalid(ValueError):
@@ -66,11 +74,16 @@ class _Invalid(ValueError):
 
 
 def _document(path: Path, run_id: str) -> dict[str, Any]:
-    value = read_json(path)
-    if value is None:
-        raise _Invalid(
-            Reason.INVALID_DOCUMENT if path.exists() else Reason.MATERIAL_UNAVAILABLE
-        )
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        raise _Invalid(Reason.MATERIAL_UNAVAILABLE) from None
+    try:
+        value = json.loads(raw)
+    except (ValueError, RecursionError):
+        raise _Invalid(Reason.INVALID_DOCUMENT) from None
+    if not isinstance(value, dict):
+        raise _Invalid(Reason.INVALID_DOCUMENT)
     if value.get("run_id") != run_id:
         raise _Invalid(Reason.RUN_ID_MISMATCH)
     return value
@@ -151,9 +164,10 @@ def _terminal(
         path = directory / f"{run_id}{suffix}"
         if not isinstance(digest, str) or not re.fullmatch("[0-9a-f]{64}", digest):
             raise _Invalid(Reason.BINDING_MISMATCH)
-        if file_sha256(path) != digest:
-            if not path.exists():
-                raise _Invalid(Reason.MATERIAL_UNAVAILABLE)
+        actual = file_sha256(path)
+        if actual is None:
+            raise _Invalid(Reason.MATERIAL_UNAVAILABLE)
+        if actual != digest:
             raise _Invalid(Reason.BINDING_MISMATCH)
         value = _document(path, run_id)
         bindings[path.name] = digest
@@ -182,7 +196,7 @@ def _terminal(
         value = bound(suffix, group.get("sha256"))
         if (
             type(group.get("format_version")) is not int
-            or group["format_version"] < 1
+            or group["format_version"] not in SUPPORTED_GROUP_FORMATS.get(suffix, ())
             or type(value.get("format_version")) is not int
             or value["format_version"] != group["format_version"]
         ):
@@ -273,9 +287,11 @@ def query_status(root: Path, directory: Path, run_id: str) -> dict[str, Any]:
         evidence = _document(directory / f"{run_id}.json", run_id)
         _version(evidence)
         checks = _checks(evidence)
-        report["tests"] = _test_summary(
-            read_json(directory / f"{run_id}.pytest.json"), run_id
-        )
+        try:
+            receipt = _document(directory / f"{run_id}.pytest.json", run_id)
+        except _Invalid:
+            receipt = None
+        report["tests"] = _test_summary(receipt, run_id)
         report["checks_passed"] = sum(item["status"] == "passed" for item in checks)
         report["current_check"] = next(
             (
