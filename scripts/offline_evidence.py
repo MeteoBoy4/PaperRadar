@@ -9,7 +9,9 @@ import shlex
 import signal
 import subprocess
 import sys
+import time
 import uuid
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -124,11 +126,19 @@ def file_sha256(path: Path) -> str | None:
         return None
 
 
+def _child_environment() -> dict[str, str]:
+    environment = os.environ.copy()
+    environment.pop("PAPER_RADAR_TEST_RECEIPT", None)
+    environment.pop("PAPER_RADAR_TEST_RUN_ID", None)
+    return environment
+
+
 def git_metadata(root: Path) -> CodeIdentity:
     try:
         commit = subprocess.run(
             ("git", "rev-parse", "HEAD"),
             cwd=root,
+            env=_child_environment(),
             capture_output=True,
             check=True,
             text=True,
@@ -136,6 +146,7 @@ def git_metadata(root: Path) -> CodeIdentity:
         status = subprocess.run(
             ("git", "status", "--porcelain", "--untracked-files=normal"),
             cwd=root,
+            env=_child_environment(),
             capture_output=True,
             check=True,
             text=True,
@@ -179,6 +190,7 @@ def _environment_metadata(root: Path) -> dict[str, Any]:
                 *_DEPENDENCY_NAMES,
             ),
             cwd=root,
+            env=_child_environment(),
             capture_output=True,
             check=True,
             text=True,
@@ -231,6 +243,53 @@ def _write_evidence(path: Path, evidence: dict[str, Any]) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _stop_process_group(process: subprocess.Popen[bytes]) -> None:
+    """给整组退出宽限, 即使组长先退出也继续清理后代。"""
+    previous = {
+        signum: signal.signal(signum, signal.SIG_IGN)
+        for signum in (signal.SIGINT, signal.SIGTERM)
+    }
+    try:
+        with suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGTERM)
+        deadline = time.monotonic() + 2
+        while True:
+            process.poll()
+            try:
+                os.killpg(process.pid, 0)
+            except ProcessLookupError:
+                break
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            time.sleep(min(0.05, remaining))
+        with suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
+        process.wait()
+    finally:
+        for signum, handler in previous.items():
+            signal.signal(signum, handler)
+
+
+def _run_check(check: Check, root: Path, environment: dict[str, str]) -> int:
+    process = subprocess.Popen(
+        check.command,
+        cwd=root,
+        env=environment,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    try:
+        exit_code = process.wait()
+    except KeyboardInterrupt:
+        _stop_process_group(process)
+        raise
+    if exit_code < 0:
+        _stop_process_group(process)
+    return exit_code
+
+
 def _run_checks(
     root: Path,
     checks: tuple[Check, ...],
@@ -250,21 +309,14 @@ def _run_checks(
         else:
             print(f"[离线检查] {check.id}", flush=True)
             try:
-                environment = os.environ.copy()
+                environment = _child_environment()
                 if check.id == "tests":
                     environment.pop("PYTEST_ADDOPTS", None)
                     environment["PAPER_RADAR_TEST_RUN_ID"] = evidence["run_id"]
                     environment["PAPER_RADAR_TEST_RECEIPT"] = str(
                         path.with_suffix(".pytest.json").resolve()
                     )
-                result = subprocess.run(
-                    check.command,
-                    cwd=root,
-                    env=environment,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    check=False,
-                )
+                exit_code = _run_check(check, root, environment)
             except KeyboardInterrupt:
                 item.update(status=CheckStatus.FAILED, reason=CheckReason.INTERRUPTED)
                 stopped = interrupted = True
@@ -272,10 +324,10 @@ def _run_checks(
                 item.update(status=CheckStatus.FAILED, reason=CheckReason.LAUNCH_ERROR)
                 stopped = True
             else:
-                item["exit_code"] = result.returncode
-                if result.returncode == 0:
+                item["exit_code"] = exit_code
+                if exit_code == 0:
                     item.update(status=CheckStatus.PASSED, reason=CheckReason.NONE)
-                elif result.returncode < 0:
+                elif exit_code < 0:
                     item.update(
                         status=CheckStatus.FAILED, reason=CheckReason.INTERRUPTED
                     )

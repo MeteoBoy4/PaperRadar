@@ -34,7 +34,7 @@ def test_full_entry_preserves_original_terminal_bytes_and_exit_code(
         (ROOT / "tests/fixtures/verification_transcripts.json").read_bytes()
     )[case]
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path)
+    binary, log = fake_checks(tmp_path, monkeypatch)
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     monkeypatch.setenv("A2_TEST_STOP", case)
@@ -98,7 +98,7 @@ def test_final_publication_interrupt_does_not_overwrite_previous_conclusions(
     from scripts.a2_full_acceptance import run_full_verification
 
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path)
+    binary, log = fake_checks(tmp_path, monkeypatch)
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     original = os.link

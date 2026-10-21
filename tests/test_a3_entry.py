@@ -18,7 +18,7 @@ def test_real_entry_final_a3_publication_failure_preserves_all_previous_conclusi
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path)
+    binary, log = fake_checks(tmp_path, monkeypatch)
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     output = root / "verification-runs"
@@ -73,7 +73,7 @@ def test_a3_rechecks_bound_bytes_before_final_publication(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, replaced: str
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path)
+    binary, log = fake_checks(tmp_path, monkeypatch)
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     output = tmp_path / "runs"

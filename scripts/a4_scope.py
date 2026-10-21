@@ -77,7 +77,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a2_full_entry.py": 7,
     "tests/test_verification_run.py": 5,
     "tests/test_verification_compatibility.py": 9,
-    "tests/test_verification_integrity.py": 3,
+    "tests/test_verification_integrity.py": 18,
 }
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
@@ -182,23 +182,23 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a4_entry.py",
-        "7ce3e816ac77c175d5e04e80b9d5f374738720a52b9f411a9fb6f433a71f4e1f",
+        "01a51e1a7bc07f6b1715ad684d4da73df57a25e2e851d0d5c3ecacdeff9dc37d",
     ),
     (
         "tests/test_a2_full_entry.py",
-        "651d7dfdc80d44474064ae2f200719aa137556ec8f71989638826b868bfff72c",
+        "70a966b2ac91791824f95e7f0eea374c4b53b1dc261480ee3676130935bc6cf5",
     ),
     (
         "tests/test_verification_run.py",
-        "495966e975a588547f2bb7b694d93603a9b3863b82c7bb0ba8b4eced0a4ec532",
+        "e1f2a09a52dad8118711868be499926b33a50f9aa148a196cf4c25b0b182f83f",
     ),
     (
         "tests/test_verification_compatibility.py",
-        "f457ee7043e89a4dfefddc8c0e1443471adfcd7131c152568f4f71f4a565b7ac",
+        "1b54de1b9cab70d489775695608636d099b9c3209efe8200d6114a15e7a3917c",
     ),
     (
         "tests/test_verification_integrity.py",
-        "0582fded26e271666544498e2bacc286ab12b637ea47d3f6ea544d1b4db876cd",
+        "0d989e9d1054b051666a2a68cd0f7ede1d36a0d2fd70f643d68660cca92fda5c",
     ),
 )
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
@@ -336,15 +336,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a3_scope.py",
-        "d2a26aa3f0388ff6ffb02928c0382227b421efdbe78ea66333efc188d0c24609",
+        "40e05ae8a7f12c249f9701a64ef05c6d0c5fbb1cd77893980e3102b566c609e9",
     ),
     (
         "scripts/a2_full_scope.py",
-        "9b8bf6e9e3e749f2ebc493e2566abba002ae742b4f80b7626880ac1838c85161",
+        "f83be1400639502ff78a1d7205859c4ad5325fc8c17ec73436e1c2a95d33a78f",
     ),
     (
         "scripts/a1_scope.py",
-        "419e26fe9a858b18ac46dfaf8f008af074ee689a923ff447c57be0a6fad84131",
+        "e71257263bed5859e4277c8b0ff399c4986c440e8212c8d1a636c559fcc7d428",
     ),
     (
         "scripts/a1_acceptance.py",
@@ -360,7 +360,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/offline_evidence.py",
-        "0c613ee51748db53ebba7a9c9c260faa74391be0f3043646ee09867b420f6362",
+        "a72697689461f30ded07259534dd7c6d2fa679f26efa46ba32bca8bdd02012ee",
     ),
     (
         "scripts/verification_checks.py",
@@ -396,15 +396,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/a4_acceptance_support.py",
-        "a32c09d03b6d5523375c27ba5c51c798c48a04bbadb04026583f587e253eff54",
+        "4799f426fba2cbc5522c644dca742af0ddd72b22f839267832400499f1bd6d6e",
     ),
     (
         "tests/a3_acceptance_support.py",
-        "86868063437584e26e02a90f64d4f4c0dc73d5a21292bd501e9bba2af7065f70",
+        "c57fd755e813a50b8f1128d5cca2091feef079264cb8e34cc35d08c82279765d",
     ),
     (
         "tests/a2_full_support.py",
-        "d6c69fe997d026288b4793f4c6fe2225ce9f4e019114463bcb0ef03da7527469",
+        "cbf2b0885ad441dd6caeefd1a028efc2ef4d6b6b60dfadbd47307be8deab6e58",
     ),
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
@@ -426,6 +426,6 @@ REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/fixtures/verification_transcripts.json",
-        "de9cc67a79a5945e5f922fdc4ae547c99e6ae047dfcac92034bae0973dffc9a5",
+        "e900793f0280d586be4a1ccd0a814553528dc5e2dd48b3eec5b307bad09450e3",
     ),
 )

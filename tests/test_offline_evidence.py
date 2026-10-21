@@ -197,16 +197,16 @@ def test_missing_identity_fields_are_explicit_and_contract_scope_can_expand(
 def test_interruption_records_incomplete_run(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    original = subprocess.run
+    original = subprocess.Popen
 
     def interrupt_fixture(
         args: Sequence[str], **kwargs: Any
-    ) -> subprocess.CompletedProcess[Any]:
+    ) -> subprocess.Popen[bytes]:
         if args == ("interrupt-fixture",):
             raise KeyboardInterrupt
         return original(args, **kwargs)
 
-    monkeypatch.setattr("scripts.offline_evidence.subprocess.run", interrupt_fixture)
+    monkeypatch.setattr("scripts.offline_evidence.subprocess.Popen", interrupt_fixture)
     path, result = run_offline_verification(
         ROOT,
         (Check("interrupted", ("interrupt-fixture",)), _check("later", "pass")),

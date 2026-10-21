@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -73,7 +75,9 @@ def init_fixture_repository(path: Path) -> None:
     )
 
 
-def fake_checks(tmp_path: Path) -> tuple[Path, Path]:
+def fake_checks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+    monkeypatch.delenv("PAPER_RADAR_TEST_RECEIPT", raising=False)
+    monkeypatch.delenv("PAPER_RADAR_TEST_RUN_ID", raising=False)
     binary = tmp_path / "bin"
     binary.mkdir()
     uv = binary / "uv"
@@ -101,7 +105,7 @@ def fake_checks(tmp_path: Path) -> tuple[Path, Path]:
         '  *) printf "%s\\n" "$*" >> "$A2_TEST_CHECK_LOG" ;;\n'
         "esac\n"
         'case "$*" in\n'
-        '  *" pytest"*)\n'
+        '  *" -m pytest"*)\n'
         '    if [ "${A2_TEST_STOP:-}" = failed ]; then exit 1; fi\n'
         '    if [ "${A2_TEST_STOP:-}" = interrupted ]; then kill -TERM $$; fi\n'
         f"    {shlex.quote(sys.executable)} {shlex.quote(str(writer))} ;;\n"

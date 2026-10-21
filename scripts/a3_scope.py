@@ -268,7 +268,7 @@ ACCEPTANCE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a3_entry.py",
-        "287672af3d88e88c5696e5f73d7d546b709f9704991f332fcaea5fd804cbe6dc",
+        "efa06e6d815baf0dc49b6cd9fb23f80810d5a8e22a09e298e7aa5f550b7e3722",
     ),
 )
 ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
@@ -302,11 +302,11 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/offline_evidence.py",
-        "0c613ee51748db53ebba7a9c9c260faa74391be0f3043646ee09867b420f6362",
+        "a72697689461f30ded07259534dd7c6d2fa679f26efa46ba32bca8bdd02012ee",
     ),
     (
         "scripts/a2_full_scope.py",
-        "9b8bf6e9e3e749f2ebc493e2566abba002ae742b4f80b7626880ac1838c85161",
+        "f83be1400639502ff78a1d7205859c4ad5325fc8c17ec73436e1c2a95d33a78f",
     ),
     (
         "scripts/check-offline",
@@ -334,7 +334,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/a3_acceptance_support.py",
-        "86868063437584e26e02a90f64d4f4c0dc73d5a21292bd501e9bba2af7065f70",
+        "c57fd755e813a50b8f1128d5cca2091feef079264cb8e34cc35d08c82279765d",
     ),
 )
 REQUIRED_TEST_MODULES = (

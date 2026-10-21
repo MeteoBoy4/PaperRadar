@@ -47,7 +47,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_offline_evidence.py",
-        "6f9c33c11b12635a6b99202a2c60caa31354306a050ed6245bf10097ffa5f15d",
+        "17224fa2be8f2463c6066d47e0f29153b1490d203b068654b1ed0a44ce531333",
     ),
     (
         "tests/test_a1_acceptance.py",

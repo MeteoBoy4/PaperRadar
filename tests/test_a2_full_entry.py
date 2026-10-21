@@ -25,7 +25,7 @@ def test_one_plan_produces_seven_bound_files_and_never_inherits_previous_success
     stop: str,
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path)
+    binary, log = fake_checks(tmp_path, monkeypatch)
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     monkeypatch.setenv("A2_TEST_STOP", stop)
@@ -153,7 +153,7 @@ def test_interruption_while_generating_legacy_conclusion_keeps_seven_files_incom
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path)
+    binary, log = fake_checks(tmp_path, monkeypatch)
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
     original_version = importlib.metadata.version
@@ -190,7 +190,7 @@ def test_real_skipped_suite_cannot_pass_complete_entry_even_when_pytest_returns_
         "        item.add_marker(pytest.mark.skip(reason='PRIVATE_SKIP_REASON'))\n",
         encoding="utf-8",
     )
-    binary, log = fake_checks(tmp_path)
+    binary, log = fake_checks(tmp_path, monkeypatch)
     uv = binary / "uv"
     invocation = (
         f"{shlex.quote(sys.executable)} "

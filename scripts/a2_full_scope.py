@@ -13,7 +13,7 @@ REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 # 固定用例数量在独立收集核对后登记。回执必须同时证明收集和三阶段通过。
 REQUIRED_TEST_CASE_COUNTS: dict[str, int] = {
     "tests/test_verification_checks.py": 6,
-    "tests/test_verification_integrity.py": 3,
+    "tests/test_verification_integrity.py": 18,
     "tests/test_verification_publication.py": 2,
     "tests/test_verification_run.py": 5,
     "tests/test_verification_compatibility.py": 9,
@@ -122,7 +122,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_verification_integrity.py",
-        "0582fded26e271666544498e2bacc286ab12b637ea47d3f6ea544d1b4db876cd",
+        "0d989e9d1054b051666a2a68cd0f7ede1d36a0d2fd70f643d68660cca92fda5c",
     ),
     (
         "tests/test_verification_publication.py",
@@ -130,11 +130,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_verification_run.py",
-        "495966e975a588547f2bb7b694d93603a9b3863b82c7bb0ba8b4eced0a4ec532",
+        "e1f2a09a52dad8118711868be499926b33a50f9aa148a196cf4c25b0b182f83f",
     ),
     (
         "tests/test_verification_compatibility.py",
-        "f457ee7043e89a4dfefddc8c0e1443471adfcd7131c152568f4f71f4a565b7ac",
+        "1b54de1b9cab70d489775695608636d099b9c3209efe8200d6114a15e7a3917c",
     ),
     (
         "tests/test_config_material_compatibility.py",
@@ -150,7 +150,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_full_entry.py",
-        "651d7dfdc80d44474064ae2f200719aa137556ec8f71989638826b868bfff72c",
+        "70a966b2ac91791824f95e7f0eea374c4b53b1dc261480ee3676130935bc6cf5",
     ),
     (
         "tests/test_a2_full_examples.py",
@@ -372,7 +372,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a1_scope.py",
-        "419e26fe9a858b18ac46dfaf8f008af074ee689a923ff447c57be0a6fad84131",
+        "e71257263bed5859e4277c8b0ff399c4986c440e8212c8d1a636c559fcc7d428",
     ),
     (
         "scripts/a2_acceptance.py",
@@ -392,7 +392,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/offline_evidence.py",
-        "0c613ee51748db53ebba7a9c9c260faa74391be0f3043646ee09867b420f6362",
+        "a72697689461f30ded07259534dd7c6d2fa679f26efa46ba32bca8bdd02012ee",
     ),
     (
         "src/paper_radar/cli.py",
@@ -536,7 +536,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/a2_full_support.py",
-        "d6c69fe997d026288b4793f4c6fe2225ce9f4e019114463bcb0ef03da7527469",
+        "cbf2b0885ad441dd6caeefd1a028efc2ef4d6b6b60dfadbd47307be8deab6e58",
     ),
     (
         "tests/config_adapter_support.py",
@@ -590,7 +590,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
     (
         "tests/fixtures/verification_transcripts.json",
-        "de9cc67a79a5945e5f922fdc4ae547c99e6ae047dfcac92034bae0973dffc9a5",
+        "e900793f0280d586be4a1ccd0a814553528dc5e2dd48b3eec5b307bad09450e3",
     ),
     (
         "tests/fixtures/config_material_compatibility.json",

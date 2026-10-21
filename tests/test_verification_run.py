@@ -21,7 +21,7 @@ def test_registered_group_publishes_same_run_and_can_affect_overall_result(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, required: bool
 ) -> None:
     root = repository_copy(tmp_path / "repo")
-    binary, log = fake_checks(tmp_path)
+    binary, log = fake_checks(tmp_path, monkeypatch)
     monkeypatch.setenv("PATH", f"{binary}:{os.environ['PATH']}")
     monkeypatch.setenv("A2_TEST_CHECK_LOG", str(log))
 

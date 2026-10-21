@@ -105,7 +105,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a5_entry.py",
-        "32cf88097078fa30c4ea64697437768e0e51ef7571bfb0f2bb47d234eb79baf0",
+        "9afeed8bdf1c711626efb26c5239e80ba7261aa3feb0ba8b2635c7384be2c838",
     ),
     (
         "tests/test_a5_test_receipt.py",
@@ -135,19 +135,19 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a1_scope.py",
-        "419e26fe9a858b18ac46dfaf8f008af074ee689a923ff447c57be0a6fad84131",
+        "e71257263bed5859e4277c8b0ff399c4986c440e8212c8d1a636c559fcc7d428",
     ),
     (
         "scripts/a2_full_scope.py",
-        "9b8bf6e9e3e749f2ebc493e2566abba002ae742b4f80b7626880ac1838c85161",
+        "f83be1400639502ff78a1d7205859c4ad5325fc8c17ec73436e1c2a95d33a78f",
     ),
     (
         "scripts/a3_scope.py",
-        "d2a26aa3f0388ff6ffb02928c0382227b421efdbe78ea66333efc188d0c24609",
+        "40e05ae8a7f12c249f9701a64ef05c6d0c5fbb1cd77893980e3102b566c609e9",
     ),
     (
         "scripts/a4_scope.py",
-        "573a0481576bc2cd87f36a85e98d83c974807dbde30fe002b8197ca3ad571bc4",
+        "b876f731414be3a4162c2fa997ea40173347f7905414cc72c5134b1e5a7af380",
     ),
     (
         "scripts/a2_full_acceptance.py",
@@ -159,7 +159,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/offline_evidence.py",
-        "0c613ee51748db53ebba7a9c9c260faa74391be0f3043646ee09867b420f6362",
+        "a72697689461f30ded07259534dd7c6d2fa679f26efa46ba32bca8bdd02012ee",
     ),
     (
         "scripts/verification_checks.py",
@@ -183,19 +183,19 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/a5_acceptance_support.py",
-        "068c60af9011899756f3cb47b861ba1e999a571f75a531d349efb86601aac537",
+        "4a2c880c075b962ec77666df104709aa414e242d311a06587171a825d2b2da09",
     ),
     (
         "tests/a4_acceptance_support.py",
-        "a32c09d03b6d5523375c27ba5c51c798c48a04bbadb04026583f587e253eff54",
+        "4799f426fba2cbc5522c644dca742af0ddd72b22f839267832400499f1bd6d6e",
     ),
     (
         "tests/a3_acceptance_support.py",
-        "86868063437584e26e02a90f64d4f4c0dc73d5a21292bd501e9bba2af7065f70",
+        "c57fd755e813a50b8f1128d5cca2091feef079264cb8e34cc35d08c82279765d",
     ),
     (
         "tests/a2_full_support.py",
-        "d6c69fe997d026288b4793f4c6fe2225ce9f4e019114463bcb0ef03da7527469",
+        "cbf2b0885ad441dd6caeefd1a028efc2ef4d6b6b60dfadbd47307be8deab6e58",
     ),
     (
         "tests/stage_input_process.py",

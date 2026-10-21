@@ -16,6 +16,26 @@ A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时�
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
 本次尚无证据文件，终端会收到 uv 的非零退出码。
 
+`<run_id>.pytest.json` 只是 pytest 子进程的内部回执，不代表整次运行状态；
+判断运行是否完成及通过，只看入口退出码和本次各组结论，不能把回执中的
+`completed` 或 `exit_code` 当成完整入口的结果。运行中或中断后的回执也不能单独
+作为通过依据。
+
+控制方启动检查和环境探测子进程前，清除继承的 `PAPER_RADAR_TEST_RECEIPT` 与
+`PAPER_RADAR_TEST_RUN_ID`；仅 `tests` 检查重新绑定本次回执路径和 run_id。
+每项检查使用独立会话和进程组；KeyboardInterrupt 或 SIGTERM 中断时先对整组发送
+SIGTERM，等待至多两秒，再向残留进程组发送 SIGKILL 并回收直接子进程，然后记录
+`interrupted`。组长提前退出也不省略后代清理；清理期间重复的 SIGINT/SIGTERM 不打断回收。
+
+#61 的回归用例通过嵌套入口验证五个受影响模块在外层回执存在或不存在时均不污染它；
+另核对环境探测和六项检查的回执变量归属，以及 SIGINT/SIGTERM × 后代是否忽略 SIGTERM
+的四种真实进程场景。进程用例以 socket 屏障同步、pidfd 确认退出，不用固定 sleep 等待。
+这 15 个新增用例明确登记进完整 A2/A4 的 `test_verification_integrity.py`，从 3 例增至
+18 例；原用例保留。原 A1 中断替身随启动边界改为 Popen，原分母不变；受影响材料与
+scope 引用按只读审计的依赖顺序重新绑定，证据格式、原因词表及各组结论判据保持不变。
+终端 fixture 的 failed/interrupted 两项仅移除环境探测被假 `uv` 误中时产生的
+`environment_unavailable` 行，其他终端字节保持原样。
+
 证据格式版本为 `1`，字段含义如下：
 
 | 字段 | 含义 |
