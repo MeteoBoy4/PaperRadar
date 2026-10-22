@@ -1,6 +1,6 @@
 # 论文版本身份与来源观察仲裁
 
-状态：已接受语义；#69 落地出版者 DOI 事实，#70 接入 Feed 发现/连续身份与只读历史，其余运行能力待 A6 后续实现。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
+状态：已接受语义；#69–#74 已落地身份、Feed、四源仲裁、版本关系、输入映射及组合隔离恢复，#75 注册独立 A6 验收。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
 
 一个 DOI 恒绑定一个 Paper/Version，一个版本最多一个 DOI，preprint/journal 创建后不可变；online-first 到卷期只是同版本修订。不同 DOI 只有权威关系才归入同一 Paper，不能再以“同 DOI 多公开形态”发明版本键。该决策收窄 ADR-0001/0005 的 A6 路径而不实现两个既有 Paper 合并；暂存重复比错误合并安全。
 
@@ -100,3 +100,11 @@ a604 只追加关系/引用、选择序列与原回执原因，a601–a603 不�
 内容寻址去重不使其变 false。字段观察创建依据独立匹配不可变材料请求，关系材料依据独立核对创建取得与制品，
 不再借这一公开标志推断字段观察创建者。relation-only 的未绑定取得通过关系 assertions 公开同一标志及真实制品引用；
 无新材料的轻量重复仍为 false，精确重试保持原回执。
+
+
+## #75 独立结论接入
+
+在既有同次 run/receipt/publication/terminal/status 协议登记必需 A6，前置 A1、完整 A2、A3、A5，
+不增加 A4 业务依赖。生产 Feed 纯规则公开格式版本 1，原始单 item SHA-256 字节算法保持不变；
+固定能力用例/材料与正文裁决归属见 A6 验收文档。历史 A5 未覆盖论文映射的结论不回写。
+本地闭环不验证真实来源、parser 完整性或阶段 C 两项门禁，不等于完整阶段 A/live。

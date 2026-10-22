@@ -19,7 +19,7 @@ import pytest
 from scripts.a2_full_acceptance import run_full_verification
 from scripts.offline_evidence import default_checks, run_offline_verification
 from tests.a2_full_support import fake_checks, repository_copy
-from tests.a5_acceptance_support import passed_receipt
+from tests.a6_acceptance_support import passed_receipt
 
 
 @pytest.mark.parametrize("existing", [False, True])

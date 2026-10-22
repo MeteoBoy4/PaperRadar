@@ -73,6 +73,7 @@ PHASE_ZH = {
 CHECK_IDS_V1 = ("lockfile", "format", "lint", "types", "tests", "contracts")
 # 历史解析能力表, 独立于当前生产 registry; 升级时保留已支持的旧格式。
 SUPPORTED_GROUP_FORMATS = {
+    ".a6.json": (1,),
     ".a1.json": (1,),
     ".a2.json": (1,),
     ".a2-full.json": (2,),

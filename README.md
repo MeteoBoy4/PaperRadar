@@ -366,9 +366,9 @@ pytest 测试（包括冻结契约导出与只读检查测试），最后用一�
 每次运行在 `verification-runs/` 下生成新的 `<run_id>.json` 离线证据、
 `<run_id>.a1.json` 独立 A1 结论、`<run_id>.a2.json` 历史范围的 A2-01 结论，
 `<run_id>.a2-full.json` 完整 A2、`<run_id>.a3.json` 存储/恢复 A3 与
-`<run_id>.a4.json` Pi 供给生命周期 A4 与 `<run_id>.a5.json` 四阶段输入 A5 独立结论。
-七份主要文件共用本次 `run_id`，
-不重复执行整套检查。只有本次 A1、完整 A2、A3、A4 与 A5 都通过时返回 0；A2-01 独立保留，仍不决定整体通过。
+`<run_id>.a4.json` Pi 供给生命周期 A4、`<run_id>.a5.json` 四阶段输入 A5 与
+`<run_id>.a6.json` 论文事实 A6 独立结论。八份主要文件共用本次 `run_id`，
+不重复执行整套检查。只有本次 A1、完整 A2、A3、A4、A5 与 A6 都通过时返回 0；A2-01 独立保留，仍不决定整体通过。
 `<run_id>.pytest.json` 另行记录脱敏测试执行回执；固定范围的收集和完整通过数量
 必须与已审查清单一致，跳过、取消选择、未完成或缺回执均不能通过。
 一次运行由 `scripts/verification_run.py` 统一组织，验收组在
@@ -389,7 +389,12 @@ A5 独立绑定 A1、完整 A2、A3，核对生产输入/投影格式、固定�
 A4 仍决定整体通过，但不作为 A5 前置。七项 capabilities 共用整组状态，
 stage_a_verified/live_verified/rpc_verified 恒 false，范围映射见
 [独立 A5 结论](docs/verification/offline-evidence.md#a5-独立结论4754)。
-仅依赖登记顺序或总测试退出码不能通过。Read/suggestion/report 指纹、论文业务事实映射、attempt/lease、
+A6 独立绑定同次 A1、完整 A2、A3、A5，A4 继续决定整体门禁。12 项能力逐项映射固定业务
+用例和 #74 组合材料，核对真实临时迁移 a604、生产格式、固定源码及全量实际执行回执。
+A5 历史 `paper_fact_mapping` 未覆盖项保留，新增映射证明属于 A6。正常运行另含回执和终态，
+共十份 JSON；没有终态不证明完成。要求与未验证来源假设见
+[A6 规格对照](docs/verification/a6-requirements.md)。
+仅依赖登记顺序或总测试退出码不能通过。Read/suggestion/report 指纹、attempt/lease、
 共享资格/可见性、报告重建与任务续跑、doctor、Pi/Docling/Read 执行、真实来源与 NAS、
 正式校准和自动精读仍未验收；A3 passed 不等于完整阶段 A 或阶段 B 通过。
 该目录不进入版本控制；格式、失败表示与使用方法见
@@ -519,6 +524,6 @@ trace 展示端点尚未出现、等待合并、已生效三态及真实选择�
 在禁止访问原数据/配置/备份源后独立恢复、再次搬迁；新进程仅凭 ID、修订、快照引用和预期哈希，
 从恢复库候选重建历史 boundary/value 输入。有/无摘要的正式升级、旧预印本及从未获选版本均保留。
 `--verify-source-bytes` 默认关闭，显式开启增加只读 blob I/O，包含仅关系材料，失败不输出原响应。
-只证明离线历史重建，仍不表示完整 A6、阶段 A、live、RPC、Docling/NAS 或任务续跑已验收。
+A6 独立结论覆盖本地论文事实及隔离历史重建，仍不表示阶段 A、live、RPC、Docling/NAS 或任务续跑已验收。
 **阶段 C 真实 Feed 接入前必须补齐强冲突观察持久化和 parser 升级固定样本回归，
 此前不得将本地拒绝路径直接作为生产写入。**详见[论文事实 Contract](docs/contracts/paper-facts.md)。

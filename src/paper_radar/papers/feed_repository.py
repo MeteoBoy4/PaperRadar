@@ -1,6 +1,5 @@
 """Feed 原文发现、连续条目身份和完整解释的原子写入。"""
 
-import hashlib
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -8,6 +7,7 @@ from uuid import uuid4
 from sqlalchemy import Engine, func, select
 
 from paper_radar.papers.errors import PaperError, PaperReason
+from paper_radar.papers.feed import item_fingerprint
 from paper_radar.papers.models import CandidateInput, ObservationInput, WriteResult
 from paper_radar.papers.relation_repository import (
     load_relations,
@@ -46,7 +46,7 @@ def submit_feed(
     doi: str | None,
     fields: dict[str, CandidateInput],
 ) -> WriteResult:
-    fingerprint = hashlib.sha256(item.payload).hexdigest()
+    fingerprint = item_fingerprint(item.payload)
     artifact_id = (
         ArtifactStore(database, data_root)
         .publish_single("source_snapshot", (item.payload,))

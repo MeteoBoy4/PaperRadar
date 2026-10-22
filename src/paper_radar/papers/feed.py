@@ -1,5 +1,6 @@
 """Feed 端点身份规则;与来源定位 URL 的无参数边界独立。"""
 
+import hashlib
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
@@ -8,6 +9,13 @@ if TYPE_CHECKING:
 
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.text_rules import normalize_text
+
+# 格式 1: 原始单条 item 的 SHA-256, 无前缀或规范化。
+FEED_ITEM_FINGERPRINT_VERSION = 1
+
+
+def item_fingerprint(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
 
 
 def normalize_feed_url(value: str) -> str:

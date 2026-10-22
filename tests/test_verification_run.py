@@ -13,7 +13,7 @@ from scripts.a2_full_acceptance import acceptance_groups
 from scripts.verification_publication import publish_conclusion
 from scripts.verification_run import AcceptanceGroup, VerificationRun, run_verification
 from tests.a2_full_support import fake_checks, repository_copy
-from tests.a5_acceptance_support import passed_receipt
+from tests.a6_acceptance_support import passed_receipt
 
 
 @pytest.mark.parametrize("required", [False, True])
@@ -50,7 +50,7 @@ def test_registered_group_publishes_same_run_and_can_affect_overall_result(
     assert run.conclusions["A5"][1]["a5_verified"]
     assert run.passed is (not required)
     assert len(log.read_text(encoding="utf-8").splitlines()) == 6
-    assert len(list(run.output_dir.glob("*.json"))) == 10
+    assert len(list(run.output_dir.glob("*.json"))) == 11
 
 
 @pytest.mark.parametrize(

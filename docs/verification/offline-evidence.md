@@ -8,11 +8,11 @@
 在 `<run_id>.a2.json` 生成 #16 A2-01 结论，在 `<run_id>.a2-full.json` 生成
 #25 完整 A2 结论，在 `<run_id>.a3.json` 生成 #29/#35 独立 A3 结论，
 在 `<run_id>.a4.json` 生成 #36/#45 独立 A4 结论，
-在 `<run_id>.a5.json` 生成 #47/#54 独立 A5 结论；终端打印七个主要路径及结果。测试另外生成同次
+在 `<run_id>.a5.json` 生成 #47/#54 独立 A5 结论，在 `<run_id>.a6.json` 生成 #67/#75 独立 A6 结论；终端打印八个主要路径及结果。测试另外生成同次
 `<run_id>.pytest.json` 脱敏执行回执。控制方在全部组发布后，最后写出
-`<run_id>.terminal.json` 终态记录并打印路径，正常成功共九份 JSON。
+`<run_id>.terminal.json` 终态记录并打印路径，正常成功共十份 JSON。
 整套检查仅执行一次，各文件
-共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3、A4 与 A5 均通过时入口返回 0，
+共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3、A4、A5 与 A6 均通过时入口返回 0，
 A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时数据库，不操作用户数据库。
 重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
@@ -25,7 +25,7 @@ A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时�
 
 开发者可用 `./scripts/verification-status <run_id> --runs-dir verification-runs --json`
 只读查询进度和可信终态；省略 `--json` 显示中文。命令不启动 uv 同步、测试、迁移或
-模型，不写入证据、字节码或 Git 索引；状态工具及其测试不登记到验收 scope。
+模型，不写入证据、字节码或 Git 索引；历史组不追加状态工具测试；A6 显式绑定其状态格式及新增反例。
 状态、阶段、退出码、终态格式和历史兼容规则见
 [状态查询契约](../contracts/verification-status.md)。缺少终态记录时只能证明
 “终态未证实”，包括旧运行、发布中、发布崩溃与被强杀的控制方；不据 PID、mtime
@@ -95,7 +95,7 @@ JSON 包含全部文件、固定计数和受控原因；文本显示问题和候
 退出码 0 表示审计匹配，1 表示漂移或无法核验，2 表示参数错误。
 
 组清单从 `acceptance_groups()` 的每个 `write` 来源推导，包含 optional A2-01，
-不硬编码 A1–A5 模块列表。writer 对 `scripts.*_scope` 的显式导入是维护契约；
+不硬编码 A1–A6 模块列表。writer 对 `scripts.*_scope` 的显式导入是维护契约；
 只消费 `REQUIRED_TEST_MODULES`、`REQUIRED_SOURCE_MODULES`、
 `REQUIRED_FIXTURE_FILES`、`REQUIRED_TEST_CASE_COUNTS` 与明确允许的元数据。
 新常量、重命名、不支持的导入或表达式必须人工扩展工具契约后才能继续审计；不能因
@@ -144,6 +144,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 | A3 | `.a3.json` | 同次 A1、完整 A2 | 是 |
 | A4 | `.a4.json` | 同次 A1、完整 A2、A3 | 是 |
 | A5 | `.a5.json` | 同次 A1、完整 A2、A3 | 是 |
+| A6 | `.a6.json` | 同次 A1、完整 A2、A3、A5 | 是 |
 
 完整 A2 另由自己的判据验证同次 pytest 回执、证据和已发布 A1，并在发布前再次
 核对这些文件的实际字节绑定；它没有 A2-01 通过依赖。各组的原因、格式、严格性与
@@ -151,17 +152,17 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 即使补写为 passed，也继续把中断传给完整 A2。最后发布阶段的中断仍可能没有
 完整结论，不会覆盖已发布文件来修复状态。
 
-六组的 `write_*_conclusion` 兼容入口共用
+七组的 `write_*_conclusion` 兼容入口共用
 `scripts/verification_publication.py` 的 `publish_conclusion`：保持原 JSON
 序列化规则，临时文件独占创建、flush/fsync 后通过 `os.link` 原子发布；目标已存在
 即失败，finally 清理临时文件。运行中证据与回执仍可原子更新，不使用此最终发布入口。
 
 新验收组以显式代码加入登记，提供自己的判据，调用同一个最终发布函数；可选提供
-组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope`、`a3_scope`、`a4_scope` 与 `a5_scope` 的固定测试模块合集。
+组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope`、`a3_scope`、`a4_scope`、`a5_scope` 与 `a6_scope` 的固定测试模块合集。
 新增组仍须显式扩展执行范围；没有自动发现插件、独立检查计划或动态调度。
 测试中的合成组只证明组织扩展能力，不代表新增产品验收能力。
 
-A4/A5 的环境版本采集与真实临时库迁移探针共用 `verification_checks` 的原语；
+A4/A5/A6 的环境版本采集与真实临时库迁移探针共用 `verification_checks` 的原语；
 各组继续独立维护依赖清单、原因词表、异常分类、登记 head 与通过判据。
 
 #48–#53 的 boundary/value/extraction/reuse 阶段输入服务由普通离线 pytest 验证，
@@ -696,3 +697,35 @@ paper_fact_mapping NOT_ASSESSED 原样保留。必要源码哈希按 A2 wrapper�
 
 只证明离线历史重建；完整阶段 A、live、真实来源/截断检测、RPC、Docling/NAS、任务续跑、
 资格/预算/校准均未验收。阶段 C parser 升级固定样本和强冲突观察持久化门禁持续未验。
+
+
+## A6 独立结论（#67/#75）
+
+`a6_scope.py` 将业务规格 #67 与最后验收子票 #75 区分登记。只有同次 A1、完整 A2、A3、A5
+通过，固定六检查与完整严格整数回执匹配，固定测试/源码/合成材料无漂移，真实临时库
+base→head 得到 `a604_version_relations`，并且运行前后代码/工作树/lockfile 相同，才有
+`a6_verified=true`。A4 不构成业务前置，但 A4 失败仍令完整入口非零。
+
+格式期望固定为 `paper_facts/doi_rules/text_norm/feed_item_fingerprint/reason_catalog=1`、
+boundary/value 输入 1 与 backup 1，实际值逐项读取生产权威。Feed 生产纯规则声明版本 1，
+计算原始单 item 全字节 SHA-256，不改变既有字节语义。`mapping_result=1` 仍由公共模型
+Contract 定义，不列为本结论的独立算法版本键。bool/float 不能冒充整数格式或回执计数。
+
+`capabilities` 固定十二项，`capability_evidence` 逐项记录已绑定的固定用例与材料映射，
+见 `tests/fixtures/a6_capabilities.json`；version_selection/field_arbitration/historical_rebuild/
+isolated_restore 明确包括 #74 完整组合库和独立进程读者。37 个业务测试模块与新增 A6
+协议测试使用独立固定分母，A1–A5 旧模块/分母及 A5 `paper_fact_mapping` 历史含义保留。
+collect 只审核分母；少执行、skip、deselect、collect-only、缺材料、篡改、未知格式、
+身份漂移、中断和缺终态均不能形成完整通过。结论不可覆盖，状态仍由既有终态协议查询。
+
+先完成代码/帮助/终端 fixture，再按 A2 wrapper→完整 A2→A3→A4→A5→A6 重审绑定，
+无自绑定或反向循环。旧/新 SHA、理由及复验 run_id 台账置于工作树外，不参与自身 run_id
+身份哈希。先合入最新 integration、冻结提交，长门禁前只读检查开发环境，留至少 30 分钟
+观察预算；真实退出码 0 后再核对 status=passed/verified、applicability=same。分支运行仅为
+阶段证据，最终集成与审查修复后的工作树须另生成正式 run_id，旧成功不能替代新身份。
+
+stage_a_verified/live_verified/rpc_verified 恒 false。真实来源和所有来源假设、parser 真实
+完整性、HTML/截断检测、merge/undo/arXiv/PMID、metadata_ready/eligibility、任务预算与完整
+可见性、RPC/Pi/Docling/NAS、校准/自动精读及完整阶段 A 未验收。阶段 C 真实 Feed 接入前
+必须补强冲突观察持久化；parser 升级前必须固定样本回归并声明关键字段减少，离线 A6
+不绕过这两项门禁。[完整规格与评论对照](a6-requirements.md)列出具体能力、测试及未覆盖项。
