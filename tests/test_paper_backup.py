@@ -252,3 +252,26 @@ def test_verify_and_restore_reject_rehashed_semantic_damage_or_a405_batch(
     assert restore_failure.value.reason == reason
     assert tree(batch.batch_dir) == before
     assert not (tmp_path / "restored").exists()
+
+
+def test_backup_rejects_same_parser_receipts_with_different_parsed_content(
+    tmp_path: Path,
+) -> None:
+    from datetime import UTC, datetime
+
+    database = tmp_path / "facts.sqlite"
+    upgrade_database(database)
+    service = PaperFacts(database, tmp_path / "data")
+    service.submit(observation())
+    repeated = service.submit(observation(observed_at=datetime(2026, 1, 2, tzinfo=UTC)))
+    assert repeated.acquisition_id
+    with closing(sqlite3.connect(database)) as connection:
+        connection.execute(
+            "UPDATE paper_source_acquisitions SET parsed_sha256=? "
+            "WHERE acquisition_id=?",
+            ("0" * 64, repeated.acquisition_id),
+        )
+        connection.commit()
+    with pytest.raises(BackupError) as failure:
+        create_backup(database, tmp_path / "data", tmp_path / "backup")
+    assert failure.value.reason == "registration_invalid"

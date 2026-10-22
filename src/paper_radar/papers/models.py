@@ -104,6 +104,7 @@ class ObservationInput(ClosedModel):
     parser_version: int
     payload: bytes
     fields: dict[str, CandidateInput]
+    interpretation: Literal["complete"]
     target_paper_id: str | None = None
     target_version_id: str | None = None
     relations: tuple[object, ...] = ()
@@ -169,6 +170,8 @@ class ObservationFact(ClosedModel):
 
 
 class AcquisitionFact(ClosedModel):
+    parsed_sha256: str
+    interpretation: Literal["complete"]
     acquisition_id: str
     event_no: int | None
     version_id: str | None

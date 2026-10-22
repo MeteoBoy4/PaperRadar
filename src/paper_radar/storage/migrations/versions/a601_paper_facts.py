@@ -85,6 +85,9 @@ def upgrade() -> None:
         sa.Column("parser_version", sa.Integer(), nullable=False),
         sa.Column("payload_sha256", sa.String(64), nullable=False),
         sa.Column("interpretation_sha256", sa.String(64), nullable=False),
+        sa.Column("parsed_sha256", sa.String(64), nullable=False),
+        sa.Column("interpretation", sa.String(16), nullable=False),
+        sa.CheckConstraint("interpretation = 'complete'"),
         sa.Column(
             "source_observation_id",
             sa.String(36),

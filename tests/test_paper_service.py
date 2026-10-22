@@ -16,6 +16,7 @@ def observation(**changes: object) -> dict[str, object]:
         "query_key": "article-1",
         "observed_at": datetime(2026, 1, 1, tzinfo=UTC),
         "parser_version": 1,
+        "interpretation": "complete",
         "payload": b"original response",
         "fields": {"title": {"value": "  Original\r\nTitle  ", "locator": "title"}},
         **changes,

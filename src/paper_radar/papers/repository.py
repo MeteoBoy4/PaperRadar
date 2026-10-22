@@ -97,6 +97,29 @@ def request_key(item: ObservationInput, doi: str) -> tuple[ColumnElement[bool], 
     )
 
 
+def _check_interpretation(
+    connection: Connection, item: ObservationInput, doi: str
+) -> None:
+    rows = connection.execute(
+        select(acquisitions.c.parser_version, acquisitions.c.parsed_sha256).where(
+            acquisitions.c.doi == doi,
+            acquisitions.c.version_kind == item.version_kind,
+            acquisitions.c.source_kind == item.source_kind,
+            acquisitions.c.provider == item.provider,
+            acquisitions.c.query_key == item.query_key,
+            acquisitions.c.payload_sha256 == hashlib.sha256(item.payload).hexdigest(),
+        )
+    ).all()
+    if item.parser_version < max(
+        (row.parser_version for row in rows), default=0
+    ) or any(
+        row.parser_version == item.parser_version
+        and row.parsed_sha256 != digest(item.fields)
+        for row in rows
+    ):
+        raise PaperError(PaperReason.INVALID_OBSERVATION, path="parser_version")
+
+
 def needs_source(
     engine: Engine, item: ObservationInput, doi: str, fields: dict[str, CandidateInput]
 ) -> bool:
@@ -109,6 +132,7 @@ def needs_source(
             select(acquisitions.c.acquisition_id).where(*request_key(item, doi))
         ).first():
             return False
+        _check_interpretation(connection, item, doi)
         source = connection.execute(
             select(observations.c.observation_id)
             .join(identifiers, observations.c.version_id == identifiers.c.version_id)
@@ -222,6 +246,7 @@ def save_observation(
                 ).first()
             ):
                 raise PaperError(PaperReason.UNSUPPORTED_SOURCE, path="source_stream")
+            _check_interpretation(connection, item, doi)
             now = datetime.now(UTC).isoformat(timespec="microseconds")
             if version_id is None and fields:
                 paper_id, version_id = str(uuid4()), str(uuid4())
@@ -324,6 +349,8 @@ def save_observation(
                     parser_version=item.parser_version,
                     payload_sha256=hashlib.sha256(item.payload).hexdigest(),
                     interpretation_sha256=interpretation_digest(item),
+                    interpretation=item.interpretation,
+                    parsed_sha256=digest(item.fields),
                     source_observation_id=source_id,
                     response_bytes_retained=retained,
                     event_no=event_no,

@@ -178,7 +178,7 @@ def _acquisition(row: RowMapping) -> AcquisitionFact:
         raise corrupt()
     if row["parser_version"] < 1 or any(
         re.fullmatch(r"[0-9a-f]{64}", row[name]) is None
-        for name in ("payload_sha256", "interpretation_sha256")
+        for name in ("payload_sha256", "interpretation_sha256", "parsed_sha256")
     ):
         raise corrupt()
     return AcquisitionFact.model_validate(
@@ -186,13 +186,61 @@ def _acquisition(row: RowMapping) -> AcquisitionFact:
     )
 
 
+def _material_key(row: RowMapping) -> tuple[str, str, str, str, str, str]:
+    return (
+        row["doi"],
+        row["version_kind"],
+        row["source_kind"],
+        row["provider"],
+        row["query_key"],
+        row["payload_sha256"],
+    )
+
+
+def _validate_parser_history(
+    connection: Connection, rows: tuple[RowMapping, ...], doi: str, kind: str
+) -> None:
+    unbound = (
+        connection.execute(
+            select(acquisitions).where(
+                acquisitions.c.version_id.is_(None),
+                acquisitions.c.doi == doi,
+                acquisitions.c.version_kind == kind,
+            )
+        )
+        .mappings()
+        .all()
+    )
+    highest: dict[tuple[str, ...], int] = {}
+    interpretations: dict[tuple[tuple[str, ...], int], str] = {}
+    for row in (*unbound, *rows):
+        key = _material_key(row)
+        version = row["parser_version"]
+        identity = (key, version)
+        if (row["version_id"] is not None and version < highest.get(key, 0)) or (
+            identity in interpretations
+            and interpretations[identity] != row["parsed_sha256"]
+        ):
+            raise corrupt()
+        highest[key] = max(highest.get(key, 0), version)
+        interpretations[identity] = row["parsed_sha256"]
+
+
 def validate_unbound_acquisitions(connection: Connection) -> None:
     """空观察也有可回放重试结果,但不得制造空论文身份。"""
     try:
+        interpretations: dict[tuple[tuple[str, ...], int], str] = {}
         for row in connection.execute(
             select(acquisitions).where(acquisitions.c.version_id.is_(None))
         ).mappings():
             item = _acquisition(row)
+            identity = (_material_key(row), item.parser_version)
+            if (
+                identity in interpretations
+                and interpretations[identity] != item.parsed_sha256
+            ):
+                raise corrupt()
+            interpretations[identity] = item.parsed_sha256
             if (
                 item.source_observation_id is not None
                 or item.event_no is not None
@@ -324,6 +372,9 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                 )
                 .mappings()
                 .all()
+            )
+            _validate_parser_history(
+                connection, tuple(event_rows), doi, version["version_kind"]
             )
             if [row["event_no"] for row in event_rows] != list(
                 range(1, len(event_rows) + 1)

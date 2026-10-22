@@ -637,3 +637,8 @@ Pi/Docling实际执行、正式校准工作流、真实来源、NAS、阶段 A/l
 版本关系、输入映射、真实来源/LLM/Docling/RPC/NAS 与完整阶段 A/live 未验收。
 
 #69 后续用户裁决另由 test_paper_acquisitions 覆盖乱序同值取得、复用候选不发布新响应大包、not_retained/空请求的原结果重试和同键异解析拒绝；backup 用活跃 WAL 中的非空取得事实验证隔离恢复，不变更 Feed D3。
+
+#69 的最终重解析裁决由 test_paper_reparse 覆盖：完整声明必填、partial/economical拒绝、
+同材料parser单调与同版本解析恒定、旧请求原结果、有效非空解释整体替换、不同材料缺项
+不清空、全空v2保护，以及公共历史查询结合既有A5 builder证明旧文本输入保留/新摘要指纹改变。
+完整历史重建/指纹链与正式映射留给#73，跨来源fallback留给#71/#74；这些不在#69提前实现。

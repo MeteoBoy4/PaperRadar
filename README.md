@@ -492,4 +492,4 @@ uv run --offline --locked paper-radar paper trace PAPER_ID --database data/paper
   --data-root data --verify-source-bytes --json
 ```
 
-`paper` 只读既有库，不创建目录、不调用模型。摘要默认隐藏，`--show-abstract` 才展开；来源字节核验只返回校验结果，不转储原始响应。Python 公共写边界是 `paper_radar.papers.PaperFacts.submit`，只接有界原始 bytes 与严格出版者结构化字段；当前不开放生产 CLI 写入、Feed、人工修正、版本关系、跨来源仲裁或阶段输入映射。本机备份与隔离恢复同时校验该首条路径的非空历史，仍不表示 A6 或 live 已验收，详见[论文事实 Contract](docs/contracts/paper-facts.md)。
+`paper` 只读既有库，不创建目录、不调用模型。摘要默认隐藏，`--show-abstract` 才展开；来源字节核验只返回校验结果，不转储原始响应。Python 公共写边界是 `paper_radar.papers.PaperFacts.submit`，只接有界原始 bytes、严格出版者结构化字段与必填 `interpretation="complete"` 声明；当前不开放生产 CLI 写入、Feed、人工修正、版本关系、跨来源仲裁或阶段输入映射。本机备份与隔离恢复同时校验该首条路径的非空历史，仍不表示 A6 或 live 已验收，详见[论文事实 Contract](docs/contracts/paper-facts.md)。

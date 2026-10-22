@@ -54,6 +54,7 @@ def interpretation_digest(item: ObservationInput) -> str:
             name: candidate.model_dump(mode="json")
             for name, candidate in item.fields.items()
         },
+        "interpretation": item.interpretation,
         "version_kind": item.version_kind,
         "target_paper_id": item.target_paper_id,
         "target_version_id": item.target_version_id,

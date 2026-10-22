@@ -23,7 +23,7 @@ boundary/value StageInput 沿用既有格式 1，backup format 沿用 1。A6 只
 
 公共 Python 边界为 `paper_radar.papers.PaperFacts(database, data_root)`：`submit(observation)` 接受严格 `ObservationInput` 或其字段字典，返回 `WriteResult`；`show(paper_id)` 返回当前 `PaperView`，`trace(paper_id, verify_source_bytes=False)` 返回 `PaperTrace`，`validate_all()` 只读校验完整引用与历史修订。所有公开模型 repr/str 隐藏论文内容；服务验证错误只返回受控原因，不透传 Pydantic 输入载荷。
 
-本切片仅接受 `source_kind="publisher"`、DOI 目标与同一 `(provider, query_key, version_id)` 出版者流。字段候选是 `{value, locator}`；摘要 value 是 `{text, is_truncated, rule}`，日期 value 是 `{value, precision}`，作者使用有序字符串 tuple。`version_kind` 为 `preprint/journal`，`observed_at` 为明确 UTC datetime，`parser_version` 为正整数，`payload` 为单份非空 bytes。其余支持范围以本文目标为准，当前跨来源流、注册机构、Feed、人工入口分别 `unsupported_source`，关系 `unsupported_relation`，未知字段 `unsupported_field`，均整笔拒绝。
+本切片仅接受 `source_kind="publisher"`、DOI 目标与同一 `(provider, query_key, version_id)` 出版者流。字段候选是 `{value, locator}`；摘要 value 是 `{text, is_truncated, rule}`，日期 value 是 `{value, precision}`，作者使用有序字符串 tuple。`version_kind` 为 `preprint/journal`，`observed_at` 为明确 UTC datetime，`parser_version` 为正整数，必填 `interpretation="complete"` 声明整份材料的完整解释，`payload` 为单份非空 bytes。其余支持范围以本文目标为准，当前跨来源流、注册机构、Feed、人工入口分别 `unsupported_source`，关系 `unsupported_relation`，未知字段 `unsupported_field`，均整笔拒绝。
 
 迁移 `a601_paper_facts` 只建立实际使用的 Paper、Version、doi 标识、出版者观察、字段候选/作者成员、完整引用式修订与初始选择表。无 Feed、关系、人工修正或未来任务空壳表。只读 CLI 为本文 §8 的 show/trace 子集；当前 trace 展示所有已支持版本、选择、修订、观察与候选，不伪造尚未支持的 Feed/关系事实，也不开放映射、历史选择器或配置快照参数。
 
@@ -60,6 +60,14 @@ publisher/注册机构来源流为 `(来源类别, 提供方, 查询键, 目标�
 
 `not_retained` 现在表示没有新增来源材料观察或候选正文，**不表示未持久化任何业务事实**。它可以新增轻量取得事实，并在获选取得 provenance 改变时追加引用式修订。A(t1)→A(t3)→B(t2晚到) 与 A(t1)→B(t2)→A(t3) 均获选 t3 的 A；每次取得使用自身不可变 observed_at、响应 SHA-256、parser_version 参与确定性仲裁。候选引用仍指向旧观察，取得时间/解析依据与原始材料的取得时间分开展示，不能把候选原属观察时间改成新时间。只读发布计划可先找同流同集合依据，ArtifactStore 发布仍在业务写事务之外，写事务重新核对；并发最多留下完整未引用制品，无内部忙锁重试循环。Feed 后续仍使用第 4 节首次时间与 D3 回摆规则，不能套用本段 publisher 取得时序。
 
+同一 `(来源流, payload SHA-256)` 的 parser_version 单调。已登记请求的精确重试优先返回原结果；新的降版本请求 `invalid_observation`。同一材料、同一 parser_version 的解析字段/locator 也必须恒定，不能借更换 observed_at 偷换解释；需要变化时提升 parser_version。取得事实保存完整声明与解析内容摘要供语义检查，声明本身不是对真实解析器的认证。
+
+更高 parser_version 的**有效非空完整解释**整体替换同材料的旧解释：新解释未提供的字段属于“该解释不含此字段”，旧解释不再参与当前仲裁，因而当前修订可以缺项；其他有效材料/来源仍可按各自优先级补充。旧候选与旧修订保留不变。这与不同 payload 的新观察不对称：不同字节之间仍是缺项不清空，不能把同材料解释替换说成可用缺失撤销字段。
+
+**全空候选集合是明确例外**：v2 全空返回 not_retained，只保留轻量取得原结果与版本门禁，不替换当前规范字段、不形成清空修订；首次空请求仍不创建 Paper，不以空回执派生字段清空影响。此后新的低 parser 请求仍受单调门禁约束，而精确旧请求继续回原结果。
+
+完整解释是调用方的必要承诺，服务拒绝缺失声明、明确 partial/economical 声明以及可检测的降版本/同版本异解释；不能仅从字段减少断定违规，也不声称能识别声明撒谎的真实解析器。A6 没有真实解析器，其真实性由第 10 节阶段 C 回归门禁承接。
+
 304、限流、失败在输入类型上不可表达；这些取得执行历史仍由未来 task_attempts 承担。轻量取得只记录有效解析请求，不成为通用请求/HTTP日志框架。
 
 当前来源 URL 与 URL 形式的查询键/提供方/locator 拒绝 userinfo、query（含空 `?`）和 fragment（含空 `#`），不猜测参数名或 opaque 查询键里的 secret；这是防止认证 URL 进入查询面的严格初版能力边界，不表示 URL 可靠性/eligibility 已核验。原始材料按来源发布规则保留。这条规则不能用于 Feed 端点 URL，第 4 节 Feed query 必须逐字保留。
@@ -90,7 +98,7 @@ Feed 同源排序只用不可变的首次 `observed_at` 和稳定 tie-break。A�
 
 摘要来源与取得时间从获选摘要候选所属观察派生，不接受独立候选；摘要标记未知不默认为 false，映射返回 `truncation_unknown`。人工摘要修正必须同时给非空文本与标记，不能只改标记；确认完整是同文本加 false 的新修正。截断检测器不在 A6。
 
-字段优先级：人工明确修正 > 目标版本出版者结构化事实 > 对应 DOI 注册机构 > 目标版本 Feed，不跨版本填缺。注册机构查询 DOI 必须等于版本已登记 DOI，不联网核验 Crossref/DataCite 路由归属。非人工先按来源流内 observed_at 排序，再用 payload SHA-256、parser_version 和封闭来源流键作为稳定 tie-break，绝不用 recorded_at、rowid 或插入顺序；同一材料重解析只由最高整数 parser_version 参与。跨流同优先级也采用相同稳定比较。只要获选值或 provenance 改变就追加修订，即使文本相同；相同观察不重复修订。
+字段优先级：人工明确修正 > 目标版本出版者结构化事实 > 对应 DOI 注册机构 > 目标版本 Feed，不跨版本填缺。注册机构查询 DOI 必须等于版本已登记 DOI，不联网核验 Crossref/DataCite 路由归属。非人工先按来源流内 observed_at 排序，再用 payload SHA-256、parser_version 和封闭来源流键作为稳定 tie-break，绝不用 recorded_at、rowid 或插入顺序；同一材料重解析只由最高有效非空完整解释的整数 parser_version 参与；全空解释沿用第 3 节 not_retained 保护。跨流同优先级也采用相同稳定比较。只要获选值或 provenance 改变就追加修订，即使文本相同；相同观察不重复修订。
 
 人工修正带调用方提供的非空 request_id，在目标 version_id 内唯一；精确重试复用原结果、同 request_id 异内容整笔 invalid_manual_correction。新修正按每个版本事务内分配的显式递增事件序号排序，最新者胜，先后本身是语义。修正绑定 version_id，预印本升级正式版后不迁移，当前值可回到正式出版者值；trace 须明示。actor/reason 只是调用方给的未认证审计字符串，不是认证用户身份。A6 无产品写入/撤销入口，误修正只能通过服务追加更高序号非空修正覆盖并保留历史；空白修正拒绝，不代表清除。期望修正跟随 Paper 需另行裁决。
 
@@ -166,6 +174,8 @@ CLI 目标固定为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER
 
 隔离恢复从活跃 WAL 备份，禁原目录访问、独立目录恢复并搬迁，新进程只持受控 ID/修订/配置引用及独立预期，不从请求文件带原题名摘要，仍由恢复库候选重建相同输入。恢复不激活、抓取、重算、清理或续跑。
 
+阶段 C 接入真实解析器前，parser_version 每次升级必须先通过固定样本回归，声明字段减少并检查关键字段变化；不得无声明地减少关键字段。A6 只校验完整解释声明和可检测的一致性，真实解析器是否诚实、升级实际损失与运行成本均未验证，不得用离线类型检查替代此硬门禁。
+
 以下均未在 A6 验证，阶段 C 逐项回填已核实/已证伪/仍未验证，并将固定来源材料纳入其验收：JGR/QJRMS guid 裸 DOI 覆盖；Wiley `?af=R` 落地页行为；页码实际为 eLocator；适配器给出的摘要截断标记可靠性；entry ID 跨抓取稳定性；Crossref `is-preprint-of/has-preprint` 真实供给。评论里的 170/170 不替代本组证据。A6 NOT_ASSESSED 必须包括这些来源假设、真实来源、截断检测、merge/undo、arXiv/PMID、metadata_ready/eligibility、任务/预算、完整可见性、RPC、Docling、NAS及完整阶段 A；stage_a_verified/live_verified/rpc_verified=false。
 
 ## 11. 实施与验收约定
@@ -177,3 +187,14 @@ A6 只在 #75 注册，ISSUE=75，PARENT_ISSUE=67，前置同次 A1、完整 A2�
 最终 run_id 必须来自全部功能和验收集成后的最终工作树，严格绑定代码、工作树、lockfile、真实 revision、材料及实际回执；中间通过不能冒充最终通过。长门禁前 `./scripts/dev-environment check`，单次先留 30 分钟观察预算并回填实际耗时，超时先诊断、不删测。#65 若已合入沿用其回执协议，未合入不自行领取测试并行优化。
 
 本票不改 README 或其他公共 Contract 的已交付能力声明；各后续票随真实实现同步。A5 旧 NOT_ASSESSED 的 paper_fact_mapping 是当次历史结论，不回改 a5_scope.py；由最终 A6 明确新增覆盖。文档落地提交由 #68 完成记录引用，主方案处置映射见 ADR；不修改 #67 正文/状态或其历史固定提交链接。
+
+### #69 重解析裁决的跨票验证归属
+
+| 用户要求 | #69 已覆盖 | 后续必须覆盖 |
+| --- | --- | --- |
+| v1 有摘要、同材料 v2 无摘要 | 当前查询缺摘要，旧修订文本/依据不变；从公开查询读出的旧文本调用既有 A5 builder 得到原输入指纹 | #73 经公共历史版本/修订/快照映射重建完整输入链 |
+| v2 无摘要、另一来源有摘要 | 当前跨来源仍受控拒绝，不宣称 fallback 通过 | #71 仲裁与 #74 集成验证 fallback 获选来源、provenance 变化与新修订 |
+| v2 改摘要文本 | 当前公开事实经既有 A5 builder 产生不同指纹 | #73 正式映射及历史重建指纹链组合验证 |
+| v2 候选全空 | not_retained、原字段/修订不变、取得原结果与版本门禁保留 | 后续消费者继续保持同一保护，不推断清空或撤销 |
+
+该表不替代各后续票的验收，特别不能把 #69 的测试内 builder 组合当作已交付公共历史映射。
