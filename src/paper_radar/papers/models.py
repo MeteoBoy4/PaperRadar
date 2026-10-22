@@ -146,7 +146,7 @@ class FieldFact(ClosedModel):
 class SelectionFact(ClosedModel):
     selection_id: str
     version_id: str
-    reason: Literal["initial"]
+    reason: Literal["initial", "journal_upgrade"]
     selected_at: str
 
 
@@ -160,7 +160,7 @@ class PaperView(ClosedModel):
     version_kind: VersionKind
     doi: str | None
     fields: dict[str, FieldFact]
-    selection: SelectionFact
+    selection: SelectionFact | None
 
 
 class ObservationFact(ClosedModel):
@@ -217,6 +217,8 @@ class PaperTrace(ClosedModel):
     discoveries: tuple["DiscoveryFact", ...] = ()
     corrections: tuple["ManualCorrectionFact", ...] = ()
     decisions: tuple["CandidateDecision", ...] = ()
+    relations: tuple["RelationFact", ...] = ()
+    selection_conflicts: tuple[str, ...] = ()
     manual_correction_scope: Literal[
         "人工修正绑定版本，不随 Paper 当前版本升级迁移"
     ] = "人工修正绑定版本，不随 Paper 当前版本升级迁移"
@@ -289,3 +291,51 @@ class CandidateDecision(ClosedModel):
         "earlier_manual_event",
         "earlier_observation_or_stable_tiebreak",
     ]
+
+
+class RelationInput(ClosedModel):
+    kind: str
+    source_doi: str
+    target_doi: str
+    locator: str
+
+
+class RelationFact(ClosedModel):
+    relation_id: str
+    preprint_doi: str
+    journal_doi: str
+    preprint_version_id: str | None
+    journal_version_id: str | None
+    preprint_paper_id: str | None
+    journal_paper_id: str | None
+    state: Literal["endpoint_missing", "requires_merge", "effective"]
+    acquisition_id: str
+    source_kind: Literal["publisher", "registry"]
+    provider: str
+    query_key: str
+    observed_at: str
+    parser_version: int
+    artifact_id: str
+    locator: str
+    assertions: tuple["RelationAssertion", ...] = ()
+
+
+class NormalizedRelation(RelationInput):
+    raw_source_doi: str
+    raw_target_doi: str
+    raw_kind: str
+
+
+class RelationAssertion(ClosedModel):
+    source_kind: Literal["publisher", "registry"]
+    provider: str
+    query_key: str
+    observed_at: str
+    parser_version: int
+    payload_sha256: str
+    artifact_id: str | None
+    locator: str
+    acquisition_id: str
+    raw_source_doi: str
+    raw_target_doi: str
+    raw_kind: str

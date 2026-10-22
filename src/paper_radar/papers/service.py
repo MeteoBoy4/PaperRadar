@@ -30,6 +30,9 @@ from paper_radar.papers.queries import (
     resolve_revision,
     validate_unbound_acquisitions,
 )
+from paper_radar.papers.relation_repository import (
+    validate_relation_references,
+)
 from paper_radar.papers.repository import needs_source, save_observation
 from paper_radar.papers.tables import feeds, papers
 from paper_radar.papers.text import normalize_fields, parse_observation
@@ -174,6 +177,8 @@ class PaperFacts:
                 if self.data_root is None:
                     raise PaperError(PaperReason.CORRUPT_REFERENCE, path="data_root")
                 store = ArtifactStore(self.database, self.data_root)
+                for relation in result.relations:
+                    store.read_artifact(relation.artifact_id)
                 for source in result.observations:
                     payload = store.read_artifact(source.artifact_id)["payload"]
                     if source.source_kind == "manual":
@@ -218,6 +223,7 @@ class PaperFacts:
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN")
                 validate_feed_registry(connection)
+                validate_relation_references(connection)
                 validate_unbound_acquisitions(connection)
                 for paper_id in connection.execute(select(papers.c.paper_id)).scalars():
                     result = load_trace(connection, paper_id)

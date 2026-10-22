@@ -10,6 +10,7 @@ from paper_radar.papers.models import (
     DateValue,
     ManualCorrectionInput,
     ObservationInput,
+    RelationInput,
     RevisionView,
     WriteResult,
 )
@@ -35,6 +36,7 @@ __all__ = [
     "PaperError",
     "PaperFacts",
     "PaperReason",
+    "RelationInput",
     "RevisionView",
     "WriteResult",
     "normalize_doi",

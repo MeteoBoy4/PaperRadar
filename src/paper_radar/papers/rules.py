@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from paper_radar.papers.models import (
     CandidateDecision,
     CandidateInput,
+    NormalizedRelation,
     ObservationInput,
 )
 
@@ -81,6 +82,30 @@ def interpretation_digest(item: ObservationInput) -> str:
             name: candidate.model_dump(mode="json")
             for name, candidate in item.fields.items()
         },
+        **(
+            {
+                "relations": sorted(
+                    {
+                        json.dumps(
+                            NormalizedRelation.model_validate(relation).model_dump(
+                                mode="json",
+                                exclude={
+                                    "raw_source_doi",
+                                    "raw_target_doi",
+                                    "raw_kind",
+                                },
+                            ),
+                            sort_keys=True,
+                            separators=(",", ":"),
+                            ensure_ascii=False,
+                        )
+                        for relation in item.relations
+                    }
+                )
+            }
+            if item.relations
+            else {}
+        ),
         "interpretation": item.interpretation,
         "version_kind": item.version_kind,
         "target_paper_id": item.target_paper_id,

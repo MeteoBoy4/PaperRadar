@@ -14,7 +14,8 @@ from paper_radar.papers.errors import PaperError
 from paper_radar.storage.errors import StorageError
 
 HELP = """\
-当前用途：只读查看论文当前事实与四类来源、人工修正及 Feed 发现历史；不写入、不调用模型。
+当前用途：只读查看论文当前事实、四类来源、人工修正、版本关系及 Feed 历史。
+不写入、不调用模型。
 仅覆盖论文事实；尚未计算完整任务资格。
 
 参数与选项：show/trace 接受 PAPER_ID、必填 --database；可选 --data-root、
@@ -121,6 +122,27 @@ def _text_result(
             f"{len(result.discoveries)} 条 Feed 发现"
         )
         typer.echo(result.manual_correction_scope)
+        for selection_event in result.selections:
+            typer.echo(
+                f"版本选择：{selection_event.version_id}；{selection_event.reason}；"
+                f"{selection_event.selected_at}"
+            )
+        if result.selection_conflicts:
+            typer.echo(
+                "同级版本歧义（保持既有选择）：" + "、".join(result.selection_conflicts)
+            )
+        for relation in result.relations:
+            label = {
+                "endpoint_missing": "版本关系（端点尚未出现）",
+                "requires_merge": "未生效版本关系（等待合并）",
+                "effective": "版本关系（已生效）",
+            }[relation.state]
+            typer.echo(
+                f"{label}：{relation.preprint_doi} → {relation.journal_doi}；"
+                f"预印本 Paper={relation.preprint_paper_id or '尚未出现'}；"
+                f"正式版 Paper={relation.journal_paper_id or '尚未出现'}；"
+                f"来源={relation.source_kind}/{relation.provider}；locator={relation.locator}"
+            )
         for revision in result.revisions:
             typer.echo(
                 f"修订 {revision.revision_no}：版本 {revision.version_id}；"

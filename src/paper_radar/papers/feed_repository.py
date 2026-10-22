@@ -9,6 +9,11 @@ from sqlalchemy import Engine, func, select
 
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.models import CandidateInput, ObservationInput, WriteResult
+from paper_radar.papers.relation_repository import (
+    load_relations,
+    related_papers,
+    validate_endpoint_kinds,
+)
 from paper_radar.papers.repository import (
     _conflict,
     _insert_candidates,
@@ -17,6 +22,7 @@ from paper_radar.papers.repository import (
     update_revision,
 )
 from paper_radar.papers.rules import digest, interpretation_digest
+from paper_radar.papers.selection_repository import select_new_version
 from paper_radar.papers.tables import (
     acquisitions,
     feed_discoveries,
@@ -27,7 +33,6 @@ from paper_radar.papers.tables import (
     observations,
     papers,
     revisions,
-    selections,
     versions,
 )
 from paper_radar.storage.artifacts import ArtifactStore
@@ -184,10 +189,17 @@ def submit_feed(
                 (row["parser_version"] for row in prior), default=0
             ):
                 raise PaperError(PaperReason.INVALID_OBSERVATION, path="parser_version")
+            if doi:
+                validate_endpoint_kinds(connection, item, doi)
             now = datetime.now(UTC).isoformat(timespec="microseconds")
             if version is None:
-                paper_id, version_id = str(uuid4()), str(uuid4())
-                connection.execute(papers.insert().values(paper_id=paper_id))
+                owners = related_papers(connection, doi, item) if doi else set()
+                paper_id, version_id = (
+                    (next(iter(owners)) if len(owners) == 1 else str(uuid4())),
+                    str(uuid4()),
+                )
+                if len(owners) != 1:
+                    connection.execute(papers.insert().values(paper_id=paper_id))
                 connection.execute(
                     versions.insert().values(
                         version_id=version_id,
@@ -195,14 +207,8 @@ def submit_feed(
                         version_kind=item.version_kind,
                     )
                 )
-                connection.execute(
-                    selections.insert().values(
-                        selection_id=str(uuid4()),
-                        paper_id=paper_id,
-                        version_id=version_id,
-                        reason="initial",
-                        selected_at=now,
-                    )
+                select_new_version(
+                    connection, paper_id, version_id, item.version_kind, now
                 )
             else:
                 paper_id = version["paper_id"]
@@ -310,11 +316,33 @@ def submit_feed(
                     acquisition_id=acquisition_id,
                 )
             )
+            requires_merge = any(
+                relation.state == "requires_merge"
+                for relation in load_relations(connection)
+                if doi in {relation.preprint_doi, relation.journal_doi}
+            )
+            reason = (
+                PaperReason.REQUIRES_MERGE
+                if requires_merge
+                else None
+                if retained
+                else PaperReason.NOT_RETAINED
+            )
+            connection.execute(
+                acquisitions.update()
+                .where(acquisitions.c.acquisition_id == acquisition_id)
+                .values(
+                    result_status="retained"
+                    if retained or requires_merge
+                    else "not_retained",
+                    result_reason=reason.value if reason else None,
+                )
+            )
             current_no = update_revision(connection, version_id, acquisition_id, now)
             connection.commit()
             return WriteResult(
-                status="retained" if retained else "not_retained",
-                reason=None if retained else PaperReason.NOT_RETAINED,
+                status="retained" if retained or requires_merge else "not_retained",
+                reason=reason,
                 paper_id=paper_id,
                 version_id=version_id,
                 revision_no=current_no,

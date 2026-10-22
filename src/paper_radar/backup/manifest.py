@@ -24,7 +24,7 @@ from paper_radar.storage.artifact_contract import (
 from paper_radar.storage.errors import StorageError
 
 BACKUP_FORMAT_VERSION = 1
-BACKUP_DATABASE_REVISION = "a603_source_arbitration"
+BACKUP_DATABASE_REVISION = "a604_version_relations"
 DATABASE_FILE = "database.sqlite3"
 MANIFEST_FILE = "manifest.json"
 BATCH_ID = re.compile(r"[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}\Z")

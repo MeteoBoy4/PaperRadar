@@ -57,7 +57,7 @@ uv run --offline --locked paper-radar --help
 ## 数据库升级
 
 A2 的 `a201_profile_snapshot`、A3 的 `a302_artifact_store` 可显式升级至当前
-`a603_source_arbitration`。论文切片追加 DOI 论文身份、四类来源观察、人工事件、发现历史、候选引用式修订与初始选择；既有升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
+`a604_version_relations`。论文切片追加 DOI 论文身份、四类来源观察、人工事件、发现历史、候选引用式修订与初始选择；既有升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
 全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
 失败或进程中断完整回滚后可以重试。配置历史的 ID、原字节、创建时间、六投影和基线不变。
 已知旧库上的 `config check/compile/diff/snapshots list` 会提示先执行升级，不自动修改库。
@@ -499,11 +499,15 @@ Python 公共写边界是 `paper_radar.papers.PaperFacts.submit`，只接有界�
 必填 `interpretation="complete"` 声明。`register_feed(url)` 按数据库唯一规范 URL 登记 Feed；
 Feed 输入要求真实 `feed_id/entry_id`、`payload_scope="single_item"`，允许 `doi=None`。
 同 Feed 条目内容变化保持版本关联；同 DOI 跨 Feed 复用版本；逐字段按人工修正 > 出版者 > 对应 DOI 注册机构 > Feed 仲裁。
-注册机构查询须明确既有版本且查询 DOI 一致；不联网推断真实注册机构。
+注册机构查询 DOI 必须一致；普通字段入口明确既有版本，权威关系路径可先保留尚无端点的依据；不联网推断真实注册机构。
 `correct({version_id, request_id, actor, reason, fields})` 追加版本内幂等人工修正，只覆盖提供的非空字段，
 按原子事件次序选择最新人工值；没有撤销或清空入口。修正不随当前版本升级迁移。
 `revision(version_id, revision_no)` 读取完整历史状态及来源依据，trace 展示获选与未选候选和全部修订。
-当前不开放生产写入 CLI、抓取适配器、Feed 配置、版本关系或阶段输入映射。
+`relations=({kind, source_doi, target_doi, locator}, ...)` 仅接受出版者/注册机构的预印本→正式版关系；
+双向别名归一同一事实，原始书写和来源断言保留。关系本身不创建版本；真实正式版到达时原子升级当前，
+缺摘要不从预印本补入。同级保持既有选择，跨 Paper 返回 retained/requires_merge，不自动合并。
+trace 展示端点尚未出现、等待合并、已生效三态及真实选择历史。
+当前不开放生产写入 CLI、抓取适配器、Feed 配置或阶段输入映射。
 本机备份与隔离恢复校验非空四类来源、人工请求原文及全部修订历史，仍不表示 A6 或 live 已验收。
 **阶段 C 真实 Feed 接入前必须补齐强冲突观察持久化和 parser 升级固定样本回归，
 此前不得将本地拒绝路径直接作为生产写入。**详见[论文事实 Contract](docs/contracts/paper-facts.md)。

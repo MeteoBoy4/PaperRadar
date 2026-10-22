@@ -74,7 +74,7 @@ def test_full_a2_records_independent_scope_formats_fixtures_and_actual_migration
     assert result["format_version"] == 2
     assert result["a2_verified"] is True
     assert result["stage_a_verified"] is result["live_verified"] is False
-    assert result["migration_revision"] == "a603_source_arbitration"
+    assert result["migration_revision"] == "a604_version_relations"
     assert result["format_versions"] == {
         "snapshot": 1,
         "stage_projections": {
@@ -249,7 +249,7 @@ def test_migration_revision_comes_from_a_real_temporary_database_and_new_head_fa
     shutil.copytree(ROOT / "src/paper_radar/storage/migrations", migrations)
     (migrations / "versions/new_head.py").write_text(
         'revision = "unregistered_head"\n'
-        'down_revision = "a603_source_arbitration"\n'
+        'down_revision = "a604_version_relations"\n'
         "def upgrade():\n    pass\n",
         encoding="utf-8",
     )

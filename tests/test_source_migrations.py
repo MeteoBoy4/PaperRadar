@@ -21,6 +21,18 @@ from tests.test_manual_corrections import correction
 from tests.test_paper_service import observation
 
 
+def previous_rows(
+    connection: sqlite3.Connection, name: str
+) -> list[tuple[object, ...]]:
+    columns = [
+        row[1]
+        for row in connection.execute(f"PRAGMA table_info({name})")
+        if row[1] != "result_reason"
+        and not (name == "paper_selection_events" and row[1] == "event_no")
+    ]
+    return connection.execute(f"SELECT {','.join(columns)} FROM {name}").fetchall()
+
+
 def previous_copy(source: Path, target: Path) -> dict[str, list[tuple[object, ...]]]:
     config = Config()
     config.set_main_option(
@@ -47,7 +59,10 @@ def previous_copy(source: Path, target: Path) -> dict[str, list[tuple[object, ..
         ]
         expected = {}
         for name in names:
-            values = original.execute(f"SELECT * FROM {name}").fetchall()
+            columns = [row[1] for row in previous.execute(f"PRAGMA table_info({name})")]
+            values = original.execute(
+                f"SELECT {','.join(columns)} FROM {name}"
+            ).fetchall()
             expected[name] = values
             previous.execute(f"DELETE FROM {name}")
             if values:
@@ -104,16 +119,12 @@ def test_nonempty_previous_revision_upgrades_atomically_preserving_history(
                 "SELECT name FROM sqlite_master WHERE name='paper_manual_corrections'"
             ).fetchall()
             assert {
-                name: connection.execute(f"SELECT * FROM {name}").fetchall()
-                for name in expected
+                name: previous_rows(connection, name) for name in expected
             } == expected
             assert not connection.execute("PRAGMA foreign_key_check").fetchall()
-    assert upgrade_database(previous) == "a603_source_arbitration"
+    assert upgrade_database(previous) == "a604_version_relations"
     with closing(sqlite3.connect(previous)) as connection:
-        assert {
-            name: connection.execute(f"SELECT * FROM {name}").fetchall()
-            for name in expected
-        } == expected
+        assert {name: previous_rows(connection, name) for name in expected} == expected
         assert not connection.execute("PRAGMA foreign_key_check").fetchall()
     upgraded = PaperFacts(previous, root / "data")
     assert (

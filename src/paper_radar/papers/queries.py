@@ -25,6 +25,10 @@ from paper_radar.papers.models import (
     VersionKind,
 )
 from paper_radar.papers.read_checks import _utc, _uuid, corrupt
+from paper_radar.papers.relation_repository import (
+    load_relations,
+    retained_relation_result,
+)
 from paper_radar.papers.rules import (
     RankedObservation,
     choose_fields,
@@ -62,6 +66,15 @@ def _acquisition(row: RowMapping) -> AcquisitionFact:
             and normalize_doi(row["query_key"]) != row["doi"]
         )
         or (row["raw_doi"] is not None and normalize_doi(row["raw_doi"]) != row["doi"])
+        or row["result_reason"] not in {None, "not_retained", "requires_merge"}
+        or (
+            row["result_reason"] == "requires_merge"
+            and row["result_status"] != "retained"
+        )
+        or (
+            row["result_reason"] == "not_retained"
+            and row["result_status"] != "not_retained"
+        )
         or row["source_kind"] not in {"manual", "publisher", "registry", "feed"}
         or row["version_kind"] not in {"journal", "preprint"}
     ):
@@ -135,7 +148,10 @@ def validate_unbound_acquisitions(connection: Connection) -> None:
                 item.source_observation_id is not None
                 or item.event_no is not None
                 or item.response_bytes_retained
-                or item.result_status != "not_retained"
+                or (
+                    item.result_status != "not_retained"
+                    and not retained_relation_result(connection, row)
+                )
                 or item.result_revision_no is not None
             ):
                 raise corrupt()
@@ -164,18 +180,47 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
         )
         selection_rows = (
             connection.execute(
-                select(selections).where(selections.c.paper_id == paper_id)
+                select(selections)
+                .where(selections.c.paper_id == paper_id)
+                .order_by(selections.c.event_no)
             )
             .mappings()
             .all()
         )
-        if len(selection_rows) != 1 or not version_rows:
+        if (
+            not selection_rows
+            or not version_rows
+            or [row["event_no"] for row in selection_rows]
+            != list(range(1, len(selection_rows) + 1))
+        ):
             raise corrupt()
-        selection = SelectionFact.model_validate(
-            {key: selection_rows[0][key] for key in SelectionFact.model_fields}
+        selection_facts = tuple(
+            SelectionFact.model_validate(
+                {key: row[key] for key in SelectionFact.model_fields}
+            )
+            for row in selection_rows
         )
-        _uuid(selection.selection_id)
-        _utc(selection.selected_at)
+        kinds = {row["version_id"]: row["version_kind"] for row in version_rows}
+        for index, selection_fact in enumerate(selection_facts):
+            _uuid(selection_fact.selection_id)
+            _utc(selection_fact.selected_at)
+            if (
+                selection_fact.version_id not in kinds
+                or (index == 0 and selection_fact.reason != "initial")
+                or (
+                    index > 0
+                    and (
+                        index != 1
+                        or selection_fact.reason != "journal_upgrade"
+                        or kinds[selection_facts[index - 1].version_id] != "preprint"
+                        or kinds[selection_fact.version_id] != "journal"
+                    )
+                )
+            ):
+                raise corrupt()
+        selection = selection_facts[-1]
+        if "journal" in kinds.values() and kinds[selection.version_id] != "journal":
+            raise corrupt()
         all_sources, all_acquired, all_revisions, views = [], [], [], []
         all_discoveries: list[DiscoveryFact] = []
         all_decisions: list[CandidateDecision] = []
@@ -325,7 +370,10 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                         ):
                             raise corrupt()
                         creators.add(source_id)
-                    elif acquired.result_status != "not_retained":
+                    elif (
+                        acquired.result_status != "not_retained"
+                        and not retained_relation_result(connection, row)
+                    ):
                         raise corrupt()
                     ranks.append(
                         RankedObservation(
@@ -341,9 +389,9 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                             stream=source_stream(connection, row),
                         )
                     )
-                elif (
-                    acquired.response_bytes_retained
-                    or acquired.result_status != "not_retained"
+                elif acquired.response_bytes_retained or (
+                    acquired.result_status != "not_retained"
+                    and not retained_relation_result(connection, row)
                 ):
                     raise corrupt()
                 winners = choose_fields(tuple(ranks))
@@ -409,7 +457,14 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                     version_kind=cast(VersionKind, version["version_kind"]),
                     doi=doi,
                     fields=latest.fields,
-                    selection=selection,
+                    selection=next(
+                        (
+                            event
+                            for event in reversed(selection_facts)
+                            if event.version_id == version_id
+                        ),
+                        None,
+                    ),
                 )
             )
         current = next(
@@ -421,7 +476,14 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
             current=current,
             versions=tuple(views),
             revisions=tuple(all_revisions),
-            selections=(selection,),
+            selections=selection_facts,
+            relations=load_relations(connection, paper_id),
+            selection_conflicts=tuple(
+                view.version_id
+                for view in views
+                if view.version_id != selection.version_id
+                and view.version_kind == current.version_kind
+            ),
             observations=tuple(all_sources),
             discoveries=tuple(all_discoveries),
             decisions=tuple(all_decisions),

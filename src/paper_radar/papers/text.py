@@ -15,6 +15,7 @@ from paper_radar.papers.models import (
     DateValue,
     ObservationInput,
 )
+from paper_radar.papers.relations import normalize_relations
 from paper_radar.papers.text_rules import normalize_text
 
 FIELDS = frozenset(
@@ -66,8 +67,10 @@ def parse_observation(value: object) -> ObservationInput:
         raise PaperError(PaperReason.UNSUPPORTED_SCHEME, path="scheme")
     if item.source_kind not in {"publisher", "registry", "feed"}:
         raise PaperError(PaperReason.UNSUPPORTED_SOURCE, path="source_kind")
-    if item.relations:
-        raise PaperError(PaperReason.UNSUPPORTED_RELATION, path="relations")
+    normalized_relations = normalize_relations(item)
+    for relation in normalized_relations:
+        require_public_url(relation.locator)
+    item = item.model_copy(update={"relations": normalized_relations})
     if set(item.fields) - FIELDS:
         raise PaperError(PaperReason.UNSUPPORTED_FIELD, path="fields")
     if (
@@ -90,8 +93,7 @@ def parse_observation(value: object) -> ObservationInput:
     ):
         raise PaperError(PaperReason.INVALID_OBSERVATION)
     if item.source_kind == "registry" and (
-        item.target_version_id is None
-        or normalize_doi(item.query_key) != normalize_doi(item.doi)
+        normalize_doi(item.query_key) != normalize_doi(item.doi)
     ):
         raise PaperError(PaperReason.INVALID_OBSERVATION, path="query_key")
     for key in (item.provider, item.query_key):

@@ -182,11 +182,39 @@ Feed 同源排序只用不可变的首次 `observed_at` 和稳定 tie-break。A�
 
 ## 6. 权威版本关系与当前选择（N2）
 
+#72 已交付的公共输入为 `ObservationInput.relations: tuple[RelationInput, ...]`；每项封闭字段
+`{kind, source_doi, target_doi, locator}`，kind 只收 `is-preprint-of/has-preprint`。
+前者 source 是预印本，后者 source 是正式版；两者先规范 DOI 并归一为预印本→正式版。
+观察 DOI 必须是其中一端，version_kind 必须匹配该端，双方已有版本的类别也须匹配。
+locator 必须非空、无敏感 URL 包装；不联网证明来源真实性。
+
 仅接受出版者/DOI 注册机构且有 locator 的预印本 DOI→正式版 DOI 关系。`is-preprint-of/has-preprint` 先归一同一个方向再判重；Feed、人工断言、未知关系、自指、类别方向不符和目标不一致拒绝。关系独立保存，另一端可尚未登记，关系本身不创建空版本。
+
+规范关系身份全局唯一于 `(preprint_doi, journal_doi)`，不同来源、不同方向和 locator 的原始断言
+经取得引用关联同一个事实。每条引用保留 raw_source_doi/raw_target_doi/raw_kind、locator 与来源流/取得时间/parser/payload hash，
+原始书写不参与身份键或 StageInput。首次新关系保留真实 source_snapshot；后来仅复用关系的取得可只保留哈希，
+其断言 artifact_id 为 null，不假称保留了新响应字节。字段与规范关系共同参与贡献判断：新增关系即 retained，
+不能因字段候选相同提前丢弃。精确重试返回原结果；同流同材料同 parser 的规范字段/关系解释须恒定。
+更高 parser 不会撤销已保留关系；关系事实没有撤销或 active 标志。
+
+空字段加关系是 relation-only：允许两端均未登记，不创建任何版本、修订或选择。
+注册机构在这一关系入口可省略既有 target，仍须 query_key DOI 等于观察 DOI；
+其后真实关系端点到达也可省略 target。普通无关系且 DOI 不涉及保留关系的 registry 仍须明确既有 target。
+显式 target 始终核对强身份，不借关系绕过。Feed 不能声明关系，但其真实新 DOI 版本同样消费已保存的权威关系；
+已有无 DOI Feed 版本补登记 DOI 不迁移既有 Paper，若关系跨 Paper 则成功返回 requires_merge。
 
 新版本到达查询全部已保留关系，唯一确定已有 Paper 才加入；预印本先到、正式版先到、关系先到最终身份关系同构，不要求随机 UUID 一致。关系三态为“端点尚未出现”“两端分属不同 Paper（等待合并）”“已生效”，生效由端点归属派生，不存可漂移 active 位，不建冲突表。两端不同 Paper 或新版本同时关联多个 Paper 时，观察/关系照常保存，无法唯一归属的新版本独立建 Paper，返回已保留成功结果 `requires_merge`，不迁移既有版本。
 
-选择事件只支持初始选择与正式版升级。正式版即使无摘要、无卷期也成为当前，映射如实缺项，预印本摘要不搬过去；同级歧义维持已有选择并披露。重复观察不增选择事件。不开放人工选版本、人工归入 Paper、替代关系或 merge/undo；人工字段修正保留。trace 的“未生效版本关系（等待合并）”必须列出对端 DOI、已有对端 Paper、来源/locator 与原因；端点未出现独立措辞，不伪造 UUID。
+选择事件只支持初始选择 `initial` 与正式版升级 `journal_upgrade`，按 Paper 内原子递增 event_no 读取，不能按时钟或 UUID 猜顺序。正式版即使无摘要、无卷期也成为当前，映射如实缺项，预印本摘要不搬过去；同级歧义维持已有选择并披露。重复观察不增选择事件。不开放人工选版本、人工归入 Paper、替代关系或 merge/undo；人工字段修正保留。trace 的“未生效版本关系（等待合并）”必须列出对端 DOI、已有对端 Paper、来源/locator 与原因；端点未出现独立措辞，不伪造 UUID。
+
+`trace.relations` 提供规范两端 DOI、可空端点 Version/Paper、派生 state
+（endpoint_missing/requires_merge/effective）、首次来源/locator/制品及全部 assertions 原始断言。
+双方 Paper 查询同一关系得到一致结果；`trace.selection_conflicts` 列出与当前同级但未替换当前的版本。
+每个版本 view 的 selection 只关联该版本真实被选事件，未曾选过为 null。
+
+追加 `a604_version_relations` 建立实际关系/取得引用表与全局规范边唯一约束，给选择追加显式事件序号并允许正式升级，
+取得回执保存原 result_reason。a601–a603 不变；非空升级完整保留历史事实。
+备份 head 跟随 a604，校验关系、原始断言、locator、制品与取得闭包；两端未齐、跨 Paper 和已生效都合法。
 
 ## 7. 写入结果、事务与阶段 C 硬门禁（D4）
 

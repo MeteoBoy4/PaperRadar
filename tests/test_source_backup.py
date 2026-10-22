@@ -168,4 +168,4 @@ def test_nonempty_wal_backup_restores_all_source_history_in_new_process_after_mo
     assert recovered.correct(request) == result
     assert recovered.revision(first.version_id, 1).fields["title"].value == "A"
     assert history_view(recovered.database, moved) == expected_history
-    assert upgrade_database(recovered.database) == "a603_source_arbitration"
+    assert upgrade_database(recovered.database) == "a604_version_relations"

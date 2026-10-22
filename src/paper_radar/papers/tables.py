@@ -102,6 +102,7 @@ acquisitions = sa.Table(
     sa.Column("event_no", sa.Integer()),
     sa.Column("result_status", sa.String(16), nullable=False),
     sa.Column("result_revision_no", sa.Integer()),
+    sa.Column("result_reason", sa.String(24)),
     sa.UniqueConstraint("version_id", "event_no"),
     sa.UniqueConstraint(
         "source_kind",
@@ -220,8 +221,9 @@ selections = sa.Table(
         ["paper_id", "version_id"],
         ["paper_versions.paper_id", "paper_versions.version_id"],
     ),
-    sa.UniqueConstraint("paper_id"),
-    sa.CheckConstraint("reason = 'initial'"),
+    sa.Column("event_no", sa.Integer(), nullable=False, server_default="1"),
+    sa.UniqueConstraint("paper_id", "event_no"),
+    sa.CheckConstraint("reason IN ('initial','journal_upgrade')"),
 )
 
 feeds = sa.Table(
@@ -307,4 +309,48 @@ manual_corrections = sa.Table(
     sa.Column("actor", sa.Text(), nullable=False),
     sa.Column("reason", sa.Text(), nullable=False),
     sa.Column("request_sha256", sa.String(64), nullable=False),
+)
+
+
+version_relations = sa.Table(
+    "paper_version_relations",
+    metadata,
+    sa.Column("relation_id", sa.String(36), primary_key=True),
+    sa.Column("preprint_doi", sa.Text(), nullable=False),
+    sa.Column("journal_doi", sa.Text(), nullable=False),
+    sa.Column(
+        "acquisition_id",
+        sa.String(36),
+        sa.ForeignKey("paper_source_acquisitions.acquisition_id"),
+        nullable=False,
+    ),
+    sa.Column(
+        "artifact_id",
+        sa.String(64),
+        sa.ForeignKey("artifacts.artifact_id"),
+        nullable=False,
+    ),
+    sa.Column("locator", sa.Text(), nullable=False),
+    sa.CheckConstraint("preprint_doi != journal_doi"),
+    sa.UniqueConstraint("preprint_doi", "journal_doi"),
+)
+relation_references = sa.Table(
+    "paper_relation_references",
+    metadata,
+    sa.Column(
+        "acquisition_id",
+        sa.String(36),
+        sa.ForeignKey("paper_source_acquisitions.acquisition_id"),
+        primary_key=True,
+    ),
+    sa.Column(
+        "relation_id",
+        sa.String(36),
+        sa.ForeignKey("paper_version_relations.relation_id"),
+        primary_key=True,
+    ),
+    sa.Column("raw_source_doi", sa.Text(), primary_key=True),
+    sa.Column("raw_target_doi", sa.Text(), primary_key=True),
+    sa.Column("raw_kind", sa.String(24), primary_key=True),
+    sa.Column("locator", sa.Text(), primary_key=True),
 )

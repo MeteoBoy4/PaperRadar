@@ -18,12 +18,23 @@ from paper_radar.papers.models import (
     ObservationInput,
     WriteResult,
 )
+from paper_radar.papers.relation_repository import (
+    has_new_relations,
+    has_relations,
+    load_relations,
+    related_papers,
+    save_relations,
+    saved_relation_signature,
+    validate_endpoint_kinds,
+)
+from paper_radar.papers.relations import relation_signature
 from paper_radar.papers.rules import (
     RankedObservation,
     choose_fields,
     digest,
     interpretation_digest,
 )
+from paper_radar.papers.selection_repository import select_new_version
 from paper_radar.papers.tables import (
     acquisitions,
     authors,
@@ -33,7 +44,6 @@ from paper_radar.papers.tables import (
     papers,
     revision_fields,
     revisions,
-    selections,
     versions,
 )
 
@@ -102,7 +112,11 @@ def _check_interpretation(
     connection: Connection, item: ObservationInput, doi: str
 ) -> None:
     rows = connection.execute(
-        select(acquisitions.c.parser_version, acquisitions.c.parsed_sha256).where(
+        select(
+            acquisitions.c.acquisition_id,
+            acquisitions.c.parser_version,
+            acquisitions.c.parsed_sha256,
+        ).where(
             acquisitions.c.doi == doi,
             acquisitions.c.version_kind == item.version_kind,
             acquisitions.c.source_kind == item.source_kind,
@@ -115,7 +129,11 @@ def _check_interpretation(
         (row.parser_version for row in rows), default=0
     ) or any(
         row.parser_version == item.parser_version
-        and row.parsed_sha256 != digest(item.fields)
+        and (
+            row.parsed_sha256 != digest(item.fields)
+            or saved_relation_signature(connection, row.acquisition_id)
+            != relation_signature(item)
+        )
         for row in rows
     ):
         raise PaperError(PaperReason.INVALID_OBSERVATION, path="parser_version")
@@ -125,7 +143,7 @@ def needs_source(
     engine: Engine, item: ObservationInput, doi: str, fields: dict[str, CandidateInput]
 ) -> bool:
     """只读发布计划;候选只追加,复用依据不会被另一写者删除。"""
-    if not fields:
+    if not fields and not item.relations:
         return False
     with engine.connect() as connection:
         connection.exec_driver_sql("BEGIN")
@@ -134,6 +152,10 @@ def needs_source(
         ).first():
             return False
         _check_interpretation(connection, item, doi)
+        if has_new_relations(connection, item):
+            return True
+        if not fields:
+            return False
         source = connection.execute(
             select(observations.c.observation_id)
             .join(identifiers, observations.c.version_id == identifiers.c.version_id)
@@ -160,9 +182,11 @@ def _saved_result(connection: Connection, row: RowMapping) -> WriteResult:
     )
     return WriteResult(
         status=row["result_status"],
-        reason=PaperReason.NOT_RETAINED
-        if row["result_status"] == "not_retained"
-        else None,
+        reason=PaperReason(row["result_reason"])
+        if row["result_reason"]
+        else (
+            PaperReason.NOT_RETAINED if row["result_status"] == "not_retained" else None
+        ),
         paper_id=paper_id,
         version_id=row["version_id"],
         revision_no=row["result_revision_no"],
@@ -195,6 +219,15 @@ def save_observation(
                 .mappings()
                 .first()
             )
+            if (
+                item.source_kind == "registry"
+                and item.target_version_id is None
+                and not item.relations
+                and not has_relations(connection, doi)
+            ):
+                raise PaperError(
+                    PaperReason.INVALID_OBSERVATION, path="target_version_id"
+                )
             if item.target_version_id:
                 target = (
                     connection.execute(
@@ -234,10 +267,16 @@ def save_observation(
                     raise PaperError(PaperReason.INVALID_OBSERVATION)
                 return _saved_result(connection, retry)
             _check_interpretation(connection, item, doi)
+            validate_endpoint_kinds(connection, item, doi)
             now = datetime.now(UTC).isoformat(timespec="microseconds")
             if version_id is None and fields:
-                paper_id, version_id = str(uuid4()), str(uuid4())
-                connection.execute(papers.insert().values(paper_id=paper_id))
+                owners = related_papers(connection, doi, item)
+                paper_id, version_id = (
+                    (next(iter(owners)) if len(owners) == 1 else str(uuid4())),
+                    str(uuid4()),
+                )
+                if len(owners) != 1:
+                    connection.execute(papers.insert().values(paper_id=paper_id))
                 connection.execute(
                     versions.insert().values(
                         version_id=version_id,
@@ -253,14 +292,8 @@ def save_observation(
                         version_id=version_id,
                     )
                 )
-                connection.execute(
-                    selections.insert().values(
-                        selection_id=str(uuid4()),
-                        paper_id=paper_id,
-                        version_id=version_id,
-                        reason="initial",
-                        selected_at=now,
-                    )
+                select_new_version(
+                    connection, paper_id, version_id, item.version_kind, now
                 )
             source_id = None
             retained = False
@@ -347,14 +380,40 @@ def save_observation(
                     result_revision_no=current_no,
                 )
             )
+            relation_retained = save_relations(
+                connection, item, acquisition_id, artifact_id
+            )
+            retained = retained or relation_retained
+            requires_merge = any(
+                relation.state == "requires_merge"
+                for relation in load_relations(connection)
+                if doi in {relation.preprint_doi, relation.journal_doi}
+            )
+            reason = (
+                PaperReason.REQUIRES_MERGE
+                if requires_merge
+                else None
+                if retained
+                else PaperReason.NOT_RETAINED
+            )
+            connection.execute(
+                acquisitions.update()
+                .where(acquisitions.c.acquisition_id == acquisition_id)
+                .values(
+                    result_status="retained"
+                    if retained or requires_merge
+                    else "not_retained",
+                    result_reason=reason.value if reason else None,
+                )
+            )
             if version_id:
                 current_no = update_revision(
                     connection, version_id, acquisition_id, now
                 )
             connection.commit()
             return WriteResult(
-                status="retained" if retained else "not_retained",
-                reason=None if retained else PaperReason.NOT_RETAINED,
+                status="retained" if retained or requires_merge else "not_retained",
+                reason=reason,
                 paper_id=paper_id,
                 version_id=version_id,
                 revision_no=current_no,

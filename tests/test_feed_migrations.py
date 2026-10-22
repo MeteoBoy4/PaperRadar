@@ -119,14 +119,15 @@ def test_a601_upgrade_preserves_nonempty_history_and_unknown_raw_doi(
                 name: connection.execute(f"SELECT * FROM {name}").fetchall()
                 for name in expected
             } == expected
-    assert upgrade_database(previous) == "a603_source_arbitration"
-    assert upgrade_database(previous) == "a603_source_arbitration"
+    assert upgrade_database(previous) == "a604_version_relations"
+    assert upgrade_database(previous) == "a604_version_relations"
     with closing(sqlite3.connect(previous)) as connection:
         for name, values in expected.items():
             columns = [
                 row[1]
                 for row in connection.execute(f"PRAGMA table_info({name})")
-                if row[1] != "raw_doi"
+                if row[1] not in {"raw_doi", "result_reason"}
+                and not (name == "paper_selection_events" and row[1] == "event_no")
             ]
             assert (
                 connection.execute(f"SELECT {','.join(columns)} FROM {name}").fetchall()
