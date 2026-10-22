@@ -1,6 +1,7 @@
 """关系来源事实与派生归属查询;不移动已存版本。"""
 
 import re
+from typing import Literal
 from uuid import uuid4
 
 from sqlalchemy import Connection, or_, select
@@ -110,9 +111,23 @@ def save_relations(
     return retained
 
 
+def relation_roles(connection: Connection) -> dict[str, str]:
+    """即使端点未登记,全部保留关系也必须声明同一种版本类别。"""
+    expected: dict[str, str] = {}
+    for preprint, journal in connection.execute(
+        select(version_relations.c.preprint_doi, version_relations.c.journal_doi)
+    ):
+        for doi, kind in ((preprint, "preprint"), (journal, "journal")):
+            if doi in expected and expected[doi] != kind:
+                raise corrupt()
+            expected[doi] = kind
+    return expected
+
+
 def load_relations(
     connection: Connection, paper_id: str | None = None
 ) -> tuple[RelationFact, ...]:
+    relation_roles(connection)
     result = []
     for row in connection.execute(select(version_relations)).mappings():
         _uuid(row["relation_id"])
@@ -336,21 +351,18 @@ def validate_assertion(
 def validate_endpoint_kinds(
     connection: Connection, item: ObservationInput, doi: str
 ) -> None:
-    expected: dict[str, str] = {}
-    for row in connection.execute(
-        select(version_relations).where(
-            or_(
-                version_relations.c.preprint_doi == doi,
-                version_relations.c.journal_doi == doi,
-            )
-        )
-    ).mappings():
-        expected[row["preprint_doi"]] = "preprint"
-        expected[row["journal_doi"]] = "journal"
+    expected = relation_roles(connection)
     for value in item.relations:
         relation = NormalizedRelation.model_validate(value)
-        expected[relation.source_doi] = "preprint"
-        expected[relation.target_doi] = "journal"
+        for endpoint_doi, kind in (
+            (relation.source_doi, "preprint"),
+            (relation.target_doi, "journal"),
+        ):
+            if endpoint_doi in expected and expected[endpoint_doi] != kind:
+                raise PaperError(
+                    PaperReason.INVALID_RELATION, path="relations.version_kind"
+                )
+            expected[endpoint_doi] = kind
     for endpoint_doi, kind in expected.items():
         actual = connection.execute(
             select(versions.c.version_kind)
@@ -401,6 +413,42 @@ def saved_relation_signature(
             )
         )
     )
+
+
+def save_acquisition_result(
+    connection: Connection, acquisition_id: str, doi: str | None, retained: bool
+) -> tuple[Literal["retained", "not_retained"], PaperReason | None]:
+    """字段与 Feed 共用关系冲突成功语义,材料保留仍由各写路径判定。"""
+    connection.execute(
+        acquisitions.update()
+        .where(acquisitions.c.acquisition_id == acquisition_id)
+        .values(response_bytes_retained=retained)
+    )
+    requires_merge = any(
+        relation.state == "requires_merge"
+        for relation in load_relations(connection)
+        if doi in {relation.preprint_doi, relation.journal_doi}
+    )
+    reason = (
+        PaperReason.REQUIRES_MERGE
+        if requires_merge
+        else None
+        if retained
+        else PaperReason.NOT_RETAINED
+    )
+    status: Literal["retained", "not_retained"] = (
+        "retained" if retained or requires_merge else "not_retained"
+    )
+    connection.execute(
+        acquisitions.update()
+        .where(acquisitions.c.acquisition_id == acquisition_id)
+        .values(
+            result_status=status,
+            result_reason=reason.value if reason else None,
+            response_bytes_retained=retained,
+        )
+    )
+    return status, reason
 
 
 def retained_relation_result(connection: Connection, row: RowMapping) -> bool:

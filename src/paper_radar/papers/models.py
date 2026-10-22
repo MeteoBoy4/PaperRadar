@@ -70,6 +70,52 @@ class ClosedModel(BaseModel):
         except (ValidationError, ValueError):
             raise PaperError(PaperReason.INVALID_OBSERVATION) from None
 
+    @classmethod
+    def model_validate_json(
+        cls,
+        json_data: str | bytes | bytearray,
+        *,
+        strict: bool | None = None,
+        extra: Literal["allow", "ignore", "forbid"] | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> Self:
+        try:
+            return super().model_validate_json(
+                json_data,
+                strict=strict,
+                extra=extra,
+                context=context,
+                by_alias=by_alias,
+                by_name=by_name,
+            )
+        except (ValidationError, ValueError):
+            raise PaperError(PaperReason.INVALID_OBSERVATION) from None
+
+    @classmethod
+    def model_validate_strings(
+        cls,
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        extra: Literal["allow", "ignore", "forbid"] | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> Self:
+        try:
+            return super().model_validate_strings(
+                obj,
+                strict=strict,
+                extra=extra,
+                context=context,
+                by_alias=by_alias,
+                by_name=by_name,
+            )
+        except (ValidationError, ValueError):
+            raise PaperError(PaperReason.INVALID_OBSERVATION) from None
+
     def __repr__(self) -> str:
         return f"{type(self).__name__}()"
 

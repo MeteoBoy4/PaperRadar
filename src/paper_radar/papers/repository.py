@@ -21,8 +21,8 @@ from paper_radar.papers.models import (
 from paper_radar.papers.relation_repository import (
     has_new_relations,
     has_relations,
-    load_relations,
     related_papers,
+    save_acquisition_result,
     save_relations,
     saved_relation_signature,
     validate_endpoint_kinds,
@@ -384,33 +384,8 @@ def save_observation(
                 connection, item, acquisition_id, artifact_id
             )
             retained = retained or relation_retained
-            connection.execute(
-                acquisitions.update()
-                .where(acquisitions.c.acquisition_id == acquisition_id)
-                .values(response_bytes_retained=retained)
-            )
-            requires_merge = any(
-                relation.state == "requires_merge"
-                for relation in load_relations(connection)
-                if doi in {relation.preprint_doi, relation.journal_doi}
-            )
-            reason = (
-                PaperReason.REQUIRES_MERGE
-                if requires_merge
-                else None
-                if retained
-                else PaperReason.NOT_RETAINED
-            )
-            connection.execute(
-                acquisitions.update()
-                .where(acquisitions.c.acquisition_id == acquisition_id)
-                .values(
-                    result_status="retained"
-                    if retained or requires_merge
-                    else "not_retained",
-                    result_reason=reason.value if reason else None,
-                    response_bytes_retained=retained,
-                )
+            status, reason = save_acquisition_result(
+                connection, acquisition_id, doi, retained
             )
             if version_id:
                 current_no = update_revision(
@@ -418,7 +393,7 @@ def save_observation(
                 )
             connection.commit()
             return WriteResult(
-                status="retained" if retained or requires_merge else "not_retained",
+                status=status,
                 reason=reason,
                 paper_id=paper_id,
                 version_id=version_id,

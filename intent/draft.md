@@ -8,7 +8,7 @@
 > 2026-10-12：按 Issue #26 的供给方案及补强意见明确 Pi 固定版本供给、执行核对与恢复要求（§7.8）；仍是目标规格，不表示安装、RPC 或校准验收已通过。
 > 2026-10-18：按用户裁决补充 §7.8「供给与升级决策」：每次升级新建适配器声明版本、不承诺脱网重建、不支持预发布/四段版本、保留当前与最近三个旧安装、行为影响判定为供给清单必填项；仍是目标规格，不表示供给、RPC 或校准验收已通过。
 
-> 2026-10-22：按 Issue #67 用户 D1–D4、N1/N2 裁决同步论文版本身份、Feed 回摆和冲突边界，见 [ADR-0030](../docs/adr/0030-paper-version-identity-and-source-observations.md) 与 [论文事实 Contract](../docs/contracts/paper-facts.md)。这是 A6 目标语义，运行能力待实现；旧固定提交正文不能覆盖后续裁决。
+> 2026-10-22：按 Issue #67 用户 D1–D4、N1/N2 裁决同步论文版本身份、Feed 回摆和冲突边界，见 [ADR-0030](../docs/adr/0030-paper-version-identity-and-source-observations.md) 与 [论文事实 Contract](../docs/contracts/paper-facts.md)。该语义由 #68 完成文档同步，#69–#75 已实现并注册 A6 离线论文事实底座；真实来源、parser/live 与完整阶段 A 仍未验收。旧固定提交正文不能覆盖后续裁决。
 
 ## 任务阅读导航
 
@@ -689,14 +689,17 @@ Read 只处理：
 class EvidenceRef(BaseModel):
     evidence_id: str
 
+
 class SupportedStatement(BaseModel):
     statement: str
     evidence: list[EvidenceRef]
+
 
 class ReusablePoint(BaseModel):
     item: str
     how_to_reuse: str
     evidence: list[EvidenceRef]
+
 
 class ReadAnalysisOutput(BaseModel):
     output_language: Literal["zh", "en"]
@@ -1078,6 +1081,7 @@ class BoundaryOutput(BaseModel):
     boundary: Literal["in_scope", "out_of_scope", "uncertain"]
     reason_zh: str
 
+
 class ValuePredictionOutput(BaseModel):
     research_value: int  # 1..5
     research_value_reason_zh: str
@@ -1089,6 +1093,7 @@ class ValuePredictionOutput(BaseModel):
     display_title_zh: str | None = None
     abstract_brief_zh: str
     why_it_may_matter_zh: str
+
 
 class ReuseAssessmentOutput(BaseModel):
     reuse_feasibility: int  # 1..5
@@ -1691,7 +1696,7 @@ DoD：
 
 ### 阶段 C：四刊发现、身份、版本与来源
 
-A6 仅提供离线论文事实底座目标，见 ADR-0030；本阶段必须先完成强冲突观察持久化再接真实 Feed。A6 的 Feed 唯一身份权威是数据库规范 URL；未来接入配置需明确与数据库对齐，不得建立第二个身份权威。
+A6 已由 #69–#75 实现并注册离线论文事实底座，历史语义裁决与 #68 文档同步见 ADR-0030；真实来源、parser/live 与完整阶段 A 仍未验收。本阶段必须先完成强冲突观察持久化再接真实 Feed，parser 升级前必须固定样本回归并声明关键字段减少。A6 的 Feed 唯一身份权威是数据库规范 URL；未来接入配置需明确与数据库对齐，不得建立第二个身份权威。
 
 实施：
 

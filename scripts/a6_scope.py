@@ -58,6 +58,8 @@ NOT_ASSESSED = (
     "report_fingerprints",
 )
 REQUIRED_TEST_CASE_COUNTS = {
+    "tests/test_pending_relation_roles.py": 5,
+    "tests/test_paper_model_validation.py": 7,
     "tests/test_feed_arbitration.py": 5,
     "tests/test_feed_backup.py": 18,
     "tests/test_feed_cli.py": 1,
@@ -103,6 +105,14 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a6_test_receipt.py": 6,
 }
 REQUIRED_TEST_MODULES = (
+    (
+        "tests/test_pending_relation_roles.py",
+        "16c07dad469a2d1cad0407ae995c5193dc91ccefbc617dbe1127b494f2cf972f",
+    ),
+    (
+        "tests/test_paper_model_validation.py",
+        "54c9819cb45b972e079379e7cc53d41315b2672be5c431bab2e564016180ded0",
+    ),
     (
         "tests/test_feed_arbitration.py",
         "1d49f0e3b22d3b2cdfbd81eb0a79ad9c76a55f1b6204489106b86c0de4f9da13",
@@ -371,7 +381,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/feed_repository.py",
-        "ba9773a5324209689fc4bcff73f0d39d37c0f42e3700a32daef09a03ebcc3fac",
+        "9b7fbfa5e2a7d3ef4c3aaf37693aa4e784ceee8db74bdee874ee5a1211581344",
     ),
     (
         "src/paper_radar/papers/manual.py",
@@ -387,7 +397,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/models.py",
-        "a99c41a2ddfebfcdfb3437399edd6ce066100708bdd6f5d38ffaace92ccacc69",
+        "e1613dbe8e6be315210f948afb8968e051a68f47d937944ca3e204be80546f49",
     ),
     (
         "src/paper_radar/papers/queries.py",
@@ -399,7 +409,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/relation_repository.py",
-        "45b1e3f9da30a30593d764c2015e648c511efc39ca0f83cc40834057abcae4e3",
+        "6c80477ba54a0eec58ceedbea60591d4a0a724407796a527f5a287add4fbd5a1",
     ),
     (
         "src/paper_radar/papers/relations.py",
@@ -407,7 +417,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/repository.py",
-        "7ec38d5bf40736f253a6eac244c43773a6075d64fc11dbc55680f6e359663188",
+        "9e25fec43a50878e27644f0b48e3fe6261548ec348054b2951ed2c1bc7179020",
     ),
     (
         "src/paper_radar/papers/rules.py",
@@ -521,6 +531,6 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "tests/fixtures/a6_capabilities.json",
-        "c3171252180a887a7258c7aa2f51ff0da53a5d1d4b9769222495d3c51ffe500f",
+        "1b0380bbd31ece374445f1dd309868cf8b1f315c8031f5fe54f71d9eb9b4bb34",
     ),
 )

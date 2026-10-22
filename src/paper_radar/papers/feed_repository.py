@@ -10,8 +10,8 @@ from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.feed import item_fingerprint
 from paper_radar.papers.models import CandidateInput, ObservationInput, WriteResult
 from paper_radar.papers.relation_repository import (
-    load_relations,
     related_papers,
+    save_acquisition_result,
     validate_endpoint_kinds,
 )
 from paper_radar.papers.repository import (
@@ -316,32 +316,13 @@ def submit_feed(
                     acquisition_id=acquisition_id,
                 )
             )
-            requires_merge = any(
-                relation.state == "requires_merge"
-                for relation in load_relations(connection)
-                if doi in {relation.preprint_doi, relation.journal_doi}
-            )
-            reason = (
-                PaperReason.REQUIRES_MERGE
-                if requires_merge
-                else None
-                if retained
-                else PaperReason.NOT_RETAINED
-            )
-            connection.execute(
-                acquisitions.update()
-                .where(acquisitions.c.acquisition_id == acquisition_id)
-                .values(
-                    result_status="retained"
-                    if retained or requires_merge
-                    else "not_retained",
-                    result_reason=reason.value if reason else None,
-                )
+            status, reason = save_acquisition_result(
+                connection, acquisition_id, doi, retained
             )
             current_no = update_revision(connection, version_id, acquisition_id, now)
             connection.commit()
             return WriteResult(
-                status="retained" if retained or requires_merge else "not_retained",
+                status=status,
                 reason=reason,
                 paper_id=paper_id,
                 version_id=version_id,
