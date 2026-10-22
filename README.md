@@ -5,7 +5,7 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓
 四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
 只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
 现已开放四种单文件制品与完整 extraction 集合的不可变内容寻址存储和完整校验回读。
-已提供同出版者流 DOI 观察的本地事实服务与只读 `paper show/trace`；真实网络来源和论文处理流水线尚未实现。
+已提供出版者 DOI 观察、Feed 登记与发现的本地事实服务和只读 `paper show/trace`；真实网络来源和论文处理流水线尚未实现。
 期刊身份与信誉集合也可版本化登记，校验 ISSN 与冲突，并从 SQLite 回放历史。
 另可登记 Pi adapter 的三个独立选择、完整有效系统指令、资源哈希、推理档位与
 固定调用策略；单快照可重建六阶段配置投影和校准基线，并只读比较已保存快照。
@@ -57,7 +57,7 @@ uv run --offline --locked paper-radar --help
 ## 数据库升级
 
 A2 的 `a201_profile_snapshot`、A3 的 `a302_artifact_store` 可显式升级至当前
-`a601_paper_facts`。首条论文切片追加 DOI 论文身份、出版者来源观察、候选引用式修订与初始选择；既有升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
+`a602_feed_discovery`。论文切片追加 DOI 论文身份、出版者/Feed 来源观察、发现历史、候选引用式修订与初始选择；既有升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
 全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
 失败或进程中断完整回滚后可以重试。配置历史的 ID、原字节、创建时间、六投影和基线不变。
 已知旧库上的 `config check/compile/diff/snapshots list` 会提示先执行升级，不自动修改库。
@@ -484,7 +484,7 @@ uv run --offline --locked paper-radar pi supply gc --execute <完整plan_id> \
 退役提交后中断依据实际进展记录，已完成项不回退为失败。旧计划与执行历史仍可回放。
 计划原字节随备份恢复，后来的选择变化不改写历史。详见 [清理计划 Contract](docs/contracts/pi-supply.md#不可变安装清理计划)。
 
-## DOI 论文事实的本地查询
+## 论文事实与 Feed 发现的本地查询
 
 ```bash
 uv run --offline --locked paper-radar paper show PAPER_ID --database data/paperradar.sqlite3
@@ -492,4 +492,14 @@ uv run --offline --locked paper-radar paper trace PAPER_ID --database data/paper
   --data-root data --verify-source-bytes --json
 ```
 
-`paper` 只读既有库，不创建目录、不调用模型。摘要默认隐藏，`--show-abstract` 才展开；来源字节核验只返回校验结果，不转储原始响应。Python 公共写边界是 `paper_radar.papers.PaperFacts.submit`，只接有界原始 bytes、严格出版者结构化字段与必填 `interpretation="complete"` 声明；当前不开放生产 CLI 写入、Feed、人工修正、版本关系、跨来源仲裁或阶段输入映射。本机备份与隔离恢复同时校验该首条路径的非空历史，仍不表示 A6 或 live 已验收，详见[论文事实 Contract](docs/contracts/paper-facts.md)。
+`paper` 只读既有库，不创建目录、不调用模型，仅覆盖论文事实，尚未计算完整任务资格。
+默认中文文本显示原题名、身份及来源摘要；`--json` 提供受控历史结构。
+摘要默认隐藏，`--show-abstract` 才展开；来源字节核验不转储原始响应或 item。
+Python 公共写边界是 `paper_radar.papers.PaperFacts.submit`，只接有界原始 bytes、严格字段与
+必填 `interpretation="complete"` 声明。`register_feed(url)` 按数据库唯一规范 URL 登记 Feed；
+Feed 输入要求真实 `feed_id/entry_id`、`payload_scope="single_item"`，允许 `doi=None`。
+同 Feed 条目内容变化保持版本关联；同 DOI 跨 Feed 复用版本，出版者非空字段优先、Feed 补缺。
+当前不开放生产写入 CLI、抓取适配器、Feed 配置、注册机构、人工修正、版本关系或阶段输入映射。
+本机备份与隔离恢复校验非空 Feed/出版者历史，仍不表示 A6 或 live 已验收。
+**阶段 C 真实 Feed 接入前必须补齐强冲突观察持久化和 parser 升级固定样本回归，
+此前不得将本地拒绝路径直接作为生产写入。**详见[论文事实 Contract](docs/contracts/paper-facts.md)。

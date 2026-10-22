@@ -138,6 +138,7 @@ def needs_source(
             .join(identifiers, observations.c.version_id == identifiers.c.version_id)
             .where(
                 identifiers.c.normalized_value == doi,
+                observations.c.source_kind == item.source_kind,
                 observations.c.provider == item.provider,
                 observations.c.query_key == item.query_key,
                 observations.c.candidate_sha256 == digest(fields),
@@ -176,8 +177,6 @@ def save_observation(
     fields: dict[str, CandidateInput],
     artifact_id: str | None,
 ) -> WriteResult:
-    from paper_radar.papers.queries import observation_fields
-
     with engine.connect() as connection:
         connection.exec_driver_sql("BEGIN IMMEDIATE")
         try:
@@ -238,6 +237,7 @@ def save_observation(
                 and connection.execute(
                     select(observations.c.observation_id).where(
                         observations.c.version_id == version_id,
+                        observations.c.source_kind == "publisher",
                         ~(
                             (observations.c.provider == item.provider)
                             & (observations.c.query_key == item.query_key)
@@ -283,6 +283,7 @@ def save_observation(
                         select(observations.c.observation_id)
                         .where(
                             observations.c.version_id == version_id,
+                            observations.c.source_kind == item.source_kind,
                             observations.c.provider == item.provider,
                             observations.c.query_key == item.query_key,
                             observations.c.candidate_sha256 == digest(fields),
@@ -341,6 +342,7 @@ def save_observation(
                     acquisition_id=acquisition_id,
                     version_id=version_id,
                     doi=doi,
+                    raw_doi=item.doi,
                     version_kind=item.version_kind,
                     source_kind=item.source_kind,
                     provider=item.provider,
@@ -359,68 +361,9 @@ def save_observation(
                 )
             )
             if version_id:
-                rows = (
-                    connection.execute(
-                        select(acquisitions).where(
-                            acquisitions.c.version_id == version_id
-                        )
-                    )
-                    .mappings()
-                    .all()
+                current_no = update_revision(
+                    connection, version_id, acquisition_id, now
                 )
-                ranks = []
-                for row in rows:
-                    if row["source_observation_id"]:
-                        source_fields = observation_fields(
-                            connection, row["source_observation_id"]
-                        )
-                        ranks.append(
-                            RankedObservation(
-                                row["observed_at"],
-                                row["payload_sha256"],
-                                row["parser_version"],
-                                {
-                                    name: (fact.candidate_id, row["acquisition_id"])
-                                    for name, fact in source_fields.items()
-                                },
-                            )
-                        )
-                winners = choose_fields(tuple(ranks))
-                old_winners = {
-                    row.field_name: (row.candidate_id, row.acquisition_id)
-                    for row in connection.execute(
-                        select(revision_fields).where(
-                            revision_fields.c.version_id == version_id,
-                            revision_fields.c.revision_no == current_no,
-                        )
-                    )
-                }
-                if winners != old_winners:
-                    current_no = (current_no or 0) + 1
-                    connection.execute(
-                        revisions.insert().values(
-                            version_id=version_id,
-                            revision_no=current_no,
-                            revised_at=now,
-                            acquisition_id=acquisition_id,
-                        )
-                    )
-                    for name, (candidate_id, acquired_id) in winners.items():
-                        connection.execute(
-                            revision_fields.insert().values(
-                                version_id=version_id,
-                                revision_no=current_no,
-                                field_name=name,
-                                candidate_id=candidate_id,
-                                acquisition_id=acquired_id,
-                                rule_version=1,
-                            )
-                        )
-                    connection.execute(
-                        acquisitions.update()
-                        .where(acquisitions.c.acquisition_id == acquisition_id)
-                        .values(result_revision_no=current_no)
-                    )
             connection.commit()
             return WriteResult(
                 status="retained" if retained else "not_retained",
@@ -434,3 +377,76 @@ def save_observation(
         except BaseException:
             connection.rollback()
             raise
+
+
+def update_revision(
+    connection: Connection, version_id: str, acquisition_id: str, now: str
+) -> int:
+    from paper_radar.papers.queries import observation_fields, source_stream
+
+    current_no = connection.execute(
+        select(func.max(revisions.c.revision_no)).where(
+            revisions.c.version_id == version_id
+        )
+    ).scalar()
+    rows = (
+        connection.execute(
+            select(acquisitions).where(acquisitions.c.version_id == version_id)
+        )
+        .mappings()
+        .all()
+    )
+    ranks = []
+    for row in rows:
+        if row["source_observation_id"]:
+            source_fields = observation_fields(connection, row["source_observation_id"])
+            ranks.append(
+                RankedObservation(
+                    row["observed_at"],
+                    row["payload_sha256"],
+                    row["parser_version"],
+                    {
+                        name: (fact.candidate_id, row["acquisition_id"])
+                        for name, fact in source_fields.items()
+                    },
+                    source_kind=row["source_kind"],
+                    stream=source_stream(connection, row),
+                )
+            )
+    winners = choose_fields(tuple(ranks))
+    old_winners = {
+        row.field_name: (row.candidate_id, row.acquisition_id)
+        for row in connection.execute(
+            select(revision_fields).where(
+                revision_fields.c.version_id == version_id,
+                revision_fields.c.revision_no == current_no,
+            )
+        )
+    }
+    if winners != old_winners or current_no is None:
+        current_no = (current_no or 0) + 1
+        connection.execute(
+            revisions.insert().values(
+                version_id=version_id,
+                revision_no=current_no,
+                revised_at=now,
+                acquisition_id=acquisition_id,
+            )
+        )
+        for name, (candidate_id, acquired_id) in winners.items():
+            connection.execute(
+                revision_fields.insert().values(
+                    version_id=version_id,
+                    revision_no=current_no,
+                    field_name=name,
+                    candidate_id=candidate_id,
+                    acquisition_id=acquired_id,
+                    rule_version=1,
+                )
+            )
+        connection.execute(
+            acquisitions.update()
+            .where(acquisitions.c.acquisition_id == acquisition_id)
+            .values(result_revision_no=current_no)
+        )
+    return current_no or 1

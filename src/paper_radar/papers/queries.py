@@ -15,6 +15,7 @@ from paper_radar.papers.models import (
     AcquisitionFact,
     CandidateInput,
     DateValue,
+    DiscoveryFact,
     FieldFact,
     ObservationFact,
     PaperTrace,
@@ -28,6 +29,8 @@ from paper_radar.papers.tables import (
     acquisitions,
     authors,
     candidates,
+    feed_entries,
+    feeds,
     identifiers,
     observations,
     papers,
@@ -123,8 +126,9 @@ def _candidate(
         or acquired["version_id"] != source["version_id"]
     ):
         raise corrupt()
-    require_public_url(source["provider"])
-    require_public_url(source["query_key"])
+    if source["source_kind"] == "publisher":
+        require_public_url(source["provider"])
+        require_public_url(source["query_key"])
     fact = FieldFact(
         acquisition_id=acquisition_id,
         source_observed_at=source["observed_at"],
@@ -154,6 +158,15 @@ def _candidate(
     return name, fact
 
 
+def source_stream(connection: Connection, row: RowMapping) -> tuple[str, str]:
+    provider = row["provider"]
+    if row["source_kind"] == "feed":
+        provider = connection.execute(
+            select(feeds.c.url).where(feeds.c.feed_id == provider)
+        ).scalar_one()
+    return provider, row["query_key"]
+
+
 def observation_fields(
     connection: Connection, observation_id: str
 ) -> dict[str, FieldFact]:
@@ -168,11 +181,14 @@ def observation_fields(
 def _acquisition(row: RowMapping) -> AcquisitionFact:
     _uuid(row["acquisition_id"])
     _utc(row["observed_at"])
-    require_public_url(row["provider"])
-    require_public_url(row["query_key"])
+    if row["source_kind"] == "publisher":
+        require_public_url(row["provider"])
+        require_public_url(row["query_key"])
     if (
-        normalize_doi(row["doi"]) != row["doi"]
-        or row["source_kind"] != "publisher"
+        (row["doi"] is not None and normalize_doi(row["doi"]) != row["doi"])
+        or (row["source_kind"] == "publisher" and row["doi"] is None)
+        or (row["raw_doi"] is not None and normalize_doi(row["raw_doi"]) != row["doi"])
+        or row["source_kind"] not in {"publisher", "feed"}
         or row["version_kind"] not in {"journal", "preprint"}
     ):
         raise corrupt()
@@ -198,7 +214,7 @@ def _material_key(row: RowMapping) -> tuple[str, str, str, str, str, str]:
 
 
 def _validate_parser_history(
-    connection: Connection, rows: tuple[RowMapping, ...], doi: str, kind: str
+    connection: Connection, rows: tuple[RowMapping, ...], doi: str | None, kind: str
 ) -> None:
     unbound = (
         connection.execute(
@@ -287,6 +303,7 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
         _uuid(selection.selection_id)
         _utc(selection.selected_at)
         all_sources, all_acquired, all_revisions, views = [], [], [], []
+        all_discoveries: list[DiscoveryFact] = []
         for version in version_rows:
             version_id = version["version_id"]
             _uuid(version_id)
@@ -297,15 +314,28 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                 .mappings()
                 .all()
             )
-            if (
-                len(identity) != 1
-                or identity[0]["paper_id"] != paper_id
-                or identity[0]["scheme"] != "doi"
-                or normalize_doi(identity[0]["normalized_value"])
-                != identity[0]["normalized_value"]
+            if len(identity) > 1 or (
+                identity
+                and (
+                    identity[0]["paper_id"] != paper_id
+                    or identity[0]["scheme"] != "doi"
+                    or normalize_doi(identity[0]["normalized_value"])
+                    != identity[0]["normalized_value"]
+                )
             ):
                 raise corrupt()
-            doi = identity[0]["normalized_value"]
+            if (
+                not identity
+                and connection.execute(
+                    select(feed_entries).where(feed_entries.c.version_id == version_id)
+                ).first()
+                is None
+            ):
+                raise corrupt()
+            doi = identity[0]["normalized_value"] if identity else None
+            from paper_radar.papers.feed_queries import load_discoveries
+
+            all_discoveries.extend(load_discoveries(connection, version_id))
             source_rows = (
                 connection.execute(
                     select(observations)
@@ -340,16 +370,12 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                 ):
                     raise corrupt()
                 fields = observation_fields(connection, row["observation_id"])
-                if (
-                    not fields
-                    or digest(
-                        {
-                            name: CandidateInput(value=fact.value, locator=fact.locator)
-                            for name, fact in fields.items()
-                        }
-                    )
-                    != row["candidate_sha256"]
-                ):
+                if (not fields and row["source_kind"] != "feed") or digest(
+                    {
+                        name: CandidateInput(value=fact.value, locator=fact.locator)
+                        for name, fact in fields.items()
+                    }
+                ) != row["candidate_sha256"]:
                     raise corrupt()
                 source_fields[row["observation_id"]] = fields
                 all_sources.append(
@@ -384,22 +410,24 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
             creators = set()
             ranks = []
             previous_winners: dict[str, tuple[str, str]] = {}
-            expected_history = []
+            expected_history: list[tuple[str, dict[str, tuple[str, str]]]] = []
             for row in event_rows:
                 acquired = _acquisition(row)
                 if (
                     acquired.doi != doi
-                    or row["version_kind"] != version["version_kind"]
-                ):
+                    and not (acquired.source_kind == "feed" and acquired.doi is None)
+                ) or row["version_kind"] != version["version_kind"]:
                     raise corrupt()
                 all_acquired.append(acquired)
                 source_id = acquired.source_observation_id
                 if source_id:
                     material = sources_by_id.get(source_id)
                     if material is None or (
+                        material["source_kind"],
                         material["provider"],
                         material["query_key"],
                     ) != (
+                        acquired.source_kind,
                         acquired.provider,
                         acquired.query_key,
                     ):
@@ -432,6 +460,8 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                                 name: (fact.candidate_id, acquired.acquisition_id)
                                 for name, fact in source_fields[source_id].items()
                             },
+                            source_kind=row["source_kind"],
+                            stream=source_stream(connection, row),
                         )
                     )
                 elif (
@@ -440,7 +470,7 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                 ):
                     raise corrupt()
                 winners = choose_fields(tuple(ranks))
-                if winners != previous_winners:
+                if winners != previous_winners or not expected_history:
                     expected_history.append((acquired.acquisition_id, winners))
                     previous_winners = winners
                 if acquired.result_revision_no != len(expected_history):
@@ -515,6 +545,7 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
             revisions=tuple(all_revisions),
             selections=(selection,),
             observations=tuple(all_sources),
+            discoveries=tuple(all_discoveries),
             acquisitions=tuple(
                 sorted(
                     all_acquired,

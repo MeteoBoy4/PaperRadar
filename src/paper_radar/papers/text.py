@@ -74,7 +74,7 @@ def parse_observation(value: object) -> ObservationInput:
         raise PaperError(PaperReason.INVALID_OBSERVATION) from None
     if item.scheme != "doi":
         raise PaperError(PaperReason.UNSUPPORTED_SCHEME, path="scheme")
-    if item.source_kind != "publisher":
+    if item.source_kind not in {"publisher", "feed"}:
         raise PaperError(PaperReason.UNSUPPORTED_SOURCE, path="source_kind")
     if item.relations:
         raise PaperError(PaperReason.UNSUPPORTED_RELATION, path="relations")
@@ -87,6 +87,18 @@ def parse_observation(value: object) -> ObservationInput:
         or item.observed_at.tzinfo is None
         or item.parser_version < 1
         or bool(item.target_paper_id) != bool(item.target_version_id)
+    ):
+        raise PaperError(PaperReason.INVALID_OBSERVATION)
+    if item.source_kind == "feed":
+        from paper_radar.papers.feed import validate_feed_item
+
+        validate_feed_item(item)
+        return item
+    if (
+        item.doi is None
+        or item.feed_id is not None
+        or item.entry_id is not None
+        or item.payload_scope is not None
     ):
         raise PaperError(PaperReason.INVALID_OBSERVATION)
     for key in (item.provider, item.query_key):

@@ -2,16 +2,18 @@
 
 import sqlite3
 from pathlib import Path
+from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError, PaperReason
-from paper_radar.papers.models import PaperTrace, PaperView, WriteResult
+from paper_radar.papers.feed import normalize_feed_url
+from paper_radar.papers.models import FeedFact, PaperTrace, PaperView, WriteResult
 from paper_radar.papers.queries import load_trace, validate_unbound_acquisitions
 from paper_radar.papers.repository import needs_source, save_observation
-from paper_radar.papers.tables import papers
+from paper_radar.papers.tables import feeds, papers
 from paper_radar.papers.text import normalize_fields, parse_observation
 from paper_radar.storage.artifact_contract import ArtifactError, ArtifactReason
 from paper_radar.storage.artifacts import ArtifactStore
@@ -38,16 +40,49 @@ class PaperFacts:
         self.database = database
         self.data_root = data_root
 
+    def register_feed(self, url: str) -> FeedFact:
+        normalized = normalize_feed_url(url)
+        engine = open_database(self.database, mode=DatabaseMode.READ_WRITE)
+        try:
+            require_current_revision(engine)
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN IMMEDIATE")
+                row = (
+                    connection.execute(select(feeds).where(feeds.c.url == normalized))
+                    .mappings()
+                    .first()
+                )
+                if row is None:
+                    feed_id = str(uuid4())
+                    connection.execute(
+                        feeds.insert().values(feed_id=feed_id, url=normalized)
+                    )
+                    connection.commit()
+                    return FeedFact(feed_id=feed_id, url=normalized)
+                return FeedFact.model_validate(dict(row))
+        except SQLAlchemyError as error:
+            raise _database_error(error) from None
+        finally:
+            engine.dispose()
+
     def submit(self, observation: object) -> WriteResult:
         try:
             item = parse_observation(observation)
-            doi = normalize_doi(item.doi)
+            doi = normalize_doi(item.doi) if item.doi is not None else None
             fields = normalize_fields(item.fields)
             if self.data_root is None:
                 raise PaperError(PaperReason.INVALID_OBSERVATION, path="data_root")
             engine = open_database(self.database, mode=DatabaseMode.READ_WRITE)
             try:
                 require_current_revision(engine)
+                if item.source_kind == "feed":
+                    from paper_radar.papers.feed_repository import submit_feed
+
+                    return submit_feed(
+                        engine, self.database, self.data_root, item, doi, fields
+                    )
+                if doi is None:
+                    raise PaperError(PaperReason.INVALID_OBSERVATION, path="doi")
                 artifact_id = None
                 if needs_source(engine, item, doi, fields):
                     artifact_id = (
@@ -109,6 +144,9 @@ class PaperFacts:
             require_current_revision(engine)
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN")
+                from paper_radar.papers.feed_queries import validate_feed_registry
+
+                validate_feed_registry(connection)
                 validate_unbound_acquisitions(connection)
                 for paper_id in connection.execute(select(papers.c.paper_id)).scalars():
                     load_trace(connection, paper_id)

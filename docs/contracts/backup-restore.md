@@ -62,7 +62,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。根内任何路径组件符号�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 a601_paper_facts，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 a602_feed_discovery，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -251,4 +251,4 @@ A4 同次完整离线组合还覆盖：非空供给准备/核验/重建与激活
 逐项执行审计、D5 原字节与既有配置/制品，退役安装不恢复可用性。该组合不访问原根、
 不安装 Pi/Node、不启用模型，不替代 NAS/live 验收；见 [A4 证据](../verification/offline-evidence.md)。
 
-当前显式支持的 head 为 `a601_paper_facts`。#69 将非空出版者 DOI 论文事实纳入固定数据库副本的语义校验，错误身份归属、来源 kind/payload、候选摘要与完整历史修订引用均以既有 `registration_invalid` 拒绝；不修复源库或批次。旧 a405 批次返回 `unsupported_revision`，须用匹配旧程序恢复后再显式升级。
+当前显式支持的 head 为 `a602_feed_discovery`。#69 的非空出版者 DOI 事实与 #70 的 Feed 登记/连续条目/原始发现/完整解释均纳入固定副本语义校验；包括未使用 Feed 的 URL 规范、DOI 原书写与规范身份一致性、fingerprint/payload 和 Feed 引用归属。错误身份、来源 kind/payload、候选摘要与完整修订引用以既有 `registration_invalid` 拒绝，外层数据库哈希重算不能掩盖损坏；不修复源库或批次。旧 a405/a601 批次返回 `unsupported_revision`，须用匹配旧程序恢复后再显式升级。

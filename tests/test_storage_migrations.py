@@ -140,7 +140,7 @@ def test_real_a201_history_survives_atomic_upgrade_and_retry(
                 "SELECT version_num FROM alembic_version"
             ).fetchone() == ("a201_profile_snapshot",)
         assert config_facts(database) == original
-    assert upgrade_database(database) == "a601_paper_facts"
+    assert upgrade_database(database) == "a602_feed_discovery"
     assert config_facts(database) == original
     restored = load_config_snapshot(database, snapshot_id)
     assert restored.payload_json == original[1][0][1]
@@ -150,7 +150,7 @@ def test_real_a201_history_survives_atomic_upgrade_and_retry(
     expected = compile_config(settings, settings.parent.parent / "db.sqlite3")
     assert project_config(restored) == project_config(expected)
     assert len(project_config(restored).projections) == 6
-    assert upgrade_database(database) == "a601_paper_facts"
+    assert upgrade_database(database) == "a602_feed_discovery"
     with sqlite3.connect(database) as connection:
         assert connection.execute("PRAGMA journal_mode").fetchone() == ("wal",)
 

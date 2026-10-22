@@ -2,7 +2,10 @@
 
 import json
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
+
+if TYPE_CHECKING:
+    from paper_radar.papers.models import PaperTrace, PaperView
 
 import typer
 
@@ -11,7 +14,8 @@ from paper_radar.papers.errors import PaperError
 from paper_radar.storage.errors import StorageError
 
 HELP = """\
-当前用途：只读查看 DOI 论文当前事实与来源历史；不写入、不调用模型。
+当前用途：只读查看论文当前事实与出版者、Feed 发现历史；不写入、不调用模型。
+仅覆盖论文事实；尚未计算完整任务资格。
 
 参数与选项：show/trace 接受 PAPER_ID、必填 --database；可选 --data-root、
 --json、--show-abstract。trace 可用 --verify-source-bytes 只读核验来源字节。
@@ -72,6 +76,48 @@ def _hide_abstract(value: object) -> object:
     return value
 
 
+def _text_result(
+    result: "PaperView | PaperTrace", *, trace: bool, show_abstract: bool
+) -> None:
+    from paper_radar.papers.models import AbstractValue, PaperTrace
+
+    view = result.current if isinstance(result, PaperTrace) else result
+    typer.echo("论文来源历史（只读）" if trace else "论文当前事实（只读）")
+    typer.echo(view.scope)
+    title = view.fields.get("title")
+    typer.echo(f"题名：{title.value if title else '（缺失）'}")
+    typer.echo(
+        f"论文：{view.paper_id}；版本：{view.version_id}；修订：{view.revision_no}"
+    )
+    typer.echo(f"DOI：{view.doi or '（尚未登记）'}；类别：{view.version_kind}")
+    typer.echo(
+        "字段来源："
+        + "、".join(f"{name}={fact.source_kind}" for name, fact in view.fields.items())
+    )
+    if isinstance(result, PaperTrace):
+        typer.echo(
+            f"历史：{len(result.revisions)} 次修订、"
+            f"{len(result.observations)} 份解释、"
+            f"{len(result.discoveries)} 条 Feed 发现"
+        )
+        for discovery in result.discoveries:
+            typer.echo(
+                f"Feed {discovery.feed_id}；entry_id={discovery.entry_id}；"
+                f"item_fingerprint={discovery.item_fingerprint}"
+            )
+            typer.echo(f"首次：{discovery.first_seen}；最近：{discovery.last_seen}")
+            parsers = [parsed.parser_version for parsed in discovery.interpretations]
+            typer.echo(
+                "解释：" + "、".join(f"parser_version={version}" for version in parsers)
+            )
+    if show_abstract:
+        sources = result.observations if isinstance(result, PaperTrace) else (view,)
+        for source in sources:
+            abstract = source.fields.get("abstract")
+            if abstract and isinstance(abstract.value, AbstractValue):
+                typer.echo(f"摘要（{abstract.source_kind}）：{abstract.value.text}")
+
+
 def _query(
     paper_id: str,
     database: Path,
@@ -93,9 +139,10 @@ def _query(
         payload: object = result.model_dump(mode="json")
         if not show_abstract:
             payload = _redact_abstracts(payload)
-        if not as_json:
-            typer.echo("论文来源历史（只读）" if trace else "论文当前事实（只读）")
-        typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+        if as_json:
+            typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            _text_result(result, trace=trace, show_abstract=show_abstract)
     except (PaperError, StorageError) as error:
         typer.echo(f"论文查询失败 [{error.reason.value}]：{error}", err=True)
         raise typer.Exit(1) from None

@@ -23,7 +23,7 @@ def facts(tmp_path: Path) -> PaperFacts:
     ("changes", "reason"),
     [
         ({"scheme": "pmid"}, "unsupported_scheme"),
-        ({"source_kind": "feed"}, "unsupported_source"),
+        ({"source_kind": "feed", "entry_id": None}, "missing_entry_id"),
         ({"source_kind": "manual"}, "unsupported_source"),
         ({"source_kind": "registry"}, "unsupported_source"),
         ({"relations": ({"type": "is-preprint-of"},)}, "unsupported_relation"),

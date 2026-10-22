@@ -55,9 +55,15 @@ observations = sa.Table(
     sa.Column("payload_sha256", sa.String(64), nullable=False),
     sa.Column("candidate_sha256", sa.String(64), nullable=False),
     sa.UniqueConstraint(
-        "version_id", "source_kind", "provider", "query_key", "candidate_sha256"
+        "version_id",
+        "source_kind",
+        "provider",
+        "query_key",
+        "candidate_sha256",
+        "payload_sha256",
+        "parser_version",
     ),
-    sa.CheckConstraint("source_kind = 'publisher'"),
+    sa.CheckConstraint("source_kind IN ('publisher', 'feed')"),
     sa.CheckConstraint("parser_version > 0"),
     sa.UniqueConstraint(
         "version_id",
@@ -74,7 +80,8 @@ acquisitions = sa.Table(
     metadata,
     sa.Column("acquisition_id", sa.String(36), primary_key=True),
     sa.Column("version_id", sa.String(36), sa.ForeignKey("paper_versions.version_id")),
-    sa.Column("doi", sa.Text(), nullable=False),
+    sa.Column("doi", sa.Text()),
+    sa.Column("raw_doi", sa.Text()),
     sa.Column("version_kind", sa.String(16), nullable=False),
     sa.Column("source_kind", sa.String(16), nullable=False),
     sa.Column("provider", sa.Text(), nullable=False),
@@ -105,7 +112,7 @@ acquisitions = sa.Table(
         "payload_sha256",
         "parser_version",
     ),
-    sa.CheckConstraint("source_kind = 'publisher'"),
+    sa.CheckConstraint("source_kind IN ('publisher', 'feed')"),
     sa.CheckConstraint("version_kind IN ('preprint','journal')"),
     sa.CheckConstraint("parser_version > 0"),
     sa.CheckConstraint("event_no IS NULL OR event_no > 0"),
@@ -215,4 +222,66 @@ selections = sa.Table(
     ),
     sa.UniqueConstraint("paper_id"),
     sa.CheckConstraint("reason = 'initial'"),
+)
+
+feeds = sa.Table(
+    "feeds",
+    metadata,
+    sa.Column("feed_id", sa.String(36), primary_key=True),
+    sa.Column("url", sa.Text(), nullable=False, unique=True),
+)
+
+
+feed_entries = sa.Table(
+    "feed_entries",
+    metadata,
+    sa.Column(
+        "feed_id", sa.String(36), sa.ForeignKey("feeds.feed_id"), primary_key=True
+    ),
+    sa.Column("entry_id", sa.Text(), primary_key=True),
+    sa.Column(
+        "version_id",
+        sa.String(36),
+        sa.ForeignKey("paper_versions.version_id"),
+        nullable=False,
+    ),
+)
+feed_discoveries = sa.Table(
+    "feed_discoveries",
+    metadata,
+    sa.Column("discovery_id", sa.String(36), primary_key=True),
+    sa.Column("feed_id", sa.String(36), nullable=False),
+    sa.Column("entry_id", sa.Text(), nullable=False),
+    sa.Column("item_fingerprint", sa.String(64), nullable=False, unique=True),
+    sa.Column(
+        "artifact_id",
+        sa.String(64),
+        sa.ForeignKey("artifacts.artifact_id"),
+        nullable=False,
+    ),
+    sa.Column("first_seen", sa.Text(), nullable=False),
+    sa.Column("last_seen", sa.Text(), nullable=False),
+    sa.UniqueConstraint("feed_id", "entry_id", "item_fingerprint"),
+    sa.ForeignKeyConstraint(
+        ["feed_id", "entry_id"], ["feed_entries.feed_id", "feed_entries.entry_id"]
+    ),
+)
+feed_interpretations = sa.Table(
+    "feed_interpretations",
+    metadata,
+    sa.Column(
+        "discovery_id",
+        sa.String(36),
+        sa.ForeignKey("feed_discoveries.discovery_id"),
+        primary_key=True,
+    ),
+    sa.Column("parser_version", sa.Integer(), primary_key=True),
+    sa.Column("submitted_at", sa.Text(), nullable=False),
+    sa.Column(
+        "acquisition_id",
+        sa.String(36),
+        sa.ForeignKey("paper_source_acquisitions.acquisition_id"),
+        nullable=False,
+        unique=True,
+    ),
 )

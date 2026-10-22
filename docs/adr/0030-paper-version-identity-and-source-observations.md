@@ -1,6 +1,6 @@
 # 论文版本身份与来源观察仲裁
 
-状态：已接受语义；#69 落地首条出版者 DOI 事实路径，其余运行能力待 A6 后续实现。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
+状态：已接受语义；#69 落地出版者 DOI 事实，#70 接入 Feed 发现/连续身份与只读历史，其余运行能力待 A6 后续实现。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
 
 一个 DOI 恒绑定一个 Paper/Version，一个版本最多一个 DOI，preprint/journal 创建后不可变；online-first 到卷期只是同版本修订。不同 DOI 只有权威关系才归入同一 Paper，不能再以“同 DOI 多公开形态”发明版本键。该决策收窄 ADR-0001/0005 的 A6 路径而不实现两个既有 Paper 合并；暂存重复比错误合并安全。
 
@@ -48,3 +48,19 @@ Feed 同源仲裁只用不可变首次 observed_at，A→B→A 不回摆，last_
 ## #69 同材料重新解释的最终用户裁决
 
 [用户选择完整新解释](https://github.com/MeteoBoy4/PaperRadar/issues/67#issuecomment-6334252628)：更高 parser_version 的有效非空解释整体替换同材料旧解释，旧解释缺项不再回填，其他有效材料/来源仍可补缺；不同 payload 继续缺项不清空。全空 v2 保留 not_retained 保护，不替换规范字段、不制造清空修订。每个有效输入必须显式声明完整解释；同流同材料版本单调，同版本解析内容恒定，旧请求精确重试优先保持原结果。服务不能根据字段减少识别真实解析器是否撒谎；阶段 C 每次 parser 升级前必须以固定样本回归并声明关键字段减少，承担实际真实性与成本门禁。本裁决覆盖先前关于空解释清空、无身份空解释派生影响的未实施讨论；Feed D3保持原义。
+
+
+## #70 Feed 发现实现
+
+Feed 身份只在数据库按规范 URL 唯一登记；HTTP(S) 的 scheme/host 只折 ASCII 大小写，默认端口移除，
+原样 path/query 与尾斜杠保留，userinfo/fragment 拒绝。原文指纹即单 item 全部提交字节的 blob SHA-256，
+明确单 item 声明与可识别文档/多 item 包装检查不构成生产 XML 真实性审计。
+连续无 DOI 版本、唯一补 DOI 入口、同 DOI 跨 Feed、强冲突整笔拒绝沿用 D1/D4。
+Feed 字段使用与出版者相同的纯仲裁和引用修订权威，出版者有效非空字段优先，Feed 补缺；
+跨流 parser 序列隔离，稳定 tie-break 使用规范 URL/entry ID，不用随机 UUID。
+D3 回摆时仅更新 last_seen，既有原文解释的首次时间保持不变；完整高版本解释替换与全空保护沿用最新裁决。
+
+a602 在同一事务暂存并重建 source_kind 约束的完整依赖闭包，保持非空 a601 事实及外键，
+新增 Feed 身份/连续条目/发现/解释引用；不改 a601。取得事实新增 DOI 原书写，历史未知值保持 NULL，
+不伪造历史、不进入规范身份或 StageInput。备份固定副本同时校验 Feed 原文、完整解释和历史归属。
+本票没有真实 Feed 或解析器；阶段 C 强冲突观察持久化与 parser 升级固定样本回归仍是硬门禁。

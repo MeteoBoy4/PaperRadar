@@ -94,12 +94,15 @@ class CandidateInput(ClosedModel):
 
 
 class ObservationInput(ClosedModel):
-    doi: str
+    doi: str | None
     scheme: str = "doi"
     version_kind: VersionKind
     source_kind: str
-    provider: str
-    query_key: str
+    provider: str = ""
+    query_key: str = ""
+    feed_id: str | None = None
+    entry_id: str | None = None
+    payload_scope: Literal["single_item"] | None = None
     observed_at: datetime
     parser_version: int
     payload: bytes
@@ -120,12 +123,13 @@ class WriteResult(ClosedModel):
     revision_no: int | None = None
     observation_id: str | None = None
     acquisition_id: str | None = None
+    discovery_id: str | None = None
 
 
 class FieldFact(ClosedModel):
     acquisition_id: str | None = None
     source_observed_at: str
-    source_kind: Literal["publisher"]
+    source_kind: Literal["publisher", "feed"]
     provider: str
     query_key: str
     observed_at: str
@@ -147,11 +151,14 @@ class SelectionFact(ClosedModel):
 
 
 class PaperView(ClosedModel):
+    scope: Literal["仅覆盖论文事实；尚未计算完整任务资格"] = (
+        "仅覆盖论文事实；尚未计算完整任务资格"
+    )
     paper_id: str
     version_id: str
     revision_no: int
     version_kind: VersionKind
-    doi: str
+    doi: str | None
     fields: dict[str, FieldFact]
     selection: SelectionFact
 
@@ -159,7 +166,7 @@ class PaperView(ClosedModel):
 class ObservationFact(ClosedModel):
     observation_id: str
     version_id: str
-    source_kind: Literal["publisher"]
+    source_kind: Literal["publisher", "feed"]
     provider: str
     query_key: str
     observed_at: str
@@ -170,12 +177,15 @@ class ObservationFact(ClosedModel):
 
 
 class AcquisitionFact(ClosedModel):
+    source_kind: Literal["publisher", "feed"]
+    raw_doi: str | None
+
     parsed_sha256: str
     interpretation: Literal["complete"]
     acquisition_id: str
     event_no: int | None
     version_id: str | None
-    doi: str
+    doi: str | None
     provider: str
     query_key: str
     observed_at: str
@@ -195,9 +205,39 @@ class RevisionFact(ClosedModel):
 
 
 class PaperTrace(ClosedModel):
+    scope: Literal["仅覆盖论文事实；尚未计算完整任务资格"] = (
+        "仅覆盖论文事实；尚未计算完整任务资格"
+    )
     current: PaperView
     versions: tuple[PaperView, ...]
     revisions: tuple[RevisionFact, ...]
     selections: tuple[SelectionFact, ...]
     observations: tuple[ObservationFact, ...]
     acquisitions: tuple[AcquisitionFact, ...]
+    discoveries: tuple["DiscoveryFact", ...] = ()
+
+
+class FeedFact(ClosedModel):
+    feed_id: str
+    url: str
+
+
+class FeedInterpretationFact(ClosedModel):
+    parser_version: int
+    submitted_at: str
+    acquisition_id: str
+    observation_id: str | None
+
+
+class DiscoveryFact(ClosedModel):
+    discovery_id: str
+    version_id: str
+    feed_id: str
+    feed_url: str
+    entry_id: str
+    item_fingerprint: str
+    artifact_id: str
+    first_seen: str
+    last_seen: str
+    observation_ids: tuple[str, ...]
+    interpretations: tuple[FeedInterpretationFact, ...]

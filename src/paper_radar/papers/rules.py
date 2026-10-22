@@ -13,6 +13,8 @@ class RankedObservation:
     payload_sha256: str
     parser_version: int
     fields: dict[str, tuple[str, str]]
+    source_kind: str = "publisher"
+    stream: tuple[str, str] = ("", "")
 
 
 def digest(fields: dict[str, CandidateInput]) -> str:
@@ -27,18 +29,35 @@ def digest(fields: dict[str, CandidateInput]) -> str:
 def choose_fields(
     observations: tuple[RankedObservation, ...],
 ) -> dict[str, tuple[str, str]]:
-    highest: dict[str, int] = {}
+    highest: dict[tuple[str, tuple[str, str], str], int] = {}
     for observation in observations:
-        highest[observation.payload_sha256] = max(
-            highest.get(observation.payload_sha256, 0), observation.parser_version
+        highest[
+            (observation.source_kind, observation.stream, observation.payload_sha256)
+        ] = max(
+            highest.get(
+                (
+                    observation.source_kind,
+                    observation.stream,
+                    observation.payload_sha256,
+                ),
+                0,
+            ),
+            observation.parser_version,
         )
     ordered = sorted(
         (
             item
             for item in observations
-            if item.parser_version == highest[item.payload_sha256]
+            if item.parser_version
+            == highest[(item.source_kind, item.stream, item.payload_sha256)]
         ),
-        key=lambda item: (item.observed_at, item.payload_sha256, item.parser_version),
+        key=lambda item: (
+            1 if item.source_kind == "publisher" else 0,
+            item.observed_at,
+            item.payload_sha256,
+            item.parser_version,
+            item.stream,
+        ),
         reverse=True,
     )
     winners: dict[str, tuple[str, str]] = {}

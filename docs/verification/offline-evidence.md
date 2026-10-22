@@ -642,3 +642,26 @@ Pi/Docling实际执行、正式校准工作流、真实来源、NAS、阶段 A/l
 同材料parser单调与同版本解析恒定、旧请求原结果、有效非空解释整体替换、不同材料缺项
 不清空、全空v2保护，以及公共历史查询结合既有A5 builder证明旧文本输入保留/新摘要指纹改变。
 完整历史重建/指纹链与正式映射留给#73，跨来源fallback留给#71/#74；这些不在#69提前实现。
+
+
+### #70 Feed 发现切片（尚未注册 A6）
+
+新用例独立置于 test_feed_registration/inputs/discovery/identity/arbitration/cli/process/migrations/backup，
+不加入 A1–A5 固定分母。公共服务与真实 SQLite/ArtifactStore 覆盖规范 Feed URL、单 item 全字节指纹、
+无 DOI 连续关联/唯一补 DOI、跨 Feed 同 DOI、身份冲突整笔拒绝、D3 A→B→A 只推进 last_seen、
+完整重解析与 parser 单调、出版者优先/Feed 补缺与跨来源 fallback。既有 #69 Feed 拒绝负例改为缺真实 entry ID，
+保留受控拒绝目的和用例数，不能在生产隐藏拒绝合法 Feed。
+
+真实两进程覆盖重复发现、不同 Feed 同 DOI、补 DOI 竞争，发布后/事务中/已提交未返回的强杀重试；
+真实非空 a601 数据含配置、制品、Pi 与出版者候选/作者/修订，从 a601→a602 升级，并在重建 DDL/stamp
+故障或强杀后检查旧事实完整回滚。恢复从活跃 WAL 备份，原目录改名后在搬迁根的新进程只读查询，
+保留无 DOI、无字段发现、全部解释、原始 DOI 书写与原文；a601 旧事实未知原书写为 NULL。
+外键合法且重算外层哈希的 fingerprint、来源 payload、条目目标、解释归属、raw DOI、未使用 Feed URL
+损坏都由 verify/restore 拒绝，批次不被修复。
+
+重审仅为实际新 head a602 调整旧当前-head断言、未来 head fixture 的 down_revision、backup 显式支持门禁，
+并依 a2_scope→完整 A2→A3→A4→A5 拓扑重绑实际受影响源文件与下游 scope 原字节。
+旧分母及 A5 历史 paper_fact_mapping 未覆盖含义不变，不修改 a601 或旧证据，不注册 A6。
+旧/新哈希、理由、最终 run_id 及九份原字节证据保存在工作树外的本票交付台账中。
+未验证真实 Feed/guid 覆盖、上游 entry 稳定性、截断质量、parser 完整性、网络来源、LLM/Docling/RPC/NAS；
+阶段 C 强冲突观察持久化与 parser 固定样本回归门禁保持。

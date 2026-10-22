@@ -1,6 +1,6 @@
 # 论文事实 Contract（A6 目标）
 
-状态：#68 冻结已裁决的目标语义；#69 实现首条出版者 DOI 事实路径与只读查询，其余能力待 #70–#75 实现与独立验收，不声明 A6 passed。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
+状态：#68 冻结已裁决的目标语义；#69 实现首条出版者 DOI 事实路径，#70 接入 Feed 发现与只读历史，其余能力待 #71–#75 实现与独立验收，不声明 A6 passed。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
 
 ## 1. 范围与格式
 
@@ -19,13 +19,44 @@ boundary/value StageInput 沿用既有格式 1，backup format 沿用 1。A6 只
 
 论文事实服务承载确定性规则与事务边界。CLI 与未来适配器只调用公共服务；纯 DOI/文本/仲裁/版本规则不依赖 storage 或 SQLAlchemy。config、screening、stage_inputs 不得反向导入论文事实服务；服务不得导入 HTTP/LLM/Docling/外部适配器。后续 AST 检查固定这些依赖。A6 不新增网络端点适配器、Feed 配置或产品写入命令。
 
-### 1.1 #69 当前可用切片
+### 1.1 #69 出版者切片与公共边界
 
 公共 Python 边界为 `paper_radar.papers.PaperFacts(database, data_root)`：`submit(observation)` 接受严格 `ObservationInput` 或其字段字典，返回 `WriteResult`；`show(paper_id)` 返回当前 `PaperView`，`trace(paper_id, verify_source_bytes=False)` 返回 `PaperTrace`，`validate_all()` 只读校验完整引用与历史修订。所有公开模型 repr/str 隐藏论文内容；服务验证错误只返回受控原因，不透传 Pydantic 输入载荷。
 
-本切片仅接受 `source_kind="publisher"`、DOI 目标与同一 `(provider, query_key, version_id)` 出版者流。字段候选是 `{value, locator}`；摘要 value 是 `{text, is_truncated, rule}`，日期 value 是 `{value, precision}`，作者使用有序字符串 tuple。`version_kind` 为 `preprint/journal`，`observed_at` 为明确 UTC datetime，`parser_version` 为正整数，必填 `interpretation="complete"` 声明整份材料的完整解释，`payload` 为单份非空 bytes。其余支持范围以本文目标为准，当前跨来源流、注册机构、Feed、人工入口分别 `unsupported_source`，关系 `unsupported_relation`，未知字段 `unsupported_field`，均整笔拒绝。
+本切片仅接受 `source_kind="publisher"`、DOI 目标与同一 `(provider, query_key, version_id)` 出版者流。字段候选是 `{value, locator}`；摘要 value 是 `{text, is_truncated, rule}`，日期 value 是 `{value, precision}`，作者使用有序字符串 tuple。`version_kind` 为 `preprint/journal`，`observed_at` 为明确 UTC datetime，`parser_version` 为正整数，必填 `interpretation="complete"` 声明整份材料的完整解释，`payload` 为单份非空 bytes。其余支持范围以本文目标及下节 #70 扩展为准，当前跨出版者流、注册机构、人工入口分别 `unsupported_source`，关系 `unsupported_relation`，未知字段 `unsupported_field`，均整笔拒绝。
 
-迁移 `a601_paper_facts` 只建立实际使用的 Paper、Version、doi 标识、出版者观察、字段候选/作者成员、完整引用式修订与初始选择表。无 Feed、关系、人工修正或未来任务空壳表。只读 CLI 为本文 §8 的 show/trace 子集；当前 trace 展示所有已支持版本、选择、修订、观察与候选，不伪造尚未支持的 Feed/关系事实，也不开放映射、历史选择器或配置快照参数。
+迁移 `a601_paper_facts` 只建立实际使用的 Paper、Version、doi 标识、出版者观察、字段候选/作者成员、完整引用式修订与初始选择表。该条历史 migration 无 Feed、关系、人工修正或未来任务空壳表；#70 只通过下述追加迁移扩展。只读 CLI 为本文 §8 的 show/trace 子集，不开放映射、历史选择器或配置快照参数。
+
+### 1.2 #70 Feed 发现切片
+
+`register_feed(url) -> FeedFact` 返回数据库登记的 `feed_id/url`；非法 URL 为 `invalid_feed_url`。
+`submit` 的 Feed 形状使用 `source_kind="feed"`、真实 `feed_id`、非空原样 `entry_id`、
+显式 `payload_scope="single_item"`、`doi: str | None`，其余时间、完整解释、候选及原文边界沿用公共模型。
+Feed 调用方不能自行设置 provider/query_key；持久化来源流由 feed_id/entry_id 确定，稳定排序使用规范 Feed URL/entry_id。
+缺 entry ID 为 `missing_entry_id`，无效 UUID/未登记 Feed、缺单 item 声明、可识别整份 Feed 或多 item 包装为 `invalid_observation`。
+原文 fingerprint 全局绑定同一个 `(feed_id, entry_id)`，不能把相同字节冒充另一条目；不实现任意 XML 真实性识别。
+
+`WriteResult.discovery_id` 指向原始发现；重放返回该解释原结果，只把 last_seen 推进到最大时点。
+每个首次原文发现即使没有字段，也保留真实无 DOI 版本、空字段修订与原文观察；
+已有原文的全空高版本解释则 `not_retained`，不替换已有字段解释，但保留解析版本门禁和回执。
+解释首个请求时间另行保留以区分 parser 升级后的旧请求精确重试与新的低版本请求；
+非人工仲裁仍只用原文不可变 first_seen，不使用该请求时间或 last_seen。
+
+`trace.discoveries` 展示发现 ID、版本、Feed UUID/规范 URL、entry ID、fingerprint、原文制品、
+first_seen/last_seen 与全部保留解释观察 ID；interpretations 同时公开每个 parser_version 的首个 submitted_at、
+acquisition_id 和可空 observation_id（包括全空解释）。完整字段来源仍在 observations/acquisitions 中。
+`show` 继续只展示规范事实。文本查询简明显示原题名/身份/受控来源摘要，JSON 与文本均声明
+“仅覆盖论文事实；尚未计算完整任务资格”；默认不输出 item 或摘要全文。
+
+`a602_feed_discovery` 顺序追加 Feed、连续条目、原始发现和解释引用表，扩展实际使用的来源类别约束；
+以同一事务暂存并重建依赖闭包，非空 a601 升级/故障/强杀后保持旧事实与 FK 完整，不改 a601。
+出版者和 Feed 的取得事实新增 `raw_doi`，保留首次登记请求的原始 DOI 书写，不参与身份键或 StageInput。
+已有 a601 事实该列为 NULL，如实表示当时未记录，不能用规范 DOI 冒充原书写；Feed 无 DOI 时也为 NULL。
+已登记请求的精确重试继续返回原回执，不因换 DOI 包装而改写原拼写。
+备份只读校验全部 Feed 登记（包括尚无发现的 Feed）、连续归属、原文 fingerprint/blob、解释、取得、候选和修订闭包。
+
+当前只开放同出版者流及 Feed，不提前开放注册机构、人工修正、权威版本关系或正式映射。
+阶段 C 强冲突持久化与 parser 固定样本回归门禁保持，第 7/10 节未验证 live 假设不因本票测试通过而转为已验证。
 
 ## 2. Paper、版本与 DOI 身份（D1）
 
