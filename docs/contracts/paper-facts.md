@@ -1,0 +1,161 @@
+# 论文事实 Contract（A6 目标）
+
+状态：#68 只冻结已裁决的目标语义，运行能力待 #69–#75 实现与独立验收；本文不发布服务、CLI 或 A6 passed 声明。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
+
+## 1. 范围与格式
+
+格式权威目标一次固定如下，后续实现从生产单一权威读取，验收独立固定期望，不自动刷新：
+
+| 名称 | 版本 | 含义 |
+| --- | --- | --- |
+| `paper_facts` | 1 | 封闭论文事实公共边界 |
+| `doi_rules` | 1 | 本文 DOI 接受集合与规范化 |
+| `text_norm` | 1 | 规范文本规则 |
+| `feed_item_fingerprint` | 1 | 原始 item 字节完整 SHA-256 |
+| `reason_catalog` | 1 | 第 9 节原因名称与语义 |
+| `mapping_result` | 1 | 第 8 节逐阶段映射返回形状 |
+
+boundary/value StageInput 沿用既有格式 1，backup format 沿用 1。A6 只接 DOI、明确的既有 Paper/Version、Feed 发现和出版者结构化、DOI 注册机构、Feed、人工字段修正观察。不接受 arXiv/PMID、自由 scheme 或关系类型、HTTP 状态、失败响应、任意 JSON 属性；不建 `duplicate_candidates`、`merge_events`、`manual_intakes`、任务/校准空表。未开放字段或关系整笔拒绝，不忽略后当作成功。
+
+论文事实服务承载确定性规则与事务边界。CLI 与未来适配器只调用公共服务；纯 DOI/文本/仲裁/版本规则不依赖 storage 或 SQLAlchemy。config、screening、stage_inputs 不得反向导入论文事实服务；服务不得导入 HTTP/LLM/Docling/外部适配器。后续 AST 检查固定这些依赖。A6 不新增网络端点适配器、Feed 配置或产品写入命令。
+
+## 2. Paper、版本与 DOI 身份（D1）
+
+Paper 只表示稳定 UUID，不保存题名、DOI、当前版本或主流程状态。一个 DOI 恰好绑定一个版本，标识同时绑定一致的 `paper_id/version_id`；一个版本最多一个 DOI，全局 `(scheme, normalized_value)` 唯一，scheme 封闭为 `doi`。同 DOI 恒命中同一 Paper/Version，不存在“同 DOI 多公开形态”入口。`preprint/journal` 是创建后不可变的身份类别；online-first 是尚缺卷期页码的 journal，补卷期或改摘要只追加同版本修订。
+
+不同 DOI 的版本只有可回查的权威版本关系才能归属同一 Paper。相似题名、作者、年份、URL 不自动合并、不生成候选记录。显式目标入口只核对既有身份，不能给它挂新 DOI。唯一 DOI 补登记路径是已有无 DOI Feed 版本的新 item 提供未占用 DOI；条目从 X 变 Y、显式目标不符、类别变化、Y 已属别的 Paper 均 `identity_conflict`。X 后续消失仍保留 X。B1 原“Y 已属于另一 Paper 返回 requires_merge”已由较新的 D4 覆盖。
+
+### 2.1 DOI 规则 v1（D2）
+
+原始包装输入先检查最多 8192 UTF-8 字节，避免无界外围处理；再去外围 Unicode 空白，所得输入与规范值均最多 2048 UTF-8 字节，空值、超长、孤立代理字符、内部空白或 Unicode 控制/格式字符拒绝。只将 ASCII A–Z 折为 a–z，其他 Unicode 原样保留，不做 casefold、NFC/NFKC、翻译、截句或联网核验。
+
+支持裸 DOI、ASCII 大小写不敏感的 `doi:` 前缀、HTTP(S) `doi.org/dx.doi.org` URL。只去外围空白，不再去 `doi:` 后空白，故 `DOI:10.1234/AbC` 接受、`doi: 10.1234/a` 拒绝为 `invalid_doi`。URL scheme/host 不区分 ASCII 大小写；允许相应默认端口（http 80、https 443），拒绝 userinfo、非默认端口、www 子域、尾点主机、双包装与任何 query/fragment（包含空 `?/#` 包装）为 `unsupported_form`。
+
+URL path 去单个起始 `/` 后严格进行一次 UTF-8 百分号解码；错误转义或无效 UTF-8 为 `invalid_doi`。`%2F` 可解为 DOI 分隔斜杠，`%25` 得字面 `%` 且不再解码，`+` 不变。裸 DOI 不百分号解码，其中字面 `?/#/%` 可为后缀，不作为 URL 参数。结构为 `10.` 加非空 ASCII 数字段（可有以点分隔的非空数字细分段）、`/` 和非空后缀；不套用“4–9 位注册前缀”的经验式。不删末尾标点或尾斜杠，后缀 Unicode 大小写相异仍不同。
+
+固定手写向量须覆盖上述形式，尤其 `HTTPS://DOI.ORG:443/10.1234/AbC` → `10.1234/abc`、`10.1234/Ä` 保留 Ä、`https://doi.org/10.1234%2FA%252F` → `10.1234/a%2f`、裸 `10.1234/a?b#c/` 原样保留后缀，以及 2048/2049 字节边界。
+
+`unsupported_form` 是输入包装超出能力，`invalid_doi` 是本规则下结构非法；拒绝都不表示论文无效。未来只可在 path 已构成合法 DOI 时放宽为忽略 query/fragment，永不从 query 构造 DOI；不得改变任何已接受输入的规范值。未来适配器优先使用 `<guid>` 裸 DOI，缺失才从受控出版者落地页提取；原 URL 保留作证据，A6 不实现提取器。评论的 170/170 是历史来源陈述，未在 A6 重验，不能作本组 live 证据。
+
+## 3. 四类来源事实与发布
+
+- **来源快照**：A3 `source_snapshot` 内容寻址制品，只有字节内容身份，不含提供方、取得时间或业务目标。
+- **来源观察**：来源类别、提供方、查询键/条目身份、`observed_at`、整数 `parser_version`、目标版本、来源快照引用、字段候选及 locator；Feed 发现是它在 Feed 上的特化。
+- **字段候选**：观察中的一个受控字段值、locator 与规则身份，未获选者也保留；摘要是文本、截断标记/未知及判断规则身份的整体。
+- **版本修订**：某版本在一次仲裁后全部规范字段的完整状态，以 `(version_id, revision_no)` 标识，逐字段只存获选候选引用与规则版本，不复制整段摘要。缺项用无获选候选表达，不造 NULL/空串值行。
+
+只接非空原始 `bytes`，单份上限 8 MiB，不接调用方“已核验引用”。解析结果由调用方给出、规则由服务确定。先以现有 `ArtifactStore.publish_single` 完整发布来源制品，再提交业务事务；制品已发布但业务失败可以留下完整未引用 `source_snapshot`，重试复用。无需修改 A3 事务、自动清理或把未引用制品称为已持久化冲突观察。
+
+publisher/注册机构来源流为 `(来源类别, 提供方, 查询键, 目标版本)`，精确重试键为 `(来源流, observed_at, payload SHA-256, parser_version)`。重试返回原结果；同键却给不同解析内容则 `invalid_observation`。新解析的字段加规范关系候选集合（包含 locator、规范值、截断/日期属性与规则身份，不含原响应非业务字段）与该流最近保留观察相同则 `not_retained`，不增业务观察；parser_version 不混入候选集合的值比较，但对同一材料的更高 parser_version 必须保留新解释，不能被相同候选短路丢弃。最近保留观察按仲裁同一确定序 `(observed_at, payload SHA-256, parser_version)` 取最大，不按入库顺序；旧观察晚到也与提交前该最大观察比较，有贡献则保留，但不会因晚到而抢规范值。仅被引次数等非业务字节变化不算贡献。空观察同样不保留，原始内容对象可以共享。A→B→A 若集合有变化可保留，新旧观察按事实时序仲裁；Feed 使用第 4 节独立字节去重。304、限流、失败在输入类型上就不可表达，未来 task_attempts 承担取得执行历史。
+
+所有时钟事实统一 UTC，精度固定到微秒；输入须明确 UTC 时区，不接受 naive 时间。观察时刻、选择/修订时间和 first_seen/last_seen 与发布日期分开；发布日期按语义和精度保存，不伪造时钟。
+
+## 4. Feed 身份、发现与回摆（D3）
+
+Feed 唯一权威是数据库按规范 URL 的唯一登记，只有 UUID 和规范 URL；不建期刊关联、ETag、Last-Modified、健康状态空列、feeds.yaml 或 CLI。未来配置接入必须另定与数据库对齐方案，不得形成第二套身份权威。规范 URL 接受 HTTP(S)，scheme/host ASCII 小写、移除默认端口；path/query 逐字保留（包括大小写、百分号及尾斜杠），拒绝 userinfo/fragment。**Feed URL 必须保留 query；DOI URL 当前拒绝 query，两条规则并列而方向不同。**
+
+Feed 发现键为 `(feed_id, entry_id, item_fingerprint)`；缺 entry ID 拒绝，不自造 fallback。无 DOI 版本的连续身份仅 `(feed_id, entry_id)`，内容 A→B 不生成新版本。`item_fingerprint` 为提交的单个原始 item 全部字节的 SHA-256 小写十六进制，无域前缀，等于 payload blob 身份；不重序列化、不补 XML 声明。空字节、超限、整份 Feed 文档、两个 item 共用同字节受控拒绝。可实现边界：受控提交须声明单 item，拒绝可识别的整份文档包装，并核对已登记条目与 payload 身份，避免同一 payload 被冒充另一条目；A6 不验证任意 XML 的上游真实性，也不实现生产 XML 解析。跨 Feed 同一 DOI 复用版本但保留独立发现；两个不同 item 可以各有不同字节。
+
+相同字节重放仅推进 `last_seen=max(last_seen, observed_at)`，`first_seen` 取首次登记值后永不变。更早重放不改变两者。重新解析不增原始发现，保留所有解释，只有最高整数 parser_version 参与仲裁。
+
+Feed 同源排序只用不可变的首次 `observed_at` 和稳定 tie-break。A→B→A 第三次只推进 A 的 last_seen，规范值停在 B；last_seen 永不参与仲裁、不会单独形成版本修订。跨 Feed 同为最低优先级，也按 observed_at 和稳定 tie-break，不是“先发现者获胜”。这项回摆限制是已批准取舍。
+
+## 5. 规范文本、字段与仲裁
+
+### 5.1 文本规范形式 v1（N1）
+
+题名、摘要及作者字符串在服务端仅将 CRLF/CR 统一成 LF，再去首尾 Unicode 空白（与 `str.strip()` 一致，包括全角空格、制表符和换行）；内部空白不折叠，内部制表符和连续三个换行保留，不做 Unicode 归一化、翻译、截句或去 HTML。原字节保留，provenance 记录 `text_norm=1`。外围差异归一后相同；内部排版差异仍能改变规范值与指纹，A5 builder 不再清洗。
+
+观察中的题名摘要必须已经是无 HTML 标签的已解析文本，含真正标签、注释等标记受控拒绝 `invalid_text`，不得默默剥除。数学比较 `a < b`、`x > 0` 不是 HTML，须接受；`<p>摘要</p>`、`<!-- comment -->` 拒绝，不能用“含尖括号就拒绝”的近似实现。固定向量包括 CRLF/CR、全角空格、制表符、连续换行、数学比较与标签边界。孤立代理字符在登记时拒绝。规范后纯空白候选视为缺项，不能覆盖非空事实；不套用模型输出占位词表删除 “No abstract available”。
+
+### 5.2 字段与优先级
+
+受控字段为题名、摘要整体、有序原样作者字符串列表、期刊、字符串卷/期/页（含 eLocator）、在线发布日期、卷期印刷日期、单值来源 URL。日期按两个独立语义字段各自仲裁，精度是该日期字段的属性（年/月/日），不把在线/印刷语义混在同键候选里。日期缺失不伪造。ORCID、引用次数等未知字段整笔 `unsupported_field`。
+
+摘要来源与取得时间从获选摘要候选所属观察派生，不接受独立候选；摘要标记未知不默认为 false，映射返回 `truncation_unknown`。人工摘要修正必须同时给非空文本与标记，不能只改标记；确认完整是同文本加 false 的新修正。截断检测器不在 A6。
+
+字段优先级：人工明确修正 > 目标版本出版者结构化事实 > 对应 DOI 注册机构 > 目标版本 Feed，不跨版本填缺。注册机构查询 DOI 必须等于版本已登记 DOI，不联网核验 Crossref/DataCite 路由归属。非人工先按来源流内 observed_at 排序，再用 payload SHA-256、parser_version 和封闭来源流键作为稳定 tie-break，绝不用 recorded_at、rowid 或插入顺序；同一材料重解析只由最高整数 parser_version 参与。跨流同优先级也采用相同稳定比较。只要获选值或 provenance 改变就追加修订，即使文本相同；相同观察不重复修订。
+
+人工修正带调用方提供的非空 request_id，在目标 version_id 内唯一；精确重试复用原结果、同 request_id 异内容整笔 invalid_manual_correction。新修正按每个版本事务内分配的显式递增事件序号排序，最新者胜，先后本身是语义。修正绑定 version_id，预印本升级正式版后不迁移，当前值可回到正式出版者值；trace 须明示。actor/reason 只是调用方给的未认证审计字符串，不是认证用户身份。A6 无产品写入/撤销入口，误修正只能通过服务追加更高序号非空修正覆盖并保留历史；空白修正拒绝，不代表清除。期望修正跟随 Paper 需另行裁决。
+
+修订号在该版本写事务内 `max+1`，唯一约束保护 `(version_id, revision_no)`。历史读取必须以整个修订取逐字段引用，不允许调用方拼出从未同时成立的字段组合。
+
+## 6. 权威版本关系与当前选择（N2）
+
+仅接受出版者/DOI 注册机构且有 locator 的预印本 DOI→正式版 DOI 关系。`is-preprint-of/has-preprint` 先归一同一个方向再判重；Feed、人工断言、未知关系、自指、类别方向不符和目标不一致拒绝。关系独立保存，另一端可尚未登记，关系本身不创建空版本。
+
+新版本到达查询全部已保留关系，唯一确定已有 Paper 才加入；预印本先到、正式版先到、关系先到最终身份关系同构，不要求随机 UUID 一致。关系三态为“端点尚未出现”“两端分属不同 Paper（等待合并）”“已生效”，生效由端点归属派生，不存可漂移 active 位，不建冲突表。两端不同 Paper 或新版本同时关联多个 Paper 时，观察/关系照常保存，无法唯一归属的新版本独立建 Paper，返回已保留成功结果 `requires_merge`，不迁移既有版本。
+
+选择事件只支持初始选择与正式版升级。正式版即使无摘要、无卷期也成为当前，映射如实缺项，预印本摘要不搬过去；同级歧义维持已有选择并披露。重复观察不增选择事件。不开放人工选版本、人工归入 Paper、替代关系或 merge/undo；人工字段修正保留。trace 的“未生效版本关系（等待合并）”必须列出对端 DOI、已有对端 Paper、来源/locator 与原因；端点未出现独立措辞，不伪造 UUID。
+
+## 7. 写入结果、事务与阶段 C 硬门禁（D4）
+
+强身份冲突 `identity_conflict` 整笔拒绝业务行：不写发现、来源观察、候选、关系、修订或选择，最多保留完整未引用 source_snapshot。细分类别固定为 `doi_owner_conflict`、`target_mismatch`、`version_kind_conflict`、`entry_doi_changed`。关系冲突 `requires_merge` 则观察及关系已保留，是成功结果；`not_retained` 是有效但无贡献的独立结果。结果类型须区分 retained/not_retained/rejected，携带 reason_catalog 版本、reason 与可选冲突类别，不用一个失败布尔值混同三者。
+
+**阶段 C 接入真实 Feed 前必须完成强身份冲突观察的持久化；此前适配器不得直接复用 A6 拒绝路径为生产写入。** A6 没有真实 Feed，仅数据库身份/幂等入口及离线测试调用方，因此当前丢失窗口为空，这也是推迟持久化唯一成立依据。阶段 C 必须逐类别验证冲突仍有可查询原始观察，避免正式论文被漏掉；A6 的细分类受控结果为适配器保留扩展点，不能将拒绝混作 not_retained。
+
+写事务 `BEGIN IMMEDIATE`，沿用既有 5 秒 busy_timeout，服务内部无重试循环；耗尽返回 `database_busy`，调用方决定稍后显式重试。读查询显式 `BEGIN` 固定一致读视图，不能依赖 legacy pysqlite 的 SELECT 自动开事务。一次查询中的身份、当前选择、修订、候选、provenance 必须同一视图；来源制品 I/O 在业务写事务之外。发布后/业务事务中/提交后未返回三类故障均可安全重试，最多完整孤立来源制品，无半条成功事实。
+
+## 8. 当前查询、历史重建与只读 CLI
+
+服务当前入口是 paper_id（最新选择→版本→最新完整修订），历史入口是 version_id/revision_no，两者互斥；另明确 snapshot_id，从同数据库 `load_config_snapshot(database, snapshot_id)` 加载，不接受外部拼装快照代替登记核对。revision 属于 version，version 属于相应 Paper；业务依据携带 paper_id、version_id、revision_no、适用选择事件、逐字段 provenance、snapshot_id。
+
+`mapping_result` v1 返回 `format_version=1`、`snapshot_id`、上述 `evidence`、`boundary`、`value`。每个阶段对象固定 `{value, reason, evidence, snapshot_id}`：成功 value 为既有 StageInput、reason=null；失败 value=null、reason 为第 9 节名称；evidence 是同次事实依据，不能凭失败造不存在的依据。共用 ScreeningFacts，缺题名/摘要或未知截断同时阻断两阶段；阶段投影分别判断，因此 boundary 未就绪时已就绪 value 仍可成功，反之亦然。配置和业务错误精确返回受控原因。业务 ID/来源时间/书目字段不进入载荷哈希。文本相同而来源/取得时间/provenance 改变，指纹不变。
+
+历史重建从完整旧修订与明确旧快照重新 `build_stage_input`，不调用 A5 `replay_stage_input`，不保存 StageInput 载荷或独立期望指纹；未来任务层仍负有规范载荷持久化义务。不存 original_title_is_zh、不派生 ValuePredictionContext。可靠来源 URL 与完整 metadata_ready 属后续 eligibility，不因映射成功而宣称路线尝试、模型、校准就绪。映射只读，不推进 last_seen、不升级选择。
+
+普通映射仅核对数据库引用链、候选→观察→同一版本及已登记制品 kind=source_snapshot，不全量哈希 blob，不读当前文件补历史。backup verify 与显式 trace 字节核验承担实际字节验证。
+
+CLI 目标固定为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER_ID --database PATH`，两者共用可选 `--data-root PATH`、`--json`、`--show-abstract`。database 必须指向既有数据库，data-root 在来源字节核验时指向既有制品根；json 输出与文本同一受控形状，show-abstract 才展开摘要，trace 中未获选摘要也只在此显式选项下展示。选项不得初始化目录或数据库。不加历史选择器、snapshot 参数、输入指纹或任何写入命令。show 显示 `paper_id/version_id/revision_no/version_kind/doi`、当前题名/书目、摘要是否存在与截断状态、当前选择依据；trace 显示全部版本/修订/选择、Feed 发现及 first_seen/last_seen、来源与 parser_version/locator、未获选候选、关系三态及人工修正不跨版本限制。默认不展开摘要/原始响应；显式展示论文文本仍不暴露 Profile、Prompt、密钥或任意 blob。
+
+`paper trace PAPER_ID --verify-source-bytes` 默认关闭，增加只读制品 I/O，只报原因与受控位置，不转储来源正文。退出码固定：正常只读查询（含合法等待端点/等待合并）0，受控拒绝/缺失/损坏/忙 1，CLI 参数语法错误 2。requires_merge 若出现在服务写入结果中是 retained 成功，不按拒绝重试。help 用中文、可复制示例，说明只读/零模型配额；空目录 help 无配置、数据库或网络副作用。
+
+## 9. `reason_catalog` v1
+
+本表为待实现单一枚举和中文文案表的权威；后续首张代码票在新包定义一次，不扩展 storage/errors.py。名称或含义改动须升版本。错误、repr、日志和离线证据不带题名摘要、原响应、Profile、Prompt 或凭据；原因可带受控字段路径/ID，但不可插入原始输入。
+
+| reason | 含义与边界 | 中文下一步 |
+| --- | --- | --- |
+| `unsupported_form` | DOI/URL 包装超出支持；是输入能力边界，不是论文无效 | 请改用受支持的裸 DOI 或规范 URL |
+| `invalid_doi` | 本规则下 DOI 结构、编码或长度非法；不是论文无效或联网核验结论 | 请核对 DOI 字面值 |
+| `identity_conflict` | 强身份冲突整笔拒绝，附第 7 节类别；不是无贡献或关系待合并 | 请核对已登记身份，勿自动换绑 |
+| `requires_merge` | 观察/关系已保留但跨 Paper，成功且等待合并；不是拒绝 | 请查看 trace 的等待合并依据 |
+| `not_retained` | 有效但空或候选无贡献，不新增业务观察；不是冲突或失败响应记录 | 无需重试相同内容 |
+| `truncation_unknown` | 获选摘要完整性标记未知；不默认完整 | 请补充文本和明确截断标记 |
+| `database_busy` | 5 秒有界锁等待耗尽，业务未部分提交 | 请在写入结束后显式重试 |
+| `config_not_ready` | 该阶段已登记配置投影未就绪；不是校准失败 | 请补齐该阶段配置 |
+| `corrupt_reference` | 业务引用链、归属、制品 kind 或显式核验字节损坏；不是合法未齐端点 | 请停止使用该批次并检查备份 |
+| `missing_title` | 选定版本无非空题名 | 请补齐该版本题名 |
+| `missing_abstract` | 选定版本无非空摘要，不跨版本借用 | 请补齐该版本摘要 |
+| `paper_not_found` | 请求 Paper 未登记 | 请核对论文 ID |
+| `version_not_found` | 请求版本未登记 | 请核对版本 ID |
+| `revision_not_found` | 版本下请求修订不存在 | 请核对版本及修订号 |
+| `snapshot_not_found` | 配置快照未在同库登记 | 请使用已登记配置快照 |
+| `unsupported_scheme` | scheme 不是 doi | 请使用 DOI，其他标识待后续支持 |
+| `unsupported_source` | 来源类别/路径尚未支持 | 请使用当前已实现来源入口 |
+| `unsupported_field` | 存在未支持字段，整笔拒绝 | 请移除未支持字段后重交 |
+| `unsupported_relation` | 关系类别/来源不支持，整笔拒绝 | 请使用出版者或注册机构的预印本到正式版关系 |
+| `invalid_observation` | 封闭类型、UTC 时间、parser_version、原始字节、重试内容或目标形状非法 | 请核对受控字段与单条原始材料 |
+| `invalid_text` | 孤立代理字符、HTML 标记等非法文本 | 请先解析为无 HTML 的合法文本 |
+| `missing_entry_id` | Feed 条目缺上游稳定身份 | 请由适配器提供真实 entry ID |
+| `invalid_feed_url` | Feed URL 不在规范规则内 | 请提供受支持的 Feed 端点 URL |
+| `invalid_relation` | 自指、方向/类别或观察目标不符 | 请核对关系两端与来源定位 |
+| `invalid_manual_correction` | 空白、仅改标记或不合法序号等修正 | 只能用非空完整值追加覆盖，不能清除或撤销 |
+
+## 10. 备份、增长与未验证来源假设
+
+只追加、不设保留期、不清理孤立 blob、不压缩修订；未来 retention/compaction 单独设计并维护备份闭包。每个代码切片同步非空 backup create/verify/restore，语义校验只在副本/恢复目录执行，不回写源库、不修复删除。合法无 DOI 版本、尚缺关系端点、跨 Paper 等待合并各有正例，不能报损坏。错误归属、item fingerprint/payload 不符、跨版本 provenance、坏候选、坏 blob/错 kind 必须受控拒绝，即使外键合法、外层哈希重算也不能通过。旧 a405 批次仍须匹配旧程序恢复后显式升级，不在批次中迁移；新程序拒绝 unsupported_revision。
+
+隔离恢复从活跃 WAL 备份，禁原目录访问、独立目录恢复并搬迁，新进程只持受控 ID/修订/配置引用及独立预期，不从请求文件带原题名摘要，仍由恢复库候选重建相同输入。恢复不激活、抓取、重算、清理或续跑。
+
+以下均未在 A6 验证，阶段 C 逐项回填已核实/已证伪/仍未验证，并将固定来源材料纳入其验收：JGR/QJRMS guid 裸 DOI 覆盖；Wiley `?af=R` 落地页行为；页码实际为 eLocator；适配器给出的摘要截断标记可靠性；entry ID 跨抓取稳定性；Crossref `is-preprint-of/has-preprint` 真实供给。评论里的 170/170 不替代本组证据。A6 NOT_ASSESSED 必须包括这些来源假设、真实来源、截断检测、merge/undo、arXiv/PMID、metadata_ready/eligibility、任务/预算、完整可见性、RPC、Docling、NAS及完整阶段 A；stage_a_verified/live_verified/rpc_verified=false。
+
+## 11. 实施与验收约定
+
+本组图为 #68→#69→#70→#71→(#72,#73)→#74→#75。与 N8 建议不同，不交付独立空表票：#69 连同最小 migration、首条 DOI 登记、查询和测试纵向落地。首个 revision 为 `a601_paper_facts`；后续扩表追加顺序 migration，不改已合入 revision，最后验收绑定实际末端 head，不能永久以 a601 代替。
+
+A6 只在 #75 注册，ISSUE=75，PARENT_ISSUE=67，前置同次 A1、完整 A2、A3、A5，A4 仍控制完整门禁。中间票均须完整离线入口 0，新测试独立模块，不改旧用例分母、不更新历史证据、不提前注册 A6。旧源码/head/help/backup 绑定先按 a2_scope wrapper、完整 A2、A3、A4、A5 拓扑重审复验，再冻结 A6 哈希；台账列旧哈希/新哈希/原因/run_id，不参与自身最终 run_id 哈希以免循环。
+
+最终 run_id 必须来自全部功能和验收集成后的最终工作树，严格绑定代码、工作树、lockfile、真实 revision、材料及实际回执；中间通过不能冒充最终通过。长门禁前 `./scripts/dev-environment check`，单次先留 30 分钟观察预算并回填实际耗时，超时先诊断、不删测。#65 若已合入沿用其回执协议，未合入不自行领取测试并行优化。
+
+本票不改 README 或其他公共 Contract 的已交付能力声明；各后续票随真实实现同步。A5 旧 NOT_ASSESSED 的 paper_fact_mapping 是当次历史结论，不回改 a5_scope.py；由最终 A6 明确新增覆盖。文档落地提交由 #68 完成记录引用，主方案处置映射见 ADR；不修改 #67 正文/状态或其历史固定提交链接。
