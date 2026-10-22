@@ -5,7 +5,7 @@ import re
 from sqlalchemy import Connection, select
 
 from paper_radar.papers.errors import PaperError, PaperReason
-from paper_radar.papers.feed import normalize_feed_url
+from paper_radar.papers.feed import normalize_feed_url, require_entry_id
 from paper_radar.papers.models import DiscoveryFact, FeedInterpretationFact
 from paper_radar.papers.tables import (
     acquisitions,
@@ -35,7 +35,8 @@ def load_discoveries(
             .one()
         )
         _uuid(feed["feed_id"])
-        if normalize_feed_url(feed["url"]) != feed["url"] or not entry["entry_id"]:
+        require_entry_id(entry["entry_id"])
+        if normalize_feed_url(feed["url"]) != feed["url"]:
             raise corrupt()
         rows = (
             connection.execute(
@@ -85,10 +86,16 @@ def load_discoveries(
             )
             if not interpretations:
                 raise corrupt()
+            for interpretation in interpretations:
+                _utc(interpretation["submitted_at"])
+            if interpretations[0]["submitted_at"] != row["first_seen"] or any(
+                interpretation["submitted_at"] > row["last_seen"]
+                for interpretation in interpretations
+            ):
+                raise corrupt()
             ids = []
             explanations = []
             for interpretation in interpretations:
-                _utc(interpretation["submitted_at"])
                 acquired = (
                     connection.execute(
                         select(acquisitions).where(

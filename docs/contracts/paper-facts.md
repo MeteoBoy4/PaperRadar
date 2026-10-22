@@ -33,7 +33,8 @@ boundary/value StageInput 沿用既有格式 1，backup format 沿用 1。A6 只
 `submit` 的 Feed 形状使用 `source_kind="feed"`、真实 `feed_id`、非空原样 `entry_id`、
 显式 `payload_scope="single_item"`、`doi: str | None`，其余时间、完整解释、候选及原文边界沿用公共模型。
 Feed 调用方不能自行设置 provider/query_key；持久化来源流由 feed_id/entry_id 确定，稳定排序使用规范 Feed URL/entry_id。
-缺 entry ID 为 `missing_entry_id`，无效 UUID/未登记 Feed、缺单 item 声明、可识别整份 Feed 或多 item 包装为 `invalid_observation`。
+缺 entry ID 为 `missing_entry_id`；entry 原样保留，须为合法 UTF-8、非空且最多 2048 字节，
+写入口与备份引用校验复用同一权威。无效 UUID/未登记 Feed、缺单 item 声明、可识别整份 Feed 或多 item 包装为 `invalid_observation`。
 原文 fingerprint 全局绑定同一个 `(feed_id, entry_id)`，不能把相同字节冒充另一条目；不实现任意 XML 真实性识别。
 
 `WriteResult.discovery_id` 指向原始发现；重放返回该解释原结果，只把 last_seen 推进到最大时点。
@@ -53,7 +54,8 @@ acquisition_id 和可空 observation_id（包括全空解释）。完整字段�
 出版者和 Feed 的取得事实新增 `raw_doi`，保留首次登记请求的原始 DOI 书写，不参与身份键或 StageInput。
 已有 a601 事实该列为 NULL，如实表示当时未记录，不能用规范 DOI 冒充原书写；Feed 无 DOI 时也为 NULL。
 已登记请求的精确重试继续返回原回执，不因换 DOI 包装而改写原拼写。
-备份只读校验全部 Feed 登记（包括尚无发现的 Feed）、连续归属、原文 fingerprint/blob、解释、取得、候选和修订闭包。
+备份只读校验全部 Feed 登记（包括尚无发现的 Feed）、entry 输入域、连续归属、原文 fingerprint/blob、解释、取得、候选和修订闭包；
+发现时间与解释提交时间须为微秒 UTC，首次解释 submitted_at 等于 first_seen，last_seen 不得早于任何已登记解释的 submitted_at。
 
 当前只开放同出版者流及 Feed，不提前开放注册机构、人工修正、权威版本关系或正式映射。
 阶段 C 强冲突持久化与 parser 固定样本回归门禁保持，第 7/10 节未验证 live 假设不因本票测试通过而转为已验证。

@@ -51,22 +51,26 @@ def normalize_feed_url(value: str) -> str:
         raise PaperError(PaperReason.INVALID_FEED_URL, path="feed_url") from None
 
 
+def require_entry_id(value: object) -> None:
+    from paper_radar.papers.text import normalize_text
+
+    if value is None:
+        raise PaperError(PaperReason.MISSING_ENTRY_ID, path="entry_id")
+    if not isinstance(value, str):
+        raise PaperError(PaperReason.INVALID_OBSERVATION, path="entry_id")
+    if not normalize_text(value):
+        raise PaperError(PaperReason.MISSING_ENTRY_ID, path="entry_id")
+    if len(value.encode("utf-8")) > 2048:
+        raise PaperError(PaperReason.INVALID_OBSERVATION, path="entry_id")
+
+
 def validate_feed_item(item: "ObservationInput") -> None:
     import re
     from uuid import UUID
 
-    from paper_radar.papers.text import normalize_text
-
-    if not item.entry_id or not normalize_text(item.entry_id):
-        raise PaperError(PaperReason.MISSING_ENTRY_ID, path="entry_id")
+    require_entry_id(item.entry_id)
     try:
-        if (
-            not item.feed_id
-            or str(UUID(item.feed_id)) != item.feed_id
-            or not item.entry_id
-            or not normalize_text(item.entry_id)
-            or len(item.entry_id.encode("utf-8")) > 2048
-        ):
+        if not item.feed_id or str(UUID(item.feed_id)) != item.feed_id:
             raise ValueError
         if item.payload_scope != "single_item" or item.provider or item.query_key:
             raise ValueError

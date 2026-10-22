@@ -657,7 +657,8 @@ Pi/Docling实际执行、正式校准工作流、真实来源、NAS、阶段 A/l
 故障或强杀后检查旧事实完整回滚。恢复从活跃 WAL 备份，原目录改名后在搬迁根的新进程只读查询，
 保留无 DOI、无字段发现、全部解释、原始 DOI 书写与原文；a601 旧事实未知原书写为 NULL。
 外键合法且重算外层哈希的 fingerprint、来源 payload、条目目标、解释归属、raw DOI、未使用 Feed URL
-损坏都由 verify/restore 拒绝，批次不被修复。
+损坏都由 verify/restore 拒绝，批次不被修复。另以与写入口共用的 entry 校验覆盖空白、UTF-8 字节超限、
+SQLite BLOB 非法 Unicode 形状；URL/时钟形状和首次/后续解释时点与发现边界的冗余一致性也由同一闭包校验拒绝。
 
 重审仅为实际新 head a602 调整旧当前-head断言、未来 head fixture 的 down_revision、backup 显式支持门禁，
 并依 a2_scope→完整 A2→A3→A4→A5 拓扑重绑实际受影响源文件与下游 scope 原字节。

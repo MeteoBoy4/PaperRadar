@@ -115,6 +115,17 @@ def test_feed_backup_restores_originals_and_interpretations_after_move(
         "interpretation",
         "raw_doi",
         "unused_feed_url",
+        "blank_entry",
+        "long_entry",
+        "invalid_unicode_entry",
+        "first_seen_precision",
+        "last_seen_not_utc",
+        "last_seen_before_first",
+        "submitted_not_utc",
+        "submitted_mismatch",
+        "last_seen_before_parse",
+        "unused_feed_long_url",
+        "unused_feed_invalid_unicode",
     ],
 )
 def test_verify_restore_reject_rehashed_semantic_feed_damage_without_repair(
@@ -126,6 +137,21 @@ def test_verify_restore_reject_rehashed_semantic_feed_damage_without_repair(
     first = service.submit(item(feed.feed_id, doi="10.1/x"))
     second = service.submit(observation(doi="10.1/y"))
     assert first.version_id and second.version_id and service.data_root
+    if damage == "last_seen_before_parse":
+        from datetime import UTC, datetime
+
+        assert (
+            service.submit(
+                item(
+                    feed.feed_id,
+                    doi="10.1/x",
+                    parser_version=2,
+                    fields={},
+                    observed_at=datetime(2026, 2, 1, tzinfo=UTC),
+                )
+            ).status
+            == "not_retained"
+        )
     batch = create_backup(service.database, service.data_root, tmp_path / "backups")
     copied = batch.batch_dir / "database.sqlite3"
     with closing(sqlite3.connect(copied)) as connection:
@@ -153,6 +179,58 @@ def test_verify_restore_reject_rehashed_semantic_feed_damage_without_repair(
                 "UPDATE paper_source_acquisitions SET raw_doi='10.1/other' "
                 "WHERE acquisition_id=?",
                 (first.acquisition_id,),
+            )
+        elif damage in {"blank_entry", "long_entry", "invalid_unicode_entry"}:
+            entry_cases: dict[str, str | bytes] = {
+                "blank_entry": " ",
+                "long_entry": "Ä" * 1025,
+                "invalid_unicode_entry": b"\xed\xa0\x80",
+            }
+            entry = entry_cases[damage]
+            for table in ("feed_entries", "feed_discoveries"):
+                connection.execute(f"UPDATE {table} SET entry_id=?", (entry,))
+            for table in ("paper_observations", "paper_source_acquisitions"):
+                connection.execute(
+                    f"UPDATE {table} SET query_key=? WHERE source_kind='feed'", (entry,)
+                )
+        elif damage == "first_seen_precision":
+            connection.execute(
+                "UPDATE feed_discoveries SET first_seen=?",
+                ("2026-01-01T00:00:00+00:00",),
+            )
+        elif damage == "last_seen_not_utc":
+            connection.execute(
+                "UPDATE feed_discoveries SET last_seen=?",
+                ("2026-01-01T08:00:00.000000+08:00",),
+            )
+        elif damage == "last_seen_before_first":
+            connection.execute(
+                "UPDATE feed_discoveries SET last_seen=?",
+                ("2025-01-01T00:00:00.000000+00:00",),
+            )
+        elif damage == "submitted_not_utc":
+            connection.execute(
+                "UPDATE feed_interpretations SET submitted_at=?",
+                ("2026-01-01T08:00:00.000000+08:00",),
+            )
+        elif damage == "submitted_mismatch":
+            connection.execute(
+                "UPDATE feed_interpretations SET submitted_at=?",
+                ("2025-01-01T00:00:00.000000+00:00",),
+            )
+        elif damage == "last_seen_before_parse":
+            connection.execute(
+                "UPDATE feed_discoveries SET last_seen=?",
+                ("2026-01-01T00:00:00.000000+00:00",),
+            )
+        elif damage in {"unused_feed_long_url", "unused_feed_invalid_unicode"}:
+            url: str | bytes = (
+                "https://feeds.example/" + "x" * 8192
+                if damage == "unused_feed_long_url"
+                else b"https://feeds.example/\xed\xa0\x80"
+            )
+            connection.execute(
+                "UPDATE feeds SET url=? WHERE feed_id=?", (url, unused.feed_id)
             )
         else:
             connection.execute(
