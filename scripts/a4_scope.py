@@ -94,7 +94,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_activation_history.py",
-        "a3acfcb15cb97454b6afa5f03fb7be72c89572d8750fc26a18e4155a3099c0c3",
+        "7d6336530111818f388426a20c98b8f20a446742282b053484c12b43615c809b",
     ),
     (
         "tests/test_pi_supply_boundaries.py",
@@ -114,11 +114,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_cleanup_execute_history.py",
-        "dfa2bed247b1b952838c7c0c8cbfef8014e1c3055bfb9ed6cf3ac13523236e50",
+        "3fa74f5faab352e6c5fdc1d8d8c2968028b321b091223b6ec477246aa7fb0aa8",
     ),
     (
         "tests/test_pi_supply_cleanup_history.py",
-        "eb66667c878e4403471707ee86a68f9520ff48ae8b5350b872bbe73c3e406b9f",
+        "cc05d906dcfd85f3ec04743d81eb936f15e7060bd49c1a176c0be3f2bb10a55a",
     ),
     (
         "tests/test_pi_supply_cleanup_unreadable.py",
@@ -138,7 +138,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_history.py",
-        "5ac7e2d9c20989e7db4c59f2543667173f9a9e6ee857ed41000a20d6a40282d1",
+        "58c0087acb30a2993b044388fbff905644d6112e363d5f555bfcc2991ca44972",
     ),
     (
         "tests/test_pi_supply_process.py",
@@ -158,7 +158,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_rebuild_history.py",
-        "06816c10d30013251983ad282114de357d461bb4848ec0ce7bdd91eafd766c8e",
+        "63442715349d9a8bed37d07ae19060381477f93f842a7f164676b6651ab99c15",
     ),
     (
         "tests/test_pi_supply_transport.py",
@@ -170,7 +170,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a4_acceptance.py",
-        "788b53181a839b4bc2efa876916ce20d361c5b7d659b83a7feecb68b47f77f90",
+        "c80663b648af1ec9a010c9639419c6918ab962dce16b6282414592ff06e34b09",
     ),
     (
         "tests/test_a4_combination.py",
@@ -316,7 +316,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "c0a9804a70aba0643c14b390c0fd96aa34e08c2a3ff7bb8bc8bfeae4a0df2226",
+        "924c659e655ba73ae95108db02a4fc343c2f4d50650be5d3972637a0b3e9cca5",
     ),
     (
         "src/paper_radar/backup/files.py",
@@ -336,11 +336,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a3_scope.py",
-        "b827c56e94d98c6f29c66a5cc4b9eab064c46ea25368236733661ffc1a35bcfe",
+        "1f2127f6dda98d880533d7863fbe275a9768da83908123085635ab0998b5d153",
     ),
     (
         "scripts/a2_full_scope.py",
-        "c4a2e292ba7becc6ca3ef96c5b081fab70f8175562106964a6adf716eb77a320",
+        "6fa89990726537a3d2844a9adfb837130c9b8b278b4269bc399ccb44f6a63d69",
     ),
     (
         "scripts/a1_scope.py",

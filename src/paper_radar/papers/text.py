@@ -92,10 +92,15 @@ def parse_observation(value: object) -> ObservationInput:
         or item.payload_scope is not None
     ):
         raise PaperError(PaperReason.INVALID_OBSERVATION)
-    if item.source_kind == "registry" and (
-        normalize_doi(item.query_key) != normalize_doi(item.doi)
-    ):
-        raise PaperError(PaperReason.INVALID_OBSERVATION, path="query_key")
+    if item.source_kind == "registry":
+        try:
+            query_doi = normalize_doi(item.query_key)
+        except PaperError:
+            raise PaperError(
+                PaperReason.INVALID_OBSERVATION, path="query_key"
+            ) from None
+        if query_doi != normalize_doi(item.doi):
+            raise PaperError(PaperReason.INVALID_OBSERVATION, path="query_key")
     for key in (item.provider, item.query_key):
         require_public_url(key)
         if not normalize_text(key) or len(key.encode("utf-8")) > 2048:

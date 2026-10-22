@@ -381,3 +381,29 @@ def test_many_relations_to_one_paper_still_have_unique_ownership(
     assert original.paper_id and incoming.paper_id == original.paper_id
     assert service.show(original.paper_id).version_id == first.version_id
     service.validate_all()
+
+
+def test_higher_field_interpretation_does_not_revoke_independent_relation(
+    tmp_path: Path,
+) -> None:
+    db = tmp_path / "facts.sqlite"
+    upgrade_database(db)
+    service = PaperFacts(db, tmp_path / "data")
+    original = service.submit(
+        observation(doi="10.1/pre", version_kind="preprint", relations=relation())
+    )
+    revised = service.submit(
+        observation(
+            doi="10.1/pre",
+            version_kind="preprint",
+            parser_version=2,
+            fields={"title": {"value": "New interpretation", "locator": "title"}},
+        )
+    )
+    assert original.paper_id and revised.paper_id == original.paper_id
+    assert service.show(original.paper_id).fields["title"].value == "New interpretation"
+    assert service.trace(original.paper_id).relations[0].state == "endpoint_missing"
+    final = service.submit(observation(doi="10.1/journal"))
+    assert final.paper_id == original.paper_id
+    assert service.trace(original.paper_id).relations[0].state == "effective"
+    service.validate_all()

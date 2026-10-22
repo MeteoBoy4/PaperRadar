@@ -19,7 +19,7 @@ ARTIFACT_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_storage_migrations.py",
-        "bd31aa2a7f64aa56770c6a4884591f59debc1a965b5a15c0ff3f643f6d28a7dc",
+        "0b712147efc8f54e20269c8e086b6329fc680e812ab4295f96f7483f3624bb89",
     ),
 )
 
@@ -104,7 +104,7 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_backup_failures.py",
-        "9686a152b8c9ba971c33f3a49d6a1127b3dfc32c02feb5be2cb9c3c1a161659e",
+        "0be23815266ce31151035ef0d7fc7327bf25b71e27045b1effb57e87f12f7402",
     ),
     (
         "tests/test_backup_cli.py",
@@ -131,7 +131,7 @@ BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "c0a9804a70aba0643c14b390c0fd96aa34e08c2a3ff7bb8bc8bfeae4a0df2226",
+        "924c659e655ba73ae95108db02a4fc343c2f4d50650be5d3972637a0b3e9cca5",
     ),
     (
         "src/paper_radar/backup/files.py",
@@ -160,7 +160,7 @@ RESTORE_TEST_CASE_COUNTS = {
 RESTORE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_restore_service.py",
-        "5a3095566b7d94d970279b874e55388fd238a099274cd2e73bd3adadd892abe7",
+        "915e39c7375ed0c6974e5df42a2508b286a815b9e178cd6bec37e034fdd83478",
     ),
     (
         "tests/test_restore_failures.py",
@@ -256,7 +256,7 @@ REQUIRED_TEST_CASE_COUNTS = {
 ACCEPTANCE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_a3_acceptance.py",
-        "dc5cd3207fe305fd146b44f5dcf0c70028ec1a305ec5c4abd9aa69d52034ff1a",
+        "503d5ed7cdd753c6baf2de34dc3d2d9413e1c023bdf2b00a413cfbdc2a5c1f23",
     ),
     (
         "tests/test_a3_combination.py",
@@ -306,7 +306,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "c4a2e292ba7becc6ca3ef96c5b081fab70f8175562106964a6adf716eb77a320",
+        "6fa89990726537a3d2844a9adfb837130c9b8b278b4269bc399ccb44f6a63d69",
     ),
     (
         "scripts/check-offline",

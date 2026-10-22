@@ -119,14 +119,13 @@ def _text_result(
         typer.echo(
             f"历史：{len(result.revisions)} 次修订、"
             f"{len(result.observations)} 份解释、"
-            f"{len(result.discoveries)} 条 Feed 发现"
+            f"{len(result.discoveries)} 条 Feed 发现；版本选择："
+            + " | ".join(
+                f"{event.selection_id}/{event.version_id}；{event.reason}；{event.selected_at}"
+                for event in result.selections
+            )
         )
         typer.echo(result.manual_correction_scope)
-        for selection_event in result.selections:
-            typer.echo(
-                f"版本选择：{selection_event.version_id}；{selection_event.reason}；"
-                f"{selection_event.selected_at}"
-            )
         if result.selection_conflicts:
             typer.echo(
                 "同级版本歧义（保持既有选择）：" + "、".join(result.selection_conflicts)

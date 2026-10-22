@@ -1,5 +1,6 @@
 """关系来源事实与派生归属查询;不移动已存版本。"""
 
+import re
 from uuid import uuid4
 
 from sqlalchemy import Connection, or_, select
@@ -252,7 +253,7 @@ def validate_relation_references(connection: Connection) -> None:
             .mappings()
             .one()
         )
-        validate_assertion(ref, relation, acquired)
+        validate_assertion(connection, ref, relation, acquired)
     interpretations: dict[tuple[object, ...], tuple[tuple[str, str, str], ...]] = {}
     for acquired in connection.execute(select(acquisitions)).mappings():
         key = tuple(
@@ -274,11 +275,34 @@ def validate_relation_references(connection: Connection) -> None:
 
 
 def validate_assertion(
-    ref: RowMapping, relation: RowMapping, acquired: RowMapping
+    connection: Connection, ref: RowMapping, relation: RowMapping, acquired: RowMapping
 ) -> None:
     _uuid(acquired["acquisition_id"])
     _utc(acquired["observed_at"])
     require_public_url(ref["locator"])
+    for key in ("provider", "query_key"):
+        require_public_url(acquired[key])
+        if not normalize_text(acquired[key]) or len(acquired[key].encode()) > 2048:
+            raise corrupt()
+    if (
+        acquired["parser_version"] < 1
+        or re.fullmatch(r"[0-9a-f]{64}", acquired["payload_sha256"]) is None
+    ):
+        raise corrupt()
+    if (
+        acquired["source_kind"] == "registry"
+        and normalize_doi(acquired["query_key"]) != acquired["doi"]
+    ):
+        raise corrupt()
+    if acquired["version_id"] is not None:
+        endpoint = connection.execute(
+            select(identifiers.c.normalized_value).where(
+                identifiers.c.version_id == acquired["version_id"]
+            )
+        ).scalar_one_or_none()
+        if endpoint != acquired["doi"]:
+            raise corrupt()
+
     if ref["raw_kind"] not in {"is-preprint-of", "has-preprint"}:
         raise corrupt()
     raw_pre, raw_journal = (
@@ -298,6 +322,7 @@ def validate_assertion(
         != (acquired["version_kind"] == "preprint")
         or not normalize_text(ref["locator"])
         or normalize_text(ref["locator"]) != ref["locator"]
+        or len(ref["locator"].encode()) > 2048
     ):
         raise corrupt()
 
@@ -413,7 +438,7 @@ def relation_assertions(
             .mappings()
             .one()
         )
-        validate_assertion(ref, relation, acquired)
+        validate_assertion(connection, ref, relation, acquired)
         result.append(
             {
                 **{
