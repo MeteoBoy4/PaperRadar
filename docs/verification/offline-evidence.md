@@ -666,3 +666,33 @@ SQLite BLOB 非法 Unicode 形状；URL/时钟形状和首次/后续解释时点
 旧/新哈希、理由、最终 run_id 及九份原字节证据保存在工作树外的本票交付台账中。
 未验证真实 Feed/guid 覆盖、上游 entry 稳定性、截断质量、parser 完整性、网络来源、LLM/Docling/RPC/NAS；
 阶段 C 强冲突观察持久化与 parser 固定样本回归门禁保持。
+
+
+### #74 组合备份与历史输入恢复（尚未注册 A6）
+
+新增 `test_paper_recovery_combined/integrity/damage`，独立于 A1–A5 固定模块和分母。
+所有成功事实由 PaperFacts/config/ArtifactStore 公共服务构造；SQL 仅用于只读检查与故意损坏。
+
+| #74 验收要求 | 离线证据与边界 |
+| --- | --- |
+| 至少两篇、多 DOI/版本、四来源/冲突/人工、旧新配置 | paper_recovery_support 组合工厂与 combined：同一真实库，trace/show 全形状摘要及两阶段载荷散列比较；不携带原文到子进程 |
+| 正式有/无摘要升级、旧预印本、never-selected | combined 两个正式摘要组合；明确历史 version/revision/snapshot，从未选中 selection=null，不跨版本补摘要 |
+| 无 DOI 后补、跨 Feed、A→B→A | combined：同 UUID、发现/first-last-seen/候选/取得/修订保留，另有仍无 DOI 正例；Feed 回摆只 last_seen |
+| 完整解释、fallback、新摘要、全空保护、重复取得 | combined：同材料 v2 缺摘要、registry 补缺追加 provenance 修订、v3 文本改变、v4 全空不清除，旧精确重试与轻量候选引用 |
+| effective/endpoint_missing/requires_merge、零端点 | combined 与完整副本公共 validate_all；跨 Paper 不合并、关系-only 不造空版本，独立关系不撤销 |
+| 真 WAL、禁原目录、恢复后再搬迁、独立进程 | combined：WAL 非空且最终事务进入副本；便携批次，audit 拒绝原根/改名根/原备份源与 SQLite URI/枚举；恢复及两个不同 cwd/hashseed 读者均为新进程 |
+| 仅从恢复候选重建历史输入 | paper_recovery_reader 只接受 ID/revision/snapshot/独立哈希与长度，比较两阶段 fingerprint/payload SHA、完整字段依据/真实选择；无外部题名摘要/配置对象 |
+| 共用语义入口且只解析副本 | integrity 首片 red→green；create 复制后统一调用 verify_contents，坏源字节 file_corrupt；damage 语义拒绝且原库/批次不变、目标不发布 |
+| 重哈希且 FK 合法的代表性损坏 | damage：item/payload、跨版本 provenance、DOI 归属、错获选候选、缺完整修订字段、选择、原关系断言、错 kind；verify/restore registration_invalid，批次不修复 |
+| 缺/坏 blob、未来 revision | damage：file_missing/file_corrupt/unsupported_revision；旧 a405 拒绝继续由 test_paper_backup 保护，不升级批次 |
+| trace 可选字节核验与默认无 blob I/O | integrity：仅关系材料缺失/损坏时默认 trace 仍读，显式服务/CLI 受控拒绝且无原文；combined 子进程默认 show/trace/map 拒绝 blobs 根访问仍成功 |
+| 无静默修复/历史变化 | combined：源库逻辑 dump、恢复库 dump/业务文件、便携批次字节前后一致；damage 成败批次均只读，失败无恢复目标；SQLite WAL/SHM 临时协调文件不当业务事实 |
+
+不改变 backup format 1，不新增 migration，不改 a601–a604，不提前注册 A6；A5 历史
+paper_fact_mapping NOT_ASSESSED 原样保留。必要源码哈希按 A2 wrapper→完整 A2→A3→A4→A5
+拓扑重审，仅 backup/service.py 校验时点与传播 scope 变化；旧分母、旧原始证据不变。
+旧/新 scope、TDD、实际 I/O/子集耗时与最终九份原 JSON/哈希保存在本票工作树外证据台账。
+长门禁前执行 dev-environment check，留 30 分钟观察预算；#75 仍须集成后重新产生最终 run_id。
+
+只证明离线历史重建；完整阶段 A、live、真实来源/截断检测、RPC、Docling/NAS、任务续跑、
+资格/预算/校准均未验收。阶段 C parser 升级固定样本和强冲突观察持久化门禁持续未验。

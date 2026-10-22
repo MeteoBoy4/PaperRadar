@@ -151,12 +151,6 @@ def _registered_contents(
         list_supplies(database)
     except SupplyError:
         raise BackupError(BackupReason.SUPPLY_INVALID) from None
-    from paper_radar.papers import PaperError, PaperFacts
-
-    try:
-        PaperFacts(database, data_root).validate_all()
-    except PaperError:
-        raise BackupError(BackupReason.REGISTRATION_INVALID) from None
     return tuple(blobs[key] for key in sorted(blobs)), artifacts, snapshot_ids
 
 
@@ -180,6 +174,13 @@ def verify_contents(root: Path, manifest: BackupManifest) -> None:
         if manifest.database_revision != BACKUP_DATABASE_REVISION:
             raise BackupError(BackupReason.UNSUPPORTED_REVISION)
         blobs, artifacts, snapshot_ids = _registered_contents(database, root)
+        # 业务语义只在完整副本上解析,源材料仅供复制与字节完整性检查。
+        from paper_radar.papers import PaperError, PaperFacts
+
+        try:
+            PaperFacts(database, root).validate_all()
+        except PaperError:
+            raise BackupError(BackupReason.REGISTRATION_INVALID) from None
         if (
             blobs != manifest.blobs
             or artifacts != manifest.artifacts

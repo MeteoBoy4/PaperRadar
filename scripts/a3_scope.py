@@ -139,7 +139,7 @@ BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/service.py",
-        "1071068ee6155ea49df3304ac9ea0796c47ba8db1c66eedf7ff70d2129af720b",
+        "177ad9459468b9e14c94fad0f9bfe1b0183c7be10d2f0cc04b1285ee5f9fc03b",
     ),
     (
         "src/paper_radar/backup/cli.py",

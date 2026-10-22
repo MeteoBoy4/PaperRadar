@@ -251,4 +251,30 @@ A4 同次完整离线组合还覆盖：非空供给准备/核验/重建与激活
 逐项执行审计、D5 原字节与既有配置/制品，退役安装不恢复可用性。该组合不访问原根、
 不安装 Pi/Node、不启用模型，不替代 NAS/live 验收；见 [A4 证据](../verification/offline-evidence.md)。
 
-当前显式支持的 head 为 `a602_feed_discovery`。#69 的非空出版者 DOI 事实与 #70 的 Feed 登记/连续条目/原始发现/完整解释均纳入固定副本语义校验；包括未使用 Feed 的 URL 规范、DOI 原书写与规范身份一致性、fingerprint/payload 和 Feed 引用归属。错误身份、来源 kind/payload、候选摘要与完整修订引用以既有 `registration_invalid` 拒绝，外层数据库哈希重算不能掩盖损坏；不修复源库或批次。旧 a405/a601 批次返回 `unsupported_revision`，须用匹配旧程序恢复后再显式升级。
+当前显式支持的 head 为 `a604_version_relations`；backup format 继续为 1，不新增 migration 或清单字段。
+旧 a405/a601–a603 批次返回 `unsupported_revision`，须用匹配旧程序恢复后对恢复活动副本显式升级；
+不得在备份批次内部迁移。
+
+### 组合论文事实的语义闭包
+
+create 先在线固定数据库、枚举该副本登记，再核验与复制源 blob。源字节只供完整性哈希与复制；
+论文业务语义解析（包括人工请求正文核对）只在全部成员已复制的 staging 上执行。
+create、只读 verify 与 restore verify 共用 `verify_contents` 的 `PaperFacts.validate_all` 入口。
+源文件缺失/坏字节按 `file_missing/file_corrupt` 拒绝；引用语义矛盾按 `registration_invalid` 拒绝。
+成功与失败均不回写源库，不修复批次、旧修订或选择；失败不发布目标，只清本次独占 staging。
+
+核对 DOI/版本/Paper 归属、Feed 原文指纹与 payload/发现键、候选所属观察/版本、完整修订获选引用、
+来源取得/轻量重复/完整重解析、人工请求、选择事件顺序与关系原始断言/端点类别/locator。
+合法无 DOI 版本、尚缺一端或两端的关系、两端分属不同 Paper 的 requires_merge 都是可恢复事实。
+正式版无摘要仍升级当前，映射缺摘要；旧预印本和从未获选同级版本可明确按历史修订重建。
+外键合法且外层数据库/清单重哈希不能掩盖 item/payload、provenance、DOI 归属、错候选或选择/关系矛盾。
+
+`test_paper_recovery_combined` 从公共服务组合四来源、跨 Feed/无 DOI 后补、人工修订、关系三态和零端点、
+旧/新快照及完整重解析。真实 WAL 非空时备份，复制便携批次后以进程 audit 拒绝原数据/配置/备份源及
+改名位置的 open/SQLite URI/listdir/scandir；另进程恢复并搬迁，再在不同 cwd/hashseed 新进程读取。
+请求只含受控 ID/revision/snapshot 与原记录的 fingerprint、payload SHA/长度、业务依据哈希；
+论文题名摘要由恢复库候选引用取得，不从请求/环境或原配置材料补入。普通查询和映射另拒绝 blob I/O。
+CLI show/trace 与公共服务一致，默认不展开摘要；显式 trace 字节核验包含仅关系材料且不转储原文。
+
+这些是离线组合恢复证据，不能替代完整阶段 A、真实来源/解析器、live/RPC、Docling/NAS 或任务续跑。
+parser 升级固定样本与强身份冲突材料持久化仍是阶段 C 门禁。
