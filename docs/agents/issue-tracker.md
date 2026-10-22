@@ -6,6 +6,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 - **Create an issue**: `gh issue create --title "..." --body-file <path>`. For multi-line bodies, write the exact text to a temporary file and pass it with `--body-file`.
 - **Read an issue**: `gh issue view <number> --comments`, also fetching labels; then `gh issue view <number> --json subIssues,subIssuesSummary,blockedBy,parent,assignees,state`. Apply the Task graph rules below.
+- **Body vs comments**: when a ticket's body and its comments conflict, the comments take precedence. Follow the comment, and state the discrepancy when it matters.
 - **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.
 - **Comment on an issue**: `gh issue comment <number> --body "..."`
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
