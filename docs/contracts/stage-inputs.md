@@ -364,6 +364,10 @@ fixture 含两个启用主题，实际顺序变化受到断言。摘录/locator 
 “卷期页码更新到任务不重跑”已端到端验收；不为此创建 A4 安装记录。A2 的组件矩阵仍是
 [配置投影契约](config-projections.md)权威，本切片只核对各阶段一个代表传播及 Read、
 期刊 tier、adapter 审计版本和 screening thinking_level 的少量交叉变化。
+#73 的[论文事实映射服务](paper-facts.md#8-当前查询历史重建与只读-cli)已在其独立测试中
+覆盖真实登记、来源仲裁、人工修正和历史 revision/snapshot 的 boundary/value 输入重建。
+该服务只读，不承担未来任务层的规范载荷持久化、任务资格或校准门禁；A5 原固定范围及
+当时的 NOT_ASSESSED 历史结论保持，A6 待最终验收票登记。
 独立复现命令与验收边界见[离线证据说明](../verification/offline-evidence.md)。
 #53 单独交付时没有登记 A5 验收组；#54 追加独立 A5 结论后，check-offline 输出七份
 主要文件，另有实际 pytest 回执。固定范围及规格映射见

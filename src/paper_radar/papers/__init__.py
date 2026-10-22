@@ -4,6 +4,11 @@ from typing import TYPE_CHECKING
 
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError, PaperReason
+from paper_radar.papers.mapping_models import (
+    MappingEvidence,
+    ScreeningMappingResult,
+    StageMappingResult,
+)
 from paper_radar.papers.models import (
     AbstractValue,
     CandidateInput,
@@ -32,12 +37,15 @@ __all__ = [
     "CandidateInput",
     "DateValue",
     "ManualCorrectionInput",
+    "MappingEvidence",
     "ObservationInput",
     "PaperError",
     "PaperFacts",
     "PaperReason",
     "RelationInput",
     "RevisionView",
+    "ScreeningMappingResult",
+    "StageMappingResult",
     "WriteResult",
     "normalize_doi",
 ]

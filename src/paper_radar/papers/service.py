@@ -18,6 +18,8 @@ from paper_radar.papers.manual import (
     save_correction,
     validate_manual_payload,
 )
+from paper_radar.papers.mapping import map_screening_inputs
+from paper_radar.papers.mapping_models import ScreeningMappingResult
 from paper_radar.papers.models import (
     FeedFact,
     PaperTrace,
@@ -211,6 +213,22 @@ class PaperFacts:
             raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
         except SQLAlchemyError as error:
             raise _database_error(error) from None
+
+    def map_screening_inputs(
+        self,
+        *,
+        snapshot_id: str,
+        paper_id: str | None = None,
+        version_id: str | None = None,
+        revision_no: int | None = None,
+    ) -> ScreeningMappingResult:
+        return map_screening_inputs(
+            self.database,
+            snapshot_id=snapshot_id,
+            paper_id=paper_id,
+            version_id=version_id,
+            revision_no=revision_no,
+        )
 
     def validate_all(self) -> None:
         """备份固定数据库上的全部论文引用链校验,无修复副作用。"""

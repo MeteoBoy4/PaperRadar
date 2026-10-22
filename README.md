@@ -282,6 +282,13 @@ manifest 审计变化，同次调用只允许一份一致正文。从相同摘�
 check-offline 输出七份主要文件，另有实际 pytest 执行回执与控制方终态记录；
 本服务不调度任务或改写人工决定，也不证明 PDF/正文的真实质量。
 
+论文事实可通过 `PaperFacts(database).map_screening_inputs(snapshot_id=..., paper_id=...)`
+直接映射 boundary/value 输入；历史重建改用 `version_id=..., revision_no=...`，并明确旧
+`snapshot_id`。返回 `mapping_result` v1 的逐阶段输入、受控原因和完整 provenance；两阶段
+配置就绪分别判断。查询只读、不读来源 blob、不生成任务或推导资格，不新增指纹 CLI。
+普通映射不证明来源字节完整性，需由备份 verify 或显式 trace 核验；完整字段形状见
+[论文事实 Contract](docs/contracts/paper-facts.md#8-当前查询历史重建与只读-cli)。
+
 ## Screening 输出验证
 
 `paper_radar.screening.validate_output` 接受研究边界、摘要层价值预测或复用可行性
