@@ -63,7 +63,7 @@ observations = sa.Table(
         "payload_sha256",
         "parser_version",
     ),
-    sa.CheckConstraint("source_kind IN ('publisher', 'feed')"),
+    sa.CheckConstraint("source_kind IN ('manual', 'publisher', 'registry', 'feed')"),
     sa.CheckConstraint("parser_version > 0"),
     sa.UniqueConstraint(
         "version_id",
@@ -112,7 +112,7 @@ acquisitions = sa.Table(
         "payload_sha256",
         "parser_version",
     ),
-    sa.CheckConstraint("source_kind IN ('publisher', 'feed')"),
+    sa.CheckConstraint("source_kind IN ('manual', 'publisher', 'registry', 'feed')"),
     sa.CheckConstraint("version_kind IN ('preprint','journal')"),
     sa.CheckConstraint("parser_version > 0"),
     sa.CheckConstraint("event_no IS NULL OR event_no > 0"),
@@ -284,4 +284,27 @@ feed_interpretations = sa.Table(
         nullable=False,
         unique=True,
     ),
+)
+
+
+manual_corrections = sa.Table(
+    "paper_manual_corrections",
+    metadata,
+    sa.Column(
+        "version_id",
+        sa.String(36),
+        sa.ForeignKey("paper_versions.version_id"),
+        primary_key=True,
+    ),
+    sa.Column("request_id", sa.Text(), primary_key=True),
+    sa.Column(
+        "acquisition_id",
+        sa.String(36),
+        sa.ForeignKey("paper_source_acquisitions.acquisition_id"),
+        nullable=False,
+        unique=True,
+    ),
+    sa.Column("actor", sa.Text(), nullable=False),
+    sa.Column("reason", sa.Text(), nullable=False),
+    sa.Column("request_sha256", sa.String(64), nullable=False),
 )

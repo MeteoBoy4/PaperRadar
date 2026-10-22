@@ -193,7 +193,7 @@ def test_unregistered_future_package_head_is_not_implicitly_a_supported_backup_r
     migrations = tmp_path / "migrations"
     shutil.copytree(Path(storage_database.__file__).parent / "migrations", migrations)
     (migrations / "versions/future.py").write_text(
-        "revision='future'\ndown_revision='a602_feed_discovery'\n"
+        "revision='future'\ndown_revision='a603_source_arbitration'\n"
         "def upgrade(): pass\ndef downgrade(): pass\n",
         encoding="utf-8",
     )

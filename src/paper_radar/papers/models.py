@@ -129,7 +129,7 @@ class WriteResult(ClosedModel):
 class FieldFact(ClosedModel):
     acquisition_id: str | None = None
     source_observed_at: str
-    source_kind: Literal["publisher", "feed"]
+    source_kind: Literal["manual", "publisher", "registry", "feed"]
     provider: str
     query_key: str
     observed_at: str
@@ -166,7 +166,7 @@ class PaperView(ClosedModel):
 class ObservationFact(ClosedModel):
     observation_id: str
     version_id: str
-    source_kind: Literal["publisher", "feed"]
+    source_kind: Literal["manual", "publisher", "registry", "feed"]
     provider: str
     query_key: str
     observed_at: str
@@ -177,7 +177,7 @@ class ObservationFact(ClosedModel):
 
 
 class AcquisitionFact(ClosedModel):
-    source_kind: Literal["publisher", "feed"]
+    source_kind: Literal["manual", "publisher", "registry", "feed"]
     raw_doi: str | None
 
     parsed_sha256: str
@@ -215,6 +215,11 @@ class PaperTrace(ClosedModel):
     observations: tuple[ObservationFact, ...]
     acquisitions: tuple[AcquisitionFact, ...]
     discoveries: tuple["DiscoveryFact", ...] = ()
+    corrections: tuple["ManualCorrectionFact", ...] = ()
+    decisions: tuple["CandidateDecision", ...] = ()
+    manual_correction_scope: Literal[
+        "人工修正绑定版本，不随 Paper 当前版本升级迁移"
+    ] = "人工修正绑定版本，不随 Paper 当前版本升级迁移"
 
 
 class FeedFact(ClosedModel):
@@ -241,3 +246,46 @@ class DiscoveryFact(ClosedModel):
     last_seen: str
     observation_ids: tuple[str, ...]
     interpretations: tuple[FeedInterpretationFact, ...]
+
+
+class RevisionView(ClosedModel):
+    """同一读视图的完整版本修订与适用选择依据。"""
+
+    paper_id: str
+    version_id: str
+    revision_no: int
+    version_kind: VersionKind
+    doi: str | None
+    fields: dict[str, FieldFact]
+    selection: SelectionFact | None
+
+
+class ManualCorrectionInput(ClosedModel):
+    version_id: str
+    request_id: str
+    actor: str
+    reason: str
+    fields: dict[str, CandidateInput]
+
+
+class ManualCorrectionFact(ClosedModel):
+    version_id: str
+    request_id: str
+    actor: str
+    reason: str
+    acquisition_id: str
+    event_no: int
+
+
+class CandidateDecision(ClosedModel):
+    version_id: str
+    field_name: str
+    candidate_id: str
+    acquisition_id: str
+    reason: Literal[
+        "selected",
+        "superseded_interpretation",
+        "lower_source_priority",
+        "earlier_manual_event",
+        "earlier_observation_or_stable_tiebreak",
+    ]

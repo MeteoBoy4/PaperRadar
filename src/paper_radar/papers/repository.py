@@ -9,6 +9,7 @@ from sqlalchemy.engine import RowMapping
 from sqlalchemy.sql.elements import ColumnElement
 
 from paper_radar.papers.errors import PaperError, PaperReason
+from paper_radar.papers.fact_reads import observation_fields, source_stream
 from paper_radar.papers.models import (
     AbstractValue,
     CandidateInput,
@@ -232,20 +233,6 @@ def save_observation(
                 if retry["interpretation_sha256"] != interpretation_digest(item):
                     raise PaperError(PaperReason.INVALID_OBSERVATION)
                 return _saved_result(connection, retry)
-            if (
-                version_id
-                and connection.execute(
-                    select(observations.c.observation_id).where(
-                        observations.c.version_id == version_id,
-                        observations.c.source_kind == "publisher",
-                        ~(
-                            (observations.c.provider == item.provider)
-                            & (observations.c.query_key == item.query_key)
-                        ),
-                    )
-                ).first()
-            ):
-                raise PaperError(PaperReason.UNSUPPORTED_SOURCE, path="source_stream")
             _check_interpretation(connection, item, doi)
             now = datetime.now(UTC).isoformat(timespec="microseconds")
             if version_id is None and fields:
@@ -382,8 +369,6 @@ def save_observation(
 def update_revision(
     connection: Connection, version_id: str, acquisition_id: str, now: str
 ) -> int:
-    from paper_radar.papers.queries import observation_fields, source_stream
-
     current_no = connection.execute(
         select(func.max(revisions.c.revision_no)).where(
             revisions.c.version_id == version_id
@@ -409,6 +394,7 @@ def update_revision(
                         name: (fact.candidate_id, row["acquisition_id"])
                         for name, fact in source_fields.items()
                     },
+                    event_no=row["event_no"],
                     source_kind=row["source_kind"],
                     stream=source_stream(connection, row),
                 )

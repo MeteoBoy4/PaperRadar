@@ -1,37 +1,41 @@
 """一致视图下重建候选与取得事实双引用,验证完整历史。"""
 
 import re
-from datetime import UTC, datetime
 from typing import cast
-from uuid import UUID
 
 from sqlalchemy import Connection, select
 from sqlalchemy.engine import RowMapping
 
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError, PaperReason
+from paper_radar.papers.fact_reads import _candidate, observation_fields, source_stream
+from paper_radar.papers.feed_queries import load_discoveries
 from paper_radar.papers.models import (
-    AbstractValue,
     AcquisitionFact,
+    CandidateDecision,
     CandidateInput,
-    DateValue,
     DiscoveryFact,
-    FieldFact,
+    ManualCorrectionFact,
     ObservationFact,
     PaperTrace,
     PaperView,
     RevisionFact,
+    RevisionView,
     SelectionFact,
     VersionKind,
 )
-from paper_radar.papers.rules import RankedObservation, choose_fields, digest
+from paper_radar.papers.read_checks import _utc, _uuid, corrupt
+from paper_radar.papers.rules import (
+    RankedObservation,
+    choose_fields,
+    digest,
+    explain_fields,
+)
 from paper_radar.papers.tables import (
     acquisitions,
-    authors,
-    candidates,
     feed_entries,
-    feeds,
     identifiers,
+    manual_corrections,
     observations,
     papers,
     revision_fields,
@@ -39,143 +43,9 @@ from paper_radar.papers.tables import (
     selections,
     versions,
 )
-from paper_radar.papers.text import normalize_fields, require_public_url
+from paper_radar.papers.text import require_public_url
+from paper_radar.papers.text_rules import normalize_text
 from paper_radar.storage.schema import artifact_members, artifacts
-
-
-def corrupt() -> PaperError:
-    return PaperError(PaperReason.CORRUPT_REFERENCE)
-
-
-def _utc(value: str) -> None:
-    instant = datetime.fromisoformat(value)
-    if (
-        instant.tzinfo is None
-        or instant.astimezone(UTC).isoformat(timespec="microseconds") != value
-    ):
-        raise corrupt()
-
-
-def _uuid(value: str) -> None:
-    if str(UUID(value)) != value:
-        raise corrupt()
-
-
-def _candidate(
-    connection: Connection, candidate_id: str, acquisition_id: str | None = None
-) -> tuple[str, FieldFact]:
-    row = (
-        connection.execute(
-            select(candidates).where(candidates.c.candidate_id == candidate_id)
-        )
-        .mappings()
-        .one()
-    )
-    _uuid(candidate_id)
-    name = row["field_name"]
-    value: str | tuple[str, ...] | AbstractValue | DateValue
-    if name == "abstract":
-        value = AbstractValue(
-            text=row["text_value"],
-            is_truncated=row["is_truncated"],
-            rule=row["abstract_rule"],
-        )
-    elif name == "authors":
-        members = (
-            connection.execute(
-                select(authors)
-                .where(authors.c.candidate_id == candidate_id)
-                .order_by(authors.c.ordinal)
-            )
-            .mappings()
-            .all()
-        )
-        if (
-            not members
-            or [r["ordinal"] for r in members] != list(range(len(members)))
-            or row["text_value"] is not None
-        ):
-            raise corrupt()
-        value = tuple(r["name"] for r in members)
-    elif name in {"online_date", "print_date"}:
-        value = DateValue.model_validate(
-            {"value": row["text_value"], "precision": row["date_precision"]}
-        )
-    else:
-        value = row["text_value"]
-    source = (
-        connection.execute(
-            select(observations).where(
-                observations.c.observation_id == row["observation_id"]
-            )
-        )
-        .mappings()
-        .one()
-    )
-    acquired = (
-        connection.execute(
-            select(acquisitions).where(acquisitions.c.acquisition_id == acquisition_id)
-        )
-        .mappings()
-        .one()
-        if acquisition_id
-        else source
-    )
-    if acquisition_id and (
-        acquired["source_observation_id"] != source["observation_id"]
-        or acquired["version_id"] != source["version_id"]
-    ):
-        raise corrupt()
-    if source["source_kind"] == "publisher":
-        require_public_url(source["provider"])
-        require_public_url(source["query_key"])
-    fact = FieldFact(
-        acquisition_id=acquisition_id,
-        source_observed_at=source["observed_at"],
-        source_kind=source["source_kind"],
-        provider=source["provider"],
-        query_key=source["query_key"],
-        observed_at=acquired["observed_at"],
-        parser_version=acquired["parser_version"],
-        artifact_id=source["artifact_id"],
-        candidate_id=candidate_id,
-        observation_id=source["observation_id"],
-        value=value,
-        locator=row["locator"],
-        text_norm=row["text_norm"],
-    )
-    normalized = normalize_fields(
-        {name: CandidateInput(value=fact.value, locator=fact.locator)}
-    )
-    if name not in normalized or normalized[name].value != value:
-        raise corrupt()
-    if name != "abstract" and (
-        row["is_truncated"] is not None or row["abstract_rule"] is not None
-    ):
-        raise corrupt()
-    if name not in {"online_date", "print_date"} and row["date_precision"] is not None:
-        raise corrupt()
-    return name, fact
-
-
-def source_stream(connection: Connection, row: RowMapping) -> tuple[str, str]:
-    provider = row["provider"]
-    if row["source_kind"] == "feed":
-        provider = connection.execute(
-            select(feeds.c.url).where(feeds.c.feed_id == provider)
-        ).scalar_one()
-    return provider, row["query_key"]
-
-
-def observation_fields(
-    connection: Connection, observation_id: str
-) -> dict[str, FieldFact]:
-    ids = connection.execute(
-        select(candidates.c.candidate_id)
-        .where(candidates.c.observation_id == observation_id)
-        .order_by(candidates.c.field_name)
-    ).scalars()
-    return dict(_candidate(connection, candidate_id) for candidate_id in ids)
 
 
 def _acquisition(row: RowMapping) -> AcquisitionFact:
@@ -186,9 +56,13 @@ def _acquisition(row: RowMapping) -> AcquisitionFact:
         require_public_url(row["query_key"])
     if (
         (row["doi"] is not None and normalize_doi(row["doi"]) != row["doi"])
-        or (row["source_kind"] == "publisher" and row["doi"] is None)
+        or (row["source_kind"] in {"publisher", "registry"} and row["doi"] is None)
+        or (
+            row["source_kind"] == "registry"
+            and normalize_doi(row["query_key"]) != row["doi"]
+        )
         or (row["raw_doi"] is not None and normalize_doi(row["raw_doi"]) != row["doi"])
-        or row["source_kind"] not in {"publisher", "feed"}
+        or row["source_kind"] not in {"manual", "publisher", "registry", "feed"}
         or row["version_kind"] not in {"journal", "preprint"}
     ):
         raise corrupt()
@@ -304,6 +178,7 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
         _utc(selection.selected_at)
         all_sources, all_acquired, all_revisions, views = [], [], [], []
         all_discoveries: list[DiscoveryFact] = []
+        all_decisions: list[CandidateDecision] = []
         for version in version_rows:
             version_id = version["version_id"]
             _uuid(version_id)
@@ -333,8 +208,6 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
             ):
                 raise corrupt()
             doi = identity[0]["normalized_value"] if identity else None
-            from paper_radar.papers.feed_queries import load_discoveries
-
             all_discoveries.extend(load_discoveries(connection, version_id))
             source_rows = (
                 connection.execute(
@@ -415,7 +288,10 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                 acquired = _acquisition(row)
                 if (
                     acquired.doi != doi
-                    and not (acquired.source_kind == "feed" and acquired.doi is None)
+                    and not (
+                        acquired.source_kind in {"feed", "manual"}
+                        and acquired.doi is None
+                    )
                 ) or row["version_kind"] != version["version_kind"]:
                     raise corrupt()
                 all_acquired.append(acquired)
@@ -460,6 +336,7 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                                 name: (fact.candidate_id, acquired.acquisition_id)
                                 for name, fact in source_fields[source_id].items()
                             },
+                            event_no=row["event_no"],
                             source_kind=row["source_kind"],
                             stream=source_stream(connection, row),
                         )
@@ -475,6 +352,7 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                     previous_winners = winners
                 if acquired.result_revision_no != len(expected_history):
                     raise corrupt()
+            all_decisions.extend(explain_fields(version_id, tuple(ranks)))
             if creators != set(sources_by_id):
                 raise corrupt()
             revision_rows = (
@@ -546,6 +424,10 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
             selections=(selection,),
             observations=tuple(all_sources),
             discoveries=tuple(all_discoveries),
+            decisions=tuple(all_decisions),
+            corrections=load_manual_corrections(
+                connection, tuple(view.version_id for view in views)
+            ),
             acquisitions=tuple(
                 sorted(
                     all_acquired,
@@ -559,3 +441,105 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
         )
     except (ValueError, TypeError, KeyError, StopIteration, PaperError):
         raise corrupt() from None
+
+
+def resolve_revision(
+    connection: Connection,
+    *,
+    paper_id: str | None = None,
+    version_id: str | None = None,
+    revision_no: int | None = None,
+) -> RevisionView:
+    """调用方先 BEGIN;当前入口与明确历史入口互斥,不另开连接。"""
+    if paper_id is not None:
+        if version_id is not None or revision_no is not None:
+            raise PaperError(PaperReason.INVALID_OBSERVATION, path="selector")
+        current = load_trace(connection, paper_id).current
+        return RevisionView.model_validate(
+            {key: getattr(current, key) for key in RevisionView.model_fields}
+        )
+    if version_id is None or type(revision_no) is not int or revision_no < 1:
+        raise PaperError(PaperReason.INVALID_OBSERVATION, path="selector")
+    owner = connection.execute(
+        select(versions.c.paper_id).where(versions.c.version_id == version_id)
+    ).scalar_one_or_none()
+    if owner is None:
+        raise PaperError(PaperReason.VERSION_NOT_FOUND, path="version_id")
+    trace = load_trace(connection, owner)
+    revision = next(
+        (
+            item
+            for item in trace.revisions
+            if item.version_id == version_id and item.revision_no == revision_no
+        ),
+        None,
+    )
+    if revision is None:
+        raise PaperError(PaperReason.REVISION_NOT_FOUND, path="revision_no")
+    version = next(item for item in trace.versions if item.version_id == version_id)
+    applicable = tuple(
+        item for item in trace.selections if item.version_id == version_id
+    )
+    return RevisionView(
+        paper_id=owner,
+        version_id=version_id,
+        revision_no=revision_no,
+        version_kind=version.version_kind,
+        doi=version.doi,
+        fields=revision.fields,
+        selection=applicable[-1] if applicable else None,
+    )
+
+
+def load_manual_corrections(
+    connection: Connection, version_ids: tuple[str, ...]
+) -> tuple[ManualCorrectionFact, ...]:
+    result = []
+    ids = set()
+    for row in connection.execute(
+        select(manual_corrections).where(
+            manual_corrections.c.version_id.in_(version_ids)
+        )
+    ).mappings():
+        acquired = (
+            connection.execute(
+                select(acquisitions).where(
+                    acquisitions.c.acquisition_id == row["acquisition_id"]
+                )
+            )
+            .mappings()
+            .one()
+        )
+        if (
+            acquired["version_id"] != row["version_id"]
+            or acquired["source_kind"] != "manual"
+            or acquired["query_key"] != row["request_id"]
+            or acquired["provider"] != row["actor"]
+            or acquired["payload_sha256"] != row["request_sha256"]
+            or not acquired["response_bytes_retained"]
+        ):
+            raise corrupt()
+        for key in ("request_id", "actor", "reason"):
+            if not normalize_text(row[key]):
+                raise corrupt()
+        ids.add(row["acquisition_id"])
+        result.append(
+            ManualCorrectionFact(
+                **{
+                    key: row[key]
+                    for key in ManualCorrectionFact.model_fields
+                    if key != "event_no"
+                },
+                event_no=acquired["event_no"],
+            )
+        )
+    if ids != set(
+        connection.execute(
+            select(acquisitions.c.acquisition_id).where(
+                acquisitions.c.version_id.in_(version_ids),
+                acquisitions.c.source_kind == "manual",
+            )
+        ).scalars()
+    ):
+        raise corrupt()
+    return tuple(sorted(result, key=lambda item: (item.version_id, item.event_no)))

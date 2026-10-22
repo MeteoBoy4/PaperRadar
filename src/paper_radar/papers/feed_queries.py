@@ -7,6 +7,7 @@ from sqlalchemy import Connection, select
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.feed import normalize_feed_url, require_entry_id
 from paper_radar.papers.models import DiscoveryFact, FeedInterpretationFact
+from paper_radar.papers.read_checks import _utc, _uuid, corrupt
 from paper_radar.papers.tables import (
     acquisitions,
     feed_discoveries,
@@ -21,8 +22,6 @@ from paper_radar.storage.schema import artifact_members, artifacts
 def load_discoveries(
     connection: Connection, version_id: str
 ) -> tuple[DiscoveryFact, ...]:
-    from paper_radar.papers.queries import _utc, _uuid, corrupt
-
     found = []
     acquired_ids = set()
     source_ids = set()
@@ -191,8 +190,6 @@ def load_discoveries(
 
 def validate_feed_registry(connection: Connection) -> None:
     """没有发现记录的合法 Feed 也属于备份语义闭包。"""
-    from paper_radar.papers.queries import _uuid, corrupt
-
     try:
         for feed in connection.execute(select(feeds)).mappings():
             _uuid(feed["feed_id"])

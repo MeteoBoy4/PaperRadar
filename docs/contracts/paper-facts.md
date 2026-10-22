@@ -1,6 +1,6 @@
 # 论文事实 Contract（A6 目标）
 
-状态：#68 冻结已裁决的目标语义；#69 实现首条出版者 DOI 事实路径，#70 接入 Feed 发现与只读历史，其余能力待 #71–#75 实现与独立验收，不声明 A6 passed。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
+状态：#68 冻结已裁决的目标语义；#69 实现首条出版者 DOI 事实路径，#70 接入 Feed 发现与只读历史，#71 实现四类来源仲裁、人工修正与完整历史读面，其余能力待 #72–#75 实现与独立验收，不声明 A6 passed。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
 
 ## 1. 范围与格式
 
@@ -23,7 +23,7 @@ boundary/value StageInput 沿用既有格式 1，backup format 沿用 1。A6 只
 
 公共 Python 边界为 `paper_radar.papers.PaperFacts(database, data_root)`：`submit(observation)` 接受严格 `ObservationInput` 或其字段字典，返回 `WriteResult`；`show(paper_id)` 返回当前 `PaperView`，`trace(paper_id, verify_source_bytes=False)` 返回 `PaperTrace`，`validate_all()` 只读校验完整引用与历史修订。所有公开模型 repr/str 隐藏论文内容；服务验证错误只返回受控原因，不透传 Pydantic 输入载荷。
 
-本切片仅接受 `source_kind="publisher"`、DOI 目标与同一 `(provider, query_key, version_id)` 出版者流。字段候选是 `{value, locator}`；摘要 value 是 `{text, is_truncated, rule}`，日期 value 是 `{value, precision}`，作者使用有序字符串 tuple。`version_kind` 为 `preprint/journal`，`observed_at` 为明确 UTC datetime，`parser_version` 为正整数，必填 `interpretation="complete"` 声明整份材料的完整解释，`payload` 为单份非空 bytes。其余支持范围以本文目标及下节 #70 扩展为准，当前跨出版者流、注册机构、人工入口分别 `unsupported_source`，关系 `unsupported_relation`，未知字段 `unsupported_field`，均整笔拒绝。
+本切片仅接受 `source_kind="publisher"`、DOI 目标与同一 `(provider, query_key, version_id)` 出版者流。字段候选是 `{value, locator}`；摘要 value 是 `{text, is_truncated, rule}`，日期 value 是 `{value, precision}`，作者使用有序字符串 tuple。`version_kind` 为 `preprint/journal`，`observed_at` 为明确 UTC datetime，`parser_version` 为正整数，必填 `interpretation="complete"` 声明整份材料的完整解释，`payload` 为单份非空 bytes。其余支持范围以本文目标及下节 #70 扩展为准，在 #69 历史切片中跨出版者流、注册机构、人工入口分别 `unsupported_source`（#71 扩展见 §1.3），关系 `unsupported_relation`，未知字段 `unsupported_field`，均整笔拒绝。
 
 迁移 `a601_paper_facts` 只建立实际使用的 Paper、Version、doi 标识、出版者观察、字段候选/作者成员、完整引用式修订与初始选择表。该条历史 migration 无 Feed、关系、人工修正或未来任务空壳表；#70 只通过下述追加迁移扩展。只读 CLI 为本文 §8 的 show/trace 子集，不开放映射、历史选择器或配置快照参数。
 
@@ -57,8 +57,49 @@ acquisition_id 和可空 observation_id（包括全空解释）。完整字段�
 备份只读校验全部 Feed 登记（包括尚无发现的 Feed）、entry 输入域、连续归属、原文 fingerprint/blob、解释、取得、候选和修订闭包；
 发现时间与解释提交时间须为微秒 UTC，首次解释 submitted_at 等于 first_seen，last_seen 不得早于任何已登记解释的 submitted_at。
 
-当前只开放同出版者流及 Feed，不提前开放注册机构、人工修正、权威版本关系或正式映射。
+#70 历史切片只开放同出版者流及 Feed；#71 对来源及人工修正的扩展见下节，权威版本关系和正式映射仍未开放。
 阶段 C 强冲突持久化与 parser 固定样本回归门禁保持，第 7/10 节未验证 live 假设不因本票测试通过而转为已验证。
+
+### 1.3 #71 四类来源仲裁、人工修正与公共历史读取
+
+`submit` 现在接受多个 publisher 来源流，以及 `source_kind="registry"`。注册机构输入必须提供
+既有 `target_paper_id/target_version_id`，`doi` 与 `query_key` 都按 `doi_rules=1` 规范化后相等，
+并且等于目标版本已登记 DOI；不会替无 DOI 版本登记身份，不联网判定 Crossref/DataCite 的真实归属。
+来源流是 `(source_kind, provider, query_key, version_id)`；Feed 稳定键使用规范 URL/entry_id。
+`parser_version` 最高解释按来源流与 payload 隔离，不受其他流同字节或高 parser 影响。
+
+`correct(correction) -> WriteResult` 接受严格 `ManualCorrectionInput` 或字段字典，固定字段为
+`version_id/request_id/actor/reason/fields`。`fields` 沿用 CandidateInput；只覆盖提供的非空字段。
+request_id/actor/reason 必须是合法无 HTML 非空 UTF-8 文本，逐项最多 2048 字节。
+request_id 在版本内唯一；完整原请求按 UTF-8、排序 JSON 对象键、无额外空白规范字节绑定请求哈希，
+包括 actor/reason、locator、原始候选文本。相同请求精确重试返回原回执，异内容为
+`invalid_manual_correction`；空字段集合、任一空白字段、仅改摘要标记或非法文本也受控拒绝。
+未知字段仍 `unsupported_field`。actor/reason 是未认证调用方字符串，不表示登录身份。
+
+人工请求完整规范字节作为 source_snapshot 先发布；同一 BEGIN IMMEDIATE 中保存观察、候选、
+取得事实、人工审计引用与必要修订。人工选最新依该版本原子追加的 acquisition event_no，
+可与非人工事件共用递增序列，明确允许号码间有非人工事件；该号对两条人工修正有真实先后语义。
+它不参与非人工排序。普通来源不能覆盖人工结果；修正绑定 version_id，不随 Paper 当前版本升级迁移。
+无撤销、删除、清空或产品写 CLI；只能以非空完整值追加覆盖。日期/作者/摘要仍使用相同字段规则。
+
+`revision(version_id, revision_no) -> RevisionView` 是公共完整历史入口；不存在的版本/修订分别
+`version_not_found/revision_not_found`。当前/历史的 connection 级共用读面为
+`paper_radar.papers.queries.resolve_revision(connection, *, paper_id=None, version_id=None, revision_no=None)`；
+调用方先显式 BEGIN，二选一使用 paper_id 或 version_id/revision_no，函数不另开连接。
+RevisionView 返回 paper_id/version_id/revision_no/version_kind/doi/fields（完整 FieldFact provenance）与
+可空 selection。历史 selection 只关联确实属于该 Paper/请求版本的选择事实，不用事件时钟推断事务先后，
+不宣称该修订产生时曾经是当前版本；从未被选当前的版本可为 None。该读面不加载配置、不生成 StageInput。
+
+trace 增加 corrections（request/actor/reason/acquisition/event_no）与 decisions：每个候选及取得引用的
+受控说明为 selected、superseded_interpretation、lower_source_priority、earlier_manual_event 或
+ earlier_observation_or_stable_tiebreak。说明复用纯仲裁权威；未获选来源与旧修订完整保留。
+show/trace 的 JSON 与中文文本共用同次一致读服务，文本显示字段来源/定位、摘要是否存在及标记、
+全部修订/候选说明和人工版本绑定限制，摘要仍只在 --show-abstract 时展开。
+
+`a603_source_arbitration` 在原子事务中重建含 Feed 解释引用的依赖闭包，扩展来源类别并新增实际使用的
+人工修正事件表；a601/a602 不变。备份登记当前 head 为 a603；完整性校验包含注册机构查询 DOI、
+人工事件归属与来源原请求对照（显式字节核验和备份），并拒绝外键合法的跨版本候选损坏。
+旧 config/Pi/artifact/来源历史与非空恢复路径保持。不注册 A6。
 
 ## 2. Paper、版本与 DOI 身份（D1）
 

@@ -10,8 +10,26 @@ from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.feed import normalize_feed_url
-from paper_radar.papers.models import FeedFact, PaperTrace, PaperView, WriteResult
-from paper_radar.papers.queries import load_trace, validate_unbound_acquisitions
+from paper_radar.papers.feed_queries import validate_feed_registry
+from paper_radar.papers.feed_repository import submit_feed
+from paper_radar.papers.manual import (
+    parse_correction,
+    retry_correction,
+    save_correction,
+    validate_manual_payload,
+)
+from paper_radar.papers.models import (
+    FeedFact,
+    PaperTrace,
+    PaperView,
+    RevisionView,
+    WriteResult,
+)
+from paper_radar.papers.queries import (
+    load_trace,
+    resolve_revision,
+    validate_unbound_acquisitions,
+)
 from paper_radar.papers.repository import needs_source, save_observation
 from paper_radar.papers.tables import feeds, papers
 from paper_radar.papers.text import normalize_fields, parse_observation
@@ -76,8 +94,6 @@ class PaperFacts:
             try:
                 require_current_revision(engine)
                 if item.source_kind == "feed":
-                    from paper_radar.papers.feed_repository import submit_feed
-
                     return submit_feed(
                         engine, self.database, self.data_root, item, doi, fields
                     )
@@ -91,6 +107,43 @@ class PaperFacts:
                         .artifact_id
                     )
                 return save_observation(engine, item, doi, fields, artifact_id)
+            finally:
+                engine.dispose()
+        except PaperError as error:
+            return WriteResult(status="rejected", reason=error.reason)
+        except ArtifactError as error:
+            return WriteResult(
+                status="rejected",
+                reason=PaperReason.DATABASE_BUSY
+                if error.reason == ArtifactReason.DATABASE_BUSY
+                else PaperReason.CORRUPT_REFERENCE,
+            )
+        except StorageError:
+            return WriteResult(status="rejected", reason=PaperReason.CORRUPT_REFERENCE)
+        except SQLAlchemyError as error:
+            return WriteResult(status="rejected", reason=_database_error(error).reason)
+
+    def correct(self, correction: object) -> WriteResult:
+        try:
+            item, payload = parse_correction(correction)
+            if self.data_root is None:
+                raise PaperError(
+                    PaperReason.INVALID_MANUAL_CORRECTION, path="data_root"
+                )
+            engine = open_database(self.database, mode=DatabaseMode.READ_WRITE)
+            try:
+                require_current_revision(engine)
+                with engine.connect() as connection:
+                    connection.exec_driver_sql("BEGIN")
+                    retry = retry_correction(connection, item, payload)
+                    if retry:
+                        return retry
+                artifact_id = (
+                    ArtifactStore(self.database, self.data_root)
+                    .publish_single("source_snapshot", (payload,))
+                    .artifact_id
+                )
+                return save_correction(engine, item, payload, artifact_id)
             finally:
                 engine.dispose()
         except PaperError as error:
@@ -122,7 +175,9 @@ class PaperFacts:
                     raise PaperError(PaperReason.CORRUPT_REFERENCE, path="data_root")
                 store = ArtifactStore(self.database, self.data_root)
                 for source in result.observations:
-                    store.read_artifact(source.artifact_id)
+                    payload = store.read_artifact(source.artifact_id)["payload"]
+                    if source.source_kind == "manual":
+                        validate_manual_payload(result, source, payload)
             return result
         except StorageError:
             raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
@@ -134,6 +189,24 @@ class PaperFacts:
     def show(self, paper_id: str) -> PaperView:
         return self.trace(paper_id).current
 
+    def revision(self, version_id: str, revision_no: int) -> RevisionView:
+        """只接受版本与完整修订号,不拼接各字段历史。"""
+        try:
+            engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+            try:
+                require_current_revision(engine)
+                with engine.connect() as connection:
+                    connection.exec_driver_sql("BEGIN")
+                    return resolve_revision(
+                        connection, version_id=version_id, revision_no=revision_no
+                    )
+            finally:
+                engine.dispose()
+        except StorageError:
+            raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
+        except SQLAlchemyError as error:
+            raise _database_error(error) from None
+
     def validate_all(self) -> None:
         """备份固定数据库上的全部论文引用链校验,无修复副作用。"""
         try:
@@ -144,12 +217,23 @@ class PaperFacts:
             require_current_revision(engine)
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN")
-                from paper_radar.papers.feed_queries import validate_feed_registry
-
                 validate_feed_registry(connection)
                 validate_unbound_acquisitions(connection)
                 for paper_id in connection.execute(select(papers.c.paper_id)).scalars():
-                    load_trace(connection, paper_id)
+                    result = load_trace(connection, paper_id)
+                    if result.corrections:
+                        if self.data_root is None:
+                            raise PaperError(
+                                PaperReason.CORRUPT_REFERENCE, path="data_root"
+                            )
+                        store = ArtifactStore(self.database, self.data_root)
+                        for source in result.observations:
+                            if source.source_kind == "manual":
+                                validate_manual_payload(
+                                    result,
+                                    source,
+                                    store.read_artifact(source.artifact_id)["payload"],
+                                )
         except StorageError:
             raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
         except SQLAlchemyError as error:

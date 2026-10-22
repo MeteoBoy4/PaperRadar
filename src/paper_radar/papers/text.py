@@ -6,13 +6,16 @@ from urllib.parse import urlsplit
 
 from pydantic import ValidationError
 
+from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError, PaperReason
+from paper_radar.papers.feed import validate_feed_item
 from paper_radar.papers.models import (
     AbstractValue,
     CandidateInput,
     DateValue,
     ObservationInput,
 )
+from paper_radar.papers.text_rules import normalize_text
 
 FIELDS = frozenset(
     {
@@ -28,19 +31,6 @@ FIELDS = frozenset(
         "source_url",
     }
 )
-_MARKUP = re.compile(
-    r"<!--|<![A-Za-z]|<\?|</?[A-Za-z][A-Za-z0-9:_-]*(?:\s+[^<>]*|\s*/?)>"
-)
-
-
-def normalize_text(value: str) -> str:
-    try:
-        value.encode("utf-8")
-    except UnicodeError:
-        raise PaperError(PaperReason.INVALID_TEXT, path="fields") from None
-    if _MARKUP.search(value):
-        raise PaperError(PaperReason.INVALID_TEXT, path="fields")
-    return value.replace("\r\n", "\n").replace("\r", "\n").strip()
 
 
 def require_public_url(value: str, *, required: bool = False) -> None:
@@ -74,7 +64,7 @@ def parse_observation(value: object) -> ObservationInput:
         raise PaperError(PaperReason.INVALID_OBSERVATION) from None
     if item.scheme != "doi":
         raise PaperError(PaperReason.UNSUPPORTED_SCHEME, path="scheme")
-    if item.source_kind not in {"publisher", "feed"}:
+    if item.source_kind not in {"publisher", "registry", "feed"}:
         raise PaperError(PaperReason.UNSUPPORTED_SOURCE, path="source_kind")
     if item.relations:
         raise PaperError(PaperReason.UNSUPPORTED_RELATION, path="relations")
@@ -90,8 +80,6 @@ def parse_observation(value: object) -> ObservationInput:
     ):
         raise PaperError(PaperReason.INVALID_OBSERVATION)
     if item.source_kind == "feed":
-        from paper_radar.papers.feed import validate_feed_item
-
         validate_feed_item(item)
         return item
     if (
@@ -101,6 +89,11 @@ def parse_observation(value: object) -> ObservationInput:
         or item.payload_scope is not None
     ):
         raise PaperError(PaperReason.INVALID_OBSERVATION)
+    if item.source_kind == "registry" and (
+        item.target_version_id is None
+        or normalize_doi(item.query_key) != normalize_doi(item.doi)
+    ):
+        raise PaperError(PaperReason.INVALID_OBSERVATION, path="query_key")
     for key in (item.provider, item.query_key):
         require_public_url(key)
         if not normalize_text(key) or len(key.encode("utf-8")) > 2048:

@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from paper_radar.papers.models import ObservationInput
 
 from paper_radar.papers.errors import PaperError, PaperReason
+from paper_radar.papers.text_rules import normalize_text
 
 
 def normalize_feed_url(value: str) -> str:
@@ -52,8 +53,6 @@ def normalize_feed_url(value: str) -> str:
 
 
 def require_entry_id(value: object) -> None:
-    from paper_radar.papers.text import normalize_text
-
     if value is None:
         raise PaperError(PaperReason.MISSING_ENTRY_ID, path="entry_id")
     if not isinstance(value, str):

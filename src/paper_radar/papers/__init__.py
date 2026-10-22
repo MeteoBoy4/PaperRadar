@@ -8,7 +8,9 @@ from paper_radar.papers.models import (
     AbstractValue,
     CandidateInput,
     DateValue,
+    ManualCorrectionInput,
     ObservationInput,
+    RevisionView,
     WriteResult,
 )
 
@@ -28,10 +30,12 @@ __all__ = [
     "AbstractValue",
     "CandidateInput",
     "DateValue",
+    "ManualCorrectionInput",
     "ObservationInput",
     "PaperError",
     "PaperFacts",
     "PaperReason",
+    "RevisionView",
     "WriteResult",
     "normalize_doi",
 ]

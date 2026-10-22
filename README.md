@@ -5,7 +5,7 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓
 四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
 只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
 现已开放四种单文件制品与完整 extraction 集合的不可变内容寻址存储和完整校验回读。
-已提供出版者 DOI 观察、Feed 登记与发现的本地事实服务和只读 `paper show/trace`；真实网络来源和论文处理流水线尚未实现。
+已提供四类来源仲裁、人工字段修正、Feed 登记与发现的本地事实服务和只读 `paper show/trace`；真实网络来源和论文处理流水线尚未实现。
 期刊身份与信誉集合也可版本化登记，校验 ISSN 与冲突，并从 SQLite 回放历史。
 另可登记 Pi adapter 的三个独立选择、完整有效系统指令、资源哈希、推理档位与
 固定调用策略；单快照可重建六阶段配置投影和校准基线，并只读比较已保存快照。
@@ -57,7 +57,7 @@ uv run --offline --locked paper-radar --help
 ## 数据库升级
 
 A2 的 `a201_profile_snapshot`、A3 的 `a302_artifact_store` 可显式升级至当前
-`a602_feed_discovery`。论文切片追加 DOI 论文身份、出版者/Feed 来源观察、发现历史、候选引用式修订与初始选择；既有升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
+`a603_source_arbitration`。论文切片追加 DOI 论文身份、四类来源观察、人工事件、发现历史、候选引用式修订与初始选择；既有升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
 全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
 失败或进程中断完整回滚后可以重试。配置历史的 ID、原字节、创建时间、六投影和基线不变。
 已知旧库上的 `config check/compile/diff/snapshots list` 会提示先执行升级，不自动修改库。
@@ -498,8 +498,12 @@ uv run --offline --locked paper-radar paper trace PAPER_ID --database data/paper
 Python 公共写边界是 `paper_radar.papers.PaperFacts.submit`，只接有界原始 bytes、严格字段与
 必填 `interpretation="complete"` 声明。`register_feed(url)` 按数据库唯一规范 URL 登记 Feed；
 Feed 输入要求真实 `feed_id/entry_id`、`payload_scope="single_item"`，允许 `doi=None`。
-同 Feed 条目内容变化保持版本关联；同 DOI 跨 Feed 复用版本，出版者非空字段优先、Feed 补缺。
-当前不开放生产写入 CLI、抓取适配器、Feed 配置、注册机构、人工修正、版本关系或阶段输入映射。
-本机备份与隔离恢复校验非空 Feed/出版者历史，仍不表示 A6 或 live 已验收。
+同 Feed 条目内容变化保持版本关联；同 DOI 跨 Feed 复用版本；逐字段按人工修正 > 出版者 > 对应 DOI 注册机构 > Feed 仲裁。
+注册机构查询须明确既有版本且查询 DOI 一致；不联网推断真实注册机构。
+`correct({version_id, request_id, actor, reason, fields})` 追加版本内幂等人工修正，只覆盖提供的非空字段，
+按原子事件次序选择最新人工值；没有撤销或清空入口。修正不随当前版本升级迁移。
+`revision(version_id, revision_no)` 读取完整历史状态及来源依据，trace 展示获选与未选候选和全部修订。
+当前不开放生产写入 CLI、抓取适配器、Feed 配置、版本关系或阶段输入映射。
+本机备份与隔离恢复校验非空四类来源、人工请求原文及全部修订历史，仍不表示 A6 或 live 已验收。
 **阶段 C 真实 Feed 接入前必须补齐强冲突观察持久化和 parser 升级固定样本回归，
 此前不得将本地拒绝路径直接作为生产写入。**详见[论文事实 Contract](docs/contracts/paper-facts.md)。

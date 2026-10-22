@@ -25,7 +25,7 @@ def facts(tmp_path: Path) -> PaperFacts:
         ({"scheme": "pmid"}, "unsupported_scheme"),
         ({"source_kind": "feed", "entry_id": None}, "missing_entry_id"),
         ({"source_kind": "manual"}, "unsupported_source"),
-        ({"source_kind": "registry"}, "unsupported_source"),
+        ({"source_kind": "registry"}, "invalid_observation"),
         ({"relations": ({"type": "is-preprint-of"},)}, "unsupported_relation"),
         (
             {"fields": {"orcid": {"value": "SECRET", "locator": "id"}}},
