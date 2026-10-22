@@ -166,18 +166,16 @@ class PaperFacts:
             return WriteResult(status="rejected", reason=_database_error(error).reason)
 
     def trace(self, paper_id: str, *, verify_source_bytes: bool = False) -> PaperTrace:
-        try:
-            engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
-        except StorageError:
-            raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
+        if verify_source_bytes and self.data_root is None:
+            raise PaperError(PaperReason.INVALID_OBSERVATION, path="data_root")
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
         try:
             require_current_revision(engine)
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN")
                 result = load_trace(connection, paper_id)
             if verify_source_bytes:
-                if self.data_root is None:
-                    raise PaperError(PaperReason.CORRUPT_REFERENCE, path="data_root")
+                assert self.data_root is not None
                 store = ArtifactStore(self.database, self.data_root)
                 for relation in result.relations:
                     store.read_artifact(relation.artifact_id)
@@ -186,7 +184,7 @@ class PaperFacts:
                     if source.source_kind == "manual":
                         validate_manual_payload(result, source, payload)
             return result
-        except StorageError:
+        except ArtifactError:
             raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
         except SQLAlchemyError as error:
             raise _database_error(error) from None
@@ -209,8 +207,6 @@ class PaperFacts:
                     )
             finally:
                 engine.dispose()
-        except StorageError:
-            raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
         except SQLAlchemyError as error:
             raise _database_error(error) from None
 
@@ -232,10 +228,7 @@ class PaperFacts:
 
     def validate_all(self) -> None:
         """备份固定数据库上的全部论文引用链校验,无修复副作用。"""
-        try:
-            engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
-        except StorageError:
-            raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
         try:
             require_current_revision(engine)
             with engine.connect() as connection:
@@ -258,7 +251,7 @@ class PaperFacts:
                                     source,
                                     store.read_artifact(source.artifact_id)["payload"],
                                 )
-        except StorageError:
+        except ArtifactError:
             raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
         except SQLAlchemyError as error:
             raise _database_error(error) from None

@@ -15,9 +15,9 @@ from paper_radar.papers.relation_repository import (
     validate_endpoint_kinds,
 )
 from paper_radar.papers.repository import (
-    _conflict,
-    _insert_candidates,
-    _saved_result,
+    identity_conflict_result,
+    insert_candidates,
+    saved_acquisition_result,
     timestamp,
     update_revision,
 )
@@ -107,19 +107,19 @@ def submit_feed(
                 else None
             )
             if version and version["version_kind"] != item.version_kind:
-                return _conflict("version_kind_conflict")
+                return identity_conflict_result("version_kind_conflict")
             if item.target_version_id and (
                 version is None
                 or item.target_version_id != version_id
                 or item.target_paper_id != version["paper_id"]
             ):
-                return _conflict("target_mismatch")
+                return identity_conflict_result("target_mismatch")
             if entry and doi and current_doi and doi != current_doi:
-                return _conflict("entry_doi_changed")
+                return identity_conflict_result("entry_doi_changed")
             if entry and identity and identity["version_id"] != version_id:
-                return _conflict("doi_owner_conflict")
+                return identity_conflict_result("doi_owner_conflict")
             if item.target_version_id and doi and current_doi != doi:
-                return _conflict("target_mismatch")
+                return identity_conflict_result("target_mismatch")
             found = (
                 connection.execute(
                     select(feed_discoveries).where(
@@ -180,7 +180,7 @@ def submit_feed(
                     .where(feed_discoveries.c.discovery_id == found["discovery_id"])
                     .values(last_seen=max(found["last_seen"], timestamp(item)))
                 )
-                result = _saved_result(connection, same).model_copy(
+                result = saved_acquisition_result(connection, same).model_copy(
                     update={"discovery_id": found["discovery_id"]}
                 )
                 connection.commit()
@@ -269,7 +269,7 @@ def submit_feed(
                         candidate_sha256=digest(fields),
                     )
                 )
-                _insert_candidates(connection, source_id, fields)
+                insert_candidates(connection, source_id, fields)
             acquisition_id = str(uuid4())
             current_no = connection.execute(
                 select(func.max(revisions.c.revision_no)).where(

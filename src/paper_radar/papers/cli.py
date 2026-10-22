@@ -19,7 +19,8 @@ HELP = """\
 仅覆盖论文事实；尚未计算完整任务资格。
 
 参数与选项：show/trace 接受 PAPER_ID、必填 --database；可选 --data-root、
---json、--show-abstract。trace 可用 --verify-source-bytes 只读核验来源字节。
+--json、--show-abstract。trace 可用 --verify-source-bytes 只读核验来源字节，
+使用时必须同时提供 --data-root。
 
 副作用：只读既有数据库；字节核验才访问既有制品根。帮助不连接数据库、不创建目录、不联网。
 
@@ -91,6 +92,12 @@ def _text_result(
         f"论文：{view.paper_id}；版本：{view.version_id}；修订：{view.revision_no}"
     )
     typer.echo(f"DOI：{view.doi or '（尚未登记）'}；类别：{view.version_kind}")
+    if not trace and view.selection:
+        selection = view.selection
+        typer.echo(
+            f"当前版本选择：{selection.selection_id}/{selection.version_id}；"
+            f"{selection.reason}；{selection.selected_at}"
+        )
     typer.echo(
         "字段来源："
         + "、".join(f"{name}={fact.source_kind}" for name, fact in view.fields.items())
@@ -247,6 +254,11 @@ def trace_command(
         bool, typer.Option("--verify-source-bytes", help="只读核验来源字节，不转储正文")
     ] = False,
 ) -> None:
+    if verify_source_bytes and data_root is None:
+        typer.echo(
+            "论文查询参数不正确：--verify-source-bytes 需要 --data-root", err=True
+        )
+        raise typer.Exit(2)
     _query(
         paper_id, database, data_root, True, as_json, show_abstract, verify_source_bytes
     )

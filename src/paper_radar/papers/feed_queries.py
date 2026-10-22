@@ -7,7 +7,7 @@ from sqlalchemy import Connection, select
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.feed import normalize_feed_url, require_entry_id
 from paper_radar.papers.models import DiscoveryFact, FeedInterpretationFact
-from paper_radar.papers.read_checks import _utc, _uuid, corrupt
+from paper_radar.papers.read_checks import corrupt, require_utc_timestamp, require_uuid
 from paper_radar.papers.tables import (
     acquisitions,
     feed_discoveries,
@@ -33,7 +33,7 @@ def load_discoveries(
             .mappings()
             .one()
         )
-        _uuid(feed["feed_id"])
+        require_uuid(feed["feed_id"])
         require_entry_id(entry["entry_id"])
         if normalize_feed_url(feed["url"]) != feed["url"]:
             raise corrupt()
@@ -50,9 +50,9 @@ def load_discoveries(
         if not rows:
             raise corrupt()
         for row in rows:
-            _uuid(row["discovery_id"])
-            _utc(row["first_seen"])
-            _utc(row["last_seen"])
+            require_uuid(row["discovery_id"])
+            require_utc_timestamp(row["first_seen"])
+            require_utc_timestamp(row["last_seen"])
             if (
                 row["last_seen"] < row["first_seen"]
                 or re.fullmatch(r"[0-9a-f]{64}", row["item_fingerprint"]) is None
@@ -86,7 +86,7 @@ def load_discoveries(
             if not interpretations:
                 raise corrupt()
             for interpretation in interpretations:
-                _utc(interpretation["submitted_at"])
+                require_utc_timestamp(interpretation["submitted_at"])
             if interpretations[0]["submitted_at"] != row["first_seen"] or any(
                 interpretation["submitted_at"] > row["last_seen"]
                 for interpretation in interpretations
@@ -192,7 +192,7 @@ def validate_feed_registry(connection: Connection) -> None:
     """没有发现记录的合法 Feed 也属于备份语义闭包。"""
     try:
         for feed in connection.execute(select(feeds)).mappings():
-            _uuid(feed["feed_id"])
+            require_uuid(feed["feed_id"])
             if normalize_feed_url(feed["url"]) != feed["url"]:
                 raise corrupt()
     except (PaperError, ValueError, TypeError):

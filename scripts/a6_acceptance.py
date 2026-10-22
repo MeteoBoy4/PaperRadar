@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import fields
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -115,6 +116,7 @@ def _formats() -> dict[str, Any]:
     from paper_radar.papers.doi import DOI_RULES_VERSION
     from paper_radar.papers.errors import REASON_CATALOG_VERSION
     from paper_radar.papers.feed import FEED_ITEM_FINGERPRINT_VERSION
+    from paper_radar.papers.mapping_models import ScreeningMappingResult
     from paper_radar.papers.models import PAPER_FACTS_VERSION, TEXT_NORM_VERSION
     from paper_radar.stage_inputs import STAGE_INPUT_FORMAT_VERSIONS
 
@@ -124,6 +126,11 @@ def _formats() -> dict[str, Any]:
         "text_norm": TEXT_NORM_VERSION,
         "feed_item_fingerprint": FEED_ITEM_FINGERPRINT_VERSION,
         "reason_catalog": REASON_CATALOG_VERSION,
+        "mapping_result": next(
+            item.default
+            for item in fields(ScreeningMappingResult)
+            if item.name == "format_version"
+        ),
         "stage_inputs": {
             stage.value: STAGE_INPUT_FORMAT_VERSIONS[stage]
             for stage in (StageName.BOUNDARY, StageName.VALUE)

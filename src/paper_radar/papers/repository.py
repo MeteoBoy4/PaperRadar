@@ -52,13 +52,13 @@ def timestamp(item: ObservationInput) -> str:
     return item.observed_at.astimezone(UTC).isoformat(timespec="microseconds")
 
 
-def _conflict(category: ConflictKind) -> WriteResult:
+def identity_conflict_result(category: ConflictKind) -> WriteResult:
     return WriteResult(
         status="rejected", reason=PaperReason.IDENTITY_CONFLICT, conflict=category
     )
 
 
-def _insert_candidates(
+def insert_candidates(
     connection: Connection, observation_id: str, fields: dict[str, CandidateInput]
 ) -> None:
     for name, candidate in fields.items():
@@ -170,7 +170,7 @@ def needs_source(
         return source is None
 
 
-def _saved_result(connection: Connection, row: RowMapping) -> WriteResult:
+def saved_acquisition_result(connection: Connection, row: RowMapping) -> WriteResult:
     paper_id = (
         connection.execute(
             select(versions.c.paper_id).where(
@@ -211,7 +211,7 @@ def save_observation(
                 .first()
             )
             if retry and retry["interpretation_sha256"] == interpretation_digest(item):
-                return _saved_result(connection, retry)
+                return saved_acquisition_result(connection, retry)
             identity = (
                 connection.execute(
                     select(identifiers).where(identifiers.c.normalized_value == doi)
@@ -239,9 +239,9 @@ def save_observation(
                     .first()
                 )
                 if target is None or target["paper_id"] != item.target_paper_id:
-                    return _conflict("target_mismatch")
+                    return identity_conflict_result("target_mismatch")
                 if identity is None or identity["version_id"] != item.target_version_id:
-                    return _conflict(
+                    return identity_conflict_result(
                         "doi_owner_conflict" if identity else "target_mismatch"
                     )
             if identity:
@@ -254,18 +254,13 @@ def save_observation(
                     ).scalar_one()
                     != item.version_kind
                 ):
-                    return _conflict("version_kind_conflict")
+                    return identity_conflict_result("version_kind_conflict")
             else:
                 paper_id = version_id = None
-            retry = (
-                connection.execute(select(acquisitions).where(*request_key(item, doi)))
-                .mappings()
-                .first()
-            )
             if retry:
                 if retry["interpretation_sha256"] != interpretation_digest(item):
                     raise PaperError(PaperReason.INVALID_OBSERVATION)
-                return _saved_result(connection, retry)
+                return saved_acquisition_result(connection, retry)
             _check_interpretation(connection, item, doi)
             validate_endpoint_kinds(connection, item, doi)
             now = datetime.now(UTC).isoformat(timespec="microseconds")
@@ -331,7 +326,7 @@ def save_observation(
                             candidate_sha256=digest(fields),
                         )
                     )
-                    _insert_candidates(connection, source_id, fields)
+                    insert_candidates(connection, source_id, fields)
                     retained = True
             acquisition_id = str(uuid4())
             current_no = (

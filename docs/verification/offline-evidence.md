@@ -706,14 +706,15 @@ paper_fact_mapping NOT_ASSESSED 原样保留。必要源码哈希按 A2 wrapper�
 base→head 得到 `a604_version_relations`，并且运行前后代码/工作树/lockfile 相同，才有
 `a6_verified=true`。A4 不构成业务前置，但 A4 失败仍令完整入口非零。
 
-格式期望固定为 `paper_facts/doi_rules/text_norm/feed_item_fingerprint/reason_catalog=1`、
+格式期望固定为 `paper_facts/doi_rules/text_norm/feed_item_fingerprint/reason_catalog/mapping_result=1`、
 boundary/value 输入 1 与 backup 1，实际值逐项读取生产权威。Feed 生产纯规则声明版本 1，
-计算原始单 item 全字节 SHA-256，不改变既有字节语义。`mapping_result=1` 仍由公共模型
-Contract 定义，不列为本结论的独立算法版本键。bool/float 不能冒充整数格式或回执计数。
+计算原始单 item 全字节 SHA-256，不改变既有字节语义。`mapping_result` 实际值从
+`ScreeningMappingResult` 的 dataclass `format_version` 字段默认值读取，与固定期望独立核对，
+不复制期望作为实际格式。bool/float 不能冒充整数格式或回执计数。
 
 `capabilities` 固定十二项，`capability_evidence` 逐项记录已绑定的固定用例与材料映射，
 见 `tests/fixtures/a6_capabilities.json`；version_selection/field_arbitration/historical_rebuild/
-isolated_restore 明确包括 #74 完整组合库和独立进程读者。37 个业务测试模块与新增 A6
+isolated_restore 明确包括 #74 完整组合库和独立进程读者。论文事实业务测试模块与 A6
 协议测试使用独立固定分母，A1–A5 旧模块/分母及 A5 `paper_fact_mapping` 历史含义保留。
 collect 只审核分母；少执行、skip、deselect、collect-only、缺材料、篡改、未知格式、
 身份漂移、中断和缺终态均不能形成完整通过。结论不可覆盖，状态仍由既有终态协议查询。

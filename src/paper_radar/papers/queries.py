@@ -9,7 +9,7 @@ from sqlalchemy.engine import RowMapping
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.fact_reads import (
-    _candidate,
+    load_candidate,
     material_request_matches,
     observation_fields,
     source_stream,
@@ -29,7 +29,7 @@ from paper_radar.papers.models import (
     SelectionFact,
     VersionKind,
 )
-from paper_radar.papers.read_checks import _utc, _uuid, corrupt
+from paper_radar.papers.read_checks import corrupt, require_utc_timestamp, require_uuid
 from paper_radar.papers.relation_repository import (
     load_relations,
     relation_material_retained,
@@ -59,8 +59,8 @@ from paper_radar.storage.schema import artifact_members, artifacts
 
 
 def _acquisition(row: RowMapping) -> AcquisitionFact:
-    _uuid(row["acquisition_id"])
-    _utc(row["observed_at"])
+    require_uuid(row["acquisition_id"])
+    require_utc_timestamp(row["observed_at"])
     if row["source_kind"] == "publisher":
         require_public_url(row["provider"])
         require_public_url(row["query_key"])
@@ -175,7 +175,7 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
     ):
         raise PaperError(PaperReason.PAPER_NOT_FOUND, path="paper_id")
     try:
-        _uuid(paper_id)
+        require_uuid(paper_id)
         version_rows = (
             connection.execute(
                 select(versions)
@@ -209,8 +209,8 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
         )
         kinds = {row["version_id"]: row["version_kind"] for row in version_rows}
         for index, selection_fact in enumerate(selection_facts):
-            _uuid(selection_fact.selection_id)
-            _utc(selection_fact.selected_at)
+            require_uuid(selection_fact.selection_id)
+            require_utc_timestamp(selection_fact.selected_at)
             if (
                 selection_fact.version_id not in kinds
                 or (index == 0 and selection_fact.reason != "initial")
@@ -233,7 +233,7 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
         all_decisions: list[CandidateDecision] = []
         for version in version_rows:
             version_id = version["version_id"]
-            _uuid(version_id)
+            require_uuid(version_id)
             identity = (
                 connection.execute(
                     select(identifiers).where(identifiers.c.version_id == version_id)
@@ -276,8 +276,8 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
             )
             source_fields = {}
             for row in source_rows:
-                _uuid(row["observation_id"])
-                _utc(row["observed_at"])
+                require_uuid(row["observation_id"])
+                require_utc_timestamp(row["observed_at"])
                 source = connection.execute(
                     select(artifacts.c.kind, artifact_members.c.sha256)
                     .join(
@@ -426,7 +426,7 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
             for row, (trigger, expected_winners) in zip(
                 revision_rows, expected_history, strict=True
             ):
-                _utc(row["revised_at"])
+                require_utc_timestamp(row["revised_at"])
                 if row["acquisition_id"] != trigger:
                     raise corrupt()
                 fields = {}
@@ -436,7 +436,7 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                         revision_fields.c.revision_no == row["revision_no"],
                     )
                 ).mappings():
-                    name, fact = _candidate(
+                    name, fact = load_candidate(
                         connection, ref["candidate_id"], ref["acquisition_id"]
                     )
                     if name != ref["field_name"] or ref["rule_version"] != 1:

@@ -21,7 +21,7 @@ boundary/value StageInput 沿用既有格式 1，backup format 沿用 1。A6 只
 
 ### 1.1 #69 出版者切片与公共边界
 
-公共 Python 边界为 `paper_radar.papers.PaperFacts(database, data_root)`：`submit(observation)` 接受严格 `ObservationInput` 或其字段字典，返回 `WriteResult`；`show(paper_id)` 返回当前 `PaperView`，`trace(paper_id, verify_source_bytes=False)` 返回 `PaperTrace`，`validate_all()` 只读校验完整引用与历史修订。所有公开模型 repr/str 隐藏论文内容；服务验证错误只返回受控原因，不透传 Pydantic 输入载荷。
+公共 Python 边界为 `paper_radar.papers.PaperFacts(database, data_root)`：`submit(observation)` 接受严格 `ObservationInput` 或其字段字典，返回 `WriteResult`；`show(paper_id)` 返回当前 `PaperView`，`trace(paper_id, verify_source_bytes=False)` 返回 `PaperTrace`，`validate_all()` 只读校验完整引用与历史修订。所有公开模型 repr/str 隐藏论文内容；服务验证错误只返回受控原因，不透传 Pydantic 输入载荷。原始 `ObservationInput.source_kind`/`RelationInput.kind` 保持字符串，关系项在纯规则层校验，未知值分别返回 `unsupported_source`/`unsupported_relation`；规范事实与仲裁内部使用封闭领域类型，`NormalizedRelation` 另外保留 `raw_*` 原断言。模型 `model_validate*` 将最终校验失败转换为 `PaperError`；直接构造使用脱敏 `ValueError` 参与 Pydantic 联合候选回退，保证合法日期字典可选中 `DateValue`。
 
 本切片仅接受 `source_kind="publisher"`、DOI 目标与同一 `(provider, query_key, version_id)` 出版者流。字段候选是 `{value, locator}`；摘要 value 是 `{text, is_truncated, rule}`，日期 value 是 `{value, precision}`，作者使用有序字符串 tuple。`version_kind` 为 `preprint/journal`，`observed_at` 为明确 UTC datetime，`parser_version` 为正整数，必填 `interpretation="complete"` 声明整份材料的完整解释，`payload` 为单份非空 bytes。其余支持范围以本文目标及下节 #70 扩展为准，在 #69 历史切片中跨出版者流、注册机构、人工入口分别 `unsupported_source`（#71 扩展见 §1.3），关系 `unsupported_relation`，未知字段 `unsupported_field`，均整笔拒绝。
 
@@ -164,7 +164,7 @@ Feed 同源排序只用不可变的首次 `observed_at` 和稳定 tie-break。A�
 
 题名、摘要及作者字符串在服务端仅将 CRLF/CR 统一成 LF，再去首尾 Unicode 空白（与 `str.strip()` 一致，包括全角空格、制表符和换行）；内部空白不折叠，内部制表符和连续三个换行保留，不做 Unicode 归一化、翻译、截句或去 HTML。原字节保留，provenance 记录 `text_norm=1`。外围差异归一后相同；内部排版差异仍能改变规范值与指纹，A5 builder 不再清洗。
 
-观察中的题名摘要必须已经是无 HTML 标签的已解析文本，含真正标签、注释等标记受控拒绝 `invalid_text`，不得默默剥除。数学比较 `a < b`、`x > 0` 不是 HTML，须接受；`<p>摘要</p>`、`<!-- comment -->` 拒绝，不能用“含尖括号就拒绝”的近似实现。固定向量包括 CRLF/CR、全角空格、制表符、连续换行、数学比较与标签边界。孤立代理字符在登记时拒绝。规范后纯空白候选视为缺项，不能覆盖非空事实；不套用模型输出占位词表删除 “No abstract available”。
+观察中的题名摘要必须已经是无 HTML 标签的已解析文本，含真正标签、注释等标记受控拒绝 `invalid_text`，不得默默剥除。数学比较 `a < b`、`x > 0` 不是 HTML，须接受；`<p>摘要</p>`、`<!-- comment -->` 拒绝，不能用“含尖括号就拒绝”的近似实现。A6 不是 HTML 解析器，对 `<String>` 这类标签形状无法可靠区分泛型与标记，因此 `List<String>`、`Array<int>` 也受控拒绝；这是明确的输入能力限制，不做已知 HTML 标签白名单放宽。数学比较与 `T <: Number` 保持接受；阶段 C 仍须以真实解析材料核对该边界。固定向量包括 CRLF/CR、全角空格、制表符、连续换行、数学比较与标签边界。孤立代理字符在登记时拒绝。规范后纯空白候选视为缺项，不能覆盖非空事实；不套用模型输出占位词表删除 “No abstract available”。
 
 ### 5.2 字段与优先级
 
@@ -218,7 +218,7 @@ locator 必须非空、无敏感 URL 包装；不联网证明来源真实性。�
 
 ## 7. 写入结果、事务与阶段 C 硬门禁（D4）
 
-强身份冲突 `identity_conflict` 整笔拒绝业务行：不写发现、来源观察、候选、关系、修订或选择，最多保留完整未引用 source_snapshot。细分类别固定为 `doi_owner_conflict`、`target_mismatch`、`version_kind_conflict`、`entry_doi_changed`。关系冲突 `requires_merge` 则观察及关系已保留，是成功结果；`not_retained` 是有效且未新增来源材料/候选正文的独立结果，轻量取得与必要修订已经保存。结果类型须区分 retained/not_retained/rejected，携带 reason_catalog 版本、reason 与可选冲突类别，不用一个失败布尔值混同三者。
+强身份冲突 `identity_conflict` 整笔拒绝业务行：不写发现、来源观察、候选、关系、修订或选择，最多保留完整未引用 source_snapshot。细分类别固定为 `doi_owner_conflict`、`target_mismatch`、`version_kind_conflict`、`entry_doi_changed`。关系冲突 `requires_merge` 则观察及关系已保留，是成功结果；`not_retained` 是有效且未新增来源材料/候选正文的独立结果，轻量取得与必要修订已经保存。结果类型须区分 retained/not_retained/rejected，携带 reason_catalog 版本、reason 与可选冲突类别，不用一个失败布尔值混同三者。`requires_merge` 是本次 DOI 涉及既有跨 Paper 关系的成功提示，优先于 `not_retained`，不是 Paper 的主 status，也不声称本次新增了关系或响应材料。普通元数据取得和候选复用均可返回该提示；是否登记材料由独立的 `response_bytes_retained` 表达。精确旧请求永远重放原回执，不按当前关系重算。
 
 **阶段 C 接入真实 Feed 前必须完成强身份冲突观察的持久化；此前适配器不得直接复用 A6 拒绝路径为生产写入。** A6 没有真实 Feed，仅数据库身份/幂等入口及离线测试调用方，因此当前丢失窗口为空，这也是推迟持久化唯一成立依据。阶段 C 必须逐类别验证冲突仍有可查询原始观察，避免正式论文被漏掉；A6 的细分类受控结果为适配器保留扩展点，不能将拒绝混作 not_retained。
 
@@ -240,7 +240,7 @@ locator 必须非空、无敏感 URL 包装；不联网证明来源真实性。�
 
 CLI 目标固定为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER_ID --database PATH`，两者共用可选 `--data-root PATH`、`--json`、`--show-abstract`。database 必须指向既有数据库，data-root 在来源字节核验时指向既有制品根；json 输出与文本同一受控形状，show-abstract 才展开摘要，trace 中未获选摘要也只在此显式选项下展示。选项不得初始化目录或数据库。不加历史选择器、snapshot 参数、输入指纹或任何写入命令。show 显示 `paper_id/version_id/revision_no/version_kind/doi`、当前题名/书目、摘要是否存在与截断状态、当前选择依据；trace 显示全部版本/修订/选择、Feed 发现及 first_seen/last_seen、来源与 parser_version/locator、未获选候选、关系三态及人工修正不跨版本限制。默认不展开摘要/原始响应；显式展示论文文本仍不暴露 Profile、Prompt、密钥或任意 blob。
 
-`paper trace PAPER_ID --verify-source-bytes` 默认关闭，增加只读制品 I/O，只报原因与受控位置，不转储来源正文。退出码固定：正常只读查询（含合法等待端点/等待合并）0，受控拒绝/缺失/损坏/忙 1，CLI 参数语法错误 2。requires_merge 若出现在服务写入结果中是 retained 成功，不按拒绝重试。help 用中文、可复制示例，说明只读/零模型配额；空目录 help 无配置、数据库或网络副作用。
+`paper trace PAPER_ID --verify-source-bytes` 默认关闭，增加只读制品 I/O，只报原因与受控位置，不转储来源正文。开启时必须同时提供 `--data-root`，遗漏在数据库 I/O 前作为参数错误退出 2；直接服务调用缺制品根返回 `invalid_observation`（`data_root`）。读取接口保留 `StorageError` 的缺库、未初始化、旧 revision 等环境原因及中文指引，不将其改成业务引用损坏；写入和映射结果的封闭原因形状保持不变。退出码固定：正常只读查询（含合法等待端点/等待合并）0，受控拒绝/缺失/损坏/忙 1，CLI 参数语法错误 2。requires_merge 若出现在服务写入结果中是 retained 成功，不按拒绝重试。help 用中文、可复制示例，说明只读/零模型配额；空目录 help 无配置、数据库或网络副作用。
 
 ## 9. `reason_catalog` v1
 
@@ -251,7 +251,7 @@ CLI 目标固定为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER
 | `unsupported_form` | DOI/URL 包装超出支持；是输入能力边界，不是论文无效 | 请改用受支持的裸 DOI 或规范 URL |
 | `invalid_doi` | 本规则下 DOI 结构、编码或长度非法；不是论文无效或联网核验结论 | 请核对 DOI 字面值 |
 | `identity_conflict` | 强身份冲突整笔拒绝，附第 7 节类别；不是无贡献或关系待合并 | 请核对已登记身份，勿自动换绑 |
-| `requires_merge` | 观察/关系已保留但跨 Paper，成功且等待合并；不是拒绝 | 请查看 trace 的等待合并依据 |
+| `requires_merge` | 本次 DOI 涉及已保留跨 Paper 关系，成功且等待合并，优先于 not_retained；不代表本次新增材料或 Paper 主状态 | 请查看 trace 的等待合并依据 |
 | `not_retained` | 有效但空或候选复用，不新增来源材料观察；轻量取得与必要修订已保存，不是冲突或失败响应记录 | 无需重试相同内容 |
 | `truncation_unknown` | 获选摘要完整性标记未知；不默认完整 | 请补充文本和明确截断标记 |
 | `database_busy` | 5 秒有界锁等待耗尽，业务未部分提交 | 请在写入结束后显式重试 |

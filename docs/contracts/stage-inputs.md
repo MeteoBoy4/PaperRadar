@@ -369,8 +369,9 @@ fixture 含两个启用主题，实际顺序变化受到断言。摘录/locator 
 该服务只读，不承担未来任务层的规范载荷持久化、任务资格或校准门禁；A5 原固定范围及
 当时的 NOT_ASSESSED 历史结论保持，最终 A6 已由 #75 登记，覆盖范围与单次判据见[离线 A6 结论](../verification/offline-evidence.md#a6-独立结论6775)。
 独立复现命令与验收边界见[离线证据说明](../verification/offline-evidence.md)。
-#53 单独交付时没有登记 A5 验收组；#54 追加独立 A5 结论后，check-offline 输出七份
-主要文件，另有实际 pytest 回执。固定范围及规格映射见
+#53 单独交付时没有登记 A5 验收组；#54 追加独立 A5 结论后的历史 check-offline 输出七份
+主要文件，另有实际 pytest 回执与终态；当前 A6 输出八份主要文件、总十份 JSON，见
+[当前离线证据](../verification/offline-evidence.md)。固定范围及规格映射见
 [独立 A5 结论](../verification/offline-evidence.md#a5-独立结论4754)。
 A5 通过仅声明四阶段输入计算、回放、比较和隔离恢复，不代表阶段 A、真实来源、RPC、
 NAS 或自动精读通过。

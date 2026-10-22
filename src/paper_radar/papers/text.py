@@ -34,7 +34,9 @@ FIELDS = frozenset(
 )
 
 
-def require_public_url(value: str, *, required: bool = False) -> None:
+def require_public_url(
+    value: str, *, required: bool = False, path: str = "source_url"
+) -> None:
     try:
         url = urlsplit(value)
         if not required and url.scheme not in {"http", "https"}:
@@ -51,7 +53,7 @@ def require_public_url(value: str, *, required: bool = False) -> None:
             raise ValueError
         _ = url.port
     except ValueError:
-        raise PaperError(PaperReason.INVALID_OBSERVATION, path="source_url") from None
+        raise PaperError(PaperReason.INVALID_OBSERVATION, path=path) from None
 
 
 def parse_observation(value: object) -> ObservationInput:
@@ -69,7 +71,7 @@ def parse_observation(value: object) -> ObservationInput:
         raise PaperError(PaperReason.UNSUPPORTED_SOURCE, path="source_kind")
     normalized_relations = normalize_relations(item)
     for relation in normalized_relations:
-        require_public_url(relation.locator)
+        require_public_url(relation.locator, path="relations.locator")
     item = item.model_copy(update={"relations": normalized_relations})
     if set(item.fields) - FIELDS:
         raise PaperError(PaperReason.UNSUPPORTED_FIELD, path="fields")
@@ -101,8 +103,8 @@ def parse_observation(value: object) -> ObservationInput:
             ) from None
         if query_doi != normalize_doi(item.doi):
             raise PaperError(PaperReason.INVALID_OBSERVATION, path="query_key")
-    for key in (item.provider, item.query_key):
-        require_public_url(key)
+    for path, key in (("provider", item.provider), ("query_key", item.query_key)):
+        require_public_url(key, path=path)
         if not normalize_text(key) or len(key.encode("utf-8")) > 2048:
             raise PaperError(PaperReason.INVALID_OBSERVATION)
     return item
@@ -118,7 +120,7 @@ def normalize_fields(fields: dict[str, CandidateInput]) -> dict[str, CandidateIn
             or len(candidate.locator.encode("utf-8")) > 2048
         ):
             raise PaperError(PaperReason.INVALID_OBSERVATION, path="fields.locator")
-        require_public_url(candidate.locator)
+        require_public_url(candidate.locator, path=f"fields.{name}.locator")
         value = candidate.value
         if name == "abstract" and isinstance(value, AbstractValue):
             text = normalize_text(value.text)

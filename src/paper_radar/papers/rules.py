@@ -9,6 +9,7 @@ from paper_radar.papers.models import (
     CandidateInput,
     NormalizedRelation,
     ObservationInput,
+    SourceKind,
 )
 
 SOURCE_PRIORITY = {"manual": 3, "publisher": 2, "registry": 1, "feed": 0}
@@ -21,7 +22,7 @@ class RankedObservation:
     parser_version: int
     fields: dict[str, tuple[str, str]]
     event_no: int = 0
-    source_kind: str = "publisher"
+    source_kind: SourceKind = "publisher"
     stream: tuple[str, str] = ("", "")
 
 
@@ -34,30 +35,32 @@ def digest(fields: dict[str, CandidateInput]) -> str:
     ).hexdigest()
 
 
+ParserKey = tuple[SourceKind, tuple[str, str], str]
+
+
+def _parser_key(item: RankedObservation) -> ParserKey:
+    return item.source_kind, item.stream, item.payload_sha256
+
+
+def _highest_parsers(
+    observations: tuple[RankedObservation, ...],
+) -> dict[ParserKey, int]:
+    highest: dict[ParserKey, int] = {}
+    for item in observations:
+        key = _parser_key(item)
+        highest[key] = max(highest.get(key, 0), item.parser_version)
+    return highest
+
+
 def choose_fields(
     observations: tuple[RankedObservation, ...],
 ) -> dict[str, tuple[str, str]]:
-    highest: dict[tuple[str, tuple[str, str], str], int] = {}
-    for observation in observations:
-        highest[
-            (observation.source_kind, observation.stream, observation.payload_sha256)
-        ] = max(
-            highest.get(
-                (
-                    observation.source_kind,
-                    observation.stream,
-                    observation.payload_sha256,
-                ),
-                0,
-            ),
-            observation.parser_version,
-        )
+    highest = _highest_parsers(observations)
     ordered = sorted(
         (
             item
             for item in observations
-            if item.parser_version
-            == highest[(item.source_kind, item.stream, item.payload_sha256)]
+            if item.parser_version == highest[_parser_key(item)]
         ),
         key=lambda item: (
             SOURCE_PRIORITY[item.source_kind],
@@ -129,13 +132,10 @@ def explain_fields(
         for reference in item.fields.values()
         if reference in winners.values()
     }
-    highest: dict[tuple[str, tuple[str, str], str], int] = {}
-    for item in observations:
-        key = (item.source_kind, item.stream, item.payload_sha256)
-        highest[key] = max(highest.get(key, 0), item.parser_version)
+    highest = _highest_parsers(observations)
     result = []
     for item in observations:
-        key = (item.source_kind, item.stream, item.payload_sha256)
+        key = _parser_key(item)
         for name, reference in item.fields.items():
             if winners.get(name) == reference:
                 reason = "selected"

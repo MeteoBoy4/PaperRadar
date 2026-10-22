@@ -6,6 +6,8 @@ from paper_radar.papers.models import (
     NormalizedRelation,
     ObservationInput,
     RelationInput,
+    RelationKind,
+    RelationState,
 )
 from paper_radar.papers.text_rules import normalize_text
 
@@ -22,7 +24,12 @@ def normalize_relations(item: ObservationInput) -> tuple[NormalizedRelation, ...
             if isinstance(value, NormalizedRelation)
             else value
         )
-        if relation.kind not in {"is-preprint-of", "has-preprint"}:
+        raw_kind: RelationKind
+        if relation.kind == "is-preprint-of":
+            raw_kind = "is-preprint-of"
+        elif relation.kind == "has-preprint":
+            raw_kind = "has-preprint"
+        else:
             raise PaperError(PaperReason.UNSUPPORTED_RELATION, path="relations.kind")
         source, target = (
             normalize_doi(relation.source_doi),
@@ -55,12 +62,14 @@ def normalize_relations(item: ObservationInput) -> tuple[NormalizedRelation, ...
             locator=locator,
             raw_source_doi=relation.source_doi,
             raw_target_doi=relation.target_doi,
-            raw_kind=relation.kind,
+            raw_kind=raw_kind,
         )
     return tuple(normalized[key] for key in sorted(normalized))
 
 
-def relation_state(preprint_paper_id: str | None, journal_paper_id: str | None) -> str:
+def relation_state(
+    preprint_paper_id: str | None, journal_paper_id: str | None
+) -> RelationState:
     if preprint_paper_id is None or journal_paper_id is None:
         return "endpoint_missing"
     return "effective" if preprint_paper_id == journal_paper_id else "requires_merge"

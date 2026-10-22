@@ -48,7 +48,7 @@
     },
     {
       "raw": "https://doi.org/doi:10.1/a",
-      "reason": "invalid_doi"
+      "reason": "unsupported_form"
     },
     {
       "raw": "https://doi.org/10.1/%FF",
@@ -108,11 +108,11 @@
     },
     {
       "raw": "doi:doi:10.1/a",
-      "reason": "invalid_doi"
+      "reason": "unsupported_form"
     },
     {
       "raw": "https://doi.org/https://doi.org/10.1/a",
-      "reason": "invalid_doi"
+      "reason": "unsupported_form"
     },
     {
       "raw": "https://doi.org/10.1/a%20b",

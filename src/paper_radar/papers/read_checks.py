@@ -10,7 +10,7 @@ def corrupt() -> PaperError:
     return PaperError(PaperReason.CORRUPT_REFERENCE)
 
 
-def _utc(value: str) -> None:
+def require_utc_timestamp(value: str) -> None:
     instant = datetime.fromisoformat(value)
     if (
         instant.tzinfo is None
@@ -19,6 +19,6 @@ def _utc(value: str) -> None:
         raise corrupt()
 
 
-def _uuid(value: str) -> None:
+def require_uuid(value: str) -> None:
     if str(UUID(value)) != value:
         raise corrupt()

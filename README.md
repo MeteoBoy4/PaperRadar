@@ -279,7 +279,7 @@ manifest 审计变化，同次调用只允许一份一致正文。从相同摘�
 重新取得的制品成员验证四阶段重建；不同 hashseed、cwd 和无序集合构造顺序保持身份，
 纯构造、回放与比较不执行 I/O。独立复现命令见[离线证据说明](docs/verification/offline-evidence.md)。
 独立 A5 验收由 #54 接入，固定绑定四阶段、回放、比较与隔离恢复能力。
-check-offline 输出七份主要文件，另有实际 pytest 执行回执与控制方终态记录；
+A5 当时的 check-offline 输出七份主要文件；当前 A6 为八份主要文件、总十份 JSON，见[当前离线证据](docs/verification/offline-evidence.md)。另有实际 pytest 执行回执与控制方终态记录；
 本服务不调度任务或改写人工决定，也不证明 PDF/正文的真实质量。
 
 论文事实可通过 `PaperFacts(database).map_screening_inputs(snapshot_id=..., paper_id=...)`
@@ -505,10 +505,10 @@ uv run --offline --locked paper-radar paper trace PAPER_ID --database data/paper
 ```
 
 `paper` 只读既有库，不创建目录、不调用模型，仅覆盖论文事实，尚未计算完整任务资格。
-默认中文文本显示原题名、身份及来源摘要；`--json` 提供受控历史结构。
+默认中文文本显示原题名、身份、当前版本选择事件/原因/时间及来源摘要；`--json` 提供受控历史结构。
 摘要默认隐藏，`--show-abstract` 才展开；来源字节核验不转储原始响应或 item。
 Python 公共写边界是 `paper_radar.papers.PaperFacts.submit`，只接有界原始 bytes、严格字段与
-必填 `interpretation="complete"` 声明。`register_feed(url)` 按数据库唯一规范 URL 登记 Feed；
+必填 `interpretation="complete"` 声明。题名/摘要必须为已解析文本；数学比较可接受，`List<String>`、`Array<int>` 等歧义标签形状受控拒绝，详见[文本输入边界](docs/contracts/paper-facts.md#51-文本规范形式-v1n1)。`register_feed(url)` 按数据库唯一规范 URL 登记 Feed；
 Feed 输入要求真实 `feed_id/entry_id`、`payload_scope="single_item"`，允许 `doi=None`。
 同 Feed 条目内容变化保持版本关联；同 DOI 跨 Feed 复用版本；逐字段按人工修正 > 出版者 > 对应 DOI 注册机构 > Feed 仲裁。
 注册机构查询 DOI 必须一致；普通字段入口明确既有版本，权威关系路径可先保留尚无端点的依据；不联网推断真实注册机构。
@@ -517,13 +517,13 @@ Feed 输入要求真实 `feed_id/entry_id`、`payload_scope="single_item"`，允
 `revision(version_id, revision_no)` 读取完整历史状态及来源依据，trace 展示获选与未选候选和全部修订。
 `relations=({kind, source_doi, target_doi, locator}, ...)` 仅接受出版者/注册机构的预印本→正式版关系；
 双向别名归一同一事实，原始书写和来源断言保留；未登记 DOI 也必须在全部关系中保持同一端点类别，矛盾输入或历史受控拒绝。关系本身不创建版本；真实正式版到达时原子升级当前，
-缺摘要不从预印本补入。同级保持既有选择，跨 Paper 返回 retained/requires_merge，不自动合并。
+缺摘要不从预印本补入。同级保持既有选择，本次 DOI 涉及既有跨 Paper 关系时返回 retained/requires_merge 成功提示，优先于 not_retained；它不表示新增材料，材料保留另由 response_bytes_retained 表达，不自动合并。
 trace 展示端点尚未出现、等待合并、已生效三态及真实选择历史。
 当前不开放生产写入 CLI、抓取适配器或 Feed 配置；只读阶段输入映射见前述公共服务。
 本机备份在完整副本上统一校验四类来源、人工请求、版本选择与关系证据。活跃 WAL 的组合库
 在禁止访问原数据/配置/备份源后独立恢复、再次搬迁；新进程仅凭 ID、修订、快照引用和预期哈希，
 从恢复库候选重建历史 boundary/value 输入。有/无摘要的正式升级、旧预印本及从未获选版本均保留。
-`--verify-source-bytes` 默认关闭，显式开启增加只读 blob I/O，包含仅关系材料，失败不输出原响应。
+`--verify-source-bytes` 默认关闭，显式开启须同时提供 `--data-root`；遗漏按参数错误退出 2。开启增加只读 blob I/O，包含仅关系材料，失败不输出原响应；缺库、未初始化或旧 revision 保留存储原因与迁移指引。
 A6 独立结论覆盖本地论文事实及隔离历史重建，仍不表示阶段 A、live、RPC、Docling/NAS 或任务续跑已验收。
 **阶段 C 真实 Feed 接入前必须补齐强冲突观察持久化和 parser 升级固定样本回归，
 此前不得将本地拒绝路径直接作为生产写入。**详见[论文事实 Contract](docs/contracts/paper-facts.md)。

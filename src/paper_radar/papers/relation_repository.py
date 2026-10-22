@@ -16,7 +16,7 @@ from paper_radar.papers.models import (
     RelationFact,
     RelationInput,
 )
-from paper_radar.papers.read_checks import _utc, _uuid, corrupt
+from paper_radar.papers.read_checks import corrupt, require_utc_timestamp, require_uuid
 from paper_radar.papers.relations import relation_state
 from paper_radar.papers.tables import (
     acquisitions,
@@ -130,7 +130,7 @@ def load_relations(
     relation_roles(connection)
     result = []
     for row in connection.execute(select(version_relations)).mappings():
-        _uuid(row["relation_id"])
+        require_uuid(row["relation_id"])
         acquired = (
             connection.execute(
                 select(acquisitions).where(
@@ -140,8 +140,8 @@ def load_relations(
             .mappings()
             .one()
         )
-        _uuid(acquired["acquisition_id"])
-        _utc(acquired["observed_at"])
+        require_uuid(acquired["acquisition_id"])
+        require_utc_timestamp(acquired["observed_at"])
         if acquired["source_kind"] not in {"publisher", "registry"} or acquired[
             "doi"
         ] not in {row["preprint_doi"], row["journal_doi"]}:
@@ -294,8 +294,8 @@ def validate_relation_references(connection: Connection) -> None:
 def validate_assertion(
     connection: Connection, ref: RowMapping, relation: RowMapping, acquired: RowMapping
 ) -> None:
-    _uuid(acquired["acquisition_id"])
-    _utc(acquired["observed_at"])
+    require_uuid(acquired["acquisition_id"])
+    require_utc_timestamp(acquired["observed_at"])
     require_public_url(ref["locator"])
     if acquired["response_bytes_retained"] != (
         response_artifact(connection, acquired) is not None
@@ -445,7 +445,6 @@ def save_acquisition_result(
         .values(
             result_status=status,
             result_reason=reason.value if reason else None,
-            response_bytes_retained=retained,
         )
     )
     return status, reason

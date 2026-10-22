@@ -15,6 +15,7 @@ FORMAT_VERSIONS = {
     "text_norm": 1,
     "feed_item_fingerprint": 1,
     "reason_catalog": 1,
+    "mapping_result": 1,
     "stage_inputs": {"boundary": 1, "value": 1},
     "backup": 1,
 }
@@ -58,6 +59,9 @@ NOT_ASSESSED = (
     "report_fingerprints",
 )
 REQUIRED_TEST_CASE_COUNTS = {
+    "tests/test_paper_review_boundaries.py": 22,
+    "tests/test_paper_review_reads.py": 18,
+    "tests/test_a6_review_formats.py": 4,
     "tests/test_pending_relation_roles.py": 5,
     "tests/test_paper_model_validation.py": 7,
     "tests/test_feed_arbitration.py": 5,
@@ -105,6 +109,18 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a6_test_receipt.py": 6,
 }
 REQUIRED_TEST_MODULES = (
+    (
+        "tests/test_paper_review_boundaries.py",
+        "3c44a6dd132f62b2c7545e793cc72c4331f9da572c7ca45a342f4400d9a8d8b8",
+    ),
+    (
+        "tests/test_paper_review_reads.py",
+        "da8524714926494df05b27ef9589c85e0bb693c1578cc8b48a0f7a115b56cf4c",
+    ),
+    (
+        "tests/test_a6_review_formats.py",
+        "7e8ca8251efb421fe024eae2bbe8cdc5ff9008d817038c5dfe19bebced1c61b8",
+    ),
     (
         "tests/test_pending_relation_roles.py",
         "16c07dad469a2d1cad0407ae995c5193dc91ccefbc617dbe1127b494f2cf972f",
@@ -263,7 +279,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_acceptance.py",
-        "eb26aee63e8a83d9a4dd07e14c019d0ef2a18980dfebea4b31309604babccc9e",
+        "c72ce1f19b7b1d1ed9b616cb6638c30d6c4ebfbb94e580b95d02723a12861600",
     ),
     (
         "tests/test_a6_entry.py",
@@ -313,7 +329,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a6_acceptance.py",
-        "21f71e65263d86bb642bee0bd315ab7fa31ac71f427d5f91af55b8003374f861",
+        "ebd079873bbe3e440ff109d34cc84dc21ab65209a8033dc63e356c3d44ba040d",
     ),
     (
         "scripts/check-offline",
@@ -357,11 +373,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/cli.py",
-        "9491add71334a8941b11f06b113ece2c68315bc76802f63cee9aff12a8bf54ec",
+        "a733d4a91ca64608ec4638518373f2c9022d4d287ab9b6b8d92099ff2d455af2",
     ),
     (
         "src/paper_radar/papers/doi.py",
-        "c96c878e77717d46ecca7b191e82d1766433bbc85e808365959dbf1bd1faf3b8",
+        "228846911cf806f424da4bbb155062f7b376249696d6625b74c80b6a421c2aee",
     ),
     (
         "src/paper_radar/papers/errors.py",
@@ -369,7 +385,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/fact_reads.py",
-        "ec29b372e3ce39f17593541158b8b7d51aed8bdbb94927af6120e647977f2a35",
+        "8e9672ea7217d4f08d692a4ef705ece3e5b5fe48759e39cac5cffefa79f6f603",
     ),
     (
         "src/paper_radar/papers/feed.py",
@@ -377,15 +393,15 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/feed_queries.py",
-        "d6f600faa3745592351d3956e03be9f99064dd0310dcf4920b09ce35e81e4da4",
+        "06da50e3656af7c30ec441471f623b40fc23fbabda5aa10ba619d8ff6459f522",
     ),
     (
         "src/paper_radar/papers/feed_repository.py",
-        "9b7fbfa5e2a7d3ef4c3aaf37693aa4e784ceee8db74bdee874ee5a1211581344",
+        "27da25d3410c7ab3a7ad15529f403c5d0a83c22614c009526b55340b20914688",
     ),
     (
         "src/paper_radar/papers/manual.py",
-        "0e13d39d5f176580e448833ea562bd057a5d818dfe601d92bad366dfc14d60db",
+        "7a15cf6f464bff49396a710c1560cbde628ef69339f585ad88a56a16a9eecab2",
     ),
     (
         "src/paper_radar/papers/mapping.py",
@@ -397,31 +413,31 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/models.py",
-        "e1613dbe8e6be315210f948afb8968e051a68f47d937944ca3e204be80546f49",
+        "6a8dace2ca4ca18767f1d79cafe11cb05bb14d2551b90e4b45147e5ff97e11e7",
     ),
     (
         "src/paper_radar/papers/queries.py",
-        "4b0142b1df589c97325ce97851544dc8226a0c2b8a41c9c4e027c19796d91042",
+        "87ec3ef5ebcab6ba48e53ee329957c834c520044cf1d5a90d834076c25db550e",
     ),
     (
         "src/paper_radar/papers/read_checks.py",
-        "1bbf3ac2e4e1fe12109e11cdbd1e8f37fef4dfd252b5ced1c8fa912b47707d5c",
+        "12bed5ba5d4e8b2d005da1e03745748265a3882d0f1b174f6c19b3d0a50ccce5",
     ),
     (
         "src/paper_radar/papers/relation_repository.py",
-        "6c80477ba54a0eec58ceedbea60591d4a0a724407796a527f5a287add4fbd5a1",
+        "16136ddd024e00983128e00bc24af29f1270ea5ae855f10e6a4315b9e2e53115",
     ),
     (
         "src/paper_radar/papers/relations.py",
-        "9bd81c1f3371c20311a3906de6748f15c52c3cbbfea2ad3a15c28fd521c77574",
+        "c286f4517b7d9b545a1b7446c2c333f65067c22b0850e46b5da1f2ec56ef3efa",
     ),
     (
         "src/paper_radar/papers/repository.py",
-        "9e25fec43a50878e27644f0b48e3fe6261548ec348054b2951ed2c1bc7179020",
+        "81b3d04a32d51bd6353f8ffc99d6ca183d74584911ae4df0d4ea5c75adc8dd3b",
     ),
     (
         "src/paper_radar/papers/rules.py",
-        "4790187ffed23c63e8ccaa3a8d51fa0a8edd6b59c79fd39dca34c83803e9d86b",
+        "d6e8ff81e894d926c62c1c90dd1c8edb06cf01d7c50799ed8256ec38544952cf",
     ),
     (
         "src/paper_radar/papers/selection_repository.py",
@@ -429,7 +445,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/service.py",
-        "4d18aa053e13bde442d26dbd404fa4c1584d4cb88b25f874c85321a383b00a45",
+        "080c2e1da988d536c0423228f2d975aad6b2c3f94a1dd172a71b668603ebcf08",
     ),
     (
         "src/paper_radar/papers/tables.py",
@@ -437,7 +453,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/text.py",
-        "e00bbfac6a728ca67f1c465db37630ff924f5152c4a518ef75840ca38cc54897",
+        "4027bfb0b48648f79bdad68b2da3f818c89628a68aae1b06d468d52e898f355f",
     ),
     (
         "src/paper_radar/papers/text_rules.py",
@@ -527,7 +543,7 @@ REQUIRED_SOURCE_MODULES = (
 REQUIRED_FIXTURE_FILES = (
     (
         "tests/fixtures/paper_facts_v1.json",
-        "493d8c4b66894f81a969ae3fb31d81354132c66b844fda8425d9762e3b3c6016",
+        "0e88876d19ceae6df0654d9c3f2699106ffb11845b24399b1b50f6686e19d425",
     ),
     (
         "tests/fixtures/a6_capabilities.json",

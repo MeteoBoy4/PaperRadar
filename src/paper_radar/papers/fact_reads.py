@@ -9,7 +9,7 @@ from paper_radar.papers.models import (
     DateValue,
     FieldFact,
 )
-from paper_radar.papers.read_checks import _uuid, corrupt
+from paper_radar.papers.read_checks import corrupt, require_uuid
 from paper_radar.papers.tables import (
     acquisitions,
     authors,
@@ -20,7 +20,7 @@ from paper_radar.papers.tables import (
 from paper_radar.papers.text import normalize_fields, require_public_url
 
 
-def _candidate(
+def load_candidate(
     connection: Connection, candidate_id: str, acquisition_id: str | None = None
 ) -> tuple[str, FieldFact]:
     row = (
@@ -30,7 +30,7 @@ def _candidate(
         .mappings()
         .one()
     )
-    _uuid(candidate_id)
+    require_uuid(candidate_id)
     name = row["field_name"]
     value: str | tuple[str, ...] | AbstractValue | DateValue
     if name == "abstract":
@@ -134,7 +134,7 @@ def observation_fields(
         .where(candidates.c.observation_id == observation_id)
         .order_by(candidates.c.field_name)
     ).scalars()
-    return dict(_candidate(connection, candidate_id) for candidate_id in ids)
+    return dict(load_candidate(connection, candidate_id) for candidate_id in ids)
 
 
 def material_request_matches(material: RowMapping, acquired: RowMapping) -> bool:

@@ -25,7 +25,7 @@
 | isolated_restore | US35；ID19/21 | **paper_recovery_combined/integrity/damage、pending_relation_roles 与 support/reader**：同一非空 WAL 批次、多 Paper/版本/四源/Feed/新旧配置，拒原根及改名根/源备份，恢复再搬迁，两新进程；重哈希且 FK 合法语义损坏仍拒绝、不修复 |
 
 US36、ID1/22–24 由 test_a6_acceptance/integrity/entry/test_receipt/status/formats 与实际正式入口
-证明：required 组、同次前置、严格八域格式、固定材料、逐模块整数回执、身份、不可覆盖、终态、
+证明：required 组、同次前置、严格九域格式（含 mapping_result）、固定材料、逐模块整数回执、身份、不可覆盖、终态、
 applicability，及下面未验收边界。ID1 依赖方向另由 test_paper_migrations 公共架构守卫覆盖；
 ID20 的 PaperReason/中文指导/敏感哨兵在 paper_inputs/cli/mapping_failures，paper_model_validation 覆盖 JSON/strings 公开校验入口；ID23 保持原串行
 协议，没有新 runner、xdist、性能基准或 #63–#66 功能依赖。
@@ -100,3 +100,14 @@ merge/undo、arXiv/PMID、metadata_ready/共享 eligibility、任务 attempt/lea
 正式结论由完整 `check-offline` 实际返回 0 与 `verification-status` passed/verified/same 共同确认。
 保留十份原 JSON、旧/新绑定台账、TDD 红绿日志、实际 collect/执行分母、环境检查和至少 30 分钟
 观察预算/实际耗时；这些外部运行记录不写回受自身 identity/hash 绑定的 tracked 材料。
+
+## r1/r2 审查后补充绑定
+
+新增独立模块 `test_paper_review_boundaries`（22 例）、`test_paper_review_reads`（18 例）、
+`test_a6_review_formats`（4 例）进入 A6 固定范围。前两者覆盖 DOI 双包装类别、精确 URL 路径、
+歧义标签拒绝/数学比较接受、原始未知输入原因、关系原书写和日期联合解析，以及读取环境原因、
+缺制品根参数、当前版本选择文本、普通元数据等待合并提示与精确重试；最后一个通过公开
+writer/status 核对真实 mapping_result 格式及 2/True/1.0 漂移拒绝。原固定回执范围并集 171 模块 3033 例
+条数不变，新增后收集并集为 174 模块 3077 例（不是全套 pytest 总数）；A6 原 45 模块 499 例增为 48 模块 543 例。
+三条旧 DOI 向量仅对齐 unsupported_form，不增加向量。
+完整处置及未采纳理由见[审查处置表](../../intent/review/issue-67-a6-paper-facts-review-resolution.md)。

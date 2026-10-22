@@ -49,6 +49,8 @@ def normalize_doi(value: str) -> str:
                 raise PaperError(PaperReason.UNSUPPORTED_FORM, path="doi") from None
         elif lowered.startswith("doi:"):
             value = value[4:]
+        if value.translate(_ASCII_LOWER).startswith(("doi:", "http:", "https:")):
+            raise PaperError(PaperReason.UNSUPPORTED_FORM, path="doi")
         if (
             len(value.encode("utf-8")) > 2048
             or any(

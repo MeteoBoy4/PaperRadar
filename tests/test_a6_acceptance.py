@@ -37,6 +37,7 @@ def test_a6_records_actual_facts_formats_and_offline_boundaries(tmp_path: Path) 
         "text_norm": 1,
         "feed_item_fingerprint": 1,
         "reason_catalog": 1,
+        "mapping_result": 1,
         "stage_inputs": {"boundary": 1, "value": 1},
         "backup": 1,
     }

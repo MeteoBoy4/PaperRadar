@@ -19,8 +19,8 @@ from paper_radar.papers.models import (
     WriteResult,
 )
 from paper_radar.papers.repository import (
-    _insert_candidates,
-    _saved_result,
+    insert_candidates,
+    saved_acquisition_result,
     update_revision,
 )
 from paper_radar.papers.rules import digest, interpretation_digest
@@ -87,7 +87,7 @@ def retry_correction(
         .mappings()
         .one()
     )
-    return _saved_result(connection, saved)
+    return saved_acquisition_result(connection, saved)
 
 
 def save_correction(
@@ -124,7 +124,7 @@ def save_correction(
             ).scalar()
             or 0
         )
-        material = ObservationInput(
+        interpretation_input = ObservationInput(
             doi=doi,
             version_kind=version["version_kind"],
             source_kind="manual",
@@ -152,7 +152,7 @@ def save_correction(
                 candidate_sha256=digest(parsed),
             )
         )
-        _insert_candidates(connection, observation_id, parsed)
+        insert_candidates(connection, observation_id, parsed)
         current = connection.execute(
             select(func.max(revisions.c.revision_no)).where(
                 revisions.c.version_id == item.version_id
@@ -171,7 +171,7 @@ def save_correction(
                 observed_at=stamp,
                 parser_version=1,
                 payload_sha256=hashlib.sha256(payload).hexdigest(),
-                interpretation_sha256=interpretation_digest(material),
+                interpretation_sha256=interpretation_digest(interpretation_input),
                 interpretation="complete",
                 parsed_sha256=digest(item.fields),
                 source_observation_id=observation_id,

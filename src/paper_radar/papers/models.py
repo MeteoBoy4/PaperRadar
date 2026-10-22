@@ -22,6 +22,10 @@ FieldName = Literal[
     "source_url",
 ]
 VersionKind = Literal["preprint", "journal"]
+SourceKind = Literal["manual", "publisher", "registry", "feed"]
+RelationSourceKind = Literal["publisher", "registry"]
+RelationKind = Literal["is-preprint-of", "has-preprint"]
+RelationState = Literal["endpoint_missing", "requires_merge", "effective"]
 ConflictKind = Literal[
     "doi_owner_conflict",
     "target_mismatch",
@@ -31,6 +35,8 @@ ConflictKind = Literal[
 
 
 class ClosedModel(BaseModel):
+    # __init__ 的脱敏 ValueError 遵循 Pydantic union 候选回退协议;应用入口
+    # model_validate* 将最终失败转换为 PaperError,不能在候选尝试阶段提前中断。
     model_config = ConfigDict(
         extra="forbid",
         frozen=True,
@@ -140,6 +146,11 @@ class CandidateInput(ClosedModel):
 
 
 class ObservationInput(ClosedModel):
+    """原始输入保留开放 str/object,纯规则负责专用 unsupported_* 原因。
+
+    relations 还需容纳带 raw_* 的 NormalizedRelation,不能由基类重校验。
+    """
+
     doi: str | None
     scheme: str = "doi"
     version_kind: VersionKind
@@ -175,7 +186,7 @@ class WriteResult(ClosedModel):
 class FieldFact(ClosedModel):
     acquisition_id: str | None = None
     source_observed_at: str
-    source_kind: Literal["manual", "publisher", "registry", "feed"]
+    source_kind: SourceKind
     provider: str
     query_key: str
     observed_at: str
@@ -212,7 +223,7 @@ class PaperView(ClosedModel):
 class ObservationFact(ClosedModel):
     observation_id: str
     version_id: str
-    source_kind: Literal["manual", "publisher", "registry", "feed"]
+    source_kind: SourceKind
     provider: str
     query_key: str
     observed_at: str
@@ -223,7 +234,7 @@ class ObservationFact(ClosedModel):
 
 
 class AcquisitionFact(ClosedModel):
-    source_kind: Literal["manual", "publisher", "registry", "feed"]
+    source_kind: SourceKind
     raw_doi: str | None
 
     parsed_sha256: str
@@ -340,6 +351,7 @@ class CandidateDecision(ClosedModel):
 
 
 class RelationInput(ClosedModel):
+    # 原始 kind 由 normalize_relations 判断支持范围,保留 unsupported_relation。
     kind: str
     source_doi: str
     target_doi: str
@@ -354,9 +366,9 @@ class RelationFact(ClosedModel):
     journal_version_id: str | None
     preprint_paper_id: str | None
     journal_paper_id: str | None
-    state: Literal["endpoint_missing", "requires_merge", "effective"]
+    state: RelationState
     acquisition_id: str
-    source_kind: Literal["publisher", "registry"]
+    source_kind: RelationSourceKind
     provider: str
     query_key: str
     observed_at: str
@@ -367,14 +379,15 @@ class RelationFact(ClosedModel):
 
 
 class NormalizedRelation(RelationInput):
+    kind: Literal["is-preprint-of"]
     raw_source_doi: str
     raw_target_doi: str
-    raw_kind: str
+    raw_kind: RelationKind
 
 
 class RelationAssertion(ClosedModel):
     response_bytes_retained: bool
-    source_kind: Literal["publisher", "registry"]
+    source_kind: RelationSourceKind
     provider: str
     query_key: str
     observed_at: str
