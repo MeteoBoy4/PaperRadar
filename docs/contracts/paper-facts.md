@@ -200,7 +200,11 @@ Feed 同源排序只用不可变的首次 `observed_at` 和稳定 tie-break。A�
 
 服务当前入口是 paper_id（最新选择→版本→最新完整修订），历史入口是 version_id/revision_no，两者互斥；另明确 snapshot_id，从同数据库 `load_config_snapshot(database, snapshot_id)` 加载，不接受外部拼装快照代替登记核对。revision 属于 version，version 属于相应 Paper；业务依据携带 paper_id、version_id、revision_no、适用选择事件、逐字段 provenance、snapshot_id。
 
-`mapping_result` v1 返回 `format_version=1`、`snapshot_id`、上述 `evidence`、`boundary`、`value`。每个阶段对象固定 `{value, reason, evidence, snapshot_id}`：成功 value 为既有 StageInput、reason=null；失败 value=null、reason 为第 9 节名称；evidence 是同次事实依据，不能凭失败造不存在的依据。共用 ScreeningFacts，缺题名/摘要或未知截断同时阻断两阶段；阶段投影分别判断，因此 boundary 未就绪时已就绪 value 仍可成功，反之亦然。配置和业务错误精确返回受控原因。业务 ID/来源时间/书目字段不进入载荷哈希。文本相同而来源/取得时间/provenance 改变，指纹不变。
+公共入口 `PaperFacts(database).map_screening_inputs(*, snapshot_id, paper_id=None, version_id=None, revision_no=None)` 已交付为只读服务。`snapshot_id` 必须是完整小写 SHA-256；明确当前 `paper_id` 与历史 `version_id/revision_no` 互斥，复用同连接 `resolve_revision` 校验。调用方不能提交 `RuntimeConfigSnapshot` 替代登记身份。先在同一个显式 BEGIN 论文读事务中核对 `runtime_config_snapshots` 登记，再经公共 `load_config_snapshot` 的独立只读连接重建不可变配置；不读取当前 selector 或材料文件。
+
+`mapping_result` v1 是 `ScreeningMappingResult`，固定字段为 `format_version=1`、`snapshot_id`、`evidence`、`boundary`、`value`。`boundary`/`value` 各为 `StageMappingResult`，固定 `{value, reason, evidence, snapshot_id}`：成功 `value` 为既有 `StageInput`、`reason=null`；失败 `value=null`、`reason` 为第 9 节 `PaperReason`。两个阶段独立调用 A5 builder；共用 ScreeningFacts，缺题名/摘要或未知截断同时阻断两阶段；配置投影分别判断，boundary 未就绪不阻止已就绪 value，反之亦然。
+
+`MappingEvidence` 包含完整 `RevisionView` 的 `paper_id/version_id/revision_no/version_kind/doi/fields/selection`，另带明确 `snapshot_id` 和固定 `source_bytes_verified=false`。`fields` 为该完整修订全部字段及逐字段 provenance，不只取输入子集；`selection` 只能是请求版本的实际适用选择，也可为 null，不表示该修订创建时曾是当前。业务事实尚未成功解析时 evidence=null；已解析事实但缺快照/输入/配置就绪时保留真实 evidence，不凭失败造依据。缺项优先级为 missing_title、missing_abstract、truncation_unknown；快照未在同库登记为 snapshot_not_found，登记后无法重建或引用链损坏为 corrupt_reference。业务 ID、DOI、来源时间、选择事件和书目字段均不进入载荷哈希。文本相同而来源/取得时间/provenance 改变，指纹不变。结果、evidence 与 StageInput 的 repr 隐藏题名、摘要和配置正文；载荷与显式字段访问仍是敏感业务数据。
 
 历史重建从完整旧修订与明确旧快照重新 `build_stage_input`，不调用 A5 `replay_stage_input`，不保存 StageInput 载荷或独立期望指纹；未来任务层仍负有规范载荷持久化义务。不存 original_title_is_zh、不派生 ValuePredictionContext。可靠来源 URL 与完整 metadata_ready 属后续 eligibility，不因映射成功而宣称路线尝试、模型、校准就绪。映射只读，不推进 last_seen、不升级选择。
 
