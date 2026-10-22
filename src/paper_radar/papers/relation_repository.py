@@ -8,6 +8,7 @@ from sqlalchemy.engine import RowMapping
 
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError, PaperReason
+from paper_radar.papers.fact_reads import material_request_matches
 from paper_radar.papers.models import (
     NormalizedRelation,
     ObservationInput,
@@ -19,6 +20,7 @@ from paper_radar.papers.relations import relation_state
 from paper_radar.papers.tables import (
     acquisitions,
     identifiers,
+    observations,
     relation_references,
     version_relations,
     versions,
@@ -280,6 +282,10 @@ def validate_assertion(
     _uuid(acquired["acquisition_id"])
     _utc(acquired["observed_at"])
     require_public_url(ref["locator"])
+    if acquired["response_bytes_retained"] != (
+        response_artifact(connection, acquired) is not None
+    ):
+        raise corrupt()
     for key in ("provider", "query_key"):
         require_public_url(acquired[key])
         if not normalize_text(acquired[key]) or len(acquired[key].encode()) > 2048:
@@ -460,11 +466,48 @@ def relation_assertions(
                         "observed_at",
                         "parser_version",
                         "payload_sha256",
+                        "response_bytes_retained",
                     )
                 },
-                "artifact_id": relation["artifact_id"]
-                if ref["acquisition_id"] == relation["acquisition_id"]
-                else None,
+                "artifact_id": response_artifact(connection, acquired),
             }
         )
     return tuple(result)
+
+
+def relation_material_retained(connection: Connection, acquisition_id: str) -> bool:
+    return (
+        connection.execute(
+            select(version_relations.c.relation_id).where(
+                version_relations.c.acquisition_id == acquisition_id
+            )
+        ).first()
+        is not None
+    )
+
+
+def response_artifact(connection: Connection, acquired: RowMapping) -> str | None:
+    relation_artifact = (
+        connection.execute(
+            select(version_relations.c.artifact_id).where(
+                version_relations.c.acquisition_id == acquired["acquisition_id"]
+            )
+        )
+        .scalars()
+        .first()
+    )
+    if relation_artifact is not None:
+        return str(relation_artifact)
+    if acquired["source_observation_id"] is not None:
+        source = (
+            connection.execute(
+                select(observations).where(
+                    observations.c.observation_id == acquired["source_observation_id"]
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if source is not None and material_request_matches(source, acquired):
+            return str(source["artifact_id"])
+    return None

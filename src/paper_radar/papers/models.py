@@ -327,6 +327,7 @@ class NormalizedRelation(RelationInput):
 
 
 class RelationAssertion(ClosedModel):
+    response_bytes_retained: bool
     source_kind: Literal["publisher", "registry"]
     provider: str
     query_key: str

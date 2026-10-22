@@ -128,7 +128,7 @@ URL path 去单个起始 `/` 后严格进行一次 UTF-8 百分号解码；错�
 
 只接非空原始 `bytes`，单份上限 8 MiB，不接调用方“已核验引用”。解析结果由调用方给出、规则由服务确定。先以现有 `ArtifactStore.publish_single` 完整发布来源制品，再提交业务事务；制品已发布但业务失败可以留下完整未引用 `source_snapshot`，重试复用。无需修改 A3 事务、自动清理或把未引用制品称为已持久化冲突观察。
 
-publisher/注册机构来源流为 `(来源类别, 提供方, 查询键, 目标版本)`。用户后续裁决采用不可变的轻量**取得事实**，覆盖此前“无贡献不写业务行”的默认：每个有效请求记录原始响应 SHA-256、取得时间、parser_version、解释摘要与原结果；相同规范候选集合复用同流历史来源观察及候选引用，不重复保存候选正文，也不发布该次非业务变化响应的大包制品。取得事实明确 `response_bytes_retained=false` 时只保存该响应的哈希，原始来源引用仍指向确实保留的旧材料，不宣称保存了新响应全文。新候选集合才先发布完整原始来源制品，再写入来源观察/候选与取得事实。
+publisher/注册机构来源流为 `(来源类别, 提供方, 查询键, 目标版本)`。用户后续裁决采用不可变的轻量**取得事实**，覆盖此前“无贡献不写业务行”的默认：每个有效请求记录原始响应 SHA-256、取得时间、parser_version、解释摘要与原结果；相同规范候选集合复用同流历史来源观察及候选引用，不重复保存候选正文，也不发布该次非业务变化响应的大包制品。`response_bytes_retained` 表示该次响应已作为字段或关系来源材料登记保留，内容对象即使去重也为 true；它不表示物理新增 blob，也不表示创建了字段观察。字段材料所属请求与关系材料取得引用分别核验。取得事实明确 `response_bytes_retained=false` 时只保存该响应的哈希，原始来源引用仍指向确实保留的旧材料，不宣称保存了新响应全文。新候选集合才先发布完整原始来源制品，再写入来源观察/候选与取得事实。
 
 精确重试键固定为 `(来源类别, 提供方, 查询键, 规范 DOI, observed_at, payload SHA-256, parser_version)`，不依赖未来创建的 Paper/Version；与仅限已保留观察的旧口径不同，retained、not_retained 和空候选均登记不可变原结果。相同键及解析内容返回原 acquisition_id、身份、当时修订号与状态；同键异解析内容 `invalid_observation`。首次空候选没有版本/来源引用，不创建空 Paper，不发布空贡献响应，即使日后该 DOI 创建不同类别版本，原请求仍回放原结果。强身份冲突与其余拒绝仍不登记取得事实。
 
@@ -193,7 +193,7 @@ locator 必须非空、无敏感 URL 包装；不联网证明来源真实性。
 规范关系身份全局唯一于 `(preprint_doi, journal_doi)`，不同来源、不同方向和 locator 的原始断言
 经取得引用关联同一个事实。每条引用保留 raw_source_doi/raw_target_doi/raw_kind、locator 与来源流/取得时间/parser/payload hash，
 原始书写不参与身份键或 StageInput。首次新关系保留真实 source_snapshot；后来仅复用关系的取得可只保留哈希，
-其断言 artifact_id 为 null，不假称保留了新响应字节。字段与规范关系共同参与贡献判断：新增关系即 retained，
+若该次也未新增字段材料，其断言 artifact_id 为 null、response_bytes_retained 为 false，不假称保留了新响应字节。若字段材料已登记保留，断言引用该真实字段制品且标志为 true；关系-only 和字段复用加新关系的保留标志同样为 true。字段与规范关系共同参与贡献判断：新增关系即 retained，
 不能因字段候选相同提前丢弃。精确重试返回原结果；同流同材料同 parser 的规范字段/关系解释须恒定。
 更高 parser 不会撤销已保留关系；关系事实没有撤销或 active 标志。
 
@@ -208,7 +208,7 @@ locator 必须非空、无敏感 URL 包装；不联网证明来源真实性。
 选择事件只支持初始选择 `initial` 与正式版升级 `journal_upgrade`，按 Paper 内原子递增 event_no 读取，不能按时钟或 UUID 猜顺序。正式版即使无摘要、无卷期也成为当前，映射如实缺项，预印本摘要不搬过去；同级歧义维持已有选择并披露。重复观察不增选择事件。不开放人工选版本、人工归入 Paper、替代关系或 merge/undo；人工字段修正保留。trace 的“未生效版本关系（等待合并）”必须列出对端 DOI、已有对端 Paper、来源/locator 与原因；端点未出现独立措辞，不伪造 UUID。
 
 `trace.relations` 提供规范两端 DOI、可空端点 Version/Paper、派生 state
-（endpoint_missing/requires_merge/effective）、首次来源/locator/制品及全部 assertions 原始断言。
+（endpoint_missing/requires_merge/effective）、首次来源/locator/制品及全部 assertions 原始断言（含该次响应登记保留标志与可空真实制品引用）。
 双方 Paper 查询同一关系得到一致结果；`trace.selection_conflicts` 列出与当前同级但未替换当前的版本。
 每个版本 view 的 selection 只关联该版本真实被选事件，未曾选过为 null。
 

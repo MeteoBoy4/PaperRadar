@@ -8,7 +8,12 @@ from sqlalchemy.engine import RowMapping
 
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError, PaperReason
-from paper_radar.papers.fact_reads import _candidate, observation_fields, source_stream
+from paper_radar.papers.fact_reads import (
+    _candidate,
+    material_request_matches,
+    observation_fields,
+    source_stream,
+)
 from paper_radar.papers.feed_queries import load_discoveries
 from paper_radar.papers.models import (
     AcquisitionFact,
@@ -27,6 +32,7 @@ from paper_radar.papers.models import (
 from paper_radar.papers.read_checks import _utc, _uuid, corrupt
 from paper_radar.papers.relation_repository import (
     load_relations,
+    relation_material_retained,
     retained_relation_result,
 )
 from paper_radar.papers.rules import (
@@ -148,6 +154,7 @@ def validate_unbound_acquisitions(connection: Connection) -> None:
                 item.source_observation_id is not None
                 or item.event_no is not None
                 or item.response_bytes_retained
+                != relation_material_retained(connection, item.acquisition_id)
                 or (
                     item.result_status != "not_retained"
                     and not retained_relation_result(connection, row)
@@ -353,19 +360,17 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                         acquired.query_key,
                     ):
                         raise corrupt()
-                    if acquired.response_bytes_retained:
+                    field_material_created = material_request_matches(material, row)
+                    relation_material_created = relation_material_retained(
+                        connection, acquired.acquisition_id
+                    )
+                    if acquired.response_bytes_retained != (
+                        field_material_created or relation_material_created
+                    ):
+                        raise corrupt()
+                    if field_material_created:
                         if (
                             source_id in creators
-                            or (
-                                material["observed_at"],
-                                material["payload_sha256"],
-                                material["parser_version"],
-                            )
-                            != (
-                                acquired.observed_at,
-                                acquired.payload_sha256,
-                                acquired.parser_version,
-                            )
                             or acquired.result_status != "retained"
                         ):
                             raise corrupt()
@@ -389,7 +394,9 @@ def load_trace(connection: Connection, paper_id: str) -> PaperTrace:
                             stream=source_stream(connection, row),
                         )
                     )
-                elif acquired.response_bytes_retained or (
+                elif acquired.response_bytes_retained != relation_material_retained(
+                    connection, acquired.acquisition_id
+                ) or (
                     acquired.result_status != "not_retained"
                     and not retained_relation_result(connection, row)
                 ):

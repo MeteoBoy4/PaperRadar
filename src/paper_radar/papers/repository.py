@@ -384,6 +384,11 @@ def save_observation(
                 connection, item, acquisition_id, artifact_id
             )
             retained = retained or relation_retained
+            connection.execute(
+                acquisitions.update()
+                .where(acquisitions.c.acquisition_id == acquisition_id)
+                .values(response_bytes_retained=retained)
+            )
             requires_merge = any(
                 relation.state == "requires_merge"
                 for relation in load_relations(connection)
@@ -404,6 +409,7 @@ def save_observation(
                     if retained or requires_merge
                     else "not_retained",
                     result_reason=reason.value if reason else None,
+                    response_bytes_retained=retained,
                 )
             )
             if version_id:

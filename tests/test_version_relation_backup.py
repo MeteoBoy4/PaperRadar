@@ -125,13 +125,32 @@ def test_wal_backup_moves_and_rebuilds_all_relation_states_in_new_process(
 
 
 @pytest.mark.parametrize(
-    "damage", ["source", "raw_endpoint", "kind", "missing_reference", "locator"]
+    "damage",
+    [
+        "source",
+        "raw_endpoint",
+        "kind",
+        "missing_reference",
+        "locator",
+        "missing_retention",
+        "invented_retention",
+    ],
 )
 def test_rehashed_relation_damage_is_rejected_without_repair(
     tmp_path: Path, damage: str
 ) -> None:
     service, _ = populated(tmp_path / "source")
     assert service.data_root
+    repeated = service.submit(
+        observation(
+            doi="10.1/pre",
+            version_kind="preprint",
+            fields={},
+            payload=b"same relation without contribution",
+            relations=relation(),
+        )
+    )
+    assert repeated.status == "not_retained"
     batch = create_backup(service.database, service.data_root, tmp_path / "backups")
     copied = batch.batch_dir / "database.sqlite3"
     with closing(sqlite3.connect(copied)) as connection:
@@ -153,6 +172,18 @@ def test_rehashed_relation_damage_is_rejected_without_repair(
             connection.execute(
                 "DELETE FROM paper_relation_references WHERE acquisition_id IN "
                 "(SELECT acquisition_id FROM paper_version_relations)"
+            )
+        elif damage == "missing_retention":
+            connection.execute(
+                "UPDATE paper_source_acquisitions SET response_bytes_retained=0 "
+                "WHERE acquisition_id IN "
+                "(SELECT acquisition_id FROM paper_version_relations)"
+            )
+        elif damage == "invented_retention":
+            connection.execute(
+                "UPDATE paper_source_acquisitions SET response_bytes_retained=1 "
+                "WHERE acquisition_id=?",
+                (repeated.acquisition_id,),
             )
         else:
             connection.execute("UPDATE paper_version_relations SET locator='   '")

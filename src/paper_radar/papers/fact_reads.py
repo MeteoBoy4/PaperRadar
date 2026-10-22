@@ -135,3 +135,19 @@ def observation_fields(
         .order_by(candidates.c.field_name)
     ).scalars()
     return dict(_candidate(connection, candidate_id) for candidate_id in ids)
+
+
+def material_request_matches(material: RowMapping, acquired: RowMapping) -> bool:
+    """材料所属请求身份,独立于公开的整次响应保留标志。"""
+    return all(
+        material[key] == acquired[key]
+        for key in (
+            "version_id",
+            "source_kind",
+            "provider",
+            "query_key",
+            "observed_at",
+            "payload_sha256",
+            "parser_version",
+        )
+    )
