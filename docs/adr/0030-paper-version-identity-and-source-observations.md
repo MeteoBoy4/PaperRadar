@@ -1,6 +1,6 @@
 # 论文版本身份与来源观察仲裁
 
-状态：已接受语义，运行能力待 A6 实现。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
+状态：已接受语义；#69 落地首条出版者 DOI 事实路径，其余运行能力待 A6 后续实现。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
 
 一个 DOI 恒绑定一个 Paper/Version，一个版本最多一个 DOI，preprint/journal 创建后不可变；online-first 到卷期只是同版本修订。不同 DOI 只有权威关系才归入同一 Paper，不能再以“同 DOI 多公开形态”发明版本键。该决策收窄 ADR-0001/0005 的 A6 路径而不实现两个既有 Paper 合并；暂存重复比错误合并安全。
 
@@ -38,3 +38,9 @@ Feed 同源仲裁只用不可变首次 observed_at，A→B→A 不回摆，last_
 | #67 评论 N8 空表横向拆票 | 按已拆实际图改为纵向业务切片，首次 a601 后追加顺序迁移 | Contract §11 |
 
 #68 仅文档同步，未改固定运行材料、旧分母、历史证据或 A6 注册。后续 README 与其他 Contract 随能力落地更新；原 #67 基线 passed 及来源 170/170 均不是 A6 证据。
+
+#69 用版本内递增取得 event_no 与修订触发引用证明每次历史修订当时的已保留取得集合；event_no 不作为非人工仲裁时序。规范候选集合摘要及纯规则回演校验完整引用式修订，不复制摘要全文。
+
+## #69 取得事实的后续用户裁决
+
+[用户选择轻量重复取得事件](https://github.com/MeteoBoy4/PaperRadar/issues/67#issuecomment-6333258795)，覆盖 #67/#71 先前“候选无贡献不写业务行”的默认，A6 未发布的 v1 据此完善；既有 A1–A5 不变。publisher 的有效取得均保存不可变稳定请求键和原结果，相同候选复用旧观察/候选，新的取得时间参与获选 provenance；not_retained 表示未新增来源材料/候选正文，仍可能保存轻量取得与引用式修订。新响应只保留 SHA-256 时必须明示未保留全文，不为非业务变化永久发布新大包。空候选的回执不依赖未来论文身份，日后建 Paper 不重新解释旧结果。Feed 的首次时间与 D3 回摆规则保持不变。当前 URL 形式的来源定位元数据拒绝 userinfo/query/fragment，opaque 查询键不猜敏感参数，这不是 Feed URL 的规范化规则。

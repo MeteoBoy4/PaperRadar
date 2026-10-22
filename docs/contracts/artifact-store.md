@@ -34,7 +34,7 @@ SQLite 是登记事实源：`content_objects` 记录 blob 身份、长度、布�
 `artifacts` 记录身份、kind、格式与时间；`artifact_members` 记录 artifact/role 到 blob 和
 成员长度。artifact 清单正文既不存磁盘也不存数据库；每次读取从关系重算身份。
 PK、UNIQUE、FK、hex 和非负整数约束在 SQLite 生效；kind/role 枚举由 Python Contract
-强制，不使用需要重建表才能演进的 DB CHECK 枚举。不建立论文表、backup_runs 或自由业务 JSON 桶。
+强制，不使用需要重建表才能演进的 DB CHECK 枚举。A3 本身不建立论文表、backup_runs 或自由业务 JSON 桶；#69 已实现的独立论文事实表与来源关联见[论文事实 Contract](paper-facts.md)。
 
 ## 独立固定向量
 

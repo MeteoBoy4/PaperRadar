@@ -7,7 +7,7 @@ from scripts.verification_checks import ReceiptCounter as ReceiptCounter
 SCOPE = "a2_versioned_config_snapshots"
 ISSUE = 25
 FORMAT_VERSION = 2
-MIGRATION_REVISION = "a405_pi_cleanup_execution"
+MIGRATION_REVISION = "a601_paper_facts"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 # 固定用例数量在独立收集核对后登记。回执必须同时证明收集和三阶段通过。
@@ -142,11 +142,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_acceptance.py",
-        "f2af0847115f44ec8ff73875a8a6a457dcc62cc6a0c59c8559600a9812501c76",
+        "70b8c2a04ed676ba917dd4886ec1df0115555e880d13be1033e19cf6ae41e82e",
     ),
     (
         "tests/test_a2_full_acceptance.py",
-        "bb8c4138b025c70fa9511222bb24247cb2ccda9f2bbc500e4d5bdc62a25d9635",
+        "52bf72a822adb72349dd526c99a44dcccf8ad4c943fab1d9cdacdc4c112e9aef",
     ),
     (
         "tests/test_a2_full_entry.py",
@@ -396,7 +396,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/cli.py",
-        "f3157590452d21827f3b9087a6861610dafba7f54259b39faff46a6109b8ba97",
+        "c444c4e16c98e8615c2b5268f0f4288144c7aff3a3890f072bf503e66a55a524",
     ),
     (
         "src/paper_radar/config/__init__.py",

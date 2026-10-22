@@ -62,7 +62,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。根内任何路径组件符号�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 a405_pi_cleanup_execution，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 a601_paper_facts，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -197,7 +197,7 @@ backup verify 一样只给批次 ID、清单 SHA-256 及按 kind 汇总，不逐
 
 ## Pi 供给事实与旧 revision 批次
 
-当前 head `a405_pi_cleanup_execution` 将供给清单、官方/派生/补充校验材料、D5 证据与引用、
+供给路径已在 `a405_pi_cleanup_execution` 将供给清单、官方/派生/补充校验材料、D5 证据与引用、
 安装根归属、安装实例、scope 为 install_check 的历史事实、重建失败、
 激活事件及单库唯一当前选择、不可变清理计划与追加的清理执行进展一并存入数据库。
 备份 format 仍为 1，不增清单字段、blob kind 或安装树副本。
@@ -250,3 +250,5 @@ A4 同次完整离线组合还覆盖：非空供给准备/核验/重建与激活
 释放后显式计划清理，再导出固定原材料；备份隔离恢复仍保留供给检查、激活、原计划和
 逐项执行审计、D5 原字节与既有配置/制品，退役安装不恢复可用性。该组合不访问原根、
 不安装 Pi/Node、不启用模型，不替代 NAS/live 验收；见 [A4 证据](../verification/offline-evidence.md)。
+
+当前显式支持的 head 为 `a601_paper_facts`。#69 将非空出版者 DOI 论文事实纳入固定数据库副本的语义校验，错误身份归属、来源 kind/payload、候选摘要与完整历史修订引用均以既有 `registration_invalid` 拒绝；不修复源库或批次。旧 a405 批次返回 `unsupported_revision`，须用匹配旧程序恢复后再显式升级。

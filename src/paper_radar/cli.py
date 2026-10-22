@@ -25,6 +25,7 @@ from paper_radar.contracts import (
     export_frozen_contracts,
 )
 from paper_radar.contracts.schema import _SUPPORTED_CONTRACT_VERSIONS
+from paper_radar.papers.cli import paper_app
 from paper_radar.pi_supply.cli import DOCTOR_HELP, DoctorCommand, doctor_command, pi_app
 
 _EXAMPLE_CONTRACT_NAME = ContractName.BOUNDARY.value
@@ -48,6 +49,9 @@ _CONTRACT_CHOICES_HELP = "\n".join(
 
 ROOT_HELP = """\
 PaperRadar 工程入口。
+
+paper show/trace 只读查看论文事实与来源。
+例如 paper-radar paper show PAPER_ID --database data/paper-radar.sqlite3。
 
 当前用途：管理冻结契约；显式迁移配置数据库，检查、编译、只读列出或比较配置快照。
 创建并只读校验包含已登记配置材料和制品的备份批次，向空隔离目标验证性恢复完整副本。
@@ -173,6 +177,7 @@ contracts_app = typer.Typer(
     no_args_is_help=True,
     rich_markup_mode="markdown",
 )
+app.add_typer(paper_app, name="paper")
 app.add_typer(contracts_app, name="contracts")
 app.add_typer(db_app, name="db")
 app.add_typer(config_app, name="config")

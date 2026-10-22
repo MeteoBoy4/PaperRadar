@@ -1,6 +1,6 @@
 # 论文事实 Contract（A6 目标）
 
-状态：#68 只冻结已裁决的目标语义，运行能力待 #69–#75 实现与独立验收；本文不发布服务、CLI 或 A6 passed 声明。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
+状态：#68 冻结已裁决的目标语义；#69 实现首条出版者 DOI 事实路径与只读查询，其余能力待 #70–#75 实现与独立验收，不声明 A6 passed。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
 
 ## 1. 范围与格式
 
@@ -18,6 +18,14 @@
 boundary/value StageInput 沿用既有格式 1，backup format 沿用 1。A6 只接 DOI、明确的既有 Paper/Version、Feed 发现和出版者结构化、DOI 注册机构、Feed、人工字段修正观察。不接受 arXiv/PMID、自由 scheme 或关系类型、HTTP 状态、失败响应、任意 JSON 属性；不建 `duplicate_candidates`、`merge_events`、`manual_intakes`、任务/校准空表。未开放字段或关系整笔拒绝，不忽略后当作成功。
 
 论文事实服务承载确定性规则与事务边界。CLI 与未来适配器只调用公共服务；纯 DOI/文本/仲裁/版本规则不依赖 storage 或 SQLAlchemy。config、screening、stage_inputs 不得反向导入论文事实服务；服务不得导入 HTTP/LLM/Docling/外部适配器。后续 AST 检查固定这些依赖。A6 不新增网络端点适配器、Feed 配置或产品写入命令。
+
+### 1.1 #69 当前可用切片
+
+公共 Python 边界为 `paper_radar.papers.PaperFacts(database, data_root)`：`submit(observation)` 接受严格 `ObservationInput` 或其字段字典，返回 `WriteResult`；`show(paper_id)` 返回当前 `PaperView`，`trace(paper_id, verify_source_bytes=False)` 返回 `PaperTrace`，`validate_all()` 只读校验完整引用与历史修订。所有公开模型 repr/str 隐藏论文内容；服务验证错误只返回受控原因，不透传 Pydantic 输入载荷。
+
+本切片仅接受 `source_kind="publisher"`、DOI 目标与同一 `(provider, query_key, version_id)` 出版者流。字段候选是 `{value, locator}`；摘要 value 是 `{text, is_truncated, rule}`，日期 value 是 `{value, precision}`，作者使用有序字符串 tuple。`version_kind` 为 `preprint/journal`，`observed_at` 为明确 UTC datetime，`parser_version` 为正整数，`payload` 为单份非空 bytes。其余支持范围以本文目标为准，当前跨来源流、注册机构、Feed、人工入口分别 `unsupported_source`，关系 `unsupported_relation`，未知字段 `unsupported_field`，均整笔拒绝。
+
+迁移 `a601_paper_facts` 只建立实际使用的 Paper、Version、doi 标识、出版者观察、字段候选/作者成员、完整引用式修订与初始选择表。无 Feed、关系、人工修正或未来任务空壳表。只读 CLI 为本文 §8 的 show/trace 子集；当前 trace 展示所有已支持版本、选择、修订、观察与候选，不伪造尚未支持的 Feed/关系事实，也不开放映射、历史选择器或配置快照参数。
 
 ## 2. Paper、版本与 DOI 身份（D1）
 
@@ -46,7 +54,15 @@ URL path 去单个起始 `/` 后严格进行一次 UTF-8 百分号解码；错�
 
 只接非空原始 `bytes`，单份上限 8 MiB，不接调用方“已核验引用”。解析结果由调用方给出、规则由服务确定。先以现有 `ArtifactStore.publish_single` 完整发布来源制品，再提交业务事务；制品已发布但业务失败可以留下完整未引用 `source_snapshot`，重试复用。无需修改 A3 事务、自动清理或把未引用制品称为已持久化冲突观察。
 
-publisher/注册机构来源流为 `(来源类别, 提供方, 查询键, 目标版本)`，精确重试键为 `(来源流, observed_at, payload SHA-256, parser_version)`。重试返回原结果；同键却给不同解析内容则 `invalid_observation`。新解析的字段加规范关系候选集合（包含 locator、规范值、截断/日期属性与规则身份，不含原响应非业务字段）与该流最近保留观察相同则 `not_retained`，不增业务观察；parser_version 不混入候选集合的值比较，但对同一材料的更高 parser_version 必须保留新解释，不能被相同候选短路丢弃。最近保留观察按仲裁同一确定序 `(observed_at, payload SHA-256, parser_version)` 取最大，不按入库顺序；旧观察晚到也与提交前该最大观察比较，有贡献则保留，但不会因晚到而抢规范值。仅被引次数等非业务字节变化不算贡献。空观察同样不保留，原始内容对象可以共享。A→B→A 若集合有变化可保留，新旧观察按事实时序仲裁；Feed 使用第 4 节独立字节去重。304、限流、失败在输入类型上就不可表达，未来 task_attempts 承担取得执行历史。
+publisher/注册机构来源流为 `(来源类别, 提供方, 查询键, 目标版本)`。用户后续裁决采用不可变的轻量**取得事实**，覆盖此前“无贡献不写业务行”的默认：每个有效请求记录原始响应 SHA-256、取得时间、parser_version、解释摘要与原结果；相同规范候选集合复用同流历史来源观察及候选引用，不重复保存候选正文，也不发布该次非业务变化响应的大包制品。取得事实明确 `response_bytes_retained=false` 时只保存该响应的哈希，原始来源引用仍指向确实保留的旧材料，不宣称保存了新响应全文。新候选集合才先发布完整原始来源制品，再写入来源观察/候选与取得事实。
+
+精确重试键固定为 `(来源类别, 提供方, 查询键, 规范 DOI, observed_at, payload SHA-256, parser_version)`，不依赖未来创建的 Paper/Version；与仅限已保留观察的旧口径不同，retained、not_retained 和空候选均登记不可变原结果。相同键及解析内容返回原 acquisition_id、身份、当时修订号与状态；同键异解析内容 `invalid_observation`。首次空候选没有版本/来源引用，不创建空 Paper，不发布空贡献响应，即使日后该 DOI 创建不同类别版本，原请求仍回放原结果。强身份冲突与其余拒绝仍不登记取得事实。
+
+`not_retained` 现在表示没有新增来源材料观察或候选正文，**不表示未持久化任何业务事实**。它可以新增轻量取得事实，并在获选取得 provenance 改变时追加引用式修订。A(t1)→A(t3)→B(t2晚到) 与 A(t1)→B(t2)→A(t3) 均获选 t3 的 A；每次取得使用自身不可变 observed_at、响应 SHA-256、parser_version 参与确定性仲裁。候选引用仍指向旧观察，取得时间/解析依据与原始材料的取得时间分开展示，不能把候选原属观察时间改成新时间。只读发布计划可先找同流同集合依据，ArtifactStore 发布仍在业务写事务之外，写事务重新核对；并发最多留下完整未引用制品，无内部忙锁重试循环。Feed 后续仍使用第 4 节首次时间与 D3 回摆规则，不能套用本段 publisher 取得时序。
+
+304、限流、失败在输入类型上不可表达；这些取得执行历史仍由未来 task_attempts 承担。轻量取得只记录有效解析请求，不成为通用请求/HTTP日志框架。
+
+当前来源 URL 与 URL 形式的查询键/提供方/locator 拒绝 userinfo、query（含空 `?`）和 fragment（含空 `#`），不猜测参数名或 opaque 查询键里的 secret；这是防止认证 URL 进入查询面的严格初版能力边界，不表示 URL 可靠性/eligibility 已核验。原始材料按来源发布规则保留。这条规则不能用于 Feed 端点 URL，第 4 节 Feed query 必须逐字保留。
 
 所有时钟事实统一 UTC，精度固定到微秒；输入须明确 UTC 时区，不接受 naive 时间。观察时刻、选择/修订时间和 first_seen/last_seen 与发布日期分开；发布日期按语义和精度保存，不伪造时钟。
 
@@ -80,6 +96,8 @@ Feed 同源排序只用不可变的首次 `observed_at` 和稳定 tie-break。A�
 
 修订号在该版本写事务内 `max+1`，唯一约束保护 `(version_id, revision_no)`。历史读取必须以整个修订取逐字段引用，不允许调用方拼出从未同时成立的字段组合。
 
+取得事实另有版本内写事务分配的递增 `event_no`，修订引用触发取得；两者只证明当次修订形成时已经保留的取得集合，不进入非人工获选优先级。只读校验按该历史取得集合复用纯获选规则，逐字段比较完整候选引用，并校验规范候选集合摘要，拒绝同版本错获选候选、缺字段与候选篡改。规范候选摘要不替代原始来源字节核验。
+
 ## 6. 权威版本关系与当前选择（N2）
 
 仅接受出版者/DOI 注册机构且有 locator 的预印本 DOI→正式版 DOI 关系。`is-preprint-of/has-preprint` 先归一同一个方向再判重；Feed、人工断言、未知关系、自指、类别方向不符和目标不一致拒绝。关系独立保存，另一端可尚未登记，关系本身不创建空版本。
@@ -90,7 +108,7 @@ Feed 同源排序只用不可变的首次 `observed_at` 和稳定 tie-break。A�
 
 ## 7. 写入结果、事务与阶段 C 硬门禁（D4）
 
-强身份冲突 `identity_conflict` 整笔拒绝业务行：不写发现、来源观察、候选、关系、修订或选择，最多保留完整未引用 source_snapshot。细分类别固定为 `doi_owner_conflict`、`target_mismatch`、`version_kind_conflict`、`entry_doi_changed`。关系冲突 `requires_merge` 则观察及关系已保留，是成功结果；`not_retained` 是有效但无贡献的独立结果。结果类型须区分 retained/not_retained/rejected，携带 reason_catalog 版本、reason 与可选冲突类别，不用一个失败布尔值混同三者。
+强身份冲突 `identity_conflict` 整笔拒绝业务行：不写发现、来源观察、候选、关系、修订或选择，最多保留完整未引用 source_snapshot。细分类别固定为 `doi_owner_conflict`、`target_mismatch`、`version_kind_conflict`、`entry_doi_changed`。关系冲突 `requires_merge` 则观察及关系已保留，是成功结果；`not_retained` 是有效且未新增来源材料/候选正文的独立结果，轻量取得与必要修订已经保存。结果类型须区分 retained/not_retained/rejected，携带 reason_catalog 版本、reason 与可选冲突类别，不用一个失败布尔值混同三者。
 
 **阶段 C 接入真实 Feed 前必须完成强身份冲突观察的持久化；此前适配器不得直接复用 A6 拒绝路径为生产写入。** A6 没有真实 Feed，仅数据库身份/幂等入口及离线测试调用方，因此当前丢失窗口为空，这也是推迟持久化唯一成立依据。阶段 C 必须逐类别验证冲突仍有可查询原始观察，避免正式论文被漏掉；A6 的细分类受控结果为适配器保留扩展点，不能将拒绝混作 not_retained。
 
@@ -120,7 +138,7 @@ CLI 目标固定为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER
 | `invalid_doi` | 本规则下 DOI 结构、编码或长度非法；不是论文无效或联网核验结论 | 请核对 DOI 字面值 |
 | `identity_conflict` | 强身份冲突整笔拒绝，附第 7 节类别；不是无贡献或关系待合并 | 请核对已登记身份，勿自动换绑 |
 | `requires_merge` | 观察/关系已保留但跨 Paper，成功且等待合并；不是拒绝 | 请查看 trace 的等待合并依据 |
-| `not_retained` | 有效但空或候选无贡献，不新增业务观察；不是冲突或失败响应记录 | 无需重试相同内容 |
+| `not_retained` | 有效但空或候选复用，不新增来源材料观察；轻量取得与必要修订已保存，不是冲突或失败响应记录 | 无需重试相同内容 |
 | `truncation_unknown` | 获选摘要完整性标记未知；不默认完整 | 请补充文本和明确截断标记 |
 | `database_busy` | 5 秒有界锁等待耗尽，业务未部分提交 | 请在写入结束后显式重试 |
 | `config_not_ready` | 该阶段已登记配置投影未就绪；不是校准失败 | 请补齐该阶段配置 |

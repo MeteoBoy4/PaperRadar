@@ -151,6 +151,12 @@ def _registered_contents(
         list_supplies(database)
     except SupplyError:
         raise BackupError(BackupReason.SUPPLY_INVALID) from None
+    from paper_radar.papers import PaperError, PaperFacts
+
+    try:
+        PaperFacts(database, data_root).validate_all()
+    except PaperError:
+        raise BackupError(BackupReason.REGISTRATION_INVALID) from None
     return tuple(blobs[key] for key in sorted(blobs)), artifacts, snapshot_ids
 
 

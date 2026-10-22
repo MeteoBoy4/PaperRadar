@@ -37,7 +37,7 @@ def test_a5_records_complete_independent_capabilities_and_live_boundaries(
         "passed",
     )
 
-    assert result["migration_revision"] == "a405_pi_cleanup_execution"
+    assert result["migration_revision"] == "a601_paper_facts"
     assert result["scope"] == "a5_stage_input_fingerprints"
     assert (result["format_version"], result["parent_issue"], result["issue"]) == (
         1,
@@ -305,7 +305,7 @@ def test_actual_new_migration_head_is_rejected_until_explicitly_registered(
     migrations = tmp_path / "migrations"
     shutil.copytree(Path(database.__file__).parent / "migrations", migrations)
     (migrations / "versions/unregistered.py").write_text(
-        "revision='unregistered'\ndown_revision='a405_pi_cleanup_execution'\n"
+        "revision='unregistered'\ndown_revision='a601_paper_facts'\n"
         "def upgrade():pass\ndef downgrade():pass\n",
         encoding="utf-8",
     )

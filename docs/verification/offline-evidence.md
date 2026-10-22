@@ -610,3 +610,30 @@ Pi/Docling实际执行、正式校准工作流、真实来源、NAS、阶段 A/l
 固定哈希按 a2_scope wrapper、完整A2 scope、A3 scope、A4 scope、A5 scope 顺序登记，
 避免循环绑定。终端fixture的八种历史case原有行保留，按已确定A5判据追加新行；
 交付运行不扫描目录生成expected，不刷新向量或降低分母。旧证据保留，任何修复用新run_id重跑。
+
+### #69 首条 DOI 论文事实路径（尚未注册 A6）
+
+本切片新增公共论文事实服务、严格 DOI/文本规则、有界出版者原始来源、唯一身份与
+完整候选引用式修订、只读 paper show/trace、a601_paper_facts 迁移与非空本机恢复。
+独立用例置于 test_paper_identity/inputs/service/acquisitions/cli/process/migrations/backup 新模块，
+固定 DOI/文本向量位于 tests/fixtures/paper_facts_v1.json；旧固定模块的用例分母不变。
+真实进程屏障验证两进程竞争、5 秒忙锁、发布后/事务中/提交后未返回的强杀恢复，
+以及两次 SELECT 之间提交的不可见性。移除显式 BEGIN 的故障实验必须使后一用例失败。
+备份副本与恢复路径拒绝外键合法的跨版本 provenance、同版本错获选候选、缺失获选字段、
+候选正文篡改与错来源 kind；重算外层数据库哈希不能掩盖损坏。
+
+| 重审范围 | 原因与保持项 |
+| --- | --- |
+| a2_scope、完整 A2、A3、A4、A5 的 migration_revision 与旧测试当前-head断言 | 实际 head 追加 a601，历史 a405 migration 原字节不改；旧分母不变 |
+| cli.py 及绑定它的 A2/完整A2/A3/A4 | 注册 paper 只读组并说明用途；root 与新 help 禁外部 I/O 验证 |
+| backup manifest/service 与 A3 绑定 | 显式支持 a601，在固定副本上增加完整论文历史语义校验；未来 head 仍拒绝 |
+| 受影响旧验收测试/历史升级测试及下游scope字节 | 当前head或已登记上游scope发生必要变化；不刷新旧证据，不追加旧模块用例 |
+
+逐项旧哈希/新哈希/原因与最终重跑 run_id 由本次交付的独立重绑台账保存；台账在工作树外
+生成，避免把最终 run_id 写入被同次身份哈希的材料。固定源码哈希按 a2_scope wrapper、
+完整 A2、A3、A4、A5 拓扑重审，audit-verification-scope --json --collect 检查旧分母。
+长门禁预留 30 分钟并先运行 dev-environment check，实际耗时及九份原始 JSON 以交付记录为准。
+本次不注册 A6、不改写 A5 历史 paper_fact_mapping 未覆盖结论；跨来源、Feed、人工修正、
+版本关系、输入映射、真实来源/LLM/Docling/RPC/NAS 与完整阶段 A/live 未验收。
+
+#69 后续用户裁决另由 test_paper_acquisitions 覆盖乱序同值取得、复用候选不发布新响应大包、not_retained/空请求的原结果重试和同键异解析拒绝；backup 用活跃 WAL 中的非空取得事实验证隔离恢复，不变更 Feed D3。

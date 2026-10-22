@@ -55,7 +55,7 @@ def test_nonempty_previous_revision_upgrade_preserves_previous_facts(
                     f"INSERT INTO {table} VALUES ({','.join('?' for _ in values[0])})",
                     values,
                 )
-    assert upgrade_database(old) == "a405_pi_cleanup_execution"
+    assert upgrade_database(old) == "a601_paper_facts"
     assert show_supply(old, prepared.supply_id) == show_supply(
         source[0], prepared.supply_id
     )
