@@ -116,8 +116,8 @@ def test_nonempty_registration_upgrade_retains_receipts_and_is_atomic(
                 name: connection.execute(f"SELECT * FROM {name}").fetchall()
                 for name in expected
             } == expected
-    assert upgrade_database(old) == "a703_screening_success"
-    assert upgrade_database(old) == "a703_screening_success"
+    assert upgrade_database(old) == "a704_screening_retry"
+    assert upgrade_database(old) == "a704_screening_retry"
     with closing(sqlite3.connect(old)) as connection:
         assert {
             name: [

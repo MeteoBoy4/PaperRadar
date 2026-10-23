@@ -8,6 +8,10 @@ REASON_CATALOG_VERSION = 1
 
 
 class TaskReason(StrEnum):
+    TASK_NOT_FOUND = "task_not_found"
+    ALREADY_RETRIED = "already_retried"
+    NOT_LATEST = "not_latest"
+    NOT_FAILED = "not_failed"
     INVALID_REQUEST = "invalid_request"
     INVALID_CONTEXT = "invalid_context"
     CONTEXT_CONFLICT = "context_conflict"
@@ -29,6 +33,10 @@ class TaskReason(StrEnum):
 
 
 GUIDANCE = {
+    TaskReason.TASK_NOT_FOUND: "请核对目标任务 ID。",
+    TaskReason.ALREADY_RETRIED: "该失败任务已有后继,请查询后继任务。",
+    TaskReason.NOT_LATEST: "请针对当前输入的最新任务代际操作。",
+    TaskReason.NOT_FAILED: "该任务尚未形成失败终态,请查询已有尝试与剩余预算。",
     TaskReason.INVALID_CANDIDATE: "请提交受支持的原始响应和执行审计字段。",
     TaskReason.ALREADY_SUCCEEDED: "该输入已有成功筛选制品。",
     TaskReason.SUCCESS_NOT_FOUND: "请核对筛选制品 ID。",
@@ -57,7 +65,9 @@ class TaskError(Exception):
         *,
         build_reason: BuildReason | None = None,
         field: InputField | None = None,
+        successor_task_id: str | None = None,
     ) -> None:
+        self.successor_task_id = successor_task_id
         self.reason = reason
         self.build_reason = build_reason
         self.field = field

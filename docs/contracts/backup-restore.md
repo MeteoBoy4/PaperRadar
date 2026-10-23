@@ -62,7 +62,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。根内任何路径组件符号�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 a703_screening_success，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 a704_screening_retry，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -307,3 +307,12 @@ artifact kind 与 counts 均保持原值。任务语义钩子继续位于 PaperF
 attempt；源库和副本之后各自继续，不能承诺跨回退追回丢失次数或限制全局真实调用数。
 新程序对 a701 批次返回 unsupported_revision，须由匹配旧程序恢复后显式升级活动副本。
 完整成功/retry 跨域恢复、真实模型、RPC、NAS 与 live 行为仍待后续验收。
+
+
+## A7-06 retry 链闭包
+
+当前 head 为 a704_screening_retry；备份格式 1、manifest 与 counts 不变。任务完整性钩子
+追加连续代际、唯一同预算父链、父真实失败终态与 retry 请求摘要校验。恢复保留每代
+两次预算、原回执、后继与未结算租约，查询只派生 lease_expired，不自动回收或执行。
+外键合法且外层重新哈希的代际跳号、环、父链缺失、retry 摘要损坏或未失败父任务仍报
+registration_invalid；拒绝不修复批次，也不发布恢复目标。#83 负责最终完整组合恢复。

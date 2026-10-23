@@ -1,6 +1,6 @@
 """A3 固定范围的分票登记。完整结论由 #35 追加,不提前声明通过。"""
 
-MIGRATION_REVISION = "a703_screening_success"
+MIGRATION_REVISION = "a704_screening_retry"
 ARTIFACT_MIGRATION_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/storage/migrations/versions/a302_artifact_store.py",
@@ -19,7 +19,7 @@ ARTIFACT_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_storage_migrations.py",
-        "87f1b4ab2ff10d8d2a5785187307cb1a2782a525ccdb3486f516e3cf45b8f94f",
+        "4bcf7f7c699910e99f72e1b2c383ff3af80891c3097d0aa37fa8a791e5cc033d",
     ),
 )
 
@@ -104,7 +104,7 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_backup_failures.py",
-        "79ca64458ca7602d270da042975f562d974f7482ee407f2524cb2d423e2b6fa7",
+        "1a6653f63fbf6b7f0af2603e8186e684f9df7d9187485731da407e44a4870497",
     ),
     (
         "tests/test_backup_cli.py",
@@ -131,7 +131,7 @@ BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "ad798500ed551d3d661fcba991e5fe6f54909b89551ae158e38b6c29ff246be9",
+        "db4d7286fa1c9431ceae5bb8ad9491103bb1a10c3969b4fdc7567b5d30aff4f4",
     ),
     (
         "src/paper_radar/backup/files.py",
@@ -160,7 +160,7 @@ RESTORE_TEST_CASE_COUNTS = {
 RESTORE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_restore_service.py",
-        "cefa03c7b73b6d3244accb596639df7a058887cfef4371dca45565b2ba61d3de",
+        "83843f03da5b74cbfc9114dc60d7f17f3a3d236d056e8690dd00bf81953b42d2",
     ),
     (
         "tests/test_restore_failures.py",
@@ -211,7 +211,7 @@ FORMAT_VERSIONS = {
     "artifact": 1,
     "blob_layout": 1,
     "backup": 1,
-    "backup_database_revision": "a703_screening_success",
+    "backup_database_revision": "a704_screening_retry",
 }
 CAPABILITIES = (
     "artifact_publication",
@@ -256,7 +256,7 @@ REQUIRED_TEST_CASE_COUNTS = {
 ACCEPTANCE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_a3_acceptance.py",
-        "547f3ab360ad2af5f8f388fffcee4115767aa2bf32cd1202918911ce9f6f3ec7",
+        "dcb106988f651094e454f7f0cdbf2f7fac6fab42ff57e1aa204af6957bb05050",
     ),
     (
         "tests/test_a3_combination.py",
@@ -306,7 +306,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "9aa95f00549e818ae3208a93e3fa2c5a7ee370e4929a87c23edb4f95bac35253",
+        "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
     ),
     (
         "scripts/check-offline",

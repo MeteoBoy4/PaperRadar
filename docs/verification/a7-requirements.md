@@ -227,3 +227,23 @@ test_a7_success_integrity、test_a7_success_backup 覆盖合法 FK 损坏拒绝�
 及原 downstream 哈希同提交重审。a701/a702 历史 migration 不改，旧固定174模块/3077
 用例分母不减。逐条旧/新身份及原因见外部 80-rebinding-ledger.json；提交、run_id、
 完整门禁和全部原 JSON 见 80-handoff.md/verification-runs，不回写历史证据。
+
+
+## A7-06 / #82 retry 与共享查询落地
+
+公共 ScreeningTasks.retry 接收显式父任务及库级 request_id；register 仍不接受 retry 来源。
+TaskQueryResult v1 由 query 统一投影范围、最新代际、请求/attempt 历史、预算和当前失败，
+安全字段见任务 Contract §11。当前失败不包含第一次失败、旧输入或未结算的到期租约。
+父链使用 tasks.parent_task_id 外键与 UNIQUE，先核对当前映射的 PaperReason，再核验
+任务资格；第二次过期结算与唯一后继在同一事务。新登记跟随最新，旧精确回执不变。
+
+独立 test_a7_retry、task_query、retry_process、retry_migrations、retry_backup 覆盖两阶段
+通用失败、严格上下文继承、同 ID 重放/冲突、跨来源 ID、真实双进程、提交丢回包、
+retry/回收/成功竞争、非空五表 FK 环迁移、开启外键的中断回滚和搬迁恢复/语义拒绝。
+#81 合入后交叉验证 value 成功拒 retry；最终组合恢复与固定 A7 范围由 #83/#84 完成。
+
+本波 head 前移 a704_screening_retry，旧 a701/a702/a703 源码保持；备份格式 1、清单、
+计数与 A5 语义不变。六旧 scope、backup revision、20 个当前 head/未来 head 探针及
+A7 历史迁移测试的“升级到当前”断言同提交重审；原历史 fixture 不前移，固定分母不减。
+旧/新绑定与逐条理由保存在工作树外 82-rebinding-ledger.json，完整门禁仍须最终真实
+exit0及 passed/verified/same；此处不是 A7 独立 passed 证据。

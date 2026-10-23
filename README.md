@@ -57,7 +57,7 @@ uv run --offline --locked paper-radar --help
 ## 数据库升级
 
 A2 的 `a201_profile_snapshot`、A3 的 `a302_artifact_store` 可显式升级至当前
-`a703_screening_success`。论文切片追加 DOI 论文身份、四类来源观察、人工事件、发现历史、候选引用式修订与初始选择；Screening 切片追加冻结输入、预算、请求、领取尝试、租约、失败结算与 boundary 成功制品。既有升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
+`a704_screening_retry`。论文切片追加 DOI 论文身份、四类来源观察、人工事件、发现历史、候选引用式修订与初始选择；Screening 切片追加冻结输入、预算、请求、领取尝试、租约、失败结算与 boundary 成功制品。既有升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
 全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
 失败或进程中断完整回滚后可以重试。配置历史的 ID、原字节、创建时间、六投影和基线不变。
 已知旧库上的 `config check/compile/diff/snapshots list` 会提示先执行升级，不自动修改库。
@@ -531,7 +531,7 @@ A6 独立结论覆盖本地论文事实及隔离历史重建，仍不表示阶�
 A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/contracts/screening-tasks.md)
 及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。#77 已在原权威验证器
 收紧重复 JSON 键和非有限常量；#78–#79 已交付任务登记、冻结回放、两次预算和租约，
-boundary 筛选制品接收与三值适用性由 #80 交付；value、retry、版本化共享查询和完整组合恢复仍待后续子票，
+boundary 筛选制品接收与三值适用性由 #80 交付，#82 交付显式 retry、共享版本化查询与父链恢复；value 和完整组合恢复仍待后续子票，
 尚未注册 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；真实 value 任务前
 必须先裁决原题名语言事实的生产来源。
 
@@ -549,6 +549,6 @@ value 的原题名语言事实必须显式提供；登记不会调用模型。�
 boundary 原始成功候选经唯一权威校验，原字节由 A3 保留；成功制品和登记时缓存命中回执不可变。
 显式 snapshot 的查询派生 current/historical/undeterminable，映射失败保留 PaperReason；
 同文本跨版本仍适用。显式内部消费才返回输出与审计，test 来源不能进入生产建议或校准。
-value 成功、显式 retry、真实模型执行与完整 A7 验收仍待后续切片。
+显式 `retry` 仅追加唯一后继，`query` 返回 task_query_result v1 的安全历史与当前失败集合；旧回执精确重放不随最新代际改变。value 成功、真实模型执行与完整 A7 验收仍待后续切片。
 API、隐私与语义闭包见[Screening 任务 Contract](docs/contracts/screening-tasks.md)，
 规格对照与重绑责任见[A7 requirements](docs/verification/a7-requirements.md)。

@@ -71,6 +71,12 @@ tasks = sa.Table(
         nullable=False,
     ),
     sa.Column("generation", sa.Integer(), nullable=False),
+    sa.Column(
+        "parent_task_id",
+        sa.String(36),
+        sa.ForeignKey("screening_tasks.task_id"),
+        unique=True,
+    ),
     sa.UniqueConstraint("budget_id", "generation"),
     sa.CheckConstraint("generation >= 0"),
 )
@@ -112,11 +118,12 @@ requests = sa.Table(
         ["version_id", "revision_no"],
         ["paper_version_revisions.version_id", "paper_version_revisions.revision_no"],
     ),
-    sa.CheckConstraint("source IN ('scheduled','manual')"),
+    sa.CheckConstraint("source IN ('scheduled','manual','retry')"),
     sa.CheckConstraint(
         "(source='scheduled' AND scheduled_day IS NOT NULL AND request_id IS NULL "
         "AND reason IS NULL AND actor IS NULL) OR "
-        "(source='manual' AND scheduled_day IS NULL AND request_id IS NOT NULL "
+        "(source IN ('manual','retry') AND scheduled_day IS NULL "
+        "AND request_id IS NOT NULL "
         "AND reason IS NOT NULL AND actor IS NOT NULL)"
     ),
 )

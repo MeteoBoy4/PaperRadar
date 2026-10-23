@@ -10,6 +10,7 @@ from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.models import (
     BoundaryRequest,
     RequestReceipt,
+    RetryRequest,
     ValueRequest,
 )
 from paper_radar.screening_tasks.rules import receipt_id, request_digest
@@ -66,9 +67,9 @@ def to_receipt(row: dict[str, Any]) -> RequestReceipt:
 
 
 def replay_request(
-    connection: Connection, request: BoundaryRequest | ValueRequest
+    connection: Connection, request: BoundaryRequest | ValueRequest | RetryRequest
 ) -> RequestReceipt | None:
-    if request.source != "manual":
+    if not isinstance(request, RetryRequest) and request.source != "manual":
         return None
     row = connection.execute(
         select(requests.c.receipt_id).where(requests.c.request_id == request.request_id)

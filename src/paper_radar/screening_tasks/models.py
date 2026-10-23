@@ -10,7 +10,8 @@ from paper_radar.stage_inputs import StageInput
 
 TASKS_FORMAT_VERSION = 1
 Stage = Literal["boundary", "value"]
-Source = Literal["scheduled", "manual"]
+Source = Literal["scheduled", "manual", "retry"]
+RegistrationSource = Literal["scheduled", "manual"]
 # 后续领取/查询沿用同一状态词表,不将 lease_expired 误作失败终态。
 TaskState = Literal[
     "ready", "running", "lease_expired", "retryable", "failed", "succeeded"
@@ -23,7 +24,7 @@ class RegistrationRequest(BaseModel):
     )
     paper_id: str
     snapshot_id: str
-    source: Source
+    source: RegistrationSource
     scheduled_day: str | None = None
     request_id: str | None = Field(default=None, repr=False)
     reason: str | None = Field(default=None, repr=False)
@@ -65,3 +66,16 @@ class FrozenInput:
     stage_input: StageInput = field(repr=False)
     snapshot: RuntimeConfigSnapshot = field(repr=False)
     original_title_is_zh: bool | None = field(repr=False)
+
+
+class RetryRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid", strict=True, frozen=True, hide_input_in_errors=True
+    )
+    paper_id: str
+    stage: Stage
+    snapshot_id: str
+    parent_task_id: str
+    request_id: str = Field(repr=False)
+    reason: str = Field(repr=False)
+    actor: str = Field(repr=False)

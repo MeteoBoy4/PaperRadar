@@ -4,7 +4,7 @@
 冻结输入回放、请求回执、a701 持久化和备份语义闭包；A7-03（#79）增加 a702 的
 原子领取、两次预算、600 秒租约、失败结算、显式回收和 test 一次尝试驱动。
 A7-04（#80）交付 boundary 权威接收、唯一制品、三值适用性和成功恢复闭包。
-value、retry、版本化共享查询和完整组合验收仍待 #81–#84。本文不是 A7 passed 证据。
+A7-06（#82）交付显式 retry、版本化共享查询和父链恢复闭包；value 与完整组合验收仍待 #81/#83–#84。本文不是 A7 passed 证据。
 来源为 [#76 正文及全部评论](https://github.com/MeteoBoy4/PaperRadar/issues/76)，
 [用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)
 优先；逐项对照与绑定台账见 [A7 requirements](../verification/a7-requirements.md)。
@@ -113,7 +113,7 @@ attempt；只读查询不要求先登记。更高 parser 删掉当前摘要时�
 补回相同文本后同制品重新适用，不改写 A6 仲裁或历史。此规则取代原 #76 故事 29/31、
 决策 15–16、测试表“当前适用性”“缓存重新使用”的旧绑定语义，见 ADR-0031。
 
-## 6. 显式 retry、共享查询与可见性（D4；服务待实现）
+## 6. 显式 retry、共享查询与可见性（D4；服务已实现）
 
 显式 retry 对当前输入的失败终态追加唯一后继，保留原终态；同 ID 精确重放返回原
 回执，不同 ID 竞争返回已有后继，运行中/尚有预算/成功输入不得借 retry 开新预算。
@@ -300,7 +300,7 @@ query_successes 复用 PaperFacts 的独立只读一致映射视图，随后读�
 版本切换同文本、书目补全或 Read/期刊配置不改 boundary 指纹时仍为 current；parser
 删除摘要暂不可判定，其他来源补回同文本后自然重新适用，无绑定写入。
 
-新 head a703_screening_success 从 a702 增量增加 screening_successes（每预算唯一、
+历史 head a703_screening_success 从 a702 增量增加 screening_successes（每预算唯一、
 每 attempt 唯一、A3 原响应引用、单列规范权威结构、规范审计与精确提交身份）；
 screening_requests 增加登记时命中引用，screening_failures 增加安全 issues/候选提交
 身份与审计。SQLite 原位追加可空 REFERENCES 列，保留既有请求 CHECK 和所有历史。
@@ -312,3 +312,60 @@ validate_all 沿用同一备份钩子，重验原始响应、权威结构、冻�
 合法；备份恢复保留成功、旧请求当时回执、失败和未结算预算，不触发执行。
 新增任务原因保持目录版本 1：invalid_candidate、already_succeeded、success_not_found、
 data_root_required，各有固定中文下一步说明；缺显式制品根时不猜 cwd。
+
+
+## 11. A7-06 显式 retry 与共享查询（已交付）
+
+`retry(raw_request) -> RequestReceipt` 只登记后继，不调用执行者。严格请求字段为
+paper_id、stage（boundary/value）、snapshot_id、parent_task_id、request_id、reason、actor。
+目标必须显式指定任务 UUID；后三项沿用非空、无 HTML、最多 2048 UTF-8 字节的原字节规则。
+请求不能携带 source、scheduled_day、语言标记或输入载荷。语言和实际执行输入继承
+预算首次冻结上下文；请求 snapshot 只用于核对当前阶段指纹，不能切换输入。
+
+全库 request_id 精确重放先于当前映射，返回原持久化回执；不同内容报 request_conflict，
+manual/retry 也不能共用同 ID。新请求先映射当前输入，映射失败保留原 PaperReason，
+优先于非最新、已有后继或非失败终态。映射成功后，写事务复核当前修订与目标预算的
+Paper/阶段/指纹，随后核验唯一成功、已有后继及最新代际。已有后继报 already_retried，
+安全的 TaskError.successor_task_id 给出已有任务 ID；其他新请求不得借旧代际再开预算。
+同 ID 精确重放即使后继已再次 retry，仍返回该 ID 原回执。
+
+只有失败终态可以追加 generation+1，父任务不覆盖；每代重新有至多两次尝试。
+ready、running、retryable 与第一次 lease_expired 报 not_failed，并保持原事实。
+第二次 lease_expired 在同一 BEGIN IMMEDIATE 内先结算 outcome_unknown，再创建后继及
+请求；中断一起回滚。成功、回收、retry 写事务串行化，要么成功并拒绝 retry，要么保留
+失败及唯一后继并拒绝旧凭据的迟到成功。scheduled/manual 新请求跟随最新已存在代际，
+旧请求的精确重放保持原样。
+
+`query(paper_id=..., stage=..., snapshot_id=...) -> TaskQueryResult` 是共享只读边界。
+固定 kind=task_query_result、format_version=1；不增加冻结契约导出。注入 UTC 时钟用于
+只读状态派生；未注入时报 invalid_clock。字段如下：
+
+| 层次 | 安全字段 |
+| --- | --- |
+| 结果 | paper_id、stage、明确 snapshot_id、current_fingerprint、可空 PaperReason、budgets、current_failures |
+| 预算 | budget_id、fingerprint、current/historical/undeterminable、可空 reason、latest_generation、latest_task_id、完整 tasks |
+| 任务 | task_id、budget_id、generation、parent_task_id、六态 state、used_attempts/remaining_attempts、requests、attempts |
+| 请求 | 既有 RequestReceipt v1；登记时 cached_success_id 不随查询重写 |
+| 尝试 | attempt_no、receipt_id、version_id/revision_no/selection_id、claimed_at/expires_at、安全 FailureReceipt 或 success_id |
+
+current_failures 只包含当前映射指纹预算的最新代际且 state=failed 的任务；第一次失败
+仍为 retryable，第二次过期未结算仍为 lease_expired，旧指纹失败保留在历史中。缺项或配置
+不可映射时为 undeterminable+原 PaperReason，不误写 historical。此查询不表示完整业务
+eligibility，不创建 pending/denied、建议或决定。映射和任务读取分别使用只读一致视图，
+允许相对并发论文变更滞后，和 query_successes 一致。查询不结算、不续租、不写数据库。
+
+共享查询不返回 request_id、自由 reason/actor、语言标记、Profile/Prompt、输入载荷、
+响应正文、用量审计或 fencing token/摘要。A1 输出失败仅沿用封闭类别、安全字段路径和
+固定中文说明。新增任务原因在目录版本 1 内为 task_not_found、already_retried、not_latest、
+not_failed，各有固定中文下一步。
+
+a704_screening_retry 是当前 head：tasks 追加可空 parent_task_id 外键及唯一索引，
+requests.source/audit CHECK 扩大到 retry。由于 requests.cached_success_id→successes→
+attempts.receipt_id→requests 存在真实 FK 环，迁移在单个写事务内保存五表闭包、暂置空
+缓存引用、依子到父清空重建、恢复原行及缓存引用，全程 foreign_keys=ON。旧 a701–a703
+源码不变。非空成功/缓存、失败审计、在途事实的迁移与 DDL/恢复/版本戳故障及强杀
+均须回滚旧 DDL/行；恢复后继续保留原 CHECK、UNIQUE、FK。
+
+validate_all 重验每预算连续代际、同预算唯一父链、父真实两次失败、每代请求、唯一
+retry 请求及其目标/规范摘要、首次预算依据。备份 format/manifest/counts 不变；恢复
+保留父链与预算，不回收或执行。完整组合恢复与独立 A7 验收仍由 #83/#84 交付。

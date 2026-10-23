@@ -26,6 +26,8 @@ from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.execution import AttemptService
 from paper_radar.screening_tasks.frozen import load_frozen
 from paper_radar.screening_tasks.models import FrozenInput, RequestReceipt, ValueRequest
+from paper_radar.screening_tasks.query import QueryService
+from paper_radar.screening_tasks.query_models import TaskQueryResult
 from paper_radar.screening_tasks.repository import (
     evidence_values,
     receipt_row,
@@ -33,6 +35,7 @@ from paper_radar.screening_tasks.repository import (
     replay_request,
     to_receipt,
 )
+from paper_radar.screening_tasks.retry import RetryService
 from paper_radar.screening_tasks.rules import parse_request
 from paper_radar.screening_tasks.success import SuccessService
 from paper_radar.screening_tasks.success_models import (
@@ -63,6 +66,14 @@ class ScreeningTasks:
         self.data_root = data_root
         self._attempts = AttemptService(database, clock)
         self._success = SuccessService(self._attempts, data_root)
+
+    def query(self, *, paper_id: str, stage: str, snapshot_id: str) -> TaskQueryResult:
+        return QueryService(self._attempts).query(
+            paper_id=paper_id, stage=stage, snapshot_id=snapshot_id
+        )
+
+    def retry(self, raw_request: object) -> RequestReceipt:
+        return RetryService(self._attempts).register(raw_request)
 
     def claim(self, receipt_id: str) -> Claim:
         return self._attempts.claim(

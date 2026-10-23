@@ -704,7 +704,7 @@ paper_fact_mapping NOT_ASSESSED 原样保留。必要源码哈希按 A2 wrapper�
 `a6_scope.py` 将业务规格 #67 与最后验收子票 #75 区分登记。只有同次 A1、完整 A2、A3、A5
 通过，固定六检查与完整严格整数回执匹配，固定测试/源码/合成材料无漂移，真实临时库
 base→head 得到随包实际 head（#75 交付时为 `a604_version_relations`，当前为
-`a703_screening_success`），并且运行前后代码/工作树/lockfile 相同，才有
+`a704_screening_retry`），并且运行前后代码/工作树/lockfile 相同，才有
 `a6_verified=true`。A4 不构成业务前置，但 A4 失败仍令完整入口非零。
 
 格式期望固定为 `paper_facts/doi_rules/text_norm/feed_item_fingerprint/reason_catalog/mapping_result=1`、

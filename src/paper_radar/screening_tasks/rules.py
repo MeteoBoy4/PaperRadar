@@ -3,6 +3,7 @@
 import hashlib
 import json
 from datetime import date
+from uuid import UUID
 
 from pydantic import ValidationError
 
@@ -12,6 +13,7 @@ from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.models import (
     BoundaryRequest,
     RegistrationRequest,
+    RetryRequest,
     ValueRequest,
 )
 
@@ -67,7 +69,7 @@ def parse_request(raw: object) -> BoundaryRequest | ValueRequest:
         raise TaskError(TaskReason.INVALID_REQUEST) from None
 
 
-def request_digest(request: RegistrationRequest) -> str:
+def request_digest(request: RegistrationRequest | RetryRequest) -> str:
     return digest(request.model_dump())
 
 
@@ -90,3 +92,24 @@ def receipt_id(
             "snapshot_id": request.snapshot_id,
         }
     )
+
+
+def parse_retry(raw: object) -> RetryRequest:
+    try:
+        if isinstance(raw, RetryRequest):
+            raw = raw.model_dump()
+        request = RetryRequest.model_validate(raw)
+        if str(UUID(request.parent_task_id)) != request.parent_task_id:
+            raise ValueError
+        for value in (request.request_id, request.reason, request.actor):
+            if not value.strip() or len(value.encode("utf-8")) > 2048:
+                raise ValueError
+            normalize_text(value)
+        canonical(request.model_dump())
+        return request
+    except (ValueError, TypeError, ValidationError, PaperError):
+        raise TaskError(TaskReason.INVALID_REQUEST) from None
+
+
+def retry_receipt_id(request: RetryRequest) -> str:
+    return digest({"source": "retry", "request_id": request.request_id})

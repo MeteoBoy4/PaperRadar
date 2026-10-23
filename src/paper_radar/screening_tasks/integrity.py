@@ -8,9 +8,21 @@ from sqlalchemy import Connection, select
 
 from paper_radar.papers import PaperFacts, resolve_revision
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
+from paper_radar.screening_tasks.execution import AttemptService
 from paper_radar.screening_tasks.frozen import load_frozen
+from paper_radar.screening_tasks.models import (
+    BoundaryRequest,
+    RetryRequest,
+    ValueRequest,
+)
 from paper_radar.screening_tasks.repository import evidence_values, receipt_row
-from paper_radar.screening_tasks.rules import parse_request, receipt_id, request_digest
+from paper_radar.screening_tasks.rules import (
+    parse_request,
+    parse_retry,
+    receipt_id,
+    request_digest,
+    retry_receipt_id,
+)
 from paper_radar.screening_tasks.tables import budgets, inputs, requests, tasks
 from paper_radar.stage_inputs import StageInput
 
@@ -18,6 +30,15 @@ from paper_radar.stage_inputs import StageInput
 def _require(value: bool) -> None:
     if not value:
         raise TaskError(TaskReason.CORRUPT_REFERENCE)
+
+
+def _stored_request(
+    raw: dict[str, Any],
+) -> BoundaryRequest | ValueRequest | RetryRequest:
+    try:
+        return parse_retry(raw) if "parent_task_id" in raw else parse_request(raw)
+    except TaskError:
+        raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
 
 
 def _mapping_matches(database: Path, row: dict[str, Any], expected: StageInput) -> None:
@@ -52,62 +73,117 @@ def validate_registration(database: Path, connection: Connection) -> None:
         input_refs.add(budget["fingerprint"])
         generations = (
             connection.execute(
-                select(tasks).where(tasks.c.budget_id == budget["budget_id"])
+                select(tasks)
+                .where(tasks.c.budget_id == budget["budget_id"])
+                .order_by(tasks.c.generation)
             )
             .mappings()
             .all()
         )
-        _require(len(generations) == 1 and generations[0]["generation"] == 0)
-        task = generations[0]
-        _require(str(UUID(task["task_id"])) == task["task_id"])
-        task_refs.add(task["task_id"])
-        identifiers = (
-            connection.execute(
-                select(requests.c.receipt_id).where(
-                    requests.c.task_id == task["task_id"]
-                )
-            )
-            .scalars()
-            .all()
+        _require(bool(generations))
+        _require(
+            [task["generation"] for task in generations]
+            == list(range(len(generations)))
         )
-        _require(bool(identifiers))
         has_baseline_request = False
-        for identifier in identifiers:
-            row = receipt_row(connection, identifier)
-            _require(row is not None)
-            assert row is not None
-            raw = {
-                key: row[key]
-                for key in (
-                    "paper_id",
-                    "snapshot_id",
-                    "stage",
-                    "source",
-                    "scheduled_day",
-                    "request_id",
-                    "actor",
-                    "reason",
-                )
-            }
-            if row["stage"] == "value":
-                raw["original_title_is_zh"] = budget["original_title_is_zh"]
-            request = parse_request(raw)
-            _require(request_digest(request) == row["request_sha256"])
-            basis = {
-                key: row[key] for key in ("version_id", "revision_no", "selection_id")
-            }
-            _require(receipt_id(request, basis, row["fingerprint"]) == identifier)
-            revision = resolve_revision(
-                connection, version_id=row["version_id"], revision_no=row["revision_no"]
+        for index, task in enumerate(generations):
+            _require(str(UUID(task["task_id"])) == task["task_id"])
+            _require(
+                task["parent_task_id"]
+                == (generations[index - 1]["task_id"] if index else None)
             )
-            _require(revision.paper_id == budget["paper_id"])
-            _require(evidence_values(revision) == basis)
-            _mapping_matches(database, row, frozen.stage_input)
-            receipt_refs.add(identifier)
-            if row["snapshot_id"] == budget["snapshot_id"] and basis == {
-                key: budget[key] for key in basis
-            }:
-                has_baseline_request = True
+            if index:
+                parent_rows = AttemptService._attempt_rows(
+                    connection, task["parent_task_id"]
+                )
+                _require(
+                    len(parent_rows) == 2
+                    and all(
+                        row["kind"] is not None and row["success_id"] is None
+                        for row in parent_rows
+                    )
+                )
+            task_refs.add(task["task_id"])
+            retry_count = 0
+            identifiers = (
+                connection.execute(
+                    select(requests.c.receipt_id).where(
+                        requests.c.task_id == task["task_id"]
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            _require(bool(identifiers))
+            for identifier in identifiers:
+                row = receipt_row(connection, identifier)
+                _require(row is not None)
+                assert row is not None
+                raw = {
+                    key: row[key]
+                    for key in (
+                        "paper_id",
+                        "snapshot_id",
+                        "stage",
+                        "source",
+                        "scheduled_day",
+                        "request_id",
+                        "actor",
+                        "reason",
+                    )
+                }
+                request: BoundaryRequest | ValueRequest | RetryRequest
+                if row["source"] == "retry":
+                    retry_count += 1
+                    _require(
+                        task["parent_task_id"] is not None
+                        and row["cached_success_id"] is None
+                    )
+                    retry_raw = {
+                        key: raw[key]
+                        for key in (
+                            "paper_id",
+                            "snapshot_id",
+                            "stage",
+                            "request_id",
+                            "actor",
+                            "reason",
+                        )
+                    }
+                    retry_raw["parent_task_id"] = task["parent_task_id"]
+                    request = _stored_request(retry_raw)
+                else:
+                    if row["stage"] == "value":
+                        raw["original_title_is_zh"] = budget["original_title_is_zh"]
+                    request = _stored_request(raw)
+                _require(request_digest(request) == row["request_sha256"])
+                basis = {
+                    key: row[key]
+                    for key in ("version_id", "revision_no", "selection_id")
+                }
+                expected_id = (
+                    retry_receipt_id(request)
+                    if isinstance(request, RetryRequest)
+                    else receipt_id(request, basis, row["fingerprint"])
+                )
+                _require(expected_id == identifier)
+                revision = resolve_revision(
+                    connection,
+                    version_id=row["version_id"],
+                    revision_no=row["revision_no"],
+                )
+                _require(revision.paper_id == budget["paper_id"])
+                _require(evidence_values(revision) == basis)
+                _mapping_matches(database, row, frozen.stage_input)
+                receipt_refs.add(identifier)
+                if (
+                    row["source"] != "retry"
+                    and task["generation"] == 0
+                    and row["snapshot_id"] == budget["snapshot_id"]
+                    and basis == {key: budget[key] for key in basis}
+                ):
+                    has_baseline_request = True
+            _require(retry_count == (1 if index else 0))
         _require(has_baseline_request)
     _require(
         input_refs == set(connection.execute(select(inputs.c.fingerprint)).scalars())

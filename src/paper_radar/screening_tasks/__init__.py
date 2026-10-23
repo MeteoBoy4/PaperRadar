@@ -18,6 +18,14 @@ from paper_radar.screening_tasks.models import (
     TASKS_FORMAT_VERSION,
     FrozenInput,
     RequestReceipt,
+    RetryRequest,
+)
+from paper_radar.screening_tasks.query_models import (
+    TASK_QUERY_FORMAT_VERSION,
+    AttemptView,
+    BudgetView,
+    TaskQueryResult,
+    TaskView,
 )
 from paper_radar.screening_tasks.service import ScreeningTasks
 from paper_radar.screening_tasks.success_models import (
@@ -32,18 +40,24 @@ __all__ = [
     "LEASE_SECONDS",
     "REASON_CATALOG_VERSION",
     "TASKS_FORMAT_VERSION",
+    "TASK_QUERY_FORMAT_VERSION",
+    "AttemptView",
+    "BudgetView",
     "Claim",
     "FailureKind",
     "FailureReceipt",
     "FailureReport",
     "FrozenInput",
     "RequestReceipt",
+    "RetryRequest",
     "ScreeningTasks",
     "SuccessCandidate",
     "SuccessContent",
     "SuccessReceipt",
     "SuccessView",
     "TaskError",
+    "TaskQueryResult",
     "TaskReason",
     "TaskStatus",
+    "TaskView",
 ]

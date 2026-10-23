@@ -119,8 +119,8 @@ def test_a601_upgrade_preserves_nonempty_history_and_unknown_raw_doi(
                 name: connection.execute(f"SELECT * FROM {name}").fetchall()
                 for name in expected
             } == expected
-    assert upgrade_database(previous) == "a703_screening_success"
-    assert upgrade_database(previous) == "a703_screening_success"
+    assert upgrade_database(previous) == "a704_screening_retry"
+    assert upgrade_database(previous) == "a704_screening_retry"
     with closing(sqlite3.connect(previous)) as connection:
         for name, values in expected.items():
             columns = [

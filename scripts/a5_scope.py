@@ -5,7 +5,7 @@ ISSUE = 47
 PARENT_ISSUE = 47
 FORMAT_VERSION = 1
 SUFFIX = ".a5.json"
-MIGRATION_REVISION = "a703_screening_success"
+MIGRATION_REVISION = "a704_screening_retry"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
 FORMAT_VERSIONS = {
@@ -101,7 +101,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a5_acceptance.py",
-        "b1830bf83425bde4ad55befad8aab5a43f1e69f8a1c22b2bbff889e397e39c07",
+        "67e7bb7532bf7495f17e26bc13c5f77c35402fd299c0d1d07ca2f9d27214df5a",
     ),
     (
         "tests/test_a5_entry.py",
@@ -139,15 +139,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "9aa95f00549e818ae3208a93e3fa2c5a7ee370e4929a87c23edb4f95bac35253",
+        "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
     ),
     (
         "scripts/a3_scope.py",
-        "d04ee3f117caf682e26e58c038dceec5e71cafcf8dc50ffddae5d57a2fb07b46",
+        "02bb65d6482dadb59182fe9d6fd3c64e4e513d1ddbc503bc3cf416d8ddfaffc8",
     ),
     (
         "scripts/a4_scope.py",
-        "604f716760fe8273aad2ef6bf0b256fa4958314bd0f949fd46f645c593e01618",
+        "d049cd31daf5727c802dc2b05a443a57394dd9d0e2e006365085e4723f5edc9b",
     ),
     (
         "scripts/a2_full_acceptance.py",

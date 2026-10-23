@@ -5,7 +5,7 @@ ISSUE = 45
 PARENT_ISSUE = 36
 FORMAT_VERSION = 1
 SUFFIX = ".a4.json"
-MIGRATION_REVISION = "a703_screening_success"
+MIGRATION_REVISION = "a704_screening_retry"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = (
     "alembic",
@@ -94,7 +94,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_activation_history.py",
-        "e2160bcbcc6d349e0b848be0d255f2a31fcc2ffe34fc4aa77e40d3b097c0a0e0",
+        "6ad090a594e4e2731b0834e828a01de11307b2820f6dbea389ff4433f2c119ef",
     ),
     (
         "tests/test_pi_supply_boundaries.py",
@@ -114,11 +114,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_cleanup_execute_history.py",
-        "64c45e253262d85fb2303cf759e84f258b0fed77c4e47a54de2ec9b3b4138ffd",
+        "aeeff46f8974c92bc8dbecdee54163cb71098e4d7e0072202f9b6de44cd0e6c3",
     ),
     (
         "tests/test_pi_supply_cleanup_history.py",
-        "0e5845d26142910c0bc9893ab52be897d4abe68a826d92d00ddfd909be186728",
+        "f097096d2d134cc7008a47f8364559ea3c7cf772b7eb671f7533b8959b713802",
     ),
     (
         "tests/test_pi_supply_cleanup_unreadable.py",
@@ -138,7 +138,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_history.py",
-        "56f838d9de8218ddc24d7a6a02efc1520b335446b77f684a31b3fb30d64d5496",
+        "26fad8c1462b2f727e2767e8e27515de7e2b799d9f5ad15000df71d5344c2a75",
     ),
     (
         "tests/test_pi_supply_process.py",
@@ -158,7 +158,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_rebuild_history.py",
-        "f71a3beaf714f21d3c61014fdc193143f438fa323d3c67224fc1ed0ac380561e",
+        "f4958af52035ff234e5abc802c7f9342d49dedec57695bf9b9626b1822509d41",
     ),
     (
         "tests/test_pi_supply_transport.py",
@@ -170,7 +170,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a4_acceptance.py",
-        "dc60e978ded91ebaded2c977da40b5bf92b42eab1a981eae7fd60067bb527704",
+        "12d62354b1e98bfe0ab1e3332a2a02c7322b9f6cc08fdb4e3d9e8e11cdf36a75",
     ),
     (
         "tests/test_a4_combination.py",
@@ -316,7 +316,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "ad798500ed551d3d661fcba991e5fe6f54909b89551ae158e38b6c29ff246be9",
+        "db4d7286fa1c9431ceae5bb8ad9491103bb1a10c3969b4fdc7567b5d30aff4f4",
     ),
     (
         "src/paper_radar/backup/files.py",
@@ -336,11 +336,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a3_scope.py",
-        "d04ee3f117caf682e26e58c038dceec5e71cafcf8dc50ffddae5d57a2fb07b46",
+        "02bb65d6482dadb59182fe9d6fd3c64e4e513d1ddbc503bc3cf416d8ddfaffc8",
     ),
     (
         "scripts/a2_full_scope.py",
-        "9aa95f00549e818ae3208a93e3fa2c5a7ee370e4929a87c23edb4f95bac35253",
+        "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
     ),
     (
         "scripts/a1_scope.py",
