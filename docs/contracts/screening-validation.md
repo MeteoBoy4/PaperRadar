@@ -117,6 +117,19 @@ assert isinstance(reason_result, ScreeningFailureProjection)
 `reuse_assessment`。成功返回意味着结构与该 kind 的全部适用业务规则都已通过；
 验证器不修复输入、不改写文本，也不调用模型判断科学语义。
 
+### 原始 JSON 的单一解析语义
+
+`validate_output` 和 `validate_screening_reason` 共用同一权威内部解析入口。
+原始 `str`、`bytes`、`bytearray` 只接受完整 UTF-8 JSON：任意层重复对象键（包括
+转义后同名键）、`NaN`、`Infinity`、`-Infinity`、BOM、非 UTF-8、语法错误与截断
+均为根 `$` 的 `invalid_json`，优先于载荷字段/业务错误；不回显键、原文或解析异常。
+合法 JSON 前后空白仍接受且文本不改写；解析后仍执行相同严格 Schema 与业务规则。
+Mapping 输入保持原验证路径，不由解析器转换类型，也没有第二套输出 Schema。
+
+这是 #76 D3(a) 的受控收紧：重复键由旧的后值覆盖改为拒绝；NaN/Infinity 原先可能
+按字段 `invalid_type` 拒绝，现在统一归为 JSON 层 `invalid_json`。四份冻结 JSON
+Schema、登记版本和 A5 阶段输入格式不变；新回归位于独立测试模块，既有固定分母不变。
+
 ### 研究边界
 
 `BoundaryOutput` 只包含：
@@ -292,7 +305,7 @@ Docling。
 | 类别 | 含义 |
 | --- | --- |
 | `unknown_kind` | 输出种类尚未注册 |
-| `invalid_json` | JSON 语法错误或被截断 |
+| `invalid_json` | JSON 语法错误、截断、重复键、非有限常量或非法编码 |
 | `missing_field` | 缺少必填字段 |
 | `extra_field` | 出现契约外字段 |
 | `invalid_type` | 值或载荷类型错误 |

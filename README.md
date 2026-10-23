@@ -527,3 +527,9 @@ trace 展示端点尚未出现、等待合并、已生效三态及真实选择�
 A6 独立结论覆盖本地论文事实及隔离历史重建，仍不表示阶段 A、live、RPC、Docling/NAS 或任务续跑已验收。
 **阶段 C 真实 Feed 接入前必须补齐强冲突观察持久化和 parser 升级固定样本回归，
 此前不得将本地拒绝路径直接作为生产写入。**详见[论文事实 Contract](docs/contracts/paper-facts.md)。
+
+A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/contracts/screening-tasks.md)
+及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。#77 已在原权威验证器
+收紧重复 JSON 键和非有限常量；任务持久化/租约/筛选制品接收/retry/恢复仍待后续子票，
+尚未注册 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；真实 value 任务前
+必须先裁决原题名语言事实的生产来源。

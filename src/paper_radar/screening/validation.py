@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from typing import Literal, overload
 
@@ -112,6 +113,19 @@ def _issues_from_pydantic(
     return tuple(issues)
 
 
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("JSON 对象键不得重复")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(value: str) -> object:
+    raise ValueError("JSON 数字必须有限")
+
+
 def _validate_model[OutputModel: BaseModel](
     model: type[OutputModel],
     payload: object,
@@ -121,7 +135,13 @@ def _validate_model[OutputModel: BaseModel](
     validation_issues: tuple[OutputValidationIssue, ...] | None = None
     try:
         if isinstance(payload, str | bytes | bytearray):
-            output = model.model_validate_json(payload)
+            raw_text = payload if isinstance(payload, str) else payload.decode("utf-8")
+            structured_payload = json.loads(
+                raw_text,
+                object_pairs_hook=_unique_json_object,
+                parse_constant=_reject_json_constant,
+            )
+            output = model.model_validate(structured_payload)
         else:
             structured_payload = (
                 dict(payload) if isinstance(payload, Mapping) else payload
@@ -129,6 +149,8 @@ def _validate_model[OutputModel: BaseModel](
             output = model.model_validate(structured_payload)
     except ValidationError as error:
         validation_issues = _issues_from_pydantic(error, known_fields)
+    except (ValueError, RecursionError):
+        validation_issues = (_issue("$", OutputErrorCategory.INVALID_JSON),)
 
     if validation_issues is not None:
         raise OutputValidationError(validation_issues)

@@ -10,6 +10,8 @@
 
 > 2026-10-22：按 Issue #67 用户 D1–D4、N1/N2 裁决同步论文版本身份、Feed 回摆和冲突边界，见 [ADR-0030](../docs/adr/0030-paper-version-identity-and-source-observations.md) 与 [论文事实 Contract](../docs/contracts/paper-facts.md)。该语义由 #68 完成文档同步，#69–#75 已实现并注册 A6 离线论文事实底座；真实来源、parser/live 与完整阶段 A 仍未验收。旧固定提交正文不能覆盖后续裁决。
 
+> 2026-10-23：按 Issue #76 用户 D1–D4 裁决同步 §8.5：Screening 预算按 Paper/阶段/指纹，当前适用性完全派生，同指纹跨版本可复用。A7 暂不交付 screening CLI 或 paper trace 组合；语言事实生产来源仍待裁决，详见 [ADR-0031](../docs/adr/0031-screening-budget-and-derived-applicability.md) 与 [任务 Contract](../docs/contracts/screening-tasks.md)。当前只交付裁决文档与严格 JSON 解析，任务服务及 A7 验收仍待后续子票。
+
 ## 任务阅读导航
 
 按任务选择下表中的相关行，先读主要章节，再核对联动约束；跨主题任务合并阅读路径，并继续跟随正文中的引用。导航只提供阅读入口，具体规则与验收要求以对应正文为准。
@@ -1371,7 +1373,7 @@ HTTP 请求可以对连接错误和 429/5xx 做同一次任务内的短暂退避
 
 ### 8.5 任务领取与幂等
 
-task attempt 的业务键至少包含：
+请求的审计业务键至少包含：
 
 - stage；
 - subject ID；
@@ -1379,7 +1381,16 @@ task attempt 的业务键至少包含：
 - 自动或人工来源；
 - 调度日或显式请求 ID。
 
-领取使用短事务和带过期时间的租约。完成提交时再次检查当前输入指纹；若运行期间当前版本变化，结果保存为历史但不能成为当前制品。
+Screening 的稳定预算范围是同库 `(paper_id, stage, input_fingerprint)`，请求来源、调度日和
+version/revision/snapshot 是审计依据，不另给预算。每个任务代际最多两次 attempt，
+显式 retry 追加代际并保留旧终态，不重置旧计数。
+
+领取使用短事务和带过期时间的租约，按请求明确 snapshot 检查当前语义输入；指纹
+变化或缺项时拒绝领取且不占 attempt。成功提交只核对未结算的领取凭据与冻结输入，
+不在提交事务复核当前论文事实。明确 snapshot 下的当前适用性由当前输入指纹与
+筛选制品指纹完全派生：版本变化但指纹相同仍适用，指纹不同或映射缺项则只作历史；
+不建立结果使用依据表或再绑定写入。登记请求自己的版本、修订、快照与命中回执
+保留使用审计。此处按 #76 D2 裁决解释“版本变化”为“实际语义输入变化”，见 ADR-0031。
 
 同一天重复运行 run-due：
 
