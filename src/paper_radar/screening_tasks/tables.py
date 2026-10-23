@@ -75,8 +75,8 @@ tasks = sa.Table(
         "parent_task_id",
         sa.String(36),
         sa.ForeignKey("screening_tasks.task_id"),
-        unique=True,
     ),
+    sa.Index("uq_screening_parent", "parent_task_id", unique=True),
     sa.UniqueConstraint("budget_id", "generation"),
     sa.CheckConstraint("generation >= 0"),
 )
