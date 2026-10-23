@@ -55,6 +55,7 @@ class RequestReceipt:
     snapshot_id: str
     scheduled_day: str | None
     selection_id: str | None
+    cached_success_id: str | None = None
     format_version: Literal[1] = field(default=1, init=False)
 
 

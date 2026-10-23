@@ -22,6 +22,7 @@ from paper_radar.screening_tasks.attempt_models import (
     TaskStatus,
 )
 from paper_radar.screening_tasks.attempt_rules import (
+    correction_for,
     derive_status,
     digest,
     lease_expiry,
@@ -33,7 +34,8 @@ from paper_radar.screening_tasks.database_errors import database_error
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.models import FrozenInput, RequestReceipt
 from paper_radar.screening_tasks.repository import evidence_values, receipt_row
-from paper_radar.screening_tasks.tables import attempts, failures, leases
+from paper_radar.screening_tasks.success_rules import decode_issues
+from paper_radar.screening_tasks.tables import attempts, failures, leases, successes
 from paper_radar.storage.database import (
     DatabaseMode,
     open_database,
@@ -92,6 +94,15 @@ class AttemptService:
             existing = self._attempt_rows(connection, receipt.task_id)
             now = utc_now(self.clock)
             expires = lease_expiry(now)
+            if (
+                connection.execute(
+                    select(successes.c.success_id).where(
+                        successes.c.budget_id == receipt.budget_id
+                    )
+                ).first()
+                is not None
+            ):
+                raise TaskError(TaskReason.ALREADY_SUCCEEDED)
             if existing and existing[-1]["kind"] is None:
                 if now < read_timestamp(existing[-1]["expires_at"]):
                     raise TaskError(TaskReason.TASK_RUNNING)
@@ -140,6 +151,26 @@ class AttemptService:
             rows = self._attempt_rows(connection, receipt.task_id)
             return derive_status(receipt.task_id, rows, now)
 
+    def correction(self, receipt: RequestReceipt) -> str | None:
+        with self.connection(write=False) as connection:
+            rows = self._attempt_rows(connection, receipt.task_id)
+            previous = next(
+                (row for row in reversed(rows) if row["kind"] is not None), None
+            )
+            if previous is None:
+                return None
+            message = correction_for(FailureKind(previous["kind"]))
+            issues = decode_issues(previous["issues_json"])
+            if issues:
+                message = (
+                    (message or "")
+                    + " "
+                    + "; ".join(
+                        f"{issue.location} [{issue.category.value}]" for issue in issues
+                    )
+                )
+            return message
+
     def renew(self, handle: str) -> datetime:
         self._require_secret(handle)
         with self.connection(write=True) as connection:
@@ -155,6 +186,7 @@ class AttemptService:
             if (
                 current["renewal_sha256"] != digest(handle)
                 or current["kind"] is not None
+                or current["success_id"] is not None
             ):
                 raise TaskError(TaskReason.INVALID_CREDENTIAL)
             now = utc_now(self.clock)
@@ -195,6 +227,8 @@ class AttemptService:
             )
             if row is None or row["credential_sha256"] != digest(claim.credential):
                 raise TaskError(TaskReason.INVALID_CREDENTIAL)
+            if row["success_id"] is not None:
+                raise TaskError(TaskReason.SETTLEMENT_CONFLICT)
             # 精确失败重放先于当前持有者检查;回收永不伪装成执行者报告。
             if row["kind"] is not None:
                 if row["origin"] == "recovery":
@@ -226,6 +260,7 @@ class AttemptService:
             if (
                 rows
                 and rows[-1]["kind"] is None
+                and rows[-1]["success_id"] is None
                 and now >= read_timestamp(rows[-1]["expires_at"])
             ):
                 self._recover(connection, rows[-1], now)
@@ -265,6 +300,7 @@ class AttemptService:
             FailureKind(row["kind"]),
             row["origin"],
             read_timestamp(row["settled_at"]),
+            decode_issues(row["issues_json"]),
         )
 
     @staticmethod
@@ -278,6 +314,8 @@ class AttemptService:
                     failures.c.kind,
                     failures.c.origin,
                     failures.c.settled_at,
+                    failures.c.issues_json,
+                    successes.c.success_id,
                 )
                 .outerjoin(
                     leases,
@@ -289,6 +327,11 @@ class AttemptService:
                     (failures.c.task_id == attempts.c.task_id)
                     & (failures.c.attempt_no == attempts.c.attempt_no),
                 )
+                .outerjoin(
+                    successes,
+                    (successes.c.task_id == attempts.c.task_id)
+                    & (successes.c.attempt_no == attempts.c.attempt_no),
+                )
                 .where(attempts.c.task_id == task_id)
                 .order_by(attempts.c.attempt_no)
             ).mappings()
@@ -299,6 +342,8 @@ class AttemptService:
             or len(rows) > 2
         ):
             raise TaskError(TaskReason.CORRUPT_REFERENCE)
-        if any(row["kind"] is None for row in rows[:-1]):
+        if any(
+            row["success_id"] is not None and row["kind"] is not None for row in rows
+        ) or any(row["kind"] is None for row in rows[:-1]):
             raise TaskError(TaskReason.CORRUPT_REFERENCE)
         return rows

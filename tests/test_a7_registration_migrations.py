@@ -118,8 +118,8 @@ def test_nonempty_previous_revision_upgrade_is_atomic_and_retains_all_history(
                 name: connection.execute(f"SELECT * FROM {name}").fetchall()
                 for name in expected
             } == expected
-    assert upgrade_database(old) == "a702_screening_attempts"
-    assert upgrade_database(old) == "a702_screening_attempts"
+    assert upgrade_database(old) == "a703_screening_success"
+    assert upgrade_database(old) == "a703_screening_success"
     with closing(sqlite3.connect(old)) as connection:
         assert {
             name: connection.execute(f"SELECT * FROM {name}").fetchall()
@@ -142,6 +142,7 @@ def test_nonempty_previous_revision_upgrade_is_atomic_and_retains_all_history(
             "screening_attempts",
             "screening_leases",
             "screening_failures",
+            "screening_successes",
         }
     assert PaperFacts(old).trace(paper.paper_id) == before
     assert history_view(old, root / "data") == history_view(source[0], root / "data")

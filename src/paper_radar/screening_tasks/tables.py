@@ -101,6 +101,11 @@ requests = sa.Table(
         sa.ForeignKey("paper_selection_events.selection_id"),
     ),
     sa.Column("scheduled_day", sa.Text()),
+    sa.Column(
+        "cached_success_id",
+        sa.String(36),
+        sa.ForeignKey("screening_successes.success_id"),
+    ),
     sa.Column("reason", sa.Text()),
     sa.Column("actor", sa.Text()),
     sa.ForeignKeyConstraint(
@@ -164,6 +169,9 @@ failures = sa.Table(
     metadata,
     sa.Column("task_id", sa.String(36), primary_key=True),
     sa.Column("attempt_no", sa.Integer(), primary_key=True),
+    sa.Column("issues_json", sa.Text()),
+    sa.Column("submission_sha256", sa.String(64)),
+    sa.Column("audit_json", sa.Text()),
     sa.Column("kind", sa.String(20), nullable=False),
     sa.Column("origin", sa.String(12), nullable=False),
     sa.Column("settled_at", sa.Text(), nullable=False),
@@ -176,4 +184,35 @@ failures = sa.Table(
         "'protocol_error','executor_error','outcome_unknown')"
     ),
     sa.CheckConstraint("origin IN ('executor','exception','recovery')"),
+)
+
+
+successes = sa.Table(
+    "screening_successes",
+    metadata,
+    sa.Column("success_id", sa.String(36), primary_key=True),
+    sa.Column(
+        "budget_id",
+        sa.String(36),
+        sa.ForeignKey("screening_budgets.budget_id"),
+        nullable=False,
+        unique=True,
+    ),
+    sa.Column("task_id", sa.String(36), nullable=False),
+    sa.Column("attempt_no", sa.Integer(), nullable=False),
+    sa.Column(
+        "artifact_id",
+        sa.String(64),
+        sa.ForeignKey("artifacts.artifact_id"),
+        nullable=False,
+    ),
+    sa.Column("structured_json", sa.Text(), nullable=False),
+    sa.Column("submission_sha256", sa.String(64), nullable=False),
+    sa.Column("audit_json", sa.Text(), nullable=False),
+    sa.Column("settled_at", sa.Text(), nullable=False),
+    sa.UniqueConstraint("task_id", "attempt_no"),
+    sa.ForeignKeyConstraint(
+        ["task_id", "attempt_no"],
+        ["screening_attempts.task_id", "screening_attempts.attempt_no"],
+    ),
 )

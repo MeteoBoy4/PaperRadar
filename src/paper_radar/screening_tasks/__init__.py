@@ -20,6 +20,12 @@ from paper_radar.screening_tasks.models import (
     RequestReceipt,
 )
 from paper_radar.screening_tasks.service import ScreeningTasks
+from paper_radar.screening_tasks.success_models import (
+    SuccessCandidate,
+    SuccessContent,
+    SuccessReceipt,
+    SuccessView,
+)
 
 __all__ = [
     "GUIDANCE",
@@ -33,6 +39,10 @@ __all__ = [
     "FrozenInput",
     "RequestReceipt",
     "ScreeningTasks",
+    "SuccessCandidate",
+    "SuccessContent",
+    "SuccessReceipt",
+    "SuccessView",
     "TaskError",
     "TaskReason",
     "TaskStatus",

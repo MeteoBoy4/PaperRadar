@@ -13,7 +13,13 @@ from paper_radar.screening_tasks.attempt_models import LEASE_SECONDS, FailureKin
 from paper_radar.screening_tasks.attempt_rules import read_timestamp
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.repository import evidence_values, receipt_row
-from paper_radar.screening_tasks.tables import attempts, failures, leases, tasks
+from paper_radar.screening_tasks.tables import (
+    attempts,
+    failures,
+    leases,
+    successes,
+    tasks,
+)
 
 
 def _require(condition: bool) -> None:
@@ -33,8 +39,17 @@ def validate_attempts(database: Path, connection: Connection) -> None:
         (row["task_id"], row["attempt_no"]): dict(row)
         for row in connection.execute(select(failures)).mappings()
     }
+    success_keys = {
+        (row.task_id, row.attempt_no)
+        for row in connection.execute(
+            select(successes.c.task_id, successes.c.attempt_no)
+        )
+    }
+    _require(not success_keys.intersection(failure_rows))
     keys = {(row["task_id"], row["attempt_no"]) for row in attempt_rows}
-    _require(keys == set(lease_rows) and set(failure_rows) <= keys)
+    _require(
+        keys == set(lease_rows) and set(failure_rows) <= keys and success_keys <= keys
+    )
     task_ids = set(connection.execute(select(tasks.c.task_id)).scalars())
     _require(all(row["task_id"] in task_ids for row in attempt_rows))
     by_task: dict[str, list[dict[str, Any]]] = {}
@@ -91,6 +106,8 @@ def validate_attempts(database: Path, connection: Connection) -> None:
                     failure["origin"] == "executor"
                     and kind
                     in {
+                        FailureKind.OUTPUT_INVALID,
+                        FailureKind.MODEL_MISMATCH,
                         FailureKind.TIMEOUT,
                         FailureKind.CANCELLED,
                         FailureKind.PROTOCOL_ERROR,

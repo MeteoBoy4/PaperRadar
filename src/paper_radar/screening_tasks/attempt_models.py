@@ -6,7 +6,9 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Literal, Protocol
 
+from paper_radar.screening import OutputValidationIssue
 from paper_radar.screening_tasks.models import TaskState
+from paper_radar.screening_tasks.success_models import SuccessCandidate
 from paper_radar.stage_inputs import StageInput
 
 Clock = Callable[[], datetime]
@@ -38,12 +40,19 @@ class FailureReceipt:
     kind: FailureKind
     origin: FailureOrigin
     settled_at: datetime
+    issues: tuple[OutputValidationIssue, ...] = ()
+
+
+class FailureExecutor(Protocol):
+    def __call__(
+        self, stage_input: StageInput, correction: str | None, renewal_handle: str, /
+    ) -> FailureReport: ...
 
 
 class TestExecutor(Protocol):
     def __call__(
         self, stage_input: StageInput, correction: str | None, renewal_handle: str, /
-    ) -> FailureReport: ...
+    ) -> FailureReport | SuccessCandidate: ...
 
 
 @dataclass(frozen=True, slots=True)

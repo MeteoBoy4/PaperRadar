@@ -67,6 +67,8 @@ def derive_status(
 ) -> TaskStatus:
     if not rows:
         return TaskStatus(task_id, "ready", 0, 2)
+    if rows[-1]["success_id"] is not None:
+        return TaskStatus(task_id, "succeeded", len(rows), 2 - len(rows))
     last_failure = FailureKind(rows[-1]["kind"]) if rows[-1]["kind"] else None
     if last_failure is not None:
         return TaskStatus(

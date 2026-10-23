@@ -13,7 +13,14 @@ from paper_radar.screening_tasks.models import (
     ValueRequest,
 )
 from paper_radar.screening_tasks.rules import receipt_id, request_digest
-from paper_radar.screening_tasks.tables import budgets, inputs, requests, tasks
+from paper_radar.screening_tasks.success_rules import require_success_id
+from paper_radar.screening_tasks.tables import (
+    budgets,
+    inputs,
+    requests,
+    successes,
+    tasks,
+)
 from paper_radar.stage_inputs import StageInput
 
 
@@ -47,6 +54,8 @@ def receipt_row(connection: Connection, identifier: str) -> dict[str, Any] | Non
 
 
 def to_receipt(row: dict[str, Any]) -> RequestReceipt:
+    if row["cached_success_id"] is not None:
+        require_success_id(row["cached_success_id"])
     return RequestReceipt(
         **{
             key: row[key]
@@ -171,6 +180,9 @@ def register_request(
             scheduled_day=request.scheduled_day,
             reason=request.reason,
             actor=request.actor,
+            cached_success_id=connection.execute(
+                select(successes.c.success_id).where(successes.c.budget_id == budget_id)
+            ).scalar_one_or_none(),
             **basis,
         )
     )

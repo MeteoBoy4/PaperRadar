@@ -29,6 +29,9 @@ extraction 的 manifest 是上游正文材料成员，与这里的制品清单�
 不进入身份：original_pdf 为 application/pdf，reference_tei 为 application/tei+xml，
 extraction/reading 为 text/markdown，其余 extraction 角色为 application/json；
 来源与模型响应默认 application/octet-stream，以保持原始字节语义。
+A7-04 boundary 接收是 model_success_response 的首个业务消费者：唯一 payload 逐字
+保存通过 A1 的原始响应（含合法外围空白）；结构结果与审计属于任务事实，不进入
+ArtifactRecord metadata。事务外发布后的完整未引用响应仍合法且纳入备份。
 
 SQLite 是登记事实源：`content_objects` 记录 blob 身份、长度、布局版本、相对位置和时间；
 `artifacts` 记录身份、kind、格式与时间；`artifact_members` 记录 artifact/role 到 blob 和

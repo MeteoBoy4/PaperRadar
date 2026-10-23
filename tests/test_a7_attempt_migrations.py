@@ -44,8 +44,15 @@ def previous_registration_copy(
                 "AND name!='alembic_version' ORDER BY name"
             )
         ]
+        columns = {
+            name: ",".join(
+                row[1] for row in previous.execute(f"PRAGMA table_info({name})")
+            )
+            for name in names
+        }
         expected = {
-            name: original.execute(f"SELECT * FROM {name}").fetchall() for name in names
+            name: original.execute(f"SELECT {columns[name]} FROM {name}").fetchall()
+            for name in names
         }
         for name, rows in expected.items():
             previous.execute(f"DELETE FROM {name}")
@@ -109,11 +116,16 @@ def test_nonempty_registration_upgrade_retains_receipts_and_is_atomic(
                 name: connection.execute(f"SELECT * FROM {name}").fetchall()
                 for name in expected
             } == expected
-    assert upgrade_database(old) == "a702_screening_attempts"
-    assert upgrade_database(old) == "a702_screening_attempts"
+    assert upgrade_database(old) == "a703_screening_success"
+    assert upgrade_database(old) == "a703_screening_success"
     with closing(sqlite3.connect(old)) as connection:
         assert {
-            name: connection.execute(f"SELECT * FROM {name}").fetchall()
+            name: [
+                row[: len(expected[name][0])]
+                for row in connection.execute(f"SELECT * FROM {name}").fetchall()
+            ]
+            if expected[name]
+            else []
             for name in expected
         } == expected
         assert not connection.execute("PRAGMA foreign_key_check").fetchall()

@@ -22,9 +22,17 @@ class TaskReason(StrEnum):
     INVALID_CREDENTIAL = "invalid_credential"
     SETTLEMENT_CONFLICT = "settlement_conflict"
     INVALID_FAILURE = "invalid_failure"
+    INVALID_CANDIDATE = "invalid_candidate"
+    ALREADY_SUCCEEDED = "already_succeeded"
+    SUCCESS_NOT_FOUND = "success_not_found"
+    DATA_ROOT_REQUIRED = "data_root_required"
 
 
 GUIDANCE = {
+    TaskReason.INVALID_CANDIDATE: "请提交受支持的原始响应和执行审计字段。",
+    TaskReason.ALREADY_SUCCEEDED: "该输入已有成功筛选制品。",
+    TaskReason.SUCCESS_NOT_FOUND: "请核对筛选制品 ID。",
+    TaskReason.DATA_ROOT_REQUIRED: "请显式提供制品根目录。",
     TaskReason.INVALID_REQUEST: "请核对受支持阶段、来源及请求字段。",
     TaskReason.INVALID_CONTEXT: "请提供严格布尔的原题名语言事实。",
     TaskReason.CONTEXT_CONFLICT: "请沿用该输入首次冻结的语言事实。",

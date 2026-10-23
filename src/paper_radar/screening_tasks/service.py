@@ -3,6 +3,7 @@
 import re
 from datetime import datetime
 from pathlib import Path
+from typing import overload
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -12,6 +13,7 @@ from paper_radar.papers import PaperError, PaperFacts, resolve_revision
 from paper_radar.screening_tasks.attempt_models import (
     Claim,
     Clock,
+    FailureExecutor,
     FailureKind,
     FailureOrigin,
     FailureReceipt,
@@ -19,7 +21,6 @@ from paper_radar.screening_tasks.attempt_models import (
     TaskStatus,
     TestExecutor,
 )
-from paper_radar.screening_tasks.attempt_rules import correction_for
 from paper_radar.screening_tasks.database_errors import database_error
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.execution import AttemptService
@@ -33,6 +34,13 @@ from paper_radar.screening_tasks.repository import (
     to_receipt,
 )
 from paper_radar.screening_tasks.rules import parse_request
+from paper_radar.screening_tasks.success import SuccessService
+from paper_radar.screening_tasks.success_models import (
+    SuccessCandidate,
+    SuccessContent,
+    SuccessReceipt,
+    SuccessView,
+)
 from paper_radar.screening_tasks.tables import budgets, requests, tasks
 from paper_radar.stage_inputs import BuildReason, StageInputError
 from paper_radar.storage.database import (
@@ -54,6 +62,7 @@ class ScreeningTasks:
         self.database = database
         self.data_root = data_root
         self._attempts = AttemptService(database, clock)
+        self._success = SuccessService(self._attempts, data_root)
 
     def claim(self, receipt_id: str) -> Claim:
         return self._attempts.claim(
@@ -72,10 +81,37 @@ class ScreeningTasks:
     def reclaim(self, receipt_id: str) -> TaskStatus:
         return self._attempts.reclaim(self.get_receipt(receipt_id))
 
-    def run_once(self, receipt_id: str, executor: TestExecutor) -> FailureReceipt:
+    def submit(
+        self, claim: Claim, candidate: SuccessCandidate
+    ) -> SuccessReceipt | FailureReceipt:
+        return self._success.submit(claim, candidate)
+
+    def load_success(self, success_id: str) -> SuccessContent:
+        return self._success.load(success_id)
+
+    def query_successes(
+        self, *, paper_id: str, stage: str, snapshot_id: str
+    ) -> tuple[SuccessView, ...]:
+        return self._success.query(
+            paper_id=paper_id, stage=stage, snapshot_id=snapshot_id
+        )
+
+    @overload
+    def run_once(
+        self, receipt_id: str, executor: FailureExecutor
+    ) -> FailureReceipt: ...
+
+    @overload
+    def run_once(
+        self, receipt_id: str, executor: TestExecutor
+    ) -> FailureReceipt | SuccessReceipt: ...
+
+    def run_once(
+        self, receipt_id: str, executor: TestExecutor
+    ) -> FailureReceipt | SuccessReceipt:
         claim = self.claim(receipt_id)
         stage_input = self.load_input(receipt_id).stage_input
-        correction = correction_for(self.status(receipt_id).last_failure)
+        correction = self._attempts.correction(self.get_receipt(receipt_id))
         # claim 已提交;进程随后中断或执行者抛异常都不退还预算。
         origin: FailureOrigin = "executor"
         try:
@@ -83,6 +119,13 @@ class ScreeningTasks:
         except Exception:
             report = FailureReport(FailureKind.EXECUTOR_ERROR)
             origin = "exception"
+        if type(report) is SuccessCandidate:
+            try:
+                return self.submit(claim, report)
+            except TaskError as error:
+                if error.reason != TaskReason.INVALID_CANDIDATE:
+                    raise
+            report = FailureReport(FailureKind.PROTOCOL_ERROR)
         if (
             type(report) is not FailureReport
             or type(report.kind) is not FailureKind
@@ -94,7 +137,7 @@ class ScreeningTasks:
                 FailureKind.EXECUTOR_ERROR,
             }
         ):
-            # 本票没有成功入口,任意未支持返回只记录协议失败。
+            # 未支持的返回只记录协议失败。
             report = FailureReport(FailureKind.PROTOCOL_ERROR)
         # 离开 except 后才结算,迟到结算的受控错误不串联原执行者异常。
         return self._attempts.fail(claim, report, origin=origin)
@@ -239,6 +282,11 @@ class ScreeningTasks:
                 connection.exec_driver_sql("BEGIN")
                 validate_registration(self.database, connection)
                 validate_attempts(self.database, connection)
+                from paper_radar.screening_tasks.success_integrity import (
+                    validate_successes,
+                )
+
+                validate_successes(self._success, connection)
         except SQLAlchemyError as error:
             raise database_error(error) from None
         except (

@@ -62,7 +62,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。根内任何路径组件符号�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 a702_screening_attempts，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 a703_screening_success，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -291,7 +291,7 @@ verify 本身不会升级旧批次。非空双阶段登记可在原目录不可�
 
 ## A7-03 尝试、租约与失败闭包
 
-当前批次数据库 revision 为 `a702_screening_attempts`，备份格式、manifest 字段、
+A7-03 历史批次数据库 revision 为 `a702_screening_attempts`，备份格式、manifest 字段、
 artifact kind 与 counts 均保持原值。任务语义钩子继续位于 PaperFacts 后、manifest
 反查前，不重复注册第二条 hook。除登记闭包外，核对 attempt 序号连续且每代最多两次、
 请求与任务归属、请求 snapshot 下领取时历史输入同指纹、凭据/租约归属、UTC 时间和

@@ -3,7 +3,8 @@
 状态：A7-01 已冻结 D1–D4 并收紧权威 JSON 解析；A7-02（#78）已交付公共登记、
 冻结输入回放、请求回执、a701 持久化和备份语义闭包；A7-03（#79）增加 a702 的
 原子领取、两次预算、600 秒租约、失败结算、显式回收和 test 一次尝试驱动。
-成功接收、retry、版本化共享查询和完整组合验收仍待 #80–#84。本文不是 A7 passed 证据。
+A7-04（#80）交付 boundary 权威接收、唯一制品、三值适用性和成功恢复闭包。
+value、retry、版本化共享查询和完整组合验收仍待 #81–#84。本文不是 A7 passed 证据。
 来源为 [#76 正文及全部评论](https://github.com/MeteoBoy4/PaperRadar/issues/76)，
 [用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)
 优先；逐项对照与绑定台账见 [A7 requirements](../verification/a7-requirements.md)。
@@ -81,7 +82,7 @@ D 固定为 600 秒、不进入配置语义；时钟统一注入严格 aware UTC
 服务 busy/引用损坏/非法调用不是模型失败；已领取但未结算者依租约恢复。
 第二次尝试只消费冻结输入和脱敏失败说明，不携前次失败原文或会话。
 
-## 4. 候选接收与筛选制品（D3；接收服务待实现）
+## 4. 候选接收与筛选制品（D3；boundary 已交付，value 待实现）
 
 外部执行者返回完整原始字节或封闭失败。服务统一调用现有 `validate_output`，不接受
 `validated=true`、自由解析字典或第二份字段 Schema。原始 `str`/`bytes`/`bytearray`
@@ -103,7 +104,7 @@ provider request ID 与 token 未报告为 null，报告 0 保持 0；不预建�
 ## 5. 当前适用性完全派生（D2）
 
 明确 snapshot S 下，把 Paper P 的当前修订重新映射得到 fingerprint F；同 Paper/
-stage 的已接收筛选制品 fingerprint 等于 F 即当前，否则只是历史。映射缺项时无
+stage 的已接收筛选制品 fingerprint 等于 F 即当前，否则为 historical。映射失败为 undeterminable，携原 PaperReason（包括缺摘要、截断未知、配置未就绪、快照未登记），无
 当前制品。版本 ID 改变但实际文本/配置指纹相同，制品直接适用；补卷期/来源不重跑。
 
 当前/历史是查询视图，不是成功状态。不建结果使用依据表、再绑定 API 或绑定写入。
@@ -191,7 +192,7 @@ RevisionView 暴露的 event_no。真实进程 CAS 用例证明事务外预读�
 新增四表为 screening_inputs（BLOB 载荷按指纹去重）、screening_budgets（首次 snapshot、
 语言事实和论文依据）、screening_tasks（预算范围内第 0 代）、screening_requests（全库 ID、
 内容摘要和独立论文/配置依据）。这四表由历史 migration a701_screening_registration 建立；
-当前 head 为 a702_screening_attempts，见下一节。A5 格式、artifact kind、
+当前 head 为 a703_screening_success；a702 历史切片见下一节，成功接收见 §10。A5 格式、artifact kind、
 backup format/manifest/counts 均保持原值。新程序不接受旧 revision 的备份批次，
 须用匹配程序恢复后显式升级；普通旧库准确报 upgrade_required。
 
@@ -207,7 +208,7 @@ request_not_found、facts_changed、corrupt_reference、database_busy，各有�
 
 任务状态词表预先固定为 ready、running、lease_expired、retryable、failed、succeeded，
 分别表示待领取、已领取未到期、到期未结算、失败但尚有预算、失败终态、成功；A7-02
-只登记 ready；A7-03 实现前五项，succeeded 由接收票交付。它们不构成 Paper 主状态或完整 eligibility。
+只登记 ready；A7-03 实现前五项，succeeded 由 boundary 接收切片交付。它们不构成 Paper 主状态或完整 eligibility。
 
 ## 9. A7-03 领取、租约与失败 API（已交付）
 
@@ -222,7 +223,7 @@ request_not_found、facts_changed、corrupt_reference、database_busy，各有�
 | `fail(claim, report)` | 原子追加封闭失败结算，返回安全 FailureReceipt；同凭据同内容精确重放返回原回执，内容不同拒绝 |
 | `reclaim(receipt_id)` | 显式结算已到期 attempt 为 outcome_unknown；不到期不结算、不退预算 |
 | `status(receipt_id)` | 只读推导 TaskStatus，包括 used_attempts/remaining_attempts、状态与 last_failure；不回收、不创建事实，不是 A7-06 版本化查询序列化 |
-| `run_once(receipt_id, executor)` | 先持久化领取，再向可替换 test 执行边界至多调用一次；本票只接收失败报告 |
+| `run_once(receipt_id, executor)` | 先持久化领取，再向可替换 test 执行边界至多调用一次；现可接收失败报告或 boundary 原始成功候选 |
 
 领取先用请求自身 snapshot 映射当前 Paper，只比较阶段指纹；历史 version/revision 与
 当前不同本身不阻止领取。写事务使用同连接复核本次预读的 version/revision/selection，
@@ -234,9 +235,9 @@ request_not_found、facts_changed、corrupt_reference、database_busy，各有�
 FailureReport 仅有 kind；修正说明从受控类别选择固定中文，不接收调用方自由文本。
 执行边界封闭为 test；执行者可报告 timeout、cancelled、protocol_error、executor_error，
 真实捕获异常结算 executor_error；执行者不能报告 outcome_unknown 代替回收，也不能
-声明 output_invalid/model_mismatch 或已验证成功。后两种失败留给权威接收票。
+声明 output_invalid/model_mismatch 或已验证成功。后两种失败仅由权威接收服务形成。
 直接 fail 的不支持报告返回 invalid_failure；run_once 中不支持的执行者返回值
-（包括成功形状）结算为 protocol_error，不能绕过权威接收。
+（自由字典或自称已验证的形状）结算为 protocol_error，不能绕过权威接收。
 调用是否发生、token 和用量未报告时保持未知，不把 attempt 占用解释为实际模型调用。
 
 fencing 使用 task_id/attempt_no/领取凭据，不重新领取同一 attempt、不另造领取计数器。
@@ -245,7 +246,7 @@ fencing 使用 task_id/attempt_no/领取凭据，不重新领取同一 attempt�
 或预算。回收结算的旧凭据不能伪装成持有者失败重放，也不能影响后续 attempt。
 过期但未结算的持有者可续租或提交，renew/fail/reclaim 的竞争由数据库短事务串行化。
 
-当前 head a702_screening_attempts 新增实际消费的 screening_attempts（不可变领取与
+历史 head a702_screening_attempts 新增实际消费的 screening_attempts（不可变领取与
 预算事实）、screening_leases（当前到期投影）与 screening_failures（追加失败结算）；
 不预建成功、retry 或未来成本字段。迁移从非空 a701 登记库前进。只读完整性钩子继续
 复用已有 backup 接线，核对最多两次、连续序号、同任务请求、两套历史依据同指纹、
@@ -256,3 +257,57 @@ invalid_credential、settlement_conflict、invalid_failure，均有固定中文�
 Claim 公开 task_id、attempt_no、receipt_id、claimed_at、expires_at 及领取时
 version_id/revision_no/selection_id，另有隐藏 repr 的 credential、renewal_handle；
 FailureReceipt 仅有 task_id、attempt_no、kind、origin 与 settled_at，不携失败原文。
+
+
+## 10. A7-04 boundary 原始候选接收与派生查询（已交付）
+
+公共 `SuccessCandidate(raw_response, executor_kind="test", reported_provider=None,
+reported_model=None, provider_request_id=None, input_tokens=None, output_tokens=None)`
+只接受严格 bytes；不接收已解析模型、自由字典或 validated 标记。所有审计字段隐藏 repr。
+执行来源仅支持严格字符串 test，provider/model/request ID 为可空非空 UTF-8 字符串
+（最多 2048 字节）；token 为可空非负严格整数，bool 非整数。未报告的字段保留 NULL，
+报告 0 保持 0。run_once 收到非法候选协议形状时结算 protocol_error；直接非法调用
+报 invalid_candidate。provider/model 与预算首次冻结 snapshot 的 screening 槽矛盾时
+结算 model_mismatch，占用当次预算。A7 test 制品不得由生产建议或校准消费者接收。
+
+| 方法 | 结果与范围 |
+| --- | --- |
+| `submit(claim, candidate)` | 权威校验 boundary 原始字节；合法返回 SuccessReceipt，校验/模型失败返回 FailureReceipt |
+| `run_once(receipt_id, executor)` | 沿用一次尝试驱动，接受 FailureReport 或 SuccessCandidate；没有生产执行者 |
+| `load_success(success_id)` | 显式内部消费 SuccessContent：原始成功字节、A1 权威 BoundaryOutput、可空审计；敏感内容隐藏 repr |
+| `query_successes(paper_id=..., stage="boundary", snapshot_id=...)` | 只读安全 SuccessView 序列，含成功回执、三值适用性及可空 PaperReason，不含判断/理由/raw |
+
+SuccessReceipt 固定为 success_id、task_id、attempt_no、artifact_id、fingerprint、stage、
+executor_kind=test、settled_at。FailureReceipt 追加安全 issues；只持久化 A1 原 category/location，
+回放为受控说明，不保存失败全文或自由指导文本。第二次执行只取得封闭失败说明及 A1
+安全类别/路径。请求格式 1 追加 nullable cached_success_id：只在本次登记时命中已有
+同预算成功才保存 ID；旧请求原来未命中的精确重放永远不被后来成功改写。
+实时 status/query 与不可变请求回执分别表达当前事实和登记当时事实。
+
+提交首先在只读事务验证持有者身份与既有结算。明确已失败/回收的旧凭据先拒绝，不发布
+新文件；同原始字节和审计的精确提交直接返回原回执。成功候选经唯一 A1 校验后，
+在业务写事务外以 A3 payload 单角色发布原始响应；随后短 BEGIN IMMEDIATE 重新验证
+身份并原子写唯一成功。精确身份包含原始字节 SHA-256 与规范审计，空白不同即不同请求。
+不检查当前租约是否已到期，不在提交事务映射/比较当前论文。竞争者先回收时发布方只
+能留下完整未引用 model_success_response；不删除或改写已发布制品。不允许同 attempt
+同时成功失败，claim/renew/fail/reclaim/status 及完整性共享此终局判断，成功不退预算。
+成功输入后续领取报 already_succeeded，不创建下一 attempt。
+
+query_successes 复用 PaperFacts 的独立只读一致映射视图，随后读取不可变成功事实；
+允许相对并发论文/任务提交滞后，不声称映射读与任务读取属于同一个 SQLite 快照。
+指纹相等 current，映射成功且不同 historical，映射失败 undeterminable+PaperReason。
+版本切换同文本、书目补全或 Read/期刊配置不改 boundary 指纹时仍为 current；parser
+删除摘要暂不可判定，其他来源补回同文本后自然重新适用，无绑定写入。
+
+新 head a703_screening_success 从 a702 增量增加 screening_successes（每预算唯一、
+每 attempt 唯一、A3 原响应引用、单列规范权威结构、规范审计与精确提交身份）；
+screening_requests 增加登记时命中引用，screening_failures 增加安全 issues/候选提交
+身份与审计。SQLite 原位追加可空 REFERENCES 列，保留既有请求 CHECK 和所有历史。
+不新增 ArtifactRecord metadata、artifact kind/role、备份字段/计数或金额字段。
+
+validate_all 沿用同一备份钩子，重验原始响应、权威结构、冻结输入和期望模型、执行
+来源、UTC 成功时间、终局排他和缓存归属；失败细节只允许权威 Schema 字段路径和
+封闭类别。语义损坏仍映 registration_invalid。完整未引用 model_success_response
+合法；备份恢复保留成功、旧请求当时回执、失败和未结算预算，不触发执行。
+新增任务原因保持目录版本 1：invalid_candidate、already_succeeded、success_not_found、
+data_root_required，各有固定中文下一步说明；缺显式制品根时不猜 cwd。
