@@ -20,6 +20,12 @@ from paper_radar.screening_tasks.attempt_models import (
     FailureKind,
     FailureReceipt,
 )
+from paper_radar.screening_tasks.attempt_repository import (
+    failure_receipt,
+    read_attempts,
+    require_attempt_time,
+    require_secret,
+)
 from paper_radar.screening_tasks.attempt_rules import (
     digest,
     read_timestamp,
@@ -65,7 +71,7 @@ class SuccessService:
     def _precheck(
         self, connection: Connection, claim: Claim, submission: str
     ) -> tuple[dict[str, Any], SuccessReceipt | FailureReceipt | None]:
-        rows = self.attempts._attempt_rows(connection, claim.task_id)
+        rows = read_attempts(connection, claim.task_id)
         row = next(
             (item for item in rows if item["attempt_no"] == claim.attempt_no), None
         )
@@ -90,7 +96,7 @@ class SuccessService:
             if failure["origin"] == "recovery":
                 raise TaskError(TaskReason.INVALID_CREDENTIAL)
             if failure["submission_sha256"] == submission:
-                return row, self.attempts._failure_receipt(row)
+                return row, failure_receipt(row)
             raise TaskError(TaskReason.SETTLEMENT_CONFLICT)
         if row["attempt_no"] != rows[-1]["attempt_no"]:
             raise TaskError(TaskReason.INVALID_CREDENTIAL)
@@ -101,7 +107,7 @@ class SuccessService:
     ) -> SuccessReceipt | FailureReceipt:
         if type(claim) is not Claim:
             raise TaskError(TaskReason.INVALID_CREDENTIAL)
-        self.attempts._require_secret(claim.credential)
+        require_secret(claim.credential)
         audit = candidate_audit(candidate)
         submission = submission_digest(candidate.raw_response, audit)
         with self.attempts.connection(write=False) as connection:
@@ -148,7 +154,7 @@ class SuccessService:
             if replayed is not None:
                 return replayed
             now = utc_now(self.attempts.clock)
-            self.attempts._require_time(row, now)
+            require_attempt_time(row, now)
             if kind is not None:
                 connection.execute(
                     failures.insert().values(

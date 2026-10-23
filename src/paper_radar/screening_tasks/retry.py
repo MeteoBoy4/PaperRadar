@@ -5,6 +5,10 @@ from uuid import uuid4
 from sqlalchemy import select
 
 from paper_radar.papers import PaperError, PaperFacts, resolve_revision
+from paper_radar.screening_tasks.attempt_repository import (
+    read_attempts,
+    recover_attempt,
+)
 from paper_radar.screening_tasks.attempt_rules import derive_status, utc_now
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.execution import AttemptService
@@ -96,12 +100,12 @@ class RetryService:
             if latest != request.parent_task_id:
                 raise TaskError(TaskReason.NOT_LATEST)
             now = utc_now(self.attempts.clock)
-            rows = self.attempts._attempt_rows(connection, request.parent_task_id)
+            rows = read_attempts(connection, request.parent_task_id)
             status = derive_status(request.parent_task_id, rows, now)
             # 只有第二次已到期的 attempt 可以在同一事务变为失败终态并开后继。
             if status.state == "lease_expired" and status.used_attempts == 2:
-                self.attempts._recover(connection, rows[-1], now)
-                rows = self.attempts._attempt_rows(connection, request.parent_task_id)
+                recover_attempt(connection, rows[-1], now)
+                rows = read_attempts(connection, request.parent_task_id)
                 status = derive_status(request.parent_task_id, rows, now)
             if status.state != "failed":
                 raise TaskError(TaskReason.NOT_FAILED)

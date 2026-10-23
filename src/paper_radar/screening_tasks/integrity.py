@@ -7,8 +7,10 @@ from uuid import UUID
 from sqlalchemy import Connection, select
 
 from paper_radar.papers import PaperFacts, resolve_revision
+from paper_radar.screening_tasks.attempt_repository import (
+    read_attempts,
+)
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
-from paper_radar.screening_tasks.execution import AttemptService
 from paper_radar.screening_tasks.frozen import load_frozen
 from paper_radar.screening_tasks.models import (
     BoundaryRequest,
@@ -93,9 +95,7 @@ def validate_registration(database: Path, connection: Connection) -> None:
                 == (generations[index - 1]["task_id"] if index else None)
             )
             if index:
-                parent_rows = AttemptService._attempt_rows(
-                    connection, task["parent_task_id"]
-                )
+                parent_rows = read_attempts(connection, task["parent_task_id"])
                 _require(
                     len(parent_rows) == 2
                     and all(

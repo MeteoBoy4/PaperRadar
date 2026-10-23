@@ -1,12 +1,10 @@
 """执行编排:事务外映射,数据库短事务串行化领取与租约。"""
 
-import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from secrets import token_hex
-from typing import Any
 
 from sqlalchemy import Connection, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -20,6 +18,13 @@ from paper_radar.screening_tasks.attempt_models import (
     FailureReceipt,
     FailureReport,
     TaskStatus,
+)
+from paper_radar.screening_tasks.attempt_repository import (
+    failure_receipt,
+    read_attempts,
+    recover_attempt,
+    require_attempt_time,
+    require_secret,
 )
 from paper_radar.screening_tasks.attempt_rules import (
     correction_for,
@@ -91,7 +96,7 @@ class AttemptService:
             current = resolve_revision(connection, paper_id=receipt.paper_id)
             if evidence_values(current) != basis:
                 raise TaskError(TaskReason.FACTS_CHANGED)
-            existing = self._attempt_rows(connection, receipt.task_id)
+            existing = read_attempts(connection, receipt.task_id)
             now = utc_now(self.clock)
             expires = lease_expiry(now)
             if (
@@ -106,7 +111,7 @@ class AttemptService:
             if existing and existing[-1]["kind"] is None:
                 if now < read_timestamp(existing[-1]["expires_at"]):
                     raise TaskError(TaskReason.TASK_RUNNING)
-                self._recover(connection, existing[-1], now)
+                recover_attempt(connection, existing[-1], now)
             number = len(existing) + 1
             if number <= 2:
                 if existing and now < read_timestamp(
@@ -148,12 +153,12 @@ class AttemptService:
     def status(self, receipt: RequestReceipt) -> TaskStatus:
         now = utc_now(self.clock)
         with self.connection(write=False) as connection:
-            rows = self._attempt_rows(connection, receipt.task_id)
+            rows = read_attempts(connection, receipt.task_id)
             return derive_status(receipt.task_id, rows, now)
 
     def correction(self, receipt: RequestReceipt) -> str | None:
         with self.connection(write=False) as connection:
-            rows = self._attempt_rows(connection, receipt.task_id)
+            rows = read_attempts(connection, receipt.task_id)
             previous = next(
                 (row for row in reversed(rows) if row["kind"] is not None), None
             )
@@ -172,7 +177,7 @@ class AttemptService:
             return message
 
     def renew(self, handle: str) -> datetime:
-        self._require_secret(handle)
+        require_secret(handle)
         with self.connection(write=True) as connection:
             row = connection.execute(
                 select(attempts.c.task_id).where(
@@ -181,7 +186,7 @@ class AttemptService:
             ).first()
             if row is None:
                 raise TaskError(TaskReason.INVALID_CREDENTIAL)
-            rows = self._attempt_rows(connection, row.task_id)
+            rows = read_attempts(connection, row.task_id)
             current = rows[-1]
             if (
                 current["renewal_sha256"] != digest(handle)
@@ -190,7 +195,7 @@ class AttemptService:
             ):
                 raise TaskError(TaskReason.INVALID_CREDENTIAL)
             now = utc_now(self.clock)
-            self._require_time(current, now)
+            require_attempt_time(current, now)
             expires = lease_expiry(now)
             connection.execute(
                 leases.update()
@@ -207,7 +212,7 @@ class AttemptService:
     ) -> FailureReceipt:
         if type(claim) is not Claim:
             raise TaskError(TaskReason.INVALID_CREDENTIAL)
-        self._require_secret(claim.credential)
+        require_secret(claim.credential)
         allowed = {
             FailureKind.TIMEOUT,
             FailureKind.CANCELLED,
@@ -221,7 +226,7 @@ class AttemptService:
         ):
             raise TaskError(TaskReason.INVALID_FAILURE)
         with self.connection(write=True) as connection:
-            rows = self._attempt_rows(connection, claim.task_id)
+            rows = read_attempts(connection, claim.task_id)
             row = next(
                 (item for item in rows if item["attempt_no"] == claim.attempt_no), None
             )
@@ -235,11 +240,11 @@ class AttemptService:
                     raise TaskError(TaskReason.INVALID_CREDENTIAL)
                 if row["kind"] != report.kind.value or row["origin"] != origin:
                     raise TaskError(TaskReason.SETTLEMENT_CONFLICT)
-                return self._failure_receipt(row)
+                return failure_receipt(row)
             if row["attempt_no"] != rows[-1]["attempt_no"]:
                 raise TaskError(TaskReason.INVALID_CREDENTIAL)
             now = utc_now(self.clock)
-            self._require_time(row, now)
+            require_attempt_time(row, now)
             connection.execute(
                 failures.insert().values(
                     task_id=claim.task_id,
@@ -256,94 +261,13 @@ class AttemptService:
     def reclaim(self, receipt: RequestReceipt) -> TaskStatus:
         with self.connection(write=True) as connection:
             now = utc_now(self.clock)
-            rows = self._attempt_rows(connection, receipt.task_id)
+            rows = read_attempts(connection, receipt.task_id)
             if (
                 rows
                 and rows[-1]["kind"] is None
                 and rows[-1]["success_id"] is None
                 and now >= read_timestamp(rows[-1]["expires_at"])
             ):
-                self._recover(connection, rows[-1], now)
-                rows = self._attempt_rows(connection, receipt.task_id)
+                recover_attempt(connection, rows[-1], now)
+                rows = read_attempts(connection, receipt.task_id)
             return derive_status(receipt.task_id, rows, now)
-
-    @staticmethod
-    def _require_secret(value: str) -> None:
-        if type(value) is not str or re.fullmatch(r"[0-9a-f]{64}", value) is None:
-            raise TaskError(TaskReason.INVALID_CREDENTIAL)
-
-    @staticmethod
-    def _require_time(row: dict[str, Any], now: datetime) -> None:
-        if now < read_timestamp(row["claimed_at"]):
-            raise TaskError(TaskReason.INVALID_CLOCK)
-
-    @classmethod
-    def _recover(
-        cls, connection: Connection, row: dict[str, Any], now: datetime
-    ) -> None:
-        cls._require_time(row, now)
-        connection.execute(
-            failures.insert().values(
-                task_id=row["task_id"],
-                attempt_no=row["attempt_no"],
-                kind=FailureKind.OUTCOME_UNKNOWN.value,
-                origin="recovery",
-                settled_at=timestamp(now),
-            )
-        )
-
-    @staticmethod
-    def _failure_receipt(row: dict[str, Any]) -> FailureReceipt:
-        return FailureReceipt(
-            row["task_id"],
-            row["attempt_no"],
-            FailureKind(row["kind"]),
-            row["origin"],
-            read_timestamp(row["settled_at"]),
-            decode_issues(row["issues_json"]),
-        )
-
-    @staticmethod
-    def _attempt_rows(connection: Connection, task_id: str) -> list[dict[str, Any]]:
-        rows = [
-            dict(row)
-            for row in connection.execute(
-                select(
-                    attempts,
-                    leases.c.expires_at,
-                    failures.c.kind,
-                    failures.c.origin,
-                    failures.c.settled_at,
-                    failures.c.issues_json,
-                    successes.c.success_id,
-                )
-                .outerjoin(
-                    leases,
-                    (leases.c.task_id == attempts.c.task_id)
-                    & (leases.c.attempt_no == attempts.c.attempt_no),
-                )
-                .outerjoin(
-                    failures,
-                    (failures.c.task_id == attempts.c.task_id)
-                    & (failures.c.attempt_no == attempts.c.attempt_no),
-                )
-                .outerjoin(
-                    successes,
-                    (successes.c.task_id == attempts.c.task_id)
-                    & (successes.c.attempt_no == attempts.c.attempt_no),
-                )
-                .where(attempts.c.task_id == task_id)
-                .order_by(attempts.c.attempt_no)
-            ).mappings()
-        ]
-        if (
-            any(row["expires_at"] is None for row in rows)
-            or [row["attempt_no"] for row in rows] != list(range(1, len(rows) + 1))
-            or len(rows) > 2
-        ):
-            raise TaskError(TaskReason.CORRUPT_REFERENCE)
-        if any(
-            row["success_id"] is not None and row["kind"] is not None for row in rows
-        ) or any(row["kind"] is None for row in rows[:-1]):
-            raise TaskError(TaskReason.CORRUPT_REFERENCE)
-        return rows

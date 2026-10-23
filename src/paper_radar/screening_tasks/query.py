@@ -5,6 +5,10 @@ from typing import Literal
 from sqlalchemy import select
 
 from paper_radar.papers import PaperFacts
+from paper_radar.screening_tasks.attempt_repository import (
+    failure_receipt,
+    read_attempts,
+)
 from paper_radar.screening_tasks.attempt_rules import (
     derive_status,
     read_timestamp,
@@ -61,7 +65,7 @@ class QueryService:
                     .where(tasks.c.budget_id == budget["budget_id"])
                     .order_by(tasks.c.generation)
                 ).mappings():
-                    rows = self.attempts._attempt_rows(connection, task["task_id"])
+                    rows = read_attempts(connection, task["task_id"])
                     status = derive_status(task["task_id"], rows, now)
                     receipts = []
                     for identifier in connection.execute(
@@ -92,7 +96,7 @@ class QueryService:
                                     selection_id=row["selection_id"],
                                     claimed_at=read_timestamp(row["claimed_at"]),
                                     expires_at=read_timestamp(row["expires_at"]),
-                                    failure=self.attempts._failure_receipt(row)
+                                    failure=failure_receipt(row)
                                     if row["kind"] is not None
                                     else None,
                                     success_id=row["success_id"],

@@ -250,6 +250,10 @@ REQUIRED_TEST_MODULES = (
 )
 REQUIRED_SOURCE_MODULES = (
     (
+        "src/paper_radar/screening_tasks/attempt_repository.py",
+        "87389b2fdfde60f946790abc4d2f0f0dd4deed2087409744c5806ccea882c421",
+    ),
+    (
         "scripts/a1_scope.py",
         "e71257263bed5859e4277c8b0ff399c4986c440e8212c8d1a636c559fcc7d428",
     ),
@@ -443,7 +447,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/execution.py",
-        "ea954d078681c28548e3ebf6e98d45e986d5402143763d59f3ddb7b62b64a144",
+        "199a90b80ca9cfbd3323673566e6b63e0a943fc618823d45ecfe347edc8f4266",
     ),
     (
         "src/paper_radar/screening_tasks/frozen.py",
@@ -451,7 +455,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/integrity.py",
-        "e89921cca6aa3cd49299c0a54fe1e774cae9d68d32ac55e82c9360a4bebc5d5d",
+        "14b871d27e0185fcfb32e2beda048ebb95eb2dc24cb6f9c641b5f900fe63802f",
     ),
     (
         "src/paper_radar/screening_tasks/models.py",
@@ -459,7 +463,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/query.py",
-        "30328d916a49b6e03faf29cdefbc1cc648adf21be7592822d9a1b71a8b99ae3b",
+        "b6e29c0fa4adfd22d9173546a206672ee5ebedf9d43c0609d63a48da2fe4f930",
     ),
     (
         "src/paper_radar/screening_tasks/query_models.py",
@@ -471,7 +475,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/retry.py",
-        "5364fe4155cdd8c9dcce17d4110147e2d0c037151c213d55335a56ea1f6587cc",
+        "8881232c2aecd20c73094a0416d3082046e1735e95af9c5b4c059de84a7ff9a0",
     ),
     (
         "src/paper_radar/screening_tasks/rules.py",
@@ -483,7 +487,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/success.py",
-        "5fd86d7b02dd4d49710bfd5df8c8175b18eb74d81040f082819cb2853f9240fa",
+        "055fe237442a4f654f52843385f32d526388414d6d96c90c13b3af6863210b6a",
     ),
     (
         "src/paper_radar/screening_tasks/success_integrity.py",
