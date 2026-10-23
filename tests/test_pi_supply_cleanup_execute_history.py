@@ -63,7 +63,7 @@ def test_nonempty_a404_upgrade_preserves_original_plan_bytes(tmp_path: Path) -> 
                     f"INSERT INTO {table} VALUES ({','.join('?' for _ in values[0])})",
                     values,
                 )
-    assert upgrade_database(old) == "a604_version_relations"
+    assert upgrade_database(old) == "a701_screening_registration"
     assert show_cleanup_plan(old, plan.plan_id).canonical_bytes == plan.canonical_bytes
     assert show_supply(old, first.supply_id) == show_supply(source[0], first.supply_id)
     with sqlite3.connect(old) as connection:

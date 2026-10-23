@@ -338,3 +338,7 @@ A5 当时 `paper_fact_mapping` NOT_ASSESSED 原样保留；正式映射与 #74 �
 
 本结论仅证明离线事实闭环，所有第 10 节来源假设和阶段 C 的强冲突材料/parser 固定样本门禁
 继续未验证。stage_a_verified/live_verified/rpc_verified 固定 false，不授予任务资格或模型预算。
+
+A7-02 任务层已持久化 boundary/value 规范输入与请求依据，见[任务 Contract](screening-tasks.md)。
+论文事实包只公开既有连接级 `resolve_revision` 供调用方在 BEGIN 后复核一致性，
+不反向依赖任务服务，不新增语言事实、预算或执行资格。

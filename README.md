@@ -533,3 +533,12 @@ A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/co
 收紧重复 JSON 键和非有限常量；任务持久化/租约/筛选制品接收/retry/恢复仍待后续子票，
 尚未注册 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；真实 value 任务前
 必须先裁决原题名语言事实的生产来源。
+
+### Screening 任务登记（A7-02）
+
+公共 `paper_radar.screening_tasks.ScreeningTasks` 已支持用现有论文和明确历史配置快照
+登记 boundary/value 请求，保存规范输入、独立预算范围和精确回执，并在备份恢复后回放。
+value 的原题名语言事实必须显式提供；当前没有执行者或产品 CLI，登记不会调用模型。
+此切片不等同于领取/租约、成功接收、显式 retry 或完整 A7 验收。
+API、隐私与语义闭包见[Screening 任务 Contract](docs/contracts/screening-tasks.md)，
+规格对照与重绑责任见[A7 requirements](docs/verification/a7-requirements.md)。

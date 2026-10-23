@@ -1,7 +1,7 @@
 # A7 规格对照与固定绑定台账
 
-状态：#77（A7-01）交付 D1–D4 裁决文档及严格 JSON 回归；#78–#84 的任务实现、
-恢复与独立 A7 验收尚未交付。当前 `check-offline` 通过只证明已有组及本次全套检查，
+状态：#77（A7-01）交付裁决文档与严格 JSON；#78（A7-02）已交付登记、冻结回放、
+a701 与备份闭包。#79–#84 的领取/接收/retry/共享查询/完整恢复及独立 A7 验收尚未交付。当前 `check-offline` 通过只证明已有组及本次全套检查，
 不表示尚未注册的 A7 passed。运行回执、commit 和 run_id 存在工作树外，不改写历史证据。
 
 ## 来源顺序与冻结依据
@@ -115,3 +115,39 @@ two_stage_orchestration、suggestion_decision、calibration_visibility、reuse/e
 最终验证先新任务/直接论文映射/权威输出/存储子集，再迁移、真实进程故障及隔离恢复，
 最后实际 `./scripts/check-offline` 返回 0。A4 虽不为 A7 直接前置，仍是整体必需组。
 旧 A1–A6 的历史 not_assessed 不回写，新增 A7 自己承担实际交付证明。
+
+## A7-02 实际交付与本波绑定重审
+
+#78 已完成公共 register/get_receipt/receipts/load_input/validate_all，详见 Contract §8。
+正文 US1–7/19–20/30、ID3–7/17–18 的登记责任由以下独立模块证明；后续 attempt、lease、
+成功接收与 retry 责任不提前宣称完成。
+
+| 测试模块 | 当前用例 | 证明 |
+| --- | --- | --- |
+| test_a7_registration | 6 | 冻结/旧精确回执；严格语言；跨日/修订/A→B→A；主体/阶段；同文本跨版本；Read/期刊配置隔离 |
+| test_a7_registration_failures | 34 | 非空/HTML/UTF-8/2048 字节、封闭请求、具体 PaperReason、独立 readiness、缺库与隐私 |
+| test_a7_registration_process | 7 | 双进程同/异请求唯一预算；事务前/中/提交后强杀；CAS；5 秒忙锁 |
+| test_a7_registration_migrations | 6 | 非空 a604→a701、DDL/提交失败和强杀、旧全部 config/artifact/Pi/paper 历史、WAL、依赖守卫 |
+| test_a7_registration_backup | 10 | 非空恢复；两阶段 WAL、新进程禁原目录后移动回放；八类 FK/SQLite/外层哈希合法语义损坏拒绝 |
+
+共 63 例；全部通过后再执行直接关联旧回归与完整门禁，不把当前收集数动态写入旧分母。
+本票不注册 A7 组，这些新增模块在 #84 一次冻结 A7 验收范围。
+
+实际重绑先审查 head 字面量及最小源 diff，再按 scope audit 的 downstream 顺序更新。
+六组 MIGRATION_REVISION 前移 a701_screening_registration；A3 的 backup_database_revision
+同步。20 个旧测试模块仅替换“当前 head”及 future 假迁移的 down_revision 字面量，
+不改历史旧库 fixture 的 revision、不新增/删除旧用例。A6 capabilities fixture 的 a601–a604
+**历史源码路径保留原值**：其字节不受本波影响，A7 的新增 migration 由本票实际升级测试
+证明，最终源码固定由 #84 负责。没有为表面上符合评论的数量而改写历史能力材料。
+
+| 接入文件 | 本波重审理由 | 旧组 |
+| --- | --- | --- |
+| backup/manifest.py | a701 批次 revision，format 1 保留 | A3/A4/A6 |
+| backup/service.py | PaperFacts 后接任务语义钩子，仍映 registration_invalid | A3/A6 |
+| papers/__init__.py | 仅导出已有连接级 resolve_revision；mapping.py 没有改动 | A6 |
+| 20 个旧测试模块 | 当前 head 及未来假 head 依据前移，原固定分母保持 | 按原所属 A2-01/完整 A2/A3/A4/A5/A6 |
+| a2→a2_full→a3→a4→a5→a6 scopes | 按实际下游重新计算上列已审查字节身份 | 不修改旧历史结论 |
+
+逐条旧/新 SHA-256、路径和原因保存在本次外部 `78-rebinding-ledger.json`，门禁 run_id、
+提交与完整审计原 JSON 见 `78-handoff.md` 和 verification-runs，避免 run_id 自哈希循环。
+已确认 36 条绑定更新涉及 27 个被绑定路径；正式门禁以最终提交为准，不写回历史证据。

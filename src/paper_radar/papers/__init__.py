@@ -19,6 +19,7 @@ from paper_radar.papers.models import (
     RevisionView,
     WriteResult,
 )
+from paper_radar.papers.queries import resolve_revision
 
 if TYPE_CHECKING:
     from paper_radar.papers.service import PaperFacts
@@ -48,4 +49,5 @@ __all__ = [
     "StageMappingResult",
     "WriteResult",
     "normalize_doi",
+    "resolve_revision",
 ]

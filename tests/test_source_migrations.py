@@ -122,7 +122,7 @@ def test_nonempty_previous_revision_upgrades_atomically_preserving_history(
                 name: previous_rows(connection, name) for name in expected
             } == expected
             assert not connection.execute("PRAGMA foreign_key_check").fetchall()
-    assert upgrade_database(previous) == "a604_version_relations"
+    assert upgrade_database(previous) == "a701_screening_registration"
     with closing(sqlite3.connect(previous)) as connection:
         assert {name: previous_rows(connection, name) for name in expected} == expected
         assert not connection.execute("PRAGMA foreign_key_check").fetchall()

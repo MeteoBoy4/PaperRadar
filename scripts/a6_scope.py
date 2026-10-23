@@ -6,7 +6,7 @@ ISSUE = 75
 PARENT_ISSUE = 67
 FORMAT_VERSION = 1
 SUFFIX = ".a6.json"
-MIGRATION_REVISION = "a604_version_relations"
+MIGRATION_REVISION = "a701_screening_registration"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
 FORMAT_VERSIONS = {
@@ -155,7 +155,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_feed_migrations.py",
-        "62190a34deadcb9f688b418bb1ef8b025975446523e7fdf45854c9d3eacc9c4c",
+        "08d1401b6c4e6de70bd8706c4b0b40f9b4fdb5927ea3928a8165548c24051e74",
     ),
     (
         "tests/test_feed_process.py",
@@ -203,7 +203,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_paper_migrations.py",
-        "5948f5c40b9b0eabb2cb53fdb717bb8a5611cb49ff782cc6cabda1cd6ca1ae74",
+        "7c591d0d81c0102543565ac30d3a92b246d0862b1465b9838f555542653037e7",
     ),
     (
         "tests/test_paper_process.py",
@@ -235,7 +235,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_source_backup.py",
-        "bcbeaa5ceb6b6587c3316172111abb205a814f500811dcfb8ad7fec5a03239c0",
+        "8584c3a24c7bdeb7be68d39c2f34e4329f0b7aa8ed97390f2d27e88751672dfa",
     ),
     (
         "tests/test_source_cli.py",
@@ -243,7 +243,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_source_migrations.py",
-        "94ee389248cde749ea6af899a28fdf8e3f78ecd5f27d44d8c527d3f5731ee40f",
+        "2cb358a90d4bae2f524bc6e575170852654a837d5fae608a300221dbd13beffa",
     ),
     (
         "tests/test_source_process.py",
@@ -267,7 +267,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_version_relation_migrations.py",
-        "629b271c9f17590c5851f6e5c8b772301e17bc57ddbb35256af6e9bd2b1500f2",
+        "27b3cfa69d95bed057e3da68416245af26738f46c5a76e3da54e583d55e86651",
     ),
     (
         "tests/test_version_relation_process.py",
@@ -279,7 +279,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_acceptance.py",
-        "c72ce1f19b7b1d1ed9b616cb6638c30d6c4ebfbb94e580b95d02723a12861600",
+        "462806464caffbcfbee2d85104e02c72c3f7cfef493714f059d4f79d4a3a022a",
     ),
     (
         "tests/test_a6_entry.py",
@@ -291,7 +291,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_integrity.py",
-        "8f43fa67710333c2654d873aad8f864ed8d8df1e9cab0a5c5b1be04afdbd1fac",
+        "16c4fc321fe99add5872f67c0ecd1d7f5e2f795cf174148e87d01d478b5af59c",
     ),
     (
         "tests/test_a6_status.py",
@@ -313,7 +313,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "d0cc473a2ec4766e4a3a0b0fa670a741328758a9082ee5ebd7ffc3abacffae9a",
+        "172cef8748964067cd30c7da359374b9a4a2fb00e14ba1d553abb9cf9e168ed4",
     ),
     (
         "scripts/a2_test_receipt.py",
@@ -321,11 +321,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "dfe9e9828bbb7323abd855183b0a78d800fe71b2eb4e5f895652ffd254d22843",
+        "b62f0e614aceb71ae7e7cc9613ed0a839934f2250c834bf519ce4e3e91d8e063",
     ),
     (
         "scripts/a5_scope.py",
-        "13305aab6874eddf456d424653897cd0cac056e4011d0fcff0e904b6437db8c8",
+        "de76f1d490cf340a5b25a650b243bb8581b50bd7cb6f94b165c6e98fe9633584",
     ),
     (
         "scripts/a6_acceptance.py",
@@ -357,11 +357,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "924c659e655ba73ae95108db02a4fc343c2f4d50650be5d3972637a0b3e9cca5",
+        "10a68266985c32b289b16a7a87dfa6219d21c7b667fe31c6f68482048d4c024f",
     ),
     (
         "src/paper_radar/backup/service.py",
-        "177ad9459468b9e14c94fad0f9bfe1b0183c7be10d2f0cc04b1285ee5f9fc03b",
+        "e6fa39228f4acb1b86c7ebc33f0e2ce4bd962bd9c749145b7faa6ea888413857",
     ),
     (
         "src/paper_radar/cli.py",
@@ -369,7 +369,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/__init__.py",
-        "51d6c843c32cefa8782f73cd6238a3cdab8d85faf5350298bf6f4f1bd07a2612",
+        "5597f1cc803f2fe0a9e5e9d37396dd6ab7fcdf3892af432a462d9924de9d9924",
     ),
     (
         "src/paper_radar/papers/cli.py",

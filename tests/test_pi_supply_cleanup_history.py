@@ -111,7 +111,7 @@ def test_upgrade_nonempty_a403_preserves_selection_and_all_previous_rows(
                     f"INSERT INTO {table} VALUES ({','.join('?' for _ in values[0])})",
                     values,
                 )
-    assert upgrade_database(old) == "a604_version_relations"
+    assert upgrade_database(old) == "a701_screening_registration"
     assert show_supply(old, installed.supply_id) == show_supply(
         source[0], installed.supply_id
     )

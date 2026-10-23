@@ -1,7 +1,8 @@
 # Screening 任务 Contract
 
-状态：A7-01 已冻结 D1–D4 裁决并收紧权威 JSON 解析；下述任务服务、持久化、租约、
-接收、retry、查询和恢复能力仍待 #78–#84 逐票交付。本文不是 A7 passed 证据。
+状态：A7-01 已冻结 D1–D4 并收紧权威 JSON 解析；A7-02（#78）已交付公共登记、
+冻结输入回放、请求回执、a701 持久化和备份语义闭包。领取/租约、接收、retry、共享
+任务查询和完整组合验收仍待 #79–#84。本文不是 A7 passed 证据。
 来源为 [#76 正文及全部评论](https://github.com/MeteoBoy4/PaperRadar/issues/76)，
 [用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)
 优先；逐项对照与绑定台账见 [A7 requirements](../verification/a7-requirements.md)。
@@ -48,10 +49,10 @@ value 登记必须显式提供严格 `bool` 的 `original_title_is_zh`；通过�
 任何真实 value 任务之前另行裁决，最晚在 RPC 票或阶段 D。** 主题集合只从匹配冻结输入
 的同库历史 snapshot 派生，不从当前 topics 文件取得。
 
-## 3. 一致登记、领取与有限尝试（待实现）
+## 3. 一致登记（已交付）、领取与有限尝试（待实现）
 
 登记/领取的映射可在事务外一致读取；进入 `BEGIN IMMEDIATE` 后必须经同一连接
-比较当前选择 event_no、version_id、最新 revision_no 与预读依据。变化则回滚并要求
+比较不可变的当前 selection_id、version_id、最新 revision_no 与预读依据。变化则回滚并要求
 重新登记，不能把另一连接看到的事实视为写事务锁定。配置快照不可变，可在事务外
 加载并在事务内核对已登记。只开放 papers 的最小只读事务组合接口，不复制仲裁。
 
@@ -140,3 +141,62 @@ backup format 保持 1，无新 manifest 字段或计数；head 前移后旧批�
 跨备份回退的全局调用上限。** 非空异地恢复须证明全部输入、响应、retry 与未结算
 历史可独立重建。A7 正式结论依赖同次 A1、完整 A2、A3、A5、A6；A4 仍为总门禁必需。
 RPC、live、完整阶段 A 与原题名语言生产来源持续未验收。
+
+## 8. A7-02 公共登记 API（已交付）
+
+`paper_radar.screening_tasks.ScreeningTasks(database, data_root=None)` 是唯一任务服务。
+当前 `data_root` 只保留为备份制品根的组合位置；登记与输入回放不读来源文件或配置目录。
+登记只接收 `register(mapping)`，请求 Pydantic 模型属于内部实现，不是第二个公共校验入口。
+没有默认执行者；此切片全部任务仍是第 0 代、零次 attempt。
+
+| 方法 | 结果与范围 |
+| --- | --- |
+| `register(request)` | 追加或精确重放 `RequestReceipt`；只写登记事实 |
+| `get_receipt(receipt_id)` | 只读返回登记时回执，不重新映射当前论文 |
+| `receipts(paper_id)` | 按回执 ID 排序的安全请求历史，不是后续资格/失败查询 |
+| `load_input(receipt_id)` | 显式内部消费：从预算基线的历史 snapshot 严格回放 StageInput；载荷、snapshot、语言事实隐藏 repr |
+| `validate_all()` | 只读核验登记关系、原始字节/指纹/投影、历史论文依据及请求身份；不升级、不修复、不执行 |
+
+请求共同字段为严格字符串 `paper_id`、`snapshot_id`、`stage` 和 `source`。stage 封闭为
+boundary/value，source 当前为 scheduled/manual。scheduled 必须有严格 ISO `scheduled_day`
+（`YYYY-MM-DD`），其 request_id/reason/actor 均为空；manual 必须有 request_id/reason/actor，
+scheduled_day 为空。value 的 `original_title_is_zh` 必须由既有 StageInput 上下文权威接收，
+boundary 禁该字段。除此之外的字段一律拒绝，异常不回显调用方字段名/值。
+
+request_id、reason、actor 检查非空、无 HTML、可 UTF-8 编码及最多 2048 字节；合法文本
+原样保存，不静默 trim 后改变精确重放身份。request_id 在整个任务请求表唯一，与 A6
+版本内的人工修正 ID 分开；回执不展示这些自由文本。
+
+调用方请求的规范 UTF-8 JSON（键排序、无外围空白、非 ASCII 原样编码）单独哈希。
+manual 精确重放先查全库 request_id 并核对该哈希，**先于当前论文映射**；当前论文后来
+变化/缺项也返回原回执。同 ID 不同内容返回 request_conflict。scheduled 的回执 ID 是
+source/paper/stage/fingerprint/day/version/revision/snapshot 的规范 JSON SHA-256；因此
+同日补卷期产生新请求、同任务，不发生旧请求身份冲突。两种来源的新请求均关联已有预算
+范围；没有重复第 0 代，也不跨 Paper 复用业务任务。
+
+回执格式 1 的固定安全字段：receipt_id、task_id、budget_id、paper_id、stage、fingerprint、
+generation、source、version_id、revision_no、snapshot_id、scheduled_day、selection_id、
+format_version。manual 的回执 ID 由 source/request_id 的规范身份摘要派生；与用户自由
+request_id 是两个字段。selection_id 已唯一标识不可变选择事件，无需复制未在 A6 公共
+RevisionView 暴露的 event_no。真实进程 CAS 用例证明事务外预读后任意修订变化会受控
+回滚 facts_changed，调用方重新登记后仍按相同语义指纹共用预算。
+
+新增四表为 screening_inputs（BLOB 载荷按指纹去重）、screening_budgets（首次 snapshot、
+语言事实和论文依据）、screening_tasks（预算范围内第 0 代）、screening_requests（全库 ID、
+内容摘要和独立论文/配置依据）。head 为 a701_screening_registration；不预建 attempt、
+lease、retry 或成功表。A5 格式、artifact kind、backup format/manifest/counts 均保持原值。
+新程序不接受 a604 备份批次，须用匹配程序恢复后显式升级；普通旧库准确报 upgrade_required。
+
+现有任务原因目录版本 1：invalid_request、invalid_context、context_conflict、request_conflict、
+request_not_found、facts_changed、corrupt_reference、database_busy，各有中文下一步说明。
+语言类型错误同时携 A5 原始 BuildReason/InputField；论文映射失败原样抛 PaperError，
+缺库/旧库保留 StorageError，均不伪装成模型失败。失败只会回滚登记，不存在预算占用。
+
+当前完整性校验逐条回放冻结输入和每个请求的历史配置/修订，核对论文归属、选择身份、
+原始请求内容摘要、回执身份及第 0 代唯一关系。备份 hook 在 PaperFacts 后、manifest
+反查前调用，受控语义损坏为 registration_invalid。跨进程恢复仅需副本和已登记材料，
+不访问原数据/配置目录。后续表的校验必须随其所属票继续补入此同一闭包。
+
+任务状态词表预先固定为 ready、running、lease_expired、retryable、failed、succeeded，
+分别表示待领取、已领取未到期、到期未结算、失败但尚有预算、失败终态、成功；A7-02
+只登记 ready，后续票实现其余状态。它们不构成 Paper 主状态或完整 eligibility。

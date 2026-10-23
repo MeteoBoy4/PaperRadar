@@ -385,3 +385,7 @@ boundary/value/reuse/extraction 各自的当前配方版本 1；构造、回放�
 视为已支持阶段。该映射只表达阶段输入格式，配置当前投影格式由 config 维护；历史投影
 回放是否受支持由本模块的封闭策略决定，核对时还要求明确快照能够重建匹配格式。
 公开版本不改变任何既有载荷字节、指纹向量或配置投影配方。
+
+A7-02 已在[任务 Contract](screening-tasks.md#8-a7-02-公共登记-api已交付)落实 boundary/value
+规范载荷持久化；缓存主体是同库 paper/stage/fingerprint，不跨 Paper 共享业务预算。
+A5 的原格式和算法不变，原题名语言只属于任务基线。
