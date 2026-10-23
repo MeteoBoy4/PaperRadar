@@ -46,7 +46,11 @@ def candidate_audit(candidate: SuccessCandidate) -> str:
         if value is not None and (type(value) is not int or value < 0):
             raise TaskError(TaskReason.INVALID_CANDIDATE)
         audit[name] = value
-    return canonical(audit).decode("utf-8")
+    try:
+        return canonical(audit).decode("utf-8")
+    except ValueError:
+        # Python 对极大整数的十进制转换有运行时限制;不回显审计内容。
+        raise TaskError(TaskReason.INVALID_CANDIDATE) from None
 
 
 def submission_digest(raw: bytes, audit_json: str) -> str:

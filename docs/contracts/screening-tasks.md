@@ -152,7 +152,7 @@ RPC、live、完整阶段 A 与原题名语言生产来源持续未验收。
 ## 8. A7-02 公共登记 API（已交付）
 
 `paper_radar.screening_tasks.ScreeningTasks(database, data_root=None, *, clock=None)` 是唯一任务服务。
-当前 `data_root` 只保留为备份制品根的组合位置；登记与输入回放不读来源文件或配置目录。
+登记与输入回放不使用 `data_root`，不读来源文件或配置目录；boundary 成功的发布和显式读取使用该根，见 §10。
 登记只接收 `register(mapping)`，请求 Pydantic 模型属于内部实现，不是第二个公共校验入口。
 没有默认执行者；A7-02 登记切片只创建第 0 代，不占 attempt。A7-03 的时间相关方法
 要求注入时钟；纯登记、回执、回放与 `validate_all()` 不依赖时钟。
@@ -266,7 +266,8 @@ reported_model=None, provider_request_id=None, input_tokens=None, output_tokens=
 只接受严格 bytes；不接收已解析模型、自由字典或 validated 标记。所有审计字段隐藏 repr。
 执行来源仅支持严格字符串 test，provider/model/request ID 为可空非空 UTF-8 字符串
 （最多 2048 字节）；token 为可空非负严格整数，bool 非整数。未报告的字段保留 NULL，
-报告 0 保持 0。run_once 收到非法候选协议形状时结算 protocol_error；直接非法调用
+报告 0 保持 0。不另设 token 业务上限；运行时不能规范序列化的审计受控拒绝。
+run_once 收到非法候选协议形状时结算 protocol_error；直接非法调用
 报 invalid_candidate。provider/model 与预算首次冻结 snapshot 的 screening 槽矛盾时
 结算 model_mismatch，占用当次预算。A7 test 制品不得由生产建议或校准消费者接收。
 

@@ -295,3 +295,47 @@ def test_parsed_or_validated_claim_cannot_bypass_authority_and_other_paper_succe
     assert isinstance(success, SuccessReceipt)
     assert service.load_success(success.success_id).audit["output_tokens"] == 0
     service.validate_all()
+
+
+@pytest.mark.parametrize("via_driver", [False, True])
+def test_unserializable_nonnegative_token_audit_is_controlled(
+    tmp_path: Path, via_driver: bool
+) -> None:
+    data = archive(tmp_path)
+    service = ScreeningTasks(
+        data.database, data.data_root, clock=lambda: datetime(2026, 1, 1, tzinfo=UTC)
+    )
+    receipt = service.register(request_for(data))
+    candidate = SuccessCandidate(b"{}", input_tokens=10**5000)
+    if via_driver:
+        result = service.run_once(receipt.receipt_id, lambda *_: candidate)
+        assert isinstance(result, FailureReceipt)
+        assert result.kind == FailureKind.PROTOCOL_ERROR
+    else:
+        claim = service.claim(receipt.receipt_id)
+        with pytest.raises(TaskError) as error:
+            service.submit(claim, candidate)
+        assert error.value.reason == TaskReason.INVALID_CANDIDATE
+        assert service.status(receipt.receipt_id).state == "running"
+    assert service.status(receipt.receipt_id).used_attempts == 1
+    service.validate_all()
+
+
+def test_serializable_large_token_audit_has_no_artificial_business_limit(
+    tmp_path: Path,
+) -> None:
+    data = archive(tmp_path)
+    service = ScreeningTasks(
+        data.database, data.data_root, clock=lambda: datetime(2026, 1, 1, tzinfo=UTC)
+    )
+    receipt = service.register(request_for(data))
+    result = service.run_once(
+        receipt.receipt_id,
+        lambda *_: SuccessCandidate(
+            b'{"boundary":"in_scope","reason_zh":"Atmospheric models are studied."}',
+            input_tokens=10**300,
+        ),
+    )
+    assert isinstance(result, SuccessReceipt)
+    assert service.load_success(result.success_id).audit["input_tokens"] == 10**300
+    service.validate_all()
