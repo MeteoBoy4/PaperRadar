@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from paper_radar.screening import BoundaryOutput
 from paper_radar.screening_tasks import (
     FailureKind,
     FailureReceipt,
@@ -36,6 +37,7 @@ def test_boundary_raw_success_is_immutable_and_replays(tmp_path: Path) -> None:
     assert service.status(registered.receipt_id).state == "succeeded"
     loaded = service.load_success(success.success_id)
     assert loaded.raw_response == raw
+    assert isinstance(loaded.output, BoundaryOutput)
     assert loaded.output.boundary == "in_scope"
     assert service.register(request) == registered
     assert registered.cached_success_id is None
@@ -59,7 +61,9 @@ def test_driver_accepts_each_boundary_without_suggestion(
     ).encode()
     result = service.run_once(receipt.receipt_id, lambda *_: SuccessCandidate(raw))
     assert isinstance(result, SuccessReceipt)
-    assert service.load_success(result.success_id).output.boundary == boundary
+    output = service.load_success(result.success_id).output
+    assert isinstance(output, BoundaryOutput)
+    assert output.boundary == boundary
     assert "reason_zh" not in repr(result)
     service.validate_all()
 

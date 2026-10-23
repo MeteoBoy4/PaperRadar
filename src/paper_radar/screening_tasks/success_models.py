@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Literal
 
 from paper_radar.papers import PaperReason
-from paper_radar.screening.schema import BoundaryOutput
+from paper_radar.screening.schema import BoundaryOutput, ValuePredictionOutput
 from paper_radar.screening_tasks.models import Stage
 
 
@@ -36,7 +36,7 @@ class SuccessReceipt:
 class SuccessContent:
     receipt: SuccessReceipt
     raw_response: bytes = field(repr=False)
-    output: BoundaryOutput = field(repr=False)
+    output: BoundaryOutput | ValuePredictionOutput = field(repr=False)
     audit: dict[str, str | int | None] = field(repr=False)
 
 

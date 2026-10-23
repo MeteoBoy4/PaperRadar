@@ -12,8 +12,11 @@ from paper_radar.screening import (
     BoundaryOutput,
     OutputErrorCategory,
     OutputValidationIssue,
+    ValuePredictionOutput,
+    validate_output,
 )
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
+from paper_radar.screening_tasks.models import FrozenInput, Stage
 from paper_radar.screening_tasks.rules import canonical
 from paper_radar.screening_tasks.success_models import SuccessCandidate
 
@@ -88,10 +91,18 @@ def encode_issues(issues: tuple[OutputValidationIssue, ...]) -> str | None:
     )
 
 
-def decode_issues(value: str | None) -> tuple[OutputValidationIssue, ...]:
+def decode_issues(
+    value: str | None, *, stage: Stage | None = None
+) -> tuple[OutputValidationIssue, ...]:
     if value is None:
         return ()
-    fields = set(BoundaryOutput.model_fields)
+    fields = (
+        set(BoundaryOutput.model_fields)
+        if stage == "boundary"
+        else set(ValuePredictionOutput.model_fields)
+        if stage == "value"
+        else set(BoundaryOutput.model_fields) | set(ValuePredictionOutput.model_fields)
+    )
     parts = "|".join(re.escape(field) for field in fields | {"<额外字段>"})
     records = json.loads(value)
     if type(records) is not list or not records:
@@ -117,6 +128,20 @@ def decode_issues(value: str | None) -> tuple[OutputValidationIssue, ...]:
     if encode_issues(issues) != value:
         raise TaskError(TaskReason.CORRUPT_REFERENCE)
     return issues
+
+
+def validate_candidate_output(
+    frozen: FrozenInput, raw: bytes
+) -> BoundaryOutput | ValuePredictionOutput:
+    """提交和恢复只从同一 A5 冻结输入派生 A1 权威上下文。"""
+    if frozen.stage_input.stage.value == "boundary":
+        return validate_output("boundary", raw)
+    if frozen.stage_input.stage.value == "value":
+        context = frozen.stage_input.value_prediction_context(
+            frozen.snapshot, original_title_is_zh=frozen.original_title_is_zh
+        )
+        return validate_output("value_prediction", raw, context=context)
+    raise TaskError(TaskReason.CORRUPT_REFERENCE)
 
 
 def require_success_id(value: object) -> None:
