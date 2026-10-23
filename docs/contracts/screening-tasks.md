@@ -1,8 +1,9 @@
 # Screening 任务 Contract
 
 状态：A7-01 已冻结 D1–D4 并收紧权威 JSON 解析；A7-02（#78）已交付公共登记、
-冻结输入回放、请求回执、a701 持久化和备份语义闭包。领取/租约、接收、retry、共享
-任务查询和完整组合验收仍待 #79–#84。本文不是 A7 passed 证据。
+冻结输入回放、请求回执、a701 持久化和备份语义闭包；A7-03（#79）增加 a702 的
+原子领取、两次预算、600 秒租约、失败结算、显式回收和 test 一次尝试驱动。
+成功接收、retry、版本化共享查询和完整组合验收仍待 #80–#84。本文不是 A7 passed 证据。
 来源为 [#76 正文及全部评论](https://github.com/MeteoBoy4/PaperRadar/issues/76)，
 [用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)
 优先；逐项对照与绑定台账见 [A7 requirements](../verification/a7-requirements.md)。
@@ -49,7 +50,7 @@ value 登记必须显式提供严格 `bool` 的 `original_title_is_zh`；通过�
 任何真实 value 任务之前另行裁决，最晚在 RPC 票或阶段 D。** 主题集合只从匹配冻结输入
 的同库历史 snapshot 派生，不从当前 topics 文件取得。
 
-## 3. 一致登记（已交付）、领取与有限尝试（待实现）
+## 3. 一致登记、领取与有限尝试（已交付）
 
 登记/领取的映射可在事务外一致读取；进入 `BEGIN IMMEDIATE` 后必须经同一连接
 比较不可变的当前 selection_id、version_id、最新 revision_no 与预读依据。变化则回滚并要求
@@ -64,11 +65,15 @@ CLI 帮助的零外部 I/O 启动路径。
 
 租约有效区间 `[claimed_at, expires_at)`，恰好到期可回收。采纳 #76 B4 建议：到期但
 未结算时，原持有者仍可续租或提交；回收结算后旧凭据全部失效。续租设为 `now + D`，
-D 为服务常量、不进入配置语义；时钟统一注入，不直接读取系统时间、不启动后台心跳。
+D 固定为 600 秒、不进入配置语义；时钟统一注入严格 aware UTC datetime，
+不直接读取系统时间、不启动后台心跳。
 凭据为 `(task_id, attempt_no, token)`，attempt_no 即领取代数，不另设计数器。
 回收一律结算 `outcome_unknown`，不假定执行者曾经运行或已经停止，不退还预算。
 只读查询不回收/续租；第二次 attempt 到期未结算显示 `lease_expired`、剩余 0，
 回收后才进入失败终态。普通任务租约与 A4 继承 fd 的安装使用保护独立。
+没有回收守护进程；强杀后的尝试保持未结算，时间到达后仅派生 `lease_expired`，
+直到显式回收或下一次领取事务结算它。尚有预算也可能暂不可继续，不能把两次预算
+解释为自动调度保证。
 
 同代第一次失败仅余一次，第二次失败终态不随日期复活。失败类别封闭为
 `output_invalid`（携 A1 安全类别/路径）、`model_mismatch`、`timeout`、`cancelled`、
@@ -124,14 +129,14 @@ A1 类别/安全路径，TaskReason 只承载任务专属原因，不扩 storage
 CLI 部分移至首张产生真实任务事实的 RPC/run-due 票。共享 calibration visibility
 也未交付；本服务不能声称完整盲评隔离或产生生效筛选决定。
 
-## 7. 完整性、备份与验收（待实现）
+## 7. 完整性、备份与验收（随已交付事实递增）
 
 完整性重建仅复用：历史 snapshot → `replay_stage_input(stored_bytes,
 stored_fingerprint, snapshot=...)` → 同源 value context → `validate_output(raw)`
 → 与保存结构比较；核对请求论文依据、代际/attempt/租约/预算和成功引用。不要求每个
 model_success_response 都有任务引用，不重哈希已由 A3 验证的 blob。
 
-新 migration 从 a604 增量推进，只新增当前票实际消费的表；非空旧库与空库都测试。
+新 migration 从前一 revision 增量推进，只新增当前票实际消费的表；非空旧库与空库都测试。
 backup format 保持 1，无新 manifest 字段或计数；head 前移后旧批次受控
 `unsupported_revision`，旧库 `upgrade_required`，只显式升级、不在 verify 中迁移。
 任务 validate_all 钩子放在 PaperFacts 后、manifest 反查前，语义损坏沿用
@@ -145,10 +150,11 @@ RPC、live、完整阶段 A 与原题名语言生产来源持续未验收。
 
 ## 8. A7-02 公共登记 API（已交付）
 
-`paper_radar.screening_tasks.ScreeningTasks(database, data_root=None)` 是唯一任务服务。
+`paper_radar.screening_tasks.ScreeningTasks(database, data_root=None, *, clock=None)` 是唯一任务服务。
 当前 `data_root` 只保留为备份制品根的组合位置；登记与输入回放不读来源文件或配置目录。
 登记只接收 `register(mapping)`，请求 Pydantic 模型属于内部实现，不是第二个公共校验入口。
-没有默认执行者；此切片全部任务仍是第 0 代、零次 attempt。
+没有默认执行者；A7-02 登记切片只创建第 0 代，不占 attempt。A7-03 的时间相关方法
+要求注入时钟；纯登记、回执、回放与 `validate_all()` 不依赖时钟。
 
 | 方法 | 结果与范围 |
 | --- | --- |
@@ -184,14 +190,15 @@ RevisionView 暴露的 event_no。真实进程 CAS 用例证明事务外预读�
 
 新增四表为 screening_inputs（BLOB 载荷按指纹去重）、screening_budgets（首次 snapshot、
 语言事实和论文依据）、screening_tasks（预算范围内第 0 代）、screening_requests（全库 ID、
-内容摘要和独立论文/配置依据）。head 为 a701_screening_registration；不预建 attempt、
-lease、retry 或成功表。A5 格式、artifact kind、backup format/manifest/counts 均保持原值。
-新程序不接受 a604 备份批次，须用匹配程序恢复后显式升级；普通旧库准确报 upgrade_required。
+内容摘要和独立论文/配置依据）。这四表由历史 migration a701_screening_registration 建立；
+当前 head 为 a702_screening_attempts，见下一节。A5 格式、artifact kind、
+backup format/manifest/counts 均保持原值。新程序不接受旧 revision 的备份批次，
+须用匹配程序恢复后显式升级；普通旧库准确报 upgrade_required。
 
-现有任务原因目录版本 1：invalid_request、invalid_context、context_conflict、request_conflict、
+登记任务原因目录版本 1：invalid_request、invalid_context、context_conflict、request_conflict、
 request_not_found、facts_changed、corrupt_reference、database_busy，各有中文下一步说明。
 语言类型错误同时携 A5 原始 BuildReason/InputField；论文映射失败原样抛 PaperError，
-缺库/旧库保留 StorageError，均不伪装成模型失败。失败只会回滚登记，不存在预算占用。
+缺库/旧库保留 StorageError，均不伪装成模型失败。登记失败只会回滚登记，不占预算。
 
 当前完整性校验逐条回放冻结输入和每个请求的历史配置/修订，核对论文归属、选择身份、
 原始请求内容摘要、回执身份及第 0 代唯一关系。备份 hook 在 PaperFacts 后、manifest
@@ -200,4 +207,52 @@ request_not_found、facts_changed、corrupt_reference、database_busy，各有�
 
 任务状态词表预先固定为 ready、running、lease_expired、retryable、failed、succeeded，
 分别表示待领取、已领取未到期、到期未结算、失败但尚有预算、失败终态、成功；A7-02
-只登记 ready，后续票实现其余状态。它们不构成 Paper 主状态或完整 eligibility。
+只登记 ready；A7-03 实现前五项，succeeded 由接收票交付。它们不构成 Paper 主状态或完整 eligibility。
+
+## 9. A7-03 领取、租约与失败 API（已交付）
+
+服务使用注入的 UTC 时钟，未配置、非 datetime、naive 或非 UTC 值受控拒绝。
+时间相关操作使用同一注入时钟；没有系统时钟默认值。普通错误、repr 与状态不携带
+领取凭据、续租句柄、输入、异常文本或 traceback。
+
+| 方法 | 结果与范围 |
+| --- | --- |
+| `claim(receipt_id)` | 以请求回执领取新 attempt，原子占一次预算；返回持有者专用 Claim，秘密字段隐藏 repr |
+| `renew(renewal_handle)` | 仅持有者可用的不透明字符串句柄；未结算且匹配即设 expires_at=now+600 秒，不追加心跳历史 |
+| `fail(claim, report)` | 原子追加封闭失败结算，返回安全 FailureReceipt；同凭据同内容精确重放返回原回执，内容不同拒绝 |
+| `reclaim(receipt_id)` | 显式结算已到期 attempt 为 outcome_unknown；不到期不结算、不退预算 |
+| `status(receipt_id)` | 只读推导 TaskStatus，包括 used_attempts/remaining_attempts、状态与 last_failure；不回收、不创建事实，不是 A7-06 版本化查询序列化 |
+| `run_once(receipt_id, executor)` | 先持久化领取，再向可替换 test 执行边界至多调用一次；本票只接收失败报告 |
+
+领取先用请求自身 snapshot 映射当前 Paper，只比较阶段指纹；历史 version/revision 与
+当前不同本身不阻止领取。写事务使用同连接复核本次预读的 version/revision/selection，
+不一致报 facts_changed 且不新增 attempt。attempt 同时保存请求 receipt_id 与领取时的
+当前依据，绝不覆盖请求登记依据。领取提交前失败回滚，提交后即使未调用执行者也占预算。
+
+执行者只取得冻结 StageInput、由封闭失败类别生成的必要安全修正说明和续租句柄；
+不取得数据库连接、PaperFacts、完整 FrozenInput/snapshot 或前次原始失败字节。
+FailureReport 仅有 kind；修正说明从受控类别选择固定中文，不接收调用方自由文本。
+执行边界封闭为 test；执行者可报告 timeout、cancelled、protocol_error、executor_error，
+真实捕获异常结算 executor_error；执行者不能报告 outcome_unknown 代替回收，也不能
+声明 output_invalid/model_mismatch 或已验证成功。后两种失败留给权威接收票。
+直接 fail 的不支持报告返回 invalid_failure；run_once 中不支持的执行者返回值
+（包括成功形状）结算为 protocol_error，不能绕过权威接收。
+调用是否发生、token 和用量未报告时保持未知，不把 attempt 占用解释为实际模型调用。
+
+fencing 使用 task_id/attempt_no/领取凭据，不重新领取同一 attempt、不另造领取计数器。
+数据库只保存领取凭据和续租句柄的 SHA-256 摘要，原始能力字符串只交给持有者。
+失败重放先识别同凭据同结算内容，再判断持有者权限；重放不改变结算时间、当前租期
+或预算。回收结算的旧凭据不能伪装成持有者失败重放，也不能影响后续 attempt。
+过期但未结算的持有者可续租或提交，renew/fail/reclaim 的竞争由数据库短事务串行化。
+
+当前 head a702_screening_attempts 新增实际消费的 screening_attempts（不可变领取与
+预算事实）、screening_leases（当前到期投影）与 screening_failures（追加失败结算）；
+不预建成功、retry 或未来成本字段。迁移从非空 a701 登记库前进。只读完整性钩子继续
+复用已有 backup 接线，核对最多两次、连续序号、同任务请求、两套历史依据同指纹、
+凭据/租约归属、严格 UTC 时间和结算一致性；恢复完整保留已占预算及租约，不自动回收。
+
+A7-03 在原因目录版本 1 追加 invalid_clock、task_running、budget_exhausted、
+invalid_credential、settlement_conflict、invalid_failure，均有固定中文下一步说明。
+Claim 公开 task_id、attempt_no、receipt_id、claimed_at、expires_at 及领取时
+version_id/revision_no/selection_id，另有隐藏 repr 的 credential、renewal_handle；
+FailureReceipt 仅有 task_id、attempt_no、kind、origin 与 settled_at，不携失败原文。

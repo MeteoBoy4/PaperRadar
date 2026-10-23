@@ -6,7 +6,7 @@ ISSUE = 75
 PARENT_ISSUE = 67
 FORMAT_VERSION = 1
 SUFFIX = ".a6.json"
-MIGRATION_REVISION = "a701_screening_registration"
+MIGRATION_REVISION = "a702_screening_attempts"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
 FORMAT_VERSIONS = {
@@ -155,7 +155,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_feed_migrations.py",
-        "08d1401b6c4e6de70bd8706c4b0b40f9b4fdb5927ea3928a8165548c24051e74",
+        "6c3087b7b96f26d523af906cff47f319a5d37e55991c2c8f21fe72cf0fd671de",
     ),
     (
         "tests/test_feed_process.py",
@@ -203,7 +203,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_paper_migrations.py",
-        "7c591d0d81c0102543565ac30d3a92b246d0862b1465b9838f555542653037e7",
+        "c937f42bb1082caba63d5b0bf70cad74167e469e1a2cadbf79267a4bcf42f51e",
     ),
     (
         "tests/test_paper_process.py",
@@ -235,7 +235,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_source_backup.py",
-        "8584c3a24c7bdeb7be68d39c2f34e4329f0b7aa8ed97390f2d27e88751672dfa",
+        "c7b0308f069ca622f534b2ddff8d267bc92654c687fde78ed942ef6c43ac7776",
     ),
     (
         "tests/test_source_cli.py",
@@ -243,7 +243,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_source_migrations.py",
-        "2cb358a90d4bae2f524bc6e575170852654a837d5fae608a300221dbd13beffa",
+        "28167e6c9830d30e68f244d699248ba4bd5611857d6e92d63cb96a49a0d56a00",
     ),
     (
         "tests/test_source_process.py",
@@ -267,7 +267,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_version_relation_migrations.py",
-        "27b3cfa69d95bed057e3da68416245af26738f46c5a76e3da54e583d55e86651",
+        "7fdef43ef7089fe24a6a4c274b39937952f71a50eabd766590976b641d97b685",
     ),
     (
         "tests/test_version_relation_process.py",
@@ -279,7 +279,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_acceptance.py",
-        "462806464caffbcfbee2d85104e02c72c3f7cfef493714f059d4f79d4a3a022a",
+        "1eb220ad33f1e972f4a2558fb401b3b61506813363e022df3e3bf43881331f95",
     ),
     (
         "tests/test_a6_entry.py",
@@ -291,7 +291,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_integrity.py",
-        "16c4fc321fe99add5872f67c0ecd1d7f5e2f795cf174148e87d01d478b5af59c",
+        "0a985ca8d7c0276f0d9f5991f0aa1690cab9abc9ddbc34499ea0c79a3e3d0517",
     ),
     (
         "tests/test_a6_status.py",
@@ -313,7 +313,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "172cef8748964067cd30c7da359374b9a4a2fb00e14ba1d553abb9cf9e168ed4",
+        "ec04dddd991a953c5a12e59cdf0d1ea3f765e993463631b0f5a4156d829cdc43",
     ),
     (
         "scripts/a2_test_receipt.py",
@@ -321,11 +321,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "b62f0e614aceb71ae7e7cc9613ed0a839934f2250c834bf519ce4e3e91d8e063",
+        "5c7d3c8de1ccea3a37114bf6e8ca1c5fc37f51aa000d4594ab58e789fdddb61b",
     ),
     (
         "scripts/a5_scope.py",
-        "de76f1d490cf340a5b25a650b243bb8581b50bd7cb6f94b165c6e98fe9633584",
+        "a69fe1213a3960457a0be8c235d09f6e89bac405e385c3ce667cb40ac7af337a",
     ),
     (
         "scripts/a6_acceptance.py",
@@ -357,7 +357,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "10a68266985c32b289b16a7a87dfa6219d21c7b667fe31c6f68482048d4c024f",
+        "75be19b002be6038ef151e63d170163c7b1f1a2fcf280537a08ee9ae6de9ac45",
     ),
     (
         "src/paper_radar/backup/service.py",

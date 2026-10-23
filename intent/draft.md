@@ -10,7 +10,7 @@
 
 > 2026-10-22：按 Issue #67 用户 D1–D4、N1/N2 裁决同步论文版本身份、Feed 回摆和冲突边界，见 [ADR-0030](../docs/adr/0030-paper-version-identity-and-source-observations.md) 与 [论文事实 Contract](../docs/contracts/paper-facts.md)。该语义由 #68 完成文档同步，#69–#75 已实现并注册 A6 离线论文事实底座；真实来源、parser/live 与完整阶段 A 仍未验收。旧固定提交正文不能覆盖后续裁决。
 
-> 2026-10-23：按 Issue #76 用户 D1–D4 裁决同步 §8.5：Screening 预算按 Paper/阶段/指纹，当前适用性完全派生，同指纹跨版本可复用。A7 暂不交付 screening CLI 或 paper trace 组合；语言事实生产来源仍待裁决，详见 [ADR-0031](../docs/adr/0031-screening-budget-and-derived-applicability.md) 与 [任务 Contract](../docs/contracts/screening-tasks.md)。当前只交付裁决文档与严格 JSON 解析，任务服务及 A7 验收仍待后续子票。
+> 2026-10-23：按 Issue #76 用户 D1–D4 裁决同步 §8.5：Screening 预算按 Paper/阶段/指纹，当前适用性完全派生，同指纹跨版本可复用。A7 暂不交付 screening CLI 或 paper trace 组合；语言事实生产来源仍待裁决，详见 [ADR-0031](../docs/adr/0031-screening-budget-and-derived-applicability.md) 与 [任务 Contract](../docs/contracts/screening-tasks.md)。#77–#79 已交付严格 JSON、任务登记、原子领取、租约与失败结算；成功接收、retry、版本化共享查询及独立 A7 验收仍待后续子票。
 
 ## 任务阅读导航
 
@@ -1391,6 +1391,12 @@ version/revision/snapshot 是审计依据，不另给预算。每个任务代际
 筛选制品指纹完全派生：版本变化但指纹相同仍适用，指纹不同或映射缺项则只作历史；
 不建立结果使用依据表或再绑定写入。登记请求自己的版本、修订、快照与命中回执
 保留使用审计。此处按 #76 D2 裁决解释“版本变化”为“实际语义输入变化”，见 ADR-0031。
+
+Screening 租约固定 600 秒，时钟统一注入 UTC；恰好到期可显式回收，续租设为
+`now + 600 秒`。到期但未结算的原持有者仍可续租或提交，回收结算 outcome_unknown
+后旧凭据失权；领取提交后即使未实际调用也占预算，不把未知调用伪装成 0 次。
+没有自动回收守护进程，只读查询只派生 lease_expired；第二次尝试到期且剩余 0 时，
+仍须结算后才进入失败终态。两次上限只针对各库连续历史，旧备份回退不追回其后丢失的尝试。
 
 同一天重复运行 run-due：
 

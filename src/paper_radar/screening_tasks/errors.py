@@ -16,6 +16,12 @@ class TaskReason(StrEnum):
     FACTS_CHANGED = "facts_changed"
     CORRUPT_REFERENCE = "corrupt_reference"
     DATABASE_BUSY = "database_busy"
+    INVALID_CLOCK = "invalid_clock"
+    TASK_RUNNING = "task_running"
+    BUDGET_EXHAUSTED = "budget_exhausted"
+    INVALID_CREDENTIAL = "invalid_credential"
+    SETTLEMENT_CONFLICT = "settlement_conflict"
+    INVALID_FAILURE = "invalid_failure"
 
 
 GUIDANCE = {
@@ -27,6 +33,12 @@ GUIDANCE = {
     TaskReason.FACTS_CHANGED: "论文事实已变化,请重新登记当前请求。",
     TaskReason.CORRUPT_REFERENCE: "请停止写入并检查档案库及备份。",
     TaskReason.DATABASE_BUSY: "请在其他写入结束后显式重试。",
+    TaskReason.INVALID_CLOCK: "请为执行操作注入有效的 UTC 时钟。",
+    TaskReason.TASK_RUNNING: "任务已有未结算的有效租约。",
+    TaskReason.BUDGET_EXHAUSTED: "该任务代际的两次尝试预算已用尽。",
+    TaskReason.INVALID_CREDENTIAL: "领取凭据无效或该尝试已结算。",
+    TaskReason.SETTLEMENT_CONFLICT: "该尝试已提交不同的结算事实。",
+    TaskReason.INVALID_FAILURE: "请使用受支持的执行失败类别。",
 }
 
 

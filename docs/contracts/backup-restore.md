@@ -62,7 +62,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。根内任何路径组件符号�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 a604_version_relations，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 a702_screening_attempts，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -251,8 +251,9 @@ A4 同次完整离线组合还覆盖：非空供给准备/核验/重建与激活
 逐项执行审计、D5 原字节与既有配置/制品，退役安装不恢复可用性。该组合不访问原根、
 不安装 Pi/Node、不启用模型，不替代 NAS/live 验收；见 [A4 证据](../verification/offline-evidence.md)。
 
-当前显式支持的 head 为 `a604_version_relations`；backup format 继续为 1，不新增 migration 或清单字段。
-旧 a405/a601–a603 批次返回 `unsupported_revision`，须用匹配旧程序恢复后对恢复活动副本显式升级；
+以下 A6 组合交付时的历史 head 为 `a604_version_relations`；当时 backup format 继续为 1，
+该组合未新增 migration 或清单字段。当前支持的 head 见上表及 A7-03 小节。
+当前程序对 a405/a601–a701 等旧 revision 批次返回 `unsupported_revision`，须用匹配旧程序恢复后对恢复活动副本显式升级；
 不得在备份批次内部迁移。
 
 ### 组合论文事实的语义闭包
@@ -281,9 +282,28 @@ parser 升级固定样本与强身份冲突材料持久化仍是阶段 C 门禁�
 
 ## A7-02 登记事实闭包
 
-当前批次数据库 revision 为 `a701_screening_registration`，备份格式仍为 1。
+A7-02 历史批次数据库 revision 为 `a701_screening_registration`，备份格式仍为 1。
 配置、论文事实之后增加任务登记语义重验，覆盖冻结 BLOB/指纹/投影、历史 snapshot、
 Paper/版本修订/选择归属、请求身份及第 0 代唯一关系；失败稳定为 registration_invalid。
 manifest 形状、制品种类与计数不扩展。a604 批次须使用匹配旧程序恢复后显式 upgrade；
 verify 本身不会升级旧批次。非空双阶段登记可在原目录不可用的新进程中从移动后的
-副本独立回放；恢复/查询不执行任务。领取与完整任务历史由后续 A7 子票继续补齐。
+副本独立回放；恢复/查询不执行任务。
+
+## A7-03 尝试、租约与失败闭包
+
+当前批次数据库 revision 为 `a702_screening_attempts`，备份格式、manifest 字段、
+artifact kind 与 counts 均保持原值。任务语义钩子继续位于 PaperFacts 后、manifest
+反查前，不重复注册第二条 hook。除登记闭包外，核对 attempt 序号连续且每代最多两次、
+请求与任务归属、请求 snapshot 下领取时历史输入同指纹、凭据/租约归属、UTC 时间和
+追加失败结算的一致性。外键合法或重新计算外层数据库/manifest 哈希不能掩盖语义损坏；
+失败沿用 registration_invalid，不回写源库或修复批次。
+
+恢复保留已占次数、未结算租约与已结算失败；只读状态不会顺手回收。租约固定 600 秒，
+恰好到期派生 lease_expired，直到显式回收或后续领取事务结算 outcome_unknown。
+第二次到期未结算仍为 lease_expired/剩余 0，回收后才为失败终态。没有自动回收守护进程，
+恢复也不调用执行者。已到期但未被结算的原持有者仍可续租/提交，回收后旧凭据失权。
+
+**两次预算保证仅针对每个档案库各自连续历史。** 从较早批次恢复会丢失备份之后的
+attempt；源库和副本之后各自继续，不能承诺跨回退追回丢失次数或限制全局真实调用数。
+新程序对 a701 批次返回 unsupported_revision，须由匹配旧程序恢复后显式升级活动副本。
+完整成功/retry 跨域恢复、真实模型、RPC、NAS 与 live 行为仍待后续验收。

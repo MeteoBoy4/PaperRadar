@@ -1,15 +1,28 @@
 """Screening 任务公共边界;预读不可变输入,短写事务复核论文事实。"""
 
 import re
-import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 from sqlalchemy import select
-from sqlalchemy.exc import DBAPIError, SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.config import ConfigError, load_config_snapshot
 from paper_radar.papers import PaperError, PaperFacts, resolve_revision
+from paper_radar.screening_tasks.attempt_models import (
+    Claim,
+    Clock,
+    FailureKind,
+    FailureOrigin,
+    FailureReceipt,
+    FailureReport,
+    TaskStatus,
+    TestExecutor,
+)
+from paper_radar.screening_tasks.attempt_rules import correction_for
+from paper_radar.screening_tasks.database_errors import database_error
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
+from paper_radar.screening_tasks.execution import AttemptService
 from paper_radar.screening_tasks.frozen import load_frozen
 from paper_radar.screening_tasks.models import FrozenInput, RequestReceipt, ValueRequest
 from paper_radar.screening_tasks.repository import (
@@ -30,19 +43,61 @@ from paper_radar.storage.database import (
 from paper_radar.storage.schema import runtime_config_snapshots
 
 
-def database_error(error: SQLAlchemyError) -> TaskError:
-    busy = (
-        isinstance(error, DBAPIError)
-        and isinstance(error.orig, sqlite3.Error)
-        and (getattr(error.orig, "sqlite_errorcode", 0) & 0xFF) == sqlite3.SQLITE_BUSY
-    )
-    return TaskError(TaskReason.DATABASE_BUSY if busy else TaskReason.CORRUPT_REFERENCE)
-
-
 class ScreeningTasks:
-    def __init__(self, database: Path, data_root: Path | None = None) -> None:
+    def __init__(
+        self,
+        database: Path,
+        data_root: Path | None = None,
+        *,
+        clock: Clock | None = None,
+    ) -> None:
         self.database = database
         self.data_root = data_root
+        self._attempts = AttemptService(database, clock)
+
+    def claim(self, receipt_id: str) -> Claim:
+        return self._attempts.claim(
+            self.get_receipt(receipt_id), self.load_input(receipt_id)
+        )
+
+    def status(self, receipt_id: str) -> TaskStatus:
+        return self._attempts.status(self.get_receipt(receipt_id))
+
+    def renew(self, handle: str) -> datetime:
+        return self._attempts.renew(handle)
+
+    def fail(self, claim: Claim, report: FailureReport) -> FailureReceipt:
+        return self._attempts.fail(claim, report)
+
+    def reclaim(self, receipt_id: str) -> TaskStatus:
+        return self._attempts.reclaim(self.get_receipt(receipt_id))
+
+    def run_once(self, receipt_id: str, executor: TestExecutor) -> FailureReceipt:
+        claim = self.claim(receipt_id)
+        stage_input = self.load_input(receipt_id).stage_input
+        correction = correction_for(self.status(receipt_id).last_failure)
+        # claim 已提交;进程随后中断或执行者抛异常都不退还预算。
+        origin: FailureOrigin = "executor"
+        try:
+            report = executor(stage_input, correction, claim.renewal_handle)
+        except Exception:
+            report = FailureReport(FailureKind.EXECUTOR_ERROR)
+            origin = "exception"
+        if (
+            type(report) is not FailureReport
+            or type(report.kind) is not FailureKind
+            or report.kind
+            not in {
+                FailureKind.TIMEOUT,
+                FailureKind.CANCELLED,
+                FailureKind.PROTOCOL_ERROR,
+                FailureKind.EXECUTOR_ERROR,
+            }
+        ):
+            # 本票没有成功入口,任意未支持返回只记录协议失败。
+            report = FailureReport(FailureKind.PROTOCOL_ERROR)
+        # 离开 except 后才结算,迟到结算的受控错误不串联原执行者异常。
+        return self._attempts.fail(claim, report, origin=origin)
 
     def register(self, raw_request: object) -> RequestReceipt:
         request = parse_request(raw_request)
@@ -174,6 +229,7 @@ class ScreeningTasks:
             engine.dispose()
 
     def validate_all(self) -> None:
+        from paper_radar.screening_tasks.attempt_integrity import validate_attempts
         from paper_radar.screening_tasks.integrity import validate_registration
 
         engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
@@ -182,6 +238,7 @@ class ScreeningTasks:
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN")
                 validate_registration(self.database, connection)
+                validate_attempts(self.database, connection)
         except SQLAlchemyError as error:
             raise database_error(error) from None
         except (

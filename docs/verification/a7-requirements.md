@@ -1,7 +1,9 @@
 # A7 规格对照与固定绑定台账
 
 状态：#77（A7-01）交付裁决文档与严格 JSON；#78（A7-02）已交付登记、冻结回放、
-a701 与备份闭包。#79–#84 的领取/接收/retry/共享查询/完整恢复及独立 A7 验收尚未交付。当前 `check-offline` 通过只证明已有组及本次全套检查，
+a701 与备份闭包；#79（A7-03）交付 a702 原子领取、有限预算、租约、失败结算、
+显式回收与 test 一次尝试驱动。#80–#84 的接收/retry/版本化共享查询/完整恢复及
+独立 A7 验收尚未交付。当前 `check-offline` 通过只证明已有组及本次全套检查，
 不表示尚未注册的 A7 passed。运行回执、commit 和 run_id 存在工作树外，不改写历史证据。
 
 ## 来源顺序与冻结依据
@@ -32,13 +34,13 @@ US 表示 #76 User Stories，ID 表示 Implementation Decisions；此表中的�
 
 | 正文 | 补充及裁决 | 最终规则与文档落点 | 验收责任/当前状态 |
 | --- | --- | --- | --- |
-| US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝，#81 接收/回放，#82 retry；均待实现。真实来源列 title_language_source 未验收 |
+| US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝已交付；#81 接收/回放，#82 retry 待。真实来源列 title_language_source 未验收 |
 | US29/31、ID15–16；测试“当前适用性”“缓存重新使用” | D2(a)、S2、评论二五 | Contract §5、ADR-0031、主方案 §8.5：同明确 snapshot 当前指纹匹配即适用；版本不同但同指纹仍适用；去掉绑定表/API/写入、提交事务论文复核 | #80/#81 派生查询待实现；原 US29 改为输入变化只作历史，US31 改为只读重建匹配，删除缓存重新绑定行 |
 | 测试“A6 语义联动” | D2(a)、B2/B6、评论二五 | 更高 parser 缺摘要→无当前成功；其他来源补回相同文本→原制品再适用，保留 A6 仲裁 | #80/#81，两例合并入派生适用性测试，待实现 |
 | US24/27、ID12–13 | D3(a)、评论二二、#77 评论 | 原权威内部严格解析；str/bytes/bytearray 任意层重复键/NaN/Infinity 根 `$` invalid_json，先于字段/业务错误；Mapping 路径不变 | #77 已实现；test_screening_strict_json 93 例，新旧相关 332 例；原固定模块/Schema/分母不变 |
 | US23、US33 CLI 部分、US39、ID20–21 CLI 部分 | D4、S2、评论二五 | Contract §6：本批仅服务 retry 与共享查询；screening CLI、paper trace 组合、help/退出码移至真实任务生产票 | #82 服务测试待；#84 不得要求 CLI，现有产品 CLI Contract 保持 |
-| US1–7/19–20/30、ID3–7/17–18 | T1/T2/T7、B1/B3/B9/B11、评论二四 | Contract §1–3：预算/代际/请求/attempt 四层；完整 scheduled 依据、manual 冲突；A→B→A、跨日/无关配置不刷新 | #78（含真实进程登记竞争）待；第 0 代可能由 manual 创建 |
-| US8–18/32、ID8–11 | T3/T4/T6、B2/B4/B5/B7、S3 | Contract §3：原子领取、两次预算、凭据 fencing、回收 outcome_unknown、lease_expired；第二次尝试不等于显式 retry | #79 真实子进程/屏障/强杀及受控时钟待 |
+| US1–7/19–20/30、ID3–7/17–18 | T1/T2/T7、B1/B3/B9/B11、评论二四 | Contract §1–3：预算/代际/请求/attempt 四层；完整 scheduled 依据、manual 冲突；A→B→A、跨日/无关配置不刷新 | #78（含真实进程登记竞争）已交付；第 0 代可能由 manual 创建；#79 消费同预算范围 |
+| US8–18/32、ID8–11 | T3/T4/T6、B2/B4/B5/B7、S3 | Contract §3/9：原子领取、两次预算、凭据 fencing、回收 outcome_unknown、lease_expired；第二次尝试不等于显式 retry | #79 交付真实子进程/屏障/强杀、注入 UTC 时钟及失败执行边界；成功接收仍归 #80/#81 |
 | US24–28/35、ID12–14/19 | T1、B6/B8/B9、评论三三/六 | Contract §4：原始响应+唯一权威结构；test 来源/未知审计；候选竞争、合法迟到、发布/提交/回包故障 | #80 boundary、#81 value 待；D3 已由 #77 阻止重复键入口 |
 | US21–22/33–34、ID7/20–22 | T5、B5/B10/B11 | Contract §6：失败终态唯一后继、库级 retry ID、同请求幂等/异请求竞争；安全查询统一格式 1 | #82 待；运行中/可继续/成功/非当前拒绝，测试固定 query shape |
 | US28/36–38、ID22–23 | B12、评论三三/四/六 | Contract §7：只读语义钩子、恢复无执行、原目录不可用非空重建；语义损坏 registration_invalid，历史回退预算限制公开 | #78 起随实际表加基础验证，#83 完整跨域恢复/损坏/继续待 |
@@ -73,7 +75,7 @@ US 表示 #76 User Stories，ID 表示 Implementation Decisions；此表中的�
 
 | 真实触碰 | 受影响绑定/动作 | 重审理由 |
 | --- | --- | --- |
-| migration 实际 head | a2_scope、a2_full_scope、a3_scope、a4_scope、a5_scope、a6_scope 的 MIGRATION_REVISION；20 个含 head 字面量旧测试模块与 fixture | #78 增量 a701；后续新消费表需新 migration 时同样推进；不预建未来空表 |
+| migration 实际 head | a2_scope、a2_full_scope、a3_scope、a4_scope、a5_scope、a6_scope 的 MIGRATION_REVISION；20 个含 head 字面量旧测试模块与 fixture | #78 增量 a701，#79 增量 a702；后续新消费表需新 migration 时同样推进；不预建未来空表 |
 | backup/manifest.py 的 BACKUP_DATABASE_REVISION | A3/A4/A6 源码绑定及必要下游 | head 前移仍保持 format 1 与旧批次受控拒绝 |
 | backup/service.py 的语义钩子 | A3/A6 源码绑定及下游 | 从首个任务事实起纳入备份语义闭包；#83 再扩完整验证，不允许中间票带坏备份 |
 | papers/mapping.py、papers/__init__.py | A6 两处源码绑定 | 同事务 CAS 的最小只读公共组合入口；不复制仲裁/输入构造 |
@@ -159,3 +161,36 @@ two_stage_orchestration、suggestion_decision、calibration_visibility、reuse/e
 再改为与 PaperFacts 一致的 TYPE_CHECKING + __getattr__ 延迟导出；事务组合能力和旧
 CLI 契约均保持。旧 CLI 固定用例未改，仅 A6 对 papers/__init__.py 的源绑定再审。
 失败 run b3342870a7be45888cc5efda214908a9 保留原始终态，最终通过另起新 run。
+
+## A7-03 实际交付与本波绑定重审
+
+#79 在同一 ScreeningTasks 公共 seam 增加 claim/renew/fail/reclaim/status/run_once，
+保留纯登记与 validate_all 无时钟可用。固定 D=600 秒，严格 UTC 注入；没有后台心跳
+或回收线程，普通状态只读。领取保存请求 receipt 与领取时当前依据，事务外用请求
+snapshot 映射，只按指纹判旧，短事务同连接 CAS；预算从每代不可变 attempt 事实推导。
+同版本修订或同文本跨版本不消耗新预算身份，跨日、重启与 A→B→A 不复活次数。
+
+失败类别为封闭七项；本票实际接通执行者报告、捕获异常和回收。output_invalid 与
+model_mismatch 留给后续权威接收，不提供成功旁路。过期未结算仍可持有者续租/提交，
+已回收则 outcome_unknown 并 fencing；同凭据同失败精确重放返回原安全回执，
+冲突内容拒绝。一次尝试先提交领取，再向 test 执行边界至多调用一次，只传冻结
+StageInput、安全修正说明和不透明续租句柄；异常文本、凭据、前次原始失败不进入普通输出。
+
+新增独立 test_a7_* 模块承担领取预算、时间与失败、执行边界、真实进程窄缝、非空
+a701 升级及备份语义闭包的证明。真实竞争与强杀使用屏障，覆盖领取提交前后、
+恰好到期、续租/回收竞争、回收后迟到拒绝及 5 秒 busy；不以长 sleep 推断状态。
+新增事实由同一 validate_all 备份钩子验证，恢复保存已占次数和未结算租约，只读不回收。
+源库与副本的两次保证分别只适用于各自连续历史，旧备份之后丢失 attempt 不可追回。
+各模块固定范围最终在 #84 统一注册，本票不提前登记 A7 组、不改旧分母。
+
+| 接入文件 | 本波重审理由 | 旧组 |
+| --- | --- | --- |
+| backup/manifest.py | 批次 revision 前移 a702_screening_attempts，format 1 保留 | A3/A4/A6 |
+| 20 个旧 current-head 测试模块 | 当前 head/未来假 head 前移；历史 migration 路径与用例数保持 | 原所属 A2-01/完整 A2/A3/A4/A5/A6 |
+| test_a7_registration_migrations | 当前升级终点和实际七表集合前移；原 a604 历史 fixture、失败原子性与旧业务数据保留 | A7 最终由 #84 冻结 |
+| a2→a2_full→a3→a4→a5→a6 scopes | 按 audit downstream 顺序重审已改字节身份，A3 backup_database_revision 同步 | 不修改历史验收结论 |
+
+本波逐条旧/新 SHA-256、路径及理由保存在外部 `79-rebinding-ledger.json`；相关测试、
+正式门禁 run_id/提交与原 JSON 由本票 handoff 和 verification-runs 保留。正式门禁
+在最终提交后运行，执行过程中不修改源码，不以收集成功冒充测试执行。
+本波已审阅 33 条绑定、25 个被绑定路径；旧固定 174 模块、3077 用例分母保持。
