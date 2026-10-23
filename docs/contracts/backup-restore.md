@@ -333,3 +333,13 @@ WAL 档案库备份，并在真正的新进程执行恢复。阻断原数据/配
 恢复，再显式 upgrade 副本。当前任务语义钩子位于 `_registered_contents` 和 PaperFacts 校验之后、manifest
 反查之前，并按当前 A1/A5 规则重验成功响应；即使 revision 相同，校验规则收紧也
 可能让旧程序曾验证通过的批次在当前程序失败。这不是无限跨版本的验证承诺。
+
+
+## A7-08 独立验收绑定
+
+A7 将上述登记、尝试、双阶段成功、retry 与完整隔离恢复逐项纳入固定能力材料，
+绑定生产 backup 格式 1、真实临时升级 head a704_screening_retry、同次 A3/A6 结论及
+实际 pytest 回执。语义损坏反例必须在 FK/SQLite 合法、外层重新哈希后仍受控拒绝，
+不修改批次、不发布目标；详见[A7 验收矩阵](../verification/a7-requirements.md#a7-08--84-独立验收与可信终态)。
+备份格式、manifest 字段、计数、artifact kind 与旧 revision 策略不因此改变。
+当前正常离线入口为九份主要文件、共十一份 JSON；这不证明 NAS、真实模型或 live 恢复。

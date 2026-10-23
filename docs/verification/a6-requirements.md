@@ -94,7 +94,9 @@ A6 离线 passed 不绕过这两项门禁。
 
 merge/undo、arXiv/PMID、metadata_ready/共享 eligibility、任务 attempt/lease/预算/每日配额、完整
 校准可见性、RPC、Pi/Docling/Read 执行、Read/suggestion/report 指纹、NAS、自动精读和完整阶段 A
-继续未验收。所有结论 stage_a_verified/live_verified/rpc_verified=false。A5 的 paper_fact_mapping
+在 A6 独立组范围内仍未验收。后续 A7 已独立覆盖 boundary/value 的有限尝试、租约、
+预算、显式 retry 与恢复，详见[A7 requirements](a7-requirements.md)；不回写 A6 历史排除项。
+各组 stage_a_verified/live_verified/rpc_verified=false。A5 的 paper_fact_mapping
 是历史未覆盖事实，保持原样；新增论文映射闭环由本 A6 结论承担。
 
 正式结论由完整 `check-offline` 实际返回 0 与 `verification-status` passed/verified/same 共同确认。

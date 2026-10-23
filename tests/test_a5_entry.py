@@ -10,7 +10,7 @@ import pytest
 
 from scripts.a2_full_acceptance import run_full_verification
 from tests.a2_full_support import fake_checks, repository_copy
-from tests.a6_acceptance_support import passed_receipt
+from tests.a7_acceptance_support import passed_receipt
 
 
 def test_a5_only_failure_blocks_real_entry_even_when_full_a2_passes(
@@ -40,7 +40,7 @@ def test_a5_only_failure_blocks_real_entry_even_when_full_a2_passes(
     assert a5["status"] == "failed" and not a5["a5_verified"]
     assert {reason["code"] for reason in a5["reasons"]} == {"scope_drift"}
     assert all(value == "failed" for value in a5["capabilities"].values())
-    assert len(tuple(output.glob("*.json"))) == 10
+    assert len(tuple(output.glob("*.json"))) == 11
 
 
 @pytest.mark.parametrize("failure", ["interrupt", "io"])

@@ -122,7 +122,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_verification_integrity.py",
-        "3839644318334ef253835dc5467953b102513f2cc7319b58afdd8586a01d1932",
+        "967a56ed308c3bd8cea003817030f145922994ffb9bc5b3856a59b4548f8524f",
     ),
     (
         "tests/test_verification_publication.py",
@@ -130,11 +130,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_verification_run.py",
-        "62d406f3648f821253e1426959706027bddc170874d4bb45a7f88a9944b7e4eb",
+        "b04559ea65de97bc2fc2529f07a60bbcf924f786056162cb848eef453b44779f",
     ),
     (
         "tests/test_verification_compatibility.py",
-        "7bdad246df8bb8b05d7f8e1c63b0530ee63b554cbdfe075a240cd8f08389542d",
+        "57301c95e4a0fc0d4e6a918007db9d5abb3b893c17a0f01c947e0176198d248e",
     ),
     (
         "tests/test_config_material_compatibility.py",
@@ -150,7 +150,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_full_entry.py",
-        "c3d8f2459ce23d5bcbc62bc7db333119bf484c828ac5bf2e7dc43edea850e62f",
+        "8c30098020471faa009113d5b272a1c3f98e88498ca37980f55b9027a140a5f0",
     ),
     (
         "tests/test_a2_full_examples.py",
@@ -380,15 +380,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "2eb2aeec023f8d5b5c13dbe85ba69d6a1c04955e37f62c3a90c15a4724801448",
+        "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "9a5c2eda301e3c9975aac7ab0c07f9884b99c5eea2f45250a4dc7145340b9c2e",
+        "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
     ),
     (
         "scripts/check-offline",
-        "24db737f730e4ca445e53ca66a547091ee6bb1a865ced53440f245e15b3bfc6a",
+        "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
     ),
     (
         "scripts/offline_evidence.py",
@@ -590,7 +590,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
     (
         "tests/fixtures/verification_transcripts.json",
-        "1ed48f8d4403d399ffa8fc65c620b02ffcc9750bf105615973e30573efcbdf91",
+        "f746f0dc76acbfb01e2f8f488e49f5db796c0793f425ccb1f76e95c341dcb16a",
     ),
     (
         "tests/fixtures/config_material_compatibility.json",

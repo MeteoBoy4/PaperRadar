@@ -10,7 +10,7 @@
 
 > 2026-10-22：按 Issue #67 用户 D1–D4、N1/N2 裁决同步论文版本身份、Feed 回摆和冲突边界，见 [ADR-0030](../docs/adr/0030-paper-version-identity-and-source-observations.md) 与 [论文事实 Contract](../docs/contracts/paper-facts.md)。该语义由 #68 完成文档同步，#69–#75 已实现并注册 A6 离线论文事实底座；真实来源、parser/live 与完整阶段 A 仍未验收。旧固定提交正文不能覆盖后续裁决。
 
-> 2026-10-23：按 Issue #76 用户 D1–D4 裁决同步 §8.5：Screening 预算按 Paper/阶段/指纹，当前适用性完全派生，同指纹跨版本可复用。A7 暂不交付 screening CLI 或 paper trace 组合；语言事实生产来源仍待裁决，详见 [ADR-0031](../docs/adr/0031-screening-budget-and-derived-applicability.md) 与 [任务 Contract](../docs/contracts/screening-tasks.md)。#77–#80 已交付严格 JSON、任务登记、原子领取、租约、失败结算与 boundary 原始候选成功/派生三值适用性；value 成功接收由 #81 交付，显式 retry 与版本化共享查询由 #82 交付；独立 A7 验收仍待后续子票。
+> 2026-10-23：按 Issue #76 用户 D1–D4 裁决同步 §8.5：Screening 预算按 Paper/阶段/指纹，当前适用性完全派生，同指纹跨版本可复用。A7 暂不交付 screening CLI 或 paper trace 组合；语言事实生产来源仍待裁决，详见 [ADR-0031](../docs/adr/0031-screening-budget-and-derived-applicability.md) 与 [任务 Contract](../docs/contracts/screening-tasks.md)。#77–#80 已交付严格 JSON、任务登记、原子领取、租约、失败结算与 boundary 原始候选成功/派生三值适用性；value 成功接收由 #81 交付，显式 retry 与版本化共享查询由 #82 交付；#83 补齐完整历史隔离恢复，#84 注册独立必需 A7 组并纳入可信终态；仍只证明 boundary/value 离线 test 执行边界，不证明真实模型或完整阶段 A。
 
 ## 任务阅读导航
 
@@ -1388,7 +1388,8 @@ version/revision/snapshot 是审计依据，不另给预算。每个任务代际
 领取使用短事务和带过期时间的租约，按请求明确 snapshot 检查当前语义输入；指纹
 变化或缺项时拒绝领取且不占 attempt。成功提交只核对未结算的领取凭据与冻结输入，
 不在提交事务复核当前论文事实。明确 snapshot 下的当前适用性由当前输入指纹与
-筛选制品指纹完全派生：版本变化但指纹相同仍适用，指纹不同或映射缺项则只作历史；
+筛选制品指纹完全派生：版本变化但指纹相同仍适用，映射成功而指纹不同为历史；
+映射缺项为 undeterminable 并保留 PaperReason，不把不可判定误写为历史；
 不建立结果使用依据表或再绑定写入。登记请求自己的版本、修订、快照与命中回执
 保留使用审计。此处按 #76 D2 裁决解释“版本变化”为“实际语义输入变化”，见 ADR-0031。
 

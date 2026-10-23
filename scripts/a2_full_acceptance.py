@@ -32,6 +32,7 @@ from scripts.a3_acceptance import write_group as write_a3_group
 from scripts.a4_acceptance import write_group as write_a4_group
 from scripts.a5_acceptance import write_group as write_a5_group
 from scripts.a6_acceptance import write_group as write_a6_group
+from scripts.a7_acceptance import write_group as write_a7_group
 from scripts.offline_evidence import (
     CheckReason,
     CheckStatus,
@@ -423,6 +424,14 @@ def acceptance_groups() -> tuple[AcceptanceGroup, ...]:
             write=write_a6_group,
             required=True,
             dependencies=("A1", "完整 A2", "A3", "A5"),
+            show_reasons=True,
+        ),
+        AcceptanceGroup(
+            name="A7",
+            suffix=".a7.json",
+            write=write_a7_group,
+            required=True,
+            dependencies=("A1", "完整 A2", "A3", "A5", "A6"),
             show_reasons=True,
         ),
     )

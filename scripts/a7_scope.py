@@ -1,0 +1,673 @@
+"""#84 固定 A7 验收范围;预期由人工审阅源码和参数化登记,运行时不能刷新。"""
+
+SCOPE = "a7_screening_tasks"
+ISSUE = 84
+PARENT_ISSUE = 76
+FORMAT_VERSION = 1
+SUFFIX = ".a7.json"
+MIGRATION_REVISION = "a704_screening_retry"
+REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
+REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
+FORMAT_VERSIONS = {
+    "screening_tasks": 1,
+    "task_reason_catalog": 1,
+    "task_query_result": 1,
+    "stage_inputs": {"boundary": 1, "value": 1},
+    "backup": 1,
+}
+CAPABILITIES = (
+    "frozen_input",
+    "request_idempotency",
+    "budget_scope",
+    "atomic_claim",
+    "lease",
+    "bounded_attempts",
+    "authoritative_acceptance",
+    "derived_applicability",
+    "explicit_retry",
+    "shared_query",
+    "crash_recovery",
+    "migration",
+    "isolated_restore",
+    "semantic_integrity",
+    "privacy",
+)
+NOT_ASSESSED = (
+    "rpc_compatibility",
+    "pi_execution",
+    "real_model_usage_cost",
+    "original_title_language_production_source",
+    "metadata_ready",
+    "complete_eligibility",
+    "daily_quota",
+    "two_stage_orchestration",
+    "suggestions_decisions",
+    "calibration_visibility",
+    "reuse_tasks",
+    "extraction_tasks",
+    "read_tasks",
+    "merge_budget",
+    "screening_cli",
+    "paper_trace_cli",
+    "nas_restore",
+    "stage_a",
+    "live",
+    "automatic_fulltext_reading",
+)
+REQUIRED_TEST_CASE_COUNTS = {
+    "tests/test_screening_strict_json.py": 93,
+    "tests/test_a7_registration.py": 6,
+    "tests/test_a7_registration_failures.py": 34,
+    "tests/test_a7_registration_migrations.py": 6,
+    "tests/test_a7_registration_backup.py": 10,
+    "tests/test_a7_registration_process.py": 7,
+    "tests/test_a7_registration_imports.py": 1,
+    "tests/test_a7_attempts.py": 12,
+    "tests/test_a7_attempt_inputs.py": 6,
+    "tests/test_a7_attempts_process.py": 11,
+    "tests/test_a7_attempt_integrity.py": 12,
+    "tests/test_a7_attempt_backup.py": 2,
+    "tests/test_a7_attempt_migrations.py": 5,
+    "tests/test_a7_boundary_success.py": 22,
+    "tests/test_a7_success_applicability.py": 4,
+    "tests/test_a7_success_process.py": 9,
+    "tests/test_a7_success_integrity.py": 16,
+    "tests/test_a7_success_backup.py": 6,
+    "tests/test_a7_success_migrations.py": 5,
+    "tests/test_a7_value_success.py": 26,
+    "tests/test_a7_value_context.py": 5,
+    "tests/test_a7_value_integrity.py": 2,
+    "tests/test_a7_value_backup.py": 7,
+    "tests/test_a7_retry.py": 27,
+    "tests/test_a7_task_query.py": 3,
+    "tests/test_a7_retry_process.py": 13,
+    "tests/test_a7_retry_integrity.py": 1,
+    "tests/test_a7_retry_backup.py": 7,
+    "tests/test_a7_retry_migrations.py": 10,
+    "tests/test_a7_complete_recovery.py": 1,
+    "tests/test_a7_recovery_integrity.py": 7,
+    "tests/test_a7_acceptance.py": 2,
+    "tests/test_a7_integrity.py": 124,
+    "tests/test_a7_entry.py": 9,
+    "tests/test_a7_status.py": 10,
+    "tests/test_a7_test_receipt.py": 6,
+    "tests/test_a7_formats.py": 2,
+}
+REQUIRED_TEST_MODULES = (
+    (
+        "tests/test_screening_strict_json.py",
+        "49365327a4a2d6599c62c049f5e3dd8d2001aa4c25741a9f545b842b81c48c53",
+    ),
+    (
+        "tests/test_a7_registration.py",
+        "7087fc72b6e5053117d43eda641954d0313065e3f8b4e218de5f2478f308f5c9",
+    ),
+    (
+        "tests/test_a7_registration_failures.py",
+        "fa43dd827543962c902b536ac9b2040753bde02bfe5a7ced2351c6d99e3b9950",
+    ),
+    (
+        "tests/test_a7_registration_migrations.py",
+        "df4cbb45f75aee872a45ee9cb7240ddb88767857c22db633b36863e9763621ae",
+    ),
+    (
+        "tests/test_a7_registration_backup.py",
+        "7adec86631d46ed281a9ae7e56a9ae0b0d127803039e668752a746d92a6f014a",
+    ),
+    (
+        "tests/test_a7_registration_process.py",
+        "4e30dd3b34637a600700d54fbbc585d877c957b8c166a6a0fd9206f542f99e5d",
+    ),
+    (
+        "tests/test_a7_registration_imports.py",
+        "4b5bb6f5d7645cb68cdf18f35f52d5349a16d8230b1da47b40a7c09679cf91e0",
+    ),
+    (
+        "tests/test_a7_attempts.py",
+        "0ed616378e055d1a0202f8648ef6bd6e4de6c979f79a8503c40cfbe076e5be72",
+    ),
+    (
+        "tests/test_a7_attempt_inputs.py",
+        "f141919936cc9ea343c8cc428c07743a9779806081fa259b695c56b5d2613e08",
+    ),
+    (
+        "tests/test_a7_attempts_process.py",
+        "1aef93556ed121ff2158807663474f7f200d3dae55413ff3fccaa4edb7b0b837",
+    ),
+    (
+        "tests/test_a7_attempt_integrity.py",
+        "8280b4cd30e33cf6836a25b838a3a9018700964ed329cc363fd90c96ab522860",
+    ),
+    (
+        "tests/test_a7_attempt_backup.py",
+        "6ada8112da3ef93ded133f0e238a8054c77c5f2333a9780219ec90d92c2736d8",
+    ),
+    (
+        "tests/test_a7_attempt_migrations.py",
+        "18dbc3fe4fb44ee1b10226a64df1a08d9d14ccdbd4c42fcdf2e141110d8ed538",
+    ),
+    (
+        "tests/test_a7_boundary_success.py",
+        "084419b0317f383d355b75e3ecbb3d24e2570e3eff3542d640a0de98a428368e",
+    ),
+    (
+        "tests/test_a7_success_applicability.py",
+        "4439f43c479b9a5ccfa759158936afa0bdce49bf233e30b3dc2e24db31e3e2ef",
+    ),
+    (
+        "tests/test_a7_success_process.py",
+        "a4a50ca4e183a7eb552b9c162c9c4092c5115eb61345bc77c813619c57eb6083",
+    ),
+    (
+        "tests/test_a7_success_integrity.py",
+        "f55dd205c74297a1dc532160393a0b89a5460791cc5fb2e3e36af3d708d4b70d",
+    ),
+    (
+        "tests/test_a7_success_backup.py",
+        "2d5f7156f96947ff16c6ec10581d38515daa7679d38d3c679d762aa78c4bd00b",
+    ),
+    (
+        "tests/test_a7_success_migrations.py",
+        "0c629257aa82d6056cb3724e0dacae75e32d5e55b23b9e319fbed51fdc603c1b",
+    ),
+    (
+        "tests/test_a7_value_success.py",
+        "c3a1ec47cab7f37ce64085c05888e8e4ff026ad802d436ab2c359698b2a1d65d",
+    ),
+    (
+        "tests/test_a7_value_context.py",
+        "599c22d81edd9ad40b596dc848071d68a7df4da595160074343a51de151f2b8e",
+    ),
+    (
+        "tests/test_a7_value_integrity.py",
+        "cb87bcc2343088a2b90191224de9ef5223f2c8f18c4c6bf2f43cd8a9b196ab34",
+    ),
+    (
+        "tests/test_a7_value_backup.py",
+        "ec3ded1784b54e59438189d99912e8cf6e9afb923c47d8b5e8c1d0750f975f85",
+    ),
+    (
+        "tests/test_a7_retry.py",
+        "2854cd2aa8730c35b3be95a21680e7f5fba147ba52f404ffa901b62e4da5e0e2",
+    ),
+    (
+        "tests/test_a7_task_query.py",
+        "6d72e8be766747ffdf6dd142780de9a6edbf41698ff38befd7dcfd9fe836a452",
+    ),
+    (
+        "tests/test_a7_retry_process.py",
+        "a82636bab2373a79f145d0ab1bc5edadd6eb39703e3477c2e1ddd9777d052b92",
+    ),
+    (
+        "tests/test_a7_retry_integrity.py",
+        "28fc7631fca2234f0e42b2db47d87bda4ccb02254026195fc34d1c41c6e6c0e7",
+    ),
+    (
+        "tests/test_a7_retry_backup.py",
+        "66766165bf6c73ac8f66108c9cd46a43997dba75dbd8202be4dd781b1ef52d24",
+    ),
+    (
+        "tests/test_a7_retry_migrations.py",
+        "da625889ea25e06e439aad8c09a58bcdb5ba2caf35d0120ff8f8bbb5973afdf3",
+    ),
+    (
+        "tests/test_a7_complete_recovery.py",
+        "864129b5025fb14319a2ef3a61d9386b66d86444fce8a9904425e9d6e3280d7a",
+    ),
+    (
+        "tests/test_a7_recovery_integrity.py",
+        "004720e9612a0245095f94254650b6bb54fdf464cf4bdc37b007889253e73fec",
+    ),
+    (
+        "tests/test_a7_acceptance.py",
+        "35e5f5f312e1079bc6663f928300a1f931f3c9fb1a777c7c49f6608b38fb597b",
+    ),
+    (
+        "tests/test_a7_integrity.py",
+        "bf873963380abbc5af0b55743e7fe1efb1df6a283744c393e27e00ae50f6e246",
+    ),
+    (
+        "tests/test_a7_entry.py",
+        "71406eed2ea9803ee0ce42353255bc2fa5567c98d4dd6599ebe71af34503709c",
+    ),
+    (
+        "tests/test_a7_status.py",
+        "c0b5c6f22d28bac33d71339fb38da19b66910e5282d2f4be68ec7427c7d2430f",
+    ),
+    (
+        "tests/test_a7_test_receipt.py",
+        "f4e218adc18b69209038ffca1b333489b2ec30b0529c0ca2dbc318e0f6fff54f",
+    ),
+    (
+        "tests/test_a7_formats.py",
+        "2012379576ac3adc501562862a10c4a42c298586bf58bbaed5b68e57a32107c4",
+    ),
+)
+REQUIRED_SOURCE_MODULES = (
+    (
+        "scripts/a1_scope.py",
+        "e71257263bed5859e4277c8b0ff399c4986c440e8212c8d1a636c559fcc7d428",
+    ),
+    (
+        "scripts/a2_full_acceptance.py",
+        "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+    ),
+    (
+        "scripts/a2_full_scope.py",
+        "9133776e4e9b5eec0859a1e51f48126f184606af9012c0f410bb035d798b2d40",
+    ),
+    (
+        "scripts/a2_test_receipt.py",
+        "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+    ),
+    (
+        "scripts/a3_scope.py",
+        "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+    ),
+    (
+        "scripts/a5_scope.py",
+        "523fe7e89aa3ccbfecede8bd22725f25b69d859dc9f69e7ba7aeec1ea4c7cf07",
+    ),
+    (
+        "scripts/a6_scope.py",
+        "92a20d7b64118089f6afb49e60557cdaec5e00f9689a9b47ce0e57883e698ed5",
+    ),
+    (
+        "scripts/a7_acceptance.py",
+        "2752e1d75cb0ee64efdfe1cf27a1e30c08fb054db20ec25c810e36f791b8a565",
+    ),
+    (
+        "scripts/check-offline",
+        "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+    ),
+    (
+        "scripts/verification_checks.py",
+        "f93113dcaa037ed7b5992133320a58d36dcf438c1d82969c94611c54649788bc",
+    ),
+    (
+        "scripts/verification_identity.py",
+        "27ebdd057098256f0419c34cb9dbc410e0c6f0c7a8c3c931f62cc6942ca8d7b5",
+    ),
+    (
+        "scripts/verification_publication.py",
+        "337c9efb7ee906486e9de9bb5ec4d60bd9bde7fe358f60098036862e1ac77072",
+    ),
+    (
+        "scripts/verification_run.py",
+        "a4d08449eb65ac7e2c39d2fe972cccf28ec8af13dcf5d34795ac1c088212ae0a",
+    ),
+    (
+        "scripts/verification_status.py",
+        "31258c53ea1532655a1b757fd5f050c839e389c8a330fcf4d35692f2b5d144b7",
+    ),
+    (
+        "src/paper_radar/backup/files.py",
+        "8bf4f05fea2085b1e6b25bb0ae426db2c13da47aa314dd695a1cd5c5259d36b8",
+    ),
+    (
+        "src/paper_radar/backup/manifest.py",
+        "db4d7286fa1c9431ceae5bb8ad9491103bb1a10c3969b4fdc7567b5d30aff4f4",
+    ),
+    (
+        "src/paper_radar/backup/restore.py",
+        "13d80b3ce3239dcc8159d02cc91ac50ac6abec1f526a8337b16fad8aba77b46f",
+    ),
+    (
+        "src/paper_radar/backup/restore_contract.py",
+        "9f251dd2aa193d3a6908361fd813c184d6dbe605aec122a7cf0de0db9262bb13",
+    ),
+    (
+        "src/paper_radar/backup/service.py",
+        "e6fa39228f4acb1b86c7ebc33f0e2ce4bd962bd9c749145b7faa6ea888413857",
+    ),
+    (
+        "src/paper_radar/config/compile.py",
+        "61d2537d0066dd8ee0ab1cd7aba0a2be858f69627feae420fbe0c18e801b30ee",
+    ),
+    (
+        "src/paper_radar/config/identity.py",
+        "ed02a7920df6c7967c034fe06da3f0ee92e172163ba61fa6c2115db562d99a0e",
+    ),
+    (
+        "src/paper_radar/config/projections.py",
+        "be8dcbffc2b1535f9838f90389548c0fa8503a53917a078ad54bb323dad1e63a",
+    ),
+    (
+        "src/paper_radar/config/schema.py",
+        "31d98d427c1c14922f08d455324a87bd1674749442d80edc4efdd94e29a6417c",
+    ),
+    (
+        "src/paper_radar/config/service.py",
+        "c9b1e320b42fd840ff091829bcccf8e62e413f006899e6618bd57417e23b1791",
+    ),
+    (
+        "src/paper_radar/papers/errors.py",
+        "90764831f8e6c8040350b321110a4bbde46873cf8f7ed8c744bcf390be9d86e5",
+    ),
+    (
+        "src/paper_radar/papers/fact_reads.py",
+        "8e9672ea7217d4f08d692a4ef705ece3e5b5fe48759e39cac5cffefa79f6f603",
+    ),
+    (
+        "src/paper_radar/papers/mapping.py",
+        "aa588937228e31d2c8ffd58d565d4f13e08a4e619a89d598614e0284e075ee1e",
+    ),
+    (
+        "src/paper_radar/papers/mapping_models.py",
+        "c1770760154967b1e0d4c7090acb79d61ba4a7df379f16af459f3ee7393e5bde",
+    ),
+    (
+        "src/paper_radar/papers/models.py",
+        "6a8dace2ca4ca18767f1d79cafe11cb05bb14d2551b90e4b45147e5ff97e11e7",
+    ),
+    (
+        "src/paper_radar/papers/queries.py",
+        "87ec3ef5ebcab6ba48e53ee329957c834c520044cf1d5a90d834076c25db550e",
+    ),
+    (
+        "src/paper_radar/papers/read_checks.py",
+        "12bed5ba5d4e8b2d005da1e03745748265a3882d0f1b174f6c19b3d0a50ccce5",
+    ),
+    (
+        "src/paper_radar/papers/repository.py",
+        "81b3d04a32d51bd6353f8ffc99d6ca183d74584911ae4df0d4ea5c75adc8dd3b",
+    ),
+    (
+        "src/paper_radar/papers/rules.py",
+        "d6e8ff81e894d926c62c1c90dd1c8edb06cf01d7c50799ed8256ec38544952cf",
+    ),
+    (
+        "src/paper_radar/papers/selection_repository.py",
+        "27579c3eb0bedbbe90f7da5c5326904b6058023cf3fe1a7576a71afde4b9c7f1",
+    ),
+    (
+        "src/paper_radar/papers/tables.py",
+        "b190ff9f7f1d0ded4bfa559246cd07e5fb8b47290e3c7a76a344c886a6311f21",
+    ),
+    (
+        "src/paper_radar/papers/text_rules.py",
+        "9cebd0175cc0730bd65940339e8dd8d01402c5cbc635afb29641b2aced635e6f",
+    ),
+    (
+        "src/paper_radar/screening/context.py",
+        "a2ab562750e3e68e42facdfddd71922c14a9ecfe1d0af8e44d3081383f86ef37",
+    ),
+    (
+        "src/paper_radar/screening/errors.py",
+        "9f03054ed7de9aae6093914f9de230b961020928bf441e7e25935bf7b3a551a1",
+    ),
+    (
+        "src/paper_radar/screening/schema.py",
+        "3d741ca3876d24fa37df7cb48569b4193fd7c6d24adf47e68e29aa39400635e1",
+    ),
+    (
+        "src/paper_radar/screening/text.py",
+        "77e4ad599a2edbbaf30aa2f134918130f2c630fcc74abb9068190614c0f3cff1",
+    ),
+    (
+        "src/paper_radar/screening/validation.py",
+        "63d26b9b7b5593bb3260a37aacef1d537fa7736f7bbbf7ef25b9198bab17fc62",
+    ),
+    (
+        "src/paper_radar/screening/value_types.py",
+        "7a6d1be2b56745e15d074575b7cc4f9f9ae0e4fed3a8409cf098fac0751b5b85",
+    ),
+    (
+        "src/paper_radar/screening_tasks/__init__.py",
+        "40404febc4166e5af5953e5d3fb232b2f27dc14de9a385168b7218a72d6b96d4",
+    ),
+    (
+        "src/paper_radar/screening_tasks/attempt_integrity.py",
+        "609f526105eb447daf8ce8b5c530b940a1c47bcd35977da4436de14cfd0478bf",
+    ),
+    (
+        "src/paper_radar/screening_tasks/attempt_models.py",
+        "3072fa9bfa4015f68092e87494384a789465de9b7e3c0c46d447836092b4eb17",
+    ),
+    (
+        "src/paper_radar/screening_tasks/attempt_rules.py",
+        "5be85a80dc18148229b457bc8c498217684f3f616808ceb3b871443a5555af49",
+    ),
+    (
+        "src/paper_radar/screening_tasks/database_errors.py",
+        "433e727d768e8281fe69fe48cff91eb861e59572b26ae839ed743872547c6630",
+    ),
+    (
+        "src/paper_radar/screening_tasks/errors.py",
+        "e6afe8229cd88c575a146901da2361d5a22ecea797bbddf829b9db360555b3e1",
+    ),
+    (
+        "src/paper_radar/screening_tasks/execution.py",
+        "ea954d078681c28548e3ebf6e98d45e986d5402143763d59f3ddb7b62b64a144",
+    ),
+    (
+        "src/paper_radar/screening_tasks/frozen.py",
+        "1feeec54b063c149788086812cac02ae148004a496ef9a79cc04b5903842438a",
+    ),
+    (
+        "src/paper_radar/screening_tasks/integrity.py",
+        "e89921cca6aa3cd49299c0a54fe1e774cae9d68d32ac55e82c9360a4bebc5d5d",
+    ),
+    (
+        "src/paper_radar/screening_tasks/models.py",
+        "42c24b28d5d53d4a748ef2bb8d9948348acf83b8470e26e56aa37f11bcafb249",
+    ),
+    (
+        "src/paper_radar/screening_tasks/query.py",
+        "30328d916a49b6e03faf29cdefbc1cc648adf21be7592822d9a1b71a8b99ae3b",
+    ),
+    (
+        "src/paper_radar/screening_tasks/query_models.py",
+        "a771cf0bc91a6cc4ee961c2c85ebca8b7c7a4f38eaa8e6f64b58e3d3b15f2ad2",
+    ),
+    (
+        "src/paper_radar/screening_tasks/repository.py",
+        "159d2135a74470c8fc9a060c4f7d24ca2e792ecd654c1ef147ec431bed6d8d9d",
+    ),
+    (
+        "src/paper_radar/screening_tasks/retry.py",
+        "5364fe4155cdd8c9dcce17d4110147e2d0c037151c213d55335a56ea1f6587cc",
+    ),
+    (
+        "src/paper_radar/screening_tasks/rules.py",
+        "ab43492fea73c223e876225ab2ab17095b01e5275867965ca118bc2eec5264f5",
+    ),
+    (
+        "src/paper_radar/screening_tasks/service.py",
+        "2581c2d373709216f5c1e3724f7a77850ff178b673e8563488f4726a73610a55",
+    ),
+    (
+        "src/paper_radar/screening_tasks/success.py",
+        "5fd86d7b02dd4d49710bfd5df8c8175b18eb74d81040f082819cb2853f9240fa",
+    ),
+    (
+        "src/paper_radar/screening_tasks/success_integrity.py",
+        "60194cd3917ee2881c73961a2e9239a7a6439baefebff595f85ec4c20319a1fb",
+    ),
+    (
+        "src/paper_radar/screening_tasks/success_models.py",
+        "bae59fc55ef8f81cc46316e3d6d9792ba6af39a26cc7878f3f836ad3cee862f5",
+    ),
+    (
+        "src/paper_radar/screening_tasks/success_rules.py",
+        "c3ead169284f15e0c8805accd7390f81e16e21306099b5fcde9c190c03d62ec7",
+    ),
+    (
+        "src/paper_radar/screening_tasks/tables.py",
+        "fdd3045c423fa2609bee7303192443d24c020cf36c54cba50710e2cc167b0f51",
+    ),
+    (
+        "src/paper_radar/stage_inputs/__init__.py",
+        "d3a77ae4330d0821ddf84ed6b9f02830292f5b3ba678c69faa48e2bfc7611a87",
+    ),
+    (
+        "src/paper_radar/stage_inputs/service.py",
+        "d2dc724da98760240b6fa95e09619b2ca435e506c68a221976ae8c3ffba382da",
+    ),
+    (
+        "src/paper_radar/storage/artifact_contract.py",
+        "ab8284b17b5710fe9e537f6edb88fff7fc84f686417f96e3558405699f1fa999",
+    ),
+    (
+        "src/paper_radar/storage/artifact_repository.py",
+        "e81d40c7330f4a2676524ead4c59bea4c263d81b447deeb32403c0599e7d222b",
+    ),
+    (
+        "src/paper_radar/storage/artifacts.py",
+        "45f08248581aaaa2681b9851e96039dd24a0743deabebc7c36fbb42535537681",
+    ),
+    (
+        "src/paper_radar/storage/blob_store.py",
+        "3507cc6db2ea5b4848790e5a2e25cc7d9f6e38a0f5a1371e18cb20d11953ad29",
+    ),
+    (
+        "src/paper_radar/storage/database.py",
+        "ed8aba07f31eb6019c6d656a9147c682d74073bbdf4d268cd488bdb79ff3b7b1",
+    ),
+    (
+        "src/paper_radar/storage/filesystem.py",
+        "b0904b630bb476eb4a7286ec9b6623176e83549be8c0a33faec7e29a1480e91e",
+    ),
+    (
+        "src/paper_radar/storage/migrations/versions/a701_screening_registration.py",
+        "7040fc993c9a8921dd81e3059a5a92e9d0817fe4fa743d5a3aff82461c469d8f",
+    ),
+    (
+        "src/paper_radar/storage/migrations/versions/a702_screening_attempts.py",
+        "d7ceb107d15d4e22b51b375fa2b13493e79e8e16f902bce2ca618d46f28671a2",
+    ),
+    (
+        "src/paper_radar/storage/migrations/versions/a703_screening_success.py",
+        "0f9d61d04cba04a658c4a928394431dff93a75abe13e38f437d20ec19feba9fe",
+    ),
+    (
+        "src/paper_radar/storage/migrations/versions/a704_screening_retry.py",
+        "720b73887f1ef6d048f645e5043fd421a00052951ee3b7b16441714694a55d8b",
+    ),
+    (
+        "src/paper_radar/storage/records.py",
+        "f1e5e7d9ca146fc8439ed8966d6bb3576e838ed7494d831772131731601094ca",
+    ),
+    (
+        "src/paper_radar/storage/repository.py",
+        "91a48152f1f2fdd840471f81c6db13ca87dc533a8ce4fa03f5b396b08019f5bf",
+    ),
+    (
+        "src/paper_radar/storage/schema.py",
+        "291db5e419f3a5a7fd88afab7f369569d0b8e754fa36932210418c0938050a0f",
+    ),
+    (
+        "tests/a2_full_support.py",
+        "a15976749dc2ae52448d81ea794c2be1c2e0f53d4e2a09de20f9a9790c16dc38",
+    ),
+    (
+        "tests/a3_acceptance_support.py",
+        "d89e4dff6834d19562ffd9a3a5fde14c353962ee67a8c1df21113c75979b2545",
+    ),
+    (
+        "tests/a3_process_support.py",
+        "4c0ca963d2513532060c5f122f92b09933e234c4c65e342b78d3fd5d06880d74",
+    ),
+    (
+        "tests/a4_acceptance_support.py",
+        "3e7457b20e193b1076b67c3d8394dcb0b9eebb60fcdc58d3abe44be4d50740cf",
+    ),
+    (
+        "tests/a5_acceptance_support.py",
+        "528ab9bd6e1a71767083eb514378e028420691d0c61a81237cab85163b2ab1f5",
+    ),
+    (
+        "tests/a6_acceptance_support.py",
+        "b6642636b0e57bb76e4bcbbe94a540e7239075ab5d6872a01e04ad046a4f28a9",
+    ),
+    (
+        "tests/a7_acceptance_support.py",
+        "3d9de027d1d9c1a6ffbab594bafb40abdaccb3e8e67297a7b8371ad1021c048d",
+    ),
+    (
+        "tests/a7_attempts_process/sitecustomize.py",
+        "9957b8549356b4f540c3c2c41534eff293f25093f2354436c2c3d0257d87433b",
+    ),
+    (
+        "tests/a7_attempts_worker.py",
+        "bc5c9098b12cfe81e4e3d5295b9816c748db163c152571b95f8cdc184d2a183a",
+    ),
+    (
+        "tests/a7_recovery_support.py",
+        "f9f98ea554614ebc7de14795c405d8034bde0bea37f4abb1d46d8c4a818660c9",
+    ),
+    (
+        "tests/a7_registration_process/sitecustomize.py",
+        "d41a6eb7bbef9be01c5674dfb3105bbafbc53b7ca564e50e3e0c3e503f367408",
+    ),
+    (
+        "tests/a7_registration_support.py",
+        "fb2a8b308364e85acd7bcf3bfa7fe80dff613f28988c6c59f891497c781a09d5",
+    ),
+    (
+        "tests/a7_registration_worker.py",
+        "aadb871af2c13b4d556e04385fc4a4bb33d11a1e0c0181ac042dffb14525c44c",
+    ),
+    (
+        "tests/a7_retry_process/sitecustomize.py",
+        "d09ee675d03850644cb29c48f26318c0eda68e50d4f807a73e985e40c233ac9e",
+    ),
+    (
+        "tests/a7_retry_support.py",
+        "ecd292a60410fe31f243d9ce2a466575b01774ac9c5cfe56f9cc6f135f2a2b81",
+    ),
+    (
+        "tests/a7_retry_worker.py",
+        "cef786836eb08ab21e1cc3677723601e64d6ac9a8048223b51b95226cb16cbc1",
+    ),
+    (
+        "tests/a7_success_process/sitecustomize.py",
+        "b28bf74b8c76d6c04db657e6214924cddad585d1ba32a5ac5f8b44d7b0e95d93",
+    ),
+    (
+        "tests/a7_success_worker.py",
+        "860935e856f476a96546ab83fb6bfefedc45733be1ec470ac1079cbd7033100a",
+    ),
+    (
+        "tests/a7_value_support.py",
+        "6165a17b98609bd0611cd27d80f09aaf165a8df9e08ad9a2808767b79f324404",
+    ),
+    (
+        "tests/artifact_support.py",
+        "2771734fb913cb279be6aa9b9518b7d7e2bf70e2b7982f28e47b78be89000664",
+    ),
+    (
+        "tests/backup_support.py",
+        "f1ee3e3febb10bcf68212af621c79d0d25951fa1464cd11e23d2afe139e8cc37",
+    ),
+    (
+        "tests/config_projection_support.py",
+        "1a3aa9a7ce2535a9a52c3fde9dc18cde964d1de8b89654e3d50e566aae79ef2a",
+    ),
+    (
+        "tests/config_test_support.py",
+        "1bdd4ec7d1c3a3c2274455cfe184ea5ee7d58971d65adc1ccd532a55c295e840",
+    ),
+    (
+        "tests/deny_network/sitecustomize.py",
+        "dfce12fb68aaefd9b19ec26f1ff6bfb10b3f726fdafe6f466ec031cc2acc3288",
+    ),
+    (
+        "tests/test_paper_mapping.py",
+        "8cf3de3591cbc9b2a19cccc8ac93ea9a16909e44121a32f231838b045f956ea0",
+    ),
+    (
+        "tests/test_paper_service.py",
+        "b0517a8a0058e544258a2f1b130ec3f1d05fcee8b495b8ea35b7409bc8efc6c2",
+    ),
+    (
+        "tests/test_version_relations.py",
+        "069aa10cc4cb66405e0f093e00b0503bda09200563113ebfaedbf7230805c74e",
+    ),
+)
+REQUIRED_FIXTURE_FILES = (
+    (
+        "tests/fixtures/a7_capabilities.json",
+        "3d46510d050a0cacf60d96f6b638b51dc812d95cffc774074b91ca35360df2eb",
+    ),
+)

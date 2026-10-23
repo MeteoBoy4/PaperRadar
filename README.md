@@ -5,7 +5,9 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓
 四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
 只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
 现已开放四种单文件制品与完整 extraction 集合的不可变内容寻址存储和完整校验回读。
-已提供四类来源仲裁、人工字段修正、Feed 登记与发现的本地事实服务和只读 `paper show/trace`；真实网络来源和论文处理流水线尚未实现。
+已提供四类来源仲裁、人工字段修正、Feed 登记与发现的本地事实服务和只读 `paper show/trace`；
+另已交付 boundary/value 的冻结任务、有限尝试、租约、成功接收、retry 与独立离线验收。
+真实网络来源、模型执行和完整论文处理流水线尚未实现。
 期刊身份与信誉集合也可版本化登记，校验 ISSN 与冲突，并从 SQLite 回放历史。
 另可登记 Pi adapter 的三个独立选择、完整有效系统指令、资源哈希、推理档位与
 固定调用策略；单快照可重建六阶段配置投影和校准基线，并只读比较已保存快照。
@@ -57,7 +59,7 @@ uv run --offline --locked paper-radar --help
 ## 数据库升级
 
 A2 的 `a201_profile_snapshot`、A3 的 `a302_artifact_store` 可显式升级至当前
-`a704_screening_retry`。论文切片追加 DOI 论文身份、四类来源观察、人工事件、发现历史、候选引用式修订与初始选择；Screening 切片追加冻结输入、预算、请求、领取尝试、租约、失败结算与 boundary 成功制品。既有升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
+`a704_screening_retry`。论文切片追加 DOI 论文身份、四类来源观察、人工事件、发现历史、候选引用式修订与初始选择；Screening 切片追加冻结输入、预算、请求、领取尝试、租约、失败结算、boundary/value 成功制品及 retry 父链。既有升级只追加内容对象/制品及供给材料、安装根、实例、检查、重建失败、激活、不可变清理计划、退役与逐项清理进展事实，
 全部 DDL 与 revision stamp 在一个 SQLite 事务内提交；
 失败或进程中断完整回滚后可以重试。配置历史的 ID、原字节、创建时间、六投影和基线不变。
 已知旧库上的 `config check/compile/diff/snapshots list` 会提示先执行升级，不自动修改库。
@@ -279,7 +281,7 @@ manifest 审计变化，同次调用只允许一份一致正文。从相同摘�
 重新取得的制品成员验证四阶段重建；不同 hashseed、cwd 和无序集合构造顺序保持身份，
 纯构造、回放与比较不执行 I/O。独立复现命令见[离线证据说明](docs/verification/offline-evidence.md)。
 独立 A5 验收由 #54 接入，固定绑定四阶段、回放、比较与隔离恢复能力。
-A5 当时的 check-offline 输出七份主要文件；当前 A6 为八份主要文件、总十份 JSON，见[当前离线证据](docs/verification/offline-evidence.md)。另有实际 pytest 执行回执与控制方终态记录；
+A5 当时的 check-offline 输出七份主要文件，A6 注册时为八份主要文件、总十份 JSON；当前 A7 为九份主要文件、总十一份 JSON，见[当前离线证据](docs/verification/offline-evidence.md)。另有实际 pytest 执行回执与控制方终态记录；
 本服务不调度任务或改写人工决定，也不证明 PDF/正文的真实质量。
 
 论文事实可通过 `PaperFacts(database).map_screening_inputs(snapshot_id=..., paper_id=...)`
@@ -367,8 +369,9 @@ pytest 测试（包括冻结契约导出与只读检查测试），最后用一�
 `<run_id>.a1.json` 独立 A1 结论、`<run_id>.a2.json` 历史范围的 A2-01 结论，
 `<run_id>.a2-full.json` 完整 A2、`<run_id>.a3.json` 存储/恢复 A3 与
 `<run_id>.a4.json` Pi 供给生命周期 A4、`<run_id>.a5.json` 四阶段输入 A5 与
-`<run_id>.a6.json` 论文事实 A6 独立结论。八份主要文件共用本次 `run_id`，
-不重复执行整套检查。只有本次 A1、完整 A2、A3、A4、A5 与 A6 都通过时返回 0；A2-01 独立保留，仍不决定整体通过。
+`<run_id>.a6.json` 论文事实 A6 与 `<run_id>.a7.json` Screening 任务 A7 独立结论。
+九份主要文件共用本次 `run_id`，不重复执行整套检查。只有本次 A1、完整 A2、A3、A4、
+A5、A6 与 A7 都通过时返回 0；A2-01 独立保留，仍不决定整体通过。
 `<run_id>.pytest.json` 另行记录脱敏测试执行回执；固定范围的收集和完整通过数量
 必须与已审查清单一致，跳过、取消选择、未完成或缺回执均不能通过。
 一次运行由 `scripts/verification_run.py` 统一组织，验收组在
@@ -390,13 +393,17 @@ A4 仍决定整体通过，但不作为 A5 前置。七项 capabilities 共用�
 stage_a_verified/live_verified/rpc_verified 恒 false，范围映射见
 [独立 A5 结论](docs/verification/offline-evidence.md#a5-独立结论4754)。
 A6 独立绑定同次 A1、完整 A2、A3、A5，A4 继续决定整体门禁。12 项能力逐项映射固定业务
-用例和 #74 组合材料，核对真实临时迁移 a604、生产格式、固定源码及全量实际执行回执。
-A5 历史 `paper_fact_mapping` 未覆盖项保留，新增映射证明属于 A6。正常运行另含回执和终态，
-共十份 JSON；没有终态不证明完成。要求与未验证来源假设见
-[A6 规格对照](docs/verification/a6-requirements.md)。
-仅依赖登记顺序或总测试退出码不能通过。Read/suggestion/report 指纹、attempt/lease、
-共享资格/可见性、报告重建与任务续跑、doctor、Pi/Docling/Read 执行、真实来源与 NAS、
-正式校准和自动精读仍未验收；A3 passed 不等于完整阶段 A 或阶段 B 通过。
+用例和 #74 组合材料，核对真实临时迁移至随包 head、生产格式、固定源码及全量实际执行回执。
+A5 历史 `paper_fact_mapping` 未覆盖项保留，新增映射证明属于 A6。A6 注册时正常运行另含
+回执和终态，共十份 JSON；要求与未验证来源假设见[A6 规格对照](docs/verification/a6-requirements.md)。
+A7 独立绑定同次 A1、完整 A2、A3、A5、A6，固定 boundary/value 任务、原权威严格 JSON、
+真实 a704 migration、生产格式、源码/材料、用例分母与实际 pytest 回执；A4 仍为整体必需。
+当前正常运行共十一份 JSON；缺失或篡改 terminal、少执行、跳过、身份漂移和中断均不能通过。
+15 项能力与排除项见[A7 规格对照](docs/verification/a7-requirements.md)。
+仅依赖登记顺序或总测试退出码不能通过。Screening 的有限尝试、租约、显式 retry 与恢复
+仅以离线 test 执行边界验收。Read/suggestion/report 指纹、完整资格/可见性、报告重建、
+其他任务续跑、doctor、Pi/Docling/Read 执行、真实来源与 NAS、正式校准和自动精读仍未验收；
+A3 或 A7 passed 均不等于完整阶段 A 或阶段 B 通过。
 该目录不进入版本控制；格式、失败表示与使用方法见
 [离线验证证据](docs/verification/offline-evidence.md)。
 
@@ -532,10 +539,10 @@ A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/co
 及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。#77 已在原权威验证器
 收紧重复 JSON 键和非有限常量；#78–#79 已交付任务登记、冻结回放、两次预算和租约，
 boundary/value 筛选制品接收与三值适用性由 #80/#81 交付，#82 交付显式 retry、共享版本化查询与父链恢复；#83 补齐新进程隔离完整历史恢复，
-尚未注册 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；真实 value 任务前
+#84 将这些能力注册为独立必需 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；真实 value 任务前
 必须先裁决原题名语言事实的生产来源。
 
-### Screening 任务登记、有限尝试与两阶段成功（A7-02 至 A7-07）
+### Screening 任务登记、有限尝试与两阶段成功（A7-02 至 A7-08）
 
 公共 `paper_radar.screening_tasks.ScreeningTasks` 已支持用现有论文和明确历史配置快照
 登记 boundary/value 请求，保存规范输入、独立预算范围和精确回执，并在备份恢复后回放。
@@ -554,6 +561,6 @@ boundary/value 原始成功候选经唯一权威校验，原字节由 A3 保留�
 value 从预算首次冻结的历史 snapshot、A5 严格回放和语言事实重建 A1 上下文，
 当前主题/模型文件变化或原目录不可访问均不替代历史接收依据；两阶段成功互不依赖。
 显式 `retry` 仅追加唯一后继，`query` 返回 task_query_result v1 的安全历史与当前失败集合；
-旧回执精确重放不随最新代际改变。真实模型执行与完整 A7 验收仍待后续切片。
+旧回执精确重放不随最新代际改变。独立 A7 结论只证明这些离线任务能力；真实模型执行仍待后续切片。
 API、隐私与语义闭包见[Screening 任务 Contract](docs/contracts/screening-tasks.md)，
 规格对照与重绑责任见[A7 requirements](docs/verification/a7-requirements.md)。

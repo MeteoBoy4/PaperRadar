@@ -5,8 +5,10 @@ a701 与备份闭包；#79（A7-03）交付 a702 原子领取、有限预算、�
 显式回收与 test 一次尝试驱动；#80（A7-04）交付 boundary 权威接收、唯一制品、
 三值适用性及成功恢复闭包；#81（A7-05）交付 value 同源权威接收与恢复。
 #82（A7-06）交付 retry/版本化共享查询，#83（A7-07）补齐完整历史隔离恢复。
-#84 的独立 A7 验收注册尚未交付。当前 `check-offline` 通过只证明已有组及本次全套检查，
-不表示尚未注册的 A7 passed。运行回执、commit 和 run_id 存在工作树外，不改写历史证据。
+#84（A7-08）将这些能力登记为独立必需 A7 组，状态读者同步支持 `.a7.json` 格式 1。
+实际通过必须由同次原始证据、真实 `check-offline` exit0 和
+`verification-status` 的 passed/verified/same 共同确认。运行回执、commit 和 run_id
+存在工作树外，不改写历史证据，也不以本文代替执行事实。
 
 ## 来源顺序与冻结依据
 
@@ -30,23 +32,23 @@ a701 与备份闭包；#79（A7-03）交付 a702 原子领取、有限预算、�
 
 ## 正文—补充—裁决—验收四层对照
 
-US 表示 #76 User Stories，ID 表示 Implementation Decisions；此表中的“待”明确是
-后续子票责任，并非现已实现。公共测试 seam 已由原规格用户确认：任务服务为主，
+US 表示 #76 User Stories，ID 表示 Implementation Decisions；下表列出裁决后的实际落点，
+未交付的生产边界单列于排除项。公共测试 seam 已由原规格用户确认：任务服务为主，
 真实 SQLite/migration/ArtifactStore/配置/PaperFacts，只替换时钟与外部执行者。
 
 | 正文 | 补充及裁决 | 最终规则与文档落点 | 验收责任/当前状态 |
 | --- | --- | --- | --- |
-| US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝、#81 接收/回放、#82 retry 继承已交付。真实来源列 title_language_source 未验收 |
-| US29/31、ID15–16；测试“当前适用性”“缓存重新使用” | D2(a)、S2、评论二五 | Contract §5、ADR-0031、主方案 §8.5：同明确 snapshot 当前指纹匹配即适用；版本不同但同指纹仍适用；去掉绑定表/API/写入、提交事务论文复核 | #80/#81 boundary/value 三值派生已交付；原 US29 改为输入变化只作历史，US31 改为只读重建匹配，删除缓存重新绑定行 |
+| US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝、#81 接收/回放、#82 retry 继承已交付。真实来源列 original_title_language_production_source 未验收 |
+| US29/31、ID15–16；测试“当前适用性”“缓存重新使用” | D2(a)、S2、评论二五 | Contract §5、ADR-0031、主方案 §8.5：同明确 snapshot 当前指纹匹配即适用；版本不同但同指纹仍适用；去掉绑定表/API/写入、提交事务论文复核 | #80/#81 boundary/value 三值派生已交付；原 US29 改为映射成功且指纹不同才为 historical，映射失败为 undeterminable+PaperReason；US31 改为只读重建匹配，删除缓存重新绑定行 |
 | 测试“A6 语义联动” | D2(a)、B2/B6、评论二五 | 更高 parser 缺摘要→无当前成功；其他来源补回相同文本→原制品再适用，保留 A6 仲裁 | #80 boundary、#81 value 已交付；#83 在恢复副本组合 value 跨版本、parser 删除与另一来源补回，无再绑定写入 |
 | US24/27、ID12–13 | D3(a)、评论二二、#77 评论 | 原权威内部严格解析；str/bytes/bytearray 任意层重复键/NaN/Infinity 根 `$` invalid_json，先于字段/业务错误；Mapping 路径不变 | #77 已实现；test_screening_strict_json 93 例，新旧相关 332 例；原固定模块/Schema/分母不变 |
 | US23、US33 CLI 部分、US39、ID20–21 CLI 部分 | D4、S2、评论二五 | Contract §6：本批仅服务 retry 与共享查询；screening CLI、paper trace 组合、help/退出码移至真实任务生产票 | #82 服务测试已交付；#84 不得要求 CLI，现有产品 CLI Contract 保持 |
 | US1–7/19–20/30、ID3–7/17–18 | T1/T2/T7、B1/B3/B9/B11、评论二四 | Contract §1–3：预算/代际/请求/attempt 四层；完整 scheduled 依据、manual 冲突；A→B→A、跨日/无关配置不刷新 | #78（含真实进程登记竞争）已交付；第 0 代可能由 manual 创建；#79 消费同预算范围 |
-| US8–18/32、ID8–11 | T3/T4/T6、B2/B4/B5/B7、S3 | Contract §3/9：原子领取、两次预算、凭据 fencing、回收 outcome_unknown、lease_expired；第二次尝试不等于显式 retry | #79 交付真实子进程/屏障/强杀、注入 UTC 时钟及失败执行边界；成功接收仍归 #80/#81 |
+| US8–18/32、ID8–11 | T3/T4/T6、B2/B4/B5/B7、S3 | Contract §3/9：原子领取、两次预算、凭据 fencing、回收 outcome_unknown、lease_expired；第二次尝试不等于显式 retry | #79 交付真实子进程/屏障/强杀、注入 UTC 时钟及失败执行边界；#80/#81 已补齐成功接收 |
 | US24–28/35、ID12–14/19 | T1、B6/B8/B9、评论三三/六 | Contract §4：原始响应+唯一权威结构；test 来源/未知审计；候选竞争、合法迟到、发布/提交/回包故障 | #80/#81 boundary/value 已交付且共用成功事务；D3 已由 #77 阻止重复键入口 |
 | US21–22/33–34、ID7/20–22 | T5、B5/B10/B11 | Contract §6：失败终态唯一后继、库级 retry ID、同请求幂等/异请求竞争；安全查询统一格式 1 | #82 已交付；运行中/可继续/成功/非当前拒绝，测试固定 query shape |
 | US28/36–38、ID22–23 | B12、评论三三/四/六 | Contract §7/12：只读语义钩子、恢复无执行、原目录不可用非空重建；语义损坏 registration_invalid，历史回退预算限制公开 | #78 起随实际表加基础验证，#83 完整跨域隔离恢复/损坏/显式继续已交付 |
-| US40、ID24–25 | 评论三一/七/八 | 必需 A7 组、同次前置/固定格式/源码/fixture/整数回执/真实 head/可信终态；不新增四份冻结 Contract | #84 待；A7 组注册与 status 识别同提交，不能拿历史通过代替 |
+| US40、ID24–25 | 评论三一/七/八 | 必需 A7 组、同次前置/固定格式/源码/fixture/整数回执/真实 head/可信终态；不新增四份冻结 Contract | #84：test_a7_acceptance/integrity/formats/entry/status/test_receipt；组注册与 status 识别同提交，不能拿历史通过代替 |
 
 ## 补充条目的完整落笔台账
 
@@ -89,18 +91,24 @@ US 表示 #76 User Stories，ID 表示 Implementation Decisions；此表中的�
 | --- | --- | --- |
 | scripts/check-offline | A2-01、完整 A2、A3、A4、A5、A6 | A7 必需组及“九份主要文件”文案 |
 | scripts/a2_full_acceptance.py | 完整 A2、A3、A4、A5、A6 | acceptance_groups 追加 A7 |
-| scripts/offline_evidence.py | 完整 A2、A3、A4、A5 | 组数/文案；CONTRACT_NAMES 四份显式列表保持 |
+| scripts/a2_test_receipt.py | 完整 A2、A3、A4、A5、A6 | 显式纳入 A7 固定模块，真实执行记录可核验；不得以合成成功代替 |
+| scripts/offline_evidence.py | 完整 A2、A3、A4、A5 | 固定六检查与 CONTRACT_NAMES 四份显式列表保持，不为组数无关常量制造改动 |
 | scripts/verification_status.py | A6 | SUPPORTED_GROUP_FORMATS 认识 .a7.json 格式 1，与注册同步 |
 
 同步更新 test_a2_full_entry 的帮助份数、test_verification_status 的 suffix 列表，
-verification-status.md/stage-inputs.md/offline-evidence.md/README 的主要文件和 JSON
-份数。test_a1_acceptance 现有帮助断言已经足够，不为文案修改其 A1 绑定。
-A7 scope 不把自身放进 REQUIRED_SOURCE_MODULES，避免自指哈希。A7 公共格式计划为
+保留 test_a6_entry 发布中断时尚无 A7 的原场景含义；test_a6_status 按 suffix 定位 A6；
+完整入口的测试回执覆盖当前全组，A6 独立历史协议含义保持。原用例不删、旧分母不降。
+同步更新 verification-status.md/stage-inputs.md/offline-evidence.md/README 的当前主要文件
+和 JSON 份数，保留历史份数的阶段含义。test_a1_acceptance 现有帮助断言已经足够，不为文案修改其 A1 绑定。
+A7 scope 不把自身放进 REQUIRED_SOURCE_MODULES，避免自指哈希。A7 公共格式固定为
 screening_tasks/task_reason_catalog/task_query_result 1、boundary/value inputs 1、backup 1。
+实际值读取生产常量与 TaskQueryResult 的真实 dataclass 默认值，严格整数比较，
+bool/float 不得冒充版本。实际 migration head 为 a704_screening_retry，并独立在临时库升级核对。
 
-#77 本票只改未被源码绑定的 screening/validation.py、新增独立回归和裁决文档，
+#77 交付时只改当时未被源码绑定的 screening/validation.py、新增独立回归和裁决文档，
 不改 migration、四份冻结 Schema、旧固定模块或 scope；因此无需旧组重绑定。
-本票代码/回归 SHA-256 见下方独立记录，后续语义变更须显式更新此记录并解释原因。
+其代码/回归 SHA-256 见下方独立记录；#84 将二者纳入 A7 固定源码/测试范围，
+93 例严格 JSON 用例不因过去 A1 未绑定该源码而遗漏。后续语义变更须显式重审绑定并解释原因。
 
 | #77 固定材料 | SHA-256 |
 | --- | --- |
@@ -109,12 +117,13 @@ screening_tasks/task_reason_catalog/task_query_result 1、boundary/value inputs 
 
 ## 未验收范围与最终结论边界
 
-A7 完成前仍待：版本化共享查询/retry、
-完整组合恢复/语义损坏、可信独立 A7 组。最终不得把 `rpc_verified`、`live_verified`、
-`stage_a_verified` 置 true。未覆盖项至少保留 rpc_compatibility、pi_execution、
-real_model_usage_and_cost、title_language_source、eligibility/metadata_ready、daily_quota、
-two_stage_orchestration、suggestion_decision、calibration_visibility、reuse/extraction/read
-任务、merge_budget、cli、nas_restore、stage_a、live；test 来源不能进入后续生产建议/校准。
+A7 仅证明 boundary/value 任务在离线 test 执行边界的工程能力。
+`rpc_verified`、`live_verified`、`stage_a_verified` 均固定为 false。
+not_assessed 明列 rpc_compatibility、pi_execution、real_model_usage_cost、
+original_title_language_production_source、metadata_ready、complete_eligibility、daily_quota、two_stage_orchestration、
+suggestions_decisions、calibration_visibility、reuse_tasks、extraction_tasks、read_tasks、
+merge_budget、screening_cli、paper_trace_cli、nas_restore、stage_a、live、automatic_fulltext_reading。test 来源不能进入后续生产建议/校准；
+已接收的 test 结构与未知/报告审计不构成真实模型质量、调用次数、用量或成本证明。
 
 最终验证先新任务/直接论文映射/权威输出/存储子集，再迁移、真实进程故障及隔离恢复，
 最后实际 `./scripts/check-offline` 返回 0。A4 虽不为 A7 直接前置，仍是整体必需组。
@@ -123,8 +132,8 @@ two_stage_orchestration、suggestion_decision、calibration_visibility、reuse/e
 ## A7-02 实际交付与本波绑定重审
 
 #78 已完成公共 register/get_receipt/receipts/load_input/validate_all，详见 Contract §8。
-正文 US1–7/19–20/30、ID3–7/17–18 的登记责任由以下独立模块证明；后续 attempt、lease、
-成功接收与 retry 责任不提前宣称完成。
+正文 US1–7/19–20/30、ID3–7/17–18 的登记责任由以下独立模块证明；本节记录 #78
+当时的交付范围，attempt、lease、成功接收与 retry 的后续实际交付见下节。
 
 | 测试模块 | 当前用例 | 证明 |
 | --- | --- | --- |
@@ -136,7 +145,7 @@ two_stage_orchestration、suggestion_decision、calibration_visibility、reuse/e
 | test_a7_registration_backup | 10 | 非空恢复；两阶段 WAL、新进程禁原目录后移动回放；八类 FK/SQLite/外层哈希合法语义损坏拒绝 |
 
 共 64 例；全部通过后再执行直接关联旧回归与完整门禁，不把当前收集数动态写入旧分母。
-本票不注册 A7 组，这些新增模块在 #84 一次冻结 A7 验收范围。
+#78 当时不注册 A7 组；这些新增模块已在 #84 一次冻结 A7 验收范围。
 
 实际重绑先审查 head 字面量及最小源 diff，再按 scope audit 的 downstream 顺序更新。
 六组 MIGRATION_REVISION 前移 a701_screening_registration；A3 的 backup_database_revision
@@ -183,7 +192,7 @@ a701 升级及备份语义闭包的证明。真实竞争与强杀使用屏障，
 恰好到期、续租/回收竞争、回收后迟到拒绝及 5 秒 busy；不以长 sleep 推断状态。
 新增事实由同一 validate_all 备份钩子验证，恢复保存已占次数和未结算租约，只读不回收。
 源库与副本的两次保证分别只适用于各自连续历史，旧备份之后丢失 attempt 不可追回。
-各模块固定范围最终在 #84 统一注册，本票不提前登记 A7 组、不改旧分母。
+各模块固定范围最终在 #84 统一注册；#79 当时不提前登记 A7 组、不改旧分母。
 
 | 接入文件 | 本波重审理由 | 旧组 |
 | --- | --- | --- |
@@ -299,4 +308,51 @@ registration_invalid、不改源批次、不发布目标。超预算与重复序
 Contract 与 backup-restore 同步绝对 UTC 时钟偏差只改结算时机、不退预算；单库连续
 历史上限不等于跨恢复 exactly-once；旧 revision 需旧程序恢复再显式升级，当前 A1/A5
 收紧可使同 revision 的更早备份不再验证通过，支持范围由 BACKUP_DATABASE_REVISION 固定。
-本票无 migration/生产代码/旧绑定改动；#84 再冻结独立 A7 范围，本节不宣称 A7 passed。
+#83 当时无 migration/生产代码/旧绑定改动；独立 A7 范围现由 #84 冻结，
+本节保留 #83 的历史交付范围，其历史运行不等于后来 A7 独立 passed。
+
+
+## A7-08 / #84 独立验收与可信终态
+
+`a7_scope.py` 固定 parent_issue=76、issue=84、格式 1、随包 head
+`a704_screening_retry`，capability fixture 为 `tests/fixtures/a7_capabilities.json`。
+固定业务范围为 #78–#83 的 283 例，加 #77 严格 JSON 93 例，共 376 例；
+#84 独立协议验收按测试源及参数化人工审阅登记：acceptance 2、integrity 124、entry 9、
+status 10、test_receipt 6、formats 2，共 153 例；A7 合计固定 529 例；
+不从实测收集结果回填。
+最终固定模块/用例总分母以 scope 中明确登记值和该次真实回执逐项核对；collect 仅作复核。
+
+下列能力名称与 CAPABILITIES 一致；测试名称均指公共 seam 的行为证明，进程/恢复
+support 同时纳入固定源码，不能仅将能力字符串整体标为 passed。
+
+| capability | 裁决后规格 | 实际测试落点与关键证明 |
+| --- | --- | --- |
+| frozen_input | US1–7、25–26；D1；B1/B6 | test_a7_registration 的 test_register_replays_frozen_input_after_current_facts_change、test_value_context_is_frozen_per_budget_and_boundary_forbids_language；test_a7_value_context；test_a7_registration_backup：旧 snapshot/规范载荷/语言独立回放 |
+| request_idempotency | US4–7/19–20；ID3–7/17；T1 | test_a7_registration 的 test_manual_and_scheduled_share_generation_but_request_ids_are_global、test_requests_share_budget_across_dates_revisions_and_input_roundtrip；test_a7_retry 的 test_request_id_conflicts_are_global_between_manual_and_retry、test_mapping_reason_precedes_old_generation_and_exact_replay_remains_original；真实登记进程竞争/丢回包 |
+| budget_scope | US1–7/19–20/30；D1/D2；T2/T7 | test_a7_registration 的 test_requests_share_budget_across_dates_revisions_and_input_roundtrip、test_same_input_cross_version_keeps_budget_and_original_basis、test_unrelated_read_and_journal_snapshots_share_both_stage_budgets；test_a7_attempt_inputs 的 test_changed_fingerprint_does_not_consume_and_roundtrip_does_not_refill、test_old_receipt_can_claim_same_text_new_version：A→B→A/跨日/跨版本/无关配置不刷新 |
+| atomic_claim | US8–18；ID8–11；B3/B5 | test_a7_attempts_process 的 test_two_processes_compete_for_one_persisted_attempt、test_claim_cas_rejects_facts_changed_between_mapping_and_transaction、test_claim_busy_is_bounded_without_consuming_attempt；test_a7_attempts 的 test_claim_persists_one_attempt_and_refuses_another_holder：同连接 CAS、原子预算、5 秒忙锁 |
+| lease | US8–18/32；T3/T4；B4/B7 | test_a7_attempts 的 test_exact_expiry_is_read_only_and_unsettled_holder_can_renew_or_fail、test_claim_can_recover_expired_attempt_but_never_refills_budget；test_a7_attempts_process 的 test_exact_expiry_renew_and_reclaim_are_serialized_and_fence_late_holder、test_simultaneous_renew_and_reclaim_commit_one_consistent_outcome：600 秒、到期未结算、未知回收与 fencing |
+| bounded_attempts | US8–18；T4/T6；B5/B8 | test_a7_attempts 的 test_failed_attempt_replays_exactly_and_budget_survives_reopen、test_executor_cannot_forge_authoritative_output_or_recovery_failure；test_a7_value_success 的 test_value_second_failure_is_terminal_and_independent_of_boundary；test_a7_retry 的 test_each_retry_generation_has_two_attempts_and_inherits_context：每代两次、失败消费、未知不退预算 |
+| authoritative_acceptance | US24–28/35；ID12–14/19；D3 | test_screening_strict_json 的全部 93 例；test_a7_boundary_success、test_a7_value_success、test_a7_value_context：唯一 A1、原字节、结构、未知与零审计、两阶段独立 |
+| derived_applicability | US29/31；ID15–16；D2 | test_a7_success_applicability 的 test_parser_removal_and_other_source_restore_reactivate_original_success、test_same_text_new_version_and_unrelated_config_keep_success_current；test_a7_value_context 的 test_changed_title_and_missing_current_abstract_preserve_historical_value；test_a7_complete_recovery：current/historical/undeterminable，无再绑定写入 |
+| explicit_retry | US21–22/33–34；T5；B10/B11 | test_a7_retry、test_a7_retry_process：失败终态唯一后继、严格请求、精确旧回执、同 ID/异 ID 竞争、回收/成功竞争、上下文继承 |
+| shared_query | US23/33；ID20–22；D4 | test_a7_task_query 的 test_query_is_safe_readonly_history_and_current_failure_set、test_query_preserves_safe_a1_failure_paths_and_explicit_shape、test_query_invalid_stage_is_controlled_even_for_unhashable_input：task_query_result 格式 1、安全历史/当前失败；不声称完整 eligibility |
+| crash_recovery | US9–18/32/35–38；B3/B7/B9 | test_a7_registration_process、attempts_process、success_process、retry_process：真实屏障/强杀、发布/业务提交/回包窄缝、不造半成功或退款 |
+| migration | US36–38；ID23；评论三五 | test_a7_registration_migrations、attempt_migrations、success_migrations、retry_migrations：真实非空前序升级、WAL、原 FK/CHECK/UNIQUE、DDL/提交/恢复/版本戳失败原子性 |
+| isolated_restore | US28/36–38；B12 | test_a7_complete_recovery 的 test_new_process_restores_complete_wal_history_and_continues_remaining_budget；各 registration/attempt/success/value/retry backup：阻断原根/改名根/批次、搬迁副本独立重建并显式继续剩余预算 |
+| semantic_integrity | US28/36–38；ID22–23；评论三四 | test_a7_registration_backup、attempt_integrity/backup、success_integrity/backup、value_integrity/backup、retry_integrity/backup、recovery_integrity：合法 SQLite/FK 且重哈希的坏关系仍拒绝，不修复/不发布目标 |
+| privacy | US23/24/33/39；B8/B10；D4 | test_a7_registration_failures 的 test_exact_manual_audit_bytes_are_kept_internal、test_a7_attempts 的 test_executor_exception_is_safe_and_other_stage_is_independent、test_a7_success_integrity 的 test_output_failure_cannot_smuggle_private_text_into_safe_projection、test_a7_task_query：普通错误/repr/共享查询无输入、响应、审计、凭据或自由文本 |
+
+验收协议自身由 test_a7_acceptance/integrity/formats/entry/status/test_receipt 固定：
+同次五前置的 scope/issue/格式/verified 与链接、真实 head/生产格式、固定哈希与整数分母、
+真实插件六类执行状态、只读状态查询和末组发布中断。missing/skip/deselect/collect-only、
+错误回执、缺失/篡改 terminal、源码或 lockfile 漂移、缺前置/组失败/中断均不能报告通过。
+A7 注册与状态读者格式 1 同提交；历史格式继续可读，旧组范围与 NOT_ASSESSED 不回填。
+
+本波先审代码/帮助/完整入口 fixture，再按只读 scope audit 的 downstream 顺序处理
+A2-01→完整 A2→A3→A4→A5→A6→A7；A7 不自绑。真实旧固定分母不减。
+旧/新 SHA-256、原/新身份和逐条理由记录在工作树外 `84-rebinding-ledger.json`；
+最终 commit、真实 run_id、回执分母与十一份原 JSON 同样保存在外部交接，避免把最终
+run_id 写入被哈希材料形成自引用。先完成所有 tracked 修改并冻结最终提交，再 merge
+最新 integration，执行开发环境检查和完整 `check-offline`；通过事实必须同时核对真实
+exit0、status=passed/reason=verified、applicability=same。

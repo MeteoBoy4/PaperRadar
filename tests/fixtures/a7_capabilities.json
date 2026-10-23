@@ -1,0 +1,148 @@
+{
+  "frozen_input": {
+    "cases": [
+      "tests/test_a7_registration.py",
+      "tests/test_a7_value_context.py"
+    ],
+    "materials": [
+      "tests/a7_registration_support.py",
+      "tests/a7_value_support.py"
+    ]
+  },
+  "request_idempotency": {
+    "cases": [
+      "tests/test_a7_registration.py",
+      "tests/test_a7_registration_process.py"
+    ],
+    "materials": [
+      "tests/a7_registration_worker.py"
+    ]
+  },
+  "budget_scope": {
+    "cases": [
+      "tests/test_a7_registration.py",
+      "tests/test_a7_attempt_inputs.py",
+      "tests/test_a7_retry.py"
+    ],
+    "materials": [
+      "src/paper_radar/screening_tasks/rules.py"
+    ]
+  },
+  "atomic_claim": {
+    "cases": [
+      "tests/test_a7_attempts.py",
+      "tests/test_a7_attempts_process.py"
+    ],
+    "materials": [
+      "tests/a7_attempts_worker.py"
+    ]
+  },
+  "lease": {
+    "cases": [
+      "tests/test_a7_attempts.py",
+      "tests/test_a7_attempts_process.py"
+    ],
+    "materials": [
+      "src/paper_radar/screening_tasks/execution.py"
+    ]
+  },
+  "bounded_attempts": {
+    "cases": [
+      "tests/test_a7_attempts.py",
+      "tests/test_a7_recovery_integrity.py"
+    ],
+    "materials": [
+      "src/paper_radar/screening_tasks/attempt_rules.py"
+    ]
+  },
+  "authoritative_acceptance": {
+    "cases": [
+      "tests/test_screening_strict_json.py",
+      "tests/test_a7_boundary_success.py",
+      "tests/test_a7_value_success.py"
+    ],
+    "materials": [
+      "src/paper_radar/screening/validation.py"
+    ]
+  },
+  "derived_applicability": {
+    "cases": [
+      "tests/test_a7_success_applicability.py",
+      "tests/test_a7_value_context.py"
+    ],
+    "materials": [
+      "src/paper_radar/screening_tasks/query.py"
+    ]
+  },
+  "explicit_retry": {
+    "cases": [
+      "tests/test_a7_retry.py",
+      "tests/test_a7_retry_process.py"
+    ],
+    "materials": [
+      "tests/a7_retry_worker.py"
+    ]
+  },
+  "shared_query": {
+    "cases": [
+      "tests/test_a7_task_query.py"
+    ],
+    "materials": [
+      "src/paper_radar/screening_tasks/query_models.py"
+    ]
+  },
+  "crash_recovery": {
+    "cases": [
+      "tests/test_a7_registration_process.py",
+      "tests/test_a7_attempts_process.py",
+      "tests/test_a7_success_process.py",
+      "tests/test_a7_retry_process.py"
+    ],
+    "materials": [
+      "tests/a7_success_worker.py"
+    ]
+  },
+  "migration": {
+    "cases": [
+      "tests/test_a7_registration_migrations.py",
+      "tests/test_a7_attempt_migrations.py",
+      "tests/test_a7_success_migrations.py",
+      "tests/test_a7_retry_migrations.py"
+    ],
+    "materials": [
+      "src/paper_radar/storage/migrations/versions/a704_screening_retry.py"
+    ]
+  },
+  "isolated_restore": {
+    "cases": [
+      "tests/test_a7_complete_recovery.py",
+      "tests/test_a7_registration_backup.py",
+      "tests/test_a7_value_backup.py",
+      "tests/test_a7_retry_backup.py"
+    ],
+    "materials": [
+      "tests/a7_recovery_support.py"
+    ]
+  },
+  "semantic_integrity": {
+    "cases": [
+      "tests/test_a7_recovery_integrity.py",
+      "tests/test_a7_success_integrity.py",
+      "tests/test_a7_value_integrity.py",
+      "tests/test_a7_retry_integrity.py"
+    ],
+    "materials": [
+      "src/paper_radar/screening_tasks/integrity.py"
+    ]
+  },
+  "privacy": {
+    "cases": [
+      "tests/test_a7_registration_failures.py",
+      "tests/test_a7_task_query.py",
+      "tests/test_a7_success_integrity.py"
+    ],
+    "materials": [
+      "src/paper_radar/screening_tasks/errors.py"
+    ]
+  }
+}

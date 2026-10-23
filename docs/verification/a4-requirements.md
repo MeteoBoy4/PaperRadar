@@ -161,7 +161,7 @@
 | --- | --- |
 | A1/四冻结契约、A2/adapter、A3 既有算法不重做 | #38–45：只新增必要公开接缝、追加 migration、兼容绑定；旧 migration/冻结字节保留 |
 | RPC/ACK/agent_settled、provider/model/参数/模型隔离/输出 | 后续阶段 A；#45 rpc_verified 恒 false |
-| 论文事实、指纹执行、task/attempt/lease、两次预算/配额、eligibility/visibility/调度 | 后续任务；安装保护不替代业务租约 |
+| 论文事实、指纹执行、task/attempt/lease、两次预算/配额、eligibility/visibility/调度 | 不在 A4 范围；后续 A6/A7 独立覆盖本地论文事实及 boundary/value 任务，配额/完整资格/可见性/调度仍未覆盖；安装保护不替代业务租约 |
 | 用户 Profile/模型凭据、校准等级/evaluation/enable | 后续任务；D5 不自动推断或授权 |
 | Read 权威输出、Docling/正文/参考文献/报告/trace | 后续任务；A4 不安装或调用 |
 | 四刊 registry/来源审计、Feed/PDF/模型/NAS、完整 doctor/日志 | 后续任务；离线 A4 不授予阶段 A/B 或自动精读资格 |

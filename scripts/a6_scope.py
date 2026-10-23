@@ -283,7 +283,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_entry.py",
-        "d455379e952b6eb8f64243e8c58012298b946a5d9f08e1408c24fcc46bcbc130",
+        "71c45514678c091bee8e04a642f98e5853e8f0fb816f07fe58c4a636da2ba04a",
     ),
     (
         "tests/test_a6_formats.py",
@@ -295,7 +295,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_status.py",
-        "3e1d1b85eb6073c0d1ce51e8cfb163d58942e3a00707ad2b98b627135ca06089",
+        "0791501dcb92cd24d39f73706d0c53cd62b668485aa2a342d2ce9c39a1ff621b",
     ),
     (
         "tests/test_a6_test_receipt.py",
@@ -309,23 +309,23 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "2eb2aeec023f8d5b5c13dbe85ba69d6a1c04955e37f62c3a90c15a4724801448",
+        "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
     ),
     (
         "scripts/a2_full_scope.py",
-        "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
+        "9133776e4e9b5eec0859a1e51f48126f184606af9012c0f410bb035d798b2d40",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "9a5c2eda301e3c9975aac7ab0c07f9884b99c5eea2f45250a4dc7145340b9c2e",
+        "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
     ),
     (
         "scripts/a3_scope.py",
-        "02bb65d6482dadb59182fe9d6fd3c64e4e513d1ddbc503bc3cf416d8ddfaffc8",
+        "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
     ),
     (
         "scripts/a5_scope.py",
-        "38c55bc6f98097a0f709049f90c23bc229e028d176b0727341078f29b0cd9926",
+        "523fe7e89aa3ccbfecede8bd22725f25b69d859dc9f69e7ba7aeec1ea4c7cf07",
     ),
     (
         "scripts/a6_acceptance.py",
@@ -333,7 +333,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/check-offline",
-        "24db737f730e4ca445e53ca66a547091ee6bb1a865ced53440f245e15b3bfc6a",
+        "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
     ),
     (
         "scripts/verification_checks.py",
@@ -353,7 +353,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/verification_status.py",
-        "097fb2c4ae1f4aba366def88afbcbfe0dd6ed4449beb0c431c89e06d62d15fdc",
+        "31258c53ea1532655a1b757fd5f050c839e389c8a330fcf4d35692f2b5d144b7",
     ),
     (
         "src/paper_radar/backup/manifest.py",

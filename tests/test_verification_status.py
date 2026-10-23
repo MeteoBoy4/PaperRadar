@@ -18,7 +18,7 @@ from scripts.offline_evidence import file_sha256
 from scripts.verification_identity import capture_identity
 from scripts.verification_run import AcceptanceGroup, VerificationRun, run_verification
 from tests.a2_full_support import ROOT, fake_checks, repository_copy
-from tests.a6_acceptance_support import passed_receipt
+from tests.a7_acceptance_support import passed_receipt
 
 
 def test_controller_publishes_bound_terminal_after_all_groups(
@@ -39,6 +39,7 @@ def test_controller_publishes_bound_terminal_after_all_groups(
         ".a4.json",
         ".a5.json",
         ".a6.json",
+        ".a7.json",
     ]
     before = {path: path.read_bytes() for path in run.output_dir.iterdir()}
     result = subprocess.run(

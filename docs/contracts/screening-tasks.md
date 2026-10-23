@@ -6,7 +6,8 @@
 A7-04（#80）交付 boundary 权威接收、唯一制品、三值适用性和成功恢复闭包。
 A7-05（#81）在同一接收链扩展 value 与历史同源上下文重建。
 A7-06（#82）交付显式 retry、版本化共享查询和父链恢复闭包；
-完整组合验收仍待 #83–#84。本文不是 A7 passed 证据。
+A7-07（#83）交付完整历史隔离恢复；A7-08（#84）注册独立必需 A7 组及可信终态。
+本文规定验收范围，具体通过事实以同次原始证据、真实入口退出码和状态查询为准。
 来源为 [#76 正文及全部评论](https://github.com/MeteoBoy4/PaperRadar/issues/76)，
 [用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)
 优先；逐项对照与绑定台账见 [A7 requirements](../verification/a7-requirements.md)。
@@ -176,7 +177,7 @@ RPC、live、完整阶段 A 与原题名语言生产来源持续未验收。
 ## 8. A7-02 公共登记 API（已交付）
 
 `paper_radar.screening_tasks.ScreeningTasks(database, data_root=None, *, clock=None)` 是唯一任务服务。
-登记与输入回放不使用 `data_root`，不读来源文件或配置目录；boundary 成功的发布和显式读取使用该根，见 §10。
+登记与输入回放不使用 `data_root`，不读来源文件或配置目录；boundary/value 成功的发布和显式读取使用该根，见 §10。
 登记只接收 `register(mapping)`，请求 Pydantic 模型属于内部实现，不是第二个公共校验入口。
 没有默认执行者；A7-02 登记切片只创建第 0 代，不占 attempt。A7-03 的时间相关方法
 要求注入时钟；纯登记、回执、回放与 `validate_all()` 不依赖时钟。
@@ -185,7 +186,7 @@ RPC、live、完整阶段 A 与原题名语言生产来源持续未验收。
 | --- | --- |
 | `register(request)` | 追加或精确重放 `RequestReceipt`；只写登记事实 |
 | `get_receipt(receipt_id)` | 只读返回登记时回执，不重新映射当前论文 |
-| `receipts(paper_id)` | 按回执 ID 排序的安全请求历史，不是后续资格/失败查询 |
+| `receipts(paper_id)` | 按回执 ID 排序的安全请求历史；完整任务历史与当前失败由 §11 的 query 提供 |
 | `load_input(receipt_id)` | 显式内部消费：从预算基线的历史 snapshot 严格回放 StageInput；载荷、snapshot、语言事实隐藏 repr |
 | `validate_all()` | 只读核验登记关系、原始字节/指纹/投影、历史论文依据及请求身份；不升级、不修复、不执行 |
 
@@ -216,7 +217,7 @@ RevisionView 暴露的 event_no。真实进程 CAS 用例证明事务外预读�
 新增四表为 screening_inputs（BLOB 载荷按指纹去重）、screening_budgets（首次 snapshot、
 语言事实和论文依据）、screening_tasks（预算范围内第 0 代）、screening_requests（全库 ID、
 内容摘要和独立论文/配置依据）。这四表由历史 migration a701_screening_registration 建立；
-当前 head 为 a703_screening_success；a702 历史切片见下一节，成功接收见 §10。A5 格式、artifact kind、
+当前 head 为 a704_screening_retry；a702 历史切片见下一节，成功接收见 §10，retry 迁移见 §11。A5 格式、artifact kind、
 backup format/manifest/counts 均保持原值。新程序不接受旧 revision 的备份批次，
 须用匹配程序恢复后显式升级；普通旧库准确报 upgrade_required。
 
@@ -225,14 +226,15 @@ request_not_found、facts_changed、corrupt_reference、database_busy，各有�
 语言类型错误同时携 A5 原始 BuildReason/InputField；论文映射失败原样抛 PaperError，
 缺库/旧库保留 StorageError，均不伪装成模型失败。登记失败只会回滚登记，不占预算。
 
-当前完整性校验逐条回放冻结输入和每个请求的历史配置/修订，核对论文归属、选择身份、
+登记事实子闭包逐条回放冻结输入和每个请求的历史配置/修订，核对论文归属、选择身份、
 原始请求内容摘要、回执身份及第 0 代唯一关系。备份 hook 在 PaperFacts 后、manifest
 反查前调用，受控语义损坏为 registration_invalid。跨进程恢复仅需副本和已登记材料，
-不访问原数据/配置目录。后续表的校验必须随其所属票继续补入此同一闭包。
+不访问原数据/配置目录。§9–12 的尝试、成功、retry 和恢复校验已纳入此同一闭包。
 
 任务状态词表预先固定为 ready、running、lease_expired、retryable、failed、succeeded，
 分别表示待领取、已领取未到期、到期未结算、失败但尚有预算、失败终态、成功；A7-02
-只登记 ready；A7-03 实现前五项，succeeded 由 boundary 接收切片交付。它们不构成 Paper 主状态或完整 eligibility。
+当时只登记 ready；A7-03 实现前五项，A7-04/05 已交付两阶段 succeeded。
+当前六态均为任务派生状态，不构成 Paper 主状态或完整 eligibility。
 
 ## 9. A7-03 领取、租约与失败 API（已交付）
 
@@ -247,7 +249,7 @@ request_not_found、facts_changed、corrupt_reference、database_busy，各有�
 | `fail(claim, report)` | 原子追加封闭失败结算，返回安全 FailureReceipt；同凭据同内容精确重放返回原回执，内容不同拒绝 |
 | `reclaim(receipt_id)` | 显式结算已到期 attempt 为 outcome_unknown；不到期不结算、不退预算 |
 | `status(receipt_id)` | 只读推导 TaskStatus，包括 used_attempts/remaining_attempts、状态与 last_failure；不回收、不创建事实，不是 A7-06 版本化查询序列化 |
-| `run_once(receipt_id, executor)` | 先持久化领取，再向可替换 test 执行边界至多调用一次；现可接收失败报告或 boundary 原始成功候选 |
+| `run_once(receipt_id, executor)` | 先持久化领取，再向可替换 test 执行边界至多调用一次；接收失败报告或 boundary/value 原始成功候选 |
 
 领取先用请求自身 snapshot 映射当前 Paper，只比较阶段指纹；历史 version/revision 与
 当前不同本身不阻止领取。写事务使用同连接复核本次预读的 version/revision/selection，
@@ -413,3 +415,30 @@ scheduled/manual 请求跟随唯一后继；到期 attempt 回收为未知，剩
 缺口、前次未结算、租期错属和成功/失败双终局；外层重算哈希仍为 registration_invalid，
 不改批次、不发布目标。attempt_no=3 与重复序号分别由既有 CHECK/主键拒绝，测试不
 关闭约束制造伪合法结构。完整未引用 model_success_response 仍允许。
+
+
+## 13. A7-08 独立验收与可信终态（已交付）
+
+标准 `check-offline` 在一次固定六检查后发布必需 `.a7.json`，格式 1，
+parent_issue=76、issue=84。直接前置精确为同次 A1、完整 A2、A3、A5、A6；
+A4 继续为整体必需组。结论独立核对各前置的范围、格式、issue、严格 verified 状态、
+同次身份及 evidence/receipt/前置文件的实际字节链接；只看登记顺序或历史 passed 不足。
+
+结论固定实际 migration head `a704_screening_retry`，从生产读取任务、原因目录、
+共享查询、boundary/value 输入和 backup 的格式 1；TaskQueryResult 的真实格式默认值
+同样参与核验。固定范围包括 #77 的权威 validation.py 与 93 例严格 JSON、新增任务
+代码/fixtures/测试及故障/隔离读者，不将实测数回填为预期。A7 的逐项能力和材料映射见
+[A7 requirements](../verification/a7-requirements.md#a7-08--84-独立验收与可信终态)。
+`task_query_result`、`task_reason_catalog` 不新增到四份 Frozen Contract；A7 scope 不自绑。
+
+真实 pytest 插件记录固定模块的收集、通过、失败、跳过、取消选择和未完成计数。
+缺回执、少执行、skip、deselect、collect-only、非法整数或错误回执均不能通过。
+源码/lockfile/代码/工作树漂移、缺前置、前置失败、组失败及中断也不能通过。
+控制方最后发布绑定全部组的 terminal；缺失或篡改终态不能证明成功。当前正常运行
+九份主要文件加 pytest/terminal 共十一份 JSON。实际入口 exit0 后，状态查询还须显示
+passed/verified 且 applicability=same；它不写回历史或补造新证据。
+
+`rpc_verified`、`live_verified`、`stage_a_verified` 恒 false。not_assessed 明列
+RPC/Pi、真实调用用量/成本、原题名语言生产来源、metadata_ready/完整 eligibility、
+每日配额、两阶段编排、建议/决定、校准可见性、reuse/extraction/Read 任务、merge 预算、
+CLI、NAS、完整阶段 A 与 live。本验收不授予 test 筛选制品生产消费或校准资格。

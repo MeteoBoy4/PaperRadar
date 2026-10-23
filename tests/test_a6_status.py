@@ -10,7 +10,7 @@ from scripts.offline_evidence import file_sha256
 from scripts.verification_run import VerificationRun, run_verification
 from scripts.verification_status import query_status
 from tests.a2_full_support import fake_checks, repository_copy
-from tests.a6_acceptance_support import passed_receipt
+from tests.a7_acceptance_support import passed_receipt
 
 
 def test_status_recognizes_a6_without_changing_historical_formats() -> None:
@@ -65,9 +65,9 @@ def test_status_requires_same_a6_bytes_and_terminal(
         value = json.loads(a6_path.read_bytes())
         value["format_version"] = 99 if case == "unknown_format" else True
         a6_path.write_text(json.dumps(value))
-        terminal["groups"][-1].update(
-            sha256=file_sha256(a6_path), format_version=value["format_version"]
-        )
+        next(
+            group for group in terminal["groups"] if group["suffix"] == ".a6.json"
+        ).update(sha256=file_sha256(a6_path), format_version=value["format_version"])
         path.write_text(json.dumps(terminal))
         expected = "unsupported_format"
     elif case == "missing_terminal":
