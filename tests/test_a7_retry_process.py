@@ -2,27 +2,41 @@
 
 import json
 import os
+import subprocess
 import sys
-from datetime import timedelta
+from contextlib import AbstractContextManager
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
 
-from paper_radar.screening_tasks import FailureKind, FailureReport, ScreeningTasks
+from paper_radar.screening_tasks import (
+    FailureKind,
+    FailureReport,
+    RequestReceipt,
+    ScreeningTasks,
+)
 from tests.a3_process_support import paused_subprocess
-from tests.a7_registration_support import archive, request_for
+from tests.a7_registration_support import Archive, archive, request_for
 from tests.a7_retry_support import exhaust, retry_for
 from tests.test_a7_attempts_process import NOW, result_of, save_claim
 from tests.test_a7_success_process import paused as paused_success
 
 
-def save_request(path, request):
+def save_request(path: Path, request: dict[str, object]) -> Path:
     path.write_text(json.dumps(request), encoding="utf-8")
     path.chmod(0o600)
     return path
 
 
-def paused(data, receipt, instant, request_path, phase="begin", operation="retry"):
+def paused(
+    data: Archive,
+    receipt: RequestReceipt,
+    instant: datetime,
+    request_path: Path,
+    phase: str = "begin",
+    operation: str = "retry",
+) -> AbstractContextManager[tuple[subprocess.Popen[str], int]]:
     return paused_subprocess(
         [
             sys.executable,
@@ -171,9 +185,38 @@ def test_retry_and_reclaim_or_success_have_one_consistent_terminal_outcome(
         assert retry_result["generation"] == 1
         assert len(view.budgets[0].tasks) == 2
         assert view.budgets[0].tasks[0].state == "failed"
-        assert view.budgets[0].tasks[0].attempts[-1].failure.kind == "outcome_unknown"
+        failure = view.budgets[0].tasks[0].attempts[-1].failure
+        assert failure is not None and failure.kind == "outcome_unknown"
         if operation == "success":
             assert other_result["reason"] == "invalid_credential"
         else:
             assert other_result["state"] == "failed"
+    service.validate_all()
+
+
+def test_retry_transaction_rejects_facts_changed_after_mapping(tmp_path: Path) -> None:
+    from paper_radar.papers import PaperFacts
+
+    data = archive(tmp_path)
+    service = ScreeningTasks(data.database, data.data_root, clock=lambda: NOW)
+    initial = service.register(request_for(data))
+    exhaust(service, initial)
+    request_path = save_request(tmp_path / "request.json", retry_for(data, initial))
+    with paused(data, initial, NOW, request_path) as (process, release):
+        corrected = PaperFacts(data.database, data.data_root).correct(
+            {
+                "version_id": data.version_id,
+                "request_id": "concurrent-change",
+                "actor": "local",
+                "reason": "并发更正",
+                "fields": {
+                    "title": {"value": "Changed after mapping", "locator": "title"}
+                },
+            }
+        )
+        assert corrected.status == "retained"
+        os.write(release, b"G")
+        result = result_of(process)
+    assert result["reason"] == "facts_changed"
+    assert service.receipts(data.paper_id) == (initial,)
     service.validate_all()

@@ -30,7 +30,9 @@ NOW = datetime(2026, 1, 1, tzinfo=UTC)
 RAW = b'{"boundary":"in_scope","reason_zh":"Atmospheric prediction is studied."}'
 
 
-def previous_success_copy(source: Path, target: Path):
+def previous_success_copy(
+    source: Path, target: Path
+) -> tuple[dict[str, list[str]], dict[str, list[tuple[object, ...]]]]:
     config = Config()
     config.set_main_option(
         "script_location", str(Path(database_module.__file__).parent / "migrations")
@@ -149,7 +151,7 @@ def test_nonempty_success_cycle_upgrade_is_atomic_with_foreign_keys_enabled(
             } == expected
     checked = []
 
-    def observe(connection, cursor, statement, parameters, context, executemany):
+    def observe(connection, cursor, statement, parameters, context, executemany):  # type: ignore[no-untyped-def]
         if statement.startswith(
             (
                 "DROP TABLE screening_",

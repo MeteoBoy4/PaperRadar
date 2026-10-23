@@ -5,7 +5,12 @@ from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from paper_radar.screening_tasks import FailureKind, FailureReport, ScreeningTasks
+from paper_radar.screening_tasks import (
+    FailureKind,
+    FailureReport,
+    ScreeningTasks,
+    TaskQueryResult,
+)
 from tests.a7_registration_support import archive, request_for
 
 NOW = datetime(2026, 1, 1, tzinfo=UTC)
@@ -18,7 +23,7 @@ def test_query_is_safe_readonly_history_and_current_failure_set(tmp_path: Path) 
     first = service.register(request_for(data))
     service.fail(service.claim(first.receipt_id), FailureReport(FailureKind.TIMEOUT))
 
-    def query():
+    def query() -> TaskQueryResult:
         return service.query(
             paper_id=data.paper_id, stage="boundary", snapshot_id=data.snapshot_id
         )
@@ -52,7 +57,8 @@ def test_query_is_safe_readonly_history_and_current_failure_set(tmp_path: Path) 
     updated = query()
     assert updated.current_failures == ()
     assert updated.budgets[0].latest_generation == 1
-    assert updated.budgets[0].tasks[0].attempts[-1].failure.kind == "outcome_unknown"
+    failure = updated.budgets[0].tasks[0].attempts[-1].failure
+    assert failure is not None and failure.kind == "outcome_unknown"
     assert updated.budgets[0].tasks[1].task_id == successor.task_id
     serialized = json.dumps(asdict(updated), default=str)
     for forbidden in (
@@ -91,7 +97,7 @@ def test_query_preserves_safe_a1_failure_paths_and_explicit_shape(
         )
     statements = []
 
-    def observe(connection, cursor, statement, parameters, context, executemany):
+    def observe(connection, cursor, statement, parameters, context, executemany):  # type: ignore[no-untyped-def]
         statements.append(statement.split()[0].upper())
 
     event.listen(Engine, "before_cursor_execute", observe)
@@ -105,7 +111,9 @@ def test_query_preserves_safe_a1_failure_paths_and_explicit_shape(
         statements
     )
     assert len(result.current_failures) == 1
-    issues = result.current_failures[0].attempts[-1].failure.issues
+    failure = result.current_failures[0].attempts[-1].failure
+    assert failure is not None
+    issues = failure.issues
     assert any(
         issue.category == "invalid_type" and issue.location == "$.reason_zh"
         for issue in issues
@@ -141,7 +149,7 @@ def test_query_invalid_stage_is_controlled_even_for_unhashable_input(
     with pytest.raises(TaskError) as error:
         ScreeningTasks(data.database, clock=lambda: NOW).query(
             paper_id=data.paper_id,
-            stage=[],
+            stage=[],  # type: ignore[arg-type]
             snapshot_id=data.snapshot_id,
         )
     assert error.value.reason == "invalid_request"

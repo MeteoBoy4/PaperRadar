@@ -304,43 +304,6 @@ def test_retry_rejects_changed_current_input_and_wrong_parent(tmp_path: Path) ->
     )
 
 
-def test_retry_transaction_rejects_facts_changed_after_mapping(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from paper_radar.papers import PaperFacts
-    from tests.a7_retry_support import exhaust, retry_for
-
-    data = archive(tmp_path)
-    service = ScreeningTasks(data.database, data.data_root, clock=lambda: NOW)
-    initial = service.register(request_for(data))
-    exhaust(service, initial)
-    original_mapping = PaperFacts.map_screening_inputs
-
-    def changing_mapping(self, **kwargs):
-        mapped = original_mapping(self, **kwargs)
-        corrected = PaperFacts(data.database, data.data_root).correct(
-            {
-                "version_id": data.version_id,
-                "request_id": "concurrent-change",
-                "actor": "local",
-                "reason": "并发更正",
-                "fields": {
-                    "title": {"value": "Changed after mapping", "locator": "title"}
-                },
-            }
-        )
-        assert corrected.status == "retained"
-        return mapped
-
-    with monkeypatch.context() as patch:
-        patch.setattr(PaperFacts, "map_screening_inputs", changing_mapping)
-        with pytest.raises(TaskError) as error:
-            service.retry(retry_for(data, initial))
-    assert error.value.reason == "facts_changed"
-    assert service.receipts(data.paper_id) == (initial,)
-    service.validate_all()
-
-
 def test_retry_parent_uniqueness_is_enforced_by_sqlite(tmp_path: Path) -> None:
     import sqlite3
     from contextlib import closing

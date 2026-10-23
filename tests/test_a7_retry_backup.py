@@ -42,12 +42,15 @@ def test_moved_restore_keeps_retry_history_success_and_unsettled_budget(
         request_for(data, stage="value", original_title_is_zh=False)
     )
     exhaust(service, initial)
-    request = retry_for(data, initial)
+    request = retry_for(
+        data, initial, reason="PRIVATE_RETRY_REASON", actor="PRIVATE_RETRY_ACTOR"
+    )
     successor = service.retry(request)
     service.claim(successor.receipt_id)
     second = PaperFacts(data.database, data.data_root).submit(
         observation(doi="10.1234/failed", fields=screening_fields())
     )
+    assert second.paper_id is not None
     failed = service.register(request_for(data, paper_id=second.paper_id))
     exhaust(service, failed)
     before = service.query(
@@ -134,9 +137,8 @@ print(json.dumps(asdict(view),default=str))
         == before.budgets[0].latest_generation
     )
     assert recovered["budgets"][0]["tasks"][1]["used_attempts"] == 1
-    assert (
-        request["reason"] not in result.stdout and request["actor"] not in result.stdout
-    )
+    assert "PRIVATE_RETRY_REASON" not in result.stdout
+    assert "PRIVATE_RETRY_ACTOR" not in result.stdout
 
 
 @pytest.mark.parametrize(
@@ -199,7 +201,7 @@ def test_retry_semantic_damage_rejected_by_validation_backup_and_restore(
         verify_backup(batch.batch_dir)
     assert error.value.reason == "registration_invalid"
     target = tmp_path / "rejected"
-    with pytest.raises(RestoreError) as error:
+    with pytest.raises(RestoreError) as rejected:
         restore_backup(batch.batch_dir, target)
-    assert error.value.reason == "registration_invalid"
+    assert rejected.value.reason == "registration_invalid"
     assert tree(batch.batch_dir) == before and not target.exists()
