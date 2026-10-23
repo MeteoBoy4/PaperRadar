@@ -44,7 +44,8 @@ def validate_successes(service: SuccessService, connection: Connection) -> None:
         )
         frozen = load_frozen(service.attempts.database, connection, budget)
         require(
-            budget["stage"] == "boundary" and model_matches(candidate, frozen.snapshot)
+            budget["stage"] in {"boundary", "value"}
+            and model_matches(candidate, frozen.snapshot)
         )
         task = (
             connection.execute(select(tasks).where(tasks.c.task_id == row["task_id"]))
@@ -114,6 +115,7 @@ def validate_successes(service: SuccessService, connection: Connection) -> None:
                 .one()
             )
             frozen = load_frozen(service.attempts.database, connection, budget)
+            require(decode_issues(row["issues_json"], stage=budget["stage"]) == issues)
             require(
                 model_matches(candidate, frozen.snapshot)
                 == (row["kind"] == "output_invalid")

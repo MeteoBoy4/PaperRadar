@@ -7,12 +7,13 @@ from uuid import uuid4
 
 from sqlalchemy import Connection, select
 
+from paper_radar.config import ConfigError
 from paper_radar.papers import PaperFacts
 from paper_radar.screening import (
     BoundaryOutput,
     OutputValidationError,
     OutputValidationIssue,
-    validate_output,
+    ValuePredictionOutput,
 )
 from paper_radar.screening_tasks.attempt_models import (
     Claim,
@@ -44,8 +45,10 @@ from paper_radar.screening_tasks.success_rules import (
     require_success_id,
     stored_candidate,
     submission_digest,
+    validate_candidate_output,
 )
 from paper_radar.screening_tasks.tables import budgets, failures, successes
+from paper_radar.stage_inputs import StageInputError
 from paper_radar.storage.artifacts import ArtifactStore
 
 
@@ -106,7 +109,7 @@ class SuccessService:
             if replayed is not None:
                 return replayed
             request = receipt_row(connection, row["receipt_id"])
-            if request is None or request["stage"] != "boundary":
+            if request is None or request["stage"] not in {"boundary", "value"}:
                 raise TaskError(TaskReason.INVALID_CANDIDATE)
             budget = dict(
                 connection.execute(
@@ -115,21 +118,22 @@ class SuccessService:
                 .mappings()
                 .one()
             )
-            frozen = load_frozen(self.attempts.database, connection, budget)
+            try:
+                frozen = load_frozen(self.attempts.database, connection, budget)
+            except (ConfigError, StageInputError):
+                raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
         kind: FailureKind | None = None
         issues: tuple[OutputValidationIssue, ...] = ()
-        output: BoundaryOutput | None = None
+        output: BoundaryOutput | ValuePredictionOutput | None = None
         if not model_matches(candidate, frozen.snapshot):
             kind = FailureKind.MODEL_MISMATCH
         else:
             try:
-                validated = validate_output("boundary", candidate.raw_response)
-                assert isinstance(validated, BoundaryOutput)
-                output = validated
+                output = validate_candidate_output(frozen, candidate.raw_response)
             except OutputValidationError as error:
                 kind, issues = (
                     FailureKind.OUTPUT_INVALID,
-                    decode_issues(encode_issues(error.issues)),
+                    decode_issues(encode_issues(error.issues), stage=request["stage"]),
                 )
         # 发布不能位于业务写事务内。竞争失败时仅可能留下完整的未引用 A3 制品。
         artifact_id = (
@@ -226,20 +230,36 @@ class SuccessService:
     def load(self, success_id: str) -> SuccessContent:
         try:
             return self._load_content(success_id)
-        except (ValueError, TypeError, KeyError, OverflowError):
+        except (
+            ConfigError,
+            StageInputError,
+            ValueError,
+            TypeError,
+            KeyError,
+            OverflowError,
+        ):
             raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
 
     def _load_content(self, success_id: str) -> SuccessContent:
         with self.attempts.connection(write=False) as connection:
             row = self._row(connection, success_id)
+            budget = dict(
+                connection.execute(
+                    select(budgets).where(budgets.c.budget_id == row["budget_id"])
+                )
+                .mappings()
+                .one()
+            )
+            frozen = load_frozen(self.attempts.database, connection, budget)
         store = self.store()
         if store.get_artifact(row["artifact_id"]).kind != "model_success_response":
             raise TaskError(TaskReason.CORRUPT_REFERENCE)
         raw = store.read_artifact(row["artifact_id"])["payload"]
-        stored_candidate(raw, row["audit_json"])
+        candidate = stored_candidate(raw, row["audit_json"])
+        if not model_matches(candidate, frozen.snapshot):
+            raise TaskError(TaskReason.CORRUPT_REFERENCE)
         try:
-            output = validate_output("boundary", raw)
-            assert isinstance(output, BoundaryOutput)
+            output = validate_candidate_output(frozen, raw)
             if (
                 canonical(output.model_dump(mode="json")).decode("utf-8")
                 != row["structured_json"]
@@ -255,13 +275,13 @@ class SuccessService:
     def query(
         self, *, paper_id: str, stage: str, snapshot_id: str
     ) -> tuple[SuccessView, ...]:
-        if type(stage) is not str or stage != "boundary":
+        if type(stage) is not str or stage not in {"boundary", "value"}:
             raise TaskError(TaskReason.INVALID_REQUEST)
         # PaperFacts 持有自己的只读一致视图;允许相对任务读取的并发提交滞后。
         mapping = PaperFacts(self.attempts.database).map_screening_inputs(
             paper_id=paper_id, snapshot_id=snapshot_id
         )
-        mapped = mapping.boundary
+        mapped = mapping.boundary if stage == "boundary" else mapping.value
         with self.attempts.connection(write=False) as connection:
             ids = (
                 connection.execute(

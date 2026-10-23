@@ -3,7 +3,8 @@
 状态：#77（A7-01）交付裁决文档与严格 JSON；#78（A7-02）已交付登记、冻结回放、
 a701 与备份闭包；#79（A7-03）交付 a702 原子领取、有限预算、租约、失败结算、
 显式回收与 test 一次尝试驱动；#80（A7-04）交付 boundary 权威接收、唯一制品、
-三值适用性及成功恢复闭包。#81–#84 的 value/retry/版本化共享查询/完整恢复及
+三值适用性及成功恢复闭包；#81（A7-05）交付 value 同源权威接收与恢复。
+#82–#84 的 retry/版本化共享查询/完整组合恢复及
 独立 A7 验收尚未交付。当前 `check-offline` 通过只证明已有组及本次全套检查，
 不表示尚未注册的 A7 passed。运行回执、commit 和 run_id 存在工作树外，不改写历史证据。
 
@@ -35,14 +36,14 @@ US 表示 #76 User Stories，ID 表示 Implementation Decisions；此表中的�
 
 | 正文 | 补充及裁决 | 最终规则与文档落点 | 验收责任/当前状态 |
 | --- | --- | --- | --- |
-| US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝已交付；#81 接收/回放，#82 retry 待。真实来源列 title_language_source 未验收 |
-| US29/31、ID15–16；测试“当前适用性”“缓存重新使用” | D2(a)、S2、评论二五 | Contract §5、ADR-0031、主方案 §8.5：同明确 snapshot 当前指纹匹配即适用；版本不同但同指纹仍适用；去掉绑定表/API/写入、提交事务论文复核 | #80 boundary 三值派生已交付，#81 value 待；原 US29 改为输入变化只作历史，US31 改为只读重建匹配，删除缓存重新绑定行 |
-| 测试“A6 语义联动” | D2(a)、B2/B6、评论二五 | 更高 parser 缺摘要→无当前成功；其他来源补回相同文本→原制品再适用，保留 A6 仲裁 | #80 boundary 两例已交付；#81 value 待 |
+| US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝、#81 接收/回放已交付，#82 retry 待。真实来源列 title_language_source 未验收 |
+| US29/31、ID15–16；测试“当前适用性”“缓存重新使用” | D2(a)、S2、评论二五 | Contract §5、ADR-0031、主方案 §8.5：同明确 snapshot 当前指纹匹配即适用；版本不同但同指纹仍适用；去掉绑定表/API/写入、提交事务论文复核 | #80/#81 boundary/value 三值派生已交付；原 US29 改为输入变化只作历史，US31 改为只读重建匹配，删除缓存重新绑定行 |
+| 测试“A6 语义联动” | D2(a)、B2/B6、评论二五 | 更高 parser 缺摘要→无当前成功；其他来源补回相同文本→原制品再适用，保留 A6 仲裁 | #80 boundary 两例已交付；#81 value 缺摘要保留历史与只读重建已交付 |
 | US24/27、ID12–13 | D3(a)、评论二二、#77 评论 | 原权威内部严格解析；str/bytes/bytearray 任意层重复键/NaN/Infinity 根 `$` invalid_json，先于字段/业务错误；Mapping 路径不变 | #77 已实现；test_screening_strict_json 93 例，新旧相关 332 例；原固定模块/Schema/分母不变 |
 | US23、US33 CLI 部分、US39、ID20–21 CLI 部分 | D4、S2、评论二五 | Contract §6：本批仅服务 retry 与共享查询；screening CLI、paper trace 组合、help/退出码移至真实任务生产票 | #82 服务测试待；#84 不得要求 CLI，现有产品 CLI Contract 保持 |
 | US1–7/19–20/30、ID3–7/17–18 | T1/T2/T7、B1/B3/B9/B11、评论二四 | Contract §1–3：预算/代际/请求/attempt 四层；完整 scheduled 依据、manual 冲突；A→B→A、跨日/无关配置不刷新 | #78（含真实进程登记竞争）已交付；第 0 代可能由 manual 创建；#79 消费同预算范围 |
 | US8–18/32、ID8–11 | T3/T4/T6、B2/B4/B5/B7、S3 | Contract §3/9：原子领取、两次预算、凭据 fencing、回收 outcome_unknown、lease_expired；第二次尝试不等于显式 retry | #79 交付真实子进程/屏障/强杀、注入 UTC 时钟及失败执行边界；成功接收仍归 #80/#81 |
-| US24–28/35、ID12–14/19 | T1、B6/B8/B9、评论三三/六 | Contract §4：原始响应+唯一权威结构；test 来源/未知审计；候选竞争、合法迟到、发布/提交/回包故障 | #80 boundary 已交付、#81 value 待；D3 已由 #77 阻止重复键入口 |
+| US24–28/35、ID12–14/19 | T1、B6/B8/B9、评论三三/六 | Contract §4：原始响应+唯一权威结构；test 来源/未知审计；候选竞争、合法迟到、发布/提交/回包故障 | #80/#81 boundary/value 已交付且共用成功事务；D3 已由 #77 阻止重复键入口 |
 | US21–22/33–34、ID7/20–22 | T5、B5/B10/B11 | Contract §6：失败终态唯一后继、库级 retry ID、同请求幂等/异请求竞争；安全查询统一格式 1 | #82 待；运行中/可继续/成功/非当前拒绝，测试固定 query shape |
 | US28/36–38、ID22–23 | B12、评论三三/四/六 | Contract §7：只读语义钩子、恢复无执行、原目录不可用非空重建；语义损坏 registration_invalid，历史回退预算限制公开 | #78 起随实际表加基础验证，#83 完整跨域恢复/损坏/继续待 |
 | US40、ID24–25 | 评论三一/七/八 | 必需 A7 组、同次前置/固定格式/源码/fixture/整数回执/真实 head/可信终态；不新增四份冻结 Contract | #84 待；A7 组注册与 status 识别同提交，不能拿历史通过代替 |
@@ -108,8 +109,8 @@ screening_tasks/task_reason_catalog/task_query_result 1、boundary/value inputs 
 
 ## 未验收范围与最终结论边界
 
-A7 完成前仍待：value 成功接收、版本化共享查询/retry、
-非空异地恢复、语义损坏、可信独立 A7 组。最终不得把 `rpc_verified`、`live_verified`、
+A7 完成前仍待：版本化共享查询/retry、
+完整组合恢复/语义损坏、可信独立 A7 组。最终不得把 `rpc_verified`、`live_verified`、
 `stage_a_verified` 置 true。未覆盖项至少保留 rpc_compatibility、pi_execution、
 real_model_usage_and_cost、title_language_source、eligibility/metadata_ready、daily_quota、
 two_stage_orchestration、suggestion_decision、calibration_visibility、reuse/extraction/read
@@ -227,3 +228,24 @@ test_a7_success_integrity、test_a7_success_backup 覆盖合法 FK 损坏拒绝�
 及原 downstream 哈希同提交重审。a701/a702 历史 migration 不改，旧固定174模块/3077
 用例分母不减。逐条旧/新身份及原因见外部 80-rebinding-ledger.json；提交、run_id、
 完整门禁和全部原 JSON 见 80-handoff.md/verification-runs，不回写历史证据。
+
+## A7-05 实际交付与本波绑定重审
+
+#81 在已有 SuccessService 扩展 value，不复制执行、预算、租约、失败或成功提交逻辑。
+接收/回读共用历史 snapshot → A5 严格 replay/投影 → value_prediction_context →
+A1 value_prediction 权威链；仅首次预算语言事实参与上下文，不改 A5 载荷或冻结输出
+Schema。成功审计、原始字节/结构/摘要、缓存、三值查询和恢复同源重验适用于两阶段。
+
+独立 test_a7_value_success/context/backup/integrity 的 40 例覆盖合法中文原题名 null、英文合法中文显示
+题名、分数/可判断性/价值类型/主题/文本/JSON 错误占 attempt、安全修正说明、两次
+预算、boundary out_of_scope 不取消 value；历史主题与模型不被当前文件替换、纯
+Read/期刊/声明版本变化保持复用、语义变更只作历史、语言冲突不能刷新缓存或预算。
+非空异地恢复在新进程禁止原目录/原批次访问，重建原 snapshot、语言、主题、响应、
+失败与未结算预算；合法 FK 且重算外层哈希后，错误 snapshot、投影、语言、结构、
+原始响应引用或模型审计均受控 registration_invalid，读写路径不修复损坏数据。
+失败路径只允许所属阶段的权威字段，新增 value 字段白名单不放宽 boundary 历史验证。
+
+无新表或 migration，head/backup 格式/A5 与四份冻结 Contract 保持。旧 A7 boundary
+测试仅因输出扩为权威联合类型增加显式缩窄断言，原用例数不变；本票新增测试独立
+模块，A7 最终固定注册归 #84。旧 scope 只读 collect 审核结果、子集、最终提交和完整
+门禁原始 JSON 记录于外部 81-handoff.md/verification-runs，不提前声明 A7 passed。

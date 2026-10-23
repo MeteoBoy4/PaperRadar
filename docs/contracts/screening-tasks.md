@@ -4,7 +4,8 @@
 冻结输入回放、请求回执、a701 持久化和备份语义闭包；A7-03（#79）增加 a702 的
 原子领取、两次预算、600 秒租约、失败结算、显式回收和 test 一次尝试驱动。
 A7-04（#80）交付 boundary 权威接收、唯一制品、三值适用性和成功恢复闭包。
-value、retry、版本化共享查询和完整组合验收仍待 #81–#84。本文不是 A7 passed 证据。
+A7-05（#81）在同一接收链扩展 value 与历史同源上下文重建。
+retry、版本化共享查询和完整组合验收仍待 #82–#84。本文不是 A7 passed 证据。
 来源为 [#76 正文及全部评论](https://github.com/MeteoBoy4/PaperRadar/issues/76)，
 [用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)
 优先；逐项对照与绑定台账见 [A7 requirements](../verification/a7-requirements.md)。
@@ -82,7 +83,7 @@ D 固定为 600 秒、不进入配置语义；时钟统一注入严格 aware UTC
 服务 busy/引用损坏/非法调用不是模型失败；已领取但未结算者依租约恢复。
 第二次尝试只消费冻结输入和脱敏失败说明，不携前次失败原文或会话。
 
-## 4. 候选接收与筛选制品（D3；boundary 已交付，value 待实现）
+## 4. 候选接收与筛选制品（D3；boundary/value 已交付）
 
 外部执行者返回完整原始字节或封闭失败。服务统一调用现有 `validate_output`，不接受
 `validated=true`、自由解析字典或第二份字段 Schema。原始 `str`/`bytes`/`bytearray`
@@ -100,6 +101,21 @@ A7 执行来源封闭为 `executor_kind=test`。未来建议/校准消费者必�
 执行者报告的 provider/model 与冻结配置矛盾即 `model_mismatch`；缺报告则记录未知。
 provider request ID 与 token 未报告为 null，报告 0 保持 0；不预建金额/成本字段。
 真实模型、settled、输出通道、Pi 供给/安装和隔离证明由后续 RPC 票承担。
+
+value 与 boundary 共用领取、预算、候选提交、发布及唯一成功事务。value 的唯一
+上下文重建顺序是加载预算首次历史 snapshot → A5 严格回放与投影核对 →
+`StageInput.value_prediction_context(snapshot, original_title_is_zh=冻结事实)` →
+A1 `validate_output("value_prediction", raw, context=...)`。提交和成功回读共用该验证
+选择；恢复仍从同一预算基线取历史 snapshot/语言，不用新请求 snapshot 或当前文件
+代替。语言不进 A5 载荷。中文原题名只允许 null 显示题名；其他原题名的非空显示题名
+须满足 A1 文本规则。分数、可判断性、价值类型、未知/重复主题、重复 JSON 键或缺
+必填字段等错误按 A1 类别和字段路径记 `output_invalid`，消费本次 attempt，失败原文
+不保留。普通回执、查询与 repr 不显示价值预测、速览、理由或显示题名。
+
+`load_success` 的 `SuccessContent.output` 为权威 `BoundaryOutput | ValuePredictionOutput`；
+显式消费方须按类型区分，不能用 stage 标签跳过重新验证。该入口重验原始字节、
+规范结构、提交摘要和冻结模型审计。`query_successes` 封闭支持两阶段，适用性均按 §5
+派生；查询仍只返回安全回执。没有隐式两阶段编排或生产默认执行者。
 
 ## 5. 当前适用性完全派生（D2）
 
@@ -259,7 +275,7 @@ version_id/revision_no/selection_id，另有隐藏 repr 的 credential、renewal
 FailureReceipt 仅有 task_id、attempt_no、kind、origin 与 settled_at，不携失败原文。
 
 
-## 10. A7-04 boundary 原始候选接收与派生查询（已交付）
+## 10. A7-04/05 原始候选接收与派生查询（已交付）
 
 公共 `SuccessCandidate(raw_response, executor_kind="test", reported_provider=None,
 reported_model=None, provider_request_id=None, input_tokens=None, output_tokens=None)`
@@ -273,10 +289,10 @@ run_once 收到非法候选协议形状时结算 protocol_error；直接非法�
 
 | 方法 | 结果与范围 |
 | --- | --- |
-| `submit(claim, candidate)` | 权威校验 boundary 原始字节；合法返回 SuccessReceipt，校验/模型失败返回 FailureReceipt |
+| `submit(claim, candidate)` | 权威校验 boundary/value 原始字节；合法返回 SuccessReceipt，校验/模型失败返回 FailureReceipt |
 | `run_once(receipt_id, executor)` | 沿用一次尝试驱动，接受 FailureReport 或 SuccessCandidate；没有生产执行者 |
-| `load_success(success_id)` | 显式内部消费 SuccessContent：原始成功字节、A1 权威 BoundaryOutput、可空审计；敏感内容隐藏 repr |
-| `query_successes(paper_id=..., stage="boundary", snapshot_id=...)` | 只读安全 SuccessView 序列，含成功回执、三值适用性及可空 PaperReason，不含判断/理由/raw |
+| `load_success(success_id)` | 显式内部消费 SuccessContent：原始成功字节、A1 权威 BoundaryOutput 或 ValuePredictionOutput、可空审计；敏感内容隐藏 repr |
+| `query_successes(paper_id=..., stage=..., snapshot_id=...)` | stage 只接受 boundary/value；只读安全 SuccessView 序列，含成功回执、三值适用性及可空 PaperReason，不含判断/理由/raw |
 
 SuccessReceipt 固定为 success_id、task_id、attempt_no、artifact_id、fingerprint、stage、
 executor_kind=test、settled_at。FailureReceipt 追加安全 issues；只持久化 A1 原 category/location，
@@ -297,7 +313,7 @@ executor_kind=test、settled_at。FailureReceipt 追加安全 issues；只持久
 query_successes 复用 PaperFacts 的独立只读一致映射视图，随后读取不可变成功事实；
 允许相对并发论文/任务提交滞后，不声称映射读与任务读取属于同一个 SQLite 快照。
 指纹相等 current，映射成功且不同 historical，映射失败 undeterminable+PaperReason。
-版本切换同文本、书目补全或 Read/期刊配置不改 boundary 指纹时仍为 current；parser
+版本切换同文本、书目补全或 Read/期刊配置不改相应阶段指纹时仍为 current；parser
 删除摘要暂不可判定，其他来源补回同文本后自然重新适用，无绑定写入。
 
 新 head a703_screening_success 从 a702 增量增加 screening_successes（每预算唯一、
