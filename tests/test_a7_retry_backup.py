@@ -60,7 +60,8 @@ def test_moved_restore_keeps_retry_history_success_and_unsettled_budget(
     moved = tmp_path / "moved"
     restored.target_dir.rename(moved)
     code = """
-import json, sys
+import json, sqlite3, sys
+from urllib.parse import unquote, urlsplit
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
@@ -70,10 +71,20 @@ blocked = tuple(Path(p).resolve() for p in sys.argv[9:])
 def audit(event, args):
     if event in {"open", "sqlite3.connect", "os.listdir", "os.scandir"}:
         if args and isinstance(args[0], (str, bytes)):
-            path = Path(args[0]).resolve()
+            raw_path = args[0].decode() if isinstance(args[0], bytes) else args[0]
+            parsed_path = (unquote(urlsplit(raw_path).path)
+                           if raw_path.startswith("file:") else raw_path)
+            path = Path(parsed_path).resolve()
             if any(path == base or base in path.parents for base in blocked):
                 raise RuntimeError("original_directory_forbidden")
 sys.addaudithook(audit)
+for base in blocked:
+    try:
+        sqlite3.connect("file:" + str(base / "probe.sqlite3") + "?mode=ro", uri=True)
+    except RuntimeError as error:
+        assert str(error) == "original_directory_forbidden"
+    else:
+        raise AssertionError("original_uri_not_blocked")
 instant = datetime.fromisoformat("2026-01-01T00:10:00+00:00")
 service = ScreeningTasks(
     Path(root)/"database.sqlite3", Path(root), clock=lambda: instant

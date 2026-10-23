@@ -71,6 +71,13 @@ class RetryService:
                 mapped.value.fingerprint,
             ):
                 raise TaskError(TaskReason.FACTS_CHANGED)
+            successor = connection.execute(
+                select(tasks.c.task_id).where(
+                    tasks.c.parent_task_id == request.parent_task_id
+                )
+            ).scalar_one_or_none()
+            if successor is not None:
+                raise TaskError(TaskReason.ALREADY_RETRIED, successor_task_id=successor)
             if (
                 connection.execute(
                     select(successes.c.success_id).where(
@@ -80,13 +87,6 @@ class RetryService:
                 is not None
             ):
                 raise TaskError(TaskReason.ALREADY_SUCCEEDED)
-            successor = connection.execute(
-                select(tasks.c.task_id).where(
-                    tasks.c.parent_task_id == request.parent_task_id
-                )
-            ).scalar_one_or_none()
-            if successor is not None:
-                raise TaskError(TaskReason.ALREADY_RETRIED, successor_task_id=successor)
             latest = connection.execute(
                 select(tasks.c.task_id)
                 .where(tasks.c.budget_id == parent["budget_id"])

@@ -342,8 +342,9 @@ paper_id、stage（boundary/value）、snapshot_id、parent_task_id、request_id
 全库 request_id 精确重放先于当前映射，返回原持久化回执；不同内容报 request_conflict，
 manual/retry 也不能共用同 ID。新请求先映射当前输入，映射失败保留原 PaperReason，
 优先于非最新、已有后继或非失败终态。映射成功后，写事务复核当前修订与目标预算的
-Paper/阶段/指纹，随后核验唯一成功、已有后继及最新代际。已有后继报 already_retried，
-安全的 TaskError.successor_task_id 给出已有任务 ID；其他新请求不得借旧代际再开预算。
+Paper/阶段/指纹，随后核验已有后继、唯一成功及最新代际。已有后继报 already_retried，
+安全的 TaskError.successor_task_id 给出已有任务 ID，后继后来成功也保留该说明；
+无后继但输入已经成功则报 already_succeeded，其他新请求不得借旧代际再开预算。
 同 ID 精确重放即使后继已再次 retry，仍返回该 ID 原回执。
 
 只有失败终态可以追加 generation+1，父任务不覆盖；每代重新有至多两次尝试。

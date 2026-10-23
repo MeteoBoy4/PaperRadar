@@ -197,18 +197,27 @@ def test_request_id_conflicts_are_global_between_manual_and_retry(
     assert service.retry(retry_for(data, initial)) == successor
 
 
-def test_success_input_rejects_retry_through_real_success_path(tmp_path: Path) -> None:
+@pytest.mark.parametrize("stage", ["boundary", "value"])
+def test_success_input_rejects_retry_through_real_success_path(
+    tmp_path: Path, stage: str
+) -> None:
     from paper_radar.screening_tasks import SuccessCandidate, SuccessReceipt
     from tests.a7_retry_support import retry_for
+    from tests.a7_value_support import value_payload
 
     data = archive(tmp_path)
     service = ScreeningTasks(data.database, data.data_root, clock=lambda: NOW)
-    initial = service.register(request_for(data))
+    extra = {"original_title_is_zh": False} if stage == "value" else {}
+    initial = service.register(request_for(data, stage=stage, **extra))
+
+    raw = (
+        value_payload(display_title_zh="区域降水诊断方法")
+        if stage == "value"
+        else b'{"boundary":"in_scope","reason_zh":"Atmospheric prediction is studied."}'
+    )
     success = service.submit(
         service.claim(initial.receipt_id),
-        SuccessCandidate(
-            b'{"boundary":"in_scope","reason_zh":"Atmospheric prediction is studied."}'
-        ),
+        SuccessCandidate(raw),
     )
     assert isinstance(success, SuccessReceipt)
     with pytest.raises(TaskError) as error:
@@ -217,11 +226,16 @@ def test_success_input_rejects_retry_through_real_success_path(tmp_path: Path) -
     assert service.status(initial.receipt_id).used_attempts == 1
     assert (
         service.register(
-            request_for(data, scheduled_day="2026-01-03")
+            request_for(data, stage=stage, scheduled_day="2026-01-03", **extra)
         ).cached_success_id
         == success.success_id
     )
     service.validate_all()
+
+    view = service.query(
+        paper_id=data.paper_id, stage=stage, snapshot_id=data.snapshot_id
+    )
+    assert view.budgets[0].tasks[0].state == "succeeded" and view.current_failures == ()
 
 
 def test_mapping_reason_precedes_old_generation_and_exact_replay_remains_original(
@@ -352,4 +366,36 @@ def test_retry_parent_uniqueness_is_enforced_by_sqlite(tmp_path: Path) -> None:
                 (str(uuid4()), initial.budget_id, initial.task_id),
             )
         connection.rollback()
+    service.validate_all()
+
+
+@pytest.mark.parametrize("stage", ["boundary", "value"])
+def test_existing_successor_id_is_returned_after_successor_succeeds(
+    tmp_path: Path, stage: str
+) -> None:
+    from paper_radar.screening_tasks import SuccessCandidate, SuccessReceipt
+    from tests.a7_retry_support import exhaust, retry_for
+    from tests.a7_value_support import value_payload
+
+    data = archive(tmp_path)
+    service = ScreeningTasks(data.database, data.data_root, clock=lambda: NOW)
+    extra = {"original_title_is_zh": False} if stage == "value" else {}
+    initial = service.register(request_for(data, stage=stage, **extra))
+    exhaust(service, initial)
+    request = retry_for(data, initial)
+    successor = service.retry(request)
+    raw = (
+        value_payload(display_title_zh="区域降水诊断方法")
+        if stage == "value"
+        else b'{"boundary":"in_scope","reason_zh":"Atmospheric prediction is studied."}'
+    )
+    accepted = service.submit(
+        service.claim(successor.receipt_id), SuccessCandidate(raw)
+    )
+    assert isinstance(accepted, SuccessReceipt)
+    with pytest.raises(TaskError) as error:
+        service.retry({**request, "request_id": "different-id"})
+    assert error.value.reason == "already_retried"
+    assert error.value.successor_task_id == successor.task_id
+    assert service.retry(request) == successor
     service.validate_all()

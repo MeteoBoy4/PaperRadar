@@ -262,7 +262,10 @@ TaskQueryResult v1 由 query 统一投影范围、最新代际、请求/attempt 
 独立 test_a7_retry、task_query、retry_process、retry_migrations、retry_backup 覆盖两阶段
 通用失败、严格上下文继承、同 ID 重放/冲突、跨来源 ID、真实双进程、提交丢回包、
 retry/回收/成功竞争、非空五表 FK 环迁移、开启外键的中断回滚和搬迁恢复/语义拒绝。
-#81 合入后交叉验证 value 成功拒 retry；最终组合恢复与固定 A7 范围由 #83/#84 完成。
+#81 合入后已以公共真实成功路径交叉验证两阶段成功拒 retry，以及已有后继后来成功
+仍返回 successor_task_id；61 项 #82 新例独立于旧固定分母。恢复新进程显式拒绝原目录、
+改名根和原批次的 SQLite file: URI，并用拒绝探针证明钩子生效。最终组合恢复与固定
+A7 范围由 #83/#84 完成。
 
 本波 head 前移 a704_screening_retry，旧 a701/a702/a703 源码保持；备份格式 1、清单、
 计数与 A5 语义不变。六旧 scope、backup revision、20 个当前 head/未来 head 探针及
