@@ -56,7 +56,8 @@
       "tests/test_a7_driver_preconditions.py"
     ],
     "materials": [
-      "src/paper_radar/screening_tasks/attempt_rules.py"
+      "src/paper_radar/screening_tasks/attempt_rules.py",
+      "src/paper_radar/screening_tasks/attempt_repository.py"
     ]
   },
   "authoritative_acceptance": {
@@ -136,7 +137,8 @@
       "tests/test_a7_retry_integrity.py"
     ],
     "materials": [
-      "src/paper_radar/screening_tasks/integrity.py"
+      "src/paper_radar/screening_tasks/integrity.py",
+      "src/paper_radar/screening_tasks/attempt_repository.py"
     ]
   },
   "privacy": {

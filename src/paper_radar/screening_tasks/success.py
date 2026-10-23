@@ -16,18 +16,18 @@ from paper_radar.screening import (
     ValuePredictionOutput,
 )
 from paper_radar.screening_tasks.attempt_models import (
+    AttemptRow,
     Claim,
     FailureKind,
     FailureReceipt,
 )
 from paper_radar.screening_tasks.attempt_repository import (
+    credential_attempt,
     failure_receipt,
-    read_attempts,
     require_attempt_time,
     require_secret,
 )
 from paper_radar.screening_tasks.attempt_rules import (
-    digest,
     read_timestamp,
     timestamp,
     utc_now,
@@ -70,13 +70,8 @@ class SuccessService:
 
     def _precheck(
         self, connection: Connection, claim: Claim, submission: str
-    ) -> tuple[dict[str, Any], SuccessReceipt | FailureReceipt | None]:
-        rows = read_attempts(connection, claim.task_id)
-        row = next(
-            (item for item in rows if item["attempt_no"] == claim.attempt_no), None
-        )
-        if row is None or row["credential_sha256"] != digest(claim.credential):
-            raise TaskError(TaskReason.INVALID_CREDENTIAL)
+    ) -> tuple[AttemptRow, SuccessReceipt | FailureReceipt | None]:
+        row, latest = credential_attempt(connection, claim)
         if row["success_id"] is not None:
             success = self._row(connection, row["success_id"])
             if success["submission_sha256"] != submission:
@@ -98,7 +93,7 @@ class SuccessService:
             if failure["submission_sha256"] == submission:
                 return row, failure_receipt(row)
             raise TaskError(TaskReason.SETTLEMENT_CONFLICT)
-        if row["attempt_no"] != rows[-1]["attempt_no"]:
+        if not latest:
             raise TaskError(TaskReason.INVALID_CREDENTIAL)
         return row, None
 

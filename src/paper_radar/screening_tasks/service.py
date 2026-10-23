@@ -124,10 +124,12 @@ class ScreeningTasks:
             raise TaskError(TaskReason.INVALID_REQUEST)
         receipt = self.get_receipt(receipt_id)
         frozen = self.load_input(receipt_id)
-        correction = self._attempts.correction(receipt)
+        # 先拒绝已有修正依据损坏;领取可能回收过期尝试,提交后需重读实际修正。
+        self._attempts.correction(receipt)
         self._success.store().prepare_publish()
         claim = self._attempts.claim(receipt, frozen)
         stage_input = frozen.stage_input
+        correction = self._attempts.correction(receipt)
         # claim 已提交;进程随后中断或执行者抛异常都不退还预算。
         origin: FailureOrigin = "executor"
         try:

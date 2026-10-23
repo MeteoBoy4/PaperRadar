@@ -1,11 +1,12 @@
 """UTC 时间、能力摘要与状态的确定性规则。"""
 
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
-from typing import Any
 
 from paper_radar.screening_tasks.attempt_models import (
     LEASE_SECONDS,
+    AttemptRow,
     Clock,
     FailureKind,
     TaskStatus,
@@ -63,7 +64,7 @@ def correction_for(kind: FailureKind | None) -> str | None:
 
 
 def derive_status(
-    task_id: str, rows: list[dict[str, Any]], now: datetime
+    task_id: str, rows: Sequence[AttemptRow], now: datetime
 ) -> TaskStatus:
     if not rows:
         return TaskStatus(task_id, "ready", 0, 2)
@@ -81,5 +82,6 @@ def derive_status(
     state: TaskState = (
         "lease_expired" if now >= read_timestamp(rows[-1]["expires_at"]) else "running"
     )
-    previous = FailureKind(rows[-2]["kind"]) if len(rows) > 1 else None
+    previous_kind = rows[-2]["kind"] if len(rows) > 1 else None
+    previous = FailureKind(previous_kind) if previous_kind is not None else None
     return TaskStatus(task_id, state, len(rows), 2 - len(rows), previous)

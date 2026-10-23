@@ -63,7 +63,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a7_registration_process.py": 7,
     "tests/test_a7_registration_imports.py": 1,
     "tests/test_a7_attempts.py": 12,
-    "tests/test_a7_driver_preconditions.py": 6,
+    "tests/test_a7_driver_preconditions.py": 7,
     "tests/test_a7_attempt_inputs.py": 6,
     "tests/test_a7_attempts_process.py": 11,
     "tests/test_a7_attempt_integrity.py": 12,
@@ -97,7 +97,7 @@ REQUIRED_TEST_CASE_COUNTS = {
 REQUIRED_TEST_MODULES = (
     (
         "tests/test_a7_driver_preconditions.py",
-        "7a634cec61476ade591e775b5fda2b5a0826eac15d3b6fa8a2df7174d8411c26",
+        "302d95bae09af82498f907bcaeec75dede5e9d90917642b6bab033b9df30c8bb",
     ),
     (
         "tests/test_screening_strict_json.py",
@@ -251,7 +251,7 @@ REQUIRED_TEST_MODULES = (
 REQUIRED_SOURCE_MODULES = (
     (
         "src/paper_radar/screening_tasks/attempt_repository.py",
-        "87389b2fdfde60f946790abc4d2f0f0dd4deed2087409744c5806ccea882c421",
+        "be3746702f681cc3ac6bd1c8d4e4d1a3eb7318f74a9493eddb705c01bb10897b",
     ),
     (
         "scripts/a1_scope.py",
@@ -431,11 +431,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/attempt_models.py",
-        "3072fa9bfa4015f68092e87494384a789465de9b7e3c0c46d447836092b4eb17",
+        "e7b5a85d7b5686809f941a3613dc14c66a439c289bdca7e9ea2df4e596880aa8",
     ),
     (
         "src/paper_radar/screening_tasks/attempt_rules.py",
-        "5be85a80dc18148229b457bc8c498217684f3f616808ceb3b871443a5555af49",
+        "4a10eed02393e62b816488a3cbee8e089ef2c62bacf898cd3f6101c3612e7a8d",
     ),
     (
         "src/paper_radar/screening_tasks/database_errors.py",
@@ -447,7 +447,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/execution.py",
-        "199a90b80ca9cfbd3323673566e6b63e0a943fc618823d45ecfe347edc8f4266",
+        "e131b5616e181f85a57149ac89bec781d852f8eb281646db77e04c4072eb1e28",
     ),
     (
         "src/paper_radar/screening_tasks/frozen.py",
@@ -483,11 +483,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/service.py",
-        "902e8dfdec9ad84fe215b713fa1ef626e6567620fde44af7c872e3997fea8ecb",
+        "e57f9dc97d4d734c407e02b5a6eb90da5723a2fbca4704a726d5b6ae771b5065",
     ),
     (
         "src/paper_radar/screening_tasks/success.py",
-        "055fe237442a4f654f52843385f32d526388414d6d96c90c13b3af6863210b6a",
+        "fa013997921091ba167fed4b1262926dbe3bb6060a518e8405425e3e6f73cd72",
     ),
     (
         "src/paper_radar/screening_tasks/success_integrity.py",
@@ -677,6 +677,6 @@ REQUIRED_SOURCE_MODULES = (
 REQUIRED_FIXTURE_FILES = (
     (
         "tests/fixtures/a7_capabilities.json",
-        "16ada172a14a9a0b39ba0a86db6b3ad150fbbf3fc01addeaaa61295cb30f7e0b",
+        "8fc6ff575695d70a011c68b11c456fde843e4862f5cf58c76db411c1582c371b",
     ),
 )

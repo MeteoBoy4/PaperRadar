@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal, Protocol
+from typing import Literal, Protocol, TypedDict
 
 from paper_radar.screening import OutputValidationIssue
 from paper_radar.screening_tasks.models import TaskState
@@ -26,6 +26,26 @@ class FailureKind(StrEnum):
 
 
 FailureOrigin = Literal["executor", "exception", "recovery"]
+
+
+class AttemptRow(TypedDict):
+    """同连接读取的尝试/租约/结算事实;不携带明文领取能力。"""
+
+    task_id: str
+    attempt_no: int
+    receipt_id: str
+    version_id: str
+    revision_no: int
+    selection_id: str | None
+    claimed_at: str
+    credential_sha256: str
+    renewal_sha256: str
+    expires_at: str
+    kind: str | None
+    origin: FailureOrigin | None
+    settled_at: str | None
+    issues_json: str | None
+    success_id: str | None
 
 
 @dataclass(frozen=True, slots=True)

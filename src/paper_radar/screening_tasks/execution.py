@@ -20,6 +20,7 @@ from paper_radar.screening_tasks.attempt_models import (
     TaskStatus,
 )
 from paper_radar.screening_tasks.attempt_repository import (
+    credential_attempt,
     failure_receipt,
     read_attempts,
     recover_attempt,
@@ -162,7 +163,7 @@ class AttemptService:
             previous = next(
                 (row for row in reversed(rows) if row["kind"] is not None), None
             )
-            if previous is None:
+            if previous is None or previous["kind"] is None:
                 return None
             message = correction_for(FailureKind(previous["kind"]))
             issues = decode_issues(previous["issues_json"])
@@ -226,12 +227,7 @@ class AttemptService:
         ):
             raise TaskError(TaskReason.INVALID_FAILURE)
         with self.connection(write=True) as connection:
-            rows = read_attempts(connection, claim.task_id)
-            row = next(
-                (item for item in rows if item["attempt_no"] == claim.attempt_no), None
-            )
-            if row is None or row["credential_sha256"] != digest(claim.credential):
-                raise TaskError(TaskReason.INVALID_CREDENTIAL)
+            row, latest = credential_attempt(connection, claim)
             if row["success_id"] is not None:
                 raise TaskError(TaskReason.SETTLEMENT_CONFLICT)
             # 精确失败重放先于当前持有者检查;回收永不伪装成执行者报告。
@@ -241,7 +237,7 @@ class AttemptService:
                 if row["kind"] != report.kind.value or row["origin"] != origin:
                     raise TaskError(TaskReason.SETTLEMENT_CONFLICT)
                 return failure_receipt(row)
-            if row["attempt_no"] != rows[-1]["attempt_no"]:
+            if not latest:
                 raise TaskError(TaskReason.INVALID_CREDENTIAL)
             now = utc_now(self.clock)
             require_attempt_time(row, now)

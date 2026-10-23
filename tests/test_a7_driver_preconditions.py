@@ -109,3 +109,28 @@ def test_storage_failure_after_claim_conservatively_consumes_attempt(
     assert calls == [1]
     assert service.status(receipt.receipt_id).used_attempts == 1
     assert service.status(receipt.receipt_id).state == "running"
+
+
+def test_driver_passes_correction_for_attempt_recovered_during_claim(
+    tmp_path: Path,
+) -> None:
+    from paper_radar.screening_tasks import FailureKind, FailureReport
+
+    data = archive(tmp_path)
+    now = datetime(2026, 1, 1, tzinfo=UTC)
+    service = ScreeningTasks(data.database, data.data_root, clock=lambda: now)
+    receipt = service.register(request_for(data))
+    first = service.claim(receipt.receipt_id)
+    now = first.expires_at
+    corrections: list[str | None] = []
+
+    def executor(
+        stage_input: object, correction: str | None, handle: str
+    ) -> FailureReport:
+        corrections.append(correction)
+        return FailureReport(FailureKind.TIMEOUT)
+
+    result = service.run_once(receipt.receipt_id, executor)
+    assert corrections == ["上次执行结果未知,请重新完成本次冻结输入。"]
+    assert result.kind == FailureKind.TIMEOUT
+    assert service.status(receipt.receipt_id).used_attempts == 2
