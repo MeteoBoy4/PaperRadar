@@ -19,9 +19,9 @@ from paper_radar.papers.models import (
     RevisionView,
     WriteResult,
 )
-from paper_radar.papers.queries import resolve_revision
 
 if TYPE_CHECKING:
+    from paper_radar.papers.queries import resolve_revision
     from paper_radar.papers.service import PaperFacts
 
 
@@ -30,6 +30,10 @@ def __getattr__(name: str) -> object:
         from paper_radar.papers.service import PaperFacts
 
         return PaperFacts
+    if name == "resolve_revision":
+        from paper_radar.papers.queries import resolve_revision
+
+        return resolve_revision
     raise AttributeError(name)
 
 

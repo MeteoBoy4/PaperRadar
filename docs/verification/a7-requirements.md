@@ -128,9 +128,10 @@ two_stage_orchestration、suggestion_decision、calibration_visibility、reuse/e
 | test_a7_registration_failures | 34 | 非空/HTML/UTF-8/2048 字节、封闭请求、具体 PaperReason、独立 readiness、缺库与隐私 |
 | test_a7_registration_process | 7 | 双进程同/异请求唯一预算；事务前/中/提交后强杀；CAS；5 秒忙锁 |
 | test_a7_registration_migrations | 6 | 非空 a604→a701、DDL/提交失败和强杀、旧全部 config/artifact/Pi/paper 历史、WAL、依赖守卫 |
+| test_a7_registration_imports | 1 | 公共论文词汇包在零外部 I/O 哨兵下可导入，保留既有 CLI 帮助启动边界 |
 | test_a7_registration_backup | 10 | 非空恢复；两阶段 WAL、新进程禁原目录后移动回放；八类 FK/SQLite/外层哈希合法语义损坏拒绝 |
 
-共 63 例；全部通过后再执行直接关联旧回归与完整门禁，不把当前收集数动态写入旧分母。
+共 64 例；全部通过后再执行直接关联旧回归与完整门禁，不把当前收集数动态写入旧分母。
 本票不注册 A7 组，这些新增模块在 #84 一次冻结 A7 验收范围。
 
 实际重绑先审查 head 字面量及最小源 diff，再按 scope audit 的 downstream 顺序更新。
@@ -151,3 +152,10 @@ two_stage_orchestration、suggestion_decision、calibration_visibility、reuse/e
 逐条旧/新 SHA-256、路径和原因保存在本次外部 `78-rebinding-ledger.json`，门禁 run_id、
 提交与完整审计原 JSON 见 `78-handoff.md` 和 verification-runs，避免 run_id 自哈希循环。
 已确认 36 条绑定更新涉及 27 个被绑定路径；正式门禁以最终提交为准，不写回历史证据。
+
+
+#78 首次完整门禁暴露一项集成回归：直接在 papers 包导出 resolve_revision 会提前
+加载 SQLAlchemy，使既有 help 的零外部 I/O 哨兵在 ssl 初始化时失败。独立新回归先红，
+再改为与 PaperFacts 一致的 TYPE_CHECKING + __getattr__ 延迟导出；事务组合能力和旧
+CLI 契约均保持。旧 CLI 固定用例未改，仅 A6 对 papers/__init__.py 的源绑定再审。
+失败 run b3342870a7be45888cc5efda214908a9 保留原始终态，最终通过另起新 run。

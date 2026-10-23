@@ -369,7 +369,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/__init__.py",
-        "5597f1cc803f2fe0a9e5e9d37396dd6ab7fcdf3892af432a462d9924de9d9924",
+        "2db5994c8f0a7b00bfd205a739e0f32e96b8769a75c185725335710c3c5fec36",
     ),
     (
         "src/paper_radar/papers/cli.py",
