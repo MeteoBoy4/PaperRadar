@@ -126,6 +126,19 @@ def _reject_json_constant(value: str) -> object:
     raise ValueError("JSON 数字必须有限")
 
 
+def _require_json_unicode(value: object) -> None:
+    pending = [value]
+    while pending:
+        member = pending.pop()
+        if isinstance(member, str):
+            member.encode("utf-8")
+        elif isinstance(member, list):
+            pending.extend(member)
+        elif isinstance(member, dict):
+            pending.extend(member)
+            pending.extend(member.values())
+
+
 def _validate_model[OutputModel: BaseModel](
     model: type[OutputModel],
     payload: object,
@@ -136,11 +149,13 @@ def _validate_model[OutputModel: BaseModel](
     try:
         if isinstance(payload, str | bytes | bytearray):
             raw_text = payload if isinstance(payload, str) else payload.decode("utf-8")
+            raw_text.encode("utf-8")
             structured_payload = json.loads(
                 raw_text,
                 object_pairs_hook=_unique_json_object,
                 parse_constant=_reject_json_constant,
             )
+            _require_json_unicode(structured_payload)
             output = model.model_validate(structured_payload)
         else:
             structured_payload = (

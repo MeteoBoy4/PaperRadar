@@ -208,3 +208,30 @@ def test_strict_parser_keeps_field_and_business_validation(
         validate_output("boundary", payload)
     assert captured.value.issues[0].category is category
     assert captured.value.issues[0].location == location
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        '{"boundary":"in_scope","reason_zh":"\\ud800"}',
+        '{"boundary":"in_scope","reason_zh":"\\udfff"}',
+        '{"boundary":"in_scope","reason_zh":"\ud800"}',
+        '{"boundary":"in_scope","reason_zh":"\udfff"}',
+        '{"boundary":"in_scope","reason_zh":"合法理由","extra":{"key":"\\ud800"}}',
+        '{"boundary":"in_scope","reason_zh":"合法理由","extra":["\\udfff"]}',
+        '{"boundary":"in_scope","reason_zh":"合法理由","\\ud800":0}',
+    ],
+)
+def test_json_rejects_unpaired_surrogates_at_any_location(raw: str) -> None:
+    with pytest.raises(OutputValidationError) as captured:
+        validate_output("boundary", raw)
+    assert [(issue.category, issue.location) for issue in captured.value.issues] == [
+        (OutputErrorCategory.INVALID_JSON, "$")
+    ]
+
+
+def test_json_accepts_valid_surrogate_pair() -> None:
+    result = validate_output(
+        "boundary", '{"boundary":"in_scope","reason_zh":"降水研究\\ud83c\\udf27"}'
+    )
+    assert result.reason_zh == "降水研究🌧"

@@ -123,6 +123,8 @@ assert isinstance(reason_result, ScreeningFailureProjection)
 原始 `str`、`bytes`、`bytearray` 只接受完整 UTF-8 JSON：任意层重复对象键（包括
 转义后同名键）、`NaN`、`Infinity`、`-Infinity`、BOM、非 UTF-8、语法错误与截断
 均为根 `$` 的 `invalid_json`，优先于载荷字段/业务错误；不回显键、原文或解析异常。
+原始字符串和解码后任意层的键/值均须可编码为 UTF-8，未配对 surrogate 拒绝，合法
+surrogate pair 仍按其 Unicode 字符接收。
 合法 JSON 前后空白仍接受且文本不改写；解析后仍执行相同严格 Schema 与业务规则。
 Mapping 输入保持原验证路径，不由解析器转换类型，也没有第二套输出 Schema。
 

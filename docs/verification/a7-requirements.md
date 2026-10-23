@@ -35,7 +35,7 @@ US 表示 #76 User Stories，ID 表示 Implementation Decisions；此表中的�
 | US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝，#81 接收/回放，#82 retry；均待实现。真实来源列 title_language_source 未验收 |
 | US29/31、ID15–16；测试“当前适用性”“缓存重新使用” | D2(a)、S2、评论二五 | Contract §5、ADR-0031、主方案 §8.5：同明确 snapshot 当前指纹匹配即适用；版本不同但同指纹仍适用；去掉绑定表/API/写入、提交事务论文复核 | #80/#81 派生查询待实现；原 US29 改为输入变化只作历史，US31 改为只读重建匹配，删除缓存重新绑定行 |
 | 测试“A6 语义联动” | D2(a)、B2/B6、评论二五 | 更高 parser 缺摘要→无当前成功；其他来源补回相同文本→原制品再适用，保留 A6 仲裁 | #80/#81，两例合并入派生适用性测试，待实现 |
-| US24/27、ID12–13 | D3(a)、评论二二、#77 评论 | 原权威内部严格解析；str/bytes/bytearray 任意层重复键/NaN/Infinity 根 `$` invalid_json，先于字段/业务错误；Mapping 路径不变 | #77 已实现；test_screening_strict_json 85 例，新旧相关 324 例；原固定模块/Schema/分母不变 |
+| US24/27、ID12–13 | D3(a)、评论二二、#77 评论 | 原权威内部严格解析；str/bytes/bytearray 任意层重复键/NaN/Infinity 根 `$` invalid_json，先于字段/业务错误；Mapping 路径不变 | #77 已实现；test_screening_strict_json 93 例，新旧相关 332 例；原固定模块/Schema/分母不变 |
 | US23、US33 CLI 部分、US39、ID20–21 CLI 部分 | D4、S2、评论二五 | Contract §6：本批仅服务 retry 与共享查询；screening CLI、paper trace 组合、help/退出码移至真实任务生产票 | #82 服务测试待；#84 不得要求 CLI，现有产品 CLI Contract 保持 |
 | US1–7/19–20/30、ID3–7/17–18 | T1/T2/T7、B1/B3/B9/B11、评论二四 | Contract §1–3：预算/代际/请求/attempt 四层；完整 scheduled 依据、manual 冲突；A→B→A、跨日/无关配置不刷新 | #78（含真实进程登记竞争）待；第 0 代可能由 manual 创建 |
 | US8–18/32、ID8–11 | T3/T4/T6、B2/B4/B5/B7、S3 | Contract §3：原子领取、两次预算、凭据 fencing、回收 outcome_unknown、lease_expired；第二次尝试不等于显式 retry | #79 真实子进程/屏障/强杀及受控时钟待 |
@@ -100,8 +100,8 @@ screening_tasks/task_reason_catalog/task_query_result 1、boundary/value inputs 
 
 | #77 固定材料 | SHA-256 |
 | --- | --- |
-| `src/paper_radar/screening/validation.py` | `0e00b2e0840d600ccbcbaf939293d75f744b24cdad3c8c20764cb605f5167379` |
-| `tests/test_screening_strict_json.py` | `7b85d31af94e175bb06a9db38c27eb518e0c04ca4263200f14d1a717e775ddca` |
+| `src/paper_radar/screening/validation.py` | `63d26b9b7b5593bb3260a37aacef1d537fa7736f7bbbf7ef25b9198bab17fc62` |
+| `tests/test_screening_strict_json.py` | `49365327a4a2d6599c62c049f5e3dd8d2001aa4c25741a9f545b842b81c48c53` |
 
 ## 未验收范围与最终结论边界
 
