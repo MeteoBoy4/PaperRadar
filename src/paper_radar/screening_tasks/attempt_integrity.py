@@ -9,10 +9,18 @@ from typing import Any
 from sqlalchemy import Connection, select
 
 from paper_radar.papers import PaperFacts, resolve_revision
-from paper_radar.screening_tasks.attempt_models import LEASE_SECONDS, FailureKind
+from paper_radar.screening_tasks.attempt_models import (
+    ATTEMPTS_PER_GENERATION,
+    LEASE_SECONDS,
+    FailureKind,
+)
 from paper_radar.screening_tasks.attempt_rules import read_timestamp
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
-from paper_radar.screening_tasks.repository import evidence_values, receipt_row
+from paper_radar.screening_tasks.repository import (
+    evidence_values,
+    receipt_row,
+    stage_mapping,
+)
 from paper_radar.screening_tasks.tables import (
     attempts,
     failures,
@@ -84,7 +92,7 @@ def validate_attempts(database: Path, connection: Connection) -> None:
             revision_no=row["revision_no"],
             snapshot_id=request["snapshot_id"],
         )
-        mapped = mapping.boundary if request["stage"] == "boundary" else mapping.value
+        mapped = stage_mapping(mapping, request["stage"])
         _require(mapped.reason is None and mapped.value is not None)
         assert mapped.value is not None
         _require(mapped.value.fingerprint == request["fingerprint"])
@@ -118,7 +126,7 @@ def validate_attempts(database: Path, connection: Connection) -> None:
         ordered = sorted(rows, key=lambda row: row["attempt_no"])
         _require(
             [row["attempt_no"] for row in ordered] == list(range(1, len(ordered) + 1))
-            and len(ordered) <= 2
+            and len(ordered) <= ATTEMPTS_PER_GENERATION
         )
         for previous, current in pairwise(ordered):
             key = (task_id, previous["attempt_no"])

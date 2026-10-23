@@ -22,7 +22,12 @@ from paper_radar.screening_tasks.query_models import (
     TaskQueryResult,
     TaskView,
 )
-from paper_radar.screening_tasks.repository import receipt_row, to_receipt
+from paper_radar.screening_tasks.repository import (
+    receipt_row,
+    stage_mapping,
+    to_receipt,
+)
+from paper_radar.screening_tasks.rules import require_stage
 from paper_radar.screening_tasks.tables import budgets, requests, tasks
 
 
@@ -31,21 +36,14 @@ class QueryService:
         self.attempts = attempts
 
     def query(self, *, paper_id: str, stage: str, snapshot_id: str) -> TaskQueryResult:
-        if (
-            not isinstance(stage, str)
-            or stage not in {"boundary", "value"}
-            or not isinstance(paper_id, str)
-            or not isinstance(snapshot_id, str)
-        ):
+        if not isinstance(paper_id, str) or not isinstance(snapshot_id, str):
             raise TaskError(TaskReason.INVALID_REQUEST)
-        stage_value: Literal["boundary", "value"] = (
-            "boundary" if stage == "boundary" else "value"
-        )
+        stage_value = require_stage(stage)
         now = utc_now(self.attempts.clock)
         mapping = PaperFacts(self.attempts.database).map_screening_inputs(
             paper_id=paper_id, snapshot_id=snapshot_id
         )
-        mapped = mapping.boundary if stage == "boundary" else mapping.value
+        mapped = stage_mapping(mapping, stage_value)
         if mapped.reason is None and mapped.value is None:
             raise TaskError(TaskReason.CORRUPT_REFERENCE)
         current = (

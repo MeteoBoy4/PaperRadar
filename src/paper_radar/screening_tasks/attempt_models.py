@@ -13,6 +13,7 @@ from paper_radar.stage_inputs import StageInput
 
 Clock = Callable[[], datetime]
 LEASE_SECONDS = 600
+ATTEMPTS_PER_GENERATION = 2
 
 
 class FailureKind(StrEnum):

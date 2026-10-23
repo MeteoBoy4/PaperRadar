@@ -7,6 +7,7 @@ from sqlalchemy import Connection, select
 from paper_radar.screening_tasks.attempt_rules import read_timestamp
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.frozen import load_frozen
+from paper_radar.screening_tasks.rules import is_stage
 from paper_radar.screening_tasks.success import SuccessService
 from paper_radar.screening_tasks.success_rules import (
     decode_issues,
@@ -43,10 +44,7 @@ def validate_successes(service: SuccessService, connection: Connection) -> None:
             .one()
         )
         frozen = load_frozen(service.attempts.database, connection, budget)
-        require(
-            budget["stage"] in {"boundary", "value"}
-            and model_matches(candidate, frozen.snapshot)
-        )
+        require(is_stage(budget["stage"]) and model_matches(candidate, frozen.snapshot))
         task = (
             connection.execute(select(tasks).where(tasks.c.task_id == row["task_id"]))
             .mappings()

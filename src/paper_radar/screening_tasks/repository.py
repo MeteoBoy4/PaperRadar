@@ -1,16 +1,26 @@
 """任务登记关系的连接级读写;事务由公共服务持有。"""
 
+from collections.abc import Iterator
+from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Connection, select
+from sqlalchemy import Connection, Engine, select
 
-from paper_radar.papers import MappingEvidence, RevisionView
+from paper_radar.papers import (
+    MappingEvidence,
+    PaperError,
+    RevisionView,
+    ScreeningMappingResult,
+    StageMappingResult,
+)
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.models import (
     BoundaryRequest,
     RequestReceipt,
     RetryRequest,
+    Stage,
     ValueRequest,
 )
 from paper_radar.screening_tasks.rules import receipt_id, request_digest
@@ -23,6 +33,46 @@ from paper_radar.screening_tasks.tables import (
     tasks,
 )
 from paper_radar.stage_inputs import StageInput
+from paper_radar.storage.database import DatabaseMode, open_database
+
+
+@contextmanager
+def task_database(database: Path, *, write: bool) -> Iterator[Engine]:
+    """只管理连接资源;各入口保留自己的异常映射。"""
+    engine = open_database(
+        database, mode=DatabaseMode.READ_WRITE if write else DatabaseMode.READ_ONLY
+    )
+    try:
+        yield engine
+    finally:
+        engine.dispose()
+
+
+@contextmanager
+def task_transaction(
+    engine: Engine, *, write: bool, begin: bool = True
+) -> Iterator[Connection]:
+    with engine.connect() as connection:
+        if begin:
+            connection.exec_driver_sql("BEGIN IMMEDIATE" if write else "BEGIN")
+        yield connection
+        if write:
+            connection.commit()
+
+
+def stage_mapping(mapping: ScreeningMappingResult, stage: Stage) -> StageMappingResult:
+    return mapping.boundary if stage == "boundary" else mapping.value
+
+
+def require_stage_mapping(
+    mapping: ScreeningMappingResult, stage: Stage
+) -> tuple[StageInput, MappingEvidence]:
+    mapped = stage_mapping(mapping, stage)
+    if mapped.reason is not None:
+        raise PaperError(mapped.reason)
+    if mapped.value is None or mapped.evidence is None:
+        raise TaskError(TaskReason.CORRUPT_REFERENCE)
+    return mapped.value, mapped.evidence
 
 
 def evidence_values(evidence: RevisionView) -> dict[str, Any]:

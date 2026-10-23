@@ -4,7 +4,8 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
-from paper_radar.papers import PaperError, PaperFacts, resolve_revision
+from paper_radar.papers import PaperFacts, resolve_revision
+from paper_radar.screening_tasks.attempt_models import ATTEMPTS_PER_GENERATION
 from paper_radar.screening_tasks.attempt_repository import (
     read_attempts,
     recover_attempt,
@@ -17,6 +18,7 @@ from paper_radar.screening_tasks.repository import (
     evidence_values,
     receipt_row,
     replay_request,
+    require_stage_mapping,
     to_receipt,
 )
 from paper_radar.screening_tasks.rules import (
@@ -40,12 +42,8 @@ class RetryService:
         mapping = PaperFacts(self.attempts.database).map_screening_inputs(
             paper_id=request.paper_id, snapshot_id=request.snapshot_id
         )
-        mapped = mapping.boundary if request.stage == "boundary" else mapping.value
-        if mapped.reason is not None:
-            raise PaperError(mapped.reason)
-        if mapped.value is None or mapped.evidence is None:
-            raise TaskError(TaskReason.CORRUPT_REFERENCE)
-        basis = evidence_values(mapped.evidence)
+        stage_input, evidence = require_stage_mapping(mapping, request.stage)
+        basis = evidence_values(evidence)
         with self.attempts.connection(write=True) as connection:
             replayed = replay_request(connection, request)
             if replayed is not None:
@@ -72,7 +70,7 @@ class RetryService:
             if (parent["paper_id"], parent["stage"], parent["fingerprint"]) != (
                 request.paper_id,
                 request.stage,
-                mapped.value.fingerprint,
+                stage_input.fingerprint,
             ):
                 raise TaskError(TaskReason.FACTS_CHANGED)
             successor = connection.execute(
@@ -103,7 +101,10 @@ class RetryService:
             rows = read_attempts(connection, request.parent_task_id)
             status = derive_status(request.parent_task_id, rows, now)
             # 只有第二次已到期的 attempt 可以在同一事务变为失败终态并开后继。
-            if status.state == "lease_expired" and status.used_attempts == 2:
+            if (
+                status.state == "lease_expired"
+                and status.used_attempts == ATTEMPTS_PER_GENERATION
+            ):
                 recover_attempt(connection, rows[-1], now)
                 rows = read_attempts(connection, request.parent_task_id)
                 status = derive_status(request.parent_task_id, rows, now)

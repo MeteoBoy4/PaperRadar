@@ -316,9 +316,9 @@ Contract 与 backup-restore 同步绝对 UTC 时钟偏差只改结算时机、�
 
 `a7_scope.py` 固定 parent_issue=76、issue=84、格式 1、随包 head
 `a704_screening_retry`，capability fixture 为 `tests/fixtures/a7_capabilities.json`。
-固定业务范围为 #78–#83 的 283 例，加 #77 严格 JSON 93 例，共 376 例；
+历史 #84 初始范围为 #78–#83 的 283 例，加 #77 严格 JSON 93 例，共 376 例；
 #84 独立协议验收按测试源及参数化人工审阅登记：acceptance 2、integrity 124、entry 9、
-status 10、test_receipt 6、formats 2，共 153 例；A7 合计固定 529 例；
+status 10、test_receipt 6、formats 2，共 153 例；当时 A7 合计固定 529 例；
 不从实测收集结果回填。
 最终固定模块/用例总分母以 scope 中明确登记值和该次真实回执逐项核对；collect 仅作复核。
 
@@ -368,3 +368,36 @@ A7 不可覆盖结论负例同时核对 EEXIST 和实际 `.a7.json` 目标，原
 尝试/租约/结算投影，共用凭据定位、时间检查、失败回执与未知结果回收。模块不拥有
 事务、时钟或执行者；成功提交、普通失败和 retry 分别保留重放及结算规则。
 query 与恢复完整性检查只读共享投影，公共任务服务和格式语义不变。
+
+
+## 外部审查 r1/r2 收口与逐波可复核索引
+
+逐项判断见 [外部审查处置](a7-external-review-disposition.md)，原报告原文均保留。
+历史 `47dec58` 固定 538 = 292 业务 + 93 严格 JSON + 153 协议；漂移始于
+`72f9938`（535），`fddad9f` 为 536，`47dec58` 为 538。不能把业务小计写成 285。
+本次独立 `test_a7_text_boundaries` 人工审阅 26 例（3 入口 × 7 文本向量 + 5 阶段向量），
+故当前固定 564 = 318 业务 + 93 严格 JSON + 153 协议，39 模块；旧固定分母保持。
+收集命令只核对已固定预期，不回填测试分母。
+
+补齐此前缺失的接入文件重审理由；逐路径旧/新 SHA-256、提交父点和绑定组见
+[a7-history-ledger.json](a7-history-ledger.json)。该历史附件不自绑定，不收录本次最终 run_id。
+
+| 波次/提交 | 接入文件 | 本波重审理由 | 旧组 |
+| --- | --- | --- | --- |
+| A7-06 / #82 `251b57c` | `backup/manifest.py`；20 个当前/未来 head 测试探针（完整路径逐项列于附件该提交 bindings） | a704 当前 head、backup revision 前移；历史 fixture 不前移，无旧分母下降 | A2-01、完整 A2、A3–A6 |
+| A7-06 后续 `cc00aaa/6704376/cb01a72` | retry/查询生产模块、A7 独立测试、任务 metadata | 唯一后继成功后的拒绝优先级、真实映射竞争、持久化唯一索引一致性 | 当时未注册 A7；旧组无新增重绑，附件 bindings 明确为空 |
+| A7-07 / #83 `eaa437f` | `tests/test_a7_complete_recovery.py`、`tests/test_a7_recovery_integrity.py`、恢复 support 与文档 | 仅新增完整历史恢复证明，未改生产/迁移/旧绑定 | 无；附件 bindings 明确为空 |
+| A7-08 / #84 `60cc945` | `scripts/check-offline`、`a2_full_acceptance.py`、`a2_test_receipt.py`、`verification_{checks,run,publication,status}.py`；真实回执 fixture 与入口/状态测试 | A7 必需性、同次回执、状态格式接入；逐项哈希及组见附件，不降低旧分母 | A2-01、完整 A2、A3–A6；新 A7 首次登记 |
+| integration `72f9938` | `screening_tasks/service.py`、`storage/artifacts.py`、`storage/blob_store.py`；driver/attempt/support/fixture | 领取前拒绝可预见存储错误及非法 executor；A3 共用存储变化及下游重审 | A3 直接；A4–A6 下游；A7 |
+| integration `9ae6819/fddad9f` | `screening_tasks/attempt_repository.py`、`attempt_models.py`、`attempt_rules.py`、`execution.py`、`success.py`、`query.py`、`retry.py`、`integrity.py` | 连接级尝试事实与凭据/时间检查集中；保留各入口事务及结算语义 | A7；旧组无新变化 |
+| integration `47dec58` | `storage/blob_store.py`、`tests/test_a7_driver_preconditions.py` | 发布命名空间与既有 shard 的真实权限能力实探；保留领取前拒绝 | A3 直接；A4–A6 下游；A7 |
+| 本次外部审查 | `screening_tasks/{repository,rules,success_rules,attempt_models,attempt_rules,attempt_repository,attempt_integrity,execution,service,retry,query,integrity,success,success_integrity}.py`；独立文本边界回归与 capability fixture | 内部规则合并且保留错误类别、优先级、三值映射、CAS、两次预算及租约语义；公共 seam 固定 26 例 | 仅 A7 直接，无旧组漂移 |
+
+附件从 Git 各提交重算并核对全部变更绑定字节，也保留本地 `82-rebinding-ledger.json`、
+`84-scope-ledger.json`、`review-fixes-bindings-*.json` 的路径及哈希索引。
+旧文提到的 `84-rebinding-ledger.json` 实际本地文件名为 `84-scope-ledger.json`。
+完整原 JSON 仍只在本地 `verification-runs/`，附件索引包含历史三次通过的十一份
+JSON 哈希：`005ccfe…`（60cc945）、`c351fcbc…` 与 `6e818ba3…`（47dec58）。
+历史 6e818 的 `code.dirty=false`、3615/3615、passed/verified 已独立复核；后来的
+未跟踪报告使当前 applicability 不同，不能推翻历史通过。本次最终提交及最终 run_id
+留在外部交接记录，所有 tracked 内容冻结后才运行最终门禁，避免自引用。

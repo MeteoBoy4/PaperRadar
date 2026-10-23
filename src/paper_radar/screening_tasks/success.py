@@ -35,8 +35,8 @@ from paper_radar.screening_tasks.attempt_rules import (
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.execution import AttemptService
 from paper_radar.screening_tasks.frozen import load_frozen
-from paper_radar.screening_tasks.repository import receipt_row
-from paper_radar.screening_tasks.rules import canonical
+from paper_radar.screening_tasks.repository import receipt_row, stage_mapping
+from paper_radar.screening_tasks.rules import canonical, is_stage, require_stage
 from paper_radar.screening_tasks.success_models import (
     SuccessCandidate,
     SuccessContent,
@@ -110,7 +110,7 @@ class SuccessService:
             if replayed is not None:
                 return replayed
             request = receipt_row(connection, row["receipt_id"])
-            if request is None or request["stage"] not in {"boundary", "value"}:
+            if request is None or not is_stage(request["stage"]):
                 raise TaskError(TaskReason.INVALID_CANDIDATE)
             budget = dict(
                 connection.execute(
@@ -276,13 +276,12 @@ class SuccessService:
     def query(
         self, *, paper_id: str, stage: str, snapshot_id: str
     ) -> tuple[SuccessView, ...]:
-        if type(stage) is not str or stage not in {"boundary", "value"}:
-            raise TaskError(TaskReason.INVALID_REQUEST)
+        stage_value = require_stage(stage, exact=True)
         # PaperFacts 持有自己的只读一致视图;允许相对任务读取的并发提交滞后。
         mapping = PaperFacts(self.attempts.database).map_screening_inputs(
             paper_id=paper_id, snapshot_id=snapshot_id
         )
-        mapped = mapping.boundary if stage == "boundary" else mapping.value
+        mapped = stage_mapping(mapping, stage_value)
         with self.attempts.connection(write=False) as connection:
             ids = (
                 connection.execute(

@@ -9,8 +9,9 @@ from secrets import token_hex
 from sqlalchemy import Connection, select
 from sqlalchemy.exc import SQLAlchemyError
 
-from paper_radar.papers import PaperError, PaperFacts, resolve_revision
+from paper_radar.papers import PaperFacts, resolve_revision
 from paper_radar.screening_tasks.attempt_models import (
+    ATTEMPTS_PER_GENERATION,
     Claim,
     Clock,
     FailureKind,
@@ -31,6 +32,7 @@ from paper_radar.screening_tasks.attempt_rules import (
     correction_for,
     derive_status,
     digest,
+    is_executor_failure,
     lease_expiry,
     read_timestamp,
     timestamp,
@@ -39,14 +41,16 @@ from paper_radar.screening_tasks.attempt_rules import (
 from paper_radar.screening_tasks.database_errors import database_error
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.models import FrozenInput, RequestReceipt
-from paper_radar.screening_tasks.repository import evidence_values, receipt_row
+from paper_radar.screening_tasks.repository import (
+    evidence_values,
+    receipt_row,
+    require_stage_mapping,
+    task_database,
+    task_transaction,
+)
 from paper_radar.screening_tasks.success_rules import decode_issues
 from paper_radar.screening_tasks.tables import attempts, failures, leases, successes
-from paper_radar.storage.database import (
-    DatabaseMode,
-    open_database,
-    require_current_revision,
-)
+from paper_radar.storage.database import require_current_revision
 
 
 class AttemptService:
@@ -56,23 +60,15 @@ class AttemptService:
 
     @contextmanager
     def connection(self, *, write: bool) -> Iterator[Connection]:
-        engine = open_database(
-            self.database,
-            mode=DatabaseMode.READ_WRITE if write else DatabaseMode.READ_ONLY,
-        )
-        try:
-            require_current_revision(engine)
-            with engine.connect() as connection:
-                connection.exec_driver_sql("BEGIN IMMEDIATE" if write else "BEGIN")
-                yield connection
-                if write:
-                    connection.commit()
-        except SQLAlchemyError as error:
-            raise database_error(error) from None
-        except (ValueError, TypeError, KeyError, OverflowError):
-            raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
-        finally:
-            engine.dispose()
+        with task_database(self.database, write=write) as engine:
+            try:
+                require_current_revision(engine)
+                with task_transaction(engine, write=write) as connection:
+                    yield connection
+            except SQLAlchemyError as error:
+                raise database_error(error) from None
+            except (ValueError, TypeError, KeyError, OverflowError):
+                raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
 
     def claim(self, receipt: RequestReceipt, frozen: FrozenInput) -> Claim:
         # 时钟错误与指纹变化都先于领取事务,不会占用预算。
@@ -80,14 +76,10 @@ class AttemptService:
         mapping = PaperFacts(self.database).map_screening_inputs(
             paper_id=receipt.paper_id, snapshot_id=receipt.snapshot_id
         )
-        mapped = mapping.boundary if receipt.stage == "boundary" else mapping.value
-        if mapped.reason is not None:
-            raise PaperError(mapped.reason)
-        if mapped.value is None or mapped.evidence is None:
-            raise TaskError(TaskReason.CORRUPT_REFERENCE)
-        if mapped.value.fingerprint != frozen.fingerprint:
+        stage_input, evidence = require_stage_mapping(mapping, receipt.stage)
+        if stage_input.fingerprint != frozen.fingerprint:
             raise TaskError(TaskReason.FACTS_CHANGED)
-        basis = evidence_values(mapped.evidence)
+        basis = evidence_values(evidence)
         credential, renewal = token_hex(32), token_hex(32)
         expires = lease_expiry(now)
         with self.connection(write=True) as connection:
@@ -114,7 +106,7 @@ class AttemptService:
                     raise TaskError(TaskReason.TASK_RUNNING)
                 recover_attempt(connection, existing[-1], now)
             number = len(existing) + 1
-            if number <= 2:
+            if number <= ATTEMPTS_PER_GENERATION:
                 if existing and now < read_timestamp(
                     existing[-1]["settled_at"] or timestamp(now)
                 ):
@@ -138,7 +130,7 @@ class AttemptService:
                     )
                 )
         # 回收第二次过期尝试必须先提交,再返回预算耗尽。
-        if number > 2:
+        if number > ATTEMPTS_PER_GENERATION:
             raise TaskError(TaskReason.BUDGET_EXHAUSTED)
         return Claim(
             task_id=receipt.task_id,
@@ -214,17 +206,7 @@ class AttemptService:
         if type(claim) is not Claim:
             raise TaskError(TaskReason.INVALID_CREDENTIAL)
         require_secret(claim.credential)
-        allowed = {
-            FailureKind.TIMEOUT,
-            FailureKind.CANCELLED,
-            FailureKind.PROTOCOL_ERROR,
-            FailureKind.EXECUTOR_ERROR,
-        }
-        if (
-            type(report) is not FailureReport
-            or type(report.kind) is not FailureKind
-            or report.kind not in allowed
-        ):
+        if not is_executor_failure(report):
             raise TaskError(TaskReason.INVALID_FAILURE)
         with self.connection(write=True) as connection:
             row, latest = credential_attempt(connection, claim)

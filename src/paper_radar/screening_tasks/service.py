@@ -21,6 +21,7 @@ from paper_radar.screening_tasks.attempt_models import (
     TaskStatus,
     TestExecutor,
 )
+from paper_radar.screening_tasks.attempt_rules import is_executor_failure
 from paper_radar.screening_tasks.database_errors import database_error
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.execution import AttemptService
@@ -33,6 +34,9 @@ from paper_radar.screening_tasks.repository import (
     receipt_row,
     register_request,
     replay_request,
+    require_stage_mapping,
+    task_database,
+    task_transaction,
     to_receipt,
 )
 from paper_radar.screening_tasks.retry import RetryService
@@ -46,11 +50,7 @@ from paper_radar.screening_tasks.success_models import (
 )
 from paper_radar.screening_tasks.tables import budgets, requests, tasks
 from paper_radar.stage_inputs import BuildReason, StageInputError
-from paper_radar.storage.database import (
-    DatabaseMode,
-    open_database,
-    require_current_revision,
-)
+from paper_radar.storage.database import require_current_revision
 from paper_radar.storage.schema import runtime_config_snapshots
 
 
@@ -144,17 +144,7 @@ class ScreeningTasks:
                 if error.reason != TaskReason.INVALID_CANDIDATE:
                     raise
             report = FailureReport(FailureKind.PROTOCOL_ERROR)
-        if (
-            type(report) is not FailureReport
-            or type(report.kind) is not FailureKind
-            or report.kind
-            not in {
-                FailureKind.TIMEOUT,
-                FailureKind.CANCELLED,
-                FailureKind.PROTOCOL_ERROR,
-                FailureKind.EXECUTOR_ERROR,
-            }
-        ):
+        if not is_executor_failure(report):
             # 未支持的返回只记录协议失败。
             report = FailureReport(FailureKind.PROTOCOL_ERROR)
         # 离开 except 后才结算,迟到结算的受控错误不串联原执行者异常。
@@ -162,63 +152,55 @@ class ScreeningTasks:
 
     def register(self, raw_request: object) -> RequestReceipt:
         request = parse_request(raw_request)
-        engine = open_database(self.database, mode=DatabaseMode.READ_WRITE)
-        try:
-            require_current_revision(engine)
-            # 精确 manual 重放先于当前映射,保留原回执即使论文已变化或缺项。
-            with engine.connect() as connection:
-                replayed = replay_request(connection, request)
-                if replayed is not None:
-                    return replayed
-            mapping = PaperFacts(self.database).map_screening_inputs(
-                paper_id=request.paper_id, snapshot_id=request.snapshot_id
-            )
-            mapped = mapping.boundary if request.stage == "boundary" else mapping.value
-            if mapped.reason is not None:
-                raise PaperError(mapped.reason)
-            if mapped.value is None or mapped.evidence is None:
-                raise TaskError(TaskReason.CORRUPT_REFERENCE)
-            snapshot = load_config_snapshot(self.database, request.snapshot_id)
-            if isinstance(request, ValueRequest):
-                try:
-                    mapped.value.value_prediction_context(
-                        snapshot, original_title_is_zh=request.original_title_is_zh
-                    )
-                except StageInputError as error:
-                    assert isinstance(error.reason, BuildReason)
-                    raise TaskError(
-                        TaskReason.INVALID_CONTEXT,
-                        build_reason=error.reason,
-                        field=error.field,
-                    ) from None
-            with engine.connect() as connection:
-                connection.exec_driver_sql("BEGIN IMMEDIATE")
-                # 并发另一登记可能已经完成相同 manual 请求,应重放其原回执。
-                replayed = replay_request(connection, request)
-                if replayed is not None:
-                    return replayed
-                current = resolve_revision(connection, paper_id=request.paper_id)
-                if evidence_values(current) != evidence_values(mapped.evidence):
-                    raise TaskError(TaskReason.FACTS_CHANGED)
-                if (
-                    connection.execute(
-                        select(runtime_config_snapshots.c.snapshot_id).where(
-                            runtime_config_snapshots.c.snapshot_id
-                            == request.snapshot_id
-                        )
-                    ).first()
-                    is None
-                ):
-                    raise TaskError(TaskReason.CORRUPT_REFERENCE)
-                result = register_request(
-                    connection, request, mapped.value, mapped.evidence
+        with task_database(self.database, write=True) as engine:
+            try:
+                require_current_revision(engine)
+                # 精确 manual 重放先于当前映射,保留原回执即使论文已变化或缺项。
+                with task_transaction(engine, write=False, begin=False) as connection:
+                    replayed = replay_request(connection, request)
+                    if replayed is not None:
+                        return replayed
+                mapping = PaperFacts(self.database).map_screening_inputs(
+                    paper_id=request.paper_id, snapshot_id=request.snapshot_id
                 )
-                connection.commit()
-                return result
-        except SQLAlchemyError as error:
-            raise database_error(error) from None
-        finally:
-            engine.dispose()
+                stage_input, evidence = require_stage_mapping(mapping, request.stage)
+                snapshot = load_config_snapshot(self.database, request.snapshot_id)
+                if isinstance(request, ValueRequest):
+                    try:
+                        stage_input.value_prediction_context(
+                            snapshot, original_title_is_zh=request.original_title_is_zh
+                        )
+                    except StageInputError as error:
+                        assert isinstance(error.reason, BuildReason)
+                        raise TaskError(
+                            TaskReason.INVALID_CONTEXT,
+                            build_reason=error.reason,
+                            field=error.field,
+                        ) from None
+                with task_transaction(engine, write=True) as connection:
+                    # 并发另一登记可能已经完成相同 manual 请求,应重放其原回执。
+                    replayed = replay_request(connection, request)
+                    if replayed is not None:
+                        return replayed
+                    current = resolve_revision(connection, paper_id=request.paper_id)
+                    if evidence_values(current) != evidence_values(evidence):
+                        raise TaskError(TaskReason.FACTS_CHANGED)
+                    if (
+                        connection.execute(
+                            select(runtime_config_snapshots.c.snapshot_id).where(
+                                runtime_config_snapshots.c.snapshot_id
+                                == request.snapshot_id
+                            )
+                        ).first()
+                        is None
+                    ):
+                        raise TaskError(TaskReason.CORRUPT_REFERENCE)
+                    result = register_request(
+                        connection, request, stage_input, evidence
+                    )
+                    return result
+            except SQLAlchemyError as error:
+                raise database_error(error) from None
 
     def get_receipt(self, receipt_id: str) -> RequestReceipt:
         if (
@@ -226,95 +208,85 @@ class ScreeningTasks:
             or re.fullmatch(r"[0-9a-f]{64}", receipt_id) is None
         ):
             raise TaskError(TaskReason.REQUEST_NOT_FOUND)
-        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
-        try:
-            require_current_revision(engine)
-            with engine.connect() as connection:
-                connection.exec_driver_sql("BEGIN")
-                row = receipt_row(connection, receipt_id)
-                if row is None:
-                    raise TaskError(TaskReason.REQUEST_NOT_FOUND)
-                return to_receipt(row)
-        except SQLAlchemyError as error:
-            raise database_error(error) from None
-        finally:
-            engine.dispose()
+        with task_database(self.database, write=False) as engine:
+            try:
+                require_current_revision(engine)
+                with task_transaction(engine, write=False) as connection:
+                    row = receipt_row(connection, receipt_id)
+                    if row is None:
+                        raise TaskError(TaskReason.REQUEST_NOT_FOUND)
+                    return to_receipt(row)
+            except SQLAlchemyError as error:
+                raise database_error(error) from None
 
     def receipts(self, paper_id: str) -> tuple[RequestReceipt, ...]:
-        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
-        try:
-            require_current_revision(engine)
-            with engine.connect() as connection:
-                connection.exec_driver_sql("BEGIN")
-                ids = (
-                    connection.execute(
-                        select(requests.c.receipt_id)
-                        .join(tasks, requests.c.task_id == tasks.c.task_id)
-                        .join(budgets, tasks.c.budget_id == budgets.c.budget_id)
-                        .where(budgets.c.paper_id == paper_id)
-                        .order_by(requests.c.receipt_id)
+        with task_database(self.database, write=False) as engine:
+            try:
+                require_current_revision(engine)
+                with task_transaction(engine, write=False) as connection:
+                    ids = (
+                        connection.execute(
+                            select(requests.c.receipt_id)
+                            .join(tasks, requests.c.task_id == tasks.c.task_id)
+                            .join(budgets, tasks.c.budget_id == budgets.c.budget_id)
+                            .where(budgets.c.paper_id == paper_id)
+                            .order_by(requests.c.receipt_id)
+                        )
+                        .scalars()
+                        .all()
                     )
-                    .scalars()
-                    .all()
-                )
-                return tuple(
-                    to_receipt(row)
-                    for identifier in ids
-                    if (row := receipt_row(connection, identifier)) is not None
-                )
-        except SQLAlchemyError as error:
-            raise database_error(error) from None
-        finally:
-            engine.dispose()
+                    return tuple(
+                        to_receipt(row)
+                        for identifier in ids
+                        if (row := receipt_row(connection, identifier)) is not None
+                    )
+            except SQLAlchemyError as error:
+                raise database_error(error) from None
 
     def load_input(self, receipt_id: str) -> FrozenInput:
         receipt = self.get_receipt(receipt_id)
-        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
-        try:
-            require_current_revision(engine)
-            with engine.connect() as connection:
-                connection.exec_driver_sql("BEGIN")
-                budget = (
-                    connection.execute(
-                        select(budgets).where(budgets.c.budget_id == receipt.budget_id)
+        with task_database(self.database, write=False) as engine:
+            try:
+                require_current_revision(engine)
+                with task_transaction(engine, write=False) as connection:
+                    budget = (
+                        connection.execute(
+                            select(budgets).where(
+                                budgets.c.budget_id == receipt.budget_id
+                            )
+                        )
+                        .mappings()
+                        .one()
                     )
-                    .mappings()
-                    .one()
-                )
-                return load_frozen(self.database, connection, dict(budget))
-        except (StageInputError, ConfigError, ValueError, TypeError, KeyError):
-            raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
-        except SQLAlchemyError as error:
-            raise database_error(error) from None
-        finally:
-            engine.dispose()
+                    return load_frozen(self.database, connection, dict(budget))
+            except (StageInputError, ConfigError, ValueError, TypeError, KeyError):
+                raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
+            except SQLAlchemyError as error:
+                raise database_error(error) from None
 
     def validate_all(self) -> None:
         from paper_radar.screening_tasks.attempt_integrity import validate_attempts
         from paper_radar.screening_tasks.integrity import validate_registration
 
-        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
-        try:
-            require_current_revision(engine)
-            with engine.connect() as connection:
-                connection.exec_driver_sql("BEGIN")
-                validate_registration(self.database, connection)
-                validate_attempts(self.database, connection)
-                from paper_radar.screening_tasks.success_integrity import (
-                    validate_successes,
-                )
+        with task_database(self.database, write=False) as engine:
+            try:
+                require_current_revision(engine)
+                with task_transaction(engine, write=False) as connection:
+                    validate_registration(self.database, connection)
+                    validate_attempts(self.database, connection)
+                    from paper_radar.screening_tasks.success_integrity import (
+                        validate_successes,
+                    )
 
-                validate_successes(self._success, connection)
-        except SQLAlchemyError as error:
-            raise database_error(error) from None
-        except (
-            StageInputError,
-            ConfigError,
-            PaperError,
-            ValueError,
-            TypeError,
-            KeyError,
-        ):
-            raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
-        finally:
-            engine.dispose()
+                    validate_successes(self._success, connection)
+            except SQLAlchemyError as error:
+                raise database_error(error) from None
+            except (
+                StageInputError,
+                ConfigError,
+                PaperError,
+                ValueError,
+                TypeError,
+                KeyError,
+            ):
+                raise TaskError(TaskReason.CORRUPT_REFERENCE) from None

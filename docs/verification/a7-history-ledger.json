@@ -1,0 +1,2375 @@
+{
+  "format_version": 1,
+  "note": "历史索引不纳入固定scope，不包含本次最终run_id；完整原JSON只在本地verification-runs。各条绑定由Git逐提交重算核对；本地原ledger以哈希索引保留。",
+  "waves": [
+    {
+      "commit": "251b57c62323d8d7d0c2a59a35c5fbc95c439f3a",
+      "parent": "1ab22f2fc9c7fa82bbe6a0ac0ba3d3ee934443ce",
+      "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持",
+      "changed_paths": [
+        "GLOSSARY.md",
+        "README.md",
+        "docs/contracts/backup-restore.md",
+        "docs/contracts/screening-tasks.md",
+        "docs/verification/a7-requirements.md",
+        "docs/verification/offline-evidence.md",
+        "intent/draft.md",
+        "scripts/a2_full_scope.py",
+        "scripts/a2_scope.py",
+        "scripts/a3_scope.py",
+        "scripts/a4_scope.py",
+        "scripts/a5_scope.py",
+        "scripts/a6_scope.py",
+        "src/paper_radar/backup/manifest.py",
+        "src/paper_radar/screening_tasks/__init__.py",
+        "src/paper_radar/screening_tasks/errors.py",
+        "src/paper_radar/screening_tasks/integrity.py",
+        "src/paper_radar/screening_tasks/models.py",
+        "src/paper_radar/screening_tasks/query.py",
+        "src/paper_radar/screening_tasks/query_models.py",
+        "src/paper_radar/screening_tasks/repository.py",
+        "src/paper_radar/screening_tasks/retry.py",
+        "src/paper_radar/screening_tasks/rules.py",
+        "src/paper_radar/screening_tasks/service.py",
+        "src/paper_radar/screening_tasks/tables.py",
+        "src/paper_radar/storage/migrations/versions/a704_screening_retry.py",
+        "tests/a7_retry_process/sitecustomize.py",
+        "tests/a7_retry_support.py",
+        "tests/a7_retry_worker.py",
+        "tests/test_a2_acceptance.py",
+        "tests/test_a2_full_acceptance.py",
+        "tests/test_a3_acceptance.py",
+        "tests/test_a4_acceptance.py",
+        "tests/test_a5_acceptance.py",
+        "tests/test_a6_acceptance.py",
+        "tests/test_a6_integrity.py",
+        "tests/test_a7_attempt_migrations.py",
+        "tests/test_a7_registration_migrations.py",
+        "tests/test_a7_retry.py",
+        "tests/test_a7_retry_backup.py",
+        "tests/test_a7_retry_integrity.py",
+        "tests/test_a7_retry_migrations.py",
+        "tests/test_a7_retry_process.py",
+        "tests/test_a7_success_migrations.py",
+        "tests/test_a7_task_query.py",
+        "tests/test_backup_failures.py",
+        "tests/test_feed_migrations.py",
+        "tests/test_paper_migrations.py",
+        "tests/test_pi_supply_activation_history.py",
+        "tests/test_pi_supply_cleanup_execute_history.py",
+        "tests/test_pi_supply_cleanup_history.py",
+        "tests/test_pi_supply_history.py",
+        "tests/test_pi_supply_rebuild_history.py",
+        "tests/test_restore_service.py",
+        "tests/test_source_backup.py",
+        "tests/test_source_migrations.py",
+        "tests/test_storage_migrations.py",
+        "tests/test_version_relation_migrations.py"
+      ],
+      "bindings": [
+        {
+          "scope": "scripts/a2_full_scope.py",
+          "path": "tests/test_a2_acceptance.py",
+          "old_sha256": "e6dc4b567f97824a0511e89e12bd4f2d3f404b9b14bdd6eb0c78327b7e147035",
+          "new_sha256": "862d629d962f7b04037baba01ccddf17c75a96f71420e1fe9fbd572844abf1bb",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a2_full_scope.py",
+          "path": "tests/test_a2_full_acceptance.py",
+          "old_sha256": "cd397e3137080664f89d7c3217cce4cca82939840c3aeaefc32b752c40f1b56a",
+          "new_sha256": "dddced8dc74d42e6655d8b17fac8312cf07b022264f1b6b06e979822b8600bff",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a2_scope.py",
+          "path": "tests/test_a2_acceptance.py",
+          "old_sha256": "e6dc4b567f97824a0511e89e12bd4f2d3f404b9b14bdd6eb0c78327b7e147035",
+          "new_sha256": "862d629d962f7b04037baba01ccddf17c75a96f71420e1fe9fbd572844abf1bb",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "tests/test_storage_migrations.py",
+          "old_sha256": "87f1b4ab2ff10d8d2a5785187307cb1a2782a525ccdb3486f516e3cf45b8f94f",
+          "new_sha256": "4bcf7f7c699910e99f72e1b2c383ff3af80891c3097d0aa37fa8a791e5cc033d",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "tests/test_backup_failures.py",
+          "old_sha256": "79ca64458ca7602d270da042975f562d974f7482ee407f2524cb2d423e2b6fa7",
+          "new_sha256": "1a6653f63fbf6b7f0af2603e8186e684f9df7d9187485731da407e44a4870497",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "src/paper_radar/backup/manifest.py",
+          "old_sha256": "ad798500ed551d3d661fcba991e5fe6f54909b89551ae158e38b6c29ff246be9",
+          "new_sha256": "db4d7286fa1c9431ceae5bb8ad9491103bb1a10c3969b4fdc7567b5d30aff4f4",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "tests/test_restore_service.py",
+          "old_sha256": "cefa03c7b73b6d3244accb596639df7a058887cfef4371dca45565b2ba61d3de",
+          "new_sha256": "83843f03da5b74cbfc9114dc60d7f17f3a3d236d056e8690dd00bf81953b42d2",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "tests/test_a3_acceptance.py",
+          "old_sha256": "547f3ab360ad2af5f8f388fffcee4115767aa2bf32cd1202918911ce9f6f3ec7",
+          "new_sha256": "dcb106988f651094e454f7f0cdbf2f7fac6fab42ff57e1aa204af6957bb05050",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "scripts/a2_full_scope.py",
+          "old_sha256": "9aa95f00549e818ae3208a93e3fa2c5a7ee370e4929a87c23edb4f95bac35253",
+          "new_sha256": "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_pi_supply_activation_history.py",
+          "old_sha256": "e2160bcbcc6d349e0b848be0d255f2a31fcc2ffe34fc4aa77e40d3b097c0a0e0",
+          "new_sha256": "6ad090a594e4e2731b0834e828a01de11307b2820f6dbea389ff4433f2c119ef",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_pi_supply_cleanup_execute_history.py",
+          "old_sha256": "64c45e253262d85fb2303cf759e84f258b0fed77c4e47a54de2ec9b3b4138ffd",
+          "new_sha256": "aeeff46f8974c92bc8dbecdee54163cb71098e4d7e0072202f9b6de44cd0e6c3",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_pi_supply_cleanup_history.py",
+          "old_sha256": "0e5845d26142910c0bc9893ab52be897d4abe68a826d92d00ddfd909be186728",
+          "new_sha256": "f097096d2d134cc7008a47f8364559ea3c7cf772b7eb671f7533b8959b713802",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_pi_supply_history.py",
+          "old_sha256": "56f838d9de8218ddc24d7a6a02efc1520b335446b77f684a31b3fb30d64d5496",
+          "new_sha256": "26fad8c1462b2f727e2767e8e27515de7e2b799d9f5ad15000df71d5344c2a75",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_pi_supply_rebuild_history.py",
+          "old_sha256": "f71a3beaf714f21d3c61014fdc193143f438fa323d3c67224fc1ed0ac380561e",
+          "new_sha256": "f4958af52035ff234e5abc802c7f9342d49dedec57695bf9b9626b1822509d41",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_a4_acceptance.py",
+          "old_sha256": "dc60e978ded91ebaded2c977da40b5bf92b42eab1a981eae7fd60067bb527704",
+          "new_sha256": "12d62354b1e98bfe0ab1e3332a2a02c7322b9f6cc08fdb4e3d9e8e11cdf36a75",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "src/paper_radar/backup/manifest.py",
+          "old_sha256": "ad798500ed551d3d661fcba991e5fe6f54909b89551ae158e38b6c29ff246be9",
+          "new_sha256": "db4d7286fa1c9431ceae5bb8ad9491103bb1a10c3969b4fdc7567b5d30aff4f4",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "d04ee3f117caf682e26e58c038dceec5e71cafcf8dc50ffddae5d57a2fb07b46",
+          "new_sha256": "02bb65d6482dadb59182fe9d6fd3c64e4e513d1ddbc503bc3cf416d8ddfaffc8",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "scripts/a2_full_scope.py",
+          "old_sha256": "9aa95f00549e818ae3208a93e3fa2c5a7ee370e4929a87c23edb4f95bac35253",
+          "new_sha256": "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "tests/test_a5_acceptance.py",
+          "old_sha256": "b1830bf83425bde4ad55befad8aab5a43f1e69f8a1c22b2bbff889e397e39c07",
+          "new_sha256": "67e7bb7532bf7495f17e26bc13c5f77c35402fd299c0d1d07ca2f9d27214df5a",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a2_full_scope.py",
+          "old_sha256": "9aa95f00549e818ae3208a93e3fa2c5a7ee370e4929a87c23edb4f95bac35253",
+          "new_sha256": "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "d04ee3f117caf682e26e58c038dceec5e71cafcf8dc50ffddae5d57a2fb07b46",
+          "new_sha256": "02bb65d6482dadb59182fe9d6fd3c64e4e513d1ddbc503bc3cf416d8ddfaffc8",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a4_scope.py",
+          "old_sha256": "604f716760fe8273aad2ef6bf0b256fa4958314bd0f949fd46f645c593e01618",
+          "new_sha256": "d049cd31daf5727c802dc2b05a443a57394dd9d0e2e006365085e4723f5edc9b",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "tests/test_feed_migrations.py",
+          "old_sha256": "b65cfa5ddb33e3a70997e5048147eeb3588b1eeeeea9cde3678ffe95f500fcd3",
+          "new_sha256": "5a6f740951d102ccc8c6d79aabf22044cfa8e37437273f2b1bcbf29d8b56e5d1",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "tests/test_paper_migrations.py",
+          "old_sha256": "6b5a7b2589feafc2de1679b489d5119b212e06fceed90465aa6933268085985f",
+          "new_sha256": "09161e405c7cdfa4d758904421611d9ff470e224a3762b3287a6c15e71a76ad1",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "tests/test_source_backup.py",
+          "old_sha256": "c2061fe31c5e204ef8996c2c2068603aff852a244cde933dfe6e5a6a39ae60ff",
+          "new_sha256": "523a6657daf69ef15f6dd365e0b65084f2e87de3ff5def2a2fe86c91dc514c5b",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "tests/test_source_migrations.py",
+          "old_sha256": "8ae81ca5a066f67a47870b552e434a5ed4a9b98a089f916ad824503e93a92328",
+          "new_sha256": "58c7ff8e3e51c0bcc1dd4f5dd34e32933bed4302be23ee92e94966c15e3a08c5",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "tests/test_version_relation_migrations.py",
+          "old_sha256": "2c632a5c8bf137242f70112353d3c443dee9b30319e0ae3ed233548735d6888d",
+          "new_sha256": "2fdf28a1fe73af337b0c00e72ddc4e6701d88eddb120f96c19d160d05a5b7628",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "tests/test_a6_acceptance.py",
+          "old_sha256": "a41283ac2d86c773388931c2a9b66f573b27dd19821db53407b678b77fb5db17",
+          "new_sha256": "ebf39c0d52023ece04fce366ef72dd1ecc6d29caba43ed1f410781ad5084d767",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "tests/test_a6_integrity.py",
+          "old_sha256": "64efaf9a0bcc614c199f8a9d674f991c0778762b9ae8fddb073f71507c59e724",
+          "new_sha256": "d104ede782057f79e62407cdb97444cfadf0a9d603b354d975ad33293643f582",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a2_full_scope.py",
+          "old_sha256": "9aa95f00549e818ae3208a93e3fa2c5a7ee370e4929a87c23edb4f95bac35253",
+          "new_sha256": "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "d04ee3f117caf682e26e58c038dceec5e71cafcf8dc50ffddae5d57a2fb07b46",
+          "new_sha256": "02bb65d6482dadb59182fe9d6fd3c64e4e513d1ddbc503bc3cf416d8ddfaffc8",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a5_scope.py",
+          "old_sha256": "4dce3cdf150d453c9a7b186381b816ca2830066043dd5e7aae4ad877663825fa",
+          "new_sha256": "38c55bc6f98097a0f709049f90c23bc229e028d176b0727341078f29b0cd9926",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "src/paper_radar/backup/manifest.py",
+          "old_sha256": "ad798500ed551d3d661fcba991e5fe6f54909b89551ae158e38b6c29ff246be9",
+          "new_sha256": "db4d7286fa1c9431ceae5bb8ad9491103bb1a10c3969b4fdc7567b5d30aff4f4",
+          "reason": "#82 a704父链迁移、backup revision及当前/未来head探针前移；历史fixture和分母保持"
+        }
+      ]
+    },
+    {
+      "commit": "cc00aaaceb19630818420ccbb1081a4eb00584f0",
+      "parent": "8cf30a70c4bd50cbe9c8e97d90527ea78c64e714",
+      "reason": "#82已有唯一后继成功后仍保留父任务重放拒绝优先级",
+      "changed_paths": [
+        "docs/contracts/screening-tasks.md",
+        "docs/verification/a7-requirements.md",
+        "src/paper_radar/screening_tasks/retry.py",
+        "tests/test_a7_retry.py",
+        "tests/test_a7_retry_backup.py"
+      ],
+      "bindings": []
+    },
+    {
+      "commit": "670437648413b5958a30a4f987cbfb0f58dc4e3f",
+      "parent": "cc00aaaceb19630818420ccbb1081a4eb00584f0",
+      "reason": "#82真实映射竞争及类型检查补强",
+      "changed_paths": [
+        "tests/test_a7_retry.py",
+        "tests/test_a7_retry_backup.py",
+        "tests/test_a7_retry_migrations.py",
+        "tests/test_a7_retry_process.py",
+        "tests/test_a7_task_query.py"
+      ],
+      "bindings": []
+    },
+    {
+      "commit": "cb01a721e579304f08849a16b2a06f769e7bc429",
+      "parent": "670437648413b5958a30a4f987cbfb0f58dc4e3f",
+      "reason": "#82 metadata UNIQUE索引与持久化迁移一致",
+      "changed_paths": [
+        "src/paper_radar/screening_tasks/tables.py"
+      ],
+      "bindings": []
+    },
+    {
+      "commit": "eaa437fd1d187fb3c00a798182a4d798d6e6a50e",
+      "parent": "cb01a721e579304f08849a16b2a06f769e7bc429",
+      "reason": "#83仅独立A7完整历史恢复测试与文档；无旧组绑定变化",
+      "changed_paths": [
+        "README.md",
+        "docs/contracts/backup-restore.md",
+        "docs/contracts/screening-tasks.md",
+        "docs/verification/a7-requirements.md",
+        "tests/a7_recovery_support.py",
+        "tests/test_a7_complete_recovery.py",
+        "tests/test_a7_recovery_integrity.py"
+      ],
+      "bindings": []
+    },
+    {
+      "commit": "60cc945d02d5a6508659ad8a47ba8a72633db55b",
+      "parent": "eaa437fd1d187fb3c00a798182a4d798d6e6a50e",
+      "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持",
+      "changed_paths": [
+        "GLOSSARY.md",
+        "README.md",
+        "docs/adr/0031-screening-budget-and-derived-applicability.md",
+        "docs/contracts/backup-restore.md",
+        "docs/contracts/screening-tasks.md",
+        "docs/contracts/stage-inputs.md",
+        "docs/contracts/verification-status.md",
+        "docs/verification/a4-requirements.md",
+        "docs/verification/a6-requirements.md",
+        "docs/verification/a7-requirements.md",
+        "docs/verification/offline-evidence.md",
+        "intent/draft.md",
+        "scripts/a2_full_acceptance.py",
+        "scripts/a2_full_scope.py",
+        "scripts/a2_scope.py",
+        "scripts/a2_test_receipt.py",
+        "scripts/a3_scope.py",
+        "scripts/a4_scope.py",
+        "scripts/a5_scope.py",
+        "scripts/a6_scope.py",
+        "scripts/a7_acceptance.py",
+        "scripts/a7_scope.py",
+        "scripts/check-offline",
+        "scripts/verification_status.py",
+        "tests/a7_acceptance_support.py",
+        "tests/fixtures/a7_capabilities.json",
+        "tests/fixtures/verification_transcripts.json",
+        "tests/test_a2_full_entry.py",
+        "tests/test_a4_entry.py",
+        "tests/test_a5_entry.py",
+        "tests/test_a6_entry.py",
+        "tests/test_a6_status.py",
+        "tests/test_a7_acceptance.py",
+        "tests/test_a7_entry.py",
+        "tests/test_a7_formats.py",
+        "tests/test_a7_integrity.py",
+        "tests/test_a7_status.py",
+        "tests/test_a7_test_receipt.py",
+        "tests/test_verification_compatibility.py",
+        "tests/test_verification_integrity.py",
+        "tests/test_verification_run.py",
+        "tests/test_verification_status.py"
+      ],
+      "bindings": [
+        {
+          "scope": "scripts/a2_full_scope.py",
+          "path": "tests/test_verification_integrity.py",
+          "old_sha256": "3839644318334ef253835dc5467953b102513f2cc7319b58afdd8586a01d1932",
+          "new_sha256": "967a56ed308c3bd8cea003817030f145922994ffb9bc5b3856a59b4548f8524f",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a2_full_scope.py",
+          "path": "tests/test_verification_run.py",
+          "old_sha256": "62d406f3648f821253e1426959706027bddc170874d4bb45a7f88a9944b7e4eb",
+          "new_sha256": "b04559ea65de97bc2fc2529f07a60bbcf924f786056162cb848eef453b44779f",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a2_full_scope.py",
+          "path": "tests/test_verification_compatibility.py",
+          "old_sha256": "7bdad246df8bb8b05d7f8e1c63b0530ee63b554cbdfe075a240cd8f08389542d",
+          "new_sha256": "57301c95e4a0fc0d4e6a918007db9d5abb3b893c17a0f01c947e0176198d248e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a2_full_scope.py",
+          "path": "tests/test_a2_full_entry.py",
+          "old_sha256": "c3d8f2459ce23d5bcbc62bc7db333119bf484c828ac5bf2e7dc43edea850e62f",
+          "new_sha256": "8c30098020471faa009113d5b272a1c3f98e88498ca37980f55b9027a140a5f0",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a2_full_scope.py",
+          "path": "scripts/a2_full_acceptance.py",
+          "old_sha256": "2eb2aeec023f8d5b5c13dbe85ba69d6a1c04955e37f62c3a90c15a4724801448",
+          "new_sha256": "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a2_full_scope.py",
+          "path": "scripts/a2_test_receipt.py",
+          "old_sha256": "9a5c2eda301e3c9975aac7ab0c07f9884b99c5eea2f45250a4dc7145340b9c2e",
+          "new_sha256": "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a2_full_scope.py",
+          "path": "scripts/check-offline",
+          "old_sha256": "24db737f730e4ca445e53ca66a547091ee6bb1a865ced53440f245e15b3bfc6a",
+          "new_sha256": "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a2_full_scope.py",
+          "path": "tests/fixtures/verification_transcripts.json",
+          "old_sha256": "1ed48f8d4403d399ffa8fc65c620b02ffcc9750bf105615973e30573efcbdf91",
+          "new_sha256": "f746f0dc76acbfb01e2f8f488e49f5db796c0793f425ccb1f76e95c341dcb16a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a2_scope.py",
+          "path": "scripts/check-offline",
+          "old_sha256": "24db737f730e4ca445e53ca66a547091ee6bb1a865ced53440f245e15b3bfc6a",
+          "new_sha256": "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "scripts/a2_full_acceptance.py",
+          "old_sha256": "2eb2aeec023f8d5b5c13dbe85ba69d6a1c04955e37f62c3a90c15a4724801448",
+          "new_sha256": "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "scripts/a2_test_receipt.py",
+          "old_sha256": "9a5c2eda301e3c9975aac7ab0c07f9884b99c5eea2f45250a4dc7145340b9c2e",
+          "new_sha256": "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "scripts/a2_full_scope.py",
+          "old_sha256": "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
+          "new_sha256": "9133776e4e9b5eec0859a1e51f48126f184606af9012c0f410bb035d798b2d40",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "scripts/check-offline",
+          "old_sha256": "24db737f730e4ca445e53ca66a547091ee6bb1a865ced53440f245e15b3bfc6a",
+          "new_sha256": "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_a4_entry.py",
+          "old_sha256": "c6ee69a9a3f12fae2344a9d24d4149592d3aebf4f938fc152e58447b043ff9d3",
+          "new_sha256": "ae1a5e366747692680b6d05f0c0c2da0736e1eb536d396a7f98c76f9d37bff94",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_a2_full_entry.py",
+          "old_sha256": "c3d8f2459ce23d5bcbc62bc7db333119bf484c828ac5bf2e7dc43edea850e62f",
+          "new_sha256": "8c30098020471faa009113d5b272a1c3f98e88498ca37980f55b9027a140a5f0",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_verification_run.py",
+          "old_sha256": "62d406f3648f821253e1426959706027bddc170874d4bb45a7f88a9944b7e4eb",
+          "new_sha256": "b04559ea65de97bc2fc2529f07a60bbcf924f786056162cb848eef453b44779f",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_verification_compatibility.py",
+          "old_sha256": "7bdad246df8bb8b05d7f8e1c63b0530ee63b554cbdfe075a240cd8f08389542d",
+          "new_sha256": "57301c95e4a0fc0d4e6a918007db9d5abb3b893c17a0f01c947e0176198d248e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/test_verification_integrity.py",
+          "old_sha256": "3839644318334ef253835dc5467953b102513f2cc7319b58afdd8586a01d1932",
+          "new_sha256": "967a56ed308c3bd8cea003817030f145922994ffb9bc5b3856a59b4548f8524f",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "02bb65d6482dadb59182fe9d6fd3c64e4e513d1ddbc503bc3cf416d8ddfaffc8",
+          "new_sha256": "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "scripts/a2_full_scope.py",
+          "old_sha256": "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
+          "new_sha256": "9133776e4e9b5eec0859a1e51f48126f184606af9012c0f410bb035d798b2d40",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "scripts/a2_full_acceptance.py",
+          "old_sha256": "2eb2aeec023f8d5b5c13dbe85ba69d6a1c04955e37f62c3a90c15a4724801448",
+          "new_sha256": "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "scripts/a2_test_receipt.py",
+          "old_sha256": "9a5c2eda301e3c9975aac7ab0c07f9884b99c5eea2f45250a4dc7145340b9c2e",
+          "new_sha256": "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "scripts/check-offline",
+          "old_sha256": "24db737f730e4ca445e53ca66a547091ee6bb1a865ced53440f245e15b3bfc6a",
+          "new_sha256": "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "tests/fixtures/verification_transcripts.json",
+          "old_sha256": "1ed48f8d4403d399ffa8fc65c620b02ffcc9750bf105615973e30573efcbdf91",
+          "new_sha256": "f746f0dc76acbfb01e2f8f488e49f5db796c0793f425ccb1f76e95c341dcb16a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "tests/test_a5_entry.py",
+          "old_sha256": "1cea8b59aca04b61549fd3fbadfe0b12331d5a85c668c85b5ba50eb4927b6b70",
+          "new_sha256": "3fe4bcd00a9ba18d43e1ac90569bdb469975b624bc600c5c567a16238aef9452",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a2_full_scope.py",
+          "old_sha256": "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
+          "new_sha256": "9133776e4e9b5eec0859a1e51f48126f184606af9012c0f410bb035d798b2d40",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "02bb65d6482dadb59182fe9d6fd3c64e4e513d1ddbc503bc3cf416d8ddfaffc8",
+          "new_sha256": "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a4_scope.py",
+          "old_sha256": "d049cd31daf5727c802dc2b05a443a57394dd9d0e2e006365085e4723f5edc9b",
+          "new_sha256": "b8932700404a985df7ca14c94447e49cf3b1df7335c340fa04a41073a911aa2b",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a2_full_acceptance.py",
+          "old_sha256": "2eb2aeec023f8d5b5c13dbe85ba69d6a1c04955e37f62c3a90c15a4724801448",
+          "new_sha256": "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a2_test_receipt.py",
+          "old_sha256": "9a5c2eda301e3c9975aac7ab0c07f9884b99c5eea2f45250a4dc7145340b9c2e",
+          "new_sha256": "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/check-offline",
+          "old_sha256": "24db737f730e4ca445e53ca66a547091ee6bb1a865ced53440f245e15b3bfc6a",
+          "new_sha256": "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "tests/test_a6_entry.py",
+          "old_sha256": "d455379e952b6eb8f64243e8c58012298b946a5d9f08e1408c24fcc46bcbc130",
+          "new_sha256": "71c45514678c091bee8e04a642f98e5853e8f0fb816f07fe58c4a636da2ba04a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "tests/test_a6_status.py",
+          "old_sha256": "3e1d1b85eb6073c0d1ce51e8cfb163d58942e3a00707ad2b98b627135ca06089",
+          "new_sha256": "0791501dcb92cd24d39f73706d0c53cd62b668485aa2a342d2ce9c39a1ff621b",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a2_full_acceptance.py",
+          "old_sha256": "2eb2aeec023f8d5b5c13dbe85ba69d6a1c04955e37f62c3a90c15a4724801448",
+          "new_sha256": "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a2_full_scope.py",
+          "old_sha256": "3a972dedd31c319f581a655f2f3a6817b465c62cec93f4c760283e1e2c63b66b",
+          "new_sha256": "9133776e4e9b5eec0859a1e51f48126f184606af9012c0f410bb035d798b2d40",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a2_test_receipt.py",
+          "old_sha256": "9a5c2eda301e3c9975aac7ab0c07f9884b99c5eea2f45250a4dc7145340b9c2e",
+          "new_sha256": "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "02bb65d6482dadb59182fe9d6fd3c64e4e513d1ddbc503bc3cf416d8ddfaffc8",
+          "new_sha256": "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a5_scope.py",
+          "old_sha256": "38c55bc6f98097a0f709049f90c23bc229e028d176b0727341078f29b0cd9926",
+          "new_sha256": "523fe7e89aa3ccbfecede8bd22725f25b69d859dc9f69e7ba7aeec1ea4c7cf07",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/check-offline",
+          "old_sha256": "24db737f730e4ca445e53ca66a547091ee6bb1a865ced53440f245e15b3bfc6a",
+          "new_sha256": "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/verification_status.py",
+          "old_sha256": "097fb2c4ae1f4aba366def88afbcbfe0dd6ed4449beb0c431c89e06d62d15fdc",
+          "new_sha256": "31258c53ea1532655a1b757fd5f050c839e389c8a330fcf4d35692f2b5d144b7",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_screening_strict_json.py",
+          "old_sha256": null,
+          "new_sha256": "49365327a4a2d6599c62c049f5e3dd8d2001aa4c25741a9f545b842b81c48c53",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_registration.py",
+          "old_sha256": null,
+          "new_sha256": "7087fc72b6e5053117d43eda641954d0313065e3f8b4e218de5f2478f308f5c9",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_registration_failures.py",
+          "old_sha256": null,
+          "new_sha256": "fa43dd827543962c902b536ac9b2040753bde02bfe5a7ced2351c6d99e3b9950",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_registration_migrations.py",
+          "old_sha256": null,
+          "new_sha256": "df4cbb45f75aee872a45ee9cb7240ddb88767857c22db633b36863e9763621ae",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_registration_backup.py",
+          "old_sha256": null,
+          "new_sha256": "7adec86631d46ed281a9ae7e56a9ae0b0d127803039e668752a746d92a6f014a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_registration_process.py",
+          "old_sha256": null,
+          "new_sha256": "4e30dd3b34637a600700d54fbbc585d877c957b8c166a6a0fd9206f542f99e5d",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_registration_imports.py",
+          "old_sha256": null,
+          "new_sha256": "4b5bb6f5d7645cb68cdf18f35f52d5349a16d8230b1da47b40a7c09679cf91e0",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_attempts.py",
+          "old_sha256": null,
+          "new_sha256": "0ed616378e055d1a0202f8648ef6bd6e4de6c979f79a8503c40cfbe076e5be72",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_attempt_inputs.py",
+          "old_sha256": null,
+          "new_sha256": "f141919936cc9ea343c8cc428c07743a9779806081fa259b695c56b5d2613e08",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_attempts_process.py",
+          "old_sha256": null,
+          "new_sha256": "1aef93556ed121ff2158807663474f7f200d3dae55413ff3fccaa4edb7b0b837",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_attempt_integrity.py",
+          "old_sha256": null,
+          "new_sha256": "8280b4cd30e33cf6836a25b838a3a9018700964ed329cc363fd90c96ab522860",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_attempt_backup.py",
+          "old_sha256": null,
+          "new_sha256": "6ada8112da3ef93ded133f0e238a8054c77c5f2333a9780219ec90d92c2736d8",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_attempt_migrations.py",
+          "old_sha256": null,
+          "new_sha256": "18dbc3fe4fb44ee1b10226a64df1a08d9d14ccdbd4c42fcdf2e141110d8ed538",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_boundary_success.py",
+          "old_sha256": null,
+          "new_sha256": "084419b0317f383d355b75e3ecbb3d24e2570e3eff3542d640a0de98a428368e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_success_applicability.py",
+          "old_sha256": null,
+          "new_sha256": "4439f43c479b9a5ccfa759158936afa0bdce49bf233e30b3dc2e24db31e3e2ef",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_success_process.py",
+          "old_sha256": null,
+          "new_sha256": "a4a50ca4e183a7eb552b9c162c9c4092c5115eb61345bc77c813619c57eb6083",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_success_integrity.py",
+          "old_sha256": null,
+          "new_sha256": "f55dd205c74297a1dc532160393a0b89a5460791cc5fb2e3e36af3d708d4b70d",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_success_backup.py",
+          "old_sha256": null,
+          "new_sha256": "2d5f7156f96947ff16c6ec10581d38515daa7679d38d3c679d762aa78c4bd00b",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_success_migrations.py",
+          "old_sha256": null,
+          "new_sha256": "0c629257aa82d6056cb3724e0dacae75e32d5e55b23b9e319fbed51fdc603c1b",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_value_success.py",
+          "old_sha256": null,
+          "new_sha256": "c3a1ec47cab7f37ce64085c05888e8e4ff026ad802d436ab2c359698b2a1d65d",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_value_context.py",
+          "old_sha256": null,
+          "new_sha256": "599c22d81edd9ad40b596dc848071d68a7df4da595160074343a51de151f2b8e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_value_integrity.py",
+          "old_sha256": null,
+          "new_sha256": "cb87bcc2343088a2b90191224de9ef5223f2c8f18c4c6bf2f43cd8a9b196ab34",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_value_backup.py",
+          "old_sha256": null,
+          "new_sha256": "ec3ded1784b54e59438189d99912e8cf6e9afb923c47d8b5e8c1d0750f975f85",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_retry.py",
+          "old_sha256": null,
+          "new_sha256": "2854cd2aa8730c35b3be95a21680e7f5fba147ba52f404ffa901b62e4da5e0e2",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_task_query.py",
+          "old_sha256": null,
+          "new_sha256": "6d72e8be766747ffdf6dd142780de9a6edbf41698ff38befd7dcfd9fe836a452",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_retry_process.py",
+          "old_sha256": null,
+          "new_sha256": "a82636bab2373a79f145d0ab1bc5edadd6eb39703e3477c2e1ddd9777d052b92",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_retry_integrity.py",
+          "old_sha256": null,
+          "new_sha256": "28fc7631fca2234f0e42b2db47d87bda4ccb02254026195fc34d1c41c6e6c0e7",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_retry_backup.py",
+          "old_sha256": null,
+          "new_sha256": "66766165bf6c73ac8f66108c9cd46a43997dba75dbd8202be4dd781b1ef52d24",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_retry_migrations.py",
+          "old_sha256": null,
+          "new_sha256": "da625889ea25e06e439aad8c09a58bcdb5ba2caf35d0120ff8f8bbb5973afdf3",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_complete_recovery.py",
+          "old_sha256": null,
+          "new_sha256": "864129b5025fb14319a2ef3a61d9386b66d86444fce8a9904425e9d6e3280d7a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_recovery_integrity.py",
+          "old_sha256": null,
+          "new_sha256": "004720e9612a0245095f94254650b6bb54fdf464cf4bdc37b007889253e73fec",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_acceptance.py",
+          "old_sha256": null,
+          "new_sha256": "35e5f5f312e1079bc6663f928300a1f931f3c9fb1a777c7c49f6608b38fb597b",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_integrity.py",
+          "old_sha256": null,
+          "new_sha256": "bf873963380abbc5af0b55743e7fe1efb1df6a283744c393e27e00ae50f6e246",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_entry.py",
+          "old_sha256": null,
+          "new_sha256": "71406eed2ea9803ee0ce42353255bc2fa5567c98d4dd6599ebe71af34503709c",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_status.py",
+          "old_sha256": null,
+          "new_sha256": "c0b5c6f22d28bac33d71339fb38da19b66910e5282d2f4be68ec7427c7d2430f",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_test_receipt.py",
+          "old_sha256": null,
+          "new_sha256": "f4e218adc18b69209038ffca1b333489b2ec30b0529c0ca2dbc318e0f6fff54f",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_formats.py",
+          "old_sha256": null,
+          "new_sha256": "2012379576ac3adc501562862a10c4a42c298586bf58bbaed5b68e57a32107c4",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a1_scope.py",
+          "old_sha256": null,
+          "new_sha256": "e71257263bed5859e4277c8b0ff399c4986c440e8212c8d1a636c559fcc7d428",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a2_full_acceptance.py",
+          "old_sha256": null,
+          "new_sha256": "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a2_full_scope.py",
+          "old_sha256": null,
+          "new_sha256": "9133776e4e9b5eec0859a1e51f48126f184606af9012c0f410bb035d798b2d40",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a2_test_receipt.py",
+          "old_sha256": null,
+          "new_sha256": "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": null,
+          "new_sha256": "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a5_scope.py",
+          "old_sha256": null,
+          "new_sha256": "523fe7e89aa3ccbfecede8bd22725f25b69d859dc9f69e7ba7aeec1ea4c7cf07",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a6_scope.py",
+          "old_sha256": null,
+          "new_sha256": "92a20d7b64118089f6afb49e60557cdaec5e00f9689a9b47ce0e57883e698ed5",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a7_acceptance.py",
+          "old_sha256": null,
+          "new_sha256": "2752e1d75cb0ee64efdfe1cf27a1e30c08fb054db20ec25c810e36f791b8a565",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/check-offline",
+          "old_sha256": null,
+          "new_sha256": "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/verification_checks.py",
+          "old_sha256": null,
+          "new_sha256": "f93113dcaa037ed7b5992133320a58d36dcf438c1d82969c94611c54649788bc",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/verification_identity.py",
+          "old_sha256": null,
+          "new_sha256": "27ebdd057098256f0419c34cb9dbc410e0c6f0c7a8c3c931f62cc6942ca8d7b5",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/verification_publication.py",
+          "old_sha256": null,
+          "new_sha256": "337c9efb7ee906486e9de9bb5ec4d60bd9bde7fe358f60098036862e1ac77072",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/verification_run.py",
+          "old_sha256": null,
+          "new_sha256": "a4d08449eb65ac7e2c39d2fe972cccf28ec8af13dcf5d34795ac1c088212ae0a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/verification_status.py",
+          "old_sha256": null,
+          "new_sha256": "31258c53ea1532655a1b757fd5f050c839e389c8a330fcf4d35692f2b5d144b7",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/backup/files.py",
+          "old_sha256": null,
+          "new_sha256": "8bf4f05fea2085b1e6b25bb0ae426db2c13da47aa314dd695a1cd5c5259d36b8",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/backup/manifest.py",
+          "old_sha256": null,
+          "new_sha256": "db4d7286fa1c9431ceae5bb8ad9491103bb1a10c3969b4fdc7567b5d30aff4f4",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/backup/restore.py",
+          "old_sha256": null,
+          "new_sha256": "13d80b3ce3239dcc8159d02cc91ac50ac6abec1f526a8337b16fad8aba77b46f",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/backup/restore_contract.py",
+          "old_sha256": null,
+          "new_sha256": "9f251dd2aa193d3a6908361fd813c184d6dbe605aec122a7cf0de0db9262bb13",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/backup/service.py",
+          "old_sha256": null,
+          "new_sha256": "e6fa39228f4acb1b86c7ebc33f0e2ce4bd962bd9c749145b7faa6ea888413857",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/config/compile.py",
+          "old_sha256": null,
+          "new_sha256": "61d2537d0066dd8ee0ab1cd7aba0a2be858f69627feae420fbe0c18e801b30ee",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/config/identity.py",
+          "old_sha256": null,
+          "new_sha256": "ed02a7920df6c7967c034fe06da3f0ee92e172163ba61fa6c2115db562d99a0e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/config/projections.py",
+          "old_sha256": null,
+          "new_sha256": "be8dcbffc2b1535f9838f90389548c0fa8503a53917a078ad54bb323dad1e63a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/config/schema.py",
+          "old_sha256": null,
+          "new_sha256": "31d98d427c1c14922f08d455324a87bd1674749442d80edc4efdd94e29a6417c",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/config/service.py",
+          "old_sha256": null,
+          "new_sha256": "c9b1e320b42fd840ff091829bcccf8e62e413f006899e6618bd57417e23b1791",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/errors.py",
+          "old_sha256": null,
+          "new_sha256": "90764831f8e6c8040350b321110a4bbde46873cf8f7ed8c744bcf390be9d86e5",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/fact_reads.py",
+          "old_sha256": null,
+          "new_sha256": "8e9672ea7217d4f08d692a4ef705ece3e5b5fe48759e39cac5cffefa79f6f603",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/mapping.py",
+          "old_sha256": null,
+          "new_sha256": "aa588937228e31d2c8ffd58d565d4f13e08a4e619a89d598614e0284e075ee1e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/mapping_models.py",
+          "old_sha256": null,
+          "new_sha256": "c1770760154967b1e0d4c7090acb79d61ba4a7df379f16af459f3ee7393e5bde",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/models.py",
+          "old_sha256": null,
+          "new_sha256": "6a8dace2ca4ca18767f1d79cafe11cb05bb14d2551b90e4b45147e5ff97e11e7",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/queries.py",
+          "old_sha256": null,
+          "new_sha256": "87ec3ef5ebcab6ba48e53ee329957c834c520044cf1d5a90d834076c25db550e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/read_checks.py",
+          "old_sha256": null,
+          "new_sha256": "12bed5ba5d4e8b2d005da1e03745748265a3882d0f1b174f6c19b3d0a50ccce5",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/repository.py",
+          "old_sha256": null,
+          "new_sha256": "81b3d04a32d51bd6353f8ffc99d6ca183d74584911ae4df0d4ea5c75adc8dd3b",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/rules.py",
+          "old_sha256": null,
+          "new_sha256": "d6e8ff81e894d926c62c1c90dd1c8edb06cf01d7c50799ed8256ec38544952cf",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/selection_repository.py",
+          "old_sha256": null,
+          "new_sha256": "27579c3eb0bedbbe90f7da5c5326904b6058023cf3fe1a7576a71afde4b9c7f1",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/tables.py",
+          "old_sha256": null,
+          "new_sha256": "b190ff9f7f1d0ded4bfa559246cd07e5fb8b47290e3c7a76a344c886a6311f21",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/papers/text_rules.py",
+          "old_sha256": null,
+          "new_sha256": "9cebd0175cc0730bd65940339e8dd8d01402c5cbc635afb29641b2aced635e6f",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening/context.py",
+          "old_sha256": null,
+          "new_sha256": "a2ab562750e3e68e42facdfddd71922c14a9ecfe1d0af8e44d3081383f86ef37",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening/errors.py",
+          "old_sha256": null,
+          "new_sha256": "9f03054ed7de9aae6093914f9de230b961020928bf441e7e25935bf7b3a551a1",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening/schema.py",
+          "old_sha256": null,
+          "new_sha256": "3d741ca3876d24fa37df7cb48569b4193fd7c6d24adf47e68e29aa39400635e1",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening/text.py",
+          "old_sha256": null,
+          "new_sha256": "77e4ad599a2edbbaf30aa2f134918130f2c630fcc74abb9068190614c0f3cff1",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening/validation.py",
+          "old_sha256": null,
+          "new_sha256": "63d26b9b7b5593bb3260a37aacef1d537fa7736f7bbbf7ef25b9198bab17fc62",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening/value_types.py",
+          "old_sha256": null,
+          "new_sha256": "7a6d1be2b56745e15d074575b7cc4f9f9ae0e4fed3a8409cf098fac0751b5b85",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/__init__.py",
+          "old_sha256": null,
+          "new_sha256": "40404febc4166e5af5953e5d3fb232b2f27dc14de9a385168b7218a72d6b96d4",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/attempt_integrity.py",
+          "old_sha256": null,
+          "new_sha256": "609f526105eb447daf8ce8b5c530b940a1c47bcd35977da4436de14cfd0478bf",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/attempt_models.py",
+          "old_sha256": null,
+          "new_sha256": "3072fa9bfa4015f68092e87494384a789465de9b7e3c0c46d447836092b4eb17",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/attempt_rules.py",
+          "old_sha256": null,
+          "new_sha256": "5be85a80dc18148229b457bc8c498217684f3f616808ceb3b871443a5555af49",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/database_errors.py",
+          "old_sha256": null,
+          "new_sha256": "433e727d768e8281fe69fe48cff91eb861e59572b26ae839ed743872547c6630",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/errors.py",
+          "old_sha256": null,
+          "new_sha256": "e6afe8229cd88c575a146901da2361d5a22ecea797bbddf829b9db360555b3e1",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/execution.py",
+          "old_sha256": null,
+          "new_sha256": "ea954d078681c28548e3ebf6e98d45e986d5402143763d59f3ddb7b62b64a144",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/frozen.py",
+          "old_sha256": null,
+          "new_sha256": "1feeec54b063c149788086812cac02ae148004a496ef9a79cc04b5903842438a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/integrity.py",
+          "old_sha256": null,
+          "new_sha256": "e89921cca6aa3cd49299c0a54fe1e774cae9d68d32ac55e82c9360a4bebc5d5d",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/models.py",
+          "old_sha256": null,
+          "new_sha256": "42c24b28d5d53d4a748ef2bb8d9948348acf83b8470e26e56aa37f11bcafb249",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/query.py",
+          "old_sha256": null,
+          "new_sha256": "30328d916a49b6e03faf29cdefbc1cc648adf21be7592822d9a1b71a8b99ae3b",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/query_models.py",
+          "old_sha256": null,
+          "new_sha256": "a771cf0bc91a6cc4ee961c2c85ebca8b7c7a4f38eaa8e6f64b58e3d3b15f2ad2",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/repository.py",
+          "old_sha256": null,
+          "new_sha256": "159d2135a74470c8fc9a060c4f7d24ca2e792ecd654c1ef147ec431bed6d8d9d",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/retry.py",
+          "old_sha256": null,
+          "new_sha256": "5364fe4155cdd8c9dcce17d4110147e2d0c037151c213d55335a56ea1f6587cc",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/rules.py",
+          "old_sha256": null,
+          "new_sha256": "ab43492fea73c223e876225ab2ab17095b01e5275867965ca118bc2eec5264f5",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/service.py",
+          "old_sha256": null,
+          "new_sha256": "2581c2d373709216f5c1e3724f7a77850ff178b673e8563488f4726a73610a55",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/success.py",
+          "old_sha256": null,
+          "new_sha256": "5fd86d7b02dd4d49710bfd5df8c8175b18eb74d81040f082819cb2853f9240fa",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/success_integrity.py",
+          "old_sha256": null,
+          "new_sha256": "60194cd3917ee2881c73961a2e9239a7a6439baefebff595f85ec4c20319a1fb",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/success_models.py",
+          "old_sha256": null,
+          "new_sha256": "bae59fc55ef8f81cc46316e3d6d9792ba6af39a26cc7878f3f836ad3cee862f5",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/success_rules.py",
+          "old_sha256": null,
+          "new_sha256": "c3ead169284f15e0c8805accd7390f81e16e21306099b5fcde9c190c03d62ec7",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/tables.py",
+          "old_sha256": null,
+          "new_sha256": "fdd3045c423fa2609bee7303192443d24c020cf36c54cba50710e2cc167b0f51",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/stage_inputs/__init__.py",
+          "old_sha256": null,
+          "new_sha256": "d3a77ae4330d0821ddf84ed6b9f02830292f5b3ba678c69faa48e2bfc7611a87",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/stage_inputs/service.py",
+          "old_sha256": null,
+          "new_sha256": "d2dc724da98760240b6fa95e09619b2ca435e506c68a221976ae8c3ffba382da",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/artifact_contract.py",
+          "old_sha256": null,
+          "new_sha256": "ab8284b17b5710fe9e537f6edb88fff7fc84f686417f96e3558405699f1fa999",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/artifact_repository.py",
+          "old_sha256": null,
+          "new_sha256": "e81d40c7330f4a2676524ead4c59bea4c263d81b447deeb32403c0599e7d222b",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/artifacts.py",
+          "old_sha256": null,
+          "new_sha256": "45f08248581aaaa2681b9851e96039dd24a0743deabebc7c36fbb42535537681",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/blob_store.py",
+          "old_sha256": null,
+          "new_sha256": "3507cc6db2ea5b4848790e5a2e25cc7d9f6e38a0f5a1371e18cb20d11953ad29",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/database.py",
+          "old_sha256": null,
+          "new_sha256": "ed8aba07f31eb6019c6d656a9147c682d74073bbdf4d268cd488bdb79ff3b7b1",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/filesystem.py",
+          "old_sha256": null,
+          "new_sha256": "b0904b630bb476eb4a7286ec9b6623176e83549be8c0a33faec7e29a1480e91e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/migrations/versions/a701_screening_registration.py",
+          "old_sha256": null,
+          "new_sha256": "7040fc993c9a8921dd81e3059a5a92e9d0817fe4fa743d5a3aff82461c469d8f",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/migrations/versions/a702_screening_attempts.py",
+          "old_sha256": null,
+          "new_sha256": "d7ceb107d15d4e22b51b375fa2b13493e79e8e16f902bce2ca618d46f28671a2",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/migrations/versions/a703_screening_success.py",
+          "old_sha256": null,
+          "new_sha256": "0f9d61d04cba04a658c4a928394431dff93a75abe13e38f437d20ec19feba9fe",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/migrations/versions/a704_screening_retry.py",
+          "old_sha256": null,
+          "new_sha256": "720b73887f1ef6d048f645e5043fd421a00052951ee3b7b16441714694a55d8b",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/records.py",
+          "old_sha256": null,
+          "new_sha256": "f1e5e7d9ca146fc8439ed8966d6bb3576e838ed7494d831772131731601094ca",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/repository.py",
+          "old_sha256": null,
+          "new_sha256": "91a48152f1f2fdd840471f81c6db13ca87dc533a8ce4fa03f5b396b08019f5bf",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/schema.py",
+          "old_sha256": null,
+          "new_sha256": "291db5e419f3a5a7fd88afab7f369569d0b8e754fa36932210418c0938050a0f",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a2_full_support.py",
+          "old_sha256": null,
+          "new_sha256": "a15976749dc2ae52448d81ea794c2be1c2e0f53d4e2a09de20f9a9790c16dc38",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a3_acceptance_support.py",
+          "old_sha256": null,
+          "new_sha256": "d89e4dff6834d19562ffd9a3a5fde14c353962ee67a8c1df21113c75979b2545",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a3_process_support.py",
+          "old_sha256": null,
+          "new_sha256": "4c0ca963d2513532060c5f122f92b09933e234c4c65e342b78d3fd5d06880d74",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a4_acceptance_support.py",
+          "old_sha256": null,
+          "new_sha256": "3e7457b20e193b1076b67c3d8394dcb0b9eebb60fcdc58d3abe44be4d50740cf",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a5_acceptance_support.py",
+          "old_sha256": null,
+          "new_sha256": "528ab9bd6e1a71767083eb514378e028420691d0c61a81237cab85163b2ab1f5",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a6_acceptance_support.py",
+          "old_sha256": null,
+          "new_sha256": "b6642636b0e57bb76e4bcbbe94a540e7239075ab5d6872a01e04ad046a4f28a9",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_acceptance_support.py",
+          "old_sha256": null,
+          "new_sha256": "3d9de027d1d9c1a6ffbab594bafb40abdaccb3e8e67297a7b8371ad1021c048d",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_attempts_process/sitecustomize.py",
+          "old_sha256": null,
+          "new_sha256": "9957b8549356b4f540c3c2c41534eff293f25093f2354436c2c3d0257d87433b",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_attempts_worker.py",
+          "old_sha256": null,
+          "new_sha256": "bc5c9098b12cfe81e4e3d5295b9816c748db163c152571b95f8cdc184d2a183a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_recovery_support.py",
+          "old_sha256": null,
+          "new_sha256": "f9f98ea554614ebc7de14795c405d8034bde0bea37f4abb1d46d8c4a818660c9",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_registration_process/sitecustomize.py",
+          "old_sha256": null,
+          "new_sha256": "d41a6eb7bbef9be01c5674dfb3105bbafbc53b7ca564e50e3e0c3e503f367408",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_registration_support.py",
+          "old_sha256": null,
+          "new_sha256": "fb2a8b308364e85acd7bcf3bfa7fe80dff613f28988c6c59f891497c781a09d5",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_registration_worker.py",
+          "old_sha256": null,
+          "new_sha256": "aadb871af2c13b4d556e04385fc4a4bb33d11a1e0c0181ac042dffb14525c44c",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_retry_process/sitecustomize.py",
+          "old_sha256": null,
+          "new_sha256": "d09ee675d03850644cb29c48f26318c0eda68e50d4f807a73e985e40c233ac9e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_retry_support.py",
+          "old_sha256": null,
+          "new_sha256": "ecd292a60410fe31f243d9ce2a466575b01774ac9c5cfe56f9cc6f135f2a2b81",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_retry_worker.py",
+          "old_sha256": null,
+          "new_sha256": "cef786836eb08ab21e1cc3677723601e64d6ac9a8048223b51b95226cb16cbc1",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_success_process/sitecustomize.py",
+          "old_sha256": null,
+          "new_sha256": "b28bf74b8c76d6c04db657e6214924cddad585d1ba32a5ac5f8b44d7b0e95d93",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_success_worker.py",
+          "old_sha256": null,
+          "new_sha256": "860935e856f476a96546ab83fb6bfefedc45733be1ec470ac1079cbd7033100a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_value_support.py",
+          "old_sha256": null,
+          "new_sha256": "6165a17b98609bd0611cd27d80f09aaf165a8df9e08ad9a2808767b79f324404",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/artifact_support.py",
+          "old_sha256": null,
+          "new_sha256": "2771734fb913cb279be6aa9b9518b7d7e2bf70e2b7982f28e47b78be89000664",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/backup_support.py",
+          "old_sha256": null,
+          "new_sha256": "f1ee3e3febb10bcf68212af621c79d0d25951fa1464cd11e23d2afe139e8cc37",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/config_projection_support.py",
+          "old_sha256": null,
+          "new_sha256": "1a3aa9a7ce2535a9a52c3fde9dc18cde964d1de8b89654e3d50e566aae79ef2a",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/config_test_support.py",
+          "old_sha256": null,
+          "new_sha256": "1bdd4ec7d1c3a3c2274455cfe184ea5ee7d58971d65adc1ccd532a55c295e840",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/deny_network/sitecustomize.py",
+          "old_sha256": null,
+          "new_sha256": "dfce12fb68aaefd9b19ec26f1ff6bfb10b3f726fdafe6f466ec031cc2acc3288",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_paper_mapping.py",
+          "old_sha256": null,
+          "new_sha256": "8cf3de3591cbc9b2a19cccc8ac93ea9a16909e44121a32f231838b045f956ea0",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_paper_service.py",
+          "old_sha256": null,
+          "new_sha256": "b0517a8a0058e544258a2f1b130ec3f1d05fcee8b495b8ea35b7409bc8efc6c2",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_version_relations.py",
+          "old_sha256": null,
+          "new_sha256": "069aa10cc4cb66405e0f093e00b0503bda09200563113ebfaedbf7230805c74e",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/fixtures/a7_capabilities.json",
+          "old_sha256": null,
+          "new_sha256": "3d46510d050a0cacf60d96f6b638b51dc812d95cffc774074b91ca35360df2eb",
+          "reason": "#84必需A7接入完整入口、状态读者和真实回执fixture；旧组分母保持"
+        }
+      ]
+    },
+    {
+      "commit": "72f9938ebda9e1fc4f57eab201e72b02b8ab86e8",
+      "parent": "60cc945d02d5a6508659ad8a47ba8a72633db55b",
+      "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审",
+      "changed_paths": [
+        "docs/contracts/screening-tasks.md",
+        "docs/verification/a7-requirements.md",
+        "scripts/a3_scope.py",
+        "scripts/a4_scope.py",
+        "scripts/a5_scope.py",
+        "scripts/a6_scope.py",
+        "scripts/a7_scope.py",
+        "src/paper_radar/screening_tasks/service.py",
+        "src/paper_radar/storage/artifacts.py",
+        "src/paper_radar/storage/blob_store.py",
+        "tests/a7_attempts_worker.py",
+        "tests/fixtures/a7_capabilities.json",
+        "tests/test_a7_attempts.py",
+        "tests/test_a7_driver_preconditions.py",
+        "tests/test_a7_integrity.py"
+      ],
+      "bindings": [
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "src/paper_radar/storage/artifacts.py",
+          "old_sha256": "45f08248581aaaa2681b9851e96039dd24a0743deabebc7c36fbb42535537681",
+          "new_sha256": "a30949836fd65485df2b3fc477b1027b7deddb405edd90bc4f29c297ade333f5",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "src/paper_radar/storage/blob_store.py",
+          "old_sha256": "3507cc6db2ea5b4848790e5a2e25cc7d9f6e38a0f5a1371e18cb20d11953ad29",
+          "new_sha256": "7f6f3f678b2de3ebc2961d4f6d2226eb97221712d123bde1ee49b4bcd75f9687",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+          "new_sha256": "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+          "new_sha256": "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a4_scope.py",
+          "old_sha256": "b8932700404a985df7ca14c94447e49cf3b1df7335c340fa04a41073a911aa2b",
+          "new_sha256": "23cb0f88bb3db286d2cb3a6a7d45d812aab396e6ed9c3b60d030c1d0a0e6561a",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+          "new_sha256": "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a5_scope.py",
+          "old_sha256": "523fe7e89aa3ccbfecede8bd22725f25b69d859dc9f69e7ba7aeec1ea4c7cf07",
+          "new_sha256": "651a8458a791098535bc33b26727a15f8602cf76de430f41b0a1e53f5c61ad95",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_driver_preconditions.py",
+          "old_sha256": null,
+          "new_sha256": "7a634cec61476ade591e775b5fda2b5a0826eac15d3b6fa8a2df7174d8411c26",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_attempts.py",
+          "old_sha256": "0ed616378e055d1a0202f8648ef6bd6e4de6c979f79a8503c40cfbe076e5be72",
+          "new_sha256": "9a4daf25625d04bccc1f3b6b9a8954fc501499452f38b4e02ff7917a8de4d591",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_integrity.py",
+          "old_sha256": "bf873963380abbc5af0b55743e7fe1efb1df6a283744c393e27e00ae50f6e246",
+          "new_sha256": "728a75c626a4edf5e71a57017a1d1d211231a63b8be424d40fe03b1445c6d603",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+          "new_sha256": "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a5_scope.py",
+          "old_sha256": "523fe7e89aa3ccbfecede8bd22725f25b69d859dc9f69e7ba7aeec1ea4c7cf07",
+          "new_sha256": "651a8458a791098535bc33b26727a15f8602cf76de430f41b0a1e53f5c61ad95",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a6_scope.py",
+          "old_sha256": "92a20d7b64118089f6afb49e60557cdaec5e00f9689a9b47ce0e57883e698ed5",
+          "new_sha256": "17ce1ff6a5f2aee3c28b8b8f6767164dffc839e817c7b20060b8ecbf9f341e31",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/service.py",
+          "old_sha256": "2581c2d373709216f5c1e3724f7a77850ff178b673e8563488f4726a73610a55",
+          "new_sha256": "902e8dfdec9ad84fe215b713fa1ef626e6567620fde44af7c872e3997fea8ecb",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/artifacts.py",
+          "old_sha256": "45f08248581aaaa2681b9851e96039dd24a0743deabebc7c36fbb42535537681",
+          "new_sha256": "a30949836fd65485df2b3fc477b1027b7deddb405edd90bc4f29c297ade333f5",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/blob_store.py",
+          "old_sha256": "3507cc6db2ea5b4848790e5a2e25cc7d9f6e38a0f5a1371e18cb20d11953ad29",
+          "new_sha256": "7f6f3f678b2de3ebc2961d4f6d2226eb97221712d123bde1ee49b4bcd75f9687",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/a7_attempts_worker.py",
+          "old_sha256": "bc5c9098b12cfe81e4e3d5295b9816c748db163c152571b95f8cdc184d2a183a",
+          "new_sha256": "95b9023990a1e7965b36ec0e282345fda8382cf6ee78cf37b055159f74e4b41d",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/fixtures/a7_capabilities.json",
+          "old_sha256": "3d46510d050a0cacf60d96f6b638b51dc812d95cffc774074b91ca35360df2eb",
+          "new_sha256": "16ada172a14a9a0b39ba0a86db6b3ad150fbbf3fc01addeaaa61295cb30f7e0b",
+          "reason": "integration驱动领取前前置条件与制品发布预检；A3存储以及下游scope重审"
+        }
+      ]
+    },
+    {
+      "commit": "9ae6819ac8ad80c538a79bb175ad68424e0c14eb",
+      "parent": "72f9938ebda9e1fc4f57eab201e72b02b8ab86e8",
+      "reason": "integration连接级attempt读取/恢复集中；不改变事务所有权",
+      "changed_paths": [
+        "scripts/a7_scope.py",
+        "src/paper_radar/screening_tasks/attempt_repository.py",
+        "src/paper_radar/screening_tasks/execution.py",
+        "src/paper_radar/screening_tasks/integrity.py",
+        "src/paper_radar/screening_tasks/query.py",
+        "src/paper_radar/screening_tasks/retry.py",
+        "src/paper_radar/screening_tasks/success.py"
+      ],
+      "bindings": [
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/attempt_repository.py",
+          "old_sha256": null,
+          "new_sha256": "87389b2fdfde60f946790abc4d2f0f0dd4deed2087409744c5806ccea882c421",
+          "reason": "integration连接级attempt读取/恢复集中；不改变事务所有权"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/execution.py",
+          "old_sha256": "ea954d078681c28548e3ebf6e98d45e986d5402143763d59f3ddb7b62b64a144",
+          "new_sha256": "199a90b80ca9cfbd3323673566e6b63e0a943fc618823d45ecfe347edc8f4266",
+          "reason": "integration连接级attempt读取/恢复集中；不改变事务所有权"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/integrity.py",
+          "old_sha256": "e89921cca6aa3cd49299c0a54fe1e774cae9d68d32ac55e82c9360a4bebc5d5d",
+          "new_sha256": "14b871d27e0185fcfb32e2beda048ebb95eb2dc24cb6f9c641b5f900fe63802f",
+          "reason": "integration连接级attempt读取/恢复集中；不改变事务所有权"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/query.py",
+          "old_sha256": "30328d916a49b6e03faf29cdefbc1cc648adf21be7592822d9a1b71a8b99ae3b",
+          "new_sha256": "b6e29c0fa4adfd22d9173546a206672ee5ebedf9d43c0609d63a48da2fe4f930",
+          "reason": "integration连接级attempt读取/恢复集中；不改变事务所有权"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/retry.py",
+          "old_sha256": "5364fe4155cdd8c9dcce17d4110147e2d0c037151c213d55335a56ea1f6587cc",
+          "new_sha256": "8881232c2aecd20c73094a0416d3082046e1735e95af9c5b4c059de84a7ff9a0",
+          "reason": "integration连接级attempt读取/恢复集中；不改变事务所有权"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/success.py",
+          "old_sha256": "5fd86d7b02dd4d49710bfd5df8c8175b18eb74d81040f082819cb2853f9240fa",
+          "new_sha256": "055fe237442a4f654f52843385f32d526388414d6d96c90c13b3af6863210b6a",
+          "reason": "integration连接级attempt读取/恢复集中；不改变事务所有权"
+        }
+      ]
+    },
+    {
+      "commit": "fddad9f39e6cba30c444966f83ac66ba44dfbe34",
+      "parent": "9ae6819ac8ad80c538a79bb175ad68424e0c14eb",
+      "reason": "integration AttemptRow类型、凭据定位和时间检查集中；旧分母保持",
+      "changed_paths": [
+        "docs/verification/a7-requirements.md",
+        "scripts/a7_scope.py",
+        "src/paper_radar/screening_tasks/attempt_models.py",
+        "src/paper_radar/screening_tasks/attempt_repository.py",
+        "src/paper_radar/screening_tasks/attempt_rules.py",
+        "src/paper_radar/screening_tasks/execution.py",
+        "src/paper_radar/screening_tasks/service.py",
+        "src/paper_radar/screening_tasks/success.py",
+        "tests/fixtures/a7_capabilities.json",
+        "tests/test_a7_driver_preconditions.py"
+      ],
+      "bindings": [
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_driver_preconditions.py",
+          "old_sha256": "7a634cec61476ade591e775b5fda2b5a0826eac15d3b6fa8a2df7174d8411c26",
+          "new_sha256": "302d95bae09af82498f907bcaeec75dede5e9d90917642b6bab033b9df30c8bb",
+          "reason": "integration AttemptRow类型、凭据定位和时间检查集中；旧分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/attempt_repository.py",
+          "old_sha256": "87389b2fdfde60f946790abc4d2f0f0dd4deed2087409744c5806ccea882c421",
+          "new_sha256": "be3746702f681cc3ac6bd1c8d4e4d1a3eb7318f74a9493eddb705c01bb10897b",
+          "reason": "integration AttemptRow类型、凭据定位和时间检查集中；旧分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/attempt_models.py",
+          "old_sha256": "3072fa9bfa4015f68092e87494384a789465de9b7e3c0c46d447836092b4eb17",
+          "new_sha256": "e7b5a85d7b5686809f941a3613dc14c66a439c289bdca7e9ea2df4e596880aa8",
+          "reason": "integration AttemptRow类型、凭据定位和时间检查集中；旧分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/attempt_rules.py",
+          "old_sha256": "5be85a80dc18148229b457bc8c498217684f3f616808ceb3b871443a5555af49",
+          "new_sha256": "4a10eed02393e62b816488a3cbee8e089ef2c62bacf898cd3f6101c3612e7a8d",
+          "reason": "integration AttemptRow类型、凭据定位和时间检查集中；旧分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/execution.py",
+          "old_sha256": "199a90b80ca9cfbd3323673566e6b63e0a943fc618823d45ecfe347edc8f4266",
+          "new_sha256": "e131b5616e181f85a57149ac89bec781d852f8eb281646db77e04c4072eb1e28",
+          "reason": "integration AttemptRow类型、凭据定位和时间检查集中；旧分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/service.py",
+          "old_sha256": "902e8dfdec9ad84fe215b713fa1ef626e6567620fde44af7c872e3997fea8ecb",
+          "new_sha256": "e57f9dc97d4d734c407e02b5a6eb90da5723a2fbca4704a726d5b6ae771b5065",
+          "reason": "integration AttemptRow类型、凭据定位和时间检查集中；旧分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/screening_tasks/success.py",
+          "old_sha256": "055fe237442a4f654f52843385f32d526388414d6d96c90c13b3af6863210b6a",
+          "new_sha256": "fa013997921091ba167fed4b1262926dbe3bb6060a518e8405425e3e6f73cd72",
+          "reason": "integration AttemptRow类型、凭据定位和时间检查集中；旧分母保持"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/fixtures/a7_capabilities.json",
+          "old_sha256": "16ada172a14a9a0b39ba0a86db6b3ad150fbbf3fc01addeaaa61295cb30f7e0b",
+          "new_sha256": "8fc6ff575695d70a011c68b11c456fde843e4862f5cf58c76db411c1582c371b",
+          "reason": "integration AttemptRow类型、凭据定位和时间检查集中；旧分母保持"
+        }
+      ]
+    },
+    {
+      "commit": "47dec5870d63bef9c6754f973211b9660b335b3c",
+      "parent": "fddad9f39e6cba30c444966f83ac66ba44dfbe34",
+      "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑",
+      "changed_paths": [
+        "docs/contracts/screening-tasks.md",
+        "docs/verification/a7-requirements.md",
+        "scripts/a3_scope.py",
+        "scripts/a4_scope.py",
+        "scripts/a5_scope.py",
+        "scripts/a6_scope.py",
+        "scripts/a7_scope.py",
+        "src/paper_radar/storage/blob_store.py",
+        "tests/test_a7_driver_preconditions.py"
+      ],
+      "bindings": [
+        {
+          "scope": "scripts/a3_scope.py",
+          "path": "src/paper_radar/storage/blob_store.py",
+          "old_sha256": "7f6f3f678b2de3ebc2961d4f6d2226eb97221712d123bde1ee49b4bcd75f9687",
+          "new_sha256": "3664854101b7d4e1612118a9dafa2320a879ca48e9ae9273c05c56821662d8e6",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        },
+        {
+          "scope": "scripts/a4_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
+          "new_sha256": "9d7f4aff00ca3665718e01015508ccaa746b3bd04ff21e581e8e718d5c5059f1",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
+          "new_sha256": "9d7f4aff00ca3665718e01015508ccaa746b3bd04ff21e581e8e718d5c5059f1",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        },
+        {
+          "scope": "scripts/a5_scope.py",
+          "path": "scripts/a4_scope.py",
+          "old_sha256": "23cb0f88bb3db286d2cb3a6a7d45d812aab396e6ed9c3b60d030c1d0a0e6561a",
+          "new_sha256": "9c12bbe47d41cea09e7f79642c969d0d00536c86d028b25be4da72a2b4b10a52",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
+          "new_sha256": "9d7f4aff00ca3665718e01015508ccaa746b3bd04ff21e581e8e718d5c5059f1",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        },
+        {
+          "scope": "scripts/a6_scope.py",
+          "path": "scripts/a5_scope.py",
+          "old_sha256": "651a8458a791098535bc33b26727a15f8602cf76de430f41b0a1e53f5c61ad95",
+          "new_sha256": "9f29dd403428ee71affeffefa85ba13bca3f5c313588766f0a99307f9b5aac0a",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "tests/test_a7_driver_preconditions.py",
+          "old_sha256": "302d95bae09af82498f907bcaeec75dede5e9d90917642b6bab033b9df30c8bb",
+          "new_sha256": "f75e3ad8801affb1ed672019e54f98e62cc3400db99d04e61ee3890d172e528d",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a3_scope.py",
+          "old_sha256": "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
+          "new_sha256": "9d7f4aff00ca3665718e01015508ccaa746b3bd04ff21e581e8e718d5c5059f1",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a5_scope.py",
+          "old_sha256": "651a8458a791098535bc33b26727a15f8602cf76de430f41b0a1e53f5c61ad95",
+          "new_sha256": "9f29dd403428ee71affeffefa85ba13bca3f5c313588766f0a99307f9b5aac0a",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "scripts/a6_scope.py",
+          "old_sha256": "17ce1ff6a5f2aee3c28b8b8f6767164dffc839e817c7b20060b8ecbf9f341e31",
+          "new_sha256": "74810a73e8d893b72f295ea3746b593cb11ccf11e701e329b44874f648d804fd",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        },
+        {
+          "scope": "scripts/a7_scope.py",
+          "path": "src/paper_radar/storage/blob_store.py",
+          "old_sha256": "7f6f3f678b2de3ebc2961d4f6d2226eb97221712d123bde1ee49b4bcd75f9687",
+          "new_sha256": "3664854101b7d4e1612118a9dafa2320a879ca48e9ae9273c05c56821662d8e6",
+          "reason": "integration发布命名空间及既有shard真实权限预检；A3及下游重绑"
+        }
+      ]
+    }
+  ],
+  "local_ledger_indexes": [
+    {
+      "path": "/tmp/paperradar-76/82-rebinding-ledger.json",
+      "sha256": "56bb235279ffb30dab3dd3c9012990be95e104a48d5fe32b36b6a3e6d948c4ab"
+    },
+    {
+      "path": "/tmp/paperradar-76/84-scope-ledger.json",
+      "sha256": "003cc82cadc4434c14debae3a5bb61b12f5ad32620e84966c1ca919be952875c"
+    },
+    {
+      "path": "/tmp/paperradar-76/review-fixes-bindings-behavior.json",
+      "sha256": "65e31b1a5a8c39ddc0b9bd8a49886bce0bb2255ead08ddba74f5eb4bece30405"
+    },
+    {
+      "path": "/tmp/paperradar-76/review-fixes-bindings-extraction.json",
+      "sha256": "67f0fb74c129c20fc53a8f740982761d4a9e1309cd634c9d457592754d2d1113"
+    },
+    {
+      "path": "/tmp/paperradar-76/review-fixes-bindings-final.json",
+      "sha256": "07d7d3f856d914c5b908c1eb9746d86f2e741a1706f28a9d227a9eea537e99ea"
+    },
+    {
+      "path": "/tmp/paperradar-76/review-fixes-bindings-publication.json",
+      "sha256": "7766bf6a1fe4ec107f85fe2a7b0a841f92e05993abef67aad51a547e31aa0584"
+    },
+    {
+      "path": "/tmp/paperradar-76/review-fixes-bindings-typed.json",
+      "sha256": "8ec0c557f5c6362a6b083dd9d1b1063bc99570d485015079062a183d744c0228"
+    }
+  ],
+  "historical_runs": [
+    {
+      "run_id": "005ccfe559af4282b89e4b51250030c7",
+      "code": {
+        "commit": "60cc945d02d5a6508659ad8a47ba8a72633db55b",
+        "dirty": false
+      },
+      "overall": "passed",
+      "finished_at": "2026-10-23T12:10:29+00:00",
+      "records": [
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.a1.json",
+          "sha256": "05ddd09ea80b5eeed9005d52cd1cea8a9114c0871ad1b89379d774b278403172"
+        },
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.a2-full.json",
+          "sha256": "92b88ebd58bb475cf782d4d2f2f0b4c9091f4517b8bc99e3f0191f9c31bd47af"
+        },
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.a2.json",
+          "sha256": "24886aadd8461a9d791ef770da4f5dedf02495549808dda4d02c365aca77c0f0"
+        },
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.a3.json",
+          "sha256": "73b98f468f8b3faab5a75ded110d362770189dd787383f4e7d2ba975cf7981d7"
+        },
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.a4.json",
+          "sha256": "4143436d3b1659534d7a40276c8258070a9e405ed5b4bcfd64817aaf8ec36448"
+        },
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.a5.json",
+          "sha256": "b38513b34526822e63a839fcb2fdc1b4b84829a2b6828d0e4ca5667e7ed559ad"
+        },
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.a6.json",
+          "sha256": "27807962787c3207893fe1056511eb9bce7dc284481a9b455e9609e7a6b1949b"
+        },
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.a7.json",
+          "sha256": "e769bae2c3e45668a9a983643a805926c6154befca01b1fceb874760c36da64e"
+        },
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.json",
+          "sha256": "7227bd13d498e5bdbc0bc769a63682bbfe2d50b9c7ea646650278e35c8765303"
+        },
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.pytest.json",
+          "sha256": "37ab673f32863cc4623ddab267ade50414efeb7c9150075c5fd4749188ee32a8"
+        },
+        {
+          "path": "verification-runs/005ccfe559af4282b89e4b51250030c7.terminal.json",
+          "sha256": "c40110fec01e72741f33b98af326efcca7cfd060931fd62e91e4f2527600bddc"
+        }
+      ]
+    },
+    {
+      "run_id": "c351fcbc271842088e06df0a882b2a34",
+      "code": {
+        "commit": "47dec5870d63bef9c6754f973211b9660b335b3c",
+        "dirty": false
+      },
+      "overall": "passed",
+      "finished_at": "2026-10-23T12:56:27+00:00",
+      "records": [
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.a1.json",
+          "sha256": "eee463271594a24a16380ff3a2e0daa67b4b341cf6266054f2570549fd698185"
+        },
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.a2-full.json",
+          "sha256": "42bbbaac720bcaa953a8358151f6c631fe65515be86ad404153788791421b0c6"
+        },
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.a2.json",
+          "sha256": "e5763b8b7ce0e955f36913fce2120f72af6ab3344b397fbbd7d63b4a63887c91"
+        },
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.a3.json",
+          "sha256": "c25f3099a86a4f78ece3d6160c9b2cbb5ba4da7e7ab113166d1257f79bbb4279"
+        },
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.a4.json",
+          "sha256": "56a03ebf0f83223c66ed5105d4869b23b4236f4f718820e0963ab450bf1fc968"
+        },
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.a5.json",
+          "sha256": "79d07916a5c7e7b65350478e5fd5d96fd374c16740be8cf70ccb91c89a007b07"
+        },
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.a6.json",
+          "sha256": "0c558a5a6c7d973e18b887b3c9dc24d3b8a4a9b068743ff81b4bb70a257fa38a"
+        },
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.a7.json",
+          "sha256": "2d955c8370c6f0adc8cd000b275d49ada0a4072caba85bc2ad73116ed6accd0e"
+        },
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.json",
+          "sha256": "dc0ebbb9e91cb5e1546371c20d21c8bcfb1b972f91d9ccb76412ab3291d5f341"
+        },
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.pytest.json",
+          "sha256": "c9a066ebf63ab5e7b79db3678434dca9d03f3a33d066978437b2f1977da2cac8"
+        },
+        {
+          "path": "verification-runs/c351fcbc271842088e06df0a882b2a34.terminal.json",
+          "sha256": "ae52231188d8d84538441e226c93dd90162e79abbc5a16348e754f64da2c0210"
+        }
+      ]
+    },
+    {
+      "run_id": "6e818ba30d6a4b7a83ae78cac9007bbf",
+      "code": {
+        "commit": "47dec5870d63bef9c6754f973211b9660b335b3c",
+        "dirty": false
+      },
+      "overall": "passed",
+      "finished_at": "2026-10-23T13:17:59+00:00",
+      "records": [
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.a1.json",
+          "sha256": "7caf2efc4fc1342ae21e989d76be10edbd7017db848c76d00f9b2fc4fd889f52"
+        },
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.a2-full.json",
+          "sha256": "987d73c1a1447eda9fec88c8bd27807bf586e260cf3651db3c095724061faa13"
+        },
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.a2.json",
+          "sha256": "4b07788a862bcb7f6d82cda38f4ae823e72b59a094ccde2715e900a6985598bc"
+        },
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.a3.json",
+          "sha256": "5bec46a29de69bea02872fe69b535f7fd92409636686329b82241fe257038b2c"
+        },
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.a4.json",
+          "sha256": "124bc883ea5b321d92810099aabfbe96282710f564b57351f21189b30f7025b3"
+        },
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.a5.json",
+          "sha256": "ec5394c4734d900466704e525bba4c3eb6696f18f277bb65635b316bdc01a357"
+        },
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.a6.json",
+          "sha256": "2d1e7f7389adbd37b431fe94eb299b88679b9d319e240b8e5ff61533d2d35772"
+        },
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.a7.json",
+          "sha256": "20b7153be89bb14aec6a80f6d44f63fb644c38be676731653324761af2a6b99f"
+        },
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.json",
+          "sha256": "ce8804b1a5f89459c152b044423e19f4ba8178c965a585b78e2bcdcc67c13b56"
+        },
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.pytest.json",
+          "sha256": "4949d4fbd1e5e3b4e469587cf006ecfb605d110d4297d1f3e43bf8dc17514cb5"
+        },
+        {
+          "path": "verification-runs/6e818ba30d6a4b7a83ae78cac9007bbf.terminal.json",
+          "sha256": "9294b2a46a5255f3a3552489efee88816645fc0dfc2bd13f51bc2e030093e1e4"
+        }
+      ]
+    }
+  ],
+  "external_review": {
+    "baseline_commit": "47dec5870d63bef9c6754f973211b9660b335b3c",
+    "new_module": "tests/test_a7_text_boundaries.py",
+    "new_module_sha256": "098c55eb94315e82b7ed056f7707e0c8962ba7b11d99a0731bab1911ad70e577",
+    "manual_expected_cases": 26,
+    "a7_total_expected_cases": 564,
+    "bindings": [
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/attempt_repository.py",
+        "old_sha256": "be3746702f681cc3ac6bd1c8d4e4d1a3eb7318f74a9493eddb705c01bb10897b",
+        "new_sha256": "19d7826a918be7c6ccca2a7412efc04a566aaf1e46b392b3d3b282c350f4faf7",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/attempt_integrity.py",
+        "old_sha256": "609f526105eb447daf8ce8b5c530b940a1c47bcd35977da4436de14cfd0478bf",
+        "new_sha256": "a1cc83d965132feab740fcc6ebb4302e349166db1ed9f17c98630b33b5a4c0fc",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/attempt_models.py",
+        "old_sha256": "e7b5a85d7b5686809f941a3613dc14c66a439c289bdca7e9ea2df4e596880aa8",
+        "new_sha256": "f2d8bdc4b5a194fda4bc114a63b6717f8d5e71ac14ec0b24459e177b78d77176",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/attempt_rules.py",
+        "old_sha256": "4a10eed02393e62b816488a3cbee8e089ef2c62bacf898cd3f6101c3612e7a8d",
+        "new_sha256": "23bedeed3bcf6d258ba326c5a08307f8c389b8d90cc3aac3a10586a0052c6dbf",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/execution.py",
+        "old_sha256": "e131b5616e181f85a57149ac89bec781d852f8eb281646db77e04c4072eb1e28",
+        "new_sha256": "09c09d0de839fdd429c909bfd358ae40893a835aa611a4308f04a7c4e9c4ea30",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/integrity.py",
+        "old_sha256": "14b871d27e0185fcfb32e2beda048ebb95eb2dc24cb6f9c641b5f900fe63802f",
+        "new_sha256": "83bc3d0f53d44ae1c4ee61b2b3173230bd2e96fa91f568c46d995610b89897eb",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/query.py",
+        "old_sha256": "b6e29c0fa4adfd22d9173546a206672ee5ebedf9d43c0609d63a48da2fe4f930",
+        "new_sha256": "8a5a4c8f07e58e5f3c7414d7cc186788fa3bf13fb8297ff8d1759734aa5605cd",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/repository.py",
+        "old_sha256": "159d2135a74470c8fc9a060c4f7d24ca2e792ecd654c1ef147ec431bed6d8d9d",
+        "new_sha256": "1d72dd519cc8f7ea1a734fc1df0686054ab07351a270e13cb2da30046479cd1c",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/retry.py",
+        "old_sha256": "8881232c2aecd20c73094a0416d3082046e1735e95af9c5b4c059de84a7ff9a0",
+        "new_sha256": "7723a0e6cb209215860e7bfff74a8fd2b5e060884045492f9a8a1966be885052",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/rules.py",
+        "old_sha256": "ab43492fea73c223e876225ab2ab17095b01e5275867965ca118bc2eec5264f5",
+        "new_sha256": "ad6e02377fbc3cc965a2644a36c8321324a036e63d493232b387566cd3a3a4bd",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/service.py",
+        "old_sha256": "e57f9dc97d4d734c407e02b5a6eb90da5723a2fbca4704a726d5b6ae771b5065",
+        "new_sha256": "47c19aff0e5fa95aa578bab5685fed38da02b5fd5a8eb80a3599e384aec2c200",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/success.py",
+        "old_sha256": "fa013997921091ba167fed4b1262926dbe3bb6060a518e8405425e3e6f73cd72",
+        "new_sha256": "40fd7a960eeaa0033f84a7e5d9736d9fbe2a3ac00722e644bb5037bc95716190",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/success_integrity.py",
+        "old_sha256": "60194cd3917ee2881c73961a2e9239a7a6439baefebff595f85ec4c20319a1fb",
+        "new_sha256": "d3498f9fe0ca4c7c1d02aceace45e01898edb9d53a363dc96e4ffc7474f17859",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "src/paper_radar/screening_tasks/success_rules.py",
+        "old_sha256": "c3ead169284f15e0c8805accd7390f81e16e21306099b5fcde9c190c03d62ec7",
+        "new_sha256": "f1d5e40a5c814d4a55ba0c63435c7c52325d5113681ec2d451cde3deef8d4ea6",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      },
+      {
+        "scope": "scripts/a7_scope.py",
+        "path": "tests/fixtures/a7_capabilities.json",
+        "old_sha256": "8fc6ff575695d70a011c68b11c456fde843e4862f5cf58c76db411c1582c371b",
+        "new_sha256": "60701c091af0700149320a12b011b0883ad58eb933e5062f1fd6a6c1249e44b7",
+        "reason": "外部审查：内部规则集中，保留公共行为；独立边界向量人工固定26例，旧分母不变"
+      }
+    ]
+  }
+}

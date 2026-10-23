@@ -3,16 +3,36 @@
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
+from typing import TypeGuard
 
 from paper_radar.screening_tasks.attempt_models import (
+    ATTEMPTS_PER_GENERATION,
     LEASE_SECONDS,
     AttemptRow,
     Clock,
     FailureKind,
+    FailureReport,
     TaskStatus,
 )
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.models import TaskState
+
+EXECUTOR_FAILURES = frozenset(
+    {
+        FailureKind.TIMEOUT,
+        FailureKind.CANCELLED,
+        FailureKind.PROTOCOL_ERROR,
+        FailureKind.EXECUTOR_ERROR,
+    }
+)
+
+
+def is_executor_failure(report: object) -> TypeGuard[FailureReport]:
+    return (
+        type(report) is FailureReport
+        and type(report.kind) is FailureKind
+        and report.kind in EXECUTOR_FAILURES
+    )
 
 
 def utc_now(clock: Clock | None) -> datetime:
@@ -67,16 +87,18 @@ def derive_status(
     task_id: str, rows: Sequence[AttemptRow], now: datetime
 ) -> TaskStatus:
     if not rows:
-        return TaskStatus(task_id, "ready", 0, 2)
+        return TaskStatus(task_id, "ready", 0, ATTEMPTS_PER_GENERATION)
     if rows[-1]["success_id"] is not None:
-        return TaskStatus(task_id, "succeeded", len(rows), 2 - len(rows))
+        return TaskStatus(
+            task_id, "succeeded", len(rows), ATTEMPTS_PER_GENERATION - len(rows)
+        )
     last_failure = FailureKind(rows[-1]["kind"]) if rows[-1]["kind"] else None
     if last_failure is not None:
         return TaskStatus(
             task_id,
-            "failed" if len(rows) == 2 else "retryable",
+            "failed" if len(rows) == ATTEMPTS_PER_GENERATION else "retryable",
             len(rows),
-            2 - len(rows),
+            ATTEMPTS_PER_GENERATION - len(rows),
             last_failure,
         )
     state: TaskState = (
@@ -84,4 +106,6 @@ def derive_status(
     )
     previous_kind = rows[-2]["kind"] if len(rows) > 1 else None
     previous = FailureKind(previous_kind) if previous_kind is not None else None
-    return TaskStatus(task_id, state, len(rows), 2 - len(rows), previous)
+    return TaskStatus(
+        task_id, state, len(rows), ATTEMPTS_PER_GENERATION - len(rows), previous
+    )

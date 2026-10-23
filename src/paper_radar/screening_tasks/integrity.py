@@ -7,6 +7,7 @@ from uuid import UUID
 from sqlalchemy import Connection, select
 
 from paper_radar.papers import PaperFacts, resolve_revision
+from paper_radar.screening_tasks.attempt_models import ATTEMPTS_PER_GENERATION
 from paper_radar.screening_tasks.attempt_repository import (
     read_attempts,
 )
@@ -17,7 +18,11 @@ from paper_radar.screening_tasks.models import (
     RetryRequest,
     ValueRequest,
 )
-from paper_radar.screening_tasks.repository import evidence_values, receipt_row
+from paper_radar.screening_tasks.repository import (
+    evidence_values,
+    receipt_row,
+    stage_mapping,
+)
 from paper_radar.screening_tasks.rules import (
     parse_request,
     parse_retry,
@@ -49,7 +54,7 @@ def _mapping_matches(database: Path, row: dict[str, Any], expected: StageInput) 
         revision_no=row["revision_no"],
         snapshot_id=row["snapshot_id"],
     )
-    mapped = mapping.boundary if row["stage"] == "boundary" else mapping.value
+    mapped = stage_mapping(mapping, row["stage"])
     _require(mapped.reason is None and mapped.value == expected)
 
 
@@ -97,7 +102,7 @@ def validate_registration(database: Path, connection: Connection) -> None:
             if index:
                 parent_rows = read_attempts(connection, task["parent_task_id"])
                 _require(
-                    len(parent_rows) == 2
+                    len(parent_rows) == ATTEMPTS_PER_GENERATION
                     and all(
                         row["kind"] is not None and row["success_id"] is None
                         for row in parent_rows

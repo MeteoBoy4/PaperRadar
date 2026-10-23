@@ -3,6 +3,7 @@
 import hashlib
 import json
 from datetime import date
+from typing import TypeGuard
 from uuid import UUID
 
 from pydantic import ValidationError
@@ -14,8 +15,33 @@ from paper_radar.screening_tasks.models import (
     BoundaryRequest,
     RegistrationRequest,
     RetryRequest,
+    Stage,
     ValueRequest,
 )
+
+
+def is_stage(value: object, *, exact: bool = False) -> TypeGuard[Stage]:
+    return (type(value) is str if exact else isinstance(value, str)) and value in (
+        "boundary",
+        "value",
+    )
+
+
+def require_stage(value: object, *, exact: bool = False) -> Stage:
+    if not is_stage(value, exact=exact):
+        raise TaskError(TaskReason.INVALID_REQUEST)
+    return "boundary" if value == "boundary" else "value"
+
+
+def require_bounded_text(value: object) -> str:
+    """保留原字节的基础约束;HTML 策略由各入口另外决定。"""
+    if (
+        not isinstance(value, str)
+        or not value.strip()
+        or len(value.encode("utf-8")) > 2048
+    ):
+        raise ValueError
+    return value
 
 
 def canonical(value: object) -> bytes:
@@ -56,13 +82,7 @@ def parse_request(raw: object) -> BoundaryRequest | ValueRequest:
             raise ValueError
         else:
             for value in (request.request_id, request.reason, request.actor):
-                if (
-                    not isinstance(value, str)
-                    or not value.strip()
-                    or len(value.encode("utf-8")) > 2048
-                ):
-                    raise ValueError
-                normalize_text(value)
+                normalize_text(require_bounded_text(value))
         canonical(request.model_dump())
         return request
     except (ValueError, TypeError, ValidationError, PaperError):
@@ -102,9 +122,7 @@ def parse_retry(raw: object) -> RetryRequest:
         if str(UUID(request.parent_task_id)) != request.parent_task_id:
             raise ValueError
         for value in (request.request_id, request.reason, request.actor):
-            if not value.strip() or len(value.encode("utf-8")) > 2048:
-                raise ValueError
-            normalize_text(value)
+            normalize_text(require_bounded_text(value))
         canonical(request.model_dump())
         return request
     except (ValueError, TypeError, ValidationError, PaperError):

@@ -55,6 +55,7 @@ NOT_ASSESSED = (
     "automatic_fulltext_reading",
 )
 REQUIRED_TEST_CASE_COUNTS = {
+    "tests/test_a7_text_boundaries.py": 26,
     "tests/test_screening_strict_json.py": 93,
     "tests/test_a7_registration.py": 6,
     "tests/test_a7_registration_failures.py": 34,
@@ -95,6 +96,10 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a7_formats.py": 2,
 }
 REQUIRED_TEST_MODULES = (
+    (
+        "tests/test_a7_text_boundaries.py",
+        "098c55eb94315e82b7ed056f7707e0c8962ba7b11d99a0731bab1911ad70e577",
+    ),
     (
         "tests/test_a7_driver_preconditions.py",
         "f75e3ad8801affb1ed672019e54f98e62cc3400db99d04e61ee3890d172e528d",
@@ -251,7 +256,7 @@ REQUIRED_TEST_MODULES = (
 REQUIRED_SOURCE_MODULES = (
     (
         "src/paper_radar/screening_tasks/attempt_repository.py",
-        "be3746702f681cc3ac6bd1c8d4e4d1a3eb7318f74a9493eddb705c01bb10897b",
+        "19d7826a918be7c6ccca2a7412efc04a566aaf1e46b392b3d3b282c350f4faf7",
     ),
     (
         "scripts/a1_scope.py",
@@ -427,15 +432,15 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/attempt_integrity.py",
-        "609f526105eb447daf8ce8b5c530b940a1c47bcd35977da4436de14cfd0478bf",
+        "a1cc83d965132feab740fcc6ebb4302e349166db1ed9f17c98630b33b5a4c0fc",
     ),
     (
         "src/paper_radar/screening_tasks/attempt_models.py",
-        "e7b5a85d7b5686809f941a3613dc14c66a439c289bdca7e9ea2df4e596880aa8",
+        "f2d8bdc4b5a194fda4bc114a63b6717f8d5e71ac14ec0b24459e177b78d77176",
     ),
     (
         "src/paper_radar/screening_tasks/attempt_rules.py",
-        "4a10eed02393e62b816488a3cbee8e089ef2c62bacf898cd3f6101c3612e7a8d",
+        "23bedeed3bcf6d258ba326c5a08307f8c389b8d90cc3aac3a10586a0052c6dbf",
     ),
     (
         "src/paper_radar/screening_tasks/database_errors.py",
@@ -447,7 +452,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/execution.py",
-        "e131b5616e181f85a57149ac89bec781d852f8eb281646db77e04c4072eb1e28",
+        "09c09d0de839fdd429c909bfd358ae40893a835aa611a4308f04a7c4e9c4ea30",
     ),
     (
         "src/paper_radar/screening_tasks/frozen.py",
@@ -455,7 +460,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/integrity.py",
-        "14b871d27e0185fcfb32e2beda048ebb95eb2dc24cb6f9c641b5f900fe63802f",
+        "83bc3d0f53d44ae1c4ee61b2b3173230bd2e96fa91f568c46d995610b89897eb",
     ),
     (
         "src/paper_radar/screening_tasks/models.py",
@@ -463,7 +468,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/query.py",
-        "b6e29c0fa4adfd22d9173546a206672ee5ebedf9d43c0609d63a48da2fe4f930",
+        "8a5a4c8f07e58e5f3c7414d7cc186788fa3bf13fb8297ff8d1759734aa5605cd",
     ),
     (
         "src/paper_radar/screening_tasks/query_models.py",
@@ -471,27 +476,27 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/repository.py",
-        "159d2135a74470c8fc9a060c4f7d24ca2e792ecd654c1ef147ec431bed6d8d9d",
+        "1d72dd519cc8f7ea1a734fc1df0686054ab07351a270e13cb2da30046479cd1c",
     ),
     (
         "src/paper_radar/screening_tasks/retry.py",
-        "8881232c2aecd20c73094a0416d3082046e1735e95af9c5b4c059de84a7ff9a0",
+        "7723a0e6cb209215860e7bfff74a8fd2b5e060884045492f9a8a1966be885052",
     ),
     (
         "src/paper_radar/screening_tasks/rules.py",
-        "ab43492fea73c223e876225ab2ab17095b01e5275867965ca118bc2eec5264f5",
+        "ad6e02377fbc3cc965a2644a36c8321324a036e63d493232b387566cd3a3a4bd",
     ),
     (
         "src/paper_radar/screening_tasks/service.py",
-        "e57f9dc97d4d734c407e02b5a6eb90da5723a2fbca4704a726d5b6ae771b5065",
+        "47c19aff0e5fa95aa578bab5685fed38da02b5fd5a8eb80a3599e384aec2c200",
     ),
     (
         "src/paper_radar/screening_tasks/success.py",
-        "fa013997921091ba167fed4b1262926dbe3bb6060a518e8405425e3e6f73cd72",
+        "40fd7a960eeaa0033f84a7e5d9736d9fbe2a3ac00722e644bb5037bc95716190",
     ),
     (
         "src/paper_radar/screening_tasks/success_integrity.py",
-        "60194cd3917ee2881c73961a2e9239a7a6439baefebff595f85ec4c20319a1fb",
+        "d3498f9fe0ca4c7c1d02aceace45e01898edb9d53a363dc96e4ffc7474f17859",
     ),
     (
         "src/paper_radar/screening_tasks/success_models.py",
@@ -499,7 +504,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/success_rules.py",
-        "c3ead169284f15e0c8805accd7390f81e16e21306099b5fcde9c190c03d62ec7",
+        "f1d5e40a5c814d4a55ba0c63435c7c52325d5113681ec2d451cde3deef8d4ea6",
     ),
     (
         "src/paper_radar/screening_tasks/tables.py",
@@ -677,6 +682,6 @@ REQUIRED_SOURCE_MODULES = (
 REQUIRED_FIXTURE_FILES = (
     (
         "tests/fixtures/a7_capabilities.json",
-        "8fc6ff575695d70a011c68b11c456fde843e4862f5cf58c76db411c1582c371b",
+        "60701c091af0700149320a12b011b0883ad58eb933e5062f1fd6a6c1249e44b7",
     ),
 )

@@ -6,6 +6,7 @@ from datetime import datetime
 from sqlalchemy import Connection, select
 
 from paper_radar.screening_tasks.attempt_models import (
+    ATTEMPTS_PER_GENERATION,
     AttemptRow,
     Claim,
     FailureKind,
@@ -105,7 +106,7 @@ def read_attempts(connection: Connection, task_id: str) -> list[AttemptRow]:
     if (
         any(row["expires_at"] is None for row in rows)
         or [row["attempt_no"] for row in rows] != list(range(1, len(rows) + 1))
-        or len(rows) > 2
+        or len(rows) > ATTEMPTS_PER_GENERATION
     ):
         raise TaskError(TaskReason.CORRUPT_REFERENCE)
     if any(

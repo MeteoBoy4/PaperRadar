@@ -17,7 +17,7 @@ from paper_radar.screening import (
 )
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.models import FrozenInput, Stage
-from paper_radar.screening_tasks.rules import canonical
+from paper_radar.screening_tasks.rules import canonical, require_bounded_text
 from paper_radar.screening_tasks.success_models import SuccessCandidate
 
 
@@ -32,16 +32,12 @@ def candidate_audit(candidate: SuccessCandidate) -> str:
     audit: dict[str, Any] = {"executor_kind": "test"}
     for name in ("reported_provider", "reported_model", "provider_request_id"):
         value = getattr(candidate, name)
-        if value is not None and (
-            type(value) is not str
-            or not value.strip()
-            or len(value.encode("utf-8", errors="replace")) > 2048
-        ):
-            raise TaskError(TaskReason.INVALID_CANDIDATE)
         if value is not None:
             try:
-                value.encode("utf-8")
-            except UnicodeError:
+                if type(value) is not str:
+                    raise ValueError
+                require_bounded_text(value)
+            except ValueError:
                 raise TaskError(TaskReason.INVALID_CANDIDATE) from None
         audit[name] = value
     for name in ("input_tokens", "output_tokens"):
