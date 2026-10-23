@@ -63,7 +63,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a7_registration_process.py": 7,
     "tests/test_a7_registration_imports.py": 1,
     "tests/test_a7_attempts.py": 12,
-    "tests/test_a7_driver_preconditions.py": 7,
+    "tests/test_a7_driver_preconditions.py": 9,
     "tests/test_a7_attempt_inputs.py": 6,
     "tests/test_a7_attempts_process.py": 11,
     "tests/test_a7_attempt_integrity.py": 12,
@@ -97,7 +97,7 @@ REQUIRED_TEST_CASE_COUNTS = {
 REQUIRED_TEST_MODULES = (
     (
         "tests/test_a7_driver_preconditions.py",
-        "302d95bae09af82498f907bcaeec75dede5e9d90917642b6bab033b9df30c8bb",
+        "f75e3ad8801affb1ed672019e54f98e62cc3400db99d04e61ee3890d172e528d",
     ),
     (
         "tests/test_screening_strict_json.py",
@@ -271,15 +271,15 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
+        "9d7f4aff00ca3665718e01015508ccaa746b3bd04ff21e581e8e718d5c5059f1",
     ),
     (
         "scripts/a5_scope.py",
-        "651a8458a791098535bc33b26727a15f8602cf76de430f41b0a1e53f5c61ad95",
+        "9f29dd403428ee71affeffefa85ba13bca3f5c313588766f0a99307f9b5aac0a",
     ),
     (
         "scripts/a6_scope.py",
-        "17ce1ff6a5f2aee3c28b8b8f6767164dffc839e817c7b20060b8ecbf9f341e31",
+        "74810a73e8d893b72f295ea3746b593cb11ccf11e701e329b44874f648d804fd",
     ),
     (
         "scripts/a7_acceptance.py",
@@ -527,7 +527,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/storage/blob_store.py",
-        "7f6f3f678b2de3ebc2961d4f6d2226eb97221712d123bde1ee49b4bcd75f9687",
+        "3664854101b7d4e1612118a9dafa2320a879ca48e9ae9273c05c56821662d8e6",
     ),
     (
         "src/paper_radar/storage/database.py",

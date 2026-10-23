@@ -359,8 +359,8 @@ exit0、status=passed/reason=verified、applicability=same。
 
 ## 最终审查修复
 
-`test_a7_driver_preconditions` 人工固定为 7 例：不可调用执行者、缺制品根、三种
-可预见路径错误都不领取/调用执行者；领取后出现存储错误仍保守占一次预算；领取回收后传递最新的安全修正说明。
+`test_a7_driver_preconditions` 人工固定为 9 例：不可调用执行者、缺制品根、三种
+可预见路径错误都不领取/调用执行者；两种发布目录不可写的情况仍在领取前拒绝，临时探针清理；领取后出现存储错误仍保守占一次预算；领取回收后传递最新的安全修正说明。
 原 `test_a7_attempts` 12 例及强杀 worker 仅补完整驱动配置，手动领取保持可无根。
 A7 不可覆盖结论负例同时核对 EEXIST 和实际 `.a7.json` 目标，原分母不变。
 

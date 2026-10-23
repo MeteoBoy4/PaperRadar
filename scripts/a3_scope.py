@@ -46,7 +46,7 @@ ARTIFACT_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/blob_store.py",
-        "7f6f3f678b2de3ebc2961d4f6d2226eb97221712d123bde1ee49b4bcd75f9687",
+        "3664854101b7d4e1612118a9dafa2320a879ca48e9ae9273c05c56821662d8e6",
     ),
     (
         "tests/artifact_support.py",

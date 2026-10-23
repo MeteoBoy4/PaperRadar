@@ -134,3 +134,41 @@ def test_driver_passes_correction_for_attempt_recovered_during_claim(
     assert corrections == ["上次执行结果未知,请重新完成本次冻结输入。"]
     assert result.kind == FailureKind.TIMEOUT
     assert service.status(receipt.receipt_id).used_attempts == 2
+
+
+@pytest.mark.parametrize("readonly_directory", ["namespace", "existing_shard"])
+def test_unwritable_publication_directory_does_not_start_executor(
+    tmp_path: Path, readonly_directory: str
+) -> None:
+    from hashlib import sha256
+
+    data = archive(tmp_path)
+    root = tmp_path / "output"
+    namespace = root / "blobs/sha256"
+    namespace.mkdir(parents=True)
+    raw = b'{"boundary":"in_scope","reason_zh":"Weather prediction is studied."}'
+    blocked = namespace
+    if readonly_directory == "existing_shard":
+        blocked = namespace / sha256(raw).hexdigest()[:2]
+        blocked.mkdir()
+    blocked.chmod(0o500)
+    service = ScreeningTasks(
+        data.database, root, clock=lambda: datetime(2026, 1, 1, tzinfo=UTC)
+    )
+    receipt = service.register(request_for(data))
+    calls: list[int] = []
+
+    def executor(*args: object) -> SuccessCandidate:
+        calls.append(1)
+        return SuccessCandidate(raw)
+
+    try:
+        with pytest.raises(ArtifactError) as error:
+            service.run_once(receipt.receipt_id, executor)
+        assert error.value.reason == ArtifactReason.PUBLICATION_FAILED
+        assert calls == []
+        assert service.status(receipt.receipt_id).used_attempts == 0
+        assert list((root / "tmp").iterdir()) == []
+        assert list(namespace.rglob(".publish-check-*")) == []
+    finally:
+        blocked.chmod(0o700)

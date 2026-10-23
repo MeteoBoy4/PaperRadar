@@ -8,6 +8,7 @@ import stat
 import tempfile
 from collections.abc import Callable, Iterable
 from contextlib import suppress
+from itertools import product
 from pathlib import Path
 
 from paper_radar.storage.artifact_contract import (
@@ -76,18 +77,37 @@ class BlobStore:
         return self._path(expected)
 
     def prepare_publish(self) -> None:
-        """预检共享发布目录及临时写入;不发布内容,不保证后续 I/O 成功。"""
+        """预检发布目录的创建/硬链接能力;不发布内容,不保证后续 I/O 成功。"""
         try:
             temporary = self._path("tmp/pending", create_parents=True).parent
-            self._path("blobs/sha256/pending", create_parents=True)
-            with tempfile.TemporaryFile(dir=temporary) as stream:
+            namespace = self._path("blobs/sha256/pending", create_parents=True).parent
+            with tempfile.NamedTemporaryFile(dir=temporary) as stream:
                 stream.flush()
+                os.fchmod(stream.fileno(), 0o400)
                 os.fsync(stream.fileno())
+                self._probe_link_directory(namespace, Path(stream.name))
+                # 布局只有 256 个两位十六进制槽位;不遍历内容,也不创建空 shard。
+                for high, low in product("0123456789abcdef", repeat=2):
+                    shard = self._path(f"blobs/sha256/{high}{low}/pending").parent
+                    if shard.exists():
+                        self._mkdir(shard)
+                        self._probe_link_directory(shard, Path(stream.name))
         except OSError:
             raise ArtifactError(
                 ArtifactReason.PUBLICATION_FAILED,
                 "发布目录无法准备；请检查路径和写入权限",
             ) from None
+
+    @staticmethod
+    def _probe_link_directory(directory: Path, source: Path) -> None:
+        # 所有探针均是可清理临时目录,不使用 blob 身份或登记制品。
+        with tempfile.TemporaryDirectory(
+            prefix=".publish-check-", dir=directory
+        ) as name:
+            probe = Path(name)
+            os.link(source, probe / "link")
+            sync_directory(probe)
+        sync_directory(directory)
 
     def verify(self, record: BlobRecord) -> Path:
         try:

@@ -321,11 +321,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
+        "9d7f4aff00ca3665718e01015508ccaa746b3bd04ff21e581e8e718d5c5059f1",
     ),
     (
         "scripts/a5_scope.py",
-        "651a8458a791098535bc33b26727a15f8602cf76de430f41b0a1e53f5c61ad95",
+        "9f29dd403428ee71affeffefa85ba13bca3f5c313588766f0a99307f9b5aac0a",
     ),
     (
         "scripts/a6_acceptance.py",

@@ -257,7 +257,9 @@ request_not_found、facts_changed、corrupt_reference、database_busy，各有�
 当前依据，绝不覆盖请求登记依据。领取提交前失败回滚，提交后即使未调用执行者也占预算。
 `run_once` 无论预期返回失败还是成功都必须提供 `data_root`；不可调用 executor 返回
 `invalid_request`，缺根返回 `data_root_required`，制品路径/权限错误沿用 ArtifactError。
-制品库 `prepare_publish` 复用受控目录规则并检查临时写入，不发布或登记占位制品；
+制品库 `prepare_publish` 复用受控目录规则，实际检查临时写入、SHA-256 命名空间与
+既有 shard 的目录创建/硬链接能力，不发布或登记占位制品。只按布局固有的 256 个
+两位十六进制槽位核验已存在目录，不遍历 blob 内容或创建空 shard，探针正常退出时清理；
 它不能保证领取后 I/O 仍成功，后续不可预知故障仍保守占预算。纯登记、只读与手动
 `claim` 不要求制品根。
 
