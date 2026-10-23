@@ -143,11 +143,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a3_scope.py",
-        "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+        "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
     ),
     (
         "scripts/a4_scope.py",
-        "b8932700404a985df7ca14c94447e49cf3b1df7335c340fa04a41073a911aa2b",
+        "23cb0f88bb3db286d2cb3a6a7d45d812aab396e6ed9c3b60d030c1d0a0e6561a",
     ),
     (
         "scripts/a2_full_acceptance.py",

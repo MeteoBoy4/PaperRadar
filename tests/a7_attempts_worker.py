@@ -36,7 +36,9 @@ def save_claim(path: Path, claim: Claim) -> None:
 def main() -> None:
     database, receipt_id, operation, instant, capability = sys.argv[1:]
     now = datetime.fromisoformat(instant)
-    tasks = ScreeningTasks(Path(database), clock=lambda: now)
+    tasks = ScreeningTasks(
+        Path(database), Path(database).parent / "data", clock=lambda: now
+    )
     try:
         result: dict[str, object]
         if operation == "claim":

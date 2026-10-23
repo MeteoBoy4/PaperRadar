@@ -40,7 +40,7 @@ def test_one_attempt_driver_uses_committed_frozen_input_and_safe_correction(
 ) -> None:
     data = archive(tmp_path)
     service = ScreeningTasks(
-        data.database, clock=lambda: datetime(2026, 1, 1, tzinfo=UTC)
+        data.database, data.data_root, clock=lambda: datetime(2026, 1, 1, tzinfo=UTC)
     )
     receipt = service.register(request_for(data))
     seen: list[str | None] = []
@@ -70,7 +70,7 @@ def test_executor_exception_is_safe_and_other_stage_is_independent(
 ) -> None:
     data = archive(tmp_path)
     service = ScreeningTasks(
-        data.database, clock=lambda: datetime(2026, 1, 1, tzinfo=UTC)
+        data.database, data.data_root, clock=lambda: datetime(2026, 1, 1, tzinfo=UTC)
     )
     boundary = service.register(request_for(data))
     value = service.register(
@@ -246,7 +246,7 @@ def test_late_executor_exception_does_not_escape_in_controlled_error_context(
 ) -> None:
     data = archive(tmp_path)
     now = datetime(2026, 1, 1, tzinfo=UTC)
-    service = ScreeningTasks(data.database, clock=lambda: now)
+    service = ScreeningTasks(data.database, data.data_root, clock=lambda: now)
     receipt = service.register(request_for(data))
 
     def executor(
@@ -266,7 +266,7 @@ def test_late_executor_exception_does_not_escape_in_controlled_error_context(
 def test_untrusted_success_return_is_one_protocol_failure(tmp_path: Path) -> None:
     data = archive(tmp_path)
     service = ScreeningTasks(
-        data.database, clock=lambda: datetime(2026, 1, 1, tzinfo=UTC)
+        data.database, data.data_root, clock=lambda: datetime(2026, 1, 1, tzinfo=UTC)
     )
     receipt = service.register(request_for(data))
     calls: list[int] = []

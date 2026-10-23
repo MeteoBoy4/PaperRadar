@@ -356,3 +356,10 @@ A2-01→完整 A2→A3→A4→A5→A6→A7；A7 不自绑。真实旧固定分�
 run_id 写入被哈希材料形成自引用。先完成所有 tracked 修改并冻结最终提交，再 merge
 最新 integration，执行开发环境检查和完整 `check-offline`；通过事实必须同时核对真实
 exit0、status=passed/reason=verified、applicability=same。
+
+## 最终审查修复
+
+`test_a7_driver_preconditions` 人工固定为 6 例：不可调用执行者、缺制品根、三种
+可预见路径错误都不领取/调用执行者；领取后出现存储错误仍保守占一次预算。
+原 `test_a7_attempts` 12 例及强杀 worker 仅补完整驱动配置，手动领取保持可无根。
+A7 不可覆盖结论负例同时核对 EEXIST 和实际 `.a7.json` 目标，原分母不变。

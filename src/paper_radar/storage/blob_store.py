@@ -75,6 +75,20 @@ class BlobStore:
             )
         return self._path(expected)
 
+    def prepare_publish(self) -> None:
+        """预检共享发布目录及临时写入;不发布内容,不保证后续 I/O 成功。"""
+        try:
+            temporary = self._path("tmp/pending", create_parents=True).parent
+            self._path("blobs/sha256/pending", create_parents=True)
+            with tempfile.TemporaryFile(dir=temporary) as stream:
+                stream.flush()
+                os.fsync(stream.fileno())
+        except OSError:
+            raise ArtifactError(
+                ArtifactReason.PUBLICATION_FAILED,
+                "发布目录无法准备；请检查路径和写入权限",
+            ) from None
+
     def verify(self, record: BlobRecord) -> Path:
         try:
             path = self.path_for(record)

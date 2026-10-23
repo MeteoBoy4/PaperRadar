@@ -1,5 +1,6 @@
 """A7 不能由缺执行、伪格式、旧前置或漂移取得通过。"""
 
+import errno
 from dataclasses import replace
 from pathlib import Path
 
@@ -271,8 +272,11 @@ def test_captured_interrupt_and_existing_conclusion_are_never_passed_or_overwrit
     assert result["a7_verified"] is False
     assert "run_incomplete" in {reason["code"] for reason in result["reasons"]}
     old = path.read_bytes()
-    with pytest.raises(FileExistsError):
+    with pytest.raises(FileExistsError) as conflict:
         conclude(tmp_path, inputs)
+    assert conflict.value.errno == errno.EEXIST
+    assert Path(conflict.value.filename2) == path
+    assert path.name == "synthetic-full-a2.a7.json"
     assert path.read_bytes() == old
 
 

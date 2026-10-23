@@ -120,9 +120,14 @@ class ScreeningTasks:
     def run_once(
         self, receipt_id: str, executor: TestExecutor
     ) -> FailureReceipt | SuccessReceipt:
-        claim = self.claim(receipt_id)
-        stage_input = self.load_input(receipt_id).stage_input
-        correction = self._attempts.correction(self.get_receipt(receipt_id))
+        if not callable(executor):
+            raise TaskError(TaskReason.INVALID_REQUEST)
+        receipt = self.get_receipt(receipt_id)
+        frozen = self.load_input(receipt_id)
+        correction = self._attempts.correction(receipt)
+        self._success.store().prepare_publish()
+        claim = self._attempts.claim(receipt, frozen)
+        stage_input = frozen.stage_input
         # claim 已提交;进程随后中断或执行者抛异常都不退还预算。
         origin: FailureOrigin = "executor"
         try:

@@ -31,10 +31,13 @@
   "atomic_claim": {
     "cases": [
       "tests/test_a7_attempts.py",
-      "tests/test_a7_attempts_process.py"
+      "tests/test_a7_attempts_process.py",
+      "tests/test_a7_driver_preconditions.py"
     ],
     "materials": [
-      "tests/a7_attempts_worker.py"
+      "tests/a7_attempts_worker.py",
+      "src/paper_radar/storage/artifacts.py",
+      "src/paper_radar/storage/blob_store.py"
     ]
   },
   "lease": {
@@ -49,7 +52,8 @@
   "bounded_attempts": {
     "cases": [
       "tests/test_a7_attempts.py",
-      "tests/test_a7_recovery_integrity.py"
+      "tests/test_a7_recovery_integrity.py",
+      "tests/test_a7_driver_preconditions.py"
     ],
     "materials": [
       "src/paper_radar/screening_tasks/attempt_rules.py"

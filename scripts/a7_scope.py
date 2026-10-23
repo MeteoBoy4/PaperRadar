@@ -63,6 +63,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a7_registration_process.py": 7,
     "tests/test_a7_registration_imports.py": 1,
     "tests/test_a7_attempts.py": 12,
+    "tests/test_a7_driver_preconditions.py": 6,
     "tests/test_a7_attempt_inputs.py": 6,
     "tests/test_a7_attempts_process.py": 11,
     "tests/test_a7_attempt_integrity.py": 12,
@@ -95,6 +96,10 @@ REQUIRED_TEST_CASE_COUNTS = {
 }
 REQUIRED_TEST_MODULES = (
     (
+        "tests/test_a7_driver_preconditions.py",
+        "7a634cec61476ade591e775b5fda2b5a0826eac15d3b6fa8a2df7174d8411c26",
+    ),
+    (
         "tests/test_screening_strict_json.py",
         "49365327a4a2d6599c62c049f5e3dd8d2001aa4c25741a9f545b842b81c48c53",
     ),
@@ -124,7 +129,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_attempts.py",
-        "0ed616378e055d1a0202f8648ef6bd6e4de6c979f79a8503c40cfbe076e5be72",
+        "9a4daf25625d04bccc1f3b6b9a8954fc501499452f38b4e02ff7917a8de4d591",
     ),
     (
         "tests/test_a7_attempt_inputs.py",
@@ -224,7 +229,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_integrity.py",
-        "bf873963380abbc5af0b55743e7fe1efb1df6a283744c393e27e00ae50f6e246",
+        "728a75c626a4edf5e71a57017a1d1d211231a63b8be424d40fe03b1445c6d603",
     ),
     (
         "tests/test_a7_entry.py",
@@ -262,15 +267,15 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "e0832e249eafbbb6007ef66c109a7dee1c44253c73f6e6697140305955341174",
+        "af6bbf0449daf770f12091d94ca4eb704fe8222548d28a44e762187ebaf35a88",
     ),
     (
         "scripts/a5_scope.py",
-        "523fe7e89aa3ccbfecede8bd22725f25b69d859dc9f69e7ba7aeec1ea4c7cf07",
+        "651a8458a791098535bc33b26727a15f8602cf76de430f41b0a1e53f5c61ad95",
     ),
     (
         "scripts/a6_scope.py",
-        "92a20d7b64118089f6afb49e60557cdaec5e00f9689a9b47ce0e57883e698ed5",
+        "17ce1ff6a5f2aee3c28b8b8f6767164dffc839e817c7b20060b8ecbf9f341e31",
     ),
     (
         "scripts/a7_acceptance.py",
@@ -474,7 +479,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/service.py",
-        "2581c2d373709216f5c1e3724f7a77850ff178b673e8563488f4726a73610a55",
+        "902e8dfdec9ad84fe215b713fa1ef626e6567620fde44af7c872e3997fea8ecb",
     ),
     (
         "src/paper_radar/screening_tasks/success.py",
@@ -514,11 +519,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/storage/artifacts.py",
-        "45f08248581aaaa2681b9851e96039dd24a0743deabebc7c36fbb42535537681",
+        "a30949836fd65485df2b3fc477b1027b7deddb405edd90bc4f29c297ade333f5",
     ),
     (
         "src/paper_radar/storage/blob_store.py",
-        "3507cc6db2ea5b4848790e5a2e25cc7d9f6e38a0f5a1371e18cb20d11953ad29",
+        "7f6f3f678b2de3ebc2961d4f6d2226eb97221712d123bde1ee49b4bcd75f9687",
     ),
     (
         "src/paper_radar/storage/database.py",
@@ -590,7 +595,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "tests/a7_attempts_worker.py",
-        "bc5c9098b12cfe81e4e3d5295b9816c748db163c152571b95f8cdc184d2a183a",
+        "95b9023990a1e7965b36ec0e282345fda8382cf6ee78cf37b055159f74e4b41d",
     ),
     (
         "tests/a7_recovery_support.py",
@@ -668,6 +673,6 @@ REQUIRED_SOURCE_MODULES = (
 REQUIRED_FIXTURE_FILES = (
     (
         "tests/fixtures/a7_capabilities.json",
-        "3d46510d050a0cacf60d96f6b638b51dc812d95cffc774074b91ca35360df2eb",
+        "16ada172a14a9a0b39ba0a86db6b3ad150fbbf3fc01addeaaa61295cb30f7e0b",
     ),
 )

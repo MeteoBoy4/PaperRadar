@@ -249,12 +249,17 @@ request_not_found、facts_changed、corrupt_reference、database_busy，各有�
 | `fail(claim, report)` | 原子追加封闭失败结算，返回安全 FailureReceipt；同凭据同内容精确重放返回原回执，内容不同拒绝 |
 | `reclaim(receipt_id)` | 显式结算已到期 attempt 为 outcome_unknown；不到期不结算、不退预算 |
 | `status(receipt_id)` | 只读推导 TaskStatus，包括 used_attempts/remaining_attempts、状态与 last_failure；不回收、不创建事实，不是 A7-06 版本化查询序列化 |
-| `run_once(receipt_id, executor)` | 先持久化领取，再向可替换 test 执行边界至多调用一次；接收失败报告或 boundary/value 原始成功候选 |
+| `run_once(receipt_id, executor)` | 先校验可调用执行者、冻结输入和显式制品根的发布前置条件，再持久化领取并至多调用一次 test 执行边界；接收失败报告或 boundary/value 原始成功候选 |
 
 领取先用请求自身 snapshot 映射当前 Paper，只比较阶段指纹；历史 version/revision 与
 当前不同本身不阻止领取。写事务使用同连接复核本次预读的 version/revision/selection，
 不一致报 facts_changed 且不新增 attempt。attempt 同时保存请求 receipt_id 与领取时的
 当前依据，绝不覆盖请求登记依据。领取提交前失败回滚，提交后即使未调用执行者也占预算。
+`run_once` 无论预期返回失败还是成功都必须提供 `data_root`；不可调用 executor 返回
+`invalid_request`，缺根返回 `data_root_required`，制品路径/权限错误沿用 ArtifactError。
+制品库 `prepare_publish` 复用受控目录规则并检查临时写入，不发布或登记占位制品；
+它不能保证领取后 I/O 仍成功，后续不可预知故障仍保守占预算。纯登记、只读与手动
+`claim` 不要求制品根。
 
 执行者只取得冻结 StageInput、由封闭失败类别生成的必要安全修正说明和续租句柄；
 不取得数据库连接、PaperFacts、完整 FrozenInput/snapshot 或前次原始失败字节。

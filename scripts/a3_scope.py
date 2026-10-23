@@ -42,11 +42,11 @@ ARTIFACT_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/storage/artifacts.py",
-        "45f08248581aaaa2681b9851e96039dd24a0743deabebc7c36fbb42535537681",
+        "a30949836fd65485df2b3fc477b1027b7deddb405edd90bc4f29c297ade333f5",
     ),
     (
         "src/paper_radar/storage/blob_store.py",
-        "3507cc6db2ea5b4848790e5a2e25cc7d9f6e38a0f5a1371e18cb20d11953ad29",
+        "7f6f3f678b2de3ebc2961d4f6d2226eb97221712d123bde1ee49b4bcd75f9687",
     ),
     (
         "tests/artifact_support.py",

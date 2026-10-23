@@ -46,6 +46,10 @@ class ArtifactStore:
             else None,
         )
 
+    def prepare_publish(self) -> None:
+        """驱动领取前检查可预见的发布路径/权限错误,不登记制品。"""
+        self.blobs.prepare_publish()
+
     def publish_artifact(
         self,
         kind: str,
