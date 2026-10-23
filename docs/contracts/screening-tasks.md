@@ -72,6 +72,9 @@ D 固定为 600 秒、不进入配置语义；时钟统一注入严格 aware UTC
 不直接读取系统时间、不启动后台心跳。
 凭据为 `(task_id, attempt_no, token)`，attempt_no 即领取代数，不另设计数器。
 回收一律结算 `outcome_unknown`，不假定执行者曾经运行或已经停止，不退还预算。
+租期保存绝对 UTC；从另一台机器或较早时刻恢复后，副本的注入时钟可能使租约立即
+过期或长期有效。默认接受这种偏差：它只改变结算时机，不退还、不额外扣除预算；
+回收仍一律是 `outcome_unknown`，不能用时钟偏差重置次数。
 只读查询不回收/续租；第二次 attempt 到期未结算显示 `lease_expired`、剩余 0，
 回收后才进入失败终态。普通任务租约与 A4 继承 fd 的安装使用保护独立。
 没有回收守护进程；强杀后的尝试保持未结算，时间到达后仅派生 `lease_expired`，
@@ -157,6 +160,10 @@ model_success_response 都有任务引用，不重哈希已由 A3 验证的 blob
 新 migration 从前一 revision 增量推进，只新增当前票实际消费的表；非空旧库与空库都测试。
 backup format 保持 1，无新 manifest 字段或计数；head 前移后旧批次受控
 `unsupported_revision`，旧库 `upgrade_required`，只显式升级、不在 verify 中迁移。
+旧 revision 的批次须用匹配旧程序恢复，再显式 upgrade 恢复副本。支持范围由
+`BACKUP_DATABASE_REVISION` 固定；即使 revision 相同，当前程序仍按当前 A1/A5
+校验语义重验历史响应。规则收紧后，曾在旧程序通过的备份可能验证失败，不承诺
+任意旧备份跨程序版本永远可验证。
 任务 validate_all 钩子放在 PaperFacts 后、manifest 反查前，语义损坏沿用
 `registration_invalid`，不新增 BackupReason，不修复源数据。
 
@@ -386,4 +393,23 @@ attempts.receipt_id→requests 存在真实 FK 环，迁移在单个写事务内
 
 validate_all 重验每预算连续代际、同预算唯一父链、父真实两次失败、每代请求、唯一
 retry 请求及其目标/规范摘要、首次预算依据。备份 format/manifest/counts 不变；恢复
-保留父链与预算，不回收或执行。完整组合恢复与独立 A7 验收仍由 #83/#84 交付。
+保留父链与预算，不回收或执行。完整组合恢复由 #83 交付；独立 A7 验收由 #84 注册。
+
+## 12. A7-07 隔离完整历史恢复（已交付）
+
+公共服务在同一真实 WAL 库产生两篇 Paper 的 boundary/value 成功、耗尽失败、retry
+父链和到期未结算 attempt；当前与历史制品共存。新进程在原数据/配置树及其改名
+位置均被阻断时执行 restore，搬迁恢复根并阻断备份位置后，仅从副本重建冻结输入、
+历史 snapshot/语言上下文、请求依据、每代 attempt/lease、原始响应和权威结构。
+恢复及完整只读查询保持目录字节与数据库逻辑事实不变；不会激活配置、回收或调用执行者。
+
+显式 upgrade 后才在测试中继续工作库：旧回执/精确 retry 重放仍属于原代际，新的
+scheduled/manual 请求跟随唯一后继；到期 attempt 回收为未知，剩余一次仅调用一次。
+耗尽任务拒绝领取，成功缓存命中不调用执行者，value 成功同样拒绝 retry。同文本正式版
+替换预印本仍适用，更高 parser 删除摘要后为 undeterminable，其他来源补回同文本后
+原制品自然恢复 current；这些查询不写结果再绑定或新增 attempt。
+
+备份负例复用已有载荷/投影/语言/响应和 retry 校验，补齐合法 FK 的请求错属、序号
+缺口、前次未结算、租期错属和成功/失败双终局；外层重算哈希仍为 registration_invalid，
+不改批次、不发布目标。attempt_no=3 与重复序号分别由既有 CHECK/主键拒绝，测试不
+关闭约束制造伪合法结构。完整未引用 model_success_response 仍允许。

@@ -531,11 +531,11 @@ A6 独立结论覆盖本地论文事实及隔离历史重建，仍不表示阶�
 A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/contracts/screening-tasks.md)
 及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。#77 已在原权威验证器
 收紧重复 JSON 键和非有限常量；#78–#79 已交付任务登记、冻结回放、两次预算和租约，
-boundary/value 筛选制品接收与三值适用性由 #80/#81 交付，#82 交付显式 retry、共享版本化查询与父链恢复；完整组合恢复仍待后续子票，
+boundary/value 筛选制品接收与三值适用性由 #80/#81 交付，#82 交付显式 retry、共享版本化查询与父链恢复；#83 补齐新进程隔离完整历史恢复，
 尚未注册 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；真实 value 任务前
 必须先裁决原题名语言事实的生产来源。
 
-### Screening 任务登记、有限尝试与两阶段成功（A7-02/03/04/05/06）
+### Screening 任务登记、有限尝试与两阶段成功（A7-02 至 A7-07）
 
 公共 `paper_radar.screening_tasks.ScreeningTasks` 已支持用现有论文和明确历史配置快照
 登记 boundary/value 请求，保存规范输入、独立预算范围和精确回执，并在备份恢复后回放。
@@ -546,6 +546,8 @@ value 的原题名语言事实必须显式提供；登记不会调用模型。�
 一次尝试驱动仅有可替换 test 执行边界，接收封闭失败或 boundary/value 原始成功候选；没有默认执行者或产品 CLI。
 当前数据库 head 为 a704_screening_retry，备份恢复保存已占次数和租约且不自动执行。
 两次预算只保证各库连续历史，回退旧备份不能追回其后丢失的尝试。
+副本按注入时钟解释绝对 UTC 租约；时钟偏差只改变结算时机，回收不退预算。
+旧 revision 批次须由匹配旧程序恢复再显式升级；当前 A1/A5 规则收紧也可能使旧备份验证失败。
 boundary/value 原始成功候选经唯一权威校验，原字节由 A3 保留；成功制品和登记时缓存命中回执不可变。
 显式 snapshot 的查询派生 current/historical/undeterminable，映射失败保留 PaperReason；
 同文本跨版本仍适用。显式内部消费才返回输出与审计，test 来源不能进入生产建议或校准。

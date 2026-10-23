@@ -4,8 +4,8 @@
 a701 与备份闭包；#79（A7-03）交付 a702 原子领取、有限预算、租约、失败结算、
 显式回收与 test 一次尝试驱动；#80（A7-04）交付 boundary 权威接收、唯一制品、
 三值适用性及成功恢复闭包；#81（A7-05）交付 value 同源权威接收与恢复。
-#82–#84 的 retry/版本化共享查询/完整组合恢复及
-独立 A7 验收尚未交付。当前 `check-offline` 通过只证明已有组及本次全套检查，
+#82（A7-06）交付 retry/版本化共享查询，#83（A7-07）补齐完整历史隔离恢复。
+#84 的独立 A7 验收注册尚未交付。当前 `check-offline` 通过只证明已有组及本次全套检查，
 不表示尚未注册的 A7 passed。运行回执、commit 和 run_id 存在工作树外，不改写历史证据。
 
 ## 来源顺序与冻结依据
@@ -36,16 +36,16 @@ US 表示 #76 User Stories，ID 表示 Implementation Decisions；此表中的�
 
 | 正文 | 补充及裁决 | 最终规则与文档落点 | 验收责任/当前状态 |
 | --- | --- | --- | --- |
-| US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝、#81 接收/回放已交付，#82 retry 待。真实来源列 title_language_source 未验收 |
+| US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝、#81 接收/回放、#82 retry 继承已交付。真实来源列 title_language_source 未验收 |
 | US29/31、ID15–16；测试“当前适用性”“缓存重新使用” | D2(a)、S2、评论二五 | Contract §5、ADR-0031、主方案 §8.5：同明确 snapshot 当前指纹匹配即适用；版本不同但同指纹仍适用；去掉绑定表/API/写入、提交事务论文复核 | #80/#81 boundary/value 三值派生已交付；原 US29 改为输入变化只作历史，US31 改为只读重建匹配，删除缓存重新绑定行 |
-| 测试“A6 语义联动” | D2(a)、B2/B6、评论二五 | 更高 parser 缺摘要→无当前成功；其他来源补回相同文本→原制品再适用，保留 A6 仲裁 | #80 boundary 两例已交付；#81 value 缺摘要保留历史与只读重建已交付 |
+| 测试“A6 语义联动” | D2(a)、B2/B6、评论二五 | 更高 parser 缺摘要→无当前成功；其他来源补回相同文本→原制品再适用，保留 A6 仲裁 | #80 boundary、#81 value 已交付；#83 在恢复副本组合 value 跨版本、parser 删除与另一来源补回，无再绑定写入 |
 | US24/27、ID12–13 | D3(a)、评论二二、#77 评论 | 原权威内部严格解析；str/bytes/bytearray 任意层重复键/NaN/Infinity 根 `$` invalid_json，先于字段/业务错误；Mapping 路径不变 | #77 已实现；test_screening_strict_json 93 例，新旧相关 332 例；原固定模块/Schema/分母不变 |
-| US23、US33 CLI 部分、US39、ID20–21 CLI 部分 | D4、S2、评论二五 | Contract §6：本批仅服务 retry 与共享查询；screening CLI、paper trace 组合、help/退出码移至真实任务生产票 | #82 服务测试待；#84 不得要求 CLI，现有产品 CLI Contract 保持 |
+| US23、US33 CLI 部分、US39、ID20–21 CLI 部分 | D4、S2、评论二五 | Contract §6：本批仅服务 retry 与共享查询；screening CLI、paper trace 组合、help/退出码移至真实任务生产票 | #82 服务测试已交付；#84 不得要求 CLI，现有产品 CLI Contract 保持 |
 | US1–7/19–20/30、ID3–7/17–18 | T1/T2/T7、B1/B3/B9/B11、评论二四 | Contract §1–3：预算/代际/请求/attempt 四层；完整 scheduled 依据、manual 冲突；A→B→A、跨日/无关配置不刷新 | #78（含真实进程登记竞争）已交付；第 0 代可能由 manual 创建；#79 消费同预算范围 |
 | US8–18/32、ID8–11 | T3/T4/T6、B2/B4/B5/B7、S3 | Contract §3/9：原子领取、两次预算、凭据 fencing、回收 outcome_unknown、lease_expired；第二次尝试不等于显式 retry | #79 交付真实子进程/屏障/强杀、注入 UTC 时钟及失败执行边界；成功接收仍归 #80/#81 |
 | US24–28/35、ID12–14/19 | T1、B6/B8/B9、评论三三/六 | Contract §4：原始响应+唯一权威结构；test 来源/未知审计；候选竞争、合法迟到、发布/提交/回包故障 | #80/#81 boundary/value 已交付且共用成功事务；D3 已由 #77 阻止重复键入口 |
-| US21–22/33–34、ID7/20–22 | T5、B5/B10/B11 | Contract §6：失败终态唯一后继、库级 retry ID、同请求幂等/异请求竞争；安全查询统一格式 1 | #82 待；运行中/可继续/成功/非当前拒绝，测试固定 query shape |
-| US28/36–38、ID22–23 | B12、评论三三/四/六 | Contract §7：只读语义钩子、恢复无执行、原目录不可用非空重建；语义损坏 registration_invalid，历史回退预算限制公开 | #78 起随实际表加基础验证，#83 完整跨域恢复/损坏/继续待 |
+| US21–22/33–34、ID7/20–22 | T5、B5/B10/B11 | Contract §6：失败终态唯一后继、库级 retry ID、同请求幂等/异请求竞争；安全查询统一格式 1 | #82 已交付；运行中/可继续/成功/非当前拒绝，测试固定 query shape |
+| US28/36–38、ID22–23 | B12、评论三三/四/六 | Contract §7/12：只读语义钩子、恢复无执行、原目录不可用非空重建；语义损坏 registration_invalid，历史回退预算限制公开 | #78 起随实际表加基础验证，#83 完整跨域隔离恢复/损坏/显式继续已交付 |
 | US40、ID24–25 | 评论三一/七/八 | 必需 A7 组、同次前置/固定格式/源码/fixture/整数回执/真实 head/可信终态；不新增四份冻结 Contract | #84 待；A7 组注册与 status 识别同提交，不能拿历史通过代替 |
 
 ## 补充条目的完整落笔台账
@@ -264,11 +264,39 @@ TaskQueryResult v1 由 query 统一投影范围、最新代际、请求/attempt 
 retry/回收/成功竞争、非空五表 FK 环迁移、开启外键的中断回滚和搬迁恢复/语义拒绝。
 #81 合入后已以公共真实成功路径交叉验证两阶段成功拒 retry，以及已有后继后来成功
 仍返回 successor_task_id；61 项 #82 新例独立于旧固定分母。恢复新进程显式拒绝原目录、
-改名根和原批次的 SQLite file: URI，并用拒绝探针证明钩子生效。最终组合恢复与固定
-A7 范围由 #83/#84 完成。
+改名根和原批次的 SQLite file: URI，并用拒绝探针证明钩子生效。#83 已交付隔离完整
+历史组合恢复；固定 A7 范围由 #84 注册。
 
 本波 head 前移 a704_screening_retry，旧 a701/a702/a703 源码保持；备份格式 1、清单、
 计数与 A5 语义不变。六旧 scope、backup revision、20 个当前 head/未来 head 探针及
 A7 历史迁移测试的“升级到当前”断言同提交重审；原历史 fixture 不前移，固定分母不减。
 旧/新绑定与逐条理由保存在工作树外 82-rebinding-ledger.json，完整门禁仍须最终真实
 exit0及 passed/verified/same；此处不是 A7 独立 passed 证据。
+
+## A7-07 / #83 完整历史隔离恢复
+
+`test_a7_complete_recovery` 只创建一个必要的非空组合批次：两篇 Paper、双阶段、
+当前/历史成功、耗尽失败、output_invalid 安全路径、唯一 retry 后继和过期 attempt
+均由公共服务产生。SQLite reader 保持事务，随后公共登记产生真实非空 WAL。
+新解释器先阻断原数据/配置与改名位置，再执行 restore、搬迁根并阻断原批次；仅从
+副本重建每条请求冻结载荷、历史 snapshot/语言/主题、回执、代际、attempt/lease、
+原始响应与权威制品。只读 validate_all/query/load 保持目录字节及 SQL dump 不变。
+
+显式 upgrade 之后，精确 retry 回执不变，scheduled/manual 跟随后继；旧租约回收为
+outcome_unknown 且不退预算，剩余一次恰有一次 test 执行，耗尽拒绝、成功命中零调用，
+value 成功拒 retry。恢复库公共 PaperFacts 再组合正式版同文本替换、同源更高 parser
+删摘要、其他来源补回，query/query_successes 一致派生且无结果再绑定、无新增 attempt。
+完整未引用 model_success_response 保持合法，不扩 manifest/counts/kind/BackupReason。
+
+`test_a7_recovery_integrity` 将前序只在 validate_all 的代表坏例推进到 verify/restore：
+请求错属、序号缺口、前次未结算和真实租期互换，并组合首次失败后的第二次成功/失败
+双终局。始终开启 FK，
+确认 integrity_check=ok 和 foreign_key_check 为空并重算外层数据库哈希后，受控
+registration_invalid、不改源批次、不发布目标。超预算与重复序号分别由既有 CHECK
+和主键原子拒绝，不关闭约束后冒充合法结构。载荷/配置/语言/原始响应、retry 环与
+唯一后继继续复用 registration/value/success/retry backup 及真实进程测试，不重复整套恢复。
+
+Contract 与 backup-restore 同步绝对 UTC 时钟偏差只改结算时机、不退预算；单库连续
+历史上限不等于跨恢复 exactly-once；旧 revision 需旧程序恢复再显式升级，当前 A1/A5
+收紧可使同 revision 的更早备份不再验证通过，支持范围由 BACKUP_DATABASE_REVISION 固定。
+本票无 migration/生产代码/旧绑定改动；#84 再冻结独立 A7 范围，本节不宣称 A7 passed。
