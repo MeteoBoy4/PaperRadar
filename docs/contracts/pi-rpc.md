@@ -1,7 +1,8 @@
 # Pi 单次 RPC 调用 Contract
 
-状态：#86 交付冻结调用描述与 render_format=1；协议与管道会话、A7 组合、独立 A8
-验收分别由 #87–#91 完成。以下把已裁决目标与目前证明范围分开记录。
+状态：#86 交付冻结调用描述与 render_format=1；#87 交付显式注入会话的单次协议服务、
+严格解帧/初始化及 boundary 的 A7 test 接线。value 与完整负例、真实管道及取消握手、
+恢复和独立 A8 验收由 #88–#91 完成。以下把已裁决目标与目前证明范围分开记录。
 依据为 [#85](https://github.com/MeteoBoy4/PaperRadar/issues/85) 正文及后续 D1–D4/P3。
 本 Contract 不新增 migration、业务 Schema、任务来源或生产命令。
 
@@ -65,16 +66,46 @@ prepare 只可核验 correction=None 的首次字节；executor 用实际 correc
 时间、内部 ID、期刊信誉、主题权重、其他阶段结果、原题名语言验证标记均不渲染。
 语义渲染改变须提升 adapter policy 版本，不能只换 adapter_version 或传输审计版本。
 
-## 固定协议与生命周期（后续实现目标）
+## 公共单次协议与字节会话
+
+`paper_radar.llm.rpc.run_call(description, user_message, factory, *, clock,
+cancelled, limits)` 返回 `RpcCandidate | RpcFailure`。user_message 是已渲染 UTF-8
+bytes，描述与渲染层之外的协议内核不依赖配置、阶段输入、任务、论文或存储。
+必须显式提供 SessionFactory，没有默认 Pi 启动器、命令/env API、PATH 或凭据读取。
+factory 每次只创建一个专属会话，接收完整描述及独立的 system_prompt；构造必须有界，
+其时间计入初始化/总期限。模型和采样参数在测试工厂可见，不证明生产映射生效。
+
+`ByteSession.pump(pending_bytes, timeout)` 在有限等待内同时推进部分 stdin 写入与
+stdout/stderr 消费，返回 SessionEvent：written、stdout、stderr_bytes、stdout_eof、
+stderr_eof、exit_code。stderr 原文在会话内丢弃，只传计数。空 pending 仅表示没有待写
+数据；关闭输入必须显式 close_stdin()。EOF 与暂无数据、退出未知与退出 0 分开表达；
+leader 退出不能替代两条管道 EOF。terminate(timeout) 的契约是有界回收整组，包括
+leader 已退出的子孙；生产管道包装器在 #89 实现，不由测试替身冒充产品能力。
+
+validate_request(user_message) 在不开会话时核对实际 prompt JSON 帧上限，返回安全
+失败或 None。tests/a8_rpc_task_support.py 的 run_attempt 先 prepare、渲染并做这项
+检查，再调用原有 run_once。双重 JSON 转义可能使合法 user 字节膨胀超限，也在领取前
+拒绝。预算首次与本次审计 snapshot 任一损坏都映射既有 CORRUPT_REFERENCE，不泄漏
+ConfigError。executor 只核对 StageInput 的 stage/fingerprint/payload，不读取 claim
+或猜 attempt，不向对端传续租能力。
+
+正常结果是未验证的 RpcCandidate，原始文本及 provider/model 隐于 repr；只在接线层
+转换为精确的 SuccessCandidate(executor_kind=test)。失败是封闭原因的 RpcFailure，
+其 category 由内核唯一映射，接线层只一对一换成既有 FailureReport。没有生产执行来源。
+
+## 固定协议与生命周期
 
 每 attempt 一个独立会话，一次服务至多一条 prompt；无自动重发、fallback 或重建重发。
 stdin 为完整 JSON 对象+LF；stdout 只按 LF 分帧，可剥 LF 前一个 CR，不用 splitlines。
 UTF-8 多字节、U+2028/U+2029 和同包多帧保持正确；坏 UTF-8/JSON、重复键、非对象、
 非有限数、超限与 EOF 尾帧受控拒绝，不搜索局部 JSON。stderr 并发计数后丢弃。
 
-建议固定上限：请求帧 256 KiB、候选 64 KiB、单帧 4 MiB、累计 stdout 16 MiB、
-stderr 1 MiB；初始化 30 s、总期限 300 s、关闭宽限 10 s。最终实际数值由 #87/#89
-在同一 Contract 对照公共常量收口。单帧须容纳 prompt+system+候选+thinking，累计
+固定上限：实际请求帧（含 LF）256 KiB、候选 64 KiB、单帧 4 MiB、累计 stdout 16 MiB、
+stderr 1 MiB；rpc_types.py 登记初始化 30 s、总期限 300 s、关闭宽限 10 s、
+强杀等待 10 s，单次 pump 至多轮询 50 ms。RpcLimits 只允许缩短前四项期限，不能放大。
+总期限从工厂构造前开始，包含初始化和正常收尾；关闭还受独立 10 s 宽限约束，失败后
+另有最多 10 s 回收等待。保守叠加 initialization+total+close+terminate=350 s，小于
+600 s 租约并留余量，不续租。单帧须容纳 prompt+system+候选+thinking，累计
 须容纳三份回显。初始化+运行+关闭+强杀等待总界限严格小于 A7 600 秒租约并留余量。
 时间使用可注入单调时钟，独立于 A7 UTC 事实时钟；心跳不延长总期限。
 
@@ -82,7 +113,9 @@ stderr 1 MiB；初始化 30 s、总期限 300 s、关闭宽限 10 s。最终实�
 set_auto_compaction(false) → set_model → get_available_thinking_levels →
 set_thinking_level → get_commands → get_state → prompt。响应 id/command 逐一匹配，
 初始化只容忍已知 thinking_level_changed 通知。set_model 可能重置档位，故档位设置
-必须后置。get_commands 必须空；state 回读固定模型、档位、autoCompactionEnabled=false、
+必须后置；设置后出现不同档位通知也拒绝。发送每条命令前非阻塞消费已到达记录，
+无主/重复/预发未来 ACK 不能通过“随后发送对应命令”变成合法。get_commands 必须空；
+state 回读固定模型、档位、autoCompactionEnabled=false、
 isStreaming=false、isCompacting=false、messageCount=0、pendingMessageCount=0、
 sessionFile 缺失或 null。state 无 retry 查询字段，不臆造；开关 ACK 不能证明持久写盘
 或隔离生效。autoCompactionEnabled=false 只证明回读值，不能证明没加载项目 settings。
@@ -95,7 +128,8 @@ system content=""、sections 只能有 preamble/cwd、preamble 精确等于描�
 为 [system,user,assistant]。partial assistant_start 不要求等于最终消息。
 
 ACK 不是完成；等待唯一 started ACK、唯一完整最终消息、agent_end、未 aborted 的
-agent_settled 和正常进程关闭。防御性合成覆盖完成早于 ACK。仅 stop 合法；length、
+agent_settled 和正常进程关闭。防御性合成覆盖完成早于 ACK；此时 settled 立即关闭
+stdin，只允许尚欠的唯一匹配 prompt ACK 补齐条件，其他后续记录仍拒绝。仅 stop 合法；length、
 error、aborted、pending、toolUse、deferred 不合法。额外 turn、工具、queue、retry、
 compaction、summarization、extension UI/错误、未知事件/角色/内容块/停止枚举均拒绝。
 已知记录的未知附加字段可容忍，必需字段类型严格。发送第一条命令前、settled 后
@@ -106,7 +140,9 @@ compaction、summarization、extension UI/错误、未知事件/角色/内容块
 存在空/纯空白 text 则返回候选，由 A1 判 invalid_json。内层围栏、重复键、非有限数、
 评分、主题、中文显示题名等均由 A1/A7 原权威路径拒绝，RPC 不清洗业务输出。
 
-取消先 clear_queue 再 abort，队列返回原文立即丢弃；超时/取消观察后锁定失败，迟到
+取消的完整握手由 #89 补齐：先 clear_queue 再 abort，队列返回原文立即丢弃。#87 已在
+每次等待前后锁定超时/注入取消并有界关闭/终止，迟到结果不能翻转，但尚不声称已实现
+clear_queue/abort。超时/取消观察后锁定失败，迟到
 stop/settled 不能翻转。失联、断管、关闭不响应需有界回收独立进程组。KeyboardInterrupt/
 SystemExit 在 finally 回收后原样上抛，attempt 保持未结算，租约到期保守结算 outcome_unknown。
 管道会话只包装已启动进程，核对独立进程组并承担双管道消费/有界写入/整组终止；
@@ -118,6 +154,19 @@ SystemExit 在 finally 回收后原样上抛，attempt 保持未结算，租约�
 | cancelled | 注入的取消信号 | cancelled |
 | environment | new_session cancelled、模型/认证初始化失败、启动/EOF/断管/异常退出 | executor_error |
 | protocol | 关联不符、执行违例、停止/通道/档位/模型回读错误、超限 | protocol_error |
+
+封闭细分原因由 rpc_types.RpcReason 登记；当前粗类固定如下，不回显自由文本：
+
+| 粗类 | RpcReason |
+| --- | --- |
+| timeout | timeout、close_timeout |
+| cancelled | cancelled |
+| environment | session_cancelled、model_rejected、startup_error、transport_error、eof、unexpected_exit |
+| protocol | invalid_description、invalid_utf8、invalid_json、non_object、duplicate_key、non_finite、frame_limit、stdout_limit、stderr_limit、request_limit、candidate_limit、partial_frame、early_record、response_mismatch、command_rejected、model_state、thinking_unsupported、thinking_state、dirty_state、commands_present、prompt_disposition、event_sequence、event_not_allowed、message_shape、message_mismatch、system_mismatch、user_mismatch、stop_reason、channel、usage_shape |
+
+set_model 失败单独为 model_rejected/environment；其他失败控制 ACK 是
+command_rejected/protocol。EOF 前未终止的尾帧是 partial_frame/protocol；正常帧之后
+缺少必要完成条件则是 eof/environment 或期限失败。关闭异常不得返回候选。
 
 受控失败返回精确 FailureReport，不抛普通异常、不包装 SuccessCandidate。内层输出
 无效由接收器产生 output_invalid；最终模型不符由接收器产生 model_mismatch。一次

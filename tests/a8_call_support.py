@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from paper_radar.config import compile_config, load_config_snapshot
+from paper_radar.config import ConfigError, compile_config, load_config_snapshot
 from paper_radar.llm import CallDescription
 from paper_radar.papers import PaperFacts
 from paper_radar.screening_tasks import ScreeningTasks, TaskError, TaskReason
@@ -64,9 +64,11 @@ def prepare_call(tasks: ScreeningTasks, receipt_id: str) -> CallDescription:
 
     receipt = tasks.get_receipt(receipt_id)
     frozen = tasks.load_input(receipt_id)
-    audit = load_config_snapshot(tasks.database, receipt.snapshot_id)
     try:
+        audit = load_config_snapshot(tasks.database, receipt.snapshot_id)
         return build_call(frozen.stage_input, frozen.snapshot, audit)
+    except ConfigError:
+        raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
     except CallDescriptionError as error:
         reasons = {
             DescriptionReason.INVALID_CONTEXT: TaskReason.INVALID_CONTEXT,

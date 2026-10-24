@@ -96,5 +96,11 @@
   字段字面量、六段 Profile 顺序、主题顺序和固定 Contract Schema 独立写入后用标准库
   JSON 编码；没有调用 `build_call` 或 `render_request` 生成期望。普通测试不会重写向量。
   输出无效修正附带受控 A1 字段/类别，timeout 修正无 issues。恶意文本只是 JSON 值。
-- 后续 wire fixtures 将在 #87–#89 按上述 DOC、DERIVED 与 SYNTH 标签登记；本票不运行
-  Pi 来补获流，不把尚未存在的 wire 用例列为通过。
+- #87 的固定合成 wire 形状在 `tests/a8_rpc_support.py` 的 `responses` 与 `run_records`
+  独立按字面量编写；`wire` 仅用标准库编码，并未调用产品解析/渲染器生成期望。
+  正常 run 对应 DERIVED-01/02/03/04/05/06/07/09/10；分片/CRLF/Unicode 为文档明载规则。
+  正常 set_model 通知先重置到 off，再显式设 low，用来锁定初始化串行纪律。
+  `test_a8_rpc_protocol.py` 的完成早于 ACK 是 SYNTH-ACK-AFTER-COMPLETION；错误帧、
+  预发未来 ACK、重复终局和错误枚举类型均为防御性合成，未作为 Pi 观测事实。
+  `test_a8_rpc_boundary.py` 的内层围栏/非法字段是 SYNTH-INNER-INVALID；完整协议候选
+  仍交 A1/A7。#88–#89 继续补全事件与故障矩阵；不运行 Pi 补获流。
