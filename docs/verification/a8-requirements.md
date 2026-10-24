@@ -28,7 +28,14 @@ GLOSSARY、README、ADR-0026、adapter-config/screening-tasks/pi-rpc Contract、
 | #87 AC6–10，ACK 与完整正常候选 | llm/rpc_messages.py；tests/a8_rpc_support.py 固定合成形状 | test_a8_rpc_protocol.py：started、ACK 不足、完成早于 ACK、重复终局、正常关闭 |
 | #87 AC11–13，模型归属/权威接收/失败结算 | A8 test 接线转精确 SuccessCandidate/FailureReport | test_a8_rpc_boundary.py：model_mismatch、output_invalid、剩余一次、失败隐私；A7 不改 |
 | #87 AC14/15，固定上限与前置/隐私 | rpc_types 常量；validate_request；A8 prepare 映射 audit snapshot 损坏 | test_a8_rpc_preflight.py：audit 损坏、外层转义膨胀均 0 预算/0 会话；期限常量关系 |
-| #88，唯一最终候选/事件表/模型与用量 | 后续协议模块与 A8 测试 | 待 #88；D2 模型不符仍由 A7 |
+| #88 AC1，value 历史同源接收 | 既有 a8_rpc_task_support.run_attempt，无新增接收规则 | test_a8_rpc_value.py：历史配置切换并删除原目录、两种冻结语言标记、回读 ValuePredictionOutput；标记不发送 |
+| #88 AC2–4，事件/角色/枚举/输入边界 | llm/rpc_messages.py；固定合成会话 | test_a8_rpc_candidates.py：允许六类 update；完整禁用事件、空 queue、角色、未知枚举、重复/缺结束、system/user 违例，精确原因 |
+| #88 AC5/6，完整消息和停止/文本 | 完整副本递归类型比较；text 原序拼接 | test_a8_rpc_candidates.py：bool/整数伪相等红→绿；矛盾副本、签名/redacted、diagnostics/endTurn、多 text、无 text 与非 stop |
+| #88 AC7/8，D2 模型与档位命名空间 | 最终 provider/responseModel→A7；规范 thinkingLevel 核对 | test_a8_rpc_candidates.py、test_a8_rpc_value.py：缺必需/可选字段畸形、responseModel 优先、日期模型不符、第二次模型修正、provider 档位不比较 |
+| #88 AC9–11，D3 用量与审计身份 | rpc_messages._usage；DERIVED-08；Contract | 严格数值/成本/四项和；零未知；reasoning/cacheWrite1h 不重复；流式用量不拼接；RPC/responseId 不填 provider_request_id |
+| #88 AC12，合法近界合并帧 | DERIVED-11；固定 256 KiB/64 KiB/4 MiB/16 MiB | test_a8_rpc_candidates.py：同时接近请求/候选/agent_end 边界，三份回显含 thinking/signature；超候选不返回半结果 |
+| #88 AC13/14，权威业务拒绝与隔离 | test_a8_rpc_value.py；既有 12 请求向量 | 评分、未知/禁用/重复主题、中文显示题名、坏内层 JSON/空文本均 output_invalid；失败原文不落盘；第二篇独立会话可继续 |
+| #88 AC15，原因全集/依赖/隐私/来源 | 封闭 RpcReason/RpcCategory 表；既有 A7 四种 executor FailureKind | 两文件穷举映射及 repr/log/数据库/制品隐私；Contract、来源 README、DERIVED-11 同步；A7 绑定不改 |
 | #89，时间/取消/管道/真实 Python 进程 | 后续 pipe wrapper 与 A8 测试/fixture | 待 #89；不启动 Pi/Node |
 | #90，预算/接线/非空恢复 | A8 test executor 支撑与组合测试 | 待 #90；不改 A7 预算或失败词汇 |
 | #91，独立组/可信终态/集中重绑 | a8_scope/a8_acceptance、registry/status/check-offline 与文档 | 待 #91；固定分母、同次真实回执、可信终态全部必须交付 |
@@ -50,6 +57,20 @@ RPC 单次调用 → 既有 A1/A7 接收和制品库；描述/渲染和协议错
 严格 mypy 通过；只读 scope 审计仍返回 0。TDD 记录包括初始接口缺失、冻结载荷与对象
 字段不一致、合法占位历史快照拒绝类别三轮 red→green。完整全量入口留至 #91 同次
 组登记后执行；这些局部结果不替代独立 A8 或完整门禁结论。
+
+## #88 已新增范围与验证
+
+仅修改前票新增的 llm/rpc_messages.py：完整消息副本按类型递归比较，补齐签名/
+redacted 及可选 usage 数值类型。继续复用原 run_attempt 与 A1/A7，不新增领域依赖。
+新增 test_a8_rpc_candidates.py（按参数矩阵审阅 219 项）、test_a8_rpc_value.py（22 项）；
+含前票 91 项的 A8 子集共 332 passed。Ruff/格式与严格 mypy（20 文件）通过；
+只读 scope 审计返回 0，affected_groups=[]、issues=[]，无既有哈希漂移。
+TDD 红→绿分别为 bool/整数矛盾副本（4）、签名/redacted 类型（3）、可选 usage
+数值类型（14）。矩阵数量供 #91 审阅，不替代其独立固定分母及同次实际执行。
+
+本票未运行完整 check-offline；按顺序实施安排由 #91 注册全 A8 后统一执行。
+当前只证明离线协议/test 接线，不代表独立 A8 验收通过；真实 Pi/Node/模型、管道
+及取消握手、生产 cwd 白名单、参数生效、语言事实生产来源仍未验收。
 
 ## #87 已新增范围与验证
 
