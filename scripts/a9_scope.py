@@ -51,7 +51,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_read_contract.py": 60,
     "tests/test_read_context.py": 60,
     "tests/test_read_validation.py": 76,
-    "tests/test_read_numbers.py": 79,
+    "tests/test_read_numbers.py": 94,
     "tests/test_read_privacy.py": 3,
     "tests/test_read_restricted.py": 56,
     "tests/test_read_reduce.py": 42,
@@ -80,7 +80,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_read_numbers.py",
-        "8e13756b89027d36fc0ad5effd2b825f2814741b257134cbfa71fa5f5f17a159",
+        "b9517983721b5cfb727791eafbf29e37b411332538cac75fb5f91f6293dfecd7",
     ),
     (
         "tests/test_read_privacy.py",
@@ -159,7 +159,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/reading/numbers.py",
-        "b11da527e562d6607ad7524f6400a40bbce7a2685d1b7486d823d58fefec5e2d",
+        "01dc3d2c77472721393a61b3814748c69cdc64c2cb229fc4e47aeb60c9137e5b",
     ),
     (
         "src/paper_radar/reading/result.py",
@@ -495,7 +495,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "0127ee10b9c320bec22a9a65e57a0ae14914179c80d07d318ec828137812c956",
+        "abf2f980b219b94afdf68690fb9c4d39040b90f5791e21b81eab4e9cc16da76f",
     ),
 )
 
@@ -572,11 +572,11 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/read-validation.md",
-        "78f25a0864060da05f4747729dd673f7e69c90cee5174a77235045972ee76924",
+        "241ea96cfbbf9bd1e28962ba2f3ef661528435e1f3465b7ed03d2bd54638b173",
     ),
     (
         "docs/verification/a9-scope-review.md",
-        "7e31be9a7d3be85bb0830186f98e7a8ace1f8dad8a52c778c2de186553dfc00d",
+        "df26042232b218c2369ce2a231b8713c3c47b9089b4de45f9c71c22213be448e",
     ),
     (
         "docs/contracts/frozen-contracts.md",
@@ -604,7 +604,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/offline-evidence.md",
-        "f9d266a75322454c1e7ac95ed38e057087b81949ad7cd760e8e0fb91883352b6",
+        "145f4881829af1f140b3d63dfa7bd1cdccb80b07a12fbf92f7580ed54891e612",
     ),
     (
         "tests/fixtures/a9_coverage.json",

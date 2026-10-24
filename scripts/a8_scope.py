@@ -339,7 +339,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/offline-evidence.md",
-        "f9d266a75322454c1e7ac95ed38e057087b81949ad7cd760e8e0fb91883352b6",
+        "145f4881829af1f140b3d63dfa7bd1cdccb80b07a12fbf92f7580ed54891e612",
     ),
     (
         "docs/verification/a8-requirements.md",

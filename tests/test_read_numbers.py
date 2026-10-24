@@ -31,6 +31,13 @@ NUMBER_MATCH_VECTORS = (
     ("3～5 公里", "3 to 5 km"),
     ("3至5 km", "3–5 km"),
     ("3-5 km", "3 to 5 km"),
+    ("3 - 5 km", "3 to 5 km"),
+    ("3 km-5 km", "3 km to 5 km"),
+    ("-5 km", "-5 km"),
+    ("-3-5 km", "-3 to 5 km"),
+    ("-3--1 km", "-3 to -1 km"),
+    ("-3 - -1 km", "-3 to -1 km"),
+    ("ERA5-6 CMIP6-7", "普通原文"),
     ("1.2e-3", "1.2×10⁻³"),
     ("1.2×10⁴", "1.2e4"),
     ("10⁻³", "1e-3"),
@@ -65,6 +72,13 @@ def test_closed_numeric_equivalences_match_own_support(
         ("3", "0.3", "number_not_supported"),
         ("3 km", "3 m", "unit_not_supported"),
         ("3–5 km", "3–6 km", "range_not_supported"),
+        ("3-5 km", "3 to 4 km", "range_not_supported"),
+        ("3-5 km", "3", "range_not_supported"),
+        ("3 km-5 km", "3 km to 4 km", "range_not_supported"),
+        ("3-5 km", "3 to 5 m", "unit_not_supported"),
+        ("3 km-5 km", "3 m and 5 km", "unit_not_supported"),
+        ("-5 km", "5 km", "number_not_supported"),
+        ("-3--1 km", "-3 to 1 km", "range_not_supported"),
         ("1,00", "100", "unrecognized_numeric_form"),
         ("1e", "1", "unrecognized_numeric_form"),
         ("2.3.4", "2.3", "unrecognized_numeric_form"),
@@ -91,7 +105,10 @@ def test_missing_or_unrecognized_support_degrades_without_rewriting(
     assert result == validate_read_output(raw, context_for(source))
 
 
-def test_ranges_need_one_slice_but_distinct_numbers_can_use_separate_slices() -> None:
+@pytest.mark.parametrize("statement", ["3–5 km", "3-5 km"])
+def test_ranges_need_one_slice_but_distinct_numbers_can_use_separate_slices(
+    statement: str,
+) -> None:
     identity = ExtractionIdentity("extraction-1", "reading-1", "map-1")
     context = context_for(
         "3",
@@ -111,7 +128,7 @@ def test_ranges_need_one_slice_but_distinct_numbers_can_use_separate_slices() ->
         ],
     )
     ranged = candidate(
-        main_findings=[{"statement": "3–5 km", "evidence": [{"evidence_id": "e1"}]}]
+        main_findings=[{"statement": statement, "evidence": [{"evidence_id": "e1"}]}]
     )
     result = validate_read_output(ranged, context)
     assert result.diagnostics[0].reason == "range_not_supported"

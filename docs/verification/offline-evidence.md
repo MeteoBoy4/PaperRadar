@@ -160,13 +160,13 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 即使补写为 passed，也继续把中断传给完整 A2。最后发布阶段的中断仍可能没有
 完整结论，不会覆盖已发布文件来修复状态。
 
-九组的 `write_*_conclusion` 兼容入口共用
+十组的 `write_*_conclusion` 兼容入口共用
 `scripts/verification_publication.py` 的 `publish_conclusion`：保持原 JSON
 序列化规则，临时文件独占创建、flush/fsync 后通过 `os.link` 原子发布；目标已存在
 即失败，finally 清理临时文件。运行中证据与回执仍可原子更新，不使用此最终发布入口。
 
 新验收组以显式代码加入登记，提供自己的判据，调用同一个最终发布函数；可选提供
-组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope`、`a3_scope`、`a4_scope`、`a5_scope`、`a6_scope`、`a7_scope` 与 `a8_scope` 的固定测试模块合集。
+组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope`、`a3_scope`、`a4_scope`、`a5_scope`、`a6_scope`、`a7_scope`、`a8_scope` 与 `a9_scope` 的固定测试模块合集。
 新增组仍须显式扩展执行范围；没有自动发现插件、独立检查计划或动态调度。
 测试中的合成组只证明组织扩展能力，不代表新增产品验收能力。
 

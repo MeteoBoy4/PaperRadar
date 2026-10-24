@@ -158,8 +158,15 @@ def _atoms(text: str) -> tuple[_Atom, ...]:
         if not raw:
             continue
         unit, unit_end = _unit_at(text, end)
+        adjacent_range_end = (
+            raw.startswith("-")
+            and bool(result)
+            and result[-1].value is not None
+            and result[-1].end == match.start()
+        )
         if (
             match.start()
+            and not adjacent_range_end
             and (
                 _latin(text[match.start() - 1])
                 or (
