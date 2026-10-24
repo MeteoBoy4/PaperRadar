@@ -105,7 +105,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a5_entry.py",
-        "35ab3f6592e76353cf19c4920f224421092fc2f8b7c3d70cd561d07f134ea118",
+        "c2964e07e423525bc23a7f3c992ad169640f00727b7e716370eaf425c74b8027",
     ),
     (
         "tests/test_a5_test_receipt.py",
@@ -147,7 +147,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a4_scope.py",
-        "ab2e56ee6084b7dbcc176aefbafeafc0899e61722425949d486432a85d75a948",
+        "51f1d264fa5e092d0745cd50155072d67e6a4c2d723f05ea40994f585d927d37",
     ),
     (
         "scripts/a2_full_acceptance.py",
