@@ -8,8 +8,8 @@
 #93 已交付 `paper_radar.reading` 的权威 Pydantic 结构及 Read 自有七类价值词汇，
 经现有 contracts 服务生成、导出和只读检查。仅通过 Schema 不表示已通过证据业务接收。
 #94 已交付原始字节与可靠文本上下文的纯验证、数值 v1 和警告三视图。
-#97 已交付显式 Read 配置准入与历史比较。受限源接收、reduce、恢复组合和独立 A9
-结论由 #95/#96/#98/#99 交付。
+#96 已交付 single/reduce 模式与同正文 map 证据允许集合检查；#97 已交付显式 Read
+配置准入与历史比较。受限源接收、恢复组合和独立 A9 结论由 #95/#98/#99 交付。
 
 | 名称用途 | 固定名称 |
 | --- | --- |
@@ -69,7 +69,7 @@ Rank、Topic、紧急性和流程决定属于程序边界，不是模型输出�
 默认不检查；其余字段将来不得呈现为已核对。`data_summary` 仅写“无”会被占位
 规则拒绝，纯理论论文可写“未使用观测数据”，具体引导留给 Prompt。
 
-## 消费上下文与错误边界（可靠文本已交付；reduce 由 #96 接入）
+## 消费上下文与错误边界（可靠文本与 reduce 已交付）
 
 调用方提交原始 UTF-8 JSON 字节和已合法构造的只读上下文。顶层前后 JSON 空白合法；
 BOM、坏 UTF-8、孤立代理字符、任意层重复键、NaN/Infinity、非对象、围栏、截断和
@@ -92,12 +92,13 @@ BOM、坏 UTF-8、孤立代理字符、任意层重复键、NaN/Infinity、非�
 | `SourceBlock` | identity、source_id、orig、kind、unreliable | 同三元组、唯一 ID、合法 Unicode orig、text/table/formula 与严格 bool |
 | `Provenance` | source_id、page_no、bbox、start、end | 源/页面闭包、四元 bbox、orig 半开区间、非空白切片；拒绝完全重复定位 |
 | `Evidence` | identity、evidence_id、provenance | 同三元组、唯一严格 ID、有序非空 provenance |
-| `ReadContext` | identity、pages、source_blocks、evidence、expected_language、mode | 先验证完整集合，再冻结；语言显式 zh/en；#94 仅 single |
+| `AllowedEvidence` | identity、evidence_ids | 集合级同三元组；有序 ID 接受 list/tuple 后冻结为 tuple；严格 ID、无重复，允许空 tuple |
+| `ReadContext` | identity、pages、source_blocks、evidence、expected_language、mode、allowed_evidence | 先验证完整集合，再冻结；语言显式 zh/en；single/reduce 与集合方向约束 |
 | `SourceSlice` | identity、evidence_id、provenance、text、kind、unreliable | `replay()` 从 orig 精确切出，保留来源与全部定位 |
 
-缺少 identity 或 expected_language 都是受控上下文错误。#94 在构造时拒绝 table、
-formula、unreliable 和 reduce，分别使用 unsupported_source / unsupported_mode；
-这些暂时拒绝由 #95/#96 接入规则后替换，不是最终矩阵的永久限制。
+缺少 identity 或 expected_language 都是受控上下文错误。#94 在构造时暂拒 table、
+formula 和 unreliable，使用 unsupported_source；这些暂时拒绝由 #95 接入矩阵后替换。
+#96 已接入 reduce；未知模式仍以 unsupported_mode 拒绝。
 公式候选、图片/公式占位及生成展示内容没有 SourceBlock 类型分支；将其 ID 用作
 provenance 目标会因未知源而构造失败。上下文只解释给定 orig，不生成这些内容。
 
@@ -119,10 +120,30 @@ charspan 按 orig 原字符串的 Unicode code point 半开区间回放，切片
 NFKC/全角折叠，数值归一化仅发生在后续等价比较子步骤，不产生新切片或改变定位。
 跨页 evidence 保留全部 provenance，数值比较不把分段拼接。
 
-single 禁止附带允许集合；reduce 必须提供集合级携带同一三元组、成员为 evidence ID
-的有序 tuple。构造时拒绝缺失、重复、未知成员及跨正文，空 tuple 可表达但无法支持
-必需的评分理由。正文未知 ID、存在但不在允许集合的 ID、集合自身未知成员分为
-不同输出/上下文原因；reduce 不回退到全文集合。集合真实来自 map 的来源链仍未验证。
+single 禁止附带允许集合；reduce 必须提供 `AllowedEvidence(identity, evidence_ids)`，
+集合级携带与上下文相同的三元组。成员以有序 list/tuple 接收后冻结为 tuple；集合、
+上下文与来源容器在构造完成后的修改不能改变已冻结范围。构造时拒绝缺失、重复、
+未知成员及跨正文（包括同 fingerprint、不同 reading/evidence-map 哈希）。
+允许引用合法子集，不要求用完全部允许 ID；不因缺集合而退回全文范围。
+
+| 位置与违例 | 安全原因 | 异常边界 |
+| --- | --- | --- |
+| reduce 缺集合 | missing_allowed_evidence | ReadContextError |
+| single 附带集合 | unexpected_allowed_evidence | ReadContextError |
+| 非权威类型或无序集合 | invalid_allowed_evidence | ReadContextError |
+| 集合内重复 / 非法 ID | duplicate_id / invalid_evidence_id | ReadContextError |
+| 集合跨正文 / 未知成员 | identity_mismatch / unknown_allowed_evidence | ReadContextError |
+| 模型引用正文不存在的 ID | unknown_evidence | ReadOutputError |
+| 模型引用正文存在但未被允许的 ID | evidence_not_allowed | ReadOutputError |
+
+空 tuple 可以构造。此时任何实际引用都按越界拒绝，五类保护内容若没有有效允许引用，
+同时报告 evidence_required；两项评分理由必填，因而整份分析不能通过。诊断按安全
+字段路径排序，保留范围越界和引用义务两种原因，不短路只报其一。原模型的 evidence
+列表为空时仍按冻结 Schema 拒绝，不补字段或引用。
+
+reduce 沿用相同严格 JSON、语言、价值、定位、数值与受限内容入口；程序模式和集合
+不进入模型 Schema。结果保留 mode、三元组和规则身份，冻结 read/v1 字节不变。
+允许集合真实来自本轮 map 的来源链仍未验证，本票不实现 map 契约、分块或任务。
 
 ## 受限内容矩阵（#95 目标）
 
@@ -273,8 +294,8 @@ Read StageInput/任务/预算/业务持久化、生产 Pi、校准资格、NAS �
 | US19：候选/占位非源已拒绝，受限源暂拒 | 受限源类型 #94/#95 | 真实 PDF 核查 |
 | US20：矩阵已记录 | 表格结构/数值区分 #95 | 人工复核入口 |
 | US21：verified 额外字段拒绝已实现 | Python 来源控制 #93/#95 | 生产证据可信度 |
-| US22：未实现 | reduce 子集 #96 | map 来源链 |
-| US23：未实现 | reduce 允许集合必填 #96 | 真实 map |
+| US22：允许集合限制引用已实现 | reduce 子集 #96 | map 来源链 |
+| US23：允许集合必填及空集合诊断已实现 | reduce 允许集合必填 #96 | 真实 map |
 | US24：逐条引用切片匹配已实现 | 仅各自引用切片匹配 #94 | 科学支持关系 |
 | US25：数值/范围/单位降级已实现 | 数值/范围/单位降级 #94 | 精确数值正确性 |
 | US26：封闭等价且不换算已实现 | 不换算/改写 #94 | 科学推导 |
@@ -308,7 +329,7 @@ Read StageInput/任务/预算/业务持久化、生产 Pi、校准资格、NAS �
 | ID07：完整构造闭包已交付 | 构造一致性 #94 | 内容身份生产验证 |
 | ID08：全部 provenance 回放已交付 | 全部 provenance 回放 #94 | PDF 回查 |
 | ID09：最终窄矩阵已记录 | 表格/公式裁决 #95 | 人工复核写入 |
-| ID10：允许集合规则已记录 | reduce #96 | map 输出来源 |
+| ID10：同正文允许集合与模式约束已交付 | reduce #96 | map 输出来源 |
 | ID11：数值规则 v1 已交付 | 数值规则 v1 #94 | 语义蕴含 |
 | ID12：降级三视图已交付，受限硬失败待接入 | 硬失败/降级 #94/#95 | 报告 |
 | ID13：area read、根/示例已冻结 | 既有发布/检查 #93 | 真实模型 |
@@ -334,7 +355,7 @@ Read StageInput/任务/预算/业务持久化、生产 Pi、校准资格、NAS �
 | TD07：页面/bbox 向量通过 | 页面/bbox #94 | PDF 来源 |
 | TD08：Unicode/多 provenance 向量通过 | charspan #94 | Docling |
 | TD09：矩阵已记录 | 受限版面 #95 | 人工核查 |
-| TD10：未实现 | reduce #96 | map 来源 |
+| TD10：模式/身份/集合/越界向量通过 | reduce #96 | map 来源 |
 | TD11：封闭记法数值向量通过 | 数值正例 #94 | 科学蕴含 |
 | TD12：数值降级向量通过 | 数值降级 #94 | 精度判断 |
 | TD13：三视图/原始依据向量通过 | 警告与原始依据 #94 | 存储接收器 |
@@ -355,7 +376,7 @@ Read StageInput/任务/预算/业务持久化、生产 Pi、校准资格、NAS �
 
 | 条目与已实现 | 目标能力（实现票） | 明确未验证 |
 | --- | --- | --- |
-| C1：上下文/异常/几何/数值/警告规则已记录 | 一-5、二-6~14 由 #94/#95/#96；三配置连锁 #97；四门禁 #99；五恢复收缩 #98；六测试 #94–#99；七文档贯穿 | 可靠文本入口已交付，受限/reduce 待接入 |
+| C1：上下文/异常/几何/数值/警告规则已记录 | 一-5、二-6~14 由 #94/#95/#96；三配置连锁 #97；四门禁 #99；五恢复收缩 #98；六测试 #94–#99；七文档贯穿 | 可靠文本/reduce 已交付，受限源待接入 |
 | D1：area=read 已冻结 | #93 | 无新 area 别名 |
 | D2：窄受限矩阵已记录 | #95 | 真实 PDF 核对 |
 | D3：A5 三元组已记录 | #94 | orig 哈希归属 |

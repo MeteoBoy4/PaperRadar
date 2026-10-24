@@ -78,6 +78,11 @@ def _business_issues(
                 )
             )
     known = {item.evidence_id for item in context.evidence}
+    allowed = (
+        set(context.allowed_evidence.evidence_ids)
+        if context.allowed_evidence is not None
+        else known
+    )
     checked: set[str] = set()
     for location, text, references in protected_contents(output):
         if not _meaningful(text):
@@ -98,7 +103,17 @@ def _business_issues(
                 issues.append(ReadIssue(position, ReadErrorCategory.DUPLICATE_EVIDENCE))
             elif identifier not in known:
                 issues.append(ReadIssue(position, ReadErrorCategory.UNKNOWN_EVIDENCE))
+            elif identifier not in allowed:
+                issues.append(
+                    ReadIssue(position, ReadErrorCategory.EVIDENCE_NOT_ALLOWED)
+                )
             seen.add(identifier)
+        if context.mode == "reduce" and not any(
+            reference.evidence_id in allowed for reference in references
+        ):
+            issues.append(
+                ReadIssue(reference_location, ReadErrorCategory.EVIDENCE_REQUIRED)
+            )
     return issues
 
 
