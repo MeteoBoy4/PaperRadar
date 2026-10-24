@@ -145,6 +145,11 @@ Table/Section 前缀；Table/Section 标签仍排除，规则身份保持 v1。
 没有新增迁移、人工复核后门或 attempt；未运行 live，orig 哈希覆盖、真实 PDF 与
 科学语义仍未验证。阶段 G 的修正提示和 attempt 结算仍由未来生产接收器实现。
 
+合入 #96 后，保留其 AllowedEvidence、模式/三元组/范围约束，以及本票的受限策略与
+失败诊断；388 项 Read/reduce/配置组合测试通过，Ruff format/check、mypy（516 文件）
+和显式 read/v1 检查通过。上述 SHA 表保留本票合并前审阅时点，不覆盖 #96 的独立记录；
+最终工作树字节和所有必要固定分母由 #99 统一登记。
+
 ## A9-04（#96）
 
 本票基于 integration 的 `c2d38b75a31238261e9056790fa61ab534b19c52`。
