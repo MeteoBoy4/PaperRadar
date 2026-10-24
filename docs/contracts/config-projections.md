@@ -37,7 +37,7 @@
 | value | profile、screening model、value prompt、value-prediction contract、screening adapter、topics |
 | reuse | profile、reuse_assessment model、reuse prompt、reuse-assessment contract、reuse_assessment adapter、excerpt_selector_version、excerpt_priority |
 | extraction | extraction：backend、model_artifacts、backend_config、normalization_version |
-| read | profile、reading model、reading prompt、未来权威 read contract（当前恒 null）、reading adapter、chunking_version |
+| read | profile、reading model、reading prompt、显式 read contract（未选择为 null）、reading adapter、chunking_version |
 | suggestion | suggestion_rule_version、reuse_escalation_research_values、decision-reasons contract |
 
 模型阶段的分量键统一为 `profile/model/prompt/contract/adapter`；表中的槽说明从哪里
@@ -74,8 +74,9 @@ normalization_version、excerpt_selector_version、chunking_version、suggestion
 凭据、执行计划或产物。reuse 与 read 不嵌套 extraction；阶段输入消费者再组合
 实际使用的论文事实或来源引用。四阶段配方、历史投影核对与隔离恢复消费者义务见
 [阶段输入契约](stage-inputs.md)。完整快照 ID 仍只作审计，不能代替阶段投影 ID。
-得到六投影或基线不会使不完整配置变为 ready；Read 始终
-缺权威契约，不能据此推导执行就绪或校准通过。
+得到六投影或基线不会使不完整配置变为 ready。Read 契约通过已有 contract 槽进入投影，
+旧快照仍保留 null、原 snapshot/projection ID；新选择只改变 Read 投影，不改变其余五
+投影或校准基线。Read 配置完整不能推导执行就绪或校准通过。
 
 ## 身份载荷与格式演进
 

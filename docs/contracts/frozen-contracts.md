@@ -14,6 +14,10 @@
 Read 的结构、独立价值词汇和后续证据业务校验边界见
 [Read Contract](read-validation.md)。Schema 通过不等于证据业务接收成功。
 
+#97 已开放 `settings.contracts.read: v1`，由配置 check/compile 复用同一权威检查，
+历史 load 则核对已登记原始材料与引用，不重新生成当前 Schema。配置入口与独立 ready
+示例见[运行配置契约](runtime-config.md#read-配置与分块身份)及 README。
+
 ## 命令与公共入口
 
 维护者使用真实安装入口重复提供 `--contract`，显式选择契约、声明版本和目标根

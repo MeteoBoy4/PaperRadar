@@ -60,6 +60,7 @@ _CONTRACT_NAMES = {
     "value_prediction": ContractName.VALUE_PREDICTION,
     "reuse_assessment": ContractName.REUSE_ASSESSMENT,
     "decision_reasons": ContractName.DECISION_REASONS,
+    "read": ContractName.READ,
 }
 _CONTRACT_CHECK_GUIDANCE = {
     ContractCheckErrorCategory.INVALID_SELECTION: "请确认所选契约和版本已实现",
