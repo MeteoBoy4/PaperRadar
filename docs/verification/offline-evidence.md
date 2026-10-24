@@ -75,8 +75,10 @@ SIGTERM，等待至多两秒，再向残留进程组发送 SIGKILL。Linux 上�
 
 证据记录的是一次实际执行；其中 #12 的 `full_a1_verified=false` 与
 `stage_a_verified=false` 保持固定。A1 结论单独核对完整范围，不改写这份证据。
-新增已实现冻结契约或声明版本时，同步更新脚本的 `CONTRACT_NAMES`
-和 `CONTRACT_VERSION`，使检查命令与证据范围一起更新；测试会与权威注册表核对。
+`CONTRACT_NAMES` 与 `CONTRACT_VERSION` 固定描述 A1 历史四契约计划，新增 Read
+不会扩大该历史范围。Read 的独立必需检查由 A9-07 的 writer 内调用现有契约服务
+接入；其组结论和固定范围另行登记。契约元数据路径使用受控注册表的真实 area，
+不假定所有契约都属于 screening。
 
 ## 固定 scope 维护审计（#60）
 

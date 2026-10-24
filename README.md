@@ -2,12 +2,17 @@
 
 PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库交付了工程入口、
 研究边界、摘要层价值预测、复用可行性升级和筛选原因组合的公共验证，以及
-四种公共契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
+原四种公共契约和 Read 结构契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
 只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
 现已开放四种单文件制品与完整 extraction 集合的不可变内容寻址存储和完整校验回读。
 已提供四类来源仲裁、人工字段修正、Feed 登记与发现的本地事实服务和只读 `paper show/trace`；
 另已交付 boundary/value 的冻结任务、有限尝试、租约、成功接收、retry 与独立离线验收。
 真实网络来源、模型执行和完整论文处理流水线尚未实现。
+
+#93 已冻结 [Read 权威结构](docs/contracts/read-validation.md)，包含全部 18 个必填字段、
+严格独立评分与 Read 自有价值词汇。证据业务接收、显式配置准入、恢复组合及独立 A9
+验收仍由 #94–#99 推进；结构契约不授予生产 Read 或校准资格。
+
 期刊身份与信誉集合也可版本化登记，校验 ISSN 与冲突，并从 SQLite 回放历史。
 另可登记 Pi adapter 的三个独立选择、声明系统指令、资源哈希、推理档位与
 固定调用策略；单快照可重建六阶段配置投影和校准基线，并只读比较已保存快照。
@@ -318,8 +323,9 @@ A5 当时的 check-offline 输出七份主要文件，A6 注册时为八份主�
 - `value-prediction`
 - `reuse-assessment`
 - `decision-reasons`
+- `read`
 
-例如一次导出全部四份契约：
+例如一次导出历史 A1 的四份契约：
 
 ```bash
 uv run --offline --locked paper-radar contracts export \
@@ -332,13 +338,15 @@ uv run --offline --locked paper-radar contracts export \
 ```
 
 `--contract` 可重复，每份至多一次；命令按上述声明顺序处理。快照写入
-`contracts/screening/<契约名>/v1/`。写入前会预检全部既有目标；损坏、版本不一致
+`contracts/screening/<契约名>/v1/`；Read 单独使用 `contracts/read/read/v1/`。
+可用 `--contract read` 单选或加入混选，两处 area 均来自受控注册表。
+写入前会预检全部既有目标；损坏、版本不一致
 或同版本内容冲突不会产生任何新快照。发布阶段逐份安全落盘，不承诺跨快照事务：
 若中途失败，预检时已经一致的项目标为“未改写”，故障前完整写入的项目标为
 “已创建”，只有失败项和仍缺失的未处理项标为“未完成”；修复后用原命令重跑会
 保持完整项不变并补齐缺失项。此命令不访问网络、数据库或模型，不消耗配额。
 
-只读确认整组快照仍与当前权威定义一致：
+只读确认历史 A1 四份快照仍与当前权威定义一致：
 
 ```bash
 uv run --offline --locked paper-radar contracts check \
@@ -354,6 +362,11 @@ uv run --offline --locked paper-radar contracts check \
 结果、错误类别和中文处理说明。全部一致返回 0；任一项缺失、不可读取、损坏、版本
 不一致或内容漂移时，其他项仍会完成检查，报告全部结果后返回 2。检查不修复、不
 刷新、不创建任何文件，也不访问网络、数据库或模型。
+
+Read 的单独只读检查为
+`uv run --offline --locked paper-radar contracts check --contract read --version v1 --target contracts`。
+完整离线计划仍只显式选择原四份；Read 会由 A9-07 的独立结论内部检查，不静默扩大
+A1 的历史证明范围。
 
 ## 完整离线验证
 

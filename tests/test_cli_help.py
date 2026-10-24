@@ -7,7 +7,14 @@ from pathlib import Path
 
 import pytest
 
-from paper_radar.contracts import ContractName, ContractVersion
+from paper_radar.contracts import ContractVersion
+
+_A1_CONTRACT_NAMES = (
+    "boundary",
+    "value-prediction",
+    "reuse-assessment",
+    "decision-reasons",
+)
 
 
 def _installed_entrypoint() -> Path:
@@ -99,12 +106,14 @@ def test_contract_help_lists_every_registered_choice(tmp_path: Path) -> None:
 
     registered_versions = "、".join(item.value for item in ContractVersion)
     assert group_help.returncode == 0, group_help.stderr
-    for name in ContractName:
-        assert name.value in group_help.stdout
+    for name in _A1_CONTRACT_NAMES:
+        assert name in group_help.stdout
+    assert "read" in group_help.stdout
     for result in command_helps:
         assert result.returncode == 0, result.stderr
-        for name in ContractName:
-            assert name.value in result.stdout
+        for name in _A1_CONTRACT_NAMES:
+            assert name in result.stdout
+        assert "read" in result.stdout
         assert f"当前支持的声明版本：{registered_versions}" in result.stdout
         if "export" in result.args:
             assert "可重复的受控契约名" in result.stdout

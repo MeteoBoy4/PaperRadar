@@ -217,13 +217,27 @@ def _environment_metadata(root: Path) -> dict[str, Any]:
 def _contract_metadata(
     root: Path, names: tuple[str, ...], version: str
 ) -> list[dict[str, str | None]]:
+    from paper_radar.contracts.schema import (
+        ContractSelectionError,
+        build_selected_contract,
+    )
+
+    def schema_sha256(name: str) -> str | None:
+        try:
+            contract = build_selected_contract(name, version)
+        except ContractSelectionError:
+            return None
+        return file_sha256(
+            (root / "contracts").joinpath(
+                *contract.snapshot_parts, contract.schema_filename
+            )
+        )
+
     return [
         {
             "name": name,
             "version": version,
-            "schema_sha256": file_sha256(
-                root / "contracts" / "screening" / name / version / "schema.json"
-            ),
+            "schema_sha256": schema_sha256(name),
         }
         for name in names
     ]

@@ -1,0 +1,219 @@
+{
+  "$defs": {
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "description": "精读分析对单条证据的引用。",
+      "properties": {
+        "evidence_id": {
+          "minLength": 1,
+          "title": "Evidence Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "ReusablePoint": {
+      "additionalProperties": false,
+      "description": "共用自身证据引用的可复用内容及其使用方式。",
+      "properties": {
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceRef"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "how_to_reuse": {
+          "title": "How To Reuse",
+          "type": "string"
+        },
+        "item": {
+          "title": "Item",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item",
+        "how_to_reuse",
+        "evidence"
+      ],
+      "title": "ReusablePoint",
+      "type": "object"
+    },
+    "SupportedStatement": {
+      "additionalProperties": false,
+      "description": "具有证据引用的精读陈述。",
+      "properties": {
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceRef"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "statement": {
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "statement",
+        "evidence"
+      ],
+      "title": "SupportedStatement",
+      "type": "object"
+    },
+    "ValueType": {
+      "description": "精读分析允许返回的七类受控价值。",
+      "enum": [
+        "method",
+        "data",
+        "code_tool",
+        "theory_mechanism",
+        "evidence_conclusion",
+        "question_hypothesis",
+        "review_knowledge_map"
+      ],
+      "title": "ValueType",
+      "type": "string"
+    }
+  },
+  "$id": "urn:paper-radar:contracts:read:read:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Read 阶段的全文精读分析。",
+  "properties": {
+    "data_summary": {
+      "title": "Data Summary",
+      "type": "string"
+    },
+    "degraded_content_warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Degraded Content Warnings",
+      "type": "array"
+    },
+    "key_limitations": {
+      "items": {
+        "$ref": "#/$defs/SupportedStatement"
+      },
+      "title": "Key Limitations",
+      "type": "array"
+    },
+    "main_findings": {
+      "items": {
+        "$ref": "#/$defs/SupportedStatement"
+      },
+      "title": "Main Findings",
+      "type": "array"
+    },
+    "methods_summary": {
+      "title": "Methods Summary",
+      "type": "string"
+    },
+    "next_action": {
+      "title": "Next Action",
+      "type": "string"
+    },
+    "one_sentence_conclusion": {
+      "title": "One Sentence Conclusion",
+      "type": "string"
+    },
+    "open_questions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Open Questions",
+      "type": "array"
+    },
+    "output_language": {
+      "enum": [
+        "zh",
+        "en"
+      ],
+      "title": "Output Language",
+      "type": "string"
+    },
+    "required_adaptations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Adaptations",
+      "type": "array"
+    },
+    "research_question": {
+      "title": "Research Question",
+      "type": "string"
+    },
+    "research_value": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Research Value",
+      "type": "integer"
+    },
+    "research_value_reason": {
+      "$ref": "#/$defs/SupportedStatement"
+    },
+    "reusable_points": {
+      "items": {
+        "$ref": "#/$defs/ReusablePoint"
+      },
+      "title": "Reusable Points",
+      "type": "array"
+    },
+    "reuse_feasibility": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Reuse Feasibility",
+      "type": "integer"
+    },
+    "reuse_feasibility_reason": {
+      "$ref": "#/$defs/SupportedStatement"
+    },
+    "value_types": {
+      "description": "精读分析允许返回的七类受控价值。",
+      "items": {
+        "$ref": "#/$defs/ValueType"
+      },
+      "title": "Value Types",
+      "type": "array"
+    },
+    "why_it_matters": {
+      "title": "Why It Matters",
+      "type": "string"
+    }
+  },
+  "required": [
+    "output_language",
+    "one_sentence_conclusion",
+    "research_question",
+    "methods_summary",
+    "data_summary",
+    "main_findings",
+    "research_value",
+    "research_value_reason",
+    "reuse_feasibility",
+    "reuse_feasibility_reason",
+    "required_adaptations",
+    "reusable_points",
+    "key_limitations",
+    "open_questions",
+    "value_types",
+    "why_it_matters",
+    "next_action",
+    "degraded_content_warnings"
+  ],
+  "title": "ReadAnalysisOutput",
+  "type": "object",
+  "x-paper-radar-contract": {
+    "name": "read",
+    "version": "v1"
+  }
+}

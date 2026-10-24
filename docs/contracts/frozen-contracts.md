@@ -1,6 +1,6 @@
 # 冻结契约导出与检查
 
-当前交付四份可单独或批量选择的 `v1` 磁盘冻结契约。`contracts export` 可在一次
+当前交付五份可单独或批量选择的 `v1` 磁盘冻结契约。`contracts export` 可在一次
 命令中处理多份；`contracts check` 也可在一次命令中逐项检查多份并汇总退出码。
 
 | CLI 受控名 | 权威定义 | 固定目录 |
@@ -9,6 +9,10 @@
 | `value-prediction` | `ValuePredictionOutput` | `screening/value-prediction/v1/` |
 | `reuse-assessment` | `ReuseAssessmentOutput` | `screening/reuse-assessment/v1/` |
 | `decision-reasons` | `screening_reason_json_schema()` 使用的权威 Pydantic 组合类型 | `screening/decision-reasons/v1/` |
+| `read` | `paper_radar.reading.ReadAnalysisOutput` | `read/read/v1/` |
+
+Read 的结构、独立价值词汇和后续证据业务校验边界见
+[Read Contract](read-validation.md)。Schema 通过不等于证据业务接收成功。
 
 ## 命令与公共入口
 
@@ -38,7 +42,7 @@ paper-radar contracts check \
   --target contracts
 ```
 
-整组检查继续显式列出四份受控契约，不使用会随注册表扩张的隐式 `--all`。因此以后
+历史 A1 整组检查继续显式列出四份受控契约，不使用会随注册表扩张的隐式 `--all`。因此以后
 新增契约不会静默改变这组检查的范围：
 
 ```bash
@@ -54,9 +58,20 @@ paper-radar contracts check \
 Python 调用方使用 `paper_radar.contracts.export_frozen_contracts` 执行带预检的
 批量导出；单份兼容入口为 `export_frozen_contract`。只读检查分别使用
 `check_frozen_contract` 和 `check_frozen_contracts`。纯内容生成可使用
-`build_frozen_contract`；三种输出直接调用各自权威 Pydantic 模型的
+`build_frozen_contract`；四种输出直接调用各自权威 Pydantic 模型的
 `model_json_schema()`，原因契约直接调用从权威合法组合生成的 Pydantic Schema，
 不会维护第二份字段或组合定义。
+
+Read 可单独选择，或与任意已实现契约混选；声明顺序位于原四份之后：
+
+```bash
+paper-radar contracts export --contract read --version v1 --target contracts
+paper-radar contracts check --contract read --version v1 --target contracts
+```
+
+完整离线入口的六项计划和 A1 四契约范围不因 Read 新增而改变。A9-07 将在独立
+必需 A9 writer 内显式调用 Read check 并影响最终退出码；当前 #93 仅交付该公共能力，
+不以现有 A1 结论宣称 Read 已完成验收。
 
 ## 路径与文件格式
 
@@ -80,9 +95,14 @@ screening/
     v1/
       schema.json
       manifest.json
+read/
+  read/
+    v1/
+      schema.json
+      manifest.json
 ```
 
-`screening`、四个契约目录名、`v1` 和两个文件名均来自代码中的受控选择，不接受
+area（`screening` / `read`）、契约目录名、`v1` 和两个文件名均来自代码中的受控选择，不接受
 模型输出或任意路径片段。解析后的快照路径必须仍位于目标根目录内；已有符号链接
 若把路径引向根目录外，导出会在写入前失败，`check` 也会直接拒绝检查。
 
@@ -95,7 +115,7 @@ screening/
 - `schema_file`：固定为 `schema.json`；
 - `schema_sha256`：对 `schema.json` 完整字节计算的十六进制 SHA-256。
 
-当前四份 Schema SHA-256 为：
+当前五份 Schema SHA-256 为：
 
 | 契约 | SHA-256 |
 | --- | --- |
@@ -103,6 +123,7 @@ screening/
 | `value-prediction/v1` | `5ba68a0499903e01e733872bbd1967e04ae8149089ae1559a5d0a2c6c2fa351e` |
 | `reuse-assessment/v1` | `48c31d66163f7022cd3e7499619d2a97701b11cdc92d9f2e4dfe701cf3d980ff` |
 | `decision-reasons/v1` | `eabf88c7679433d52d8b8fa8a9cc3051c978a22ee528c785a187b146c555e4bc` |
+| `read/v1` | `1ac06948024aab610c6b2c1098d0a53596632c940704d32fae860a03ed5d6111` |
 
 ## JSON Schema 与上下文校验边界
 
@@ -219,7 +240,7 @@ Schema、规范序列化、清单字段、SHA-256 判据与错误类别，不维
 `scripts/check-offline` 在全部测试之后用一次 `contracts check` 显式选择
 `boundary`、`value-prediction`、`reuse-assessment` 和 `decision-reasons`。完整离线
 入口因此实际执行整组检查；任一项失败时命令仍报告全部四项，最后以非零退出。
-入口随后生成独立的 A1 结论：只有本次固定计划全部通过、四份磁盘快照再次只读
+入口随后生成独立的 A1 结论：只有本次固定计划全部通过、历史四份磁盘快照再次只读
 核验并与本次证据哈希一致、HEAD/工作树/lockfile 在运行前后保持一致，才宣布
 A1 通过。`<run_id>.json` 仍只表示 #12 局部证据；完整结论见同目录的
 `<run_id>.a1.json`，解释见[离线验证证据](../verification/offline-evidence.md)。

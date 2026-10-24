@@ -16,7 +16,7 @@ from typing import Any, cast
 
 import pytest
 
-from paper_radar.contracts import ContractName, ContractVersion
+from paper_radar.contracts import ContractVersion
 from scripts import offline_evidence
 from scripts.offline_evidence import (
     CONTRACT_NAMES,
@@ -244,7 +244,12 @@ def test_plan_runs_only_registered_contracts() -> None:
         "contracts",
     ]
     command = plan[-1].command
-    assert set(CONTRACT_NAMES) == {name.value for name in ContractName}
+    assert set(CONTRACT_NAMES) == {
+        "boundary",
+        "value-prediction",
+        "reuse-assessment",
+        "decision-reasons",
+    }
     assert {version.value for version in ContractVersion} == {CONTRACT_VERSION}
     assert command.count("--contract") == len(CONTRACT_NAMES)
     for name in CONTRACT_NAMES:

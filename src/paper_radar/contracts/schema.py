@@ -10,6 +10,7 @@ from enum import StrEnum
 from functools import partial
 from typing import Any
 
+from paper_radar.reading.schema import ReadAnalysisOutput
 from paper_radar.screening.reasons import screening_reason_json_schema
 from paper_radar.screening.schema import (
     BoundaryOutput,
@@ -37,6 +38,7 @@ class ContractName(StrEnum):
     VALUE_PREDICTION = "value-prediction"
     REUSE_ASSESSMENT = "reuse-assessment"
     DECISION_REASONS = "decision-reasons"
+    READ = "read"
 
 
 class ContractVersion(StrEnum):
@@ -90,6 +92,10 @@ _CONTRACTS: dict[
     (ContractName.DECISION_REASONS, ContractVersion.V1): _ContractDefinition(
         schema_builder=screening_reason_json_schema,
         area="screening",
+    ),
+    (ContractName.READ, ContractVersion.V1): _ContractDefinition(
+        schema_builder=partial(ReadAnalysisOutput.model_json_schema, mode="validation"),
+        area="read",
     ),
 }
 
