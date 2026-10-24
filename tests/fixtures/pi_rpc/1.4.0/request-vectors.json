@@ -1,0 +1,137 @@
+{
+  "render_format": 1,
+  "vectors": [
+    {
+      "id": "paper-1-boundary-first",
+      "stage": "boundary",
+      "paper": {
+        "title": "Title",
+        "abstract": "Abstract",
+        "abstract_truncated": false
+      },
+      "correction": null,
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$id\":\"urn:paper-radar:contracts:screening:boundary:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第一阶段的研究边界判断。\",\"properties\":{\"boundary\":{\"enum\":[\"in_scope\",\"out_of_scope\",\"uncertain\"],\"title\":\"Boundary\",\"type\":\"string\"},\"reason_zh\":{\"title\":\"Reason Zh\",\"type\":\"string\"}},\"required\":[\"boundary\",\"reason_zh\"],\"title\":\"BoundaryOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"boundary\",\"version\":\"v1\"}},\"correction\":null,\"paper\":{\"abstract\":\"Abstract\",\"abstract_truncated\":false,\"title\":\"Title\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Boundary prompt\\n\",\"stage\":\"boundary\"}"
+    },
+    {
+      "id": "paper-1-boundary-output-invalid",
+      "stage": "boundary",
+      "paper": {
+        "title": "Title",
+        "abstract": "Abstract",
+        "abstract_truncated": false
+      },
+      "correction": "上次输出未通过验证,请遵守冻结的输出契约。 research_value [schema]",
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$id\":\"urn:paper-radar:contracts:screening:boundary:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第一阶段的研究边界判断。\",\"properties\":{\"boundary\":{\"enum\":[\"in_scope\",\"out_of_scope\",\"uncertain\"],\"title\":\"Boundary\",\"type\":\"string\"},\"reason_zh\":{\"title\":\"Reason Zh\",\"type\":\"string\"}},\"required\":[\"boundary\",\"reason_zh\"],\"title\":\"BoundaryOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"boundary\",\"version\":\"v1\"}},\"correction\":\"上次输出未通过验证,请遵守冻结的输出契约。 research_value [schema]\",\"paper\":{\"abstract\":\"Abstract\",\"abstract_truncated\":false,\"title\":\"Title\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Boundary prompt\\n\",\"stage\":\"boundary\"}"
+    },
+    {
+      "id": "paper-1-boundary-timeout",
+      "stage": "boundary",
+      "paper": {
+        "title": "Title",
+        "abstract": "Abstract",
+        "abstract_truncated": false
+      },
+      "correction": "上次执行超时,请在受支持的执行时限内完成。",
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$id\":\"urn:paper-radar:contracts:screening:boundary:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第一阶段的研究边界判断。\",\"properties\":{\"boundary\":{\"enum\":[\"in_scope\",\"out_of_scope\",\"uncertain\"],\"title\":\"Boundary\",\"type\":\"string\"},\"reason_zh\":{\"title\":\"Reason Zh\",\"type\":\"string\"}},\"required\":[\"boundary\",\"reason_zh\"],\"title\":\"BoundaryOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"boundary\",\"version\":\"v1\"}},\"correction\":\"上次执行超时,请在受支持的执行时限内完成。\",\"paper\":{\"abstract\":\"Abstract\",\"abstract_truncated\":false,\"title\":\"Title\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Boundary prompt\\n\",\"stage\":\"boundary\"}"
+    },
+    {
+      "id": "paper-1-value-first",
+      "stage": "value",
+      "paper": {
+        "title": "Title",
+        "abstract": "Abstract",
+        "abstract_truncated": false
+      },
+      "correction": null,
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$defs\":{\"ValueType\":{\"description\":\"价值预测允许返回的七类受控价值。\",\"enum\":[\"method\",\"data\",\"code_tool\",\"theory_mechanism\",\"evidence_conclusion\",\"question_hypothesis\",\"review_knowledge_map\"],\"title\":\"ValueType\",\"type\":\"string\"}},\"$id\":\"urn:paper-radar:contracts:screening:value-prediction:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第二阶段的摘要层价值预测。\",\"properties\":{\"abstract_brief_zh\":{\"title\":\"Abstract Brief Zh\",\"type\":\"string\"},\"display_title_zh\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"title\":\"Display Title Zh\"},\"research_value\":{\"maximum\":5,\"minimum\":1,\"title\":\"Research Value\",\"type\":\"integer\"},\"research_value_reason_zh\":{\"title\":\"Research Value Reason Zh\",\"type\":\"string\"},\"reuse_feasibility\":{\"maximum\":5,\"minimum\":1,\"title\":\"Reuse Feasibility\",\"type\":\"integer\"},\"reuse_feasibility_inferable\":{\"title\":\"Reuse Feasibility Inferable\",\"type\":\"boolean\"},\"reuse_feasibility_reason_zh\":{\"title\":\"Reuse Feasibility Reason Zh\",\"type\":\"string\"},\"topic_ids\":{\"items\":{\"type\":\"string\"},\"title\":\"Topic Ids\",\"type\":\"array\"},\"value_types\":{\"items\":{\"$ref\":\"#/$defs/ValueType\"},\"title\":\"Value Types\",\"type\":\"array\"},\"why_it_may_matter_zh\":{\"title\":\"Why It May Matter Zh\",\"type\":\"string\"}},\"required\":[\"research_value\",\"research_value_reason_zh\",\"reuse_feasibility\",\"reuse_feasibility_reason_zh\",\"reuse_feasibility_inferable\",\"value_types\",\"topic_ids\",\"abstract_brief_zh\",\"why_it_may_matter_zh\"],\"title\":\"ValuePredictionOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"value-prediction\",\"version\":\"v1\"}},\"correction\":null,\"paper\":{\"abstract\":\"Abstract\",\"abstract_truncated\":false,\"title\":\"Title\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Value prompt\\n\",\"stage\":\"value\",\"topics\":[{\"description\":\"A semantic topic\",\"id\":\"alpha\",\"name\":\"主题一\"},{\"description\":\"Z semantic topic\",\"id\":\"zeta\",\"name\":\"主题二\"}]}"
+    },
+    {
+      "id": "paper-1-value-output-invalid",
+      "stage": "value",
+      "paper": {
+        "title": "Title",
+        "abstract": "Abstract",
+        "abstract_truncated": false
+      },
+      "correction": "上次输出未通过验证,请遵守冻结的输出契约。 research_value [schema]",
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$defs\":{\"ValueType\":{\"description\":\"价值预测允许返回的七类受控价值。\",\"enum\":[\"method\",\"data\",\"code_tool\",\"theory_mechanism\",\"evidence_conclusion\",\"question_hypothesis\",\"review_knowledge_map\"],\"title\":\"ValueType\",\"type\":\"string\"}},\"$id\":\"urn:paper-radar:contracts:screening:value-prediction:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第二阶段的摘要层价值预测。\",\"properties\":{\"abstract_brief_zh\":{\"title\":\"Abstract Brief Zh\",\"type\":\"string\"},\"display_title_zh\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"title\":\"Display Title Zh\"},\"research_value\":{\"maximum\":5,\"minimum\":1,\"title\":\"Research Value\",\"type\":\"integer\"},\"research_value_reason_zh\":{\"title\":\"Research Value Reason Zh\",\"type\":\"string\"},\"reuse_feasibility\":{\"maximum\":5,\"minimum\":1,\"title\":\"Reuse Feasibility\",\"type\":\"integer\"},\"reuse_feasibility_inferable\":{\"title\":\"Reuse Feasibility Inferable\",\"type\":\"boolean\"},\"reuse_feasibility_reason_zh\":{\"title\":\"Reuse Feasibility Reason Zh\",\"type\":\"string\"},\"topic_ids\":{\"items\":{\"type\":\"string\"},\"title\":\"Topic Ids\",\"type\":\"array\"},\"value_types\":{\"items\":{\"$ref\":\"#/$defs/ValueType\"},\"title\":\"Value Types\",\"type\":\"array\"},\"why_it_may_matter_zh\":{\"title\":\"Why It May Matter Zh\",\"type\":\"string\"}},\"required\":[\"research_value\",\"research_value_reason_zh\",\"reuse_feasibility\",\"reuse_feasibility_reason_zh\",\"reuse_feasibility_inferable\",\"value_types\",\"topic_ids\",\"abstract_brief_zh\",\"why_it_may_matter_zh\"],\"title\":\"ValuePredictionOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"value-prediction\",\"version\":\"v1\"}},\"correction\":\"上次输出未通过验证,请遵守冻结的输出契约。 research_value [schema]\",\"paper\":{\"abstract\":\"Abstract\",\"abstract_truncated\":false,\"title\":\"Title\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Value prompt\\n\",\"stage\":\"value\",\"topics\":[{\"description\":\"A semantic topic\",\"id\":\"alpha\",\"name\":\"主题一\"},{\"description\":\"Z semantic topic\",\"id\":\"zeta\",\"name\":\"主题二\"}]}"
+    },
+    {
+      "id": "paper-1-value-timeout",
+      "stage": "value",
+      "paper": {
+        "title": "Title",
+        "abstract": "Abstract",
+        "abstract_truncated": false
+      },
+      "correction": "上次执行超时,请在受支持的执行时限内完成。",
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$defs\":{\"ValueType\":{\"description\":\"价值预测允许返回的七类受控价值。\",\"enum\":[\"method\",\"data\",\"code_tool\",\"theory_mechanism\",\"evidence_conclusion\",\"question_hypothesis\",\"review_knowledge_map\"],\"title\":\"ValueType\",\"type\":\"string\"}},\"$id\":\"urn:paper-radar:contracts:screening:value-prediction:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第二阶段的摘要层价值预测。\",\"properties\":{\"abstract_brief_zh\":{\"title\":\"Abstract Brief Zh\",\"type\":\"string\"},\"display_title_zh\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"title\":\"Display Title Zh\"},\"research_value\":{\"maximum\":5,\"minimum\":1,\"title\":\"Research Value\",\"type\":\"integer\"},\"research_value_reason_zh\":{\"title\":\"Research Value Reason Zh\",\"type\":\"string\"},\"reuse_feasibility\":{\"maximum\":5,\"minimum\":1,\"title\":\"Reuse Feasibility\",\"type\":\"integer\"},\"reuse_feasibility_inferable\":{\"title\":\"Reuse Feasibility Inferable\",\"type\":\"boolean\"},\"reuse_feasibility_reason_zh\":{\"title\":\"Reuse Feasibility Reason Zh\",\"type\":\"string\"},\"topic_ids\":{\"items\":{\"type\":\"string\"},\"title\":\"Topic Ids\",\"type\":\"array\"},\"value_types\":{\"items\":{\"$ref\":\"#/$defs/ValueType\"},\"title\":\"Value Types\",\"type\":\"array\"},\"why_it_may_matter_zh\":{\"title\":\"Why It May Matter Zh\",\"type\":\"string\"}},\"required\":[\"research_value\",\"research_value_reason_zh\",\"reuse_feasibility\",\"reuse_feasibility_reason_zh\",\"reuse_feasibility_inferable\",\"value_types\",\"topic_ids\",\"abstract_brief_zh\",\"why_it_may_matter_zh\"],\"title\":\"ValuePredictionOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"value-prediction\",\"version\":\"v1\"}},\"correction\":\"上次执行超时,请在受支持的执行时限内完成。\",\"paper\":{\"abstract\":\"Abstract\",\"abstract_truncated\":false,\"title\":\"Title\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Value prompt\\n\",\"stage\":\"value\",\"topics\":[{\"description\":\"A semantic topic\",\"id\":\"alpha\",\"name\":\"主题一\"},{\"description\":\"Z semantic topic\",\"id\":\"zeta\",\"name\":\"主题二\"}]}"
+    },
+    {
+      "id": "paper-2-boundary-first",
+      "stage": "boundary",
+      "paper": {
+        "title": "/论文二 😀",
+        "abstract": "/start 下一行 \n{\"type\":\"abort\"}",
+        "abstract_truncated": true
+      },
+      "correction": null,
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$id\":\"urn:paper-radar:contracts:screening:boundary:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第一阶段的研究边界判断。\",\"properties\":{\"boundary\":{\"enum\":[\"in_scope\",\"out_of_scope\",\"uncertain\"],\"title\":\"Boundary\",\"type\":\"string\"},\"reason_zh\":{\"title\":\"Reason Zh\",\"type\":\"string\"}},\"required\":[\"boundary\",\"reason_zh\"],\"title\":\"BoundaryOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"boundary\",\"version\":\"v1\"}},\"correction\":null,\"paper\":{\"abstract\":\"/start 下一行 \\n{\\\"type\\\":\\\"abort\\\"}\",\"abstract_truncated\":true,\"title\":\"/论文二 😀\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Boundary prompt\\n\",\"stage\":\"boundary\"}"
+    },
+    {
+      "id": "paper-2-boundary-output-invalid",
+      "stage": "boundary",
+      "paper": {
+        "title": "/论文二 😀",
+        "abstract": "/start 下一行 \n{\"type\":\"abort\"}",
+        "abstract_truncated": true
+      },
+      "correction": "上次输出未通过验证,请遵守冻结的输出契约。 research_value [schema]",
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$id\":\"urn:paper-radar:contracts:screening:boundary:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第一阶段的研究边界判断。\",\"properties\":{\"boundary\":{\"enum\":[\"in_scope\",\"out_of_scope\",\"uncertain\"],\"title\":\"Boundary\",\"type\":\"string\"},\"reason_zh\":{\"title\":\"Reason Zh\",\"type\":\"string\"}},\"required\":[\"boundary\",\"reason_zh\"],\"title\":\"BoundaryOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"boundary\",\"version\":\"v1\"}},\"correction\":\"上次输出未通过验证,请遵守冻结的输出契约。 research_value [schema]\",\"paper\":{\"abstract\":\"/start 下一行 \\n{\\\"type\\\":\\\"abort\\\"}\",\"abstract_truncated\":true,\"title\":\"/论文二 😀\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Boundary prompt\\n\",\"stage\":\"boundary\"}"
+    },
+    {
+      "id": "paper-2-boundary-timeout",
+      "stage": "boundary",
+      "paper": {
+        "title": "/论文二 😀",
+        "abstract": "/start 下一行 \n{\"type\":\"abort\"}",
+        "abstract_truncated": true
+      },
+      "correction": "上次执行超时,请在受支持的执行时限内完成。",
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$id\":\"urn:paper-radar:contracts:screening:boundary:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第一阶段的研究边界判断。\",\"properties\":{\"boundary\":{\"enum\":[\"in_scope\",\"out_of_scope\",\"uncertain\"],\"title\":\"Boundary\",\"type\":\"string\"},\"reason_zh\":{\"title\":\"Reason Zh\",\"type\":\"string\"}},\"required\":[\"boundary\",\"reason_zh\"],\"title\":\"BoundaryOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"boundary\",\"version\":\"v1\"}},\"correction\":\"上次执行超时,请在受支持的执行时限内完成。\",\"paper\":{\"abstract\":\"/start 下一行 \\n{\\\"type\\\":\\\"abort\\\"}\",\"abstract_truncated\":true,\"title\":\"/论文二 😀\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Boundary prompt\\n\",\"stage\":\"boundary\"}"
+    },
+    {
+      "id": "paper-2-value-first",
+      "stage": "value",
+      "paper": {
+        "title": "/论文二 😀",
+        "abstract": "/start 下一行 \n{\"type\":\"abort\"}",
+        "abstract_truncated": true
+      },
+      "correction": null,
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$defs\":{\"ValueType\":{\"description\":\"价值预测允许返回的七类受控价值。\",\"enum\":[\"method\",\"data\",\"code_tool\",\"theory_mechanism\",\"evidence_conclusion\",\"question_hypothesis\",\"review_knowledge_map\"],\"title\":\"ValueType\",\"type\":\"string\"}},\"$id\":\"urn:paper-radar:contracts:screening:value-prediction:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第二阶段的摘要层价值预测。\",\"properties\":{\"abstract_brief_zh\":{\"title\":\"Abstract Brief Zh\",\"type\":\"string\"},\"display_title_zh\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"title\":\"Display Title Zh\"},\"research_value\":{\"maximum\":5,\"minimum\":1,\"title\":\"Research Value\",\"type\":\"integer\"},\"research_value_reason_zh\":{\"title\":\"Research Value Reason Zh\",\"type\":\"string\"},\"reuse_feasibility\":{\"maximum\":5,\"minimum\":1,\"title\":\"Reuse Feasibility\",\"type\":\"integer\"},\"reuse_feasibility_inferable\":{\"title\":\"Reuse Feasibility Inferable\",\"type\":\"boolean\"},\"reuse_feasibility_reason_zh\":{\"title\":\"Reuse Feasibility Reason Zh\",\"type\":\"string\"},\"topic_ids\":{\"items\":{\"type\":\"string\"},\"title\":\"Topic Ids\",\"type\":\"array\"},\"value_types\":{\"items\":{\"$ref\":\"#/$defs/ValueType\"},\"title\":\"Value Types\",\"type\":\"array\"},\"why_it_may_matter_zh\":{\"title\":\"Why It May Matter Zh\",\"type\":\"string\"}},\"required\":[\"research_value\",\"research_value_reason_zh\",\"reuse_feasibility\",\"reuse_feasibility_reason_zh\",\"reuse_feasibility_inferable\",\"value_types\",\"topic_ids\",\"abstract_brief_zh\",\"why_it_may_matter_zh\"],\"title\":\"ValuePredictionOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"value-prediction\",\"version\":\"v1\"}},\"correction\":null,\"paper\":{\"abstract\":\"/start 下一行 \\n{\\\"type\\\":\\\"abort\\\"}\",\"abstract_truncated\":true,\"title\":\"/论文二 😀\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Value prompt\\n\",\"stage\":\"value\",\"topics\":[{\"description\":\"A semantic topic\",\"id\":\"alpha\",\"name\":\"主题一\"},{\"description\":\"Z semantic topic\",\"id\":\"zeta\",\"name\":\"主题二\"}]}"
+    },
+    {
+      "id": "paper-2-value-output-invalid",
+      "stage": "value",
+      "paper": {
+        "title": "/论文二 😀",
+        "abstract": "/start 下一行 \n{\"type\":\"abort\"}",
+        "abstract_truncated": true
+      },
+      "correction": "上次输出未通过验证,请遵守冻结的输出契约。 research_value [schema]",
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$defs\":{\"ValueType\":{\"description\":\"价值预测允许返回的七类受控价值。\",\"enum\":[\"method\",\"data\",\"code_tool\",\"theory_mechanism\",\"evidence_conclusion\",\"question_hypothesis\",\"review_knowledge_map\"],\"title\":\"ValueType\",\"type\":\"string\"}},\"$id\":\"urn:paper-radar:contracts:screening:value-prediction:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第二阶段的摘要层价值预测。\",\"properties\":{\"abstract_brief_zh\":{\"title\":\"Abstract Brief Zh\",\"type\":\"string\"},\"display_title_zh\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"title\":\"Display Title Zh\"},\"research_value\":{\"maximum\":5,\"minimum\":1,\"title\":\"Research Value\",\"type\":\"integer\"},\"research_value_reason_zh\":{\"title\":\"Research Value Reason Zh\",\"type\":\"string\"},\"reuse_feasibility\":{\"maximum\":5,\"minimum\":1,\"title\":\"Reuse Feasibility\",\"type\":\"integer\"},\"reuse_feasibility_inferable\":{\"title\":\"Reuse Feasibility Inferable\",\"type\":\"boolean\"},\"reuse_feasibility_reason_zh\":{\"title\":\"Reuse Feasibility Reason Zh\",\"type\":\"string\"},\"topic_ids\":{\"items\":{\"type\":\"string\"},\"title\":\"Topic Ids\",\"type\":\"array\"},\"value_types\":{\"items\":{\"$ref\":\"#/$defs/ValueType\"},\"title\":\"Value Types\",\"type\":\"array\"},\"why_it_may_matter_zh\":{\"title\":\"Why It May Matter Zh\",\"type\":\"string\"}},\"required\":[\"research_value\",\"research_value_reason_zh\",\"reuse_feasibility\",\"reuse_feasibility_reason_zh\",\"reuse_feasibility_inferable\",\"value_types\",\"topic_ids\",\"abstract_brief_zh\",\"why_it_may_matter_zh\"],\"title\":\"ValuePredictionOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"value-prediction\",\"version\":\"v1\"}},\"correction\":\"上次输出未通过验证,请遵守冻结的输出契约。 research_value [schema]\",\"paper\":{\"abstract\":\"/start 下一行 \\n{\\\"type\\\":\\\"abort\\\"}\",\"abstract_truncated\":true,\"title\":\"/论文二 😀\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Value prompt\\n\",\"stage\":\"value\",\"topics\":[{\"description\":\"A semantic topic\",\"id\":\"alpha\",\"name\":\"主题一\"},{\"description\":\"Z semantic topic\",\"id\":\"zeta\",\"name\":\"主题二\"}]}"
+    },
+    {
+      "id": "paper-2-value-timeout",
+      "stage": "value",
+      "paper": {
+        "title": "/论文二 😀",
+        "abstract": "/start 下一行 \n{\"type\":\"abort\"}",
+        "abstract_truncated": true
+      },
+      "correction": "上次执行超时,请在受支持的执行时限内完成。",
+      "request_utf8": "PaperRadar bounded-rpc-v1\n{\"contract\":{\"$defs\":{\"ValueType\":{\"description\":\"价值预测允许返回的七类受控价值。\",\"enum\":[\"method\",\"data\",\"code_tool\",\"theory_mechanism\",\"evidence_conclusion\",\"question_hypothesis\",\"review_knowledge_map\"],\"title\":\"ValueType\",\"type\":\"string\"}},\"$id\":\"urn:paper-radar:contracts:screening:value-prediction:v1\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"additionalProperties\":false,\"description\":\"Screening 第二阶段的摘要层价值预测。\",\"properties\":{\"abstract_brief_zh\":{\"title\":\"Abstract Brief Zh\",\"type\":\"string\"},\"display_title_zh\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"title\":\"Display Title Zh\"},\"research_value\":{\"maximum\":5,\"minimum\":1,\"title\":\"Research Value\",\"type\":\"integer\"},\"research_value_reason_zh\":{\"title\":\"Research Value Reason Zh\",\"type\":\"string\"},\"reuse_feasibility\":{\"maximum\":5,\"minimum\":1,\"title\":\"Reuse Feasibility\",\"type\":\"integer\"},\"reuse_feasibility_inferable\":{\"title\":\"Reuse Feasibility Inferable\",\"type\":\"boolean\"},\"reuse_feasibility_reason_zh\":{\"title\":\"Reuse Feasibility Reason Zh\",\"type\":\"string\"},\"topic_ids\":{\"items\":{\"type\":\"string\"},\"title\":\"Topic Ids\",\"type\":\"array\"},\"value_types\":{\"items\":{\"$ref\":\"#/$defs/ValueType\"},\"title\":\"Value Types\",\"type\":\"array\"},\"why_it_may_matter_zh\":{\"title\":\"Why It May Matter Zh\",\"type\":\"string\"}},\"required\":[\"research_value\",\"research_value_reason_zh\",\"reuse_feasibility\",\"reuse_feasibility_reason_zh\",\"reuse_feasibility_inferable\",\"value_types\",\"topic_ids\",\"abstract_brief_zh\",\"why_it_may_matter_zh\"],\"title\":\"ValuePredictionOutput\",\"type\":\"object\",\"x-paper-radar-contract\":{\"name\":\"value-prediction\",\"version\":\"v1\"}},\"correction\":\"上次执行超时,请在受支持的执行时限内完成。\",\"paper\":{\"abstract\":\"/start 下一行 \\n{\\\"type\\\":\\\"abort\\\"}\",\"abstract_truncated\":true,\"title\":\"/论文二 😀\"},\"profile\":[{\"name\":\"background\",\"text\":\"climate\"},{\"name\":\"core_questions\",\"text\":\"rain\"},{\"name\":\"transferable_methods\",\"text\":\"statistics\"},{\"name\":\"available_data_and_tools\",\"text\":\"reanalysis\"},{\"name\":\"theory_and_cognitive_interests\",\"text\":\"mechanisms\"},{\"name\":\"constraints_and_exclusions\",\"text\":\"none\"}],\"prompt\":\"Value prompt\\n\",\"stage\":\"value\",\"topics\":[{\"description\":\"A semantic topic\",\"id\":\"alpha\",\"name\":\"主题一\"},{\"description\":\"Z semantic topic\",\"id\":\"zeta\",\"name\":\"主题二\"}]}"
+    }
+  ]
+}

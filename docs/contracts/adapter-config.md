@@ -22,7 +22,7 @@ selector 精确选择 settings 相邻的 `adapters/<version>.yaml`，文件内 `
 V1 封闭逻辑名为 `pi-rpc`，登记键为 `(adapter, pi-rpc, declared_version)`。
 不定义通用 harness、插件或自由资源注册表。
 
-V1 唯一显式资源为完整有效系统指令，复用 `PROMPT` 登记机制，封闭逻辑名
+V1 唯一显式资源为登记的声明系统指令，复用 `PROMPT` 登记机制，封闭逻辑名
 `pi-system`，与 `boundary/value/reuse/reading` 分开，即使同为 `v1` 也不共用登记键。
 版本来自资源引用，正文无需内嵌声明；位置为 settings 相邻的
 `prompts/pi-system-<version>.md`。Screening 业务 Prompt 在配置根的
@@ -46,6 +46,17 @@ resources:
 
 上例对应 examples 中的 adapter 与合成 Prompt；`1.1.0` 是审计示例，不选择实际
 安装版本，也不证明已核对 Pi 的有效输入。
+
+A8 离线协议档案只支持 `1.4.0`；配置登记仍可保存其他严格三段正式版本，但调用
+描述必须先于领取拒绝未登记协议版本，不占预算。语义取预算首次 snapshot，
+`pi_version`/`adapter_version` 取本次回执 snapshot，且同阶段投影必须相等。
+档案准入只说明离线协议支持，不授予生产 `rpc_compatibility`。
+
+`bounded-rpc-v1` 首次渲染含义固定为 `render_format=1`，见 [RPC Contract](pi-rpc.md)。
+后续语义渲染变化须提升 policy 版本，不能仅换 `adapter_version`。
+Pi 1.4.0 有效指令为登记声明指令加其强制追加的 cwd 段，这是已知缺口。所有者只
+接受不含个人信息、每次相同且无意义的常量执行 cwd；具体值、目录无资源与白名单
+须在真实调用前由生产启动器票确认。A8 不选定该常量、不证明隔离。
 
 ## 字段、默认值与固定策略
 
