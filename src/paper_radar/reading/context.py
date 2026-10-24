@@ -175,10 +175,6 @@ class ReadContext:
                 _reject(location + ".kind", ReadErrorCategory.INVALID_SOURCE)
             if type(source.unreliable) is not bool:
                 _reject(location + ".unreliable", ReadErrorCategory.INVALID_SOURCE)
-            if source.kind != "text":
-                _reject(location + ".kind", ReadErrorCategory.UNSUPPORTED_SOURCE)
-            if source.unreliable:
-                _reject(location + ".unreliable", ReadErrorCategory.UNSUPPORTED_SOURCE)
 
     def _validate_evidence(self) -> None:
         pages = {page.page_no: page for page in self.pages}

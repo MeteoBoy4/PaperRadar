@@ -1,7 +1,7 @@
 """全部给定上下文成员在调用模型前保持闭包与不可变。"""
 
 from dataclasses import replace
-from typing import Any
+from typing import Any, Literal
 
 import pytest
 
@@ -83,16 +83,6 @@ IDENTITY = ExtractionIdentity("extraction-1", "reading-1", "map-1")
             "$.source_blocks[0].kind",
             "invalid_source",
         ),
-        (
-            {"source_blocks": [SourceBlock(IDENTITY, "s1", "正文。", "table")]},
-            "$.source_blocks[0].kind",
-            "unsupported_source",
-        ),
-        (
-            {"source_blocks": [SourceBlock(IDENTITY, "s1", "正文。", unreliable=True)]},
-            "$.source_blocks[0].unreliable",
-            "unsupported_source",
-        ),
     ],
 )
 def test_context_rejects_invalid_or_unsupported_members(
@@ -103,6 +93,22 @@ def test_context_rejects_invalid_or_unsupported_members(
     assert (error.value.issues[0].location, error.value.issues[0].category.value) == (
         location,
         category,
+    )
+
+
+@pytest.mark.parametrize(
+    ("kind", "unreliable"), [("table", False), ("formula", False), ("text", True)]
+)
+def test_restricted_source_facts_are_preserved_for_output_field_policy(
+    kind: Literal["text", "table", "formula"], unreliable: bool
+) -> None:
+    context = context_for(
+        "正文。",
+        source_blocks=[SourceBlock(IDENTITY, "s1", "正文。", kind, unreliable)],
+    )
+    assert (context.replay()[0].kind, context.replay()[0].unreliable) == (
+        kind,
+        unreliable,
     )
 
 

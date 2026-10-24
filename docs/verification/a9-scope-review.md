@@ -110,3 +110,37 @@ Read Schema 仍为 `1ac06948024aab610c6b2c1098d0a53596632c940704d32fae860a03ed5d
 新增测试覆盖显式准入、未选/null、就绪缺项、双材料身份与摘要、Read 单投影 diff、缺失/损坏/错版/手写材料、只读 check、原子回滚、幂等、历史损坏拒绝、删文件后新进程 load 与权威模型演进后的历史 load；不证明生产执行。
 
 独立 config-only 收集曾使旧 `test_upgrade_is_idempotent_and_schema_matches_metadata` 未加载 papers/pi/screening_tasks 表，基线同样失败。显式加载既有真实元数据后该测试通过；不借本票修改旧测试或生产 schema。完整门禁仍由 #99 收口。
+
+## A9-03（#95）
+
+本票以 integration `c2d38b75a31238261e9056790fa61ab534b19c52` 为基线，接通受限源
+字段矩阵；不修改旧 scope、Screening 源码或五份冻结契约。下表是合入并行 #96 前的
+本票材料审阅记录，最终合并字节由 #99 一次审计重绑。
+
+346 项 Read/配置组合测试通过；Ruff format/check、全项目 mypy（515 文件）通过。
+独立 scope 审计仅有预期 hash_drift，收集 reason=ok、skip/deselect=0、execution=not_run，
+受影响组仍为 A1、A2-01、完整 A2、A3–A8。没有发布新的全量通过结论。
+
+| 路径 | #95 前 SHA-256 | #95 SHA-256 | 原因 |
+| --- | --- | --- | --- |
+| `src/paper_radar/reading/context.py` | `411b3ba87182889e92b97b3533ea784fc1a47b98572d0d12e0c35ea54439a561` | `b107c33613721ecee153051fe1af2e11a77e2fc8be39fbe72946beb22b65d72d` | 移除受限源暂拒，保留种类与闭包验证 |
+| `src/paper_radar/reading/errors.py` | `4415bbbb6e6b5b3630e7e2cef116c9992153d705a82f7a5cb155ed566d2c32db` | `89d750bbbac2d8650a7f3bbb43a72284c20ad587306847b667ab67715f2668dd` | 增加受限硬失败类别与安全降级诊断 |
+| `src/paper_radar/reading/numbers.py` | `a93fca33e50014e6060d7021bef22ccc3aab9344f524214579bdc8b180b312d7` | `18d543e2a438b2a6e5bd4a3ea479aeee656fd1acadee167a2bd74f21a9811f52` | 限定英文交叉引用左边界并提供受限支持原因 |
+| `src/paper_radar/reading/validation.py` | `02d037df5a9d3887fb2e58ede010c1b52a9e95da31564a87648bd11c9491e404` | `c8594426dbe7677bdf64a299d7f1a3bfdf182c58ea596ce076d87afcca7ac66c` | 接通逐字段矩阵并收集全部受限违例 |
+| `tests/test_read_context.py` | `6b4b075b946c2356894a5d9517f6131c48513ee29eacaa65048855726919e730` | `1e2bad2d2e6932a61ae0e0b394fcfe2ec9e76c5dc85021896af48a25e248e12d` | 两暂拒负例改三种来源事实正例，保留候选与闭包拒绝 |
+| `tests/test_read_restricted.py` | 新增 | `ccae8274a573e7291c643f661a65537aa7959b934ca0684a3ca059a499a8e5f5` | 全字段矩阵、混合来源、英文 origin 及前缀漏检回归 |
+| `docs/contracts/read-validation.md` | `dac412d2f895e7cef1449c35192e31147bc169e85ea18872e85d3169a87df5b4` | `d7179c37fe17eeff48da36067208658f0768a5317a48d01492d532e18b318eec` | 更新矩阵交付、错误诊断与覆盖台账 |
+| `README.md` | `17f1109319626c056fa5102d79a3c648d57bf3b03f03267b2ee7f8cd5a9d754c` | `7b4d4bceff5a60613534d9869db4c8f59bb28be68d38569b3cac480b580badaf` | 准确声明受限证据已交付 |
+| `intent/draft.md` | `30eee67eea6008bb9015edb05839237d7d92ea2c0c444570296217bcea9bc539` | `e05831c241f9bfcd3c5784b4ba149961110e91a70698c7185fca4f24658c6aa3` | 按实际切片同步交付说明 |
+
+`tests/test_read_context.py` 59 → 60：原 table/unreliable 的两项暂拒改为 table/formula/
+unreliable 三类合法来源事实保留向量，不减少未知 kind、候选、闭包或定位拒绝。
+新增 `tests/test_read_restricted.py` 56 项，归独立 A9，不并入旧组分母。
+
+表格结构、表格数值仅受限命中、公式/不可靠引用、关键局限降级、混合 provenance、
+可靠来源同时命中、范围跨切片拒绝、模型警告伪造 origin 和固定优先级均经公共入口
+验证。额外修复当前同规则中的窄漏检：stable/intersection 的词尾不再被误识别成
+Table/Section 前缀；Table/Section 标签仍排除，规则身份保持 v1。
+
+没有新增迁移、人工复核后门或 attempt；未运行 live，orig 哈希覆盖、真实 PDF 与
+科学语义仍未验证。阶段 G 的修正提示和 attempt 结算仍由未来生产接收器实现。
