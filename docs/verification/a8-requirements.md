@@ -41,7 +41,11 @@ GLOSSARY、README、ADR-0026、adapter-config/screening-tasks/pi-rpc Contract、
 | #89 AC5/6，取消锁定/正常收尾/整组终止 | clear_queue→abort 匹配 ACK；settled 后即时关 stdin 不发命令；成功也清整组 | 两测试模块：丢/错 ACK、半帧取消、迟到完整输出不可翻转；leader 退出且孙进程已关 pipes 仍回收 |
 | #89 AC7/8，异常分流/A7 语义不变 | 原 RpcReason/RpcCategory→既有 FailureReport；finally 清理 | lifecycle：原样 KeyboardInterrupt/SystemExit，attempt 未结算，601s 按既有规则 outcome_unknown；受控失败 origin=executor |
 | #89 AC9–12，真实夹具/敏感边界/隔离失败/权限 | 纯标准库 Python/最小 env/deny_external_io；Linux pidfd+/proc；Contract/DERIVED-09 | 6 类场景加背压/孙进程变体及共享组拒绝，共 9 个实际进程用例；正常/取消均核对 pidfd、pipes、句柄数与空 fixture 目录；前篇失败后另一论文可成功 |
-| #90，预算/接线/非空恢复 | A8 test executor 支撑与组合测试 | 待 #90；不改 A7 预算或失败词汇 |
+| #90 AC1/2/3，四类边界与失败映射 | 既有 prepare→run_once；a8_recovery_support 外部故障；全部 RpcReason→RpcCategory→既有 FailureKind | test_a8_rpc_recovery.py：封闭全集、精确类型接收、普通异常/包装/子类负例；TaskReason/Schema 不变 |
+| #90 AC4/5/6，每代预算/安全修正/租约 | 既有 A7 claim/status/reclaim/submit 权威；单次 RPC 不续租 | recovery：两次耗尽、日期/新实例/会话不刷新、第三次/成功/在途零会话、prepare 零事实、实际 output_invalid/timeout/outcome_unknown 修正；history：过期未结算可提交、回收后失权 |
+| #90 AC7，版本/输入历史与 D1 | a8_recovery_support.audit_upgrade 只创建新声明 | test_a8_rpc_history.py：首次 1.3.0 语义→1.4.0 回执执行/重试，1.3.0 回摆 prepare 拒绝；审计 A→B→A、输入 A→B→A 旧预算与同指纹跨版本 current |
+| #90 AC8/9/10，非空 WAL 隔离恢复 | 既有 backup/restore；a8_recovery_worker 复用 A7 路径阻断支撑 | test_a8_rpc_backup.py：两阶段成功/协议与业务失败/retry/未结算，阻断原目录并移动恢复库，新解释器只读查询；唯一恢复后显式继续消耗剩余一次 |
+| #90 AC11/12，隐私与文档 | pi-rpc Contract 四边界；无 A7 源码/支撑/绑定变更 | 备份无失败原文/完整事件/thinking/自由错误；原成功字节、test 审计、provider_request_id 未知和安全 issues 保持 |
 | #91，独立组/可信终态/集中重绑 | a8_scope/a8_acceptance、registry/status/check-offline 与文档 | 待 #91；固定分母、同次真实回执、可信终态全部必须交付 |
 
 ## 测试边界与后续验收
@@ -105,3 +109,28 @@ TDD 红→绿包含缺少 PipeSession、取消未发送 clear_queue/abort、正�
 settled 后取消仍发送命令四个行为缺口。原 A8 正例同步要求成功也清组，没有改变任何
 A1–A7 分母/受绑定文件。独立 A8 登记、非空恢复与完整门禁仍依 #90/#91 收口；本票
 未运行完整 check-offline，不将当前子集结论冒充阶段 A 或 live 通过。
+
+## #90 已新增范围与验证
+
+本票补既有公开服务的组合证据，没有产品源码缺口，也没有为了制造红而改坏既有行为。
+新增 test_a8_rpc_recovery.py（16）、test_a8_rpc_history.py（6）、
+test_a8_rpc_backup.py（1）与 a8_recovery_support/worker；不改任何 A1–A7 受绑定文件。
+prepare、执行失败、权威接收失败与未结算中断分别断言事实有无、次数与会话边界；
+所有封闭 RpcReason 经 RpcCategory 穷举至既有四类 executor FailureKind，
+output_invalid/model_mismatch/outcome_unknown 继续归 A7 权威接收或回收。
+
+23 项新增组合通过；全部 A8 子集 400 passed/38.59s。单个非空恢复用例 7.59s，
+包含同库备份验证及新解释器恢复/查询/一次显式继续，无 sleep；其余用例均小于 1s，
+组总时长低于约 60s 的规模目标。两阶段原始成功、失败安全 issues、父链、首次历史
+输入和未结算预算在阻断原目录且移动恢复路径后保持可查询；恢复查询没有导入 RPC
+执行入口，树和数据库逻辑内容不变。唯一恢复后继续只消耗剩余一次。
+
+Ruff 检查/格式（全部 A8 30 文件）和严格 mypy（src 与全部 A8 测试/支撑，共 178
+文件）通过；git diff --check 通过，只读 scope 审计 affected_groups=[]、issues=[]。
+提交前已合并当时最新 integration tip 297e092（Already up to date）。新增测试属于
+已有能力的组合验证；最初的失败仅纠正测试对安全额外字段路径、取消时机与父链查询
+位置的预期，没有改变 A7 接口、词汇、Schema、Frozen Contract 或恢复规则。
+
+完整 check-offline 与独立 A8 组仍由 #91 注册后在稳定 integration 同次执行；本票未
+运行真实 Pi/Node/模型、抓流 spike 或任何 live 来源。不把离线合成恢复升级为生产
+RPC、权限隔离、采样参数生效、自动外发抑制或原题名语言来源的验收。

@@ -226,6 +226,38 @@ command_rejected/protocol。EOF 前未终止的尾帧是 partial_frame/protocol�
 run_once 至多一次 RPC，不改变两次预算、retry 代际父链、租约或保守结算。其他论文
 失败隔离。A7 续租句柄、数据库能力不传对端。
 
+## 任务接线与恢复的四种边界
+
+离线组合入口先 `prepare_call(receipt_id)`，再把描述闭包交给 `run_once`。
+prepare 仅验证描述可构造，不领取、不回收、不按状态推断执行资格；`running` 或
+`lease_expired` 均可能有合法描述，实际领取与回收仍由 A7 决定。
+
+| 边界 | 公共结果与持久事实 | 预算与会话 |
+| --- | --- | --- |
+| prepare 错误 | 复用既有 TaskError：不支持阶段/版本为 invalid_context，投影冲突为 context_conflict，损坏引用为 corrupt_reference，不存在回执为 request_not_found | 无 attempt、无失败行、工厂不实例化；已用次数不变 |
+| 领取后的执行失败 | 封闭 RPC 原因经上述四类换名为精确 FailureReport，结算 origin=executor；普通适配器异常由 A7 记 executor_error/origin=exception，包装或子类候选记 protocol_error | 保守消耗一次；每次独立会话，不自动重发 |
+| 权威接收失败 | 完整协议候选交 A7/A1；模型不符为 model_mismatch，业务校验不通过为 output_invalid，仅保留安全 issues | 同样消耗一次，失败原文不发布 |
+| 未结算中断 | KeyboardInterrupt/SystemExit 原样上抛，finally 回收会话；该 attempt 暂无成功/失败结算，租约到期后由既有 claim/reclaim 结算 outcome_unknown/origin=recovery | 中断不退款，回收也不重置预算 |
+
+同代最多两次；耗尽、已成功或有效租约在途时，`run_once` 拒绝且不开会话、不发 prompt。
+第二次请求仅含同一冻结描述和 A7 在领取后实际传入的修正：output_invalid 只带安全
+字段路径/类别，timeout 与 outcome_unknown 只带固定说明。correction 非空不代表
+attempt 编号，编号只由外层 status/回执观察；旧响应、claim 和续租凭据均不传对端。
+租约过期本身不使未结算凭据失权；回收后旧凭据不可提交，适配器不另立所有权规则。
+
+D1 的首次语义 snapshot 可以声明未登记的 1.3.0；只要新回执自己的 1.4.0 snapshot
+与其投影相同，就可按原语义和预算执行。回摆 1.3.0 回执仍因协议未登记在 prepare
+拒绝，不刷新次数。普通声明版本、纯执行审计、日期、会话或进程重建均不改变预算；
+输入 A→B→A 回到原预算，同指纹跨论文版本继续适用。每次执行描述的审计取其自己
+回执，包括回摆与 retry，不能把首次语义版本冒写为本次执行版本。
+
+RPC fixture 形成的成功、失败、retry 父链和未结算历史由既有 backup/restore 原样
+处理；不新增 Schema、manifest、任务失败字段或词汇。非空 WAL 离线组合用例在阻断
+原数据/配置目录的新进程中核对两阶段原始成功字节、权威结构、历史输入和预算；
+恢复/查询保持只读且不导入 RPC 执行入口。仅一个用例显式继续，回收未知结果后只
+消费剩余一次。成功仍为 test，完整事件/失败全文/thinking/自由错误不进入备份。
+这不扩大既有恢复 revision 范围，也不承诺回退备份后的全局调用预算。
+
 ## D2/D3：执行观察与 A7 权威接收
 
 最终消息必需 provider/model；协议完整时内核不比较最终模型身份，只返回 provider
