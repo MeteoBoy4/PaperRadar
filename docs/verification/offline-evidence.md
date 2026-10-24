@@ -9,11 +9,12 @@
 #25 完整 A2 结论，在 `<run_id>.a3.json` 生成 #29/#35 独立 A3 结论，
 在 `<run_id>.a4.json` 生成 #36/#45 独立 A4 结论，
 在 `<run_id>.a5.json` 生成 #47/#54 独立 A5 结论，在 `<run_id>.a6.json` 生成 #67/#75 独立 A6 结论，
-在 `<run_id>.a7.json` 生成 #76/#84 独立 A7 结论；终端打印九个主要路径及结果。测试另外生成同次
+在 `<run_id>.a7.json` 生成 #76/#84 独立 A7 结论，
+在 `<run_id>.a8.json` 生成 #85/#91 独立 A8 离线协议/任务接线结论；终端打印十个主要路径及结果。测试另外生成同次
 `<run_id>.pytest.json` 脱敏执行回执。控制方在全部组发布后，最后写出
-`<run_id>.terminal.json` 终态记录并打印路径，正常成功共十一份 JSON。
+`<run_id>.terminal.json` 终态记录并打印路径，正常成功共十二份 JSON。
 整套检查仅执行一次，各文件
-共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3、A4、A5、A6 与 A7 均通过时入口返回 0，
+共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3、A4、A5、A6、A7 与 A8 均通过时入口返回 0，
 A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时数据库，不操作用户数据库。
 重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
@@ -96,7 +97,7 @@ JSON 包含全部文件、固定计数和受控原因；文本显示问题和候
 退出码 0 表示审计匹配，1 表示漂移或无法核验，2 表示参数错误。
 
 组清单从 `acceptance_groups()` 的每个 `write` 来源推导，包含 optional A2-01，
-不硬编码 A1–A7 模块列表。writer 对 `scripts.*_scope` 的显式导入是维护契约；
+不硬编码 A1–A8 模块列表。writer 对 `scripts.*_scope` 的显式导入是维护契约；
 只消费 `REQUIRED_TEST_MODULES`、`REQUIRED_SOURCE_MODULES`、
 `REQUIRED_FIXTURE_FILES`、`REQUIRED_TEST_CASE_COUNTS` 与明确允许的元数据。
 新常量、重命名、不支持的导入或表达式必须人工扩展工具契约后才能继续审计；不能因
@@ -147,6 +148,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 | A5 | `.a5.json` | 同次 A1、完整 A2、A3 | 是 |
 | A6 | `.a6.json` | 同次 A1、完整 A2、A3、A5 | 是 |
 | A7 | `.a7.json` | 同次 A1、完整 A2、A3、A5、A6 | 是 |
+| A8 | `.a8.json` | 同次 A1、完整 A2、A3、A5、A6、A7 | 是 |
 
 完整 A2 另由自己的判据验证同次 pytest 回执、证据和已发布 A1，并在发布前再次
 核对这些文件的实际字节绑定；它没有 A2-01 通过依赖。各组的原因、格式、严格性与
@@ -160,7 +162,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 即失败，finally 清理临时文件。运行中证据与回执仍可原子更新，不使用此最终发布入口。
 
 新验收组以显式代码加入登记，提供自己的判据，调用同一个最终发布函数；可选提供
-组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope`、`a3_scope`、`a4_scope`、`a5_scope`、`a6_scope` 与 `a7_scope` 的固定测试模块合集。
+组内中断恢复规则，无需在组织核心增加组名称分支。当前回执显式记录 `a1_scope`、`a2_full_scope`、`a3_scope`、`a4_scope`、`a5_scope`、`a6_scope`、`a7_scope` 与 `a8_scope` 的固定测试模块合集。
 新增组仍须显式扩展执行范围；没有自动发现插件、独立检查计划或动态调度。
 测试中的合成组只证明组织扩展能力，不代表新增产品验收能力。
 
@@ -737,7 +739,7 @@ stage_a_verified/live_verified/rpc_verified 恒 false。真实来源和所有来
 
 ## A7 独立结论（#76/#84）
 
-当前完整入口为九份主要证据/结论，加 pytest 回执与 terminal 共十一份 JSON。
+A7 注册时完整入口为九份主要证据/结论，加 pytest 回执与 terminal 共十一份 JSON。
 以上 A3–A6 分票小节中的八/九/十份均对应其交付时的历史范围，不改写原 JSON。
 `a7_scope.py` 区分父规格 #76 与验收子票 #84；`.a7.json` 格式 1 与状态读者解析能力
 同提交交付。A7 直接前置精确为同次 A1、完整 A2、A3、A5、A6，A4 继续为总门禁必需。
@@ -773,3 +775,25 @@ original_title_language_production_source、metadata_ready、complete_eligibilit
 two_stage_orchestration、suggestions_decisions、calibration_visibility、reuse_tasks、
 extraction_tasks、read_tasks、merge_budget、screening_cli、paper_trace_cli、nas_restore、
 stage_a、live、automatic_fulltext_reading。test 输出不作为生产筛选或校准依据。
+
+
+## A8 独立离线协议与任务接线结论（#85/#91）
+
+当前共十份主要文件，另有实际 pytest 回执和控制方 terminal，共十二份 JSON。
+A8 直接核对同次 A1、完整 A2、A3、A5、A6、A7 的范围、格式、身份、实际原始字节
+链接与通过资格；A4 保持总门禁必需，其安装检查不证明 RPC。a8_scope 固定 ISSUE=85、
+SUFFIX=.a8.json、格式1、13项能力、源码/支撑/材料 SHA256 及逐模块人工用例分母，
+不自绑定、不按 collection 回填预期、不把 run_id 写回固定材料。
+
+writer 核对同次完整执行回执、生产渲染/协议档案、依赖版本和真实临时库 head；
+skip、deselect、collect-only、少跑、伪整数、旧前置、未知格式、材料/身份漂移、中断、
+缺回执或字节链接均不能通过；发布前复核所有前置及回执原始字节。只有所有必需组
+同次通过才由控制方发布退出0的终态；缺可信 terminal 不能宣称成功。
+[状态 Contract](../contracts/verification-status.md) 支持 .a8.json 格式1并保留历史格式。
+[需求与绑定台账](a8-requirements.md) 列出人工分母推导、40条故事、所有子票/裁决和实际
+scope DAG；原始证据及以前失败/中断保持只追加，最终证据指针存工作树外。
+
+A8 只证明离线合成协议及 test 任务接线；基础证据 #12 的 llm not_assessed 与 A7
+历史含义均保留。rpc_verified、live_verified、stage_a_verified 仍为 false。
+生产前须逐编号核实 DERIVED-01…11、系统指令/cwd、参数映射、凭据预检、会话资源权限
+隔离、provider retry/cacheWarming和全部自动网络活动；详见 pi-rpc Contract，不运行 spike。

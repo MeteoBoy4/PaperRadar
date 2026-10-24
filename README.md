@@ -289,7 +289,7 @@ manifest 审计变化，同次调用只允许一份一致正文。从相同摘�
 重新取得的制品成员验证四阶段重建；不同 hashseed、cwd 和无序集合构造顺序保持身份，
 纯构造、回放与比较不执行 I/O。独立复现命令见[离线证据说明](docs/verification/offline-evidence.md)。
 独立 A5 验收由 #54 接入，固定绑定四阶段、回放、比较与隔离恢复能力。
-A5 当时的 check-offline 输出七份主要文件，A6 注册时为八份主要文件、总十份 JSON；当前 A7 为九份主要文件、总十一份 JSON，见[当前离线证据](docs/verification/offline-evidence.md)。另有实际 pytest 执行回执与控制方终态记录；
+A5 当时的 check-offline 输出七份主要文件，A6 注册时为八份主要文件、总十份 JSON；A7 注册时为九份主要文件、总十一份 JSON；当前 A8 为十份主要文件、总十二份 JSON，见[当前离线证据](docs/verification/offline-evidence.md)。另有实际 pytest 执行回执与控制方终态记录；
 本服务不调度任务或改写人工决定，也不证明 PDF/正文的真实质量。
 
 论文事实可通过 `PaperFacts(database).map_screening_inputs(snapshot_id=..., paper_id=...)`
@@ -377,9 +377,9 @@ pytest 测试（包括冻结契约导出与只读检查测试），最后用一�
 `<run_id>.a1.json` 独立 A1 结论、`<run_id>.a2.json` 历史范围的 A2-01 结论，
 `<run_id>.a2-full.json` 完整 A2、`<run_id>.a3.json` 存储/恢复 A3 与
 `<run_id>.a4.json` Pi 供给生命周期 A4、`<run_id>.a5.json` 四阶段输入 A5 与
-`<run_id>.a6.json` 论文事实 A6 与 `<run_id>.a7.json` Screening 任务 A7 独立结论。
-九份主要文件共用本次 `run_id`，不重复执行整套检查。只有本次 A1、完整 A2、A3、A4、
-A5、A6 与 A7 都通过时返回 0；A2-01 独立保留，仍不决定整体通过。
+`<run_id>.a6.json` 论文事实 A6 与 `<run_id>.a7.json` Screening 任务 A7 与 `<run_id>.a8.json` RPC 离线协议/任务接线 A8 独立结论。
+十份主要文件共用本次 `run_id`，不重复执行整套检查。只有本次 A1、完整 A2、A3、A4、
+A5、A6、A7 与 A8 都通过时返回 0；A2-01 独立保留，仍不决定整体通过。
 `<run_id>.pytest.json` 另行记录脱敏测试执行回执；固定范围的收集和完整通过数量
 必须与已审查清单一致，跳过、取消选择、未完成或缺回执均不能通过。
 一次运行由 `scripts/verification_run.py` 统一组织，验收组在
@@ -406,8 +406,12 @@ A5 历史 `paper_fact_mapping` 未覆盖项保留，新增映射证明属于 A6�
 回执和终态，共十份 JSON；要求与未验证来源假设见[A6 规格对照](docs/verification/a6-requirements.md)。
 A7 独立绑定同次 A1、完整 A2、A3、A5、A6，固定 boundary/value 任务、原权威严格 JSON、
 真实 a704 migration、生产格式、源码/材料、用例分母与实际 pytest 回执；A4 仍为整体必需。
-当前正常运行共十一份 JSON；缺失或篡改 terminal、少执行、跳过、身份漂移和中断均不能通过。
+当前正常运行共十二份 JSON；缺失或篡改 terminal、少执行、跳过、身份漂移和中断均不能通过。
 15 项能力与排除项见[A7 规格对照](docs/verification/a7-requirements.md)。
+A8 另以 `.a8.json` 格式 1 直接核对同次 A1、完整 A2、A3、A5、A6、A7、实际原始字节和
+固定用例回执；13 项离线能力、40 条故事及全部子票/裁决落点见
+[A8 需求与绑定台账](docs/verification/a8-requirements.md)。A4 仍决定总门禁；
+`rpc_verified/live_verified/stage_a_verified` 恒为 false，真实 Pi 与生产准入仍未验收。
 仅依赖登记顺序或总测试退出码不能通过。Screening 的有限尝试、租约、显式 retry 与恢复
 仅以离线 test 执行边界验收。Read/suggestion/report 指纹、完整资格/可见性、报告重建、
 其他任务续跑、doctor、Pi/Docling/Read 执行、真实来源与 NAS、正式校准和自动精读仍未验收；

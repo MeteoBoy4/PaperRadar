@@ -20,6 +20,7 @@ from scripts.a4_scope import REQUIRED_TEST_MODULES as A4_TEST_MODULES
 from scripts.a5_scope import REQUIRED_TEST_MODULES as A5_TEST_MODULES
 from scripts.a6_scope import REQUIRED_TEST_MODULES as A6_TEST_MODULES
 from scripts.a7_scope import REQUIRED_TEST_MODULES as A7_TEST_MODULES
+from scripts.a8_scope import REQUIRED_TEST_MODULES as A8_TEST_MODULES
 
 
 class TestReceipt:
@@ -37,6 +38,7 @@ class TestReceipt:
                 *A5_TEST_MODULES,
                 *A6_TEST_MODULES,
                 *A7_TEST_MODULES,
+                *A8_TEST_MODULES,
             )
         }
 

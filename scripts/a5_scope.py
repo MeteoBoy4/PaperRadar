@@ -105,7 +105,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a5_entry.py",
-        "3fe4bcd00a9ba18d43e1ac90569bdb469975b624bc600c5c567a16238aef9452",
+        "35ab3f6592e76353cf19c4920f224421092fc2f8b7c3d70cd561d07f134ea118",
     ),
     (
         "tests/test_a5_test_receipt.py",
@@ -139,23 +139,23 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "9133776e4e9b5eec0859a1e51f48126f184606af9012c0f410bb035d798b2d40",
+        "f48e9af3cf10cdb728b9140d55303559fe3c3b60950b0a0e38be11b156b9855a",
     ),
     (
         "scripts/a3_scope.py",
-        "9d7f4aff00ca3665718e01015508ccaa746b3bd04ff21e581e8e718d5c5059f1",
+        "1730f0b2d0350ca75f0c30aedd22aac8059c6cf9de958efc86b7e8dda332a04b",
     ),
     (
         "scripts/a4_scope.py",
-        "9c12bbe47d41cea09e7f79642c969d0d00536c86d028b25be4da72a2b4b10a52",
+        "a96912d4a82c3a07d85d98b7f411725e956fd39ab6d6f49f65bbbc4ad1c1a132",
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+        "1240d6ffa62ebc9f7234857e1e9f5bcb709091cd0edc0a6783b40306d54ecb16",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+        "c31cc8385293e915a38419a89886b114be6200b2a43b84935235c1a72d20c401",
     ),
     (
         "scripts/offline_evidence.py",
@@ -179,7 +179,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/check-offline",
-        "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+        "aac450ba4bd00f30067dca0ae2ec06129140dae7eebce360b5055e4571f56c84",
     ),
     (
         "tests/a5_acceptance_support.py",

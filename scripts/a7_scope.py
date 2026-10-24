@@ -238,11 +238,11 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_entry.py",
-        "71406eed2ea9803ee0ce42353255bc2fa5567c98d4dd6599ebe71af34503709c",
+        "705517ad4bb287a9f1ad574ae0471589bee9fb9167a6880acebe7efd8744d3dd",
     ),
     (
         "tests/test_a7_status.py",
-        "c0b5c6f22d28bac33d71339fb38da19b66910e5282d2f4be68ec7427c7d2430f",
+        "6bd334471fd7f1b8d833f6c6185483fd4cd14f97a61895f8a609b19cbe7391d0",
     ),
     (
         "tests/test_a7_test_receipt.py",
@@ -264,27 +264,27 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+        "1240d6ffa62ebc9f7234857e1e9f5bcb709091cd0edc0a6783b40306d54ecb16",
     ),
     (
         "scripts/a2_full_scope.py",
-        "9133776e4e9b5eec0859a1e51f48126f184606af9012c0f410bb035d798b2d40",
+        "f48e9af3cf10cdb728b9140d55303559fe3c3b60950b0a0e38be11b156b9855a",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+        "c31cc8385293e915a38419a89886b114be6200b2a43b84935235c1a72d20c401",
     ),
     (
         "scripts/a3_scope.py",
-        "9d7f4aff00ca3665718e01015508ccaa746b3bd04ff21e581e8e718d5c5059f1",
+        "1730f0b2d0350ca75f0c30aedd22aac8059c6cf9de958efc86b7e8dda332a04b",
     ),
     (
         "scripts/a5_scope.py",
-        "9f29dd403428ee71affeffefa85ba13bca3f5c313588766f0a99307f9b5aac0a",
+        "527f9bd266fce539932ef3610bd67a771e0c54c6e7f47922e60d588366f4783e",
     ),
     (
         "scripts/a6_scope.py",
-        "74810a73e8d893b72f295ea3746b593cb11ccf11e701e329b44874f648d804fd",
+        "139decc9ce005553cd63759cc11653f042bbc6aaa1b95ed942feaf7b842beada",
     ),
     (
         "scripts/a7_acceptance.py",
@@ -292,7 +292,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/check-offline",
-        "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+        "aac450ba4bd00f30067dca0ae2ec06129140dae7eebce360b5055e4571f56c84",
     ),
     (
         "scripts/verification_checks.py",
@@ -312,7 +312,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/verification_status.py",
-        "31258c53ea1532655a1b757fd5f050c839e389c8a330fcf4d35692f2b5d144b7",
+        "7c3b5bf260ff645c3731c79b502dda16df121c62e5e32f13f20df519e5a17786",
     ),
     (
         "src/paper_radar/backup/files.py",

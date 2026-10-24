@@ -1,0 +1,136 @@
+{
+  "frozen_call_description": {
+    "cases": [
+      "tests/test_a8_call_description.py",
+      "tests/test_a8_call_rejections.py"
+    ],
+    "materials": [
+      "src/paper_radar/llm/calls.py",
+      "tests/a8_call_support.py"
+    ]
+  },
+  "protocol_version_admission": {
+    "cases": [
+      "tests/test_a8_call_description.py::test_new_receipt_pi_version_is_used_even_when_budget_snapshot_is_older",
+      "tests/test_a8_rpc_history.py"
+    ],
+    "materials": [
+      "src/paper_radar/llm/models.py",
+      "src/paper_radar/llm/calls.py"
+    ]
+  },
+  "deterministic_rendering": {
+    "cases": [
+      "tests/test_a8_request_vectors.py"
+    ],
+    "materials": [
+      "tests/fixtures/pi_rpc/1.4.0/request-vectors.json",
+      "src/paper_radar/llm/calls.py"
+    ]
+  },
+  "bounded_framing": {
+    "cases": [
+      "tests/test_a8_rpc_protocol.py::test_bad_outer_frame_has_precise_safe_failure",
+      "tests/test_a8_rpc_candidates.py::test_near_request_candidate_and_aggregate_frame_limits_allow_three_echoes"
+    ],
+    "materials": [
+      "src/paper_radar/llm/rpc_frames.py",
+      "src/paper_radar/llm/rpc_types.py"
+    ]
+  },
+  "correlated_initialization": {
+    "cases": [
+      "tests/test_a8_rpc_protocol.py::test_initialization_rejects_before_prompt",
+      "tests/test_a8_rpc_protocol.py::test_command_response_requires_exact_id_name_and_boolean_success"
+    ],
+    "materials": [
+      "src/paper_radar/llm/rpc.py",
+      "tests/a8_rpc_support.py"
+    ]
+  },
+  "complete_unique_candidate": {
+    "cases": [
+      "tests/test_a8_rpc_candidates.py"
+    ],
+    "materials": [
+      "src/paper_radar/llm/rpc_messages.py",
+      "tests/fixtures/pi_rpc/1.4.0/README"
+    ]
+  },
+  "model_usage_audit": {
+    "cases": [
+      "tests/test_a8_rpc_candidates.py::test_usage_zero_is_unknown_and_cache_and_reasoning_are_not_double_counted",
+      "tests/test_a8_rpc_value.py::test_final_model_identity_is_owned_by_a7_and_second_attempt_keeps_model_reason"
+    ],
+    "materials": [
+      "src/paper_radar/llm/rpc_messages.py",
+      "tests/a8_rpc_task_support.py"
+    ]
+  },
+  "bounded_cancellation_cleanup": {
+    "cases": [
+      "tests/test_a8_rpc_lifecycle.py",
+      "tests/test_a8_rpc_pipes.py"
+    ],
+    "materials": [
+      "src/paper_radar/llm/rpc_pipes.py",
+      "tests/a8_pipe_worker.py",
+      "tests/a8_pipe_support.py"
+    ]
+  },
+  "a7_authoritative_acceptance": {
+    "cases": [
+      "tests/test_a8_rpc_boundary.py",
+      "tests/test_a8_rpc_value.py"
+    ],
+    "materials": [
+      "tests/a8_rpc_task_support.py",
+      "scripts/a7_scope.py"
+    ]
+  },
+  "attempt_budget_correction": {
+    "cases": [
+      "tests/test_a8_rpc_recovery.py",
+      "tests/test_a8_rpc_history.py"
+    ],
+    "materials": [
+      "tests/a8_recovery_support.py",
+      "tests/a8_rpc_task_support.py"
+    ]
+  },
+  "isolated_recovery": {
+    "cases": [
+      "tests/test_a8_rpc_backup.py"
+    ],
+    "materials": [
+      "tests/a8_recovery_worker.py",
+      "tests/a8_recovery_support.py"
+    ]
+  },
+  "privacy": {
+    "cases": [
+      "tests/test_a8_rpc_boundary.py::test_rpc_failure_diagnostics_do_not_log_input_or_upstream_error",
+      "tests/test_a8_rpc_value.py::test_success_keeps_only_final_text_and_safe_audit_without_rpc_or_provider_ids",
+      "tests/test_a8_integrity.py::test_drifted_capability_material_is_rejected_without_echoing_its_contents"
+    ],
+    "materials": [
+      "src/paper_radar/llm/rpc_types.py",
+      "tests/a8_rpc_support.py"
+    ]
+  },
+  "same_run_acceptance": {
+    "cases": [
+      "tests/test_a8_acceptance.py",
+      "tests/test_a8_integrity.py",
+      "tests/test_a8_entry.py",
+      "tests/test_a8_status.py",
+      "tests/test_a8_test_receipt.py",
+      "tests/test_a8_formats.py"
+    ],
+    "materials": [
+      "scripts/a8_acceptance.py",
+      "scripts/a2_test_receipt.py",
+      "scripts/verification_status.py"
+    ]
+  }
+}

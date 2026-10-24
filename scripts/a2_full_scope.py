@@ -122,7 +122,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_verification_integrity.py",
-        "967a56ed308c3bd8cea003817030f145922994ffb9bc5b3856a59b4548f8524f",
+        "12b2eae45e2652bad29129895b782b5dfca3436a945b74291b61bb5f2d4bde29",
     ),
     (
         "tests/test_verification_publication.py",
@@ -130,11 +130,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_verification_run.py",
-        "b04559ea65de97bc2fc2529f07a60bbcf924f786056162cb848eef453b44779f",
+        "fa672e5f2b138a5a4821412aad6053a2dab5d128af4bbd7cccaeedc562a71145",
     ),
     (
         "tests/test_verification_compatibility.py",
-        "57301c95e4a0fc0d4e6a918007db9d5abb3b893c17a0f01c947e0176198d248e",
+        "b8d1938d353bb7799c8cca6914da9b55d07c9455ca91c7f9eaf1e4a9e5841ebc",
     ),
     (
         "tests/test_config_material_compatibility.py",
@@ -150,7 +150,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_full_entry.py",
-        "8c30098020471faa009113d5b272a1c3f98e88498ca37980f55b9027a140a5f0",
+        "b85f0328bd9d842c29e4f76f0f7b1845b64651cce56a0bb63188214c50ab0584",
     ),
     (
         "tests/test_a2_full_examples.py",
@@ -380,15 +380,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+        "1240d6ffa62ebc9f7234857e1e9f5bcb709091cd0edc0a6783b40306d54ecb16",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+        "c31cc8385293e915a38419a89886b114be6200b2a43b84935235c1a72d20c401",
     ),
     (
         "scripts/check-offline",
-        "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+        "aac450ba4bd00f30067dca0ae2ec06129140dae7eebce360b5055e4571f56c84",
     ),
     (
         "scripts/offline_evidence.py",
