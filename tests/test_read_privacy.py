@@ -26,7 +26,7 @@ def test_reading_is_pure_and_does_not_import_upper_layers_or_io() -> None:
         "os",
         "pi",
     )
-    for path in root.glob("*.py"):
+    for path in root.rglob("*.py"):
         tree = ast.parse(path.read_text())
         imported = _imports_in(path, root.parents[1])
         assert not any(
@@ -35,18 +35,6 @@ def test_reading_is_pure_and_does_not_import_upper_layers_or_io() -> None:
             for prefix in forbidden
         ), path.name
         for node in ast.walk(tree):
-            names = (
-                [a.name for a in node.names]
-                if isinstance(node, ast.Import)
-                else [node.module or ""]
-                if isinstance(node, ast.ImportFrom)
-                else []
-            )
-            assert not any(
-                name == prefix or name.startswith(prefix + ".")
-                for name in names
-                for prefix in forbidden
-            ), path.name
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
                 assert node.func.id not in ("open", "eval", "exec", "__import__"), (
                     path.name
