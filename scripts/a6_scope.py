@@ -283,7 +283,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_entry.py",
-        "8603fa05c3103979fc6031c18c38826720c201f0465017081af9c7adbed34b7a",
+        "0163e7a0e965421f4f20133f0dc6616a238574b26662e64d5b99d47296e4bc0c",
     ),
     (
         "tests/test_a6_formats.py",
@@ -325,7 +325,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a5_scope.py",
-        "0da384fa71f01c7ee4be9df86ca51a7ee305b69fe91188469b714046d1578ce1",
+        "ab247f370816520d8147fcf16c5d93330efb24254e580c55f87ab12af750bc4d",
     ),
     (
         "scripts/a6_acceptance.py",

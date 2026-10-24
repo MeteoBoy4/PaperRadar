@@ -182,7 +182,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a4_entry.py",
-        "93226456db6d89fc25435f5f9f3d4f26091764afcec9de43b2e9fcdd3754b021",
+        "48ab0e4eccee9ed0f641b183fe3721c0f52da75e3e5bf9cf0997fcdfdba220f7",
     ),
     (
         "tests/test_a2_full_entry.py",

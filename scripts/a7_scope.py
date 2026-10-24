@@ -238,7 +238,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_entry.py",
-        "705517ad4bb287a9f1ad574ae0471589bee9fb9167a6880acebe7efd8744d3dd",
+        "d1d0d074380da63ba1aab8145ba0fc210e2aa692820000cfb5ed32ef4d9710df",
     ),
     (
         "tests/test_a7_status.py",
@@ -280,11 +280,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a5_scope.py",
-        "0da384fa71f01c7ee4be9df86ca51a7ee305b69fe91188469b714046d1578ce1",
+        "ab247f370816520d8147fcf16c5d93330efb24254e580c55f87ab12af750bc4d",
     ),
     (
         "scripts/a6_scope.py",
-        "8e1f8380147e5fff1040fcc7589c34e7f12f14738f62c59e6474f828a3390e02",
+        "36363c351ff407b1fe746c4df37b599395e8c87341367d0f63c7c9307222a5cf",
     ),
     (
         "scripts/a7_acceptance.py",

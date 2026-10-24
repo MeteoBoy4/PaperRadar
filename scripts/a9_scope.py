@@ -479,23 +479,23 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a4_scope.py",
-        "ab2e56ee6084b7dbcc176aefbafeafc0899e61722425949d486432a85d75a948",
+        "51f1d264fa5e092d0745cd50155072d67e6a4c2d723f05ea40994f585d927d37",
     ),
     (
         "scripts/a5_scope.py",
-        "0da384fa71f01c7ee4be9df86ca51a7ee305b69fe91188469b714046d1578ce1",
+        "ab247f370816520d8147fcf16c5d93330efb24254e580c55f87ab12af750bc4d",
     ),
     (
         "scripts/a6_scope.py",
-        "8e1f8380147e5fff1040fcc7589c34e7f12f14738f62c59e6474f828a3390e02",
+        "36363c351ff407b1fe746c4df37b599395e8c87341367d0f63c7c9307222a5cf",
     ),
     (
         "scripts/a7_scope.py",
-        "5e14d94a13cc6978d972bb1b799322d307acddc404a2a5d49f79eb2776442c11",
+        "c8044cbca5252649366400a9c253c5719781df4c2304e963ebfc7b45857c0d79",
     ),
     (
         "scripts/a8_scope.py",
-        "e40dc96442c74550405709efd5efb02c6916dea78147e5b8fac048a96081835e",
+        "0127ee10b9c320bec22a9a65e57a0ae14914179c80d07d318ec828137812c956",
     ),
 )
 
@@ -576,7 +576,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/a9-scope-review.md",
-        "c1dfe5ea4024ccb45b0780c8f9334ae0777ec12f336dea57f3df11fdeb2f095b",
+        "7e31be9a7d3be85bb0830186f98e7a8ace1f8dad8a52c778c2de186553dfc00d",
     ),
     (
         "docs/contracts/frozen-contracts.md",

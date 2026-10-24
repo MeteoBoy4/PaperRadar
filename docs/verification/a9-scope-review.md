@@ -340,3 +340,34 @@ result.ReadDiagnostic导出保留相同类型。只读AST导入图审计确认Re
 的实际字节，scope本身继续由完整工作树身份及self_reference/cycle拒绝保护。
 最终完整check-offline由integration实际执行，旧提交的中断运行不作为通过证明。
 真实PDF/Pi/模型/Docling/NAS、orig哈希归属、map来源链和完整阶段A仍未验证。
+
+## #92 完整门禁产物计数兼容修复
+
+基线 `3da9170378a7b8a054b9fd0d6e2cbe243f42a5bb` 的完整门禁实际收集4811项，其中4807通过、4项旧入口失败，
+没有skip/deselect。A4的根代理紧反馈循环和A5/A6/A7各自约1.7秒的独立循环均
+明确复现为“实际13个JSON，断言仍为12”；前面的真实前置状态、失败原因和整体
+阻断断言已通过。A9已规定十一份主要文件加pytest回执与terminal共十三份JSON，
+因此无需猜测其他运行故障或插桩。仅修正4处固定预期，不改生产产物、旧失败目的
+和任何状态/原因断言，也不新增镜像测试；原有失败用例就是回归。
+
+检索完整入口、verification组合及全部测试，遗漏的旧`== 12`产物断言仅此四处。
+独立audit --collect确认各组固定分母不变：a4_entry=5、a5_entry=5、a6_entry=9、
+a7_entry=9，A9仍为541；收集execution=not_run，不能替代实际测试。
+实际传播为A4→A5→A6→A7→A8→A9，按原有DAG在同一提交内更新必要哈希。
+A1、A2-01、完整A2和A3无需重绑，源码/测试集合、所有固定分母保持。
+
+| 消费scope | 路径 | 修复前SHA-256 | 修复SHA-256 | 原因 |
+| --- | --- | --- | --- | --- |
+| `a5_scope.py`, `a9_scope.py` | `scripts/a4_scope.py` | `ab2e56ee6084b7dbcc176aefbafeafc0899e61722425949d486432a85d75a948` | `51f1d264fa5e092d0745cd50155072d67e6a4c2d723f05ea40994f585d927d37` | 前置scope同次重绑，按实际DAG传播固定字节身份 |
+| `a6_scope.py`, `a7_scope.py`, `a8_scope.py`, `a9_scope.py` | `scripts/a5_scope.py` | `0da384fa71f01c7ee4be9df86ca51a7ee305b69fe91188469b714046d1578ce1` | `ab247f370816520d8147fcf16c5d93330efb24254e580c55f87ab12af750bc4d` | 前置scope同次重绑，按实际DAG传播固定字节身份 |
+| `a7_scope.py`, `a8_scope.py`, `a9_scope.py` | `scripts/a6_scope.py` | `8e1f8380147e5fff1040fcc7589c34e7f12f14738f62c59e6474f828a3390e02` | `36363c351ff407b1fe746c4df37b599395e8c87341367d0f63c7c9307222a5cf` | 前置scope同次重绑，按实际DAG传播固定字节身份 |
+| `a8_scope.py`, `a9_scope.py` | `scripts/a7_scope.py` | `5e14d94a13cc6978d972bb1b799322d307acddc404a2a5d49f79eb2776442c11` | `c8044cbca5252649366400a9c253c5719781df4c2304e963ebfc7b45857c0d79` | 前置scope同次重绑，按实际DAG传播固定字节身份 |
+| `a9_scope.py` | `scripts/a8_scope.py` | `e40dc96442c74550405709efd5efb02c6916dea78147e5b8fac048a96081835e` | `0127ee10b9c320bec22a9a65e57a0ae14914179c80d07d318ec828137812c956` | 前置scope同次重绑，按实际DAG传播固定字节身份 |
+| `a4_scope.py` | `tests/test_a4_entry.py` | `93226456db6d89fc25435f5f9f3d4f26091764afcec9de43b2e9fcdd3754b021` | `48ab0e4eccee9ed0f641b183fe3721c0f52da75e3e5bf9cf0997fcdfdba220f7` | 旧完整入口新增A9后总产物12→13；其他断言和分母保持 |
+| `a5_scope.py` | `tests/test_a5_entry.py` | `35ab3f6592e76353cf19c4920f224421092fc2f8b7c3d70cd561d07f134ea118` | `c2964e07e423525bc23a7f3c992ad169640f00727b7e716370eaf425c74b8027` | 旧完整入口新增A9后总产物12→13；其他断言和分母保持 |
+| `a6_scope.py` | `tests/test_a6_entry.py` | `8603fa05c3103979fc6031c18c38826720c201f0465017081af9c7adbed34b7a` | `0163e7a0e965421f4f20133f0dc6616a238574b26662e64d5b99d47296e4bc0c` | 旧完整入口新增A9后总产物12→13；其他断言和分母保持 |
+| `a7_scope.py` | `tests/test_a7_entry.py` | `705517ad4bb287a9f1ad574ae0471589bee9fb9167a6880acebe7efd8744d3dd` | `d1d0d074380da63ba1aab8145ba0fc210e2aa692820000cfb5ed32ef4d9710df` | 旧完整入口新增A9后总产物12→13；其他断言和分母保持 |
+
+本台账不写自身或a9_scope.py最终哈希，A9仍显式固定台账，保留自引用/循环拒绝
+和完整工作树身份保护。此处记录根门禁的真实失败与修复原因，最终通过仍以
+integration重新执行的完整门禁及同次可信终态为准，不覆盖或改写失败证据。

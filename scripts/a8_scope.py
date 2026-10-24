@@ -261,15 +261,15 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a5_scope.py",
-        "0da384fa71f01c7ee4be9df86ca51a7ee305b69fe91188469b714046d1578ce1",
+        "ab247f370816520d8147fcf16c5d93330efb24254e580c55f87ab12af750bc4d",
     ),
     (
         "scripts/a6_scope.py",
-        "8e1f8380147e5fff1040fcc7589c34e7f12f14738f62c59e6474f828a3390e02",
+        "36363c351ff407b1fe746c4df37b599395e8c87341367d0f63c7c9307222a5cf",
     ),
     (
         "scripts/a7_scope.py",
-        "5e14d94a13cc6978d972bb1b799322d307acddc404a2a5d49f79eb2776442c11",
+        "c8044cbca5252649366400a9c253c5719781df4c2304e963ebfc7b45857c0d79",
     ),
     (
         "scripts/check-offline",
