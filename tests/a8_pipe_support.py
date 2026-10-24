@@ -13,6 +13,7 @@ from time import monotonic
 
 from paper_radar.llm.models import CallDescription
 from paper_radar.llm.rpc_pipes import PipeSession
+from paper_radar.llm.rpc_types import MonotonicClock
 
 ROOT = Path(__file__).parents[1]
 
@@ -25,6 +26,7 @@ class FixtureFactory:
     status_write: int
     baseline_fds: int
     own_group: bool = True
+    clock: MonotonicClock = monotonic
     child: subprocess.Popen[bytes] | None = None
     session: PipeSession | None = None
     pidfds: list[int] = field(default_factory=list)
@@ -87,7 +89,7 @@ class FixtureFactory:
                 [self.status_read], [], [], max(0, deadline - monotonic())
             )[0], "fixture 未握手"
             self.collect()
-        self.session = PipeSession(self.child)
+        self.session = PipeSession(self.child, clock=self.clock)
         return self.session
 
     def assert_reclaimed(self) -> None:
@@ -108,13 +110,17 @@ class FixtureFactory:
 
 @contextmanager
 def fixture_factory(
-    directory: Path, scenario: str, *, own_group: bool = True
+    directory: Path,
+    scenario: str,
+    *,
+    own_group: bool = True,
+    clock: MonotonicClock = monotonic,
 ) -> Iterator[FixtureFactory]:
     baseline_fds = len(os.listdir("/proc/self/fd"))
     read_fd, write_fd = os.pipe()
     os.set_blocking(read_fd, False)
     factory = FixtureFactory(
-        scenario, directory, read_fd, write_fd, baseline_fds, own_group
+        scenario, directory, read_fd, write_fd, baseline_fds, own_group, clock
     )
     try:
         yield factory

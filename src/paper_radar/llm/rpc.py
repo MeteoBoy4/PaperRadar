@@ -1,6 +1,7 @@
 """有界单次 Pi RPC;不构造进程、读取配置或决定业务成功。"""
 
 import math
+import sys
 from collections import deque
 from contextlib import suppress
 from time import monotonic
@@ -345,12 +346,42 @@ def _cancel(connection: _Connection) -> None:
                     connection.response(record, *outstanding)
                     outstanding = None
                     continue
-                connection.response(record, command_id, name)
+                data = connection.response(record, command_id, name)
+                if name == "clear_queue" and any(
+                    not isinstance(data.get(field), list)
+                    or any(type(text) is not str for text in data[field])
+                    for field in ("steering", "followUp")
+                ):
+                    raise RpcProblem(RpcReason.RESPONSE_MISMATCH)
                 # clear_queue 的文本只在当前帧短暂存在,不恢复/传出队列。
-                del record
+                del data, record
                 break
     finally:
         connection.records.clear()
+
+
+def _cleanup(session: ByteSession, clock: MonotonicClock, deadline: float) -> None:
+    """清理中断延迟上抛;每步至多补做一次,始终共用首次绝对期限。"""
+    interruption: KeyboardInterrupt | SystemExit | None = None
+    failure: Exception | None = None
+    for operation in (
+        session.close_stdin,
+        lambda: session.terminate(max(0.0, deadline - clock())),
+    ):
+        for _attempt in range(2):
+            try:
+                operation()
+                break
+            except (KeyboardInterrupt, SystemExit) as error:
+                if interruption is None:
+                    interruption = error
+            except Exception as error:
+                failure = error
+                break
+    if interruption is not None:
+        raise interruption
+    if failure is not None:
+        raise failure
 
 
 def run_call(
@@ -365,8 +396,8 @@ def run_call(
     """一次调用仅一个显式会话/一条prompt,失败不携原文或自动重发。"""
     session: ByteSession | None = None
     connection: _Connection | None = None
-    completed = False
-    cleanup_started = False
+    cleanup_finished = False
+    cleanup_deadline: float | None = None
     try:
         if (
             type(description) is not CallDescription
@@ -425,10 +456,10 @@ def run_call(
         _initialize(connection, description, initialization)
         result = _run(connection, description, user_message)
         connection.check(connection.total_deadline, closing=True)
-        cleanup_started = True
-        session.terminate(limits.terminate)
+        cleanup_deadline = clock() + limits.terminate
+        _cleanup(session, clock, cleanup_deadline)
+        cleanup_finished = True
         connection.check(connection.total_deadline, closing=True)
-        completed = True
         return result
     except RpcProblem as error:
         if error.reason is RpcReason.CANCELLED and connection is not None:
@@ -438,8 +469,25 @@ def run_call(
     except Exception:
         return RpcFailure(RpcReason.TRANSPORT_ERROR)
     finally:
-        if session is not None and not completed and not cleanup_started:
-            with suppress(Exception):
-                session.close_stdin()
-            with suppress(Exception):
-                session.terminate(limits.terminate)
+        if session is not None and not cleanup_finished:
+            original = sys.exception()
+            interruption = (
+                original
+                if isinstance(original, (KeyboardInterrupt, SystemExit))
+                else None
+            )
+            # 依据完成状态补偿;helper入口/时钟或循环间隙的中断也不能跳过清理。
+            # 补偿至多两次,任何已取得的首次绝对期限都不重置。
+            for _attempt in range(2):
+                try:
+                    if cleanup_deadline is None:
+                        cleanup_deadline = clock() + limits.terminate
+                    _cleanup(session, clock, cleanup_deadline)
+                    break
+                except (KeyboardInterrupt, SystemExit) as error:
+                    if interruption is None:
+                        interruption = error
+                except Exception:
+                    break
+            if interruption is not None and interruption is not original:
+                raise interruption from None

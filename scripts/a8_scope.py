@@ -72,8 +72,8 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a8_rpc_preflight.py": 2,
     "tests/test_a8_rpc_candidates.py": 219,
     "tests/test_a8_rpc_value.py": 22,
-    "tests/test_a8_rpc_lifecycle.py": 36,
-    "tests/test_a8_rpc_pipes.py": 9,
+    "tests/test_a8_rpc_lifecycle.py": 67,
+    "tests/test_a8_rpc_pipes.py": 19,
     "tests/test_a8_rpc_recovery.py": 16,
     "tests/test_a8_rpc_history.py": 6,
     "tests/test_a8_rpc_backup.py": 1,
@@ -123,11 +123,11 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a8_rpc_lifecycle.py",
-        "6b7aded3a7d768636eec2d99157718e8ac23b72b5cd81e84df03b9595140291c",
+        "0c98a380fd31188728dc990faaa6f4040e0149876ef973003b88575900137aec",
     ),
     (
         "tests/test_a8_rpc_pipes.py",
-        "ae1ab917b30fc974dd01eb3f92a84a3bda10c291b53a19dd118e78ba7329883b",
+        "872cda2c547fb0213ede2461a26f71e92cd5ff008a4fc6a332949d634679724b",
     ),
     (
         "tests/test_a8_rpc_recovery.py",
@@ -181,7 +181,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/rpc.py",
-        "714498c03b6695595e2f34f09503bd89826418373530c5ed55ff5f3638f76567",
+        "ff86056720aeacb6fb731016ed42b8cb6114c6cdf2d7bb71aa5e815a7197186c",
     ),
     (
         "src/paper_radar/llm/rpc_frames.py",
@@ -189,11 +189,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/rpc_messages.py",
-        "98ed042fb6250bdf971665a674a4cdc22a1825ea5e5ecdca8940817e7efcb48d",
+        "d2a0648c11fa32614a993900d27f7b3143131ca8e64b4290c560649a3474e6b5",
     ),
     (
         "src/paper_radar/llm/rpc_pipes.py",
-        "a62b9c3fcb2f65fe44ef5cef3b41fb0efa0099bffdeb46fdfd72cdba1ac8b7b8",
+        "d294ca3ab3e1170af072bd7fe2f77387d72adf97b2e49231021213b76b3c3c3a",
     ),
     (
         "src/paper_radar/llm/rpc_types.py",
@@ -213,7 +213,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "tests/a8_pipe_support.py",
-        "61b1de9883a556646dec7200601cab09a41d54d5e6e7b4083df3f7c965cc5808",
+        "e457f0e178683ec2d83aad637828a2a473a8f2a8b3afff71cb0922c18e46d952",
     ),
     (
         "tests/a8_pipe_worker.py",
@@ -331,7 +331,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/pi-rpc.md",
-        "e58b066998f613c71ca541e3b1b8b76860aa34ae8a1815e57be6e2610725ad82",
+        "e548fbadd99f38b8005f061d65bd0c0a6665fa15a08baaecffd079f3be435a83",
     ),
     (
         "docs/contracts/verification-status.md",
@@ -343,7 +343,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/a8-requirements.md",
-        "78c25f4b8ba677ef744e824ec12fb88dfa40040b3c759ba736d45d15bd22c4fc",
+        "0d02694326f529cc8146849855ad5c6cb25ecf0e74b5f8f789f555e37d77277d",
     ),
     ("README.md", "5c40cdd06e82c16b491540d3e1c9340daf2e174abf8b918518e24cb59a6ce54d"),
 )

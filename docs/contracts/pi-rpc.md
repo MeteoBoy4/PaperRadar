@@ -185,8 +185,10 @@ compaction、summarization、extension UI/错误、未知事件/角色/内容块
 
 注入取消先锁定 cancelled；在已知完整帧边界且尚未 settled/EOF/退出时，先 clear_queue
 再 abort，各用新关联 ID，逐条核对 id/command/success 与响应形状。允许丢弃仍在途的
-原命令匹配 ACK 和迟到事件，不再生成候选。clear_queue 的队列文本立即丢弃；不能
-把它恢复、重发或返回。clear_queue ACK 缺失/矛盾时不发送 abort；abort 缺失、EOF、
+原命令匹配 ACK 和迟到事件，不再生成候选。clear_queue 成功响应的 data 必须包含
+steering、followUp 两个字符串数组，允许空数组；缺字段、非数组或非字符串元素均
+直接转有界终止，不发送 abort，且保持 cancelled。合法队列文本立即丢弃，不能恢复、
+重发或返回。clear_queue ACK 缺失/矛盾时不发送 abort；abort 缺失、EOF、
 断管或部分待写帧等不能安全继续协议的状态转有界终止。正常 settled 后任何情况下
 都不发新命令，立即关 stdin、排空并回收整组。超时不重发或执行取消握手。
 
@@ -198,6 +200,12 @@ stop/settled 翻转。完整候选尚须正常关闭、退出零和整组回收�
 失败（等待耗尽 close_timeout，其他 I/O 异常 transport_error），不返回候选。
 失联、断管、关闭不响应需有界回收独立进程组。KeyboardInterrupt/
 SystemExit 在 finally 回收后原样上抛，attempt 保持未结算，租约到期保守结算 outcome_unknown。
+清理本身被中断也继续整组回收、直接子进程 wait 及句柄关闭，再抛最初的中断对象，
+不转为 cancelled/FailureReport。每轮清理中被中断的步骤至多补做一次；公共调用仅
+有限次补偿，判断依据为清理已完成而非已开始，入口/时钟中断也须补偿。全部补偿共用
+首次 terminate 绝对期限；会话重调也不重置期限。零等待预算仍立即 kill/close 并尝试
+直接 child wait(timeout=0)，不新增等待。只有全部步骤完成才标为 finished，pidfd
+关闭中断不跳过其他句柄。默认总预算与 600 秒租约的关系不变。
 管道会话只包装已启动进程，核对独立进程组并承担双管道消费/有界写入/整组终止；
 不提供自由命令或 env 产品 API。进程组回收不是 OS 沙箱。
 

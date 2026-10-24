@@ -62,18 +62,39 @@ class CancelSession(ScriptedSession):
                 response["success"] = False
             elif self.cancel_reply == "bad_data":
                 response["data"] = []
+            elif self.cancel_reply == "missing_data":
+                del response["data"]
+            elif self.cancel_reply == "empty_data":
+                response["data"] = {}
+            elif self.cancel_reply == "empty_queue":
+                response["data"] = {"steering": [], "followUp": []}
+            elif self.cancel_reply == "missing_steering":
+                response["data"] = {"followUp": []}
+            elif self.cancel_reply == "missing_followup":
+                response["data"] = {"steering": []}
+            elif self.cancel_reply == "steering_not_array":
+                response["data"] = {"steering": "text", "followUp": []}
+            elif self.cancel_reply == "followup_not_array":
+                response["data"] = {"steering": [], "followUp": None}
+            elif self.cancel_reply == "steering_non_string":
+                response["data"] = {"steering": [True], "followUp": []}
+            elif self.cancel_reply == "followup_non_string":
+                response["data"] = {"steering": [], "followUp": [123]}
             if self.cancel_reply != "lost":
                 self.pending.append(wire([response]))
             return SessionEvent(written=len(pending))
         return super().pump(pending, timeout)
 
 
+@pytest.mark.parametrize("reply", ["normal", "empty_queue"])
 def test_cancellation_clears_queue_then_aborts_and_never_accepts_late_completion(
     description: CallDescription,
+    reply: str,
 ) -> None:
     desc = description
     clock = FakeClock()
     session = CancelSession(desc, clock=clock)
+    session.cancel_reply = reply
     result = run_call(
         desc,
         b"request",
@@ -103,7 +124,22 @@ def test_success_also_reclaims_group_and_closes_handles(
 
 
 @pytest.mark.parametrize(
-    "reply", ["wrong_id", "wrong_command", "rejected", "bad_data", "lost"]
+    "reply",
+    [
+        "wrong_id",
+        "wrong_command",
+        "rejected",
+        "bad_data",
+        "lost",
+        "missing_data",
+        "empty_data",
+        "missing_steering",
+        "missing_followup",
+        "steering_not_array",
+        "followup_not_array",
+        "steering_non_string",
+        "followup_non_string",
+    ],
 )
 def test_unmatched_clear_queue_never_sends_abort(
     description: CallDescription, reply: str
@@ -242,17 +278,28 @@ def test_process_interruptions_clean_up_and_propagate_original_object(
 
 
 @pytest.mark.parametrize("interruption", [KeyboardInterrupt(), SystemExit(42)])
+@pytest.mark.parametrize("phase", ["communication", "cleanup"])
 def test_interrupt_leaves_a7_unsettled_until_existing_lease_recovery(
-    tmp_path: Path, interruption: BaseException
+    tmp_path: Path, interruption: BaseException, phase: str
 ) -> None:
     data = archive(tmp_path)
     now = datetime(2026, 1, 1, tzinfo=UTC)
     tasks = ScreeningTasks(data.database, data.data_root, clock=lambda: now)
     receipt = tasks.register(request_for(data))
-    session = ScriptedSession(prepare_call(tasks, receipt.receipt_id))
+
+    class CleanupSession(ScriptedSession):
+        interrupted = False
+
+        def terminate(self, timeout: float) -> None:
+            if phase == "cleanup" and not self.interrupted:
+                self.interrupted = True
+                raise interruption
+            super().terminate(timeout)
+
+    session = CleanupSession(prepare_call(tasks, receipt.receipt_id))
 
     def cancelled() -> bool:
-        if len(session.commands) == 9:
+        if phase == "communication" and len(session.commands) == 9:
             raise interruption
         return False
 
@@ -446,3 +493,74 @@ def test_cancellation_before_start_never_opens_session(
         limits=FAST,
     ) == RpcFailure(RpcReason.CANCELLED)
     assert factory.sessions == []
+
+
+@pytest.mark.parametrize("interruption", [KeyboardInterrupt(), SystemExit(42)])
+@pytest.mark.parametrize("phase", ["success", "failure", "interrupted"])
+@pytest.mark.parametrize("elapsed", [0.05, 0.2])
+def test_cleanup_interruption_reclaims_session_with_original_deadline(
+    description: CallDescription,
+    interruption: BaseException,
+    phase: str,
+    elapsed: float,
+) -> None:
+    original = (
+        KeyboardInterrupt("communication") if phase == "interrupted" else interruption
+    )
+
+    class InterruptedCleanup(ScriptedSession):
+        termination_calls = 0
+
+        def pump(self, pending: bytes, timeout: float) -> SessionEvent:
+            if phase == "failure":
+                raise OSError("transport failed")
+            if phase == "interrupted":
+                raise original
+            return super().pump(pending, timeout)
+
+        def terminate(self, timeout: float) -> None:
+            self.termination_calls += 1
+            if self.termination_calls == 1:
+                self.clock.now += elapsed
+                raise interruption
+            assert timeout == pytest.approx(0.2 - elapsed)
+            super().terminate(timeout)
+
+    session = InterruptedCleanup(description)
+    with pytest.raises(type(original)) as caught:
+        run_call(
+            description, b"request", lambda _: session, clock=session.clock, limits=FAST
+        )
+    assert caught.value is original
+    assert session.closed and session.terminated
+    assert session.clock.now <= 0.2
+
+
+@pytest.mark.parametrize("interruption", [KeyboardInterrupt(), SystemExit(42)])
+@pytest.mark.parametrize("sample", [1, 2, 3, 4])
+def test_post_eof_clock_interruption_cannot_skip_cleanup(
+    description: CallDescription, interruption: BaseException, sample: int
+) -> None:
+    class EofSession(ScriptedSession):
+        eof_returned = False
+
+        def pump(self, pending: bytes, timeout: float) -> SessionEvent:
+            event = super().pump(pending, timeout)
+            self.eof_returned = event.stdout_eof and event.stderr_eof
+            return event
+
+    session = EofSession(description)
+    samples = 0
+
+    def clock() -> float:
+        nonlocal samples
+        if session.eof_returned:
+            samples += 1
+            if samples == sample:
+                raise interruption
+        return session.clock()
+
+    with pytest.raises(type(interruption)) as caught:
+        run_call(description, b"request", lambda _: session, clock=clock, limits=FAST)
+    assert caught.value is interruption
+    assert session.closed and session.terminated
