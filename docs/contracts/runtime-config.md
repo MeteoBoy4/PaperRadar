@@ -1,6 +1,6 @@
 # 运行配置快照契约（已交付配置切片）
 
-当前开放六段式 Research Profile、主题集合、期刊信誉集合、三槽 models 文件、boundary/value/reuse/reading 提示词、Read 分块身份、四份 A1 冻结契约、复用升级参数、正文提取配置，以及三槽 Pi adapter 材料和完整有效系统 Prompt。配置就绪仅说明这些本地材料齐全且合法，不证明模型调用、正式校准或自动精读可用。
+当前开放六段式 Research Profile、主题集合、期刊信誉集合、三槽 models 文件、boundary/value/reuse/reading 提示词、Read 分块身份、四份 A1 冻结契约及独立 Read v1 契约、复用升级参数、正文提取配置，以及三槽 Pi adapter 材料和完整有效系统 Prompt。配置就绪仅说明这些本地材料齐全且合法，不证明模型调用、正式校准或自动精读可用。
 公共 Python 入口是 `paper_radar.config.check_config(settings_path, database)`、
 `compile_config(settings_path, database)`、`load_config_snapshot(database, snapshot_id)` 和
 `upgrade_database(database)`。前三个返回 `RuntimeConfigSnapshot`；错误为脱敏的
@@ -45,8 +45,9 @@ provider/model、secret 或凭据引用。check/compile 必须显式传 `--setti
 | `contracts.reuse_assessment` | `v1` 或 `null` | 检查并登记 `contracts/screening/reuse-assessment/v1/{schema,manifest}.json`。 |
 | `contracts.decision_reasons` | `v1` 或 `null` | 检查并登记 `contracts/screening/decision-reasons/v1/{schema,manifest}.json`。 |
 | `prompts.reading` | 声明版本或 `null` | 绑定 `prompts/reading/<version>.md` 原始 UTF-8 字节；缺失或 `null` 为缺项。 |
+| `contracts.read` | `v1` 或 `null` | 检查并登记 `contracts/read/read/v1/{schema,manifest}.json`；未选择时不自动启用磁盘材料。 |
 
-当前封闭逻辑名称为 `profile/profile`、`topics/topics`、`journals/journals`、`models/models`、`escalation/escalation`、`extraction/extraction`、`read/read`、`adapter/pi-rpc`、`prompt/pi-system`、`prompt/boundary`、`prompt/value`、`prompt/reuse`、`prompt/reading`，以及 `contract_schema`/`contract_manifest` 下的 `boundary`、`value-prediction`、`reuse-assessment` 与 `decision-reasons`。快照包络中的材料条目含
+当前封闭逻辑名称为 `profile/profile`、`topics/topics`、`journals/journals`、`models/models`、`escalation/escalation`、`extraction/extraction`、`read/read`、`adapter/pi-rpc`、`prompt/pi-system`、`prompt/boundary`、`prompt/value`、`prompt/reuse`、`prompt/reading`，以及 `contract_schema`/`contract_manifest` 下的 `boundary`、`value-prediction`、`reuse-assessment`、`decision-reasons` 与 `read`。快照包络中的材料条目含
 `kind`、`name`、`version`、`raw_sha256` 和编译值；后续新增材料种类只增加带
 种类和版本键的条目，不提升编译格式版本。只有包络结构改变时才提升格式版本。
 选择了尚未开放的非空字段会返回 2，并给出字段路径；不会忽略选择。
@@ -259,9 +260,12 @@ chunking_version: v1
 登记内容重建，即使源文件被删除或当前 selector 已切换，仍保留旧模型和提示词。
 没有 Read 材料的历史快照保持包络格式和身份，无需 migration。
 
-当前没有权威 Read 输出契约，`contracts.read` / `contracts.reading` 为未知字段，
-不能通过磁盘 Schema、测试 Schema 或手写 JSON Schema 让 Read 就绪。
-Read 恒为 `not_ready`，始终包含 `read_contract`；其余缺项见下表。
+`contracts.read` 显式选择已有权威 Read v1，`contracts.reading` 仍为未知字段。
+check/compile 复用当前权威 export/check 检查 Schema/manifest 配对及精确字节；
+测试 Schema 或手写替代物不能让 Read 就绪。未选择或 null 时保留 `read_contract`，
+即使磁盘已有契约也不读取或自动启用。材料齐全时可报告配置 `ready`；其余缺项见下表。
+历史 load 只核对登记原始字节、哈希、selector、引用闭包及重建身份，不重新生成当前
+Pydantic Schema 比较；新权威模型不能替换历史材料，历史损坏也不回退到当前文件。
 不执行分块、模型调用、协议探测或凭据读取。输出语言、正文制品、paper ID、
 任务及其他论文/调用输入均不属于运行配置快照，配置中出现时按未知字段拒绝。
 Read 模型、Prompt、chunking 与 reading adapter 的变化只影响 read 投影，基线不变。
@@ -331,7 +335,7 @@ CLI 显示槽的 `configured`/`unconfigured`/`placeholder`、阶段的 `ready`/
 | boundary | Profile 六段、Screening 模型、boundary 提示词、boundary 契约；若已选择 Screening adapter，其系统 Prompt 不得占位 | `profile`、`screening_model` / `screening_model_placeholder`、`boundary_prompt` / `boundary_prompt_placeholder`、`boundary_contract`、`screening_adapter_prompt_placeholder` |
 | value | Profile 六段、Screening 模型、value 提示词、value-prediction 契约、已配置主题集合；若已选择 Screening adapter，其系统 Prompt 不得占位 | `profile`、`screening_model` / `screening_model_placeholder`、`value_prompt` / `value_prompt_placeholder`、`value_contract`、`topics`、`screening_adapter_prompt_placeholder` |
 | reuse | Profile 六段、reuse_assessment 模型、reuse 提示词、reuse-assessment 契约、升级文件内 excerpt selector；若已选择 reuse adapter，其系统 Prompt 不得占位 | `profile`、`reuse_model` / `reuse_model_placeholder`、`reuse_prompt` / `reuse_prompt_placeholder`、`reuse_contract`、`excerpt_selector`、`reuse_adapter_prompt_placeholder` |
-| Read（当前恒未就绪） | Profile 六段、Read 模型、reading 提示词、Read 配置内 chunking 身份与权威 Read 契约（契约尚未开放）；若已选择 reading adapter，其系统 Prompt 不得占位 | `profile`、`read_model` / `read_model_placeholder`、`read_prompt` / `read_prompt_placeholder`、`read_contract`、`chunking_version`、`read_adapter_prompt_placeholder` |
+| Read | Profile 六段、Read 模型、reading 提示词、Read 配置内 chunking 身份与显式选择的权威 read/v1；若已选择 reading adapter，其系统 Prompt 不得占位 | 按顺序为 `profile`、`read_adapter_prompt_placeholder`、`read_model` / `read_model_placeholder`、`read_prompt` / `read_prompt_placeholder`、`read_contract`、`chunking_version` |
 | suggestion | 升级文件内建议规则身份和触发参数、decision-reasons 契约 | `suggestion_rule`、`escalation_parameters`、`decision_reasons_contract` |
 | extraction | 合法完整的 extraction 材料：受控工具链、启用模型文件身份、有效策略及 normalization v1 | `extraction_config` |
 
@@ -347,8 +351,8 @@ value 不依赖 boundary 提示词/契约或期刊信誉；boundary 不依赖主
 reuse 就绪不要求 PDF、正文提取、value 配置或实际模型输出；suggestion 就绪不要求
 Screening 制品或模型槽。这些是配置完整性，不是实际任务 eligibility。未选择
 escalation 文件时，reuse 缺 `excerpt_selector`，suggestion 同时缺 `suggestion_rule`
-和 `escalation_parameters`。Read 始终因缺少权威契约为 `not_ready`；模型、提示词、
-分块配置及已选择 adapter 的占位缺项仍分别列出。
+和 `escalation_parameters`。Read 逐槽判断配置完整性；模型、提示词、
+分块、契约及已选择 adapter 的占位缺项分别列出。
 不输出“校准就绪”。单快照重建、diff 与校准语义基线已实现；缺项与占位参与身份，
 不会因得到投影而变为 ready。完整快照与配置投影身份均不能当作阶段输入指纹。
 
@@ -364,13 +368,13 @@ suggestion 五个投影身份。每槽按实际消费者提取，不能使用整
 | boundary 提示词与契约 | boundary | 是 |
 | value 提示词与 value-prediction 契约 | value | 是 |
 | Reuse 模型、提示词、契约与摘录选择器版本 excerpt_selector_version 及有序 excerpt_priority | reuse | 是 |
-| models.reading、prompt/reading、未来权威 Read 契约（当前 null）与 read/read 内 chunking | read | 否 |
+| models.reading、prompt/reading、显式 Read 契约（未选为 null）与 read/read 内 chunking | read | 否 |
 | Screening/reuse 实际消费的适配器语义：输出协议、有效系统提示词、工具声明与实现、运行策略及参数 | 对应 boundary、value、reuse | 是 |
 | reading 槽 adapter.semantics_id | read | 否 |
 | 解析器、后端、模型制品、解析配置与 normalization | extraction | 是 |
 | 复用升级触发集合、建议规则语义版本与原因契约 | suggestion | 是 |
 
-当前开放 Profile、topics、journals、models、escalation、extraction、read、adapters、boundary/value/reuse/reading 提示词、Pi 系统 Prompt 与四份契约登记。
+当前开放 Profile、topics、journals、models、escalation、extraction、read、adapters、boundary/value/reuse/reading 提示词、Pi 系统 Prompt 与五份契约登记。
 表中其余非空 selector 仍拒绝。value 投影只取 `enabled_topics`，不取完整集合
 的原始字节哈希或声明版本；仅改停用主题描述、声明版本或 YAML 注释不会改变
 value 语义，空集合与全部停用的 value 投影身份相同；未选择主题为 null，与空集合区分。
@@ -412,7 +416,9 @@ Profile、三槽 models、主题、升级参数、三阶段提示词及四份 A1
 它们不是真实
 Research Profile，不能据此开始正式校准。
 `settings-read.yaml` 选择新的 `models-read-v1`、`read-v1`、Read 业务提示词与
-reading adapter，演示 boundary 就绪、Read 仅缺权威契约。
+reading adapter，演示 boundary 就绪、Read 因未选择契约而缺 `read_contract`。
+`settings-read-ready.yaml` 在独立文件中增加 `contracts.read: v1`，演示 Read 配置完整；
+旧例子与材料字节保持不变。
 它不构成真实 Read 或阶段 B 验收。先确保数据库的父目录已存在：
 
 ```bash

@@ -81,5 +81,9 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 所有 help 在空目录、缺配置和缺数据库时返回 0，不连接数据库或创建业务文件。
 
 验证使用真实迁移、临时 SQLite、固定碰撞索引 fixture 和真实安装 CLI，沿用外部
-I/O 哨兵；新测试独立于 A1 固定测试和四份 v1 契约，不重复 #23 投影/基线算法测试。
+I/O 哨兵；快照发现测试独立于 A1 固定测试和四份历史 v1 契约，不重复 #23 投影/基线算法测试。
 没有新增 migration 或持久字段。
+
+#97 另覆盖显式 Read v1 的 `contract_schema.read` / `contract_manifest.read` 摘要及
+只读 diff；它们沿用同一材料登记与历史 load，不重新生成 Schema，不依赖当前配置目录。
+缺少 Read 契约的旧快照仍保留原身份与 `read_contract`；新选择只影响 Read 投影。

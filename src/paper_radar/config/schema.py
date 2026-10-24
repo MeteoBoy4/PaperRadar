@@ -120,9 +120,10 @@ class ContractSelectors(BaseModel):
     value_prediction: str | None = None
     reuse_assessment: str | None = None
     decision_reasons: str | None = None
+    read: str | None = None
 
     @field_validator(
-        "boundary", "value_prediction", "reuse_assessment", "decision_reasons"
+        "boundary", "value_prediction", "reuse_assessment", "decision_reasons", "read"
     )
     @classmethod
     def valid_version(cls, value: str | None) -> str | None:

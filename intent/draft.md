@@ -994,8 +994,10 @@ A2-06（#21）新增 `settings.read` 选择 `config/read/<version>.yaml`，只�
 `prompts.reading` 绑定 `prompts/reading/<version>.md` 的精确 UTF-8 字节，
 使用封闭 `prompt/reading` 逻辑名，与 Pi 系统 Prompt 分开登记。
 models.reading、Read YAML 与提示词沿用原子版本保护和 SQLite 历史回放。
-Read 恒未就绪并列出 `read_contract` 及模型、提示词、适配器占位与 chunking 缺项；
-不新增权威 Read 输出契约、不执行分块或模型调用。输出语言和正文制品仍由后续
+该历史切片未选择权威 Read 契约，因此保留 `read_contract` 及模型、提示词、适配器占位与 chunking 缺项。
+#97 已开放显式 `settings.contracts.read: v1`，按既有材料规则检查、登记和回放 #93 的权威
+Read 契约；完整材料可配置 ready，未选/null 的旧快照身份与缺项不变。
+不执行分块或模型调用。输出语言和正文制品仍由后续
 阶段输入指纹组合，不进入运行配置快照。#23 已实现单快照六投影与校准基线重建，
 Read 配置变化只影响 read 投影；公共服务与只读比较见 `docs/contracts/config-projections.md`。
 
