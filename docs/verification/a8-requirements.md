@@ -22,7 +22,12 @@ GLOSSARY、README、ADR-0026、adapter-config/screening-tasks/pi-rpc Contract、
 | #86 AC13，20 份材料/三态来源 | tests/fixtures/pi_rpc/1.4.0/README | 20 个哈希实际复算一致；DOC/DERIVED-01…10/SYNTH；不是运行观测 |
 | #86 AC14，生产前置与可证明范围 | pi-rpc Contract 的 D4/not_assessed；adapter-config 与 ADR | 逐 DERIVED 编号留待生产启动器；autoCompaction 只证明读回值 |
 | #86 AC15，术语/依赖/隐私 | GLOSSARY；llm/models.py 与 calls.py | test_a8_llm_architecture.py；repr/log/stdout/stderr 隐私负例 |
-| #87，单次调用/分帧/串行初始化/boundary | 后续新增 llm 协议模块与 A8 测试 | 待 #87 |
+| #87 AC1/2，单次公共服务/显式会话/A7 接线 | llm/rpc.py、rpc_types.py；tests/a8_rpc_task_support.py | test_a8_rpc_boundary.py：真实迁移/任务/接收/原字节，无生产来源 |
+| #87 AC3，LF/UTF-8/JSON 严格外层与上限 | llm/rpc_frames.py；rpc.py 的流量计数 | test_a8_rpc_protocol.py：1/2/13 字节分包、CRLF、中文/emoji/U+2028/2029、重复键/非有限数/尾帧/超限 |
+| #87 AC4/5，串行初始化和干净回读 | llm/rpc.py 固定命令链与发送前无主响应拒绝 | test_a8_rpc_protocol.py：模型重置档位、开关 ACK、模型/档位/队列/sessionFile 回读 |
+| #87 AC6–10，ACK 与完整正常候选 | llm/rpc_messages.py；tests/a8_rpc_support.py 固定合成形状 | test_a8_rpc_protocol.py：started、ACK 不足、完成早于 ACK、重复终局、正常关闭 |
+| #87 AC11–13，模型归属/权威接收/失败结算 | A8 test 接线转精确 SuccessCandidate/FailureReport | test_a8_rpc_boundary.py：model_mismatch、output_invalid、剩余一次、失败隐私；A7 不改 |
+| #87 AC14/15，固定上限与前置/隐私 | rpc_types 常量；validate_request；A8 prepare 映射 audit snapshot 损坏 | test_a8_rpc_preflight.py：audit 损坏、外层转义膨胀均 0 预算/0 会话；期限常量关系 |
 | #88，唯一最终候选/事件表/模型与用量 | 后续协议模块与 A8 测试 | 待 #88；D2 模型不符仍由 A7 |
 | #89，时间/取消/管道/真实 Python 进程 | 后续 pipe wrapper 与 A8 测试/fixture | 待 #89；不启动 Pi/Node |
 | #90，预算/接线/非空恢复 | A8 test executor 支撑与组合测试 | 待 #90；不改 A7 预算或失败词汇 |
@@ -45,3 +50,13 @@ RPC 单次调用 → 既有 A1/A7 接收和制品库；描述/渲染和协议错
 严格 mypy 通过；只读 scope 审计仍返回 0。TDD 记录包括初始接口缺失、冻结载荷与对象
 字段不一致、合法占位历史快照拒绝类别三轮 red→green。完整全量入口留至 #91 同次
 组登记后执行；这些局部结果不替代独立 A8 或完整门禁结论。
+
+## #87 已新增范围与验证
+
+新增产品文件为 llm/rpc.py、rpc_types.py、rpc_frames.py、rpc_messages.py；接线/字节会话
+支撑为 tests/a8_rpc_task_support.py、a8_rpc_support.py。只修改前票新增的
+a8_call_support.py 以映射回执审计 snapshot 损坏，不改任何既有 A1–A7 支撑。
+独立新增 test_a8_rpc_protocol.py（53）、test_a8_rpc_boundary.py（7）、
+test_a8_rpc_preflight.py（2），按参数化审阅本票 62 个；含前票 29 个共 91 个。
+分母在 #91 固定审阅，不以当次实测回填期望。#87 子集、Ruff/mypy 与既有 scope 审计
+用于本票验证；完整标准入口与可信终态仍待 #91。真实工厂、管道与取消握手未在 #87 证明。
