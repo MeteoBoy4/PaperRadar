@@ -44,7 +44,7 @@ def test_rpc_boundary_reaches_authoritative_acceptance_and_keeps_raw(
     )
     assert (startup.temperature, startup.top_p) == (0.0, 1.0)
     assert [c["type"] for c in factory.sessions[0].commands] == list(COMMANDS)
-    assert factory.sessions[0].closed and not factory.sessions[0].terminated
+    assert factory.sessions[0].closed and factory.sessions[0].terminated
     assert tasks.status(receipt.receipt_id).used_attempts == 1
     tasks.validate_all()
 

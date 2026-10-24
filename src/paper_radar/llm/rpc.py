@@ -73,6 +73,9 @@ class _Connection:
         self.exit_code: int | None = None
         self.command_no = 0
         self.expected_level: str | None = None
+        self.write_pending = False
+        self.awaiting: tuple[str, str] | None = None
+        self.settled = False
 
     def check(self, deadline: float, *, closing: bool = False) -> float:
         if self.cancelled():
@@ -94,7 +97,6 @@ class _Connection:
         event = self.session.pump(
             pending, 0.0 if immediate else min(left, self.limits.poll)
         )
-        self.check(deadline, closing=closing)
         if (
             type(event) is not SessionEvent
             or type(event.written) is not int
@@ -107,6 +109,8 @@ class _Connection:
             or (event.exit_code is not None and type(event.exit_code) is not int)
         ):
             raise RpcProblem(RpcReason.TRANSPORT_ERROR)
+        self.write_pending = event.written < len(pending)
+        self.check(deadline, closing=closing)
         if self.stdout_eof and event.stdout:
             raise RpcProblem(RpcReason.TRANSPORT_ERROR)
         self.stdout_bytes += len(event.stdout)
@@ -133,6 +137,7 @@ class _Connection:
             raise RpcProblem(RpcReason.EOF)
         pending = frame
         while pending:
+            self.write_pending = True
             written = self.pump(pending, deadline)
             pending = pending[written:]
 
@@ -170,13 +175,16 @@ class _Connection:
         self.before_command(deadline)
         self.command_no += 1
         command_id = f"rpc-{self.command_no}"
+        self.awaiting = (command_id, name)
         self.send(command_frame(command_id, name, **fields), deadline)
         while True:
             record = self.read(deadline)
             if record.get("type") == "thinking_level_changed":
                 self.notification(record)
                 continue
-            return self.response(record, command_id, name)
+            data = self.response(record, command_id, name)
+            self.awaiting = None
+            return data
 
     def before_command(self, deadline: float) -> None:
         while True:
@@ -272,6 +280,8 @@ def _run(
 ) -> RpcCandidate:
     events = RunEvents(description, user_message.decode("utf-8"))
     connection.before_command(connection.total_deadline)
+    connection.command_no = 9
+    connection.awaiting = ("rpc-9", "prompt")
     connection.send(_prompt_frame(user_message), connection.total_deadline)
     acked = False
     closed = False
@@ -284,9 +294,11 @@ def _run(
             if data.get("disposition") != "started":
                 raise RpcProblem(RpcReason.PROMPT_DISPOSITION)
             acked = True
+            connection.awaiting = None
         else:
             events.accept(record)
         if events.settled and not closed:
+            connection.settled = True
             connection.session.close_stdin()
             closed = True
     deadline = min(
@@ -307,6 +319,40 @@ def _run(
     return events.candidate
 
 
+def _cancel(connection: _Connection) -> None:
+    """终局已锁定;只在完整帧边界做有限取消握手,不再解释候选。"""
+    if (
+        connection.write_pending
+        or connection.stdout_eof
+        or connection.exit_code is not None
+        or connection.settled
+    ):
+        return
+    connection.cancelled = lambda: False
+    deadline = connection.clock() + connection.limits.close
+    connection.total_deadline = deadline
+    outstanding = connection.awaiting
+    try:
+        for name in ("clear_queue", "abort"):
+            connection.command_no += 1
+            command_id = f"rpc-{connection.command_no}"
+            connection.send(command_frame(command_id, name), deadline)
+            while True:
+                record = connection.read(deadline)
+                if record.get("type") != "response":
+                    continue
+                if outstanding is not None and record.get("id") == outstanding[0]:
+                    connection.response(record, *outstanding)
+                    outstanding = None
+                    continue
+                connection.response(record, command_id, name)
+                # clear_queue 的文本只在当前帧短暂存在,不恢复/传出队列。
+                del record
+                break
+    finally:
+        connection.records.clear()
+
+
 def run_call(
     description: CallDescription,
     user_message: bytes,
@@ -318,7 +364,9 @@ def run_call(
 ) -> RpcCandidate | RpcFailure:
     """一次调用仅一个显式会话/一条prompt,失败不携原文或自动重发。"""
     session: ByteSession | None = None
+    connection: _Connection | None = None
     completed = False
+    cleanup_started = False
     try:
         if (
             type(description) is not CallDescription
@@ -376,14 +424,21 @@ def run_call(
             raise RpcProblem(RpcReason.EARLY_RECORD)
         _initialize(connection, description, initialization)
         result = _run(connection, description, user_message)
+        connection.check(connection.total_deadline, closing=True)
+        cleanup_started = True
+        session.terminate(limits.terminate)
+        connection.check(connection.total_deadline, closing=True)
         completed = True
         return result
     except RpcProblem as error:
+        if error.reason is RpcReason.CANCELLED and connection is not None:
+            with suppress(Exception):
+                _cancel(connection)
         return RpcFailure(error.reason)
     except Exception:
         return RpcFailure(RpcReason.TRANSPORT_ERROR)
     finally:
-        if session is not None and not completed:
+        if session is not None and not completed and not cleanup_started:
             with suppress(Exception):
                 session.close_stdin()
             with suppress(Exception):

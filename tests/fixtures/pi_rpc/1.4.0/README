@@ -113,3 +113,14 @@
   A7 重建，RPC 不读取语言标记。业务坏 JSON/评分/主题/中文显示题名属于
   SYNTH-INNER-INVALID；日期化 responseModel 不符由 A7 产生 model_mismatch。
   正常候选仍不表示业务成功，token 是合成 Pi 报告值，provider_request_id 保持未知。
+- #89 的 `a8_pipe_worker.py` 是独立字面量编写的标准库 Python 对端，使用相同
+  DERIVED-01/03/04/09 形状；不调用产品渲染器/解析器生成预期。DOC-CANCEL-CLOSE 的
+  clear_queue→abort 带独立 ID；返回的合成队列文本立即丢弃。真实管道用例只证明
+  生产包装器的通信/回收行为，没有运行真实 Pi。
+  `test_a8_rpc_lifecycle.py` 的丢 ACK、精确期限、取消与迟到完成、中断及关闭失败为
+  SYNTH-FAULT-CANCEL。DERIVED-09 包含 settled 后立即关闭 stdin、只容忍尚欠的
+  prompt ACK、继续排空与退出零、额外 stdout 拒绝；即使正常 EOF/leader 退出也回收
+  整组。孙进程已主动关闭 pipes 的正例不能由 EOF 替代进程退出证明。
+  夹具显式最小 env，-s 禁用户 site，PYTHONPATH 只选择 deny_external_io（其自身已禁
+  socket 与 SQLite）；不把两份同名 sitecustomize.py 并列冒称叠加加载。使用 ready
+  pipe/pidfd 握手及 200–500 ms 期限，无测试 sleep、个人 Pi/凭据或完整 RPC 文件。

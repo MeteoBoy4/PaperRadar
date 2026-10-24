@@ -36,7 +36,11 @@ GLOSSARY、README、ADR-0026、adapter-config/screening-tasks/pi-rpc Contract、
 | #88 AC12，合法近界合并帧 | DERIVED-11；固定 256 KiB/64 KiB/4 MiB/16 MiB | test_a8_rpc_candidates.py：同时接近请求/候选/agent_end 边界，三份回显含 thinking/signature；超候选不返回半结果 |
 | #88 AC13/14，权威业务拒绝与隔离 | test_a8_rpc_value.py；既有 12 请求向量 | 评分、未知/禁用/重复主题、中文显示题名、坏内层 JSON/空文本均 output_invalid；失败原文不落盘；第二篇独立会话可继续 |
 | #88 AC15，原因全集/依赖/隐私/来源 | 封闭 RpcReason/RpcCategory 表；既有 A7 四种 executor FailureKind | 两文件穷举映射及 repr/log/数据库/制品隐私；Contract、来源 README、DERIVED-11 同步；A7 绑定不改 |
-| #89，时间/取消/管道/真实 Python 进程 | 后续 pipe wrapper 与 A8 测试/fixture | 待 #89；不启动 Pi/Node |
+| #89 AC1/2，已启动句柄/并发管道/背压 | llm/rpc_pipes.PipeSession；a8_pipe_support/worker | test_a8_rpc_pipes.py：共享组先拒绝、大 stdin/双输出背压、stderr 洪泛不泄漏 |
+| #89 AC3/4，注入时钟/有限资源/租约 | rpc.py、RpcLimits 常量；总期限含初始化/正常排空，取消另用 close 宽限，整组回收另用 terminate | test_a8_rpc_lifecycle.py：fake 无 sleep、精确期限、写入/读取/关闭期限；既有小于 600s 常量关系测试继续通过 |
+| #89 AC5/6，取消锁定/正常收尾/整组终止 | clear_queue→abort 匹配 ACK；settled 后即时关 stdin 不发命令；成功也清整组 | 两测试模块：丢/错 ACK、半帧取消、迟到完整输出不可翻转；leader 退出且孙进程已关 pipes 仍回收 |
+| #89 AC7/8，异常分流/A7 语义不变 | 原 RpcReason/RpcCategory→既有 FailureReport；finally 清理 | lifecycle：原样 KeyboardInterrupt/SystemExit，attempt 未结算，601s 按既有规则 outcome_unknown；受控失败 origin=executor |
+| #89 AC9–12，真实夹具/敏感边界/隔离失败/权限 | 纯标准库 Python/最小 env/deny_external_io；Linux pidfd+/proc；Contract/DERIVED-09 | 6 类场景加背压/孙进程变体及共享组拒绝，共 9 个实际进程用例；正常/取消均核对 pidfd、pipes、句柄数与空 fixture 目录；前篇失败后另一论文可成功 |
 | #90，预算/接线/非空恢复 | A8 test executor 支撑与组合测试 | 待 #90；不改 A7 预算或失败词汇 |
 | #91，独立组/可信终态/集中重绑 | a8_scope/a8_acceptance、registry/status/check-offline 与文档 | 待 #91；固定分母、同次真实回执、可信终态全部必须交付 |
 
@@ -69,8 +73,9 @@ TDD 红→绿分别为 bool/整数矛盾副本（4）、签名/redacted 类型�
 数值类型（14）。矩阵数量供 #91 审阅，不替代其独立固定分母及同次实际执行。
 
 本票未运行完整 check-offline；按顺序实施安排由 #91 注册全 A8 后统一执行。
-当前只证明离线协议/test 接线，不代表独立 A8 验收通过；真实 Pi/Node/模型、管道
-及取消握手、生产 cwd 白名单、参数生效、语言事实生产来源仍未验收。
+截至 #88 只证明离线协议/test 接线，不代表独立 A8 验收通过；当时管道及取消握手
+尚未交付，现由下述 #89 补齐。真实 Pi/Node/模型、生产 cwd 白名单、参数生效与
+语言事实生产来源仍未验收。
 
 ## #87 已新增范围与验证
 
@@ -81,3 +86,22 @@ a8_call_support.py 以映射回执审计 snapshot 损坏，不改任何既有 A1
 test_a8_rpc_preflight.py（2），按参数化审阅本票 62 个；含前票 29 个共 91 个。
 分母在 #91 固定审阅，不以当次实测回填期望。#87 子集、Ruff/mypy 与既有 scope 审计
 用于本票验证；完整标准入口与可信终态仍待 #91。真实工厂、管道与取消握手未在 #87 证明。
+
+## #89 已新增范围与验证
+
+新增生产 Linux PipeSession 仅包装已启动的 Popen，不启动 Pi/Node、不构造命令/env/cwd。
+selectors 非阻塞双读与部分写；stderr 只计数。终局前关 stdin，排空、退出零之后还须
+有界 SIGKILL 整组并用 /proc/pidfd 核验，finally 释放 selector/pipes；能力不可用安全
+失败。组回收不等于权限隔离，不覆盖主动逃组。生产任意执行 API 和 A7 代码均未增加。
+
+生命周期新增 36 项（含精确期限、取消 ACK、半帧/迟到、收尾失败、独立论文、中断未
+结算及原租约恢复）；实际 Python 夹具新增 9 项，对应正常、挂住、提前退出、双管道
+背压/洪泛、取消、持有/已关闭 pipes 的孙进程及共享组拒绝。用 ready pipe 和 pidfd
+同步，期限为 200–500 ms，A8 测试无 sleep。实际进程组 9 passed/1.88s；含前票的
+全 A8 子集 377 passed/20.07s，最慢用例 0.66s，没有以紧墙钟断言决定语义成功。
+Ruff/格式与严格 mypy（25 文件）通过，scope 审计无既有绑定漂移。
+
+TDD 红→绿包含缺少 PipeSession、取消未发送 clear_queue/abort、正常成功未清组、
+settled 后取消仍发送命令四个行为缺口。原 A8 正例同步要求成功也清组，没有改变任何
+A1–A7 分母/受绑定文件。独立 A8 登记、非空恢复与完整门禁仍依 #90/#91 收口；本票
+未运行完整 check-offline，不将当前子集结论冒充阶段 A 或 live 通过。
