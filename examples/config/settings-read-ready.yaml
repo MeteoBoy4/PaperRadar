@@ -1,0 +1,13 @@
+# 工程验收合成材料；只证明配置完整，不证明模型、正文或自动精读可运行。
+# 旧 settings-read.yaml 保留历史字节；它未选择 contracts.read，因此仍缺 read_contract。
+profile: profile-example-v1
+models: models-read-v1
+read: read-v1
+prompts:
+  boundary: v1
+  reading: v1
+contracts:
+  boundary: v1
+  read: v1
+adapters:
+  reading: pi-v1

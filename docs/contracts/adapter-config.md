@@ -110,7 +110,8 @@ ConfigError；CLI 返回 2，不回显值、Prompt、原始异常或可执行命
 `adapter_slots` 分别返回 unconfigured/configured/placeholder；合法材料的 Prompt
 strip 后为空或精确为 `...` 时为 placeholder，仍可保存明确不完整的快照。
 模型槽和既有业务阶段完整性独立报告；没有 adapter 的业务配置完整性不证明
-Pi 就绪，已配置 adapter 也不证明执行就绪。Read 仍缺权威契约。
+Pi 就绪，已配置 adapter 也不证明执行就绪。Read 另须显式选择 `contracts.read: v1`
+并配齐业务材料；就绪规则见[运行配置契约](runtime-config.md#当前就绪范围)。
 已选择但 Prompt 占位的 adapter 使实际消费者阶段未就绪；受控缺项分别为
 `screening_adapter_prompt_placeholder`（boundary/value）、
 `reuse_adapter_prompt_placeholder`（reuse）、`read_adapter_prompt_placeholder`（Read）。

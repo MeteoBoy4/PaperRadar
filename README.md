@@ -186,7 +186,7 @@ uv run --offline --locked paper-radar config compile \
 ```
 
 先创建数据库父目录，例如 `mkdir -p data`。示例是工程验收合成材料，不是正式
-校准资料。当前可选六段式 Profile、单份三槽 models 文件、主题集合、boundary/value/reuse 提示词、四份 A1 冻结契约与复用升级参数。boundary、value、reuse 和 suggestion 各自报告配置就绪；value 需要已配置的主题集合，空集合和全部停用均合法。`examples/config/settings-value.yaml` 使用完整合成 Profile，演示两阶段均就绪；`settings-boundary.yaml` 演示仅 boundary 就绪；`settings-reuse.yaml` 演示缺 value/PDF/extraction 时 reuse 和 suggestion 配置就绪，触发集合默认仅 `{3}`、摘录顺序固定为 availability 优先；算法身份只接受受控 v1，不执行摘录选择或建议规则。原 `settings.yaml` 保留占位 Profile，展示未就绪原因。公共 Python 服务可从数据库加载旧快照；完整字段、声明版本规则、
+校准资料。当前可选六段式 Profile、单份三槽 models 文件、主题集合、boundary/value/reuse/reading 提示词、四份 A1 冻结契约及独立 Read v1 与复用升级参数。boundary、value、reuse、read 和 suggestion 各自报告配置就绪；value 需要已配置的主题集合，空集合和全部停用均合法。`examples/config/settings-value.yaml` 使用完整合成 Profile，演示两阶段均就绪；`settings-boundary.yaml` 演示仅 boundary 就绪；`settings-reuse.yaml` 演示缺 value/PDF/extraction 时 reuse 和 suggestion 配置就绪，触发集合默认仅 `{3}`、摘录顺序固定为 availability 优先；算法身份只接受受控 v1，不执行摘录选择或建议规则。原 `settings.yaml` 保留占位 Profile，展示未就绪原因。公共 Python 服务可从数据库加载旧快照；完整字段、声明版本规则、
 身份格式、未就绪范围和迁移行为见
 [运行配置快照契约](docs/contracts/runtime-config.md)。
 
@@ -199,12 +199,16 @@ uv run --offline --locked paper-radar config compile \
 `settings-read.yaml` 使用新增的 `models-read-v1`、独立 `config/read/read-v1.yaml`
 和 `prompts/reading/v1.md`，演示 Read 模型、业务提示词和受控 chunking v1 的
 版本登记与历史回放。`settings.read` 选择分块配置，`prompts.reading` 选择提示词；
-Read 始终 `not_ready`，该合成示例仅缺 `read_contract`，boundary 仍配置就绪。
-当前不执行分块或 Read，不接受手写 Read Schema，也不构成阶段 B 验收：
+旧示例未选择 `contracts.read`，因此保持 `not_ready` / `read_contract`；boundary 配置就绪。
+新 `settings-read-ready.yaml` 显式选择 `contracts.read: v1`，配齐 Profile、reading 模型、
+reading Prompt、reading adapter 和 chunking v1 后报告 Read 配置 `ready`。
+两者都不执行分块或 Read，不接受手写替代 Schema，也不构成阶段 B 验收：
 
 ```bash
 uv run --offline --locked paper-radar config compile \
   --settings examples/config/settings-read.yaml --database data/paperradar.sqlite3
+uv run --offline --locked paper-radar config compile \
+  --settings examples/config/settings-read-ready.yaml --database data/paperradar.sqlite3
 ```
 
 `settings-extraction.yaml` 独立演示正文提取配置就绪：受控工具链、pypdfium2、
@@ -225,7 +229,7 @@ uv run --offline --locked paper-radar config compile \
 ```
 
 该示例只证明 boundary、value、reuse 与 suggestion 配置完整；模型、Profile 和
-提示词仍为合成材料，Read 未就绪。当前没有 Pi RPC 执行器，配置层也不检查 Pi/Node、
+提示词仍为合成材料，该示例未选择 Read 契约，Read 配置未就绪。配置层不检查 Pi/Node、
 认证、实际参数能力或运行隔离。旧 models 与示例选择保留，以维持历史版本和快照
 回放；配置层继续接受既有协议，不代表 Pi 会支持或自动切换这些协议。
 接入目标与边界见 [ADR-0026](docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。

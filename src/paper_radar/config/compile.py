@@ -412,6 +412,20 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
             ContractName.DECISION_REASONS, MissingReason.DECISION_REASONS_CONTRACT
         ),
     )
+    read_missing = (
+        *missing_profile,
+        *adapter_reason("reading", MissingReason.READ_ADAPTER_PROMPT_PLACEHOLDER),
+        *model_reason(
+            "reading", MissingReason.READ_MODEL, MissingReason.READ_MODEL_PLACEHOLDER
+        ),
+        *prompt_reason(
+            PromptName.READING,
+            MissingReason.READ_PROMPT,
+            MissingReason.READ_PROMPT_PLACEHOLDER,
+        ),
+        *contract_reason(ContractName.READ, MissingReason.READ_CONTRACT),
+        *((MissingReason.CHUNKING_VERSION,) if materials.read is None else ()),
+    )
     stages = {
         StageName.BOUNDARY: StageReadiness(
             StageStatus.READY if not boundary_missing else StageStatus.NOT_READY,
@@ -430,25 +444,8 @@ def compile_snapshot(materials: SelectedMaterials) -> RuntimeConfigSnapshot:
             () if extraction is not None else (MissingReason.EXTRACTION_CONFIG,),
         ),
         StageName.READ: StageReadiness(
-            StageStatus.NOT_READY,
-            (
-                *missing_profile,
-                *adapter_reason(
-                    "reading", MissingReason.READ_ADAPTER_PROMPT_PLACEHOLDER
-                ),
-                *model_reason(
-                    "reading",
-                    MissingReason.READ_MODEL,
-                    MissingReason.READ_MODEL_PLACEHOLDER,
-                ),
-                *prompt_reason(
-                    PromptName.READING,
-                    MissingReason.READ_PROMPT,
-                    MissingReason.READ_PROMPT_PLACEHOLDER,
-                ),
-                MissingReason.READ_CONTRACT,
-                *((MissingReason.CHUNKING_VERSION,) if materials.read is None else ()),
-            ),
+            StageStatus.READY if not read_missing else StageStatus.NOT_READY,
+            read_missing,
         ),
         StageName.SUGGESTION: StageReadiness(
             StageStatus.READY if not suggestion_missing else StageStatus.NOT_READY,

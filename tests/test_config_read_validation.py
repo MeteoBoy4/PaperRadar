@@ -64,7 +64,7 @@ def test_invalid_read_material_is_rejected_without_partial_registration(
         ("artifact: secret-marker\n", "settings.artifact"),
         ("task: secret-marker\n", "settings.task"),
         ("contracts:\n  reading: v1\n", "settings.contracts.reading"),
-        ("contracts:\n  read: v1\n", "settings.contracts.read"),
+        ("contracts:\n  read: v1\n", "contracts.read：missing_snapshot"),
     ],
 )
 def test_settings_cannot_supply_paper_inputs_or_unsupported_read_schema(

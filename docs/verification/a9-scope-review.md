@@ -77,3 +77,36 @@ README 和离线证据范围说明；其中 README、offline-evidence 也在旧 
 新增源码/测试目前未纳入历史固定 scope，#99 应作为独立 A9 范围登记。
 Read Schema 仍为 `1ac06948024aab610c6b2c1098d0a53596632c940704d32fae860a03ed5d6111`。
 未运行 Pi、模型、Docling、PDF、NAS，orig 哈希覆盖及 map 来源链仍未验证。
+
+## A9-05（#97）
+
+本票基于 integration 合并提交 `24a8741ea934fa80ff323229fd2be7bd1718f416`。不修改任何 scope，#99 一次重绑。
+
+最终配置子集在显式加载既有完整元数据后 990 passed；本票独立新增子集 34 passed。Ruff format/check 与全项目 mypy（503 文件）通过。
+
+`audit_verification_scope --collect --json` 退出 1，仅有预期漂移；收集 reason=ok、skip/deselect=0、execution=not_run。受影响组仍为 A1、A2-01、完整 A2、A3–A8。
+
+| 路径 | 本票前 SHA-256 | #97 SHA-256 | 原因 |
+| --- | --- | --- | --- |
+| `src/paper_radar/config/schema.py` | `31d98d427c1c14922f08d455324a87bd1674749442d80edc4efdd94e29a6417c` | `ef445b8335f8c7b9828921d43a6cf116168cb7f2aea06ac1b6f1985f33570bc4` | 开放 read selector，缺失/null 仍不序列化 |
+| `src/paper_radar/config/service.py` | `c9b1e320b42fd840ff091829bcccf8e62e413f006899e6618bd57417e23b1791` | `3f9732e076fe69e3e247d50bf682c519c4f9f6ccd5deb4398908d33a952ac103` | 登记和历史反查 read，沿用原材料校验与事务 |
+| `src/paper_radar/config/compile.py` | `61d2537d0066dd8ee0ab1cd7aba0a2be858f69627feae420fbe0c18e801b30ee` | `0579c66ff57664b62269bb7ccfc5ba8f18277a284fd7fedf8cddb09d65eb7b69` | 在原缺项位置判断 Read 契约，配置齐全可 ready |
+| `src/paper_radar/config/diff.py` | `920553c48bc661893a6b3a3c23c0df0e051888f6161c010f98dced9d1664da30` | `add553638b26d691e1f8ca7fb69261347a5dfff00b5b34288cf8f866f0810b5d` | 补充两项 Read 契约封闭类别 |
+| `src/paper_radar/config/cli.py` | `69f06e69b312af4c4d3ab07652789e20e17bf0d07ee73351ad0d61c2b6872234` | `1bbec637e1017146c595f3aba6bf6b616e067bb20df48581b3d1ac28558c986f` | 中文帮助说明显式契约和配置完整性 |
+| `tests/test_config_read_validation.py` | `e76a9b90effb5b516531c370b628dea5da9c238c05d3b787bbb6e1b2a3378035` | `fa9a338476fca43b7b95ff369091064c784394eced54d7841989600234bb61ef` | 保留原参数分母，将已合法 selector 负例改为材料缺失拒绝 |
+| `README.md` | `2648fa5452f9f3ec3e3502c56e0755fbf4bb58810a01b29f93523c0039304caa` | `9d3b22bae786fd8696af468b9f86549290b87885f1524a00d3d3a02f503ffe35` | 增加独立 ready 示例并解释旧示例未选择契约 |
+| `docs/contracts/runtime-config.md` | `7328c70c65acae06285f352e7b859bc2b0d49d1d75ee66ddf6dde1782fc020b1` | `ee0752fb4215d65e4f1debe600234913fcc80f618af2e963f1a0c2340075582c` | 同步 selector、封闭材料名、缺项与历史回放语义 |
+| `docs/contracts/config-projections.md` | `44d9b25b05dcd6d3d8891631f6f5f07f2ffdbb8d9addc31415ede2ea51d92d16` | `854e353a9329971bc5893bcb687d4977a8365a1fbe683725c4b3605d432e9565` | 区分旧 null 身份与新 Read contract 分量 |
+| `docs/contracts/config-snapshots.md` | `18d48f7d1d4d36aea8093e3f58347eeabae5a411b352bf8d64d06106f9c4ece0` | `7bd0371f214027cb3288e3c03a3b505007d9c49177e133b27df7fccc61826d96` | 登记 Read 双材料摘要和 diff 支持 |
+| `docs/contracts/frozen-contracts.md` | `da03a5cb963f230b10ea78e3ed514406dbcc903b1810a637d7ffe1eedbf9caa3` | `f8a4da25f859cea1013739b936a0a4d845e411d739fed569abed6b5c441f4c07` | 指向已交付 Read 配置准入和历史语义 |
+| `docs/contracts/read-validation.md` | `0e012d5d162bd4efa8fe8ca2b3d77be4ee74d805ee3efe85b91e3b5676eea275` | `a1f1dca6a0d05b56c71bd316d9e245112ff4c900b0b5a2352b051909a5638c00` | 标注 #97 已交付与测试覆盖，保留恢复目标边界 |
+| `intent/draft.md` | `9e706b76cc4f32d595ff2bd637bf4a736c59db080660d37cd16fe8a3628e9094` | `30eee67eea6008bb9015edb05839237d7d92ea2c0c444570296217bcea9bc539` | 按实际配置交付同步当前说明，保留 A2-06 历史含义 |
+| `docs/contracts/adapter-config.md` | `aa2efe84304fba9acd3344a7cab578051854bbec570d4da4a5e3017703509754` | `46fdf72a13ecfb8c6b4f962caeac5f582d7256f1114aa2df9986daadfe5cea0e` | 将 Read 额外配置条件指向已交付契约，保持 adapter 政策 |
+
+固定旧 `tests/test_config_read_validation.py` 分母 28 → 28，由独立审计收集核对；只替换合法 selector 的目标拒绝原因，不删除负例。
+
+新 A9 测试为 `tests/test_read_config.py`（29 项）和 `tests/test_read_config_cli.py`（5 项），支撑为 `tests/read_config_support.py`，独立于旧分母。新增示例 `examples/config/settings-read-ready.yaml`；旧示例、五份冻结契约和投影配方字节不变。
+
+新增测试覆盖显式准入、未选/null、就绪缺项、双材料身份与摘要、Read 单投影 diff、缺失/损坏/错版/手写材料、只读 check、原子回滚、幂等、历史损坏拒绝、删文件后新进程 load 与权威模型演进后的历史 load；不证明生产执行。
+
+独立 config-only 收集曾使旧 `test_upgrade_is_idempotent_and_schema_matches_metadata` 未加载 papers/pi/screening_tasks 表，基线同样失败。显式加载既有真实元数据后该测试通过；不借本票修改旧测试或生产 schema。完整门禁仍由 #99 收口。
