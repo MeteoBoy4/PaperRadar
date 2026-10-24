@@ -50,7 +50,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/cli.py",
-        "c444c4e16c98e8615c2b5268f0f4288144c7aff3a3890f072bf503e66a55a524",
+        "b5bf7b9f643fc84dcccf1227af608d8602deec167f5aeedff7efdd02d536cb66",
     ),
     (
         "src/paper_radar/config/__init__.py",
@@ -58,11 +58,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/cli.py",
-        "69f06e69b312af4c4d3ab07652789e20e17bf0d07ee73351ad0d61c2b6872234",
+        "1bbec637e1017146c595f3aba6bf6b616e067bb20df48581b3d1ac28558c986f",
     ),
     (
         "src/paper_radar/config/compile.py",
-        "61d2537d0066dd8ee0ab1cd7aba0a2be858f69627feae420fbe0c18e801b30ee",
+        "58cc5454dfe5e662f0e7eef0f884c2b562891f9ae7b0a709fbf78984eb81654e",
     ),
     (
         "src/paper_radar/config/escalation.py",
@@ -78,7 +78,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/schema.py",
-        "31d98d427c1c14922f08d455324a87bd1674749442d80edc4efdd94e29a6417c",
+        "ef445b8335f8c7b9828921d43a6cf116168cb7f2aea06ac1b6f1985f33570bc4",
     ),
     (
         "src/paper_radar/config/material_assembly.py",
@@ -86,7 +86,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/service.py",
-        "c9b1e320b42fd840ff091829bcccf8e62e413f006899e6618bd57417e23b1791",
+        "3f9732e076fe69e3e247d50bf682c519c4f9f6ccd5deb4398908d33a952ac103",
     ),
     (
         "src/paper_radar/config/topics.py",
@@ -138,7 +138,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/check-offline",
-        "aac450ba4bd00f30067dca0ae2ec06129140dae7eebce360b5055e4571f56c84",
+        "7da9535adf65a7ae809242d556d40412f65851602d6a4cde84426038ec364382",
     ),
     (
         "scripts/a2_acceptance.py",
@@ -198,7 +198,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/diff.py",
-        "920553c48bc661893a6b3a3c23c0df0e051888f6161c010f98dced9d1664da30",
+        "add553638b26d691e1f8ca7fb69261347a5dfff00b5b34288cf8f866f0810b5d",
     ),
     (
         "tests/config_projection_support.py",

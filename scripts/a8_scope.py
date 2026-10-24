@@ -151,7 +151,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a8_entry.py",
-        "d131e48b2ddb75023374831817d85ba0349620eb41da436bb6f0292dd7a37147",
+        "673c06d68d92d90b30439dc4ac8bd29d266d6a7a3d84af3c786ced4aa585ecf2",
     ),
     (
         "tests/test_a8_status.py",
@@ -201,7 +201,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "tests/a8_acceptance_support.py",
-        "26b5602a0ed7594a54aae74de5c8950126a973d84f15e95c27d3cd7e8374dd40",
+        "2a4516dc9d4f462d4f2a7f6c3106b5b0631e605f9c656e4c91e0fe96b12bd057",
     ),
     (
         "tests/a8_call_support.py",
@@ -241,43 +241,43 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "1240d6ffa62ebc9f7234857e1e9f5bcb709091cd0edc0a6783b40306d54ecb16",
+        "b90a29fb1b645c47960f7f1ca9db816495225a68d1b6ac60a6e43096f0d40840",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "c31cc8385293e915a38419a89886b114be6200b2a43b84935235c1a72d20c401",
+        "795596859f24d1241c589afd3d28902cbc148724b0aaa25fdbfafeaec4bd1593",
     ),
     (
         "scripts/a1_scope.py",
-        "e71257263bed5859e4277c8b0ff399c4986c440e8212c8d1a636c559fcc7d428",
+        "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
     ),
     (
         "scripts/a2_full_scope.py",
-        "f48e9af3cf10cdb728b9140d55303559fe3c3b60950b0a0e38be11b156b9855a",
+        "8022620adb20868eb7d006285baafb04991ce8e40e282d3de85b4b38b96b28e7",
     ),
     (
         "scripts/a3_scope.py",
-        "1730f0b2d0350ca75f0c30aedd22aac8059c6cf9de958efc86b7e8dda332a04b",
+        "3738ed6011aacbf1ce22307dc456c4168caf8a5bef57c07536a014b1451354f3",
     ),
     (
         "scripts/a5_scope.py",
-        "527f9bd266fce539932ef3610bd67a771e0c54c6e7f47922e60d588366f4783e",
+        "0da384fa71f01c7ee4be9df86ca51a7ee305b69fe91188469b714046d1578ce1",
     ),
     (
         "scripts/a6_scope.py",
-        "139decc9ce005553cd63759cc11653f042bbc6aaa1b95ed942feaf7b842beada",
+        "8e1f8380147e5fff1040fcc7589c34e7f12f14738f62c59e6474f828a3390e02",
     ),
     (
         "scripts/a7_scope.py",
-        "a5ab4504d3e356e57a7badf00ee2f3d899a931f6b4e429cd725cd020870754e5",
+        "5e14d94a13cc6978d972bb1b799322d307acddc404a2a5d49f79eb2776442c11",
     ),
     (
         "scripts/check-offline",
-        "aac450ba4bd00f30067dca0ae2ec06129140dae7eebce360b5055e4571f56c84",
+        "7da9535adf65a7ae809242d556d40412f65851602d6a4cde84426038ec364382",
     ),
     (
         "scripts/offline_evidence.py",
-        "7c2585d4aec8416b496f6b2618e14a81a670b03806b10fc7fb3e48f3c7d08497",
+        "3c53fd4e272ee346da23b72cd977180b78aeaa55a027064a97f5540ea24d9a28",
     ),
     (
         "scripts/verification_checks.py",
@@ -297,7 +297,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/verification_status.py",
-        "7c3b5bf260ff645c3731c79b502dda16df121c62e5e32f13f20df519e5a17786",
+        "4db5d49e411b45777a2b32a2ac1d739b746274c1cdf7115e62c50c96640630a7",
     ),
     (
         "scripts/verification_scope_registry.py",
@@ -335,15 +335,15 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/verification-status.md",
-        "91d3bda5e4cc855cb9083d047d82c2cb341a40090aed5a0bab07e3be26ab4b5f",
+        "ccd6c5f223cee2c7eb4d3f5d65fcc2c056293f6e50210942e7020273dcac1739",
     ),
     (
         "docs/verification/offline-evidence.md",
-        "c8f3e3d702dd669b939a0606f1e4816a09075d55c59c9f4eb9c32ac8256e4896",
+        "f9d266a75322454c1e7ac95ed38e057087b81949ad7cd760e8e0fb91883352b6",
     ),
     (
         "docs/verification/a8-requirements.md",
         "102cb0f2bd14ac6ad57467b9f8cfb766d7f19620058b29bbd23ebd0a5615307f",
     ),
-    ("README.md", "5c40cdd06e82c16b491540d3e1c9340daf2e174abf8b918518e24cb59a6ce54d"),
+    ("README.md", "72c8dc720dba8fa7a8ba76101461ab785b55c1988a3efa3e0670425bc70440a9"),
 )

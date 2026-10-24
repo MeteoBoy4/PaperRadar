@@ -215,3 +215,87 @@ hash_drift），collection reason=ok、skip/deselect=0，execution=not_run。
 
 未运行真实 Pi/模型/Docling/PDF/NAS；orig 的生产哈希归属、真实 evidence-map、
 当前正文选择、科学语义、map 来源链和生产 Read 仍未验证。
+
+## A9-07（#99）固定范围收口
+
+本节以 `04ed707` 为旧范围基线，前六票的行为原因见上述逐票记录。
+按真实引用 DAG 一次收口：A1 → A2-01 → 完整 A2 → A3 → A4 → A5 → A6 → A7 → A8 → A9。
+A4→A5 来自真实 source 引用。所有旧范围仅更新必要字节绑定，测试文件集合与固定分母
+不扩大、不减少；新增 Read 与 A9 协议测试独立登记。以下同路径/同前后哈希合并列出
+消费者，清单本身仍为各 scope 的显式字面量，不在运行时按当前文件或 collection 回填。
+
+A9 固定 reading 全包、真实数值/警告机制、配置与恢复边界、原始候选恢复 worker、
+架构 scanner、契约/示例及新测试；登记自己的 writer，明确不登记 a9_scope.py 自身。
+正常登记审计与 self_reference/cycle 拒绝用例、前后完整工作树身份共同保护该例外。
+完整入口合成回执支撑引用的 A4–A8 scope 属于测试材料闭包，不能替代生产直接前置
+A1/完整 A2/A3，也不继承它们的通过状态。
+
+| 消费 scope | 路径 | 基线 SHA-256 | 收口 SHA-256 | 原因 |
+| --- | --- | --- | --- | --- |
+| `a8_scope.py` | `README.md` | `5c40cdd06e82c16b491540d3e1c9340daf2e174abf8b918518e24cb59a6ce54d` | `72c8dc720dba8fa7a8ba76101461ab785b55c1988a3efa3e0670425bc70440a9` | 本批 Read 契约/配置/恢复及 A9 当前范围文档，保留历史语义 |
+| `a8_scope.py` | `docs/contracts/verification-status.md` | `91d3bda5e4cc855cb9083d047d82c2cb341a40090aed5a0bab07e3be26ab4b5f` | `ccd6c5f223cee2c7eb4d3f5d65fcc2c056293f6e50210942e7020273dcac1739` | 本批 Read 契约/配置/恢复及 A9 当前范围文档，保留历史语义 |
+| `a8_scope.py` | `docs/verification/offline-evidence.md` | `c8f3e3d702dd669b939a0606f1e4816a09075d55c59c9f4eb9c32ac8256e4896` | `f9d266a75322454c1e7ac95ed38e057087b81949ad7cd760e8e0fb91883352b6` | 本批 Read 契约/配置/恢复及 A9 当前范围文档，保留历史语义 |
+| `a2_full_scope.py`, `a4_scope.py`, `a5_scope.py`, `a6_scope.py`, `a7_scope.py`, `a8_scope.py` | `scripts/a1_scope.py` | `e71257263bed5859e4277c8b0ff399c4986c440e8212c8d1a636c559fcc7d428` | `245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251` | 前置 scope 同批重绑，按 DAG 传播固定身份 |
+| `a2_full_scope.py`, `a3_scope.py`, `a4_scope.py`, `a5_scope.py`, `a6_scope.py`, `a7_scope.py`, `a8_scope.py` | `scripts/a2_full_acceptance.py` | `1240d6ffa62ebc9f7234857e1e9f5bcb709091cd0edc0a6783b40306d54ecb16` | `b90a29fb1b645c47960f7f1ca9db816495225a68d1b6ac60a6e43096f0d40840` | #99 追加 required A9 及直接前置，不改变旧组资格 |
+| `a3_scope.py`, `a4_scope.py`, `a5_scope.py`, `a6_scope.py`, `a7_scope.py`, `a8_scope.py` | `scripts/a2_full_scope.py` | `f48e9af3cf10cdb728b9140d55303559fe3c3b60950b0a0e38be11b156b9855a` | `8022620adb20868eb7d006285baafb04991ce8e40e282d3de85b4b38b96b28e7` | 前置 scope 同批重绑，按 DAG 传播固定身份 |
+| `a2_full_scope.py`, `a3_scope.py`, `a4_scope.py`, `a5_scope.py`, `a6_scope.py`, `a7_scope.py`, `a8_scope.py` | `scripts/a2_test_receipt.py` | `c31cc8385293e915a38419a89886b114be6200b2a43b84935235c1a72d20c401` | `795596859f24d1241c589afd3d28902cbc148724b0aaa25fdbfafeaec4bd1593` | #99 显式记录 A9 固定模块的实际执行 |
+| `a4_scope.py`, `a5_scope.py`, `a6_scope.py`, `a7_scope.py`, `a8_scope.py` | `scripts/a3_scope.py` | `1730f0b2d0350ca75f0c30aedd22aac8059c6cf9de958efc86b7e8dda332a04b` | `3738ed6011aacbf1ce22307dc456c4168caf8a5bef57c07536a014b1451354f3` | 前置 scope 同批重绑，按 DAG 传播固定身份 |
+| `a5_scope.py` | `scripts/a4_scope.py` | `a96912d4a82c3a07d85d98b7f411725e956fd39ab6d6f49f65bbbc4ad1c1a132` | `ab2e56ee6084b7dbcc176aefbafeafc0899e61722425949d486432a85d75a948` | 前置 scope 同批重绑，按 DAG 传播固定身份 |
+| `a6_scope.py`, `a7_scope.py`, `a8_scope.py` | `scripts/a5_scope.py` | `527f9bd266fce539932ef3610bd67a771e0c54c6e7f47922e60d588366f4783e` | `0da384fa71f01c7ee4be9df86ca51a7ee305b69fe91188469b714046d1578ce1` | 前置 scope 同批重绑，按 DAG 传播固定身份 |
+| `a7_scope.py`, `a8_scope.py` | `scripts/a6_scope.py` | `139decc9ce005553cd63759cc11653f042bbc6aaa1b95ed942feaf7b842beada` | `8e1f8380147e5fff1040fcc7589c34e7f12f14738f62c59e6474f828a3390e02` | 前置 scope 同批重绑，按 DAG 传播固定身份 |
+| `a8_scope.py` | `scripts/a7_scope.py` | `a5ab4504d3e356e57a7badf00ee2f3d899a931f6b4e429cd725cd020870754e5` | `5e14d94a13cc6978d972bb1b799322d307acddc404a2a5d49f79eb2776442c11` | 前置 scope 同批重绑，按 DAG 传播固定身份 |
+| `a2_scope.py`, `a2_full_scope.py`, `a3_scope.py`, `a4_scope.py`, `a5_scope.py`, `a6_scope.py`, `a7_scope.py`, `a8_scope.py` | `scripts/check-offline` | `aac450ba4bd00f30067dca0ae2ec06129140dae7eebce360b5055e4571f56c84` | `7da9535adf65a7ae809242d556d40412f65851602d6a4cde84426038ec364382` | #99 中文帮助同步十一主要/十三 JSON 与必需 A9 |
+| `a2_full_scope.py`, `a3_scope.py`, `a4_scope.py`, `a5_scope.py`, `a8_scope.py` | `scripts/offline_evidence.py` | `7c2585d4aec8416b496f6b2618e14a81a670b03806b10fc7fb3e48f3c7d08497` | `3c53fd4e272ee346da23b72cd977180b78aeaa55a027064a97f5540ea24d9a28` | #93 元数据按受控实际 area 取路径，六检查与 A1 四契约不变 |
+| `a6_scope.py`, `a7_scope.py`, `a8_scope.py` | `scripts/verification_status.py` | `7c3b5bf260ff645c3731c79b502dda16df121c62e5e32f13f20df519e5a17786` | `4db5d49e411b45777a2b32a2ac1d739b746274c1cdf7115e62c50c96640630a7` | #99 支持 .a9.json 格式1，保留历史格式 |
+| `a2_scope.py`, `a2_full_scope.py`, `a3_scope.py`, `a4_scope.py`, `a6_scope.py` | `src/paper_radar/cli.py` | `c444c4e16c98e8615c2b5268f0f4288144c7aff3a3890f072bf503e66a55a524` | `b5bf7b9f643fc84dcccf1227af608d8602deec167f5aeedff7efdd02d536cb66` | #93 当前五契约帮助与历史四契约范围 |
+| `a2_scope.py`, `a2_full_scope.py` | `src/paper_radar/config/cli.py` | `69f06e69b312af4c4d3ab07652789e20e17bf0d07ee73351ad0d61c2b6872234` | `1bbec637e1017146c595f3aba6bf6b616e067bb20df48581b3d1ac28558c986f` | #97 中文帮助区分配置就绪与生产运行 |
+| `a2_scope.py`, `a2_full_scope.py`, `a7_scope.py` | `src/paper_radar/config/compile.py` | `61d2537d0066dd8ee0ab1cd7aba0a2be858f69627feae420fbe0c18e801b30ee` | `58cc5454dfe5e662f0e7eef0f884c2b562891f9ae7b0a709fbf78984eb81654e` | #97 显式契约准入/缺项；#98 payload 默认表示脱敏，身份不变 |
+| `a2_scope.py`, `a2_full_scope.py` | `src/paper_radar/config/diff.py` | `920553c48bc661893a6b3a3c23c0df0e051888f6161c010f98dced9d1664da30` | `add553638b26d691e1f8ca7fb69261347a5dfff00b5b34288cf8f866f0810b5d` | #97 封闭差异类别新增 Read 双材料 |
+| `a2_scope.py`, `a2_full_scope.py`, `a7_scope.py` | `src/paper_radar/config/schema.py` | `31d98d427c1c14922f08d455324a87bd1674749442d80edc4efdd94e29a6417c` | `ef445b8335f8c7b9828921d43a6cf116168cb7f2aea06ac1b6f1985f33570bc4` | #97 开放 read selector，拒绝 reading 别名 |
+| `a2_scope.py`, `a2_full_scope.py`, `a7_scope.py` | `src/paper_radar/config/service.py` | `c9b1e320b42fd840ff091829bcccf8e62e413f006899e6618bd57417e23b1791` | `3f9732e076fe69e3e247d50bf682c519c4f9f6ccd5deb4398908d33a952ac103` | #97 历史材料 selector 反查包含 read |
+| `a8_scope.py` | `tests/a8_acceptance_support.py` | `26b5602a0ed7594a54aae74de5c8950126a973d84f15e95c27d3cd7e8374dd40` | `2a4516dc9d4f462d4f2a7f6c3106b5b0631e605f9c656e4c91e0fe96b12bd057` | #99 当前完整入口的合成回执补 A9；不扩大旧 A8 固定测试集合 |
+| `a2_full_scope.py`, `a4_scope.py` | `tests/test_a2_full_entry.py` | `b85f0328bd9d842c29e4f76f0f7b1845b64651cce56a0bb63188214c50ab0584` | `170e631f6d67bbb1d904d61ecc6a712b1884e1d8407d22dc70458c95485fa16b` | #99 当前帮助及产物计数同步，旧断言目的保留 |
+| `a8_scope.py` | `tests/test_a8_entry.py` | `d131e48b2ddb75023374831817d85ba0349620eb41da436bb6f0292dd7a37147` | `673c06d68d92d90b30439dc4ac8bd29d266d6a7a3d84af3c786ced4aa585ecf2` | #99 仅当前完整产物由12→13，A8 失败和中断反例保留 |
+| `a1_scope.py` | `tests/test_cli_help.py` | `966176a77cc60467198f115468b0dfe95f17e5ea3d09365f5b02faeaaea1d8cd` | `c03c70471575a50a82ae68bca7fea6c5bf3f885921fbac626403f2ce133e4ff4` | #93 契约/帮助兼容的必要字节变化，原测试分母不变（见首票） |
+| `a2_full_scope.py` | `tests/test_config_read_validation.py` | `e76a9b90effb5b516531c370b628dea5da9c238c05d3b787bbb6e1b2a3378035` | `fa9a338476fca43b7b95ff369091064c784394eced54d7841989600234bb61ef` | #97 合法 read selector 的负例改为缺材料，固定28项不变 |
+| `a1_scope.py` | `tests/test_contract_cli.py` | `948e62d98e08410fe19fce762366f14f36eef2c812714f18ae792e8a4ddc93c6` | `84b86b8017b4cc94da95311409257fd1fc4ff575f840e3eef90c546893d59eaf` | #93 契约/帮助兼容的必要字节变化，原测试分母不变（见首票） |
+| `a1_scope.py` | `tests/test_contract_export.py` | `9ddc4d25be516c7af133964cc9603ade8f262d3d5684a302250acf19a3261bc3` | `49dca04977690856bb2e8a14b9acc063d54e3e26182174b6c2164ac7f0e41f9f` | #93 契约/帮助兼容的必要字节变化，原测试分母不变（见首票） |
+| `a1_scope.py` | `tests/test_contract_schema.py` | `8092fb2390e8f2ada6bfd52b5f2db1ec68403720fe88a7d1221ec4932df8d497` | `9471333e0ab7df64fa135b2587b289059ca935fd45b53e4cc81d173ab931eb9a` | #93 契约/帮助兼容的必要字节变化，原测试分母不变（见首票） |
+| `a1_scope.py` | `tests/test_offline_evidence.py` | `17224fa2be8f2463c6066d47e0f29153b1490d203b068654b1ed0a44ce531333` | `843308e18b62b0115ba149fc8ad6db1db15a5d01679086e91802b5f153dc5d49` | #93 契约/帮助兼容的必要字节变化，原测试分母不变（见首票） |
+| `a2_full_scope.py`, `a4_scope.py` | `tests/test_verification_compatibility.py` | `b8d1938d353bb7799c8cca6914da9b55d07c9455ca91c7f9eaf1e4a9e5841ebc` | `77ddd42b829b2ea9c4cbff486ca54da3d40c9eefc3e27b4682e560841cd7b17d` | #99 继续逐字比较旧 transcript，另剔除新增 A9 输出并更新总数 |
+| `a2_full_scope.py`, `a4_scope.py` | `tests/test_verification_run.py` | `fa672e5f2b138a5a4821412aad6053a2dab5d128af4bbd7cccaeedc562a71145` | `65196031de305c040b73b3f7ae832813e1eb2af12db10b10ffe0493393c9a6ab` | #99 额外合成组场景的产物由13→14，资格语义不变 |
+
+### 独立 A9 固定分母
+
+下列分母按各票结果与本票参数化先人工推导，独立 audit --collect 已逐项一致核对。
+Read 10 模块共399项；A9 5模块共120项，合计519项。旧组各模块独立收集也全部
+等于既有预期，skip/deselect 为0；收集 execution=not_run，不是执行证明。
+本记录只证明登记审阅，最终通过仍须本次完整入口、真实回执和可信终态。
+
+| A9 模块 | 固定预期 | 独立核对 |
+| --- | --- | --- |
+| `tests/test_read_contract.py` | 60 | 60 |
+| `tests/test_read_context.py` | 60 | 60 |
+| `tests/test_read_validation.py` | 76 | 76 |
+| `tests/test_read_numbers.py` | 57 | 57 |
+| `tests/test_read_privacy.py` | 3 | 3 |
+| `tests/test_read_restricted.py` | 56 | 56 |
+| `tests/test_read_reduce.py` | 42 | 42 |
+| `tests/test_read_config.py` | 29 | 29 |
+| `tests/test_read_config_cli.py` | 5 | 5 |
+| `tests/test_read_recovery.py` | 11 | 11 |
+| `tests/test_a9_acceptance.py` | 4 | 4 |
+| `tests/test_a9_integrity.py` | 91 | 91 |
+| `tests/test_a9_entry.py` | 10 | 10 |
+| `tests/test_a9_status.py` | 11 | 11 |
+| `tests/test_a9_scope.py` | 4 | 4 |
+
+本票新增 writer、回执与 .a9 格式、真实前置/字节/计数反例、完整入口 Read 检查
+阻断、发布不可覆盖/中断、终态缺失/篡改和 scope 身份保护。覆盖材料明确映射42故事、
+21决策、20测试面及四评论。当前正常产物十一份主要文件加回执/terminal共十三份JSON；
+A1 四契约、固定六检查和真实 migration a704_screening_retry 保持。
+
+A9 scope 清单保存所有新源码/测试/材料的显式 SHA-256；本台账不记录自身或
+a9_scope.py 的最终 SHA，以避免间接自哈希环。旧证据不覆盖，最终 commit/run_id
+放在未跟踪的运行证据与交付记录，不回写固定文档。真实 Pi/模型、Docling/PDF、
+orig 哈希归属、map 来源链、生产 Read、NAS、校准和完整阶段 A 仍未验证。

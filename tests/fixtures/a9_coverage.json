@@ -1,0 +1,824 @@
+{
+  "capabilities": {
+    "authoritative_output": {
+      "cases": [
+        "tests/test_read_contract.py",
+        "tests/test_read_validation.py"
+      ],
+      "materials": [
+        "src/paper_radar/reading/schema.py",
+        "src/paper_radar/reading/value_types.py"
+      ]
+    },
+    "strict_json_privacy": {
+      "cases": [
+        "tests/test_read_validation.py",
+        "tests/test_read_privacy.py"
+      ],
+      "materials": [
+        "src/paper_radar/reading/parsing.py",
+        "src/paper_radar/reading/errors.py",
+        "tests/test_screening_architecture.py"
+      ]
+    },
+    "immutable_context": {
+      "cases": [
+        "tests/test_read_context.py",
+        "tests/test_read_validation.py"
+      ],
+      "materials": [
+        "src/paper_radar/reading/context.py",
+        "tests/read_support.py"
+      ]
+    },
+    "provenance_replay": {
+      "cases": [
+        "tests/test_read_context.py"
+      ],
+      "materials": [
+        "src/paper_radar/reading/context.py",
+        "docs/contracts/read-validation.md"
+      ]
+    },
+    "numeric_diagnostics": {
+      "cases": [
+        "tests/test_read_numbers.py",
+        "tests/test_read_privacy.py"
+      ],
+      "materials": [
+        "src/paper_radar/reading/numbers.py",
+        "src/paper_radar/reading/result.py",
+        "src/paper_radar/reading/validation.py"
+      ]
+    },
+    "restricted_content": {
+      "cases": [
+        "tests/test_read_restricted.py"
+      ],
+      "materials": [
+        "src/paper_radar/reading/context.py",
+        "src/paper_radar/reading/numbers.py",
+        "src/paper_radar/reading/validation.py"
+      ]
+    },
+    "reduce_scope": {
+      "cases": [
+        "tests/test_read_reduce.py",
+        "tests/test_read_recovery.py"
+      ],
+      "materials": [
+        "src/paper_radar/reading/context.py",
+        "src/paper_radar/reading/validation.py"
+      ]
+    },
+    "frozen_contract": {
+      "cases": [
+        "tests/test_read_contract.py"
+      ],
+      "materials": [
+        "contracts/read/read/v1/schema.json",
+        "contracts/read/read/v1/manifest.json",
+        "examples/contracts/read/read/v1/schema.json",
+        "src/paper_radar/contracts/schema.py"
+      ]
+    },
+    "explicit_configuration": {
+      "cases": [
+        "tests/test_read_config.py",
+        "tests/test_read_config_cli.py"
+      ],
+      "materials": [
+        "src/paper_radar/config/schema.py",
+        "src/paper_radar/config/compile.py",
+        "src/paper_radar/config/service.py",
+        "examples/config/settings-read-ready.yaml"
+      ]
+    },
+    "historical_identity": {
+      "cases": [
+        "tests/test_read_config.py",
+        "tests/test_read_recovery.py"
+      ],
+      "materials": [
+        "src/paper_radar/config/projections.py",
+        "src/paper_radar/config/diff.py",
+        "src/paper_radar/config/service.py"
+      ]
+    },
+    "isolated_recovery": {
+      "cases": [
+        "tests/test_read_recovery.py"
+      ],
+      "materials": [
+        "tests/read_recovery_worker.py",
+        "tests/read_recovery_support.py",
+        "src/paper_radar/backup/restore.py",
+        "src/paper_radar/storage/artifacts.py"
+      ]
+    },
+    "same_run_acceptance": {
+      "cases": [
+        "tests/test_a9_acceptance.py",
+        "tests/test_a9_integrity.py",
+        "tests/test_a9_entry.py",
+        "tests/test_a9_status.py",
+        "tests/test_a9_scope.py"
+      ],
+      "materials": [
+        "scripts/a9_acceptance.py",
+        "scripts/a2_test_receipt.py",
+        "scripts/verification_status.py",
+        "docs/verification/a9-scope-review.md"
+      ]
+    }
+  },
+  "stories": [
+    {
+      "number": 1,
+      "issues": [
+        99
+      ],
+      "capability": "same_run_acceptance",
+      "status": "implemented"
+    },
+    {
+      "number": 2,
+      "issues": [
+        93
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 3,
+      "issues": [
+        93
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 4,
+      "issues": [
+        93
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 5,
+      "issues": [
+        94
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 6,
+      "issues": [
+        94
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 7,
+      "issues": [
+        94,
+        95,
+        96
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 8,
+      "issues": [
+        94
+      ],
+      "capability": "strict_json_privacy",
+      "status": "implemented"
+    },
+    {
+      "number": 9,
+      "issues": [
+        93,
+        94
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 10,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 11,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 12,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 13,
+      "issues": [
+        94
+      ],
+      "capability": "immutable_context",
+      "status": "implemented"
+    },
+    {
+      "number": 14,
+      "issues": [
+        94
+      ],
+      "capability": "immutable_context",
+      "status": "implemented"
+    },
+    {
+      "number": 15,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 16,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 17,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 18,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 19,
+      "issues": [
+        94,
+        95
+      ],
+      "capability": "restricted_content",
+      "status": "implemented"
+    },
+    {
+      "number": 20,
+      "issues": [
+        95
+      ],
+      "capability": "restricted_content",
+      "status": "implemented"
+    },
+    {
+      "number": 21,
+      "issues": [
+        93,
+        95
+      ],
+      "capability": "restricted_content",
+      "status": "implemented"
+    },
+    {
+      "number": 22,
+      "issues": [
+        96
+      ],
+      "capability": "reduce_scope",
+      "status": "implemented"
+    },
+    {
+      "number": 23,
+      "issues": [
+        96
+      ],
+      "capability": "reduce_scope",
+      "status": "implemented"
+    },
+    {
+      "number": 24,
+      "issues": [
+        94
+      ],
+      "capability": "numeric_diagnostics",
+      "status": "implemented"
+    },
+    {
+      "number": 25,
+      "issues": [
+        94
+      ],
+      "capability": "numeric_diagnostics",
+      "status": "implemented"
+    },
+    {
+      "number": 26,
+      "issues": [
+        94
+      ],
+      "capability": "numeric_diagnostics",
+      "status": "implemented"
+    },
+    {
+      "number": 27,
+      "issues": [
+        94
+      ],
+      "capability": "numeric_diagnostics",
+      "status": "implemented"
+    },
+    {
+      "number": 28,
+      "issues": [
+        94
+      ],
+      "capability": "numeric_diagnostics",
+      "status": "implemented"
+    },
+    {
+      "number": 29,
+      "issues": [
+        94
+      ],
+      "capability": "immutable_context",
+      "status": "implemented"
+    },
+    {
+      "number": 30,
+      "issues": [
+        93
+      ],
+      "capability": "frozen_contract",
+      "status": "implemented"
+    },
+    {
+      "number": 31,
+      "issues": [
+        93
+      ],
+      "capability": "frozen_contract",
+      "status": "implemented"
+    },
+    {
+      "number": 32,
+      "issues": [
+        93
+      ],
+      "capability": "frozen_contract",
+      "status": "implemented"
+    },
+    {
+      "number": 33,
+      "issues": [
+        97
+      ],
+      "capability": "explicit_configuration",
+      "status": "implemented"
+    },
+    {
+      "number": 34,
+      "issues": [
+        97
+      ],
+      "capability": "explicit_configuration",
+      "status": "implemented"
+    },
+    {
+      "number": 35,
+      "issues": [
+        97,
+        99
+      ],
+      "capability": "historical_identity",
+      "status": "implemented"
+    },
+    {
+      "number": 36,
+      "issues": [
+        97
+      ],
+      "capability": "historical_identity",
+      "status": "implemented"
+    },
+    {
+      "number": 37,
+      "issues": [
+        97
+      ],
+      "capability": "historical_identity",
+      "status": "implemented"
+    },
+    {
+      "number": 38,
+      "issues": [
+        98
+      ],
+      "capability": "isolated_recovery",
+      "status": "implemented"
+    },
+    {
+      "number": 39,
+      "issues": [
+        94,
+        98,
+        99
+      ],
+      "capability": "strict_json_privacy",
+      "status": "implemented"
+    },
+    {
+      "number": 40,
+      "issues": [
+        93,
+        99
+      ],
+      "capability": "same_run_acceptance",
+      "status": "implemented"
+    },
+    {
+      "number": 41,
+      "issues": [
+        99
+      ],
+      "capability": "same_run_acceptance",
+      "status": "implemented"
+    },
+    {
+      "number": 42,
+      "issues": [
+        99
+      ],
+      "capability": "same_run_acceptance",
+      "status": "boundary_documented"
+    }
+  ],
+  "implementation_decisions": [
+    {
+      "number": 1,
+      "issues": [
+        94,
+        95
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 2,
+      "issues": [
+        93
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 3,
+      "issues": [
+        94
+      ],
+      "capability": "strict_json_privacy",
+      "status": "implemented"
+    },
+    {
+      "number": 4,
+      "issues": [
+        94
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 5,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 6,
+      "issues": [
+        94
+      ],
+      "capability": "immutable_context",
+      "status": "implemented"
+    },
+    {
+      "number": 7,
+      "issues": [
+        94
+      ],
+      "capability": "immutable_context",
+      "status": "implemented"
+    },
+    {
+      "number": 8,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 9,
+      "issues": [
+        95
+      ],
+      "capability": "restricted_content",
+      "status": "implemented"
+    },
+    {
+      "number": 10,
+      "issues": [
+        96
+      ],
+      "capability": "reduce_scope",
+      "status": "implemented"
+    },
+    {
+      "number": 11,
+      "issues": [
+        94
+      ],
+      "capability": "numeric_diagnostics",
+      "status": "implemented"
+    },
+    {
+      "number": 12,
+      "issues": [
+        94,
+        95
+      ],
+      "capability": "numeric_diagnostics",
+      "status": "implemented"
+    },
+    {
+      "number": 13,
+      "issues": [
+        93
+      ],
+      "capability": "frozen_contract",
+      "status": "implemented"
+    },
+    {
+      "number": 14,
+      "issues": [
+        97
+      ],
+      "capability": "explicit_configuration",
+      "status": "implemented"
+    },
+    {
+      "number": 15,
+      "issues": [
+        97
+      ],
+      "capability": "explicit_configuration",
+      "status": "implemented"
+    },
+    {
+      "number": 16,
+      "issues": [
+        97
+      ],
+      "capability": "historical_identity",
+      "status": "implemented"
+    },
+    {
+      "number": 17,
+      "issues": [
+        98
+      ],
+      "capability": "isolated_recovery",
+      "status": "implemented"
+    },
+    {
+      "number": 18,
+      "issues": [
+        99
+      ],
+      "capability": "same_run_acceptance",
+      "status": "implemented"
+    },
+    {
+      "number": 19,
+      "issues": [
+        97,
+        98
+      ],
+      "capability": "explicit_configuration",
+      "status": "implemented"
+    },
+    {
+      "number": 20,
+      "issues": [
+        99
+      ],
+      "capability": "same_run_acceptance",
+      "status": "implemented"
+    },
+    {
+      "number": 21,
+      "issues": [
+        99
+      ],
+      "capability": "same_run_acceptance",
+      "status": "implemented"
+    }
+  ],
+  "testing_decisions": [
+    {
+      "number": 1,
+      "issues": [
+        93,
+        94
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 2,
+      "issues": [
+        94
+      ],
+      "capability": "strict_json_privacy",
+      "status": "implemented"
+    },
+    {
+      "number": 3,
+      "issues": [
+        94
+      ],
+      "capability": "authoritative_output",
+      "status": "implemented"
+    },
+    {
+      "number": 4,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 5,
+      "issues": [
+        94
+      ],
+      "capability": "immutable_context",
+      "status": "implemented"
+    },
+    {
+      "number": 6,
+      "issues": [
+        94
+      ],
+      "capability": "immutable_context",
+      "status": "implemented"
+    },
+    {
+      "number": 7,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 8,
+      "issues": [
+        94
+      ],
+      "capability": "provenance_replay",
+      "status": "implemented"
+    },
+    {
+      "number": 9,
+      "issues": [
+        95
+      ],
+      "capability": "restricted_content",
+      "status": "implemented"
+    },
+    {
+      "number": 10,
+      "issues": [
+        96
+      ],
+      "capability": "reduce_scope",
+      "status": "implemented"
+    },
+    {
+      "number": 11,
+      "issues": [
+        94
+      ],
+      "capability": "numeric_diagnostics",
+      "status": "implemented"
+    },
+    {
+      "number": 12,
+      "issues": [
+        94
+      ],
+      "capability": "numeric_diagnostics",
+      "status": "implemented"
+    },
+    {
+      "number": 13,
+      "issues": [
+        94
+      ],
+      "capability": "numeric_diagnostics",
+      "status": "implemented"
+    },
+    {
+      "number": 14,
+      "issues": [
+        94
+      ],
+      "capability": "strict_json_privacy",
+      "status": "implemented"
+    },
+    {
+      "number": 15,
+      "issues": [
+        93
+      ],
+      "capability": "frozen_contract",
+      "status": "implemented"
+    },
+    {
+      "number": 16,
+      "issues": [
+        97
+      ],
+      "capability": "explicit_configuration",
+      "status": "implemented"
+    },
+    {
+      "number": 17,
+      "issues": [
+        97
+      ],
+      "capability": "historical_identity",
+      "status": "implemented"
+    },
+    {
+      "number": 18,
+      "issues": [
+        98
+      ],
+      "capability": "isolated_recovery",
+      "status": "implemented"
+    },
+    {
+      "number": 19,
+      "issues": [
+        97
+      ],
+      "capability": "explicit_configuration",
+      "status": "implemented"
+    },
+    {
+      "number": 20,
+      "issues": [
+        99
+      ],
+      "capability": "same_run_acceptance",
+      "status": "implemented"
+    }
+  ],
+  "comments": [
+    6380859875,
+    6380999899,
+    6381074150,
+    6381118444
+  ]
+}

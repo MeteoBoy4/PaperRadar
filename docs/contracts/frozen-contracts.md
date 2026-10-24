@@ -248,3 +248,8 @@ Schema、规范序列化、清单字段、SHA-256 判据与错误类别，不维
 核验并与本次证据哈希一致、HEAD/工作树/lockfile 在运行前后保持一致，才宣布
 A1 通过。`<run_id>.json` 仍只表示 #12 局部证据；完整结论见同目录的
 `<run_id>.a1.json`，解释见[离线验证证据](../verification/offline-evidence.md)。
+
+
+A9 的独立结论内部另显式调用 `check_frozen_contracts(("read",), "v1", ...)`，记录
+实际 Read schema 哈希并使失败影响完整入口；A1 的四份选择与历史证明范围保持。
+当前可用五份契约，Read 业务接收还须通过[公共证据验证器](read-validation.md)。

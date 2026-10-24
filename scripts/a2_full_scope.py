@@ -130,11 +130,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_verification_run.py",
-        "fa672e5f2b138a5a4821412aad6053a2dab5d128af4bbd7cccaeedc562a71145",
+        "65196031de305c040b73b3f7ae832813e1eb2af12db10b10ffe0493393c9a6ab",
     ),
     (
         "tests/test_verification_compatibility.py",
-        "b8d1938d353bb7799c8cca6914da9b55d07c9455ca91c7f9eaf1e4a9e5841ebc",
+        "77ddd42b829b2ea9c4cbff486ca54da3d40c9eefc3e27b4682e560841cd7b17d",
     ),
     (
         "tests/test_config_material_compatibility.py",
@@ -150,7 +150,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_full_entry.py",
-        "b85f0328bd9d842c29e4f76f0f7b1845b64651cce56a0bb63188214c50ab0584",
+        "170e631f6d67bbb1d904d61ecc6a712b1884e1d8407d22dc70458c95485fa16b",
     ),
     (
         "tests/test_a2_full_examples.py",
@@ -294,7 +294,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_config_read_validation.py",
-        "e76a9b90effb5b516531c370b628dea5da9c238c05d3b787bbb6e1b2a3378035",
+        "fa9a338476fca43b7b95ff369091064c784394eced54d7841989600234bb61ef",
     ),
     (
         "tests/test_config_reuse.py",
@@ -372,7 +372,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a1_scope.py",
-        "e71257263bed5859e4277c8b0ff399c4986c440e8212c8d1a636c559fcc7d428",
+        "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
     ),
     (
         "scripts/a2_acceptance.py",
@@ -380,23 +380,23 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "1240d6ffa62ebc9f7234857e1e9f5bcb709091cd0edc0a6783b40306d54ecb16",
+        "b90a29fb1b645c47960f7f1ca9db816495225a68d1b6ac60a6e43096f0d40840",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "c31cc8385293e915a38419a89886b114be6200b2a43b84935235c1a72d20c401",
+        "795596859f24d1241c589afd3d28902cbc148724b0aaa25fdbfafeaec4bd1593",
     ),
     (
         "scripts/check-offline",
-        "aac450ba4bd00f30067dca0ae2ec06129140dae7eebce360b5055e4571f56c84",
+        "7da9535adf65a7ae809242d556d40412f65851602d6a4cde84426038ec364382",
     ),
     (
         "scripts/offline_evidence.py",
-        "7c2585d4aec8416b496f6b2618e14a81a670b03806b10fc7fb3e48f3c7d08497",
+        "3c53fd4e272ee346da23b72cd977180b78aeaa55a027064a97f5540ea24d9a28",
     ),
     (
         "src/paper_radar/cli.py",
-        "c444c4e16c98e8615c2b5268f0f4288144c7aff3a3890f072bf503e66a55a524",
+        "b5bf7b9f643fc84dcccf1227af608d8602deec167f5aeedff7efdd02d536cb66",
     ),
     (
         "src/paper_radar/config/__init__.py",
@@ -412,15 +412,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/cli.py",
-        "69f06e69b312af4c4d3ab07652789e20e17bf0d07ee73351ad0d61c2b6872234",
+        "1bbec637e1017146c595f3aba6bf6b616e067bb20df48581b3d1ac28558c986f",
     ),
     (
         "src/paper_radar/config/compile.py",
-        "61d2537d0066dd8ee0ab1cd7aba0a2be858f69627feae420fbe0c18e801b30ee",
+        "58cc5454dfe5e662f0e7eef0f884c2b562891f9ae7b0a709fbf78984eb81654e",
     ),
     (
         "src/paper_radar/config/diff.py",
-        "920553c48bc661893a6b3a3c23c0df0e051888f6161c010f98dced9d1664da30",
+        "add553638b26d691e1f8ca7fb69261347a5dfff00b5b34288cf8f866f0810b5d",
     ),
     (
         "src/paper_radar/config/errors.py",
@@ -468,7 +468,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/schema.py",
-        "31d98d427c1c14922f08d455324a87bd1674749442d80edc4efdd94e29a6417c",
+        "ef445b8335f8c7b9828921d43a6cf116168cb7f2aea06ac1b6f1985f33570bc4",
     ),
     (
         "src/paper_radar/config/material_assembly.py",
@@ -476,7 +476,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/config/service.py",
-        "c9b1e320b42fd840ff091829bcccf8e62e413f006899e6618bd57417e23b1791",
+        "3f9732e076fe69e3e247d50bf682c519c4f9f6ccd5deb4398908d33a952ac103",
     ),
     (
         "src/paper_radar/config/snapshot_cli.py",

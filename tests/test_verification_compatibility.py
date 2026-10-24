@@ -76,11 +76,11 @@ sys.exit(main())
     stdout = result.stdout.replace(str(output).encode(), b"<OUTPUT>").replace(
         full["run_id"].encode(), b"<RUN>"
     )
-    # 历史字节仍逐字比较; A8 是本次新增输出,其结论与终态另有独立测试。
+    # 历史 transcript 逐字比较; A8/A9 新输出与终态另有独立测试。
     historical_stdout = b"".join(
         line
         for line in stdout.splitlines(keepends=True)
-        if not line.startswith("[A8 验收]".encode())
+        if not line.startswith(("[A8 验收]".encode(), "[A9 验收]".encode()))
     )
     assert historical_stdout == expected["stdout"].encode()
     assert result.stderr == expected["stderr"].encode()
@@ -89,7 +89,7 @@ sys.exit(main())
         5 if case in {"failed", "interrupted"} else 6
     )
     assert len(list(output.glob("*.json"))) == (
-        11 if case in {"failed", "interrupted"} else 12
+        12 if case in {"failed", "interrupted"} else 13
     )
     assert not list(output.glob("*.tmp"))
     legacy = json.loads(next(output.glob("*.a2.json")).read_bytes())

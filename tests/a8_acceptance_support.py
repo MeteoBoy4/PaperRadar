@@ -31,6 +31,7 @@ Inputs = tuple[
 
 def passed_receipt(run_id: str) -> dict[str, Any]:
     from scripts.a8_scope import REQUIRED_TEST_CASE_COUNTS
+    from scripts.a9_scope import REQUIRED_TEST_CASE_COUNTS as A9_COUNTS
 
     payload = a7_acceptance_support.passed_receipt(run_id)
     payload["modules"].update(
@@ -43,7 +44,7 @@ def passed_receipt(run_id: str) -> dict[str, Any]:
                 deselected=0,
                 incomplete=0,
             )
-            for name, count in REQUIRED_TEST_CASE_COUNTS.items()
+            for name, count in {**REQUIRED_TEST_CASE_COUNTS, **A9_COUNTS}.items()
         }
     )
     return payload
