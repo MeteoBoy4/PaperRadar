@@ -1,5 +1,7 @@
 """同一产品包装器的实际管道背压、退出与整组回收。"""
 
+import os
+import select
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -11,7 +13,7 @@ from paper_radar.llm.rpc_types import RpcCandidate, RpcFailure, RpcLimits, RpcRe
 from paper_radar.screening_tasks import ScreeningTasks, SuccessReceipt
 from tests.a8_call_support import archive, prepare_call, request_for
 from tests.a8_pipe_support import fixture_factory
-from tests.a8_rpc_support import BOUNDARY_RAW
+from tests.a8_rpc_support import BOUNDARY_RAW, FakeClock
 from tests.a8_rpc_task_support import run_attempt
 
 FAST = RpcLimits(initialization=0.5, total=0.5, close=0.3, terminate=0.5, poll=0.01)
@@ -113,3 +115,109 @@ def test_real_group_reclaims_grandchild_even_after_leader_exit(
         else:
             assert isinstance(result, RpcCandidate)
         factory.assert_reclaimed()
+
+
+@pytest.mark.parametrize("interruption", [KeyboardInterrupt(), SystemExit(42)])
+@pytest.mark.parametrize("phase", ["killpg", "wait", "pidfd_close", "killpg_deadline"])
+def test_real_termination_interruption_still_reclaims_closed_pipe_grandchild(
+    description: CallDescription,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    interruption: BaseException,
+    phase: str,
+) -> None:
+    clock = FakeClock()
+    with fixture_factory(tmp_path, "grandchild_closed", clock=clock) as factory:
+        session = factory(description)
+        killpg = os.killpg
+        assert factory.child is not None
+        wait = factory.child.wait
+        close = os.close
+        injected = False
+        waited = False
+
+        def interrupted_killpg(pid: int, sig: int) -> None:
+            nonlocal injected
+            if phase in {"killpg", "killpg_deadline"} and not injected:
+                injected = True
+                if phase == "killpg_deadline":
+                    clock.now = 0.5
+                raise interruption
+            killpg(pid, sig)
+
+        def interrupted_wait(timeout: float | None = None) -> int:
+            nonlocal injected, waited
+            if phase == "wait" and not injected:
+                injected = True
+                raise interruption
+            if phase == "killpg_deadline":
+                assert timeout == 0.0
+                waited = True
+            result = wait(timeout)
+            waited = True
+            return result
+
+        def interrupted_close(fd: int) -> None:
+            nonlocal injected
+            if (
+                phase == "pidfd_close"
+                and not injected
+                and os.readlink(f"/proc/self/fd/{fd}") == "anon_inode:[pidfd]"
+            ):
+                injected = True
+                raise interruption
+            close(fd)
+
+        with monkeypatch.context() as patch:
+            patch.setattr(os, "killpg", interrupted_killpg)
+            patch.setattr(os, "close", interrupted_close)
+            patch.setattr(factory.child, "wait", interrupted_wait)
+            with pytest.raises(type(interruption)) as caught:
+                session.terminate(0.5)
+            assert caught.value is interruption
+            assert injected and waited
+            # 等待观测pidfd只用于测试证据,产品在耗尽预算时只能wait(timeout=0)。
+            assert all(select.select([fd], [], [], 1)[0] for fd in factory.pidfds)
+            # pidfd/关闭断言在fixture兜底之前执行,不靠重调terminate制造通过。
+            factory.assert_reclaimed()
+        if phase != "killpg_deadline":
+            session.terminate(0.5)
+
+
+@pytest.mark.parametrize("interruption", [KeyboardInterrupt(), SystemExit(42)])
+def test_zero_wait_budget_still_kills_closes_and_attempts_direct_child_wait(
+    description: CallDescription,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    interruption: BaseException,
+) -> None:
+    with fixture_factory(tmp_path, "grandchild_closed") as factory:
+        session = factory(description)
+        killpg = os.killpg
+        injected = False
+        assert factory.child is not None
+        wait = factory.child.wait
+        wait_attempted = False
+
+        def interrupted_killpg(pid: int, sig: int) -> None:
+            nonlocal injected
+            if not injected:
+                injected = True
+                raise interruption
+            killpg(pid, sig)
+
+        def immediate_wait(timeout: float | None = None) -> int:
+            nonlocal wait_attempted
+            assert timeout == 0.0
+            wait_attempted = True
+            return wait(timeout)
+
+        with monkeypatch.context() as patch:
+            patch.setattr(os, "killpg", interrupted_killpg)
+            patch.setattr(factory.child, "wait", immediate_wait)
+            with pytest.raises(type(interruption)) as caught:
+                session.terminate(0.0)
+            assert caught.value is interruption
+            assert wait_attempted
+            assert all(select.select([fd], [], [], 1)[0] for fd in factory.pidfds)
+            factory.assert_reclaimed()

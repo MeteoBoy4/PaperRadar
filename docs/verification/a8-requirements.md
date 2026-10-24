@@ -166,8 +166,8 @@ A7 历史 not_assessed 保留。A8 自己的 not_assessed 沿用 A7 词汇并补
 | test_a8_rpc_preflight.py | 2个单例 | 2 |
 | test_a8_rpc_candidates.py | 2×2+3+6+9+22+9+10+9+6+10+6+7+1+5×7+5+5×6+1+1+1+1+7+3×4+3+2+5+2×7 | 219 |
 | test_a8_rpc_value.py | 2+7+7+3+1+1+1 | 22 |
-| test_a8_rpc_lifecycle.py | 1+1+5+1+9+1+2+2+4+1+3+1+3+1+1 | 36 |
-| test_a8_rpc_pipes.py | 1+1+1+1+2+1+2 | 9 |
+| test_a8_rpc_lifecycle.py | 2+1+13+1+9+1+2+2×2+4+1+3+1+3+1+1+2×3×2+2×4 | 67 |
+| test_a8_rpc_pipes.py | 1+1+1+1+2+1+2+2×4+2 | 19 |
 | test_a8_rpc_recovery.py | 5+3+2+1+4+1 | 16 |
 | test_a8_rpc_history.py | 2+1+1+1+1 | 6 |
 | test_a8_rpc_backup.py | 1个非空完整恢复 | 1 |
@@ -177,7 +177,7 @@ A7 历史 not_assessed 保留。A8 自己的 not_assessed 沿用 A7 词汇并补
 | test_a8_status.py | 1格式支持+9终态/字节/身份 | 10 |
 | test_a8_test_receipt.py | passed/skipped/deselected/collect_only/failed/incomplete | 6 |
 | test_a8_formats.py | 3个生产格式来源×3种漂移/伪类型 | 9 |
-| 合计 | 功能400+验收172 | 572 |
+| 合计 | 功能441+验收172 | 613 |
 
 ### User Stories 逐项落点
 
@@ -278,5 +278,38 @@ run_id写进本台账造成自失效。scope不自绑定，没有为了消除cou
 
 全部功能/文档/测试先稳定，再按order更新受触及文件的显式哈希及下游scope；最后
 固定A8的llm源码、支撑、向量/来源/能力材料、公共文档、20个测试模块和六前置scope。
-collection仅比对人工572项与旧范围；不运行真实Pi/Node。最终完整门禁证据须由稳定
+collection仅比对人工613项与旧范围；不运行真实Pi/Node。最终完整门禁证据须由稳定
 integration提交产生，任何审查修复触及绑定字节时再次按DAG重绑；旧失败/中断证据保留。
+
+
+## 双轴审阅修复（#85/#89/#91）
+
+Spec P1：公共 run_call 在成功、受控失败、已有中断三种路径中，清理自身的
+KeyboardInterrupt/SystemExit 均先完成有界清理，再保留最初中断对象上抛；已有通信
+中断不能被清理中断替换。真实 grandchild_closed 夹具分别在 killpg 前、直接 child wait
+和 pidfd 关闭时注入两种中断，以 pidfd 就绪、直接 wait 完成及全部句柄关闭证明回收；
+所有断言均先于测试兜底。PipeSession 保留首次绝对期限，清理中断每步至多补做一次，
+未完成不能标 finished。A7 在清理中断后仍 running、无失败结算，原租约 601 秒后仅由
+既有 reclaim 形成 outcome_unknown；默认小于 600 秒的预算关系不变。
+
+Spec P2：实际重读用户提供 Pi 1.4.0 docs/rpc-commands.md:109–127，仅阅读不运行。
+clear_queue 的 steering/followUp 必须同时存在且均为字符串数组。缺 data、空对象、
+分别缺字段、字段非数组、数组含非字符串共8种畸形响应不发 abort，立即有界终止并保持
+cancelled；合法空数组继续 abort，合法文本立即丢弃。取消握手仍可丢弃迟到事件，
+不改变正常 settled 后禁止新命令的规则。
+
+Standards 局部建议：rpc_messages 将事件位置改为私有具名状态，并把状态与预期事件
+显式关联；不增加新框架，不改变候选矩阵行为，不为状态命名增加镜像测试。
+
+补充清理入口与期限边界：EOF 后外部时钟第1–4次采样分别注入中断，不能因 helper
+已开始而跳过 finally；成功、受控失败、已有中断三路径分别覆盖剩余等待与恰耗尽预算。
+真实进程同时覆盖 killpg 中断恰耗尽首次期限与首次 terminate(0)，仍立即 kill/close，
+直接 child wait 只传0。测试在产品返回后等待 pidfd 就绪仅为退出证据，不扩产品期限。
+
+人工新增分母：lifecycle 原36 + clear_queue畸形8 + 合法空队列1 + 公共清理中断
+2种×3路径×2耗时12 + A7清理中断2 + EOF后时钟2种×4采样8 = 67；pipes 原9 +
+2种中断×4个OS/期限边界8 + 首次零等待2 = 19。
+新增41项，功能441、验收172、固定总数613。此表先按测试定义推导，后续 collection
+仅核对。scope 审计的修复前闭包仅 A8；按实际 DAG 更新必要哈希，不改 A1–A7 的
+能力/分母/head。完整 check-offline 仍由主agent在合并并复核后的稳定 integration 执行，
+不在本台账写入最终 run_id；真实 Pi/Node、模型及 live 行为均未执行。

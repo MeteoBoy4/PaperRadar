@@ -6,6 +6,7 @@ import os
 import selectors
 import signal
 import subprocess
+import sys
 from contextlib import suppress
 from time import monotonic
 
@@ -39,6 +40,7 @@ class PipeSession:
         self._stdout = process.stdout
         self._stderr = process.stderr
         self._finished = False
+        self._termination_deadline: float | None = None
         self._stdout_eof = False
         self._stderr_eof = False
         try:
@@ -117,32 +119,56 @@ class PipeSession:
         """无论 leader 是否退出都清整组,有界等待 pidfd 并回收直接子进程。"""
         if self._finished:
             return
-        if not math.isfinite(timeout) or timeout <= 0:
+        if not math.isfinite(timeout) or timeout < 0:
             raise RpcProblem(RpcReason.CLOSE_TIMEOUT)
-        deadline = self._clock() + min(timeout, DEFAULT_LIMITS.terminate)
-        try:
+        if self._termination_deadline is None:
+            self._termination_deadline = self._clock() + min(
+                timeout, DEFAULT_LIMITS.terminate
+            )
+        deadline = self._termination_deadline
+        interruption: KeyboardInterrupt | SystemExit | None = None
+        failure: Exception | None = None
+        incomplete = False
+
+        def kill_group() -> None:
             with suppress(ProcessLookupError):
                 os.killpg(self._process.pid, signal.SIGKILL)
-            self.close_stdin()
-            # EOF/leader 退出无法观察已主动关闭 pipe 的孙进程。Linux pidfd 证明
-            # 组内进程真正退出,也避免用 kill(pid,0) 把 zombie 当作存活。
-            try:
-                self._wait_group(deadline)
-            except BaseException:
-                # 枚举/等待组失败也要尝试回收已被 kill 的直接 child,不覆盖原异常。
-                with suppress(Exception):
-                    self._process.wait(timeout=max(0.0, deadline - self._clock()))
-                raise
-            try:
-                self._process.wait(timeout=max(0.0, deadline - self._clock()))
-            except subprocess.TimeoutExpired:
-                raise RpcProblem(RpcReason.CLOSE_TIMEOUT) from None
-        finally:
-            self._finished = True
-            self._selector.close()
-            for stream in (self._stdin, self._stdout, self._stderr):
-                if stream is not None:
-                    stream.close()
+
+        # 每步至多补做一次;中断不跳过后续组等待、直接 child wait 或句柄关闭。
+        # 首次期限保留在会话上,外部重调 terminate 也不能重新取得等待预算。
+        operations = (
+            kill_group,
+            self.close_stdin,
+            lambda: self._wait_group(deadline),
+            lambda: self._process.wait(timeout=max(0.0, deadline - self._clock())),
+            self._selector.close,
+            *(
+                stream.close
+                for stream in (self._stdin, self._stdout, self._stderr)
+                if stream is not None
+            ),
+        )
+        for operation in operations:
+            for attempt in range(2):
+                try:
+                    operation()
+                    break
+                except (KeyboardInterrupt, SystemExit) as error:
+                    if interruption is None:
+                        interruption = error
+                    if attempt == 1:
+                        incomplete = True
+                except Exception as error:
+                    failure = error
+                    incomplete = True
+                    break
+        self._finished = not incomplete
+        if interruption is not None:
+            raise interruption
+        if isinstance(failure, subprocess.TimeoutExpired):
+            raise RpcProblem(RpcReason.CLOSE_TIMEOUT) from None
+        if failure is not None:
+            raise failure
 
     def _wait_group(self, deadline: float) -> None:
         pidfds: list[int] = []
@@ -172,5 +198,23 @@ class PipeSession:
                     for key, _mask in exited.select(left):
                         exited.unregister(key.fd)
         finally:
+            original = sys.exception()
+            interruption: KeyboardInterrupt | SystemExit | None = None
+            failure: Exception | None = None
             for fd in pidfds:
-                os.close(fd)
+                for _attempt in range(2):
+                    try:
+                        os.close(fd)
+                        break
+                    except (KeyboardInterrupt, SystemExit) as error:
+                        if interruption is None:
+                            interruption = error
+                    except Exception as error:
+                        failure = error
+                        break
+            if interruption is not None and not isinstance(
+                original, (KeyboardInterrupt, SystemExit)
+            ):
+                raise interruption
+            if failure is not None and original is None:
+                raise failure
