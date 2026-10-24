@@ -2,6 +2,7 @@
 
 from paper_radar.reading.context import (
     EVIDENCE_RULE_VERSION,
+    AllowedEvidence,
     Evidence,
     ExtractionIdentity,
     PageFact,
@@ -31,6 +32,7 @@ __all__ = [
     "EVIDENCE_RULE_VERSION",
     "NUMERIC_RULE_VERSION",
     "VALUE_TYPE_DESCRIPTIONS_ZH",
+    "AllowedEvidence",
     "Evidence",
     "EvidenceRef",
     "ExtractionIdentity",
