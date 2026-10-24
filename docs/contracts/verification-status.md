@@ -113,12 +113,25 @@ A4 继续为整体 required。读者保留上述历史组和格式支持，不�
 applicability=same。查询仍只读，同次终态不能由历史成功替代。
 
 
-## A8 格式与当前输出范围
+## A8 格式与历史输出范围
 
 状态读者支持 `.a8.json` 格式1，同时保留 A1–A7 已支持格式（完整 A2 为2）。
-当前登记的十份主要文件加实际 pytest 回执、terminal 共十二份 JSON；terminal 原样绑定
+A8 登记时的十份主要文件加实际 pytest 回执、terminal 共十二份 JSON；terminal 原样绑定
 A8 的 suffix、required、格式、run_id、原始 SHA256。A8 必需且直接前置为同次 A1、完整
 A2、A3、A5、A6、A7；A4 仍决定总门禁。A8 仅证明离线协议与 test 任务接线，
 rpc_verified/live_verified/stage_a_verified 恒为 false。旧终态按其冻结组清单解释，
 不把历史缺少 A8 当成当前 A8 通过；未知格式、缺组、字节替换、缺终态或中断均不能
 得到 passed/verified，适用性仍按代码/工作树/lockfile 与当前身份独立判断。
+
+
+## A9 格式与当前输出范围
+
+状态读者支持 `.a9.json` 格式 1，并保留 A1–A8 历史格式。当前十一份主要文件加
+实际 pytest 回执与 terminal 共十三份 JSON。terminal 的 A9 required 项绑定同次
+文件名、原字节哈希、格式、代码/工作树/lockfile 身份与 a9_verified；缺失、篡改、
+错误run或不支持格式都不能返回 passed/verified。
+
+A9 自身只直接核对同次 A1、完整 A2、A3，不继承 A4–A8 通过状态；整体终态仍要求
+所有 required 组通过。旧terminal不自动补上A9，历史通过保持历史适用范围。
+`applicability=same` 仍独立要求当前代码、完整工作树及lockfile与运行身份一致，
+运行中或缺可信终态时不能以pytest回执宣称成功。

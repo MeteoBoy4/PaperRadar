@@ -10,11 +10,12 @@
 在 `<run_id>.a4.json` 生成 #36/#45 独立 A4 结论，
 在 `<run_id>.a5.json` 生成 #47/#54 独立 A5 结论，在 `<run_id>.a6.json` 生成 #67/#75 独立 A6 结论，
 在 `<run_id>.a7.json` 生成 #76/#84 独立 A7 结论，
-在 `<run_id>.a8.json` 生成 #85/#91 独立 A8 离线协议/任务接线结论；终端打印十个主要路径及结果。测试另外生成同次
+在 `<run_id>.a8.json` 生成 #85/#91 独立 A8 离线协议/任务接线结论，
+在 `<run_id>.a9.json` 生成 #92/#99 独立 Read 离线校验/配置/恢复结论；终端打印十一个主要路径及结果。测试另外生成同次
 `<run_id>.pytest.json` 脱敏执行回执。控制方在全部组发布后，最后写出
-`<run_id>.terminal.json` 终态记录并打印路径，正常成功共十二份 JSON。
+`<run_id>.terminal.json` 终态记录并打印路径，正常成功共十三份 JSON。
 整套检查仅执行一次，各文件
-共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3、A4、A5、A6、A7 与 A8 均通过时入口返回 0，
+共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3、A4、A5、A6、A7、A8 与 A9 均通过时入口返回 0，
 A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时数据库，不操作用户数据库。
 重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
@@ -151,6 +152,7 @@ HEAD、工作树与 lockfile 身份算法。`scripts/offline_evidence.py` 继续
 | A6 | `.a6.json` | 同次 A1、完整 A2、A3、A5 | 是 |
 | A7 | `.a7.json` | 同次 A1、完整 A2、A3、A5、A6 | 是 |
 | A8 | `.a8.json` | 同次 A1、完整 A2、A3、A5、A6、A7 | 是 |
+| A9 | `.a9.json` | 同次 A1、完整 A2、A3 | 是 |
 
 完整 A2 另由自己的判据验证同次 pytest 回执、证据和已发布 A1，并在发布前再次
 核对这些文件的实际字节绑定；它没有 A2-01 通过依赖。各组的原因、格式、严格性与
@@ -781,7 +783,7 @@ stage_a、live、automatic_fulltext_reading。test 输出不作为生产筛选�
 
 ## A8 独立离线协议与任务接线结论（#85/#91）
 
-当前共十份主要文件，另有实际 pytest 回执和控制方 terminal，共十二份 JSON。
+A8 注册时共十份主要文件，另有实际 pytest 回执和控制方 terminal，共十二份 JSON。
 A8 直接核对同次 A1、完整 A2、A3、A5、A6、A7 的范围、格式、身份、实际原始字节
 链接与通过资格；A4 保持总门禁必需，其安装检查不证明 RPC。a8_scope 固定 ISSUE=85、
 SUFFIX=.a8.json、格式1、13项能力、源码/支撑/材料 SHA256 及逐模块人工用例分母，
@@ -799,3 +801,35 @@ A8 只证明离线合成协议及 test 任务接线；基础证据 #12 的 llm n
 历史含义均保留。rpc_verified、live_verified、stage_a_verified 仍为 false。
 生产前须逐编号核实 DERIVED-01…11、系统指令/cwd、参数映射、凭据预检、会话资源权限
 隔离、provider retry/cacheWarming和全部自动网络活动；详见 pi-rpc Contract，不运行 spike。
+
+
+## A9 独立 Read 离线结论（#92/#99）
+
+当前完整入口生成十一份主要证据/结论，加实际 pytest 回执和可信 terminal 共十三份
+JSON；六项基础检查与 A1 四份契约的历史选择不变。A9 的 required 登记直接依赖
+同次 A1、完整 A2、A3；这三组分别提供契约、配置和恢复底座。A4–A8 继续决定总门禁，
+不作为 A9 通过资格的直接前置，也不能以其历史成功替代 Read 证明。
+
+writer 在结论内显式调用既有 `check_frozen_contracts(("read",), "v1", ...)`。根契约
+缺失、漂移或配对损坏会产生 read_contract_invalid，A9 及完整入口失败；磁盘存在时
+记录实际 schema SHA-256，包括失败检查的当前字节哈希。该检查不新增第七个计划 id。
+A9 记录真实迁移 revision a704_screening_retry、依赖版本、生产证据/数值规则身份、
+快照/备份格式、固定源码/支撑/材料及逐模块整数分母。
+
+结论的 `story_coverage` 指向 Read Contract 的 42 条故事并逐项包含 number、issues、
+capability、status；`coverage_review` 同时记录21条 Implementation Decisions、20个
+Testing Decisions 和四条评论指针。`tests/fixtures/a9_coverage.json` 是显式固定的
+人工映射，writer 校验行数、状态与文档编号；`capability_evidence` 连接固定测试与材料。
+缺模块、少执行、skip/deselect/collect-only、伪整数、旧run、错误前置、身份/字节
+漂移和中断均不能通过。原始内容、Prompt、Profile、响应或数值字面量不写验收 JSON。
+
+A9 scope 固定实际 reading 全包、配置/恢复消费者、新测试、worker、scanner及契约
+材料，不哈希自身。该例外已获所有者批准；正常登记审计、self_reference/cycle拒绝和
+完整工作树前后身份核对继续执行。scope 链按真实 DAG（含 A4→A5）一次重绑，前后
+哈希、分母和原因见 [scope 审阅台账](a9-scope-review.md)。collect 只核对已审阅的
+预期，不自动回填分母；最终 run_id 保留于未跟踪证据，不回写受固定材料。
+
+`a9_verified=true` 仅证明给定合成上下文的离线 Read 校验、显式配置与隔离恢复。
+stage_a_verified、live_verified、rpc_verified 恒 false。orig 哈希覆盖、真实 PDF/
+正文质量、四刊 fixture、语义蕴含、map 来源链、Read StageInput/任务/预算、生产
+Pi/模型、校准/NAS及完整阶段 A 仍未验证，完整范围见 [Read Contract](../contracts/read-validation.md)。

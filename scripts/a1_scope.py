@@ -23,11 +23,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_contract_schema.py",
-        "8092fb2390e8f2ada6bfd52b5f2db1ec68403720fe88a7d1221ec4932df8d497",
+        "9471333e0ab7df64fa135b2587b289059ca935fd45b53e4cc81d173ab931eb9a",
     ),
     (
         "tests/test_contract_export.py",
-        "9ddc4d25be516c7af133964cc9603ade8f262d3d5684a302250acf19a3261bc3",
+        "49dca04977690856bb2e8a14b9acc063d54e3e26182174b6c2164ac7f0e41f9f",
     ),
     (
         "tests/test_contract_check.py",
@@ -35,11 +35,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_contract_cli.py",
-        "948e62d98e08410fe19fce762366f14f36eef2c812714f18ae792e8a4ddc93c6",
+        "84b86b8017b4cc94da95311409257fd1fc4ff575f840e3eef90c546893d59eaf",
     ),
     (
         "tests/test_cli_help.py",
-        "966176a77cc60467198f115468b0dfe95f17e5ea3d09365f5b02faeaaea1d8cd",
+        "c03c70471575a50a82ae68bca7fea6c5bf3f885921fbac626403f2ce133e4ff4",
     ),
     (
         "tests/test_screening_architecture.py",
@@ -47,7 +47,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_offline_evidence.py",
-        "17224fa2be8f2463c6066d47e0f29153b1490d203b068654b1ed0a44ce531333",
+        "843308e18b62b0115ba149fc8ad6db1db15a5d01679086e91802b5f153dc5d49",
     ),
     (
         "tests/test_a1_acceptance.py",
