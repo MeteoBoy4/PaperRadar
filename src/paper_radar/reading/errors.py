@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from paper_radar.reading.result import ReadDiagnostic
+from paper_radar.reading.diagnostics import ReadDiagnostic
 
 
 class ReadErrorCategory(StrEnum):

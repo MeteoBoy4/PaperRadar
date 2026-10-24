@@ -6,7 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from paper_radar.reading import ReadContextError, ReadOutputError, validate_read_output
+from paper_radar.reading import (
+    ReadContextError,
+    ReadErrorCategory,
+    ReadOutputError,
+    validate_read_output,
+)
 from tests.read_support import candidate, context_for
 
 
@@ -66,10 +71,16 @@ def test_representations_and_error_chains_do_not_expose_content(
         assert secret not in str(value)
     with pytest.raises(ReadOutputError) as error:
         validate_read_output(candidate(**{secret: secret}), context)
+    assert [(issue.location, issue.category) for issue in error.value.issues] == [
+        ("$.<额外字段>", ReadErrorCategory.EXTRA_FIELD)
+    ]
     assert secret not in str(error.value)
     assert error.value.__cause__ is error.value.__context__ is None
     with pytest.raises(ReadContextError) as context_error:
         context_for(source_blocks=[secret])
+    assert [
+        (issue.location, issue.category) for issue in context_error.value.issues
+    ] == [("$.source_blocks[0]", ReadErrorCategory.INVALID_SOURCE)]
     assert secret not in str(context_error.value)
     assert context_error.value.__cause__ is context_error.value.__context__ is None
     assert capsys.readouterr() == ("", "")

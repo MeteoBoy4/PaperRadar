@@ -51,7 +51,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_read_contract.py": 60,
     "tests/test_read_context.py": 60,
     "tests/test_read_validation.py": 76,
-    "tests/test_read_numbers.py": 57,
+    "tests/test_read_numbers.py": 79,
     "tests/test_read_privacy.py": 3,
     "tests/test_read_restricted.py": 56,
     "tests/test_read_reduce.py": 42,
@@ -80,11 +80,11 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_read_numbers.py",
-        "c857e9eb0196e09bef87b25b2b000e6622479b64b59733af98ca238fbd4b88ac",
+        "8e13756b89027d36fc0ad5effd2b825f2814741b257134cbfa71fa5f5f17a159",
     ),
     (
         "tests/test_read_privacy.py",
-        "4d68a9f788f1b132bfe2c97e84ebaebd37b4505912bc2d29b992f89ff7975983",
+        "506b760c8bffdb712844473f6c5aecd536a28f7df162c67f22dcc8f014855ea7",
     ),
     (
         "tests/test_read_restricted.py",
@@ -131,7 +131,7 @@ REQUIRED_TEST_MODULES = (
 REQUIRED_SOURCE_MODULES = (
     (
         "src/paper_radar/reading/__init__.py",
-        "a7a980453943233f5f40169205e74e22b5d81bfc959196bdbc746fd62c782f3a",
+        "46abc1b703683085ac1b770f0a431304f2784117daff97656e97e7a04e6cb2d4",
     ),
     (
         "src/paper_radar/reading/schema.py",
@@ -147,7 +147,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/reading/errors.py",
-        "f6a94e757422cb48be1ad0c391d7aad4056bfb191e9790e93ef398b295b88a29",
+        "8cb6363f973b754b944d3246cb370b3ade43cff8c8ab4f99723e941dc445f50c",
+    ),
+    (
+        "src/paper_radar/reading/diagnostics.py",
+        "5776997b330ac4b41fb93ccb98e50302c47feb8f250e91151bc086c27fcea576",
     ),
     (
         "src/paper_radar/reading/parsing.py",
@@ -155,11 +159,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/reading/numbers.py",
-        "18d543e2a438b2a6e5bd4a3ea479aeee656fd1acadee167a2bd74f21a9811f52",
+        "b11da527e562d6607ad7524f6400a40bbce7a2685d1b7486d823d58fefec5e2d",
     ),
     (
         "src/paper_radar/reading/result.py",
-        "5a7afb4bf43bb8451a6215e65813f62dbd486cc7b4b880b696b39c1eca4420ef",
+        "e7ad472d2e0676962ef102412923822533c86b222cb1f494b76a877134e294f4",
     ),
     (
         "src/paper_radar/reading/validation.py",
@@ -564,19 +568,19 @@ REQUIRED_FIXTURE_FILES = (
     ("GLOSSARY.md", "93f7e9ba809391bff7d9773aef403a2e28d12e2daf210a10113dcd6bbb7a345c"),
     (
         "intent/draft.md",
-        "853dd3fea4672faa1d3eb405b8a24a3f57d7035dc1f589a92b8b8350759ed7f5",
+        "ef685589dab5eb515410c3c87fa95e2efca22442a0b10bf307768a15e7c1e25e",
     ),
     (
         "docs/contracts/read-validation.md",
-        "91a382371deffe076eefdd1d4b68ed79ed909ad9efa099bc0b02588f8fc114a8",
+        "78f25a0864060da05f4747729dd673f7e69c90cee5174a77235045972ee76924",
     ),
     (
         "docs/verification/a9-scope-review.md",
-        "a9bca55e1855e1909c72842d4db24f465f8d7af5126fa5b7ce4d39b7c2a6bb0a",
+        "c1dfe5ea4024ccb45b0780c8f9334ae0777ec12f336dea57f3df11fdeb2f095b",
     ),
     (
         "docs/contracts/frozen-contracts.md",
-        "17f589899d6c840e27a2a61d80477d9395e1fdac01edc5f9c02c5757a3d4bb21",
+        "a8974bed5a23532e724c4bd1e215670e89950c0020713a47844f460fad1a254a",
     ),
     (
         "docs/contracts/runtime-config.md",
@@ -604,6 +608,6 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "tests/fixtures/a9_coverage.json",
-        "8169c4354d126194a267f6d9bbd5b607e13028e90a291857b9a32f724cf25b63",
+        "36917e6f63fab382ad9b11afcbfb69b993d2e9e8a125596ee9e1dc09ba681650",
     ),
 )

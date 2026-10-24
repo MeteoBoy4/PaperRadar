@@ -11,14 +11,15 @@ from paper_radar.reading.context import (
     SourceBlock,
     SourceSlice,
 )
+from paper_radar.reading.diagnostics import NumericReason, ReadDiagnostic
 from paper_radar.reading.errors import (
     ReadContextError,
     ReadErrorCategory,
     ReadIssue,
     ReadOutputError,
 )
-from paper_radar.reading.numbers import NUMERIC_RULE_VERSION, NumericReason
-from paper_radar.reading.result import ReadDiagnostic, ReadValidationResult, ReadWarning
+from paper_radar.reading.numbers import NUMERIC_RULE_VERSION
+from paper_radar.reading.result import ReadValidationResult, ReadWarning
 from paper_radar.reading.schema import (
     EvidenceRef,
     ReadAnalysisOutput,

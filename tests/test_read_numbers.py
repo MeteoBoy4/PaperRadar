@@ -294,3 +294,106 @@ def test_range_unit_belongs_to_the_second_endpoint() -> None:
         main_findings=[{"statement": "2–3 m", "evidence": [{"evidence_id": "e1"}]}]
     )
     assert validate_read_output(raw, context_for("2 and 3 m")).diagnostics == ()
+
+
+@pytest.mark.parametrize(
+    ("statement", "source"),
+    [
+        ("13±5", "13±3"),
+        ("13±5", "13"),
+        ("13 ±5", "13 ±3"),
+        ("13±5 km", "13±3 km"),
+    ],
+)
+def test_adjacent_uncertainty_must_match_its_own_support(
+    statement: str, source: str
+) -> None:
+    raw = candidate(
+        main_findings=[{"statement": statement, "evidence": [{"evidence_id": "e1"}]}]
+    )
+    result = validate_read_output(raw, context_for(source))
+    assert [(d.reason, d.ordinal) for d in result.diagnostics] == [
+        ("number_not_supported", 1)
+    ]
+
+
+@pytest.mark.parametrize(
+    ("statement", "source"),
+    [("13±5", "13 ±5"), ("13 ±5", "13±5"), ("13±5 km", "13 ±5 km")],
+)
+def test_uncertainty_spacing_keeps_the_same_numeric_meaning(
+    statement: str, source: str
+) -> None:
+    raw = candidate(
+        main_findings=[{"statement": statement, "evidence": [{"evidence_id": "e1"}]}]
+    )
+    assert validate_read_output(raw, context_for(source)).diagnostics == ()
+
+
+@pytest.mark.parametrize(
+    ("statement", "source"),
+    [
+        ("210⁻³", "0.021"),
+        ("110^3", "11000"),
+        ("210⁻³", "210⁻³"),
+        ("10³2", "1e32"),
+        ("10³⁴5", "1e345"),
+    ],
+)
+def test_power_suffix_cannot_create_a_scientific_equivalence(
+    statement: str, source: str
+) -> None:
+    raw = candidate(
+        main_findings=[{"statement": statement, "evidence": [{"evidence_id": "e1"}]}]
+    )
+    result = validate_read_output(raw, context_for(source))
+    assert [(d.reason, d.ordinal) for d in result.diagnostics] == [
+        ("unrecognized_numeric_form", 0)
+    ]
+
+
+def test_complete_ten_power_preserves_sentence_punctuation() -> None:
+    raw = candidate(
+        main_findings=[{"statement": "10^3.", "evidence": [{"evidence_id": "e1"}]}]
+    )
+    assert validate_read_output(raw, context_for("1000")).diagnostics == ()
+
+
+@pytest.mark.parametrize(
+    ("statement", "source"),
+    [
+        ("3 km–5 km", "3 m and 5 km"),
+        ("3 m–5 km", "3 km and 5 km"),
+        ("3 km–5 km", "3 m–5 km"),
+        ("3–5 km", "3 m and 5 km"),
+        ("3 km–5 m", "3 km and 5 km"),
+    ],
+)
+def test_range_cannot_discard_an_explicit_source_endpoint_unit(
+    statement: str, source: str
+) -> None:
+    raw = candidate(
+        main_findings=[{"statement": statement, "evidence": [{"evidence_id": "e1"}]}]
+    )
+    result = validate_read_output(raw, context_for(source))
+    assert [(d.reason, d.ordinal) for d in result.diagnostics] == [
+        ("unit_not_supported", 0)
+    ]
+
+
+@pytest.mark.parametrize(
+    ("statement", "source"),
+    [
+        ("3 km–5 km", "3 km and 5 km"),
+        ("3 m–5 km", "3 m and 5 km"),
+        ("3–5 km", "3 km and 5 km"),
+        ("3 km–5 km", "3 and 5 km"),
+    ],
+)
+def test_range_retains_explicit_units_and_permitted_implicit_front_unit(
+    statement: str, source: str
+) -> None:
+    raw = candidate(
+        main_findings=[{"statement": statement, "evidence": [{"evidence_id": "e1"}]}]
+    )
+    assert validate_read_output(raw, context_for(source)).diagnostics == ()
