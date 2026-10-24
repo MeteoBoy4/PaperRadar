@@ -10,7 +10,7 @@ from scripts.offline_evidence import file_sha256
 from scripts.verification_run import VerificationRun, run_verification
 from scripts.verification_status import query_status
 from tests.a2_full_support import fake_checks, repository_copy
-from tests.a7_acceptance_support import passed_receipt
+from tests.a8_acceptance_support import passed_receipt
 
 
 def test_status_recognizes_a7_without_changing_historical_formats() -> None:

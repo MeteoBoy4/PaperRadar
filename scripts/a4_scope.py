@@ -182,23 +182,23 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a4_entry.py",
-        "ae1a5e366747692680b6d05f0c0c2da0736e1eb536d396a7f98c76f9d37bff94",
+        "93226456db6d89fc25435f5f9f3d4f26091764afcec9de43b2e9fcdd3754b021",
     ),
     (
         "tests/test_a2_full_entry.py",
-        "8c30098020471faa009113d5b272a1c3f98e88498ca37980f55b9027a140a5f0",
+        "b85f0328bd9d842c29e4f76f0f7b1845b64651cce56a0bb63188214c50ab0584",
     ),
     (
         "tests/test_verification_run.py",
-        "b04559ea65de97bc2fc2529f07a60bbcf924f786056162cb848eef453b44779f",
+        "fa672e5f2b138a5a4821412aad6053a2dab5d128af4bbd7cccaeedc562a71145",
     ),
     (
         "tests/test_verification_compatibility.py",
-        "57301c95e4a0fc0d4e6a918007db9d5abb3b893c17a0f01c947e0176198d248e",
+        "b8d1938d353bb7799c8cca6914da9b55d07c9455ca91c7f9eaf1e4a9e5841ebc",
     ),
     (
         "tests/test_verification_integrity.py",
-        "967a56ed308c3bd8cea003817030f145922994ffb9bc5b3856a59b4548f8524f",
+        "12b2eae45e2652bad29129895b782b5dfca3436a945b74291b61bb5f2d4bde29",
     ),
 )
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
@@ -336,11 +336,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a3_scope.py",
-        "9d7f4aff00ca3665718e01015508ccaa746b3bd04ff21e581e8e718d5c5059f1",
+        "1730f0b2d0350ca75f0c30aedd22aac8059c6cf9de958efc86b7e8dda332a04b",
     ),
     (
         "scripts/a2_full_scope.py",
-        "9133776e4e9b5eec0859a1e51f48126f184606af9012c0f410bb035d798b2d40",
+        "f48e9af3cf10cdb728b9140d55303559fe3c3b60950b0a0e38be11b156b9855a",
     ),
     (
         "scripts/a1_scope.py",
@@ -352,11 +352,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "3dcdf38be0c1bab160a67749be7cd20b9d601f4e3ca562f106418896608fdda9",
+        "1240d6ffa62ebc9f7234857e1e9f5bcb709091cd0edc0a6783b40306d54ecb16",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "ffa940bf4ef7f1f91db31cd6f5a704463643a5c3f922d727386f035949bb168e",
+        "c31cc8385293e915a38419a89886b114be6200b2a43b84935235c1a72d20c401",
     ),
     (
         "scripts/offline_evidence.py",
@@ -380,7 +380,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/check-offline",
-        "ad6f4316774644c1655b4aa3439a642f018ccfaaa48ab82c5452774a1e7dab62",
+        "aac450ba4bd00f30067dca0ae2ec06129140dae7eebce360b5055e4571f56c84",
     ),
     (
         "tests/pi_supply_support.py",

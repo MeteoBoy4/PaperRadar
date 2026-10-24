@@ -15,7 +15,7 @@ import pytest
 from scripts.a2_full_acceptance import run_full_verification
 from scripts.offline_evidence import file_sha256
 from tests.a2_full_support import ROOT, fake_checks, repository_copy
-from tests.a7_acceptance_support import passed_receipt
+from tests.a8_acceptance_support import passed_receipt
 
 
 @pytest.mark.parametrize("stop", ["passed", "failed", "interrupted", "legacy_mismatch"])
@@ -142,7 +142,7 @@ def test_full_entry_help_is_local_and_does_not_create_evidence_or_databases(
     assert "不操作用户数据库" in result.stdout
     assert "A2-01" in result.stdout and "完整 A2" in result.stdout
     assert all(group in result.stdout for group in ("A3", "A4", "A5"))
-    assert "九份主要文件" in result.stdout
+    assert "十份主要文件" in result.stdout
     assert "[离线检查]" not in result.stdout
     assert set(tmp_path.iterdir()) == {scripts}
     assert set(scripts.iterdir()) == {wrapper}
@@ -171,7 +171,7 @@ def test_interruption_while_generating_legacy_conclusion_keeps_seven_files_incom
     _, full = run_full_verification(root, output)
     assert full["status"] == "incomplete"
     assert not full["a2_verified"]
-    assert len(list(output.glob("*.json"))) == 11
+    assert len(list(output.glob("*.json"))) == 12
     assert (
         json.loads(next(output.glob("*.a3.json")).read_bytes())["status"]
         == "incomplete"

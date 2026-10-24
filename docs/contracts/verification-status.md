@@ -111,3 +111,14 @@ A4 继续为整体 required。读者保留上述历史组和格式支持，不�
 补文件或扩大其证明范围。A7 失败、缺失、篡改、未知/布尔格式、范围漂移或中断均不得
 显示通过；真实完整入口退出 0 后，还应核对 status=passed、reason=verified、
 applicability=same。查询仍只读，同次终态不能由历史成功替代。
+
+
+## A8 格式与当前输出范围
+
+状态读者支持 `.a8.json` 格式1，同时保留 A1–A7 已支持格式（完整 A2 为2）。
+当前登记的十份主要文件加实际 pytest 回执、terminal 共十二份 JSON；terminal 原样绑定
+A8 的 suffix、required、格式、run_id、原始 SHA256。A8 必需且直接前置为同次 A1、完整
+A2、A3、A5、A6、A7；A4 仍决定总门禁。A8 仅证明离线协议与 test 任务接线，
+rpc_verified/live_verified/stage_a_verified 恒为 false。旧终态按其冻结组清单解释，
+不把历史缺少 A8 当成当前 A8 通过；未知格式、缺组、字节替换、缺终态或中断均不能
+得到 passed/verified，适用性仍按代码/工作树/lockfile 与当前身份独立判断。
