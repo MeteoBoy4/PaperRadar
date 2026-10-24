@@ -343,3 +343,9 @@ A7 将上述登记、尝试、双阶段成功、retry 与完整隔离恢复逐�
 不修改批次、不发布目标；详见[A7 验收矩阵](../verification/a7-requirements.md#a7-08--84-独立验收与可信终态)。
 备份格式、manifest 字段、计数、artifact kind 与旧 revision 策略不因此改变。
 当前正常离线入口为九份主要文件、共十一份 JSON；这不证明 NAS、真实模型或 live 恢复。
+
+## Read 配置与候选恢复（#98）
+
+新增组合沿用本 Contract 的格式、revision 准入与独立副本算法。
+双历史配置、四份合法 `model_success_response` 的隔离恢复和明确未验证项统一见
+[Read 恢复范围](read-validation.md#恢复范围98)；消费上下文来自测试常量，不是备份产物。

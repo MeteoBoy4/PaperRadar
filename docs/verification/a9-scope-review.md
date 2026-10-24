@@ -175,3 +175,43 @@ hash_drift；受影响组为 A1、A2-01、完整 A2、A3–A8。没有动态回�
 重复/未知/严格 ID、集合类型及防御冻结、空集合双诊断、五类保护内容范围、数值和
 模型警告保留、严格输出规则与重新导出同一冻结 Read Schema。
 未证明真实 map 来源链、生产正文/模型、完整 Read StageInput、任务或预算；未运行 live。
+
+
+## A9-06（#98）
+
+本票沿用真实 config/storage/backup 公共服务，不增加 migration、制品种类或 Read 成功事实。
+双历史配置与中/英文 × single/reduce 四份合法原始响应经备份、原根哨兵/audit 屏障、
+新进程恢复和再次搬迁后逐项一致；上下文由固定常量重建，不是恢复产物。
+恢复后还验证允许集合与受限矩阵共同拒绝、截断 JSON 拒绝、Read 材料/引用闭包损坏、
+响应 blob 缺失/坏字节和旧/未知 revision 的现有拒绝。无效候选仅在内存修改。
+
+为满足 #92 US39 与 #98 的表示隐私，RuntimeConfigSnapshot.payload_json 仅增加
+repr=False；公共 compile/load 隐私回归先失败后通过，持久载荷/ID/投影未改变。
+478 项 Read、旧 A2 投影、相关 A3 备份恢复组合通过，Ruff format/check、mypy
+519 文件通过。完整门禁与链式 scope 重绑仍由 #99 执行，本票不修改 scope。
+
+| 路径 | #98 变更前 SHA-256 | #98 SHA-256 | 原因 |
+| --- | --- | --- | --- |
+| `src/paper_radar/config/compile.py` | `0579c66ff57664b62269bb7ccfc5ba8f18277a284fd7fedf8cddb09d65eb7b69` | `58cc5454dfe5e662f0e7eef0f884c2b562891f9ae7b0a709fbf78984eb81654e` | 仅隐藏 RuntimeConfigSnapshot.payload_json 默认表示，持久化/身份不变 |
+| `README.md` | `b9c8c43913d215e281c363d0ea8ee57c27a039f18bffe0bdcc25ad6b51aebcba` | `5303b81d481685eb594879048de19d79529e037e698da38842dac4b4a6488afb` | 准确披露 Read 配置/候选非空恢复交付与未验证范围 |
+| `docs/contracts/read-validation.md` | `3fda118c47345911d58de8219de664fc90a9c4c9d3c9703e3ea46698b71dcc27` | `21b0be1db867be6f409760a9a76ba5727e62381a285ce1e85a73bbbaf334c3f6` | 记录恢复公共边界、四候选/双快照、损坏拒绝与台账 |
+| `docs/contracts/backup-restore.md` | `c9811b91edcf2415ccf41cbd5711c2180b30a2d9c354350e1f944ed21488a6de` | `c8184ad1419f8d0f2840861a838b8c9ccd299e9ee7e655f758029bf5b0c5dfd1` | 指向唯一 Read 恢复范围说明，不改变备份算法或格式 |
+| `docs/contracts/config-snapshots.md` | `7bd0371f214027cb3288e3c03a3b505007d9c49177e133b27df7fccc61826d96` | `d7a19be8d2900dde2750f8ddeb3c9c9db5dad77b9e343f1bdd5f34af971a98a0` | 指向 Read 恢复范围并说明快照安全表示 |
+| `intent/draft.md` | `8340d8520f04ffe43ec7bd5d3e4eee9fbee532cbc3ba843dd8213755c203f1e8` | `1ededd5db5e6fc83c627b0d07919097a9a29e87eba81efe039783800fd0343f7` | 同步 #98 实际进度与固定上下文恢复范围 |
+
+| 新文件 | #98 SHA-256 |
+| --- | --- |
+| `tests/read_recovery_support.py` | `b5569cd43e7decdfe914365a0d2dcefb5069c4b26fc50629925904707a1912b9` |
+| `tests/read_recovery_worker.py` | `2404ff8fe28da8786c68a9853ce135bd20f13582fa8392ab5aafe115c3ae6f86` |
+| `tests/test_read_recovery.py` | `586b2624a6a85edab2d79ba01551f4a1cbaf52a837950d6625c30ded862d50e1` |
+
+新增固定执行分母：tests/test_read_recovery.py 为 11；独立 collect-only 核对为 11，
+不动态回填任何 scope。测试支撑还消费 tests/read_config_support.py、read_support.py、
+backup_support.py 及其既有 config 支撑，#99 应显式审阅并纳入 A9 闭包。
+现有测试文件未修改，原固定分母不变；config/compile、README、backup-restore 等
+旧绑定字节变化需按真实 DAG 一次重绑。独立审计 98-scope-audit.json 返回1（预期
+hash_drift），collection reason=ok、skip/deselect=0，execution=not_run。
+受影响 A1、A2-01、完整 A2、A3–A8；历史结论不覆盖，不以收集代替执行。
+
+未运行真实 Pi/模型/Docling/PDF/NAS；orig 的生产哈希归属、真实 evidence-map、
+当前正文选择、科学语义、map 来源链和生产 Read 仍未验证。

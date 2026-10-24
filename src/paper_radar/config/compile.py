@@ -152,7 +152,7 @@ class RuntimeConfigSnapshot:
     profile_fields: Mapping[str, SlotStatus]
     model_slots: Mapping[str, SlotStatus]
     stages: Mapping[StageName, StageReadiness]
-    payload_json: str
+    payload_json: str = field(repr=False)
     topics_status: TopicsStatus
     enabled_topics: tuple[EnabledTopic, ...]
     escalation: EscalationSemantics | None

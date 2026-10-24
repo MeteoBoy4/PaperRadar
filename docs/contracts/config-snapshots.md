@@ -87,3 +87,7 @@ I/O 哨兵；快照发现测试独立于 A1 固定测试和四份历史 v1 契�
 #97 另覆盖显式 Read v1 的 `contract_schema.read` / `contract_manifest.read` 摘要及
 只读 diff；它们沿用同一材料登记与历史 load，不重新生成 Schema，不依赖当前配置目录。
 缺少 Read 契约的旧快照仍保留原身份与 `read_contract`；新选择只影响 Read 投影。
+
+#98 另验证含/不含 Read 契约的双历史快照与候选原字节在阻断原根的新进程恢复，
+完整范围和上下文固定常量的限制见 [Read 恢复说明](read-validation.md#恢复范围98)。
+`RuntimeConfigSnapshot` 默认 repr/str 隐藏 `payload_json`，显式访问与载荷身份不变。
