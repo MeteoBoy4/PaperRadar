@@ -45,3 +45,35 @@ README 和离线证据范围说明；其中 README、offline-evidence 也在旧 
 已如实出现在上述 audit 影响组中。新增公共规则文档由后续票继续按交付进度更新。
 
 未验证：真实模型、Pi、Docling、PDF、map 来源、Read 生产接收、NAS 与完整阶段 A。
+
+## A9-02（#94）
+
+本票新增可靠文本的公共纯接收、只读上下文、严格 JSON、数值规则与安全警告三视图。
+不修改任何旧 scope、Screening 文件或冻结契约。255 项 Read 子集及既有严格 JSON、
+架构、契约兼容组合共 399 项通过；全项目 Ruff format/check 和 mypy 通过。
+完整门禁留 #99 同次收口，当前独立 scope 审计仍为预期 hash_drift。
+
+下表只记录本票改变的既有材料；#93 的已有漂移继续保留，不以本票重复解释。
+
+| 路径 | #94 变更前 SHA-256 | #94 SHA-256 | 原因 |
+| --- | --- | --- | --- |
+| `src/paper_radar/reading/__init__.py` | `8f38dd4922fa49cf9e7fd5f1e2ca2531cc805bb67fed3c02ea4df8797b3abf3d` | `90f7cfb756c987d71ddc7dc949372e9fea78378a958849ffbdac6a0492c828a3` | 导出单一公共校验、上下文、结果及受控词汇 |
+| `README.md` | `2648fa5452f9f3ec3e3502c56e0755fbf4bb58810a01b29f93523c0039304caa` | `e275a8524d0378ba2f1d5e5589edb25c945ea0b09bbfa0dad07c9a72b1c73173` | 披露可靠文本纯接收已交付与后续范围 |
+| `docs/agents/llm-evidence.md` | `680bc306afeca76ceab6a3626b9c8c080653d5fee285cfb950f25c31d2fe588a` | `49796d520af0409407fa6fe1a76569a3c56a7e6a7213d57e07e129b3c4724468` | 指向 Read 公共规则而非只给 Screening |
+| `docs/contracts/read-validation.md` | `0e012d5d162bd4efa8fe8ca2b3d77be4ee74d805ee3efe85b91e3b5676eea275` | `648875a456d7cc2120b291ebb1f4eef0221e8cb87f4f239089c85dcbcf14ed22` | 公共上下文形状、数值闭集和按票更新覆盖台账 |
+
+新增源码：`reading/context.py`、`errors.py`、`numbers.py`、`parsing.py`、`result.py`、
+`validation.py`。新增支撑 `tests/read_support.py`；架构守卫复用既有
+`tests/test_screening_architecture.py` 的绝对/相对导入检查，A9 固定范围须将该支撑一并纳入。
+以下独立收集只核对执行分母，不代表执行通过，也不动态写回任何 scope。
+
+| 新测试模块 | #94 实际收集 |
+| --- | --- |
+| `tests/test_read_context.py` | 59 |
+| `tests/test_read_validation.py` | 76 |
+| `tests/test_read_numbers.py` | 57 |
+| `tests/test_read_privacy.py` | 3 |
+
+新增源码/测试目前未纳入历史固定 scope，#99 应作为独立 A9 范围登记。
+Read Schema 仍为 `1ac06948024aab610c6b2c1098d0a53596632c940704d32fae860a03ed5d6111`。
+未运行 Pi、模型、Docling、PDF、NAS，orig 哈希覆盖及 map 来源链仍未验证。
