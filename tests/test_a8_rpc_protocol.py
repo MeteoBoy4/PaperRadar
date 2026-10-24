@@ -1,11 +1,13 @@
 """公共 RPC 服务的分帧、串行初始化、ACK 与唯一终局。"""
 
 from collections.abc import Callable
+from dataclasses import replace
 from typing import Any
 
 import pytest
 
 from paper_radar.llm import CallDescription, render_request
+from paper_radar.llm.models import ThinkingLevel
 from paper_radar.llm.rpc import run_call
 from paper_radar.llm.rpc_types import RpcCandidate, RpcFailure, RpcLimits, RpcReason
 from paper_radar.screening_tasks import ScreeningTasks
@@ -33,6 +35,80 @@ def invoke(
         clock=factory.clock,
         limits=FAST,
     )
+
+
+# Pi 1.4.0 docs/rpc-commands.md 的七档;预期不从产品词表生成。
+@pytest.mark.parametrize(
+    "level", ["off", "minimal", "low", "medium", "high", "xhigh", "max"]
+)
+def test_each_documented_thinking_level_completes_public_call(
+    description: CallDescription, level: ThinkingLevel
+) -> None:
+    description = replace(description, thinking_level=level)
+
+    def mutate(name: str, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if name == "get_available_thinking_levels":
+            records[-1]["data"] = {"levels": [level]}
+        return records
+
+    factory = FakeFactory(mutate=mutate)
+    result = invoke(description, factory)
+    assert isinstance(result, RpcCandidate)
+    assert result.raw_response == BOUNDARY_RAW.encode()
+    assert factory.sessions[0].terminated
+
+
+@pytest.mark.parametrize("level", ["UNKNOWN", [], {}])
+def test_malformed_description_level_is_rejected_without_session(
+    description: CallDescription, level: Any
+) -> None:
+    factory = FakeFactory()
+    result = invoke(replace(description, thinking_level=level), factory)
+    assert result == RpcFailure(RpcReason.INVALID_DESCRIPTION)
+    assert factory.sessions == []
+
+
+@pytest.mark.parametrize("level", ["UNKNOWN", [], {}])
+def test_malformed_thinking_notification_keeps_protocol_failure(
+    description: CallDescription, level: object
+) -> None:
+    def mutate(name: str, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if name == "set_thinking_level":
+            records[0]["level"] = level
+        return records
+
+    factory = FakeFactory(mutate=mutate)
+    assert invoke(description, factory) == RpcFailure(RpcReason.THINKING_STATE)
+    assert factory.sessions[0].terminated
+    assert "prompt" not in [record["type"] for record in factory.sessions[0].commands]
+
+
+@pytest.mark.parametrize("poll", [0.05, 0.01])
+def test_default_or_shorter_poll_completes_public_call(
+    description: CallDescription, poll: float
+) -> None:
+    factory = FakeFactory()
+    result = run_call(
+        description,
+        render_request(description),
+        factory,
+        clock=factory.clock,
+        limits=replace(FAST, poll=poll),
+    )
+    assert isinstance(result, RpcCandidate)
+
+
+def test_larger_poll_is_rejected_without_session(description: CallDescription) -> None:
+    factory = FakeFactory()
+    result = run_call(
+        description,
+        render_request(description),
+        factory,
+        clock=factory.clock,
+        limits=replace(FAST, poll=0.051),
+    )
+    assert result == RpcFailure(RpcReason.INVALID_DESCRIPTION)
+    assert factory.sessions == []
 
 
 @pytest.mark.parametrize(

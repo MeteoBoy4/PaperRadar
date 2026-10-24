@@ -4,7 +4,7 @@ import math
 from enum import IntEnum
 from typing import Any
 
-from paper_radar.llm.models import CallDescription
+from paper_radar.llm.models import THINKING_LEVELS, CallDescription
 from paper_radar.llm.rpc_types import (
     MAX_CANDIDATE_BYTES,
     RpcCandidate,
@@ -42,7 +42,6 @@ _EVENTS = {
     _Position.AGENT_SETTLED: "agent_settled",
 }
 
-_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 _STOPS = {"pending", "stop", "length", "toolUse", "error", "aborted", "deferred"}
 
 
@@ -205,7 +204,7 @@ class RunEvents:
         level = message.get("thinkingLevel")
         if "thinkingLevel" in message and (
             not isinstance(level, str)
-            or level not in _LEVELS
+            or level not in THINKING_LEVELS
             or level != self._description.thinking_level
         ):
             raise RpcProblem(RpcReason.THINKING_STATE)

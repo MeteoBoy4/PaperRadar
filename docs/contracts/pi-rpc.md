@@ -119,7 +119,8 @@ UTF-8 多字节、U+2028/U+2029 和同包多帧保持正确；坏 UTF-8/JSON、�
 
 固定上限：实际请求帧（含 LF）256 KiB、候选 64 KiB、单帧 4 MiB、累计 stdout 16 MiB、
 stderr 1 MiB；rpc_types.py 登记初始化 30 s、总期限 300 s、关闭宽限 10 s、
-强杀等待 10 s，单次 pump 至多轮询 50 ms。RpcLimits 只允许缩短前四项期限，不能放大。
+强杀等待 10 s，单次 pump 至多轮询 50 ms。RpcLimits 允许保持默认值或缩短前四项期限
+及 poll 轮询上限；任一项放大均在创建会话前以 invalid_description 拒绝。
 总期限从工厂构造前开始，包含初始化和正常排空；关闭还受独立 10 s 宽限约束，
 整组回收另有最多 10 s。取消握手在观察取消之后使用独立 close 宽限，即使主期限
 已经到达也不延长为成功；最坏 total+close+terminate=320 s。保守再叠加已包含的
@@ -127,6 +128,9 @@ initialization，initialization+total+close+terminate=350 s，小于
 600 s 租约并留余量，不续租。单帧须容纳 prompt+system+候选+thinking，累计
 须容纳三份回显。初始化+运行+关闭+强杀等待总界限严格小于 A7 600 秒租约并留余量。
 时间使用可注入单调时钟，独立于 A7 UTC 事实时钟；心跳不延长总期限。
+离线测试用注入时钟与握手/屏障推进，不用 sleep 同步；既有 AST 守卫覆盖 A8 测试与
+支撑。单例约 5 s、组总约 60 s 是规模观察目标，实际耗时在验收台账披露；不以紧墙钟
+阈值在慢机器上判定协议失败，语义门禁仍核对注入期限和清理终局。
 
 控制命令必须严格一问一答，顺序为 new_session → set_auto_retry(false) →
 set_auto_compaction(false) → set_model → get_available_thinking_levels →

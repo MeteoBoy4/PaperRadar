@@ -67,7 +67,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a8_call_rejections.py": 8,
     "tests/test_a8_request_vectors.py": 14,
     "tests/test_a8_llm_architecture.py": 1,
-    "tests/test_a8_rpc_protocol.py": 53,
+    "tests/test_a8_rpc_protocol.py": 69,
     "tests/test_a8_rpc_boundary.py": 7,
     "tests/test_a8_rpc_preflight.py": 2,
     "tests/test_a8_rpc_candidates.py": 219,
@@ -103,7 +103,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a8_rpc_protocol.py",
-        "b0215b5c26a31ff87f1557ef482f78ef6525e704dc8623726a934a74969622ed",
+        "7782e415c5e760fa7a3897bc4d791876eae4f88120382e2007a97361d7e35b5d",
     ),
     (
         "tests/test_a8_rpc_boundary.py",
@@ -177,11 +177,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/models.py",
-        "4347cc7856c1fbf323f608d39ae9af9b84d4b7a35bcdca5edffe314a9f31d00d",
+        "e797ee78cfae739a5d705d5d25ee406e2d43e57511f82364bfa6cacd10a44a64",
     ),
     (
         "src/paper_radar/llm/rpc.py",
-        "ff86056720aeacb6fb731016ed42b8cb6114c6cdf2d7bb71aa5e815a7197186c",
+        "295fca3e595de9003baf76a92e82bb382de83207c23aa0e3ce327d21b0e61857",
     ),
     (
         "src/paper_radar/llm/rpc_frames.py",
@@ -189,7 +189,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/rpc_messages.py",
-        "d2a0648c11fa32614a993900d27f7b3143131ca8e64b4290c560649a3474e6b5",
+        "c33ce58005583b16142ae0fa6b033ff7b776eb1f5505e6376dc1ddaa1049128c",
     ),
     (
         "src/paper_radar/llm/rpc_pipes.py",
@@ -229,7 +229,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "tests/a8_rpc_support.py",
-        "b477af72f1110f11e1f453e861cf09460030d509caaf43ffd92c8bc588e427d9",
+        "70750fc6b8ed6bfc6f87c5f3e8af9f30dbcd076b7164acdd1906b80e505770ae",
     ),
     (
         "tests/a8_rpc_task_support.py",
@@ -331,7 +331,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/pi-rpc.md",
-        "e548fbadd99f38b8005f061d65bd0c0a6665fa15a08baaecffd079f3be435a83",
+        "28a0aadcf161ae887e5e6808e35a5fed35ff69b0f9b9cef7fddb1457c10d92d7",
     ),
     (
         "docs/contracts/verification-status.md",
@@ -339,11 +339,11 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/offline-evidence.md",
-        "cd7094db8c393a753f0b24761f24b27ae66849d8b7d96fc96f581be9e8552bac",
+        "c8f3e3d702dd669b939a0606f1e4816a09075d55c59c9f4eb9c32ac8256e4896",
     ),
     (
         "docs/verification/a8-requirements.md",
-        "0d02694326f529cc8146849855ad5c6cb25ecf0e74b5f8f789f555e37d77277d",
+        "102cb0f2bd14ac6ad57467b9f8cfb766d7f19620058b29bbd23ebd0a5615307f",
     ),
     ("README.md", "5c40cdd06e82c16b491540d3e1c9340daf2e174abf8b918518e24cb59a6ce54d"),
 )

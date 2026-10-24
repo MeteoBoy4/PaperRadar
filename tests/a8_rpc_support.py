@@ -31,7 +31,9 @@ def wire(records: list[dict[str, Any]]) -> bytes:
     )
 
 
-def run_records(message: str, system_prompt: str, raw: str) -> list[dict[str, Any]]:
+def run_records(
+    message: str, system_prompt: str, raw: str, thinking_level: str = "low"
+) -> list[dict[str, Any]]:
     """DERIVED-01/03/04:按随包源码独立编写,没有调用产品渲染/解析。"""
     system = {
         "role": "system",
@@ -53,7 +55,7 @@ def run_records(message: str, system_prompt: str, raw: str) -> list[dict[str, An
         "api": "openai-completions",
         "provider": "provider-a",
         "model": "real-model",
-        "thinkingLevel": "low",
+        "thinkingLevel": thinking_level,
         "stopReason": "stop",
         "timestamp": 3,
         "usage": {
@@ -170,7 +172,7 @@ class ScriptedSession:
         elif name == "get_state":
             data = {
                 "model": {"provider": "provider-a", "id": "real-model"},
-                "thinkingLevel": "low",
+                "thinkingLevel": self.description.thinking_level,
                 "autoCompactionEnabled": False,
                 "isStreaming": False,
                 "isCompacting": False,
@@ -178,7 +180,7 @@ class ScriptedSession:
                 "pendingMessageCount": 0,
             }
         elif name == "set_thinking_level":
-            assert command["level"] == "low"
+            assert command["level"] == self.description.thinking_level
         elif name in {"set_auto_retry", "set_auto_compaction"}:
             assert command["enabled"] is False
         elif name == "prompt":
@@ -192,13 +194,20 @@ class ScriptedSession:
                     command["message"],
                     self.description.system_prompt.decode(),
                     self.raw,
+                    self.description.thinking_level,
                 ),
             ]
         if name == "set_model":
-            # set_model 重置档位的源码推导通知;客户端随后必须重新设置low。
+            # set_model 重置档位的源码推导通知;客户端随后必须重新设置请求的档位。
             return [{"type": "thinking_level_changed", "level": "off"}, response]
         if name == "set_thinking_level":
-            return [{"type": "thinking_level_changed", "level": "low"}, response]
+            return [
+                {
+                    "type": "thinking_level_changed",
+                    "level": self.description.thinking_level,
+                },
+                response,
+            ]
         return [response]
 
     def close_stdin(self) -> None:

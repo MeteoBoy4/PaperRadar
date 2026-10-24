@@ -161,7 +161,7 @@ A7 历史 not_assessed 保留。A8 自己的 not_assessed 沿用 A7 词汇并补
 | test_a8_call_rejections.py | 8个单例 | 8 |
 | test_a8_request_vectors.py | 12个向量+2个hashseed | 14 |
 | test_a8_llm_architecture.py | 1个依赖边界 | 1 |
-| test_a8_rpc_protocol.py | 8+4+6+9+3+3+4+4+1+1+2+1+2+3+1+1 | 53 |
+| test_a8_rpc_protocol.py | 原53+7档+3描述类型+3通知类型+2合法poll+1放大poll | 69 |
 | test_a8_rpc_boundary.py | 1+2+3+1 | 7 |
 | test_a8_rpc_preflight.py | 2个单例 | 2 |
 | test_a8_rpc_candidates.py | 2×2+3+6+9+22+9+10+9+6+10+6+7+1+5×7+5+5×6+1+1+1+1+7+3×4+3+2+5+2×7 | 219 |
@@ -177,7 +177,7 @@ A7 历史 not_assessed 保留。A8 自己的 not_assessed 沿用 A7 词汇并补
 | test_a8_status.py | 1格式支持+9终态/字节/身份 | 10 |
 | test_a8_test_receipt.py | passed/skipped/deselected/collect_only/failed/incomplete | 6 |
 | test_a8_formats.py | 3个生产格式来源×3种漂移/伪类型 | 9 |
-| 合计 | 功能441+验收172 | 613 |
+| 合计 | 功能457+验收172 | 629 |
 
 ### User Stories 逐项落点
 
@@ -188,7 +188,7 @@ recovery/history/backup 均指上表对应 test_a8_* 模块；实际固定绑定
 |---|---|
 | 1 复用 A1–A7 | A8同次六前置+总门禁A4；旧能力/分母不扩义 |
 | 2 固定1.4.0依据 | fixtures/pi_rpc/1.4.0/README，20材料哈希与三态来源 |
-| 3 隐藏RPC公共服务 | llm.call_once；boundary/value 经 run_once 组合 |
+| 3 隐藏RPC公共服务 | paper_radar.llm.rpc.run_call；boundary/value 经 run_once 组合 |
 | 4 只读冻结输入 | description/rejections/vectors/history，双snapshot来源 |
 | 5 boundary 无主题/信誉 | vectors 的完整请求字节与 boundary |
 | 6 value 启用主题投影 | vectors/value，只有 id/name/description |
@@ -278,7 +278,7 @@ run_id写进本台账造成自失效。scope不自绑定，没有为了消除cou
 
 全部功能/文档/测试先稳定，再按order更新受触及文件的显式哈希及下游scope；最后
 固定A8的llm源码、支撑、向量/来源/能力材料、公共文档、20个测试模块和六前置scope。
-collection仅比对人工613项与旧范围；不运行真实Pi/Node。最终完整门禁证据须由稳定
+collection仅比对当前人工固定分母与旧范围；不运行真实Pi/Node。最终完整门禁证据须由稳定
 integration提交产生，任何审查修复触及绑定字节时再次按DAG重绑；旧失败/中断证据保留。
 
 
@@ -313,3 +313,34 @@ Standards 局部建议：rpc_messages 将事件位置改为私有具名状态，
 仅核对。scope 审计的修复前闭包仅 A8；按实际 DAG 更新必要哈希，不改 A1–A7 的
 能力/分母/head。完整 check-offline 仍由主agent在合并并复核后的稳定 integration 执行，
 不在本台账写入最终 run_id；真实 Pi/Node、模型及 live 行为均未执行。
+
+## 三份外部审查核实收口（#85/#89/#91）
+
+逐项接受、部分接受及不改的依据追加在 intent/review/ 下三份原始报告末尾，保留原文。
+本轮在 llm/models.py 唯一定义 ThinkingLevel Literal，并从 get_args 派生运行时词表；
+rpc/rpc_messages 共用，保持内核不依赖配置层。description/通知中的不可信档位先验
+str 类型，再检查成员，避免 list/dict 在 frozenset 查询时抛异常而误报 transport_error。
+prompt 序号、关联 ID 与命令名局部具名化，wire 仍固定 rpc-9，不改初始化顺序或语义版本。
+
+run_call seam 新增16项：Pi文档七档正常完成7，非法字符串/list/dict描述无会话3，
+相同三种畸形通知保持thinking_state 3，默认/缩短poll成功2，放大poll创建会话前
+invalid_description 1。先按参数定义推导，protocol从53增至69；功能457+验收172=629。
+这些是现行安全行为的补充刻画与重构保护，原代码已通过新增用例，不伪造红→绿缺陷。
+既有请求关联、候选、生命周期及架构守卫继续验证没有行为漂移。文案修正包括九组
+write_*_conclusion、实际公共服务paper_radar.llm.rpc.run_call、poll同受默认上限约束。
+
+规模说明：#90的400项/38.59s属于当票历史范围；后续登记与审阅修复扩展到613项，
+三份外部审查测得完整A8约86–96s，非空恢复约7.6–8.2s。该单例保留真实WAL备份、
+阻断原目录、独立解释器恢复与唯一剩余预算继续，不能用删减这条完整链来换墙钟目标。
+test_a8_rpc_lifecycle.py::test_a8_tests_use_no_sleep_for_synchronization 已以AST检查
+所有*a8_*.py，不再重复新增守卫。依#89补充采用注入期限/终局断言并披露耗时，
+不设单例5s或组60s的硬失败阈值；替代规则同步pi-rpc Contract。
+
+本轮先读现行scope审计：修改前无漂移；修改后实际闭包仅A8，8个绑定字节变化。
+按审计order集中重绑，A1–A7能力、固定分母、head、格式与四份Frozen Contract不变。
+本轮报告加入提交及整体工作树身份，不擅自扩大A8固定材料成员。受绑定台账只记录
+验证入口及范围，最终完整check-offline和verification-status由稳定提交产生并在工作树
+外保存；旧运行不会因受绑定材料未改就自动保持same，非忽略untracked报告也改变身份。
+
+本轮全部A8子集629 passed/86.29s，最慢非空恢复7.53s；A8相关Ruff检查/格式与
+严格mypy（39文件）通过。最终完整门禁仍由稳定提交运行，不将该子集当作完整验收。

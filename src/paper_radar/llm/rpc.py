@@ -7,7 +7,12 @@ from contextlib import suppress
 from time import monotonic
 from typing import Any
 
-from paper_radar.llm.models import MAX_REQUEST_BYTES, PROTOCOL_PROFILES, CallDescription
+from paper_radar.llm.models import (
+    MAX_REQUEST_BYTES,
+    PROTOCOL_PROFILES,
+    THINKING_LEVELS,
+    CallDescription,
+)
 from paper_radar.llm.rpc_frames import FrameDecoder, command_frame
 from paper_radar.llm.rpc_messages import RunEvents
 from paper_radar.llm.rpc_types import (
@@ -26,7 +31,9 @@ from paper_radar.llm.rpc_types import (
     SessionFactory,
 )
 
-_LEVELS = ("off", "minimal", "low", "medium", "high", "xhigh", "max")
+_PROMPT_COMMAND_NO = 9
+_PROMPT_COMMAND_ID = f"rpc-{_PROMPT_COMMAND_NO}"
+_PROMPT_COMMAND_NAME = "prompt"
 
 
 def _prompt_frame(user_message: bytes) -> bytes:
@@ -36,7 +43,7 @@ def _prompt_frame(user_message: bytes) -> bytes:
         message = user_message.decode("utf-8")
     except UnicodeError:
         raise RpcProblem(RpcReason.INVALID_DESCRIPTION) from None
-    frame = command_frame("rpc-9", "prompt", message=message)
+    frame = command_frame(_PROMPT_COMMAND_ID, _PROMPT_COMMAND_NAME, message=message)
     if len(frame) > MAX_REQUEST_BYTES:
         raise RpcProblem(RpcReason.REQUEST_LIMIT)
     return frame
@@ -209,8 +216,10 @@ class _Connection:
 
     def notification(self, record: dict[str, Any]) -> None:
         level = record.get("level")
-        if level not in _LEVELS or (
-            self.expected_level is not None and level != self.expected_level
+        if (
+            type(level) is not str
+            or level not in THINKING_LEVELS
+            or (self.expected_level is not None and level != self.expected_level)
         ):
             raise RpcProblem(RpcReason.THINKING_STATE)
 
@@ -235,7 +244,9 @@ def _initialize(
     if (
         not isinstance(levels, list)
         or not levels
-        or any(type(level) is not str or level not in _LEVELS for level in levels)
+        or any(
+            type(level) is not str or level not in THINKING_LEVELS for level in levels
+        )
         or description.thinking_level not in levels
     ):
         raise RpcProblem(RpcReason.THINKING_UNSUPPORTED)
@@ -281,8 +292,8 @@ def _run(
 ) -> RpcCandidate:
     events = RunEvents(description, user_message.decode("utf-8"))
     connection.before_command(connection.total_deadline)
-    connection.command_no = 9
-    connection.awaiting = ("rpc-9", "prompt")
+    connection.command_no = _PROMPT_COMMAND_NO
+    connection.awaiting = (_PROMPT_COMMAND_ID, _PROMPT_COMMAND_NAME)
     connection.send(_prompt_frame(user_message), connection.total_deadline)
     acked = False
     closed = False
@@ -291,7 +302,7 @@ def _run(
         if record.get("type") == "response":
             if acked:
                 raise RpcProblem(RpcReason.RESPONSE_MISMATCH)
-            data = connection.response(record, "rpc-9", "prompt")
+            data = connection.response(record, _PROMPT_COMMAND_ID, _PROMPT_COMMAND_NAME)
             if data.get("disposition") != "started":
                 raise RpcProblem(RpcReason.PROMPT_DISPOSITION)
             acked = True
@@ -406,7 +417,8 @@ def run_call(
             or PROTOCOL_PROFILES.get(description.pi_version)
             != description.protocol_profile
             or description.protocol != "prompt_only"
-            or description.thinking_level not in _LEVELS
+            or type(description.thinking_level) is not str
+            or description.thinking_level not in THINKING_LEVELS
             or type(description.system_prompt) is not bytes
             or not description.system_prompt
             or any(
