@@ -25,6 +25,10 @@ class ReadErrorCategory(StrEnum):
     DUPLICATE_PROVENANCE = "duplicate_provenance"
     UNSUPPORTED_SOURCE = "unsupported_source"
     UNSUPPORTED_MODE = "unsupported_mode"
+    MISSING_ALLOWED_EVIDENCE = "missing_allowed_evidence"
+    UNEXPECTED_ALLOWED_EVIDENCE = "unexpected_allowed_evidence"
+    INVALID_ALLOWED_EVIDENCE = "invalid_allowed_evidence"
+    UNKNOWN_ALLOWED_EVIDENCE = "unknown_allowed_evidence"
     INVALID_JSON = "invalid_json"
     MISSING_FIELD = "missing_field"
     EXTRA_FIELD = "extra_field"
@@ -41,6 +45,7 @@ class ReadErrorCategory(StrEnum):
     EVIDENCE_REQUIRED = "evidence_required"
     RESTRICTED_NUMERIC_SUPPORT = "restricted_numeric_support"
     RESTRICTED_SOURCE_REFERENCE = "restricted_source_reference"
+    EVIDENCE_NOT_ALLOWED = "evidence_not_allowed"
 
 
 @dataclass(frozen=True, slots=True)

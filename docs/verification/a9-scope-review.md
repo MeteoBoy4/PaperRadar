@@ -144,3 +144,29 @@ Table/Section 前缀；Table/Section 标签仍排除，规则身份保持 v1。
 
 没有新增迁移、人工复核后门或 attempt；未运行 live，orig 哈希覆盖、真实 PDF 与
 科学语义仍未验证。阶段 G 的修正提示和 attempt 结算仍由未来生产接收器实现。
+
+## A9-04（#96）
+
+本票基于 integration 的 `c2d38b75a31238261e9056790fa61ab534b19c52`。
+新增同正文 `AllowedEvidence` 及 single/reduce 约束；原始字节仍由同一验证入口处理。
+不修改冻结契约、Screening、配置、migration 或任何 scope。完整重绑与全量门禁留 #99。
+
+| 路径 | #96 前 SHA-256 | #96 SHA-256 | 原因 |
+| --- | --- | --- | --- |
+| `src/paper_radar/reading/__init__.py` | `90f7cfb756c987d71ddc7dc949372e9fea78378a958849ffbdac6a0492c828a3` | `a7a980453943233f5f40169205e74e22b5d81bfc959196bdbc746fd62c782f3a` | 导出程序侧允许集合，模型 Schema 不变 |
+| `src/paper_radar/reading/context.py` | `411b3ba87182889e92b97b3533ea784fc1a47b98572d0d12e0c35ea54439a561` | `9a3e7c7a07d7231c929a72e8e7c4e035b21d10e15b47c67dd1238eee3d56a942` | 冻结集合，核对模式、三元组、重复及未知成员 |
+| `src/paper_radar/reading/errors.py` | `4415bbbb6e6b5b3630e7e2cef116c9992153d705a82f7a5cb155ed566d2c32db` | `dd256e8a882e4f3b876e171811f9f3b1aa6dace64a79ec2346fba4d8e18e1a26` | 分开调用方集合错误与模型引用越界 |
+| `src/paper_radar/reading/validation.py` | `02d037df5a9d3887fb2e58ede010c1b52a9e95da31564a87648bd11c9491e404` | `3a48b8cf016b576ae38202582a2ae02c8100ec433502835141e9078a7f299632` | 按同一保护字段循环核对允许范围和有效引用义务 |
+| `tests/test_read_context.py` | `6b4b075b946c2356894a5d9517f6131c48513ee29eacaa65048855726919e730` | `3096c617684cff38d9e8d6db8a069dcf30b76215df00af7cf8a3bab6bec35144` | reduce 暂拒替换为缺少明确允许集合拒绝，保留负例与原分母 |
+| `README.md` | `17f1109319626c056fa5102d79a3c648d57bf3b03f03267b2ee7f8cd5a9d754c` | `941de3d944ee9695b2c76381b4c86c5fba70d1dd0703e175eecef88564fdcaf4` | 说明 reduce 范围已交付及生产来源未验证 |
+| `docs/contracts/read-validation.md` | `dac412d2f895e7cef1449c35192e31147bc169e85ea18872e85d3169a87df5b4` | `ca7d85a12adb36f4bd58b3fad65a5ccb618a1f431da6eecc587c9bd7a20e9a51` | 公共字段、错误边界、空集合诊断及覆盖台账 |
+
+新增 `tests/test_read_reduce.py` 共 42 项；原 `tests/test_read_context.py` 保持 59 项。
+本票 Read/配置组合实际 331 passed；Ruff format/check、全项目 mypy（515 文件）通过。
+scope 审计收集 reason=ok、skip/deselect=0、execution=not_run，退出 1 为既有预期
+hash_drift；受影响组为 A1、A2-01、完整 A2、A3–A8。没有动态回填任何固定分母。
+
+42 项通过范围包含：同候选 single/允许 reduce/排除 reduce、三元组各分量不符、
+重复/未知/严格 ID、集合类型及防御冻结、空集合双诊断、五类保护内容范围、数值和
+模型警告保留、严格输出规则与重新导出同一冻结 Read Schema。
+未证明真实 map 来源链、生产正文/模型、完整 Read StageInput、任务或预算；未运行 live。

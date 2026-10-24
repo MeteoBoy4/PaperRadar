@@ -75,6 +75,35 @@ class SourceSlice:
 
 
 @dataclass(frozen=True, slots=True, init=False)
+class AllowedEvidence:
+    """同正文 map 已定位的有序证据范围;不证明 map 生产来源。"""
+
+    identity: ExtractionIdentity
+    evidence_ids: tuple[str, ...] = field(repr=False)
+
+    def __init__(
+        self, identity: ExtractionIdentity, evidence_ids: Sequence[str]
+    ) -> None:
+        if not _valid_identity(identity):
+            _reject("$.allowed_evidence.identity", ReadErrorCategory.INVALID_IDENTITY)
+        if type(evidence_ids) not in (tuple, list):
+            _reject(
+                "$.allowed_evidence.evidence_ids",
+                ReadErrorCategory.INVALID_ALLOWED_EVIDENCE,
+            )
+        seen: set[str] = set()
+        for index, identifier in enumerate(evidence_ids):
+            location = f"$.allowed_evidence.evidence_ids[{index}]"
+            if not valid_id(identifier):
+                _reject(location, ReadErrorCategory.INVALID_EVIDENCE_ID)
+            if identifier in seen:
+                _reject(location, ReadErrorCategory.DUPLICATE_ID)
+            seen.add(identifier)
+        object.__setattr__(self, "identity", identity)
+        object.__setattr__(self, "evidence_ids", tuple(evidence_ids))
+
+
+@dataclass(frozen=True, slots=True, init=False)
 class ReadContext:
     identity: ExtractionIdentity
     pages: tuple[PageFact, ...]
@@ -82,6 +111,7 @@ class ReadContext:
     evidence: tuple[Evidence, ...] = field(repr=False)
     expected_language: Literal["zh", "en"] | None = None
     mode: Literal["single", "reduce"] = "single"
+    allowed_evidence: AllowedEvidence | None = field(default=None, repr=False)
 
     def __init__(
         self,
@@ -91,6 +121,7 @@ class ReadContext:
         evidence: Sequence[Evidence] = (),
         expected_language: Literal["zh", "en"] | None = None,
         mode: Literal["single", "reduce"] = "single",
+        allowed_evidence: AllowedEvidence | None = None,
     ) -> None:
         object.__setattr__(self, "identity", identity)
         object.__setattr__(self, "pages", pages)
@@ -98,6 +129,7 @@ class ReadContext:
         object.__setattr__(self, "evidence", evidence)
         object.__setattr__(self, "expected_language", expected_language)
         object.__setattr__(self, "mode", mode)
+        object.__setattr__(self, "allowed_evidence", allowed_evidence)
         self.__post_init__()
 
     def __post_init__(self) -> None:
@@ -110,6 +142,7 @@ class ReadContext:
         self._validate_pages()
         self._validate_sources()
         self._validate_evidence()
+        self._validate_allowance()
         object.__setattr__(self, "pages", tuple(self.pages))
         object.__setattr__(self, "source_blocks", tuple(self.source_blocks))
         object.__setattr__(
@@ -132,8 +165,31 @@ class ReadContext:
             _reject("$.identity", ReadErrorCategory.INVALID_IDENTITY)
         if self.expected_language not in ("zh", "en"):
             _reject("$.expected_language", ReadErrorCategory.INVALID_CONTEXT)
-        if self.mode != "single":
+        if self.mode not in ("single", "reduce"):
             _reject("$.mode", ReadErrorCategory.UNSUPPORTED_MODE)
+        if self.mode == "single" and self.allowed_evidence is not None:
+            _reject("$.allowed_evidence", ReadErrorCategory.UNEXPECTED_ALLOWED_EVIDENCE)
+        if self.mode == "reduce" and self.allowed_evidence is None:
+            _reject("$.allowed_evidence", ReadErrorCategory.MISSING_ALLOWED_EVIDENCE)
+        if (
+            self.allowed_evidence is not None
+            and type(self.allowed_evidence) is not AllowedEvidence
+        ):
+            _reject("$.allowed_evidence", ReadErrorCategory.INVALID_ALLOWED_EVIDENCE)
+
+    def _validate_allowance(self) -> None:
+        allowance = self.allowed_evidence
+        if allowance is None:
+            return
+        if allowance.identity != self.identity:
+            _reject("$.allowed_evidence.identity", ReadErrorCategory.IDENTITY_MISMATCH)
+        known = {item.evidence_id for item in self.evidence}
+        for index, identifier in enumerate(allowance.evidence_ids):
+            if identifier not in known:
+                _reject(
+                    f"$.allowed_evidence.evidence_ids[{index}]",
+                    ReadErrorCategory.UNKNOWN_ALLOWED_EVIDENCE,
+                )
 
     def _validate_pages(self) -> None:
         seen: set[int] = set()

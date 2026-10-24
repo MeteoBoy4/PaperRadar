@@ -24,7 +24,7 @@ IDENTITY = ExtractionIdentity("extraction-1", "reading-1", "map-1")
     [
         ({"expected_language": None}, "$.expected_language", "invalid_context"),
         ({"expected_language": "fr"}, "$.expected_language", "invalid_context"),
-        ({"mode": "reduce"}, "$.mode", "unsupported_mode"),
+        ({"mode": "reduce"}, "$.allowed_evidence", "missing_allowed_evidence"),
         ({"identity": ("wrong",)}, "$.identity", "invalid_identity"),
         (
             {"pages": [PageFact(IDENTITY, 3, 600, 800, "top_left")] * 2},
