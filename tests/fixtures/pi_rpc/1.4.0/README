@@ -1,0 +1,100 @@
+# Pi RPC 1.4.0 来源摘要与样例登记
+
+2026-10-24 实际只读核对。先读 `pi-coding-agent/docs/docs.json` 导航，再按需阅读对应文档与随包实现；20 个 SHA-256 均用 `sha256sum` 对本机文件重新计算，与 #85 正文八项及第一次补充十二项一致。原始命令结果另存 `/tmp/paperradar-85/protocol-hashes.txt`。未运行 Pi、Node、模型或抓流 spike；下列任何项都不是运行观测、项目供给登记或生产兼容证明。
+
+路径相对 `@earendil-works/`，便于区分三个包；普通测试只读仓库内冻结样例和本摘要，不访问用户个人安装。
+
+## 材料指纹
+
+| 来源批次 | 材料 | SHA-256 |
+|---|---|---|
+| 正文 | `pi-coding-agent/package.json` | `df6883685382d6a914e5797232744c26579fe7db5576ea0e9c859d018ca2d54e` |
+| 正文 | `pi-coding-agent/docs/docs.json` | `fc0bccd6bf66716ad1067d4fbf7258f674d89c89a12cb0b2587a027b9d7fdc49` |
+| 正文 | `pi-coding-agent/docs/rpc.md` | `37a03d180115460a0a275022f4aeabef1e5345458df6a9b6e8a6de18474de720` |
+| 正文 | `pi-coding-agent/docs/rpc-commands.md` | `4deeee367852f4633ef594bc079f9e9fb14640a4e3ba8a69b7c89b6f54740838` |
+| 正文 | `pi-coding-agent/docs/json.md` | `f103191816fdcf3627dfc98b89acad8a28eee737697130ddaeb2581131213543` |
+| 正文 | `pi-coding-agent/docs/message-types.md` | `b832893fb762f87fdbbfd694241d484592942823791f3e81a6c4d915421ff5db` |
+| 正文 | `pi-coding-agent/docs/settings.md` | `2915d26f91f4c46ab1b92e63cbc46b8d48888fa0e491168642a5a90f973bd814` |
+| 正文 | `pi-coding-agent/dist/modes/rpc/rpc-mode.js` | `631697cd35928fc827f4a423538c43ff227b8cbf63c2a2f11060616f55eba6db` |
+| 第一次补充 | `pi-coding-agent/dist/core/agent-session.js` | `436e8be3bbab2db475ce30bb5d0bb30f0046b19a3476f8cd57b8133e68891162` |
+| 第一次补充 | `pi-coding-agent/dist/core/settings-manager.js` | `f3eeaadbc97b8c36acf98b1dd5894265f7f719bab95218e66dbc8c25658d5b12` |
+| 第一次补充 | `pi-coding-agent/dist/core/system-prompt.js` | `ab02924fa078eef81addcf39bc0e43d3663f06d627cb42ead403662a004a9e5c` |
+| 第一次补充 | `pi-coding-agent/dist/core/resource-loader.js` | `ad50235884ea6d5ee14cdae1efcfe6afef58b22b18ce574e81886d57ca9f4642` |
+| 第一次补充 | `pi-coding-agent/dist/core/cache-warmer.js` | `9c4b000930d6d3c567073102f6b6a52660110bb0f79cf78dd72c4dd1ebc87fc0` |
+| 第一次补充 | `pi-coding-agent/dist/core/prompt-templates.js` | `7661704470a957c98d63132b178cb4b8238a268ff9ad25c1ad2a3e705ec4e41c` |
+| 第一次补充 | `pi-coding-agent/dist/modes/rpc/jsonl.js` | `049a9f8ca4242c79f1911ed977949e8d8906b4561f424c2729687f426fabaacf` |
+| 第一次补充 | `pi-agent-core/dist/agent-loop.js` | `22ee81f9977e211044c1ad41a763876c793ca7fc1c5b39b9fa7f76f3cb281129` |
+| 第一次补充 | `pi-ai/dist/api/openai-completions.js` | `106eb312121137abbe9ad8050e2c9baa1ea27315233c7b8bee8c7820c8b3a6cf` |
+| 第一次补充 | `pi-ai/dist/api/anthropic-messages.js` | `360298eff89e8c517c213880088db33c93b56ba737c91e885b22e7e125ca5d55` |
+| 第一次补充 | `pi-coding-agent/docs/cli.md` | `c45e59f31574de71770a71c9a7c9b6ac03bf9cad4928aa31bb6614d661733679` |
+| 第一次补充 | `pi-coding-agent/docs/environment-variables.md` | `097f2101e285f51f509be0b176d458825b83b929a635ae29d2a43703168170dd` |
+
+摘要只登记查阅材料身份；不需复制完整上游文档或完整实现到仓库。来自其他已查阅随包文件的行号是补充解释指针，不伪称它们已包含在上述20项中，例如 `dist/modes/json-event.js`、`dist/core/agent-session-runtime.js`。
+
+## 三态来源含义
+
+| 来源标识 | 含义 | 允许声称的范围 |
+|---|---|---|
+| 文档明载 | 固定 1.4.0 随包文档明确给出字段或行为 | 实现按所载协议构造合成样例；不称实测。 |
+| 源码推导 | 从上述随包源码推导限定运行条件下应出现的形状/次序 | 内核 fail closed 核对的是与所读源码相符；真实运行前仍须逐编号验证。 |
+| 防御性合成 | 为验证错误边界或异步健壮性而人工构造 | 证明遇到该字节流如何响应；不声称 Pi 实际会产生。 |
+
+所有样例本身均为人工编写的合成材料；“文档明载/源码推导”描述样例规则的依据，不表示样例是从真实 Pi 捕获的流。
+
+## 文档明载的主要样例规则
+
+| 样例规则标签 | 规则 | 固定依据 |
+|---|---|---|
+| `DOC-FRAMING` | 完整 JSON 对象+LF，接受 CRLF，U+2028/U+2029 不分帧；RPC 无 JSON-mode session header | `docs/rpc.md:50–56`，`docs/json.md:9,13–29` |
+| `DOC-RESPONSE` | response 按 id、command 关联；成功 ACK 与执行完成分开 | `docs/rpc.md:35–46,58–89` |
+| `DOC-DISPOSITION` | started/queued/handled 为 prompt dispositions；A8 仅接 started 是项目策略 | `docs/rpc-commands.md:7–42` |
+| `DOC-STATE` | state/model/levels 字段；new_session cancelled；set_thinking_level ACK 无 data | `docs/rpc-commands.md:130–186,210–225,274–327` |
+| `DOC-MESSAGES` | system/user/assistant 结构，text/thinking/signature 区别，stopReason 全集 | `docs/message-types.md:15–145` |
+| `DOC-UPDATES` | wire message_update 去掉 cumulative message/partial，text_*/thinking_* 对应字段；provider start/done/error 正常经 agent loop 转换 | `docs/json.md:62–98` |
+| `DOC-ENDINGS` | message_end 为完成消息；turn_end/agent_end/agent_settled 各有不同意义 | `docs/json.md:31–68` |
+| `DOC-CANCEL-CLOSE` | clear_queue 在 abort 前，abort 等 idle；关 stdin 请求有序退出 | `docs/rpc-commands.md:94–128`，`docs/rpc.md:91–95` |
+| `DOC-USAGE` | reasoning 已含 output，cacheWrite1h 是 cacheWrite 子集；cacheWarming/provider retry 是独立配置 | `docs/message-types.md:67–90`，`docs/settings.md:21–23,132–136` |
+
+## 源码推导假设登记表（稳定编号）
+
+以下编号供 README、Contract 的 not_assessed、生产启动器门槛和后续实测逐项互引；如果推导被实测推翻，按编号同时修订对应 Contract 和 fixtures，不能悄悄把来源改称观测。
+
+| 编号 | 源码推导规则及 A8 检查 | 源码依据（包名前缀同上） | 尚未证明/生产前置 |
+|---|---|---|---|
+| `DERIVED-01` | 初次 run 先有恰好一个 system 补丁：content=""；sections 仅 preamble/cwd；preamble 原样，无 toolsAdded/toolsRemoved | `pi-coding-agent/dist/core/agent-session.js:1323–1328,1525–1528`；`dist/core/system-prompt.js:68–120,140–150` | 须用真实固定启动策略证明没有默认提示、项目资源、extension 改写或工具；形状吻合本身不是 OS 隔离证明。 |
+| `DERIVED-02` | Pi 强制追加 cwd；其 section 实际为 `<cwd>\n${normalizedCwd}\n</cwd>`，preamble 不包装 | `pi-coding-agent/dist/core/system-prompt.js:110–118` | A8 只用合成 cwd；生产常量需所有者确认，目录无个人信息及项目资源，并由内核按该值白名单核对。 |
+| `DERIVED-03` | 无图片/transform 的 user content 恰为一项 text；文本逐字等于发送内容 | `pi-coding-agent/dist/core/agent-session.js:1500–1509` | 真实 input handler、图片提示与 slash/template 展开均须关闭；A8 的固定非 slash 头部和回显检查只证明可观察一致。 |
+| `DERIVED-04` | 新 run 的 agent_end.messages 恰为 [system,user,assistant]；system/user 在其 start/end 及 aggregate 中重复回显，最终 assistant 在 message_end/turn_end/agent_end 重复回显 | `pi-coding-agent/dist/core/agent-session.js:1480–1529`；`pi-agent-core/dist/agent-loop.js:48–61,178–212` | 真实事件序列须复核；文档简化示例省略 system，不代表真实新会话可省略。单帧/累计上限必须计三倍回显以及 thinking/signature。 |
+| `DERIVED-05` | 新临时会话首 prompt 前 messageCount=0、pendingMessageCount=0；in-memory sessionFile 在 JSON 中缺键（A8 容忍 null） | `pi-coding-agent/dist/core/agent-session-runtime.js:147–172`；`dist/modes/rpc/rpc-mode.js:345–360`；`dist/core/agent-session.js:1242–1243` | 需真实 --no-session 启动验证；只读字段缺键不独立证明所有落盘路径被禁止。 |
+| `DERIVED-06` | 无 extension/template/skills 时 get_commands 返回空列表；A8 非空一律拒绝 | `pi-coding-agent/dist/modes/rpc/rpc-mode.js:540–566` | 真实资源发现关闭仍靠启动策略验收；空 commands 不独立证明无任意扩展副作用。 |
+| `DERIVED-07` | 正常新会话 prompt started ACK 在 agent_start 之前；set_model 可重置档位，初始化期 thinking_level_changed 可在 ACK 前出现 | `pi-coding-agent/dist/modes/rpc/rpc-mode.js:298–317`；`dist/core/agent-session.js:1423–1449,1693,2008–2024,2114–2126` | 各命令严格一问一答；完成早于 ACK 样例单独标防御性合成，不能当1.4.0观测。 |
+| `DERIVED-08` | totalTokens=input+output+cacheRead+cacheWrite；全零初始化意味着最终零无法区分未报告/真实零 | `pi-ai/dist/api/openai-completions.js:155–170,1186–1196` | D3 用 totalTokens==0→两字段未知；否则总提示量含缓存读，不当计费输入；真实 provider 口径/用量未验收。 |
+| `DERIVED-09` | settled 后在无 extension/额外工作路径应无进一步 stdout 协议记录；A8 立即关 stdin 后继续排空并把额外记录拒绝 | `pi-coding-agent/dist/core/agent-session.js:683–706,1464–1471`；`dist/modes/rpc/rpc-mode.js:579–595,639–645` | 这是 A8 fail-closed 后置条件；不能证明 cacheWarmer/其他自动网络活动未发生，特别是 cache warmer 在 settled 前已收到 onAgentSettled。 |
+| `DERIVED-10` | 最终 thinkingLevel 是请求档位的记录，provider/model 主要为请求回显；OpenAI/Anthropic 的 responseModel 在不同请求模型时设置 | `pi-agent-core/dist/agent-loop.js:282–283`；`pi-ai/dist/api/openai-completions.js:155–160,359–361`；`anthropic-messages.js:480–487` | A8 只核对 Pi 记录与既有 A7 model_matches；真实 provider 参数生效、日期别名与能力映射另验收。 |
+
+注：`DERIVED-05` 的补充 runtime 指针与 `DERIVED-10` 的细节不新增第21个“已冻结供给材料”；20项表仅忠实复核工单要求的材料清单。实现者若需要扩大来源清单，应明确列为额外阅读材料，不能假称来自原20项。
+
+## 防御性合成样例规则
+
+| 样例规则标签 | 人工构造情形 | 期望说明 |
+|---|---|---|
+| `SYNTH-ACK-AFTER-COMPLETION` | 完成事件先到，started ACK 后到 | 验证等待全部条件，不表示源码正常顺序。 |
+| `SYNTH-BAD-FRAMING` | 分包、中文/emoji 跨包、多帧同包；坏 UTF-8/重复键/NaN/非对象/未结束尾帧/超限 | 正例规则来自文档；负例字节人工构造，只证明 fail closed。 |
+| `SYNTH-EXECUTION-VIOLATION` | 多 turn/assistant、重复 settled、未知事件、工具/retry/compaction/queue 等不允许事件 | 项目有界策略下受控拒绝，不声称这些异常被真实 provider 提前阻止。 |
+| `SYNTH-CONTRADICTORY-COPIES` | message_end 与 turn_end/agent_end 副本不符 | 验证同一完整候选的一致性；不产生第二候选或部分成功。 |
+| `SYNTH-FAULT-CANCEL` | 超时、取消、EOF、stderr 洪泛、异常退出、关闭不响应、KeyboardInterrupt | Python fixture/fake 只模拟协议与生命周期；进程组回收不是 OS 沙箱。 |
+| `SYNTH-INNER-INVALID` | 候选 text 是围栏、重复键、NaN、错误主题/评分/坏 JSON | 外层协议仍完整；交 A1/A7 原权威验证得到 output_invalid，适配器不清洗。 |
+
+## 不应从材料身份或合成结果推断的结论
+
+`rpc_verified`、`live_verified`、`stage_a_verified` 继续为 false。真实 Pi 启动、凭据/参数映射、OS 权限隔离、自动网络活动、cacheWarming/provider retry 抑制、原题名语言生产来源与校准资格均未验收。后续启动器必须复用本协议组件，并逐项核对上表 DERIVED 编号。
+
+## 本目录已登记材料
+
+- `request-vectors.json`：防御性合成，来源规则为 render_format=1 与领域冻结 Schema。
+  12 个独立字节向量为两篇论文 × boundary/value × 首次/output_invalid修正/timeout修正。
+  字段字面量、六段 Profile 顺序、主题顺序和固定 Contract Schema 独立写入后用标准库
+  JSON 编码；没有调用 `build_call` 或 `render_request` 生成期望。普通测试不会重写向量。
+  输出无效修正附带受控 A1 字段/类别，timeout 修正无 issues。恶意文本只是 JSON 值。
+- 后续 wire fixtures 将在 #87–#89 按上述 DOC、DERIVED 与 SYNTH 标签登记；本票不运行
+  Pi 来补获流，不把尚未存在的 wire 用例列为通过。
