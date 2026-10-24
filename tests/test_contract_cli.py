@@ -36,7 +36,7 @@ _ALL_CONTRACT_ARGUMENTS = tuple(
 )
 _UNKNOWN_CONTRACT_GUIDANCE = (
     "未知契约；当前支持："
-    "boundary、value-prediction、reuse-assessment、decision-reasons。"
+    "boundary、value-prediction、reuse-assessment、decision-reasons、read。"
 )
 
 

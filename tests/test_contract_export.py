@@ -21,6 +21,13 @@ from paper_radar.contracts import (
 )
 from tests.contract_snapshot_support import canonical_json_bytes
 
+_A1_CONTRACT_NAMES = (
+    ContractName.BOUNDARY,
+    ContractName.VALUE_PREDICTION,
+    ContractName.REUSE_ASSESSMENT,
+    ContractName.DECISION_REASONS,
+)
+
 
 def _snapshot_files(root: Path) -> tuple[Path, Path]:
     snapshot_dir = root / "screening" / "boundary" / "v1"
@@ -34,7 +41,7 @@ def test_batch_preflight_reports_each_item_without_publishing(tmp_path: Path) ->
     broken = root / "screening" / "decision-reasons" / "v1" / "schema.json"
     broken.write_text('{"broken": true}\n', encoding="utf-8")
 
-    result = export_frozen_contracts(tuple(ContractName), "v1", root)
+    result = export_frozen_contracts(_A1_CONTRACT_NAMES, "v1", root)
 
     assert isinstance(result, ContractBatchExportResult)
     assert result.passed is False
@@ -68,7 +75,7 @@ def test_batch_preflight_keeps_matched_item_after_failure(tmp_path: Path) -> Non
     broken, _manifest = _snapshot_files(root)
     broken.write_text('{"broken": true}\n', encoding="utf-8")
 
-    result = export_frozen_contracts(tuple(ContractName), "v1", root)
+    result = export_frozen_contracts(_A1_CONTRACT_NAMES, "v1", root)
 
     assert result.passed is False
     assert [item.outcome for item in result.items] == [
@@ -104,7 +111,7 @@ def test_batch_publish_failure_keeps_later_matched_item_unchanged(
 
     monkeypatch.setattr(os, "replace", fail_second_publish)
 
-    result = export_frozen_contracts(tuple(ContractName), "v1", root)
+    result = export_frozen_contracts(_A1_CONTRACT_NAMES, "v1", root)
 
     assert result.passed is False
     assert [item.outcome for item in result.items] == [

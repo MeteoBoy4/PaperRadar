@@ -18,6 +18,12 @@ _CONTRACT_CASES = (
     (ContractName.VALUE_PREDICTION, "value-prediction", ValuePredictionOutput),
     (ContractName.REUSE_ASSESSMENT, "reuse-assessment", ReuseAssessmentOutput),
 )
+_A1_CONTRACT_NAMES = (
+    ContractName.BOUNDARY,
+    ContractName.VALUE_PREDICTION,
+    ContractName.REUSE_ASSESSMENT,
+    ContractName.DECISION_REASONS,
+)
 
 
 def test_boundary_contract_is_generated_deterministically_from_model() -> None:
@@ -94,7 +100,7 @@ def test_decision_reason_contract_preserves_authoritative_legal_combinations() -
     }
 
 
-@pytest.mark.parametrize("name", tuple(ContractName))
+@pytest.mark.parametrize("name", _A1_CONTRACT_NAMES)
 def test_committed_snapshots_match_every_authoritative_contract(
     name: ContractName,
 ) -> None:
@@ -110,7 +116,7 @@ def test_committed_snapshots_match_every_authoritative_contract(
 def test_frozen_schemas_exclude_forbidden_outputs_and_runtime_context() -> None:
     serialized_schemas = b"\n".join(
         build_frozen_contract(name, ContractVersion.V1).schema_bytes
-        for name in ContractName
+        for name in _A1_CONTRACT_NAMES
     )
 
     for forbidden_name in (

@@ -1,0 +1,7 @@
+{
+  "contract": "read",
+  "format_version": 1,
+  "schema_file": "schema.json",
+  "schema_sha256": "1ac06948024aab610c6b2c1098d0a53596632c940704d32fae860a03ed5d6111",
+  "version": "v1"
+}

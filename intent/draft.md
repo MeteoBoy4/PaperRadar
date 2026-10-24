@@ -18,6 +18,11 @@
 
 ## 任务阅读导航
 
+> 2026-10-24：#92 最终裁决已同步 §4.10：Read 自有冻结词汇、正文消费身份三元组、
+> 窄受限矩阵、阿拉伯数字检查与三种警告视图。#93 已交付 Read v1 结构与冻结材料；
+> 证据业务校验、配置准入、非空恢复和独立 A9 验收仍由 #94–#99 继续，
+> 不表示真实 Read 或完整阶段 A 已验收，详见 [Read Contract](../docs/contracts/read-validation.md)。
+
 按任务选择下表中的相关行，先读主要章节，再核对联动约束；跨主题任务合并阅读路径，并继续跟随正文中的引用。导航只提供阅读入口，具体规则与验收要求以对应正文为准。
 
 |任务类型|主要阅读|联动核对|
@@ -693,7 +698,7 @@ Read 只处理：
 
 最终结构契约：
 
-以下是 Read 的设计定义；生产接入必须先实现单一权威 Pydantic Schema 与业务验证器，再由它导出 Frozen Contract。可行性研究使用的临时 Read Schema 不取得生产权威资格。单次调用及 map/reduce 均由 Python 编排并通过 §7.7 的隔离 Pi 会话执行；分块、输入证据选择和最终引用检查由 PaperRadar 控制，不新增 Agent evidence 查询或 PDF 工具。
+以下是 Read 的目标定义；#93 已实现单一权威 Pydantic Schema 并导出 Read v1 Frozen Contract，证据业务验证器仍由 #94–#96 交付。可行性研究使用的临时 Read Schema 不取得生产权威资格。单次调用及 map/reduce 的生产目标仍由 Python 编排并通过 §7.7 的隔离 Pi 会话执行；分块、输入证据选择和最终引用检查由 PaperRadar 控制，不新增 Agent evidence 查询或 PDF 工具。
 
 ~~~python
 class EvidenceRef(BaseModel):
@@ -732,15 +737,31 @@ class ReadAnalysisOutput(BaseModel):
     degraded_content_warnings: list[str]
 ~~~
 
-主要发现、两项正式评分理由、可复用内容和关键局限都必须引用 evidence ID。程序检查：
+Read 持有自己的七类 ValueType 冻结定义；冻结时的 wire 值和中文含义与 Screening v1
+一致，未来两者演进独立决定版本，不动态 import Screening 枚举。`next_action`
+保留为叙述性建议，仅作非空/有意义文本校验，不承担流程控制，也不增加证据义务、
+数值检查或紧急性措辞判定。18 个字段均必填，完整闭集与嵌套约束见
+[Read Contract](../docs/contracts/read-validation.md#字段闭集)。
 
-- ID 属于当前正文提取物；
+主要发现、两项正式评分理由、可复用内容和关键局限都必须引用 evidence ID。程序检查的目标规则为：
+
+- ID 与正文消费身份 `(extraction_fingerprint, reading_sha256, evidence_map_sha256)` 共同解释；上下文、成员归属和结果均绑定三元组，同 fingerprint 不同消费内容不可互换；
 - 页码存在；
 - bbox 在页面边界内；
 - charspan 可以回放；
 - 支持片段非空；
-- 受限版面内容没有被冒充精确证据；
-- 从主要发现、两项评分理由、可复用内容和关键局限抽取数值字面量、范围和相邻单位，检查其是否出现在各自引用的支持片段中；不匹配不拒绝整份分析，但必须追加 `degraded_content_warnings` 并在单篇报告标出。
+- provenance 只指向源文本块，公式候选、占位及生成展示文本不能冒充源 orig；
+- 主要发现、两项评分理由与可复用点引用公式区域源字符或不可靠字符块时硬失败；表格结构描述允许，但某个数值只在其受限切片命中时硬失败；关键局限可引用受限所在，其数值仅受限命中时只降级警告；数值在所有引用切片中都未命中时统一降级，不硬失败；
+- 数值规则只抽取阿拉伯数字（含全角），中文数字不提取、不产生警告；排除拉丁字母直连标识符及封闭前缀交叉引用，采用封闭中英单位别名和排版等价，不换算或推导。范围两端须在同条 provenance 切片命中，不跨段拼接；
+- 仅对主要发现、两项评分理由、可复用内容和关键局限检查各自所引切片中的数值/范围/相邻单位。普通不匹配保留分析和评分并生成降级诊断；其他叙述字段不检查，不可在未来报告中冒充已核对；
+- orig 回放、切片和非空判断不作规范化；数值归一化仅用于比较；
+- 原模型警告逐字保留，安全结构化程序诊断单独返回，另提供带 origin 的只读合并警告视图供未来报告使用。程序中/英文模板按期望语言选择，不改变原始模型响应；幂等指同一原字节加同一上下文重复验证结果一致。
+
+A9 只消费合成给定上下文，不定义生产 evidence-map 协议；orig 的哈希覆盖仍由阶段 F
+裁决。非空恢复证明收缩为历史配置加 `model_success_response` 原始候选字节，恢复后用
+测试固定常量重建上下文，不把合成证据发布成生产 extraction，不宣称上下文从库恢复。
+证据/数值规则是否进入 Read StageInput 由后续票决定。单篇报告、真实 PDF provenance、
+四刊质量与生产模型均不因本票离线通过而取得验收资格。
 
 程序不调用第二个模型判断语义蕴含。Read 质量通过用户少量抽查发现，但不是自动精读启用门禁。
 
@@ -942,7 +963,7 @@ contracts/
   screening/value-prediction/v1/{schema,manifest}.json
   screening/reuse-assessment/v1/{schema,manifest}.json
   screening/decision-reasons/v1/{schema,manifest}.json
-  reading/v1.schema.json
+  read/read/v1/{schema,manifest}.json
 tools/
   pi/<supply_id>/
     package.json
