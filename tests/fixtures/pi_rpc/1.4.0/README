@@ -71,6 +71,7 @@
 | `DERIVED-08` | totalTokens=input+output+cacheRead+cacheWrite；全零初始化意味着最终零无法区分未报告/真实零 | `pi-ai/dist/api/openai-completions.js:155–170,1186–1196` | D3 用 totalTokens==0→两字段未知；否则总提示量含缓存读，不当计费输入；真实 provider 口径/用量未验收。 |
 | `DERIVED-09` | settled 后在无 extension/额外工作路径应无进一步 stdout 协议记录；A8 立即关 stdin 后继续排空并把额外记录拒绝 | `pi-coding-agent/dist/core/agent-session.js:683–706,1464–1471`；`dist/modes/rpc/rpc-mode.js:579–595,639–645` | 这是 A8 fail-closed 后置条件；不能证明 cacheWarmer/其他自动网络活动未发生，特别是 cache warmer 在 settled 前已收到 onAgentSettled。 |
 | `DERIVED-10` | 最终 thinkingLevel 是请求档位的记录，provider/model 主要为请求回显；OpenAI/Anthropic 的 responseModel 在不同请求模型时设置 | `pi-agent-core/dist/agent-loop.js:282–283`；`pi-ai/dist/api/openai-completions.js:155–160,359–361`；`anthropic-messages.js:480–487` | A8 只核对 Pi 记录与既有 A7 model_matches；真实 provider 参数生效、日期别名与能力映射另验收。 |
+| `DERIVED-11` | system/user 各在 start/end/aggregate 回显三次，最终 assistant 在 message_end/turn_end/aggregate 回显三次；agent_end 单帧含三者 | 同 DERIVED-04 的 `agent-session.js:1480–1529`、`agent-loop.js:48–61,178–212` | 4 MiB 单帧、16 MiB 累计预算计入三倍 prompt/system/候选/thinking/signature；合成近界正例不是实际流量测量。 |
 
 注：`DERIVED-05` 的补充 runtime 指针与 `DERIVED-10` 的细节不新增第21个“已冻结供给材料”；20项表仅忠实复核工单要求的材料清单。实现者若需要扩大来源清单，应明确列为额外阅读材料，不能假称来自原20项。
 
@@ -103,4 +104,12 @@
   `test_a8_rpc_protocol.py` 的完成早于 ACK 是 SYNTH-ACK-AFTER-COMPLETION；错误帧、
   预发未来 ACK、重复终局和错误枚举类型均为防御性合成，未作为 Pi 观测事实。
   `test_a8_rpc_boundary.py` 的内层围栏/非法字段是 SYNTH-INNER-INVALID；完整协议候选
-  仍交 A1/A7。#88–#89 继续补全事件与故障矩阵；不运行 Pi 补获流。
+  仍交 A1/A7。#88 补全事件与候选矩阵；#89 继续故障/管道/取消，不运行 Pi 补获流。
+- #88 的 `test_a8_rpc_candidates.py` 按 DOC-MESSAGES/UPDATES/USAGE、DERIVED-04/08/10/11
+  覆盖完整消息副本、事件封闭表、停止/角色/内容通道和审计值。错误副本含 bool/整数
+  伪相等，均为 SYNTH-CONTRADICTORY-COPIES；接近预算的合法 agent_end 为源码推导
+  的防御性合成正例。thinking/signature 和未知附加字段仅在内存参与完整副本比较。
+- `test_a8_rpc_value.py` 使用真实临时任务/制品和字节会话；历史同源语言/主题上下文由
+  A7 重建，RPC 不读取语言标记。业务坏 JSON/评分/主题/中文显示题名属于
+  SYNTH-INNER-INVALID；日期化 responseModel 不符由 A7 产生 model_mismatch。
+  正常候选仍不表示业务成功，token 是合成 Pi 报告值，provider_request_id 保持未知。

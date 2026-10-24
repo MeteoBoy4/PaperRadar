@@ -1,8 +1,9 @@
 # Pi 单次 RPC 调用 Contract
 
 状态：#86 交付冻结调用描述与 render_format=1；#87 交付显式注入会话的单次协议服务、
-严格解帧/初始化及 boundary 的 A7 test 接线。value 与完整负例、真实管道及取消握手、
-恢复和独立 A8 验收由 #88–#91 完成。以下把已裁决目标与目前证明范围分开记录。
+严格解帧/初始化及 boundary 的 A7 test 接线；#88 补全 value 同源权威接收、事件/
+最终消息矩阵及 D2/D3 审计边界。真实管道及取消握手、恢复和独立 A8 验收由 #89–#91
+完成。以下把已裁决目标与目前证明范围分开记录。
 依据为 [#85](https://github.com/MeteoBoy4/PaperRadar/issues/85) 正文及后续 D1–D4/P3。
 本 Contract 不新增 migration、业务 Schema、任务来源或生产命令。
 
@@ -127,6 +128,13 @@ system content=""、sections 只能有 preamble/cwd、preamble 精确等于描�
 最终 assistant 在 message_end/turn_end/agent_end 中的副本一致；agent_end.messages
 为 [system,user,assistant]。partial assistant_start 不要求等于最终消息。
 
+副本一致指完整解码值递归相等且类型一致：对象键顺序无关，数组顺序固定，所有已知
+和未知附加字段都参与比较；bool 与整数、整数与浮点不互相替代。system/user 的
+start/end 与 aggregate 也使用同一规则。矛盾副本为 message_mismatch，不重新提取
+另一候选；其他结束副本不能弥补 message_end 的必需字段。textSignature/
+thinkingSignature 存在时须为字符串，redacted 存在时须为严格布尔；合法空 thinking、
+签名、diagnostics/endTurn 和未知附加字段可以保留在内存核对，随事件丢弃。
+
 ACK 不是完成；等待唯一 started ACK、唯一完整最终消息、agent_end、未 aborted 的
 agent_settled 和正常进程关闭。防御性合成覆盖完成早于 ACK；此时 settled 立即关闭
 stdin，只允许尚欠的唯一匹配 prompt ACK 补齐条件，其他后续记录仍拒绝。仅 stop 合法；length、
@@ -134,6 +142,23 @@ error、aborted、pending、toolUse、deferred 不合法。额外 turn、工具�
 compaction、summarization、extension UI/错误、未知事件/角色/内容块/停止枚举均拒绝。
 已知记录的未知附加字段可容忍，必需字段类型严格。发送第一条命令前、settled 后
 有额外记录均失败；settled 后立即关 stdin 并排空等待退出，不能此刻提前返回成功。
+
+运行期封闭表（不允许项即使携带空内容仍拒绝）：
+
+| 记录/枚举 | 允许或受控拒绝 |
+| --- | --- |
+| agent_start/turn_start；system→user→assistant start/end；turn_end/agent_end/agent_settled | 按上述唯一顺序；重复/缺序为 event_sequence，缺完成且 EOF 为 eof |
+| message_update | 仅 assistant start/end 之间；text_start/delta/end、thinking_start/delta/end；严格非负整数 contentIndex，delta/content 为字符串，usage 形状同完整消息 |
+| toolcall_start/delta/end；provider start/done/error update | event_not_allowed；不从 provider 结束更新兜底 |
+| tool_execution_start/update/end；auto_retry_start/end；compaction_start/end；summarization_retry_scheduled/attempt_start/finished | event_not_allowed |
+| queue_update（含空 steering/followUp）、entry_appended、session_info_changed、运行期 thinking_level_changed、extension_error、extension_ui_request、bash_execution_update | event_not_allowed |
+| toolResult/custom/bashExecution/branchSummary/compactionSummary/未知 role | message_shape |
+| image/toolCall/未知内容块 type | channel |
+| pending/length/toolUse/error/aborted/deferred/未知 stopReason | stop_reason；deferred 不轮询 |
+| 未知记录 type、assistantMessageEvent.type | event_not_allowed；对象/数组等错误枚举类型也保持 protocol 类 |
+
+这里只证明可观察违例不会被接收；事件到达前真实 provider 是否已经执行额外请求，
+仍需生产启动策略和真实验收证明。
 
 最终候选只拼接完整 assistant 消息中的 text 块，按原序无分隔保留空白；thinking、
 签名不拼接。不从 delta 或 get_last_assistant_text 兜底。没有 text 块为协议失败；
@@ -186,6 +211,10 @@ Pi 报告 totalTokens==0 时 input_tokens/output_tokens 都为 null；否则 inp
 input+cacheRead+cacheWrite、output_tokens=output。reasoning 已包含在 output，
 不得再加。口径为 Pi 报告的总提示量（含缓存读），不是独立测量、计费输入或成本。
 1.4.0 全零初始化无法区别未报告和真实零；缓存拆分、成本不保存，不新增字段。
+四项及 totalTokens 必须为严格非负整数，并满足 totalTokens 等于四项之和（DERIVED-08）；
+可选 reasoning/cacheWrite1h 同样须为严格非负整数，前者已含在 output，后者为
+cacheWrite 子集，均不再相加。usage.cost 的 input/output/cacheRead/cacheWrite/total
+须为非负有限数且不接受 bool；任何形状或和关系不符均为 usage_shape。
 RPC command ID 与可选 responseId 都不假称 provider_request_id，该字段保持未知。
 完整事件、prompt、profile、摘要、thinking、stderr、错误自由文本不得进入 repr、日志、
 异常、数据库、制品或验收结果；只保留受控原因、标识摘要、计数和必要成功文本。
@@ -198,9 +227,15 @@ Pi 1.4.0 强制追加 cwd，section 实际是 `<cwd>\n<归一化路径>\n</cwd>`
 
 来源摘要与三态登记见 [固定材料 README](../../tests/fixtures/pi_rpc/1.4.0/README)。
 DERIVED-01(system补丁)、02(cwd包装)、03(user回显)、04(aggregate副本)、05(临时状态)、
-06(空commands)、07(ACK/档位顺序)、08(token总和)、09(settled后收尾)、10(请求回显)
+06(空commands)、07(ACK/档位顺序)、08(token总和)、09(settled后收尾)、10(请求回显)、
+11(三份回显预算)
 都只按源码推导 fail closed，尚未由真实 Pi 运行逐项确认。对应检查只证明与固定源码
 一致，不能把其升级成运行观测或生产隔离结论。
+
+#88 的 DERIVED-11 正例同时使用恰好 256 KiB 请求帧、64 KiB 候选和含 system/user/
+assistant 的 4 MiB agent_end 帧；完整流约三份合并回显，处于 16 MiB 累计界限内。
+thinking/signature 也计入三份回显。该正例证明固定上限可接收这组合法预算；超候选/
+帧/累计界限不返回半候选，也不保存原始流。
 
 生产启动器票必须在任何真实调用前完成以下准入，并逐项按 DERIVED 编号复核：
 

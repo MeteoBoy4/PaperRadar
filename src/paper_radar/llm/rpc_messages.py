@@ -38,6 +38,21 @@ def _number(value: object) -> bool:
     return type(value) is float and math.isfinite(value) and value >= 0
 
 
+def _same_json(left: object, right: object) -> bool:
+    """完整副本比较保留 JSON 类型,不把 true/1 或 false/0 合并。"""
+    if type(left) is not type(right):
+        return False
+    if isinstance(left, dict) and isinstance(right, dict):
+        return left.keys() == right.keys() and all(
+            _same_json(value, right[key]) for key, value in left.items()
+        )
+    if isinstance(left, list) and isinstance(right, list):
+        return len(left) == len(right) and all(
+            _same_json(a, b) for a, b in zip(left, right, strict=True)
+        )
+    return left == right
+
+
 def _timestamp(message: dict[str, Any]) -> None:
     if not _number(message.get("timestamp")):
         raise RpcProblem(RpcReason.MESSAGE_SHAPE)
@@ -48,6 +63,11 @@ def _usage(message: dict[str, Any]) -> tuple[int | None, int | None]:
     names = ("input", "output", "cacheRead", "cacheWrite", "totalTokens")
     if not isinstance(usage, dict) or any(
         type(usage.get(name)) is not int or usage[name] < 0 for name in names
+    ):
+        raise RpcProblem(RpcReason.USAGE_SHAPE)
+    if any(
+        name in usage and (type(usage[name]) is not int or usage[name] < 0)
+        for name in ("reasoning", "cacheWrite1h")
     ):
         raise RpcProblem(RpcReason.USAGE_SHAPE)
     cost = usage.get("cost")
@@ -94,10 +114,15 @@ class RunEvents:
         elif self._position in (6, 7):
             self._assistant_message(record)
         elif self._position == 8:
-            if record.get("message") != self._final or record.get("toolResults") != []:
+            if (
+                not _same_json(record.get("message"), self._final)
+                or record.get("toolResults") != []
+            ):
                 raise RpcProblem(RpcReason.MESSAGE_MISMATCH)
         elif self._position == 9:
-            if record.get("messages") != [self._system, self._user, self._final]:
+            if not _same_json(
+                record.get("messages"), [self._system, self._user, self._final]
+            ):
                 raise RpcProblem(RpcReason.MESSAGE_MISMATCH)
             if record.get("willRetry") is not False:
                 raise RpcProblem(RpcReason.EVENT_SEQUENCE)
@@ -128,7 +153,7 @@ class RunEvents:
             raise RpcProblem(RpcReason.SYSTEM_MISMATCH)
         if self._system is None:
             self._system = message
-        elif message != self._system:
+        elif not _same_json(message, self._system):
             raise RpcProblem(RpcReason.MESSAGE_MISMATCH)
 
     def _user_message_event(self, record: dict[str, Any]) -> None:
@@ -144,7 +169,7 @@ class RunEvents:
             raise RpcProblem(RpcReason.USER_MISMATCH)
         if self._user is None:
             self._user = message
-        elif message != self._user:
+        elif not _same_json(message, self._user):
             raise RpcProblem(RpcReason.MESSAGE_MISMATCH)
 
     def _assistant_message(self, record: dict[str, Any]) -> None:
@@ -179,6 +204,15 @@ class RunEvents:
                 raise RpcProblem(RpcReason.CHANNEL)
             name = "text" if block["type"] == "text" else "thinking"
             if not isinstance(block.get(name), str):
+                raise RpcProblem(RpcReason.MESSAGE_SHAPE)
+            signature = "textSignature" if name == "text" else "thinkingSignature"
+            if signature in block and not isinstance(block[signature], str):
+                raise RpcProblem(RpcReason.MESSAGE_SHAPE)
+            if (
+                name == "thinking"
+                and "redacted" in block
+                and type(block["redacted"]) is not bool
+            ):
                 raise RpcProblem(RpcReason.MESSAGE_SHAPE)
             if name == "text":
                 texts.append(block[name])
