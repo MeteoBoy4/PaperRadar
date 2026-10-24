@@ -15,6 +15,7 @@ class NumericReason(StrEnum):
     RANGE_NOT_SUPPORTED = "range_not_supported"
     UNIT_NOT_SUPPORTED = "unit_not_supported"
     UNRECOGNIZED_NUMERIC_FORM = "unrecognized_numeric_form"
+    RESTRICTED_NUMERIC_SUPPORT = "restricted_numeric_support"
 
 
 # 单位别名及其大小写是封闭记法;未知相邻词不参与比较。
@@ -49,7 +50,9 @@ _VALID_NUMBER = re.compile(
     r"[+\-]?(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)(?:\.[0-9]+)?(?:[eE][+\-]?[0-9]+)?|[+\-]?\.[0-9]+(?:[eE][+\-]?[0-9]+)?"
 )
 _REFERENCE_PREFIX = re.compile(
-    r"(?:图|表|式|节|Fig\.|Figure|Table|Eq\.|Section)\s*[\(\[]?\s*$", re.IGNORECASE
+    r"(?:图|表|式|节|(?<![A-Za-z0-9])(?:Fig\.|Figure|Table|Eq\.|Section))"
+    r"\s*[\(\[]?\s*$",
+    re.IGNORECASE,
 )
 _RANGE = re.compile(r"\s*(?:–|~|～|至|to|-)\s*", re.IGNORECASE)
 

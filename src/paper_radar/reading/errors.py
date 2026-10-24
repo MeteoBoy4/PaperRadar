@@ -1,7 +1,13 @@
 """Read 调用方上下文错误与模型输出拒绝的脱敏词汇。"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from paper_radar.reading.result import ReadDiagnostic
 
 
 class ReadErrorCategory(StrEnum):
@@ -37,6 +43,8 @@ class ReadErrorCategory(StrEnum):
     DUPLICATE_EVIDENCE = "duplicate_evidence"
     UNKNOWN_EVIDENCE = "unknown_evidence"
     EVIDENCE_REQUIRED = "evidence_required"
+    RESTRICTED_NUMERIC_SUPPORT = "restricted_numeric_support"
+    RESTRICTED_SOURCE_REFERENCE = "restricted_source_reference"
     EVIDENCE_NOT_ALLOWED = "evidence_not_allowed"
 
 
@@ -62,8 +70,14 @@ class ReadContextError(ValueError):
 class ReadOutputError(ValueError):
     """模型候选被权威接收规则拒绝。"""
 
-    def __init__(self, issues: tuple[ReadIssue, ...]) -> None:
+    def __init__(
+        self,
+        issues: tuple[ReadIssue, ...],
+        *,
+        diagnostics: tuple[ReadDiagnostic, ...] = (),
+    ) -> None:
         self.issues = issues
+        self.diagnostics = diagnostics
         super().__init__(
             "；".join(
                 f"{i.location} [{i.category.value}] {i.guidance_zh}" for i in issues
