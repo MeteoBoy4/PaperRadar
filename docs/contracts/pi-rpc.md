@@ -80,8 +80,24 @@ factory 每次只创建一个专属会话，接收完整描述及独立的 syste
 stdout/stderr 消费，返回 SessionEvent：written、stdout、stderr_bytes、stdout_eof、
 stderr_eof、exit_code。stderr 原文在会话内丢弃，只传计数。空 pending 仅表示没有待写
 数据；关闭输入必须显式 close_stdin()。EOF 与暂无数据、退出未知与退出 0 分开表达；
-leader 退出不能替代两条管道 EOF。terminate(timeout) 的契约是有界回收整组，包括
-leader 已退出的子孙；生产管道包装器在 #89 实现，不由测试替身冒充产品能力。
+leader 退出不能替代两条管道 EOF。terminate(timeout) 有界回收整组，包括 leader
+已退出的子孙，并关闭 selector 和所有 pipes；正常成功也必须完成这一步。
+
+`rpc_pipes.PipeSession(process, *, clock)` 是 Linux 管道包装器，仅接管已启动的 binary
+Popen 句柄；核对 `os.getpgid(process.pid)==process.pid` 及三条完整管道，不启动或重建
+进程，不接收 command/env/cwd。上层须移交尚未做缓冲读写的干净句柄；验证拒绝之前的
+所有权仍归启动方，产品不能向未验证的共享组发信号。接管后使用 raw 非阻塞 I/O，
+每次 pump 对每条 ready 管道至多读/写 64 KiB，双读与部分写同时推进；不无限 drain
+洪泛 fd。stderr 立即计数丢弃；暂无数据、两条独立 EOF 和未知/零/非零退出分开报告。
+空 pending 不关闭 stdin，close_stdin 即时半关闭且不等待。所有等待均为有限 select/
+wait(timeout)，没有后台线程、communicate 或无界 wait。
+
+整组收尾无论 leader 是否已退出都发 SIGKILL；Linux /proc 与 pidfd 用于有界观察同组
+进程退出，再 wait 回收直接 child，并在 finally 释放句柄。包括已关闭 pipes 的孙进程，
+不能仅凭 EOF 或 leader 退出推断组已清空；不会跟踪或隔离主动脱离该组的进程。
+当前依赖 Linux /proc 与 os.pidfd_open；能力缺失或不可访问时安全失败为 transport_error，
+不降级成只等待 leader 或声称跨 POSIX 平台支持。
+这是回收机制，不是 OS 沙箱。构造拒绝、超时或收尾失败均不能形成成功候选。
 
 validate_request(user_message) 在不开会话时核对实际 prompt JSON 帧上限，返回安全
 失败或 None。tests/a8_rpc_task_support.py 的 run_attempt 先 prepare、渲染并做这项
@@ -104,8 +120,10 @@ UTF-8 多字节、U+2028/U+2029 和同包多帧保持正确；坏 UTF-8/JSON、�
 固定上限：实际请求帧（含 LF）256 KiB、候选 64 KiB、单帧 4 MiB、累计 stdout 16 MiB、
 stderr 1 MiB；rpc_types.py 登记初始化 30 s、总期限 300 s、关闭宽限 10 s、
 强杀等待 10 s，单次 pump 至多轮询 50 ms。RpcLimits 只允许缩短前四项期限，不能放大。
-总期限从工厂构造前开始，包含初始化和正常收尾；关闭还受独立 10 s 宽限约束，失败后
-另有最多 10 s 回收等待。保守叠加 initialization+total+close+terminate=350 s，小于
+总期限从工厂构造前开始，包含初始化和正常排空；关闭还受独立 10 s 宽限约束，
+整组回收另有最多 10 s。取消握手在观察取消之后使用独立 close 宽限，即使主期限
+已经到达也不延长为成功；最坏 total+close+terminate=320 s。保守再叠加已包含的
+initialization，initialization+total+close+terminate=350 s，小于
 600 s 租约并留余量，不续租。单帧须容纳 prompt+system+候选+thinking，累计
 须容纳三份回显。初始化+运行+关闭+强杀等待总界限严格小于 A7 600 秒租约并留余量。
 时间使用可注入单调时钟，独立于 A7 UTC 事实时钟；心跳不延长总期限。
@@ -165,10 +183,20 @@ compaction、summarization、extension UI/错误、未知事件/角色/内容块
 存在空/纯空白 text 则返回候选，由 A1 判 invalid_json。内层围栏、重复键、非有限数、
 评分、主题、中文显示题名等均由 A1/A7 原权威路径拒绝，RPC 不清洗业务输出。
 
-取消的完整握手由 #89 补齐：先 clear_queue 再 abort，队列返回原文立即丢弃。#87 已在
-每次等待前后锁定超时/注入取消并有界关闭/终止，迟到结果不能翻转，但尚不声称已实现
-clear_queue/abort。超时/取消观察后锁定失败，迟到
-stop/settled 不能翻转。失联、断管、关闭不响应需有界回收独立进程组。KeyboardInterrupt/
+注入取消先锁定 cancelled；在已知完整帧边界且尚未 settled/EOF/退出时，先 clear_queue
+再 abort，各用新关联 ID，逐条核对 id/command/success 与响应形状。允许丢弃仍在途的
+原命令匹配 ACK 和迟到事件，不再生成候选。clear_queue 的队列文本立即丢弃；不能
+把它恢复、重发或返回。clear_queue ACK 缺失/矛盾时不发送 abort；abort 缺失、EOF、
+断管或部分待写帧等不能安全继续协议的状态转有界终止。正常 settled 后任何情况下
+都不发新命令，立即关 stdin、排空并回收整组。超时不重发或执行取消握手。
+
+每次等待前后先检查注入取消，再检查绝对期限；在同一检查点二者同时成立时 cancelled
+优先。有效 SessionEvent 之后也先检查取消/期限，再核对流量/解帧与运行记录；异常
+SessionEvent 形状为 transport_error。流量超限先于解帧，解帧先于非零退出和记录状态
+检查。观察到的首次受控失败锁定；取消握手/收尾的后续违例不覆盖它，也不能被迟到
+stop/settled 翻转。完整候选尚须正常关闭、退出零和整组回收；正常收尾失败改为受控
+失败（等待耗尽 close_timeout，其他 I/O 异常 transport_error），不返回候选。
+失联、断管、关闭不响应需有界回收独立进程组。KeyboardInterrupt/
 SystemExit 在 finally 回收后原样上抛，attempt 保持未结算，租约到期保守结算 outcome_unknown。
 管道会话只包装已启动进程，核对独立进程组并承担双管道消费/有界写入/整组终止；
 不提供自由命令或 env 产品 API。进程组回收不是 OS 沙箱。
