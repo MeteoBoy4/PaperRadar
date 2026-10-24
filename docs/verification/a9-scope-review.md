@@ -299,3 +299,44 @@ A9 scope 清单保存所有新源码/测试/材料的显式 SHA-256；本台账�
 a9_scope.py 的最终 SHA，以避免间接自哈希环。旧证据不覆盖，最终 commit/run_id
 放在未跟踪的运行证据与交付记录，不回写固定文档。真实 Pi/模型、Docling/PDF、
 orig 哈希归属、map 来源链、生产 Read、NAS、校准和完整阶段 A 仍未验证。
+
+## #92 双轴审查修复
+
+基线为集成提交 `9e44d35105c2a4dad4dc8f39f68e70c5e40c68a7`。同一实现代理处理
+Standards 的负例原因断言、诊断类型依赖环和旧能力文案，以及 Spec 的三项数值漏检。
+三类缺口均先通过公共 validate_read_output 复现失败，再修复；后续独立向量覆盖
+无空格/有空格 ±、缺失或错误误差项、完整科学记法/非支持幂形状，以及范围两端
+显式单位冲突与裸前端正例。未变更Schema字节、规则wire身份、投影配方或migration。
+
+安全诊断下沉至 reading.diagnostics；原reading/root、numbers.NumericReason和
+result.ReadDiagnostic导出保留相同类型。只读AST导入图审计确认Reading模块无环。
+隐私负例分别断言extra_field与invalid_source的准确安全路径，现有3项分母不变。
+
+独立audit --collect的实际DAG仍为A1→A2-01→完整A2→A3→A4→A5→A6→A7→A8→A9；
+本轮仅A9有字节/计数漂移，旧组登记、测试集合及分母均无变化，无需改写旧scope。
+下面的前后哈希按受控显式路径审阅，最后重绑A9；新模块一并固定，不只固定版本常量。
+
+| 路径 | 审查前SHA-256 | 修复SHA-256 | 原因 |
+| --- | --- | --- | --- |
+| `intent/draft.md` | `853dd3fea4672faa1d3eb405b8a24a3f57d7035dc1f589a92b8b8350759ed7f5` | `ef685589dab5eb515410c3c87fa95e2efca22442a0b10bf307768a15e7c1e25e` | 当前结构/业务验证/配置/恢复与独立A9已交付的主规格说明 |
+| `docs/contracts/read-validation.md` | `91a382371deffe076eefdd1d4b68ed79ed909ad9efa099bc0b02588f8fc114a8` | `78f25a0864060da05f4747729dd673f7e69c90cee5174a77235045972ee76924` | 明确±、完整10幂边界、逐端显式单位与底层诊断归属 |
+| `docs/contracts/frozen-contracts.md` | `17f589899d6c840e27a2a61d80477d9395e1fdac01edc5f9c02c5757a3d4bb21` | `a8974bed5a23532e724c4bd1e215670e89950c0020713a47844f460fad1a254a` | 去除A9待交付措辞，保持A1历史证明范围 |
+| `tests/fixtures/a9_coverage.json` | `8169c4354d126194a267f6d9bbd5b607e13028e90a291857b9a32f724cf25b63` | `36917e6f63fab382ad9b11afcbfb69b993d2e9e8a125596ee9e1dc09ba681650` | 隐私及数值能力材料闭包增加底层diagnostics模块 |
+| `src/paper_radar/reading/__init__.py` | `a7a980453943233f5f40169205e74e22b5d81bfc959196bdbc746fd62c782f3a` | `46abc1b703683085ac1b770f0a431304f2784117daff97656e97e7a04e6cb2d4` | 公共诊断导出从底层定义导入，名称及wire值不变 |
+| `src/paper_radar/reading/errors.py` | `f6a94e757422cb48be1ad0c391d7aad4056bfb191e9790e93ef398b295b88a29` | `8cb6363f973b754b944d3246cb370b3ade43cff8c8ab4f99723e941dc445f50c` | 去除对结果层的反向类型依赖 |
+| `src/paper_radar/reading/numbers.py` | `18d543e2a438b2a6e5bd4a3ea479aeee656fd1acadee167a2bd74f21a9811f52` | `b11da527e562d6607ad7524f6400a40bbce7a2685d1b7486d823d58fefec5e2d` | 修复±漏检、10幂后缀误归一化与显式端点单位丢失 |
+| `src/paper_radar/reading/result.py` | `5a7afb4bf43bb8451a6215e65813f62dbd486cc7b4b880b696b39c1eca4420ef` | `e7ad472d2e0676962ef102412923822533c86b222cb1f494b76a877134e294f4` | 复用底层诊断，保留原导出兼容且消除依赖环 |
+| `tests/test_read_numbers.py` | `c857e9eb0196e09bef87b25b2b000e6622479b64b59733af98ca238fbd4b88ac` | `8e13756b89027d36fc0ad5effd2b825f2814741b257134cbfa71fa5f5f17a159` | 新增22项独立公共向量，分母57→79 |
+| `tests/test_read_privacy.py` | `4d68a9f788f1b132bfe2c97e84ebaebd37b4505912bc2d29b992f89ff7975983` | `506b760c8bffdb712844473f6c5aecd536a28f7df162c67f22dcc8f014855ea7` | 两拒绝负例锁定准确安全路径及受控类别，分母仍3 |
+| `src/paper_radar/reading/diagnostics.py` | `新增` | `5776997b330ac4b41fb93ccb98e50302c47feb8f250e91151bc086c27fcea576` | 新增不依赖上下文/结果的NumericReason与ReadDiagnostic定义 |
+
+数值模块原57项，新79项：新增±负例4项与空格等价正例3项、幂后缀/未支持形状
+负例5项与合法句号正例1项、范围显式单位负例5项与合法显式/隐式单位正例4项，
+合计22项。预期先由上述参数化人工推导，再由独立collection确认79；其他模块数量
+逐项不变。Read当前为421项，A9协议/入口/状态/scope仍120项，A9总分母541项。
+独立收集execution=not_run，只核对分母；执行通过仍依据实际pytest与最终集成门禁。
+
+本台账与a9_scope.py自身不在正文记录最终哈希，避免间接自哈希环；A9固定本台账
+的实际字节，scope本身继续由完整工作树身份及self_reference/cycle拒绝保护。
+最终完整check-offline由integration实际执行，旧提交的中断运行不作为通过证明。
+真实PDF/Pi/模型/Docling/NAS、orig哈希归属、map来源链和完整阶段A仍未验证。

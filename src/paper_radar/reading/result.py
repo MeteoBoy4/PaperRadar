@@ -4,15 +4,8 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from paper_radar.reading.context import ExtractionIdentity, SourceSlice
-from paper_radar.reading.numbers import NumericReason
+from paper_radar.reading.diagnostics import ReadDiagnostic as ReadDiagnostic
 from paper_radar.reading.schema import ReadAnalysisOutput
-
-
-@dataclass(frozen=True, slots=True)
-class ReadDiagnostic:
-    location: str
-    reason: NumericReason
-    ordinal: int
 
 
 @dataclass(frozen=True, slots=True)

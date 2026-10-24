@@ -73,9 +73,9 @@ paper-radar contracts export --contract read --version v1 --target contracts
 paper-radar contracts check --contract read --version v1 --target contracts
 ```
 
-完整离线入口的六项计划和 A1 四契约范围不因 Read 新增而改变。A9-07 将在独立
-必需 A9 writer 内显式调用 Read check 并影响最终退出码；当前 #93 仅交付该公共能力，
-不以现有 A1 结论宣称 Read 已完成验收。
+完整离线入口的六项计划和 A1 四契约范围不因 Read 新增而改变。#99 已在独立
+必需 A9 writer 内显式调用 Read check，其结果影响最终退出码。Read 的结构、给定
+证据校验、配置和隔离恢复均有独立 A9 范围；A1 结论仍只证明历史四契约能力。
 
 ## 路径与文件格式
 

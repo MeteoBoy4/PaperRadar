@@ -18,6 +18,7 @@
       "materials": [
         "src/paper_radar/reading/parsing.py",
         "src/paper_radar/reading/errors.py",
+        "src/paper_radar/reading/diagnostics.py",
         "tests/test_screening_architecture.py"
       ]
     },
@@ -48,6 +49,7 @@
       "materials": [
         "src/paper_radar/reading/numbers.py",
         "src/paper_radar/reading/result.py",
+        "src/paper_radar/reading/diagnostics.py",
         "src/paper_radar/reading/validation.py"
       ]
     },

@@ -3,19 +3,11 @@
 import re
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
-from enum import StrEnum
 
 from paper_radar.reading.context import SourceSlice
+from paper_radar.reading.diagnostics import NumericReason as NumericReason
 
 NUMERIC_RULE_VERSION = "read-numeric-v1"
-
-
-class NumericReason(StrEnum):
-    NUMBER_NOT_SUPPORTED = "number_not_supported"
-    RANGE_NOT_SUPPORTED = "range_not_supported"
-    UNIT_NOT_SUPPORTED = "unit_not_supported"
-    UNRECOGNIZED_NUMERIC_FORM = "unrecognized_numeric_form"
-    RESTRICTED_NUMERIC_SUPPORT = "restricted_numeric_support"
 
 
 # 单位别名及其大小写是封闭记法;未知相邻词不参与比较。
@@ -38,12 +30,21 @@ UNIT_ALIASES = (
 _FULLWIDTH = str.maketrans("０１２３４５６７８９＋－．，％−", "0123456789+-.,%-")
 _SUPERSCRIPT = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻", "0123456789+-")
 _SCIENTIFIC = re.compile(
-    r"(?P<mant>(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+))\s*[×x]\s*10(?P<exponent>[⁺⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+|\^[+-]?[0-9]+)"
+    r"(?<![A-Za-z0-9.])(?P<mant>(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+))"
+    r"\s*[×x]\s*10(?P<exponent>[⁺⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+|\^[+-]?[0-9]+)"
+    r"(?![0-9⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻]|\.[0-9])"
 )
-_POWER = re.compile(r"10(?P<exponent>[⁺⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+|\^[+-]?[0-9]+)")
+_POWER = re.compile(
+    r"(?<![A-Za-z0-9.])10(?P<exponent>[⁺⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+|\^[+-]?[0-9]+)"
+    r"(?![0-9⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻]|\.[0-9])"
+)
 _UNSUPPORTED_FORM = re.compile(
-    r"(?:[0-9]+(?:\.[0-9]+)?)\s*[×x]\s*10(?:\^[^\s,;。，；]*)?"
-    r"|10\^[^\s,;。，；]*|[0-9]+/[0-9]+"
+    r"(?<![A-Za-z0-9.])(?:"
+    r"(?:[0-9]+(?:\.[0-9]+)?)\s*[×x]\s*10"
+    r"(?:\^[^\s,;。，；]*|[⁺⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+[0-9.]*)?"
+    r"|(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)"
+    r"(?:\^[^\s,;。，；]*|[⁺⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+[0-9.]*)"
+    r"|[0-9]+/[0-9]+)"
 )
 _ATOM = re.compile(r"[+\-±]?(?:[0-9][0-9,.]*|\.[0-9]+)(?:[eE][+\-]?[0-9]*)?")
 _VALID_NUMBER = re.compile(
@@ -71,7 +72,11 @@ class NumericLiteral:
     text: str = field(repr=False)
     values: tuple[Decimal | None, ...] = field(repr=False)
     uncertainty: tuple[bool, ...]
-    unit: str | None
+    units: tuple[str | None, ...]
+
+    @property
+    def unit(self) -> str | None:
+        return self.units[-1]
 
     @property
     def recognized(self) -> bool:
@@ -98,7 +103,8 @@ def _normal_form(text: str) -> tuple[str, tuple[int, ...]]:
             pieces.append(normalized[cursor : match.start()])
             positions.extend(offsets[cursor : match.start()])
             if pattern is _UNSUPPORTED_FORM:
-                replacement = "0e"
+                # 即使未知形状后紧跟数字,也不能拼出合法的指数记法。
+                replacement = "0..0"
             else:
                 exponent = match["exponent"].lstrip("^").translate(_SUPERSCRIPT)
                 mantissa = match.groupdict().get("mant") or "1"
@@ -156,7 +162,9 @@ def _atoms(text: str) -> tuple[_Atom, ...]:
             match.start()
             and (
                 _latin(text[match.start() - 1])
-                or text[match.start() - 1] in "0123456789."
+                or (
+                    text[match.start() - 1] in "0123456789." and not raw.startswith("±")
+                )
             )
         ) or (end < len(text) and _latin(text[end]) and unit is None):
             continue
@@ -186,6 +194,7 @@ def extract_numeric_literals(text: str) -> tuple[NumericLiteral, ...]:
         last = first
         values: tuple[Decimal | None, ...] = (first.value,)
         uncertainty: tuple[bool, ...] = (first.uncertainty,)
+        units: tuple[str | None, ...] = (first.unit,)
         if index + 1 < len(atoms):
             second = atoms[index + 1]
             between = normalized[first.end : second.start]
@@ -200,9 +209,10 @@ def extract_numeric_literals(text: str) -> tuple[NumericLiteral, ...]:
                     second_value = abs(second_value)
                 values = (first.value, second_value)
                 uncertainty = (first.uncertainty, second.uncertainty)
+                units = (first.unit, second.unit)
                 index += 1
         literal_text = text[offsets[first.start] : offsets[last.end - 1] + 1]
-        literals.append(NumericLiteral(literal_text, values, uncertainty, last.unit))
+        literals.append(NumericLiteral(literal_text, values, uncertainty, units))
         index += 1
     return tuple(literals)
 
@@ -214,27 +224,30 @@ def _supports(
         return False
     # 每个 source 参数只代表一条 provenance,不会跨切片凑范围端点。
     numbers = [
-        (value, uncertain, item.unit)
+        (value, uncertain, unit if unit is not None else item.unit)
         for item in source
         if item.recognized
-        for value, uncertain in zip(item.values, item.uncertainty, strict=True)
+        for value, uncertain, unit in zip(
+            item.values, item.uncertainty, item.units, strict=True
+        )
     ]
-    return all(
-        any(
+    for index, (value, uncertain, declared_unit) in enumerate(
+        zip(literal.values, literal.uncertainty, literal.units, strict=True)
+    ):
+        required_unit = declared_unit if declared_unit is not None else literal.unit
+        if not any(
             value == source_value
             and uncertain == source_uncertain
             and (
                 not with_unit
-                or index < len(literal.values) - 1
-                or literal.unit is None
-                or literal.unit == unit
+                or required_unit is None
+                or required_unit == unit
+                or (index < len(literal.values) - 1 and unit is None)
             )
             for source_value, source_uncertain, unit in numbers
-        )
-        for index, (value, uncertain) in enumerate(
-            zip(literal.values, literal.uncertainty, strict=True)
-        )
-    )
+        ):
+            return False
+    return True
 
 
 def match_numbers(
@@ -258,7 +271,7 @@ def match_numbers(
         if not literal.recognized:
             reason = NumericReason.UNRECOGNIZED_NUMERIC_FORM
         elif not reliable and not restricted:
-            if literal.unit is not None and any(
+            if any(unit is not None for unit in literal.units) and any(
                 _supports(literal, values, with_unit=False) for values, _ in sources
             ):
                 reason = NumericReason.UNIT_NOT_SUPPORTED
