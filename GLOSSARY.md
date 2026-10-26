@@ -620,3 +620,12 @@ _Avoid_: 网络故障、0% 命中、已执行
 **审计路线原因**：
 摘要审计沿用来源失败词表，并区分 not_applicable_no_doi、agency_unknown、agency_unsupported、identity_mismatch、unrecognized_page_shape、record_without_abstract、outcome_unknown、deferred_retry_after、not_attempted、disallowed_destination、disallowed_scheme 与 channel_not_installed。
 _Avoid_: 全部失败、未知即不适用
+
+
+**固定选样**：
+对同一轮冻结 Feed，按原位次和显式身份、类别依据确定审计成员；摘要有无、长度或截断不参与成员选择。每刊独立保留目标、考察上限及不足数量，不以成功率换样。
+_Avoid_: 挑选可取得摘要的论文、按日期重排、成功样本补齐
+
+**选样台账**：
+原始候选的入样、确定排除或暂时受阻依据及其继续历史。确定结论推进位次，暂时受阻保留当前位置；旧失败和排除始终可查，不能改写成未发生。
+_Avoid_: 未知即排除、失败即跳过、成员主状态

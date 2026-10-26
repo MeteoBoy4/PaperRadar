@@ -99,3 +99,30 @@ def upgrade() -> None:
             artifact_id VARCHAR(64) REFERENCES artifacts(artifact_id)
         )
     """)
+
+    op.execute("""
+        CREATE TABLE audit_sampling_feeds (
+            freeze_id VARCHAR(64) NOT NULL,
+            plan_id VARCHAR(64) NOT NULL REFERENCES audit_plans(plan_id),
+            journal VARCHAR(16) NOT NULL,
+            acquisition_id VARCHAR(64) NOT NULL
+                REFERENCES audit_route_starts(execution_id),
+            artifact_id VARCHAR(64) NOT NULL REFERENCES artifacts(artifact_id),
+            content_json TEXT NOT NULL,
+            PRIMARY KEY(plan_id, journal),
+            UNIQUE(freeze_id)
+        )
+    """)
+    op.execute("""
+        CREATE TABLE audit_sampling_events (
+            event_no INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            event_id VARCHAR(64) NOT NULL,
+            plan_id VARCHAR(64) NOT NULL REFERENCES audit_plans(plan_id),
+            journal VARCHAR(16) NOT NULL,
+            previous_event_id VARCHAR(64)
+                REFERENCES audit_sampling_events(event_id),
+            content_json TEXT NOT NULL,
+            UNIQUE(event_id),
+            UNIQUE(previous_event_id)
+        )
+    """)

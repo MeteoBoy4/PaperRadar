@@ -13,7 +13,7 @@ from paper_radar.fixture_audit.errors import FixtureError
 from paper_radar.storage.errors import StorageError
 
 HELP = """\
-当前用途：只读查询已冻结审计计划、路线执行、材料哈希和安全计数。
+当前用途：只读查询计划、路线执行、固定成员/排除/暂停位置、材料哈希和安全计数。
 参数：list 接受 --database；show 另需 PLAN_ID；--json 输出结构化事实。
 副作用：list/show 只读，不迁移、不联网、不创建目录或执行锁；帮助不访问任何业务资源。
 自动配额：0 次模型调用；来源取得只由显式服务调用推进，当前没有空的 run/resume 命令。

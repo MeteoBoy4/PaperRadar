@@ -70,7 +70,7 @@ HTTPFacts 只保存安全 URL、状态、轮次/重定向/重试/实际等待与
 
 条件头可空；带条件时必须引用已有同策略/通道/来源取得核验的 source_snapshot。无旧材料在 HTTP 前拒绝。304 只复用该既有引用，标记 reused_prior，不产生新材料或假取得时间；原始来源事实保留。取得结算的 `content_decoding` 单独记录保留材料的实际解码依据：200 来自实际取得，304 沿匹配原始材料继承，不能用本次无体 HTTP 的默认 UTF-8 代替。`http.charset/decoding` 仍只表示本次 HTTP 响应，不伪填旧头；回放/恢复按 `content_decoding` 重解析并核对原始/复用关系。计划 created_at、路线 started_at 与 settled_at 使用实际生成的 `datetime.isoformat()` UTC（+00:00）规范字符串；非法值、无时区或非规范表示拒绝，保留原始合法字节。墙钟先后不构成新的门禁，请求期限仍使用单调时钟。声明、材料引用、请求身份、计数和内容资格在 validate_all 中只读核对，并接入原有备份固定副本；恢复不联网、不取得执行锁、不自动继续。
 
-本票 CLI 仅 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。run/resume/replay 待后续完整工作流交付，不提前注册空命令。当前未运行真实来源审计，四刊选样、摘要矩阵、恢复继续与独立 A10 仍由后续票收口。
+本票 CLI 仅 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。run/resume/replay 待后续完整工作流交付，不提前注册空命令。当前未运行真实来源审计，摘要矩阵、完整恢复继续与独立 A10 仍由后续票收口。
 
 ## PDF 字节事实与 backend 期望（#102）
 
@@ -135,3 +135,24 @@ PDF 及全部旧 backend 期望进入既有 backup/restore 闭包；恢复只依
 待补齐声明不产生缺失制品。相同字节按既有内容寻址复用。语义核验除字节闭包外重建取得
 身份、样本作用域、替换链、预期/实际 SHA 一致性及 backend 引用；重算外层备份哈希也
 不能绕过这些检查。本批继续使用未发布 a1001 revision，所有测试从 a704 重新升级。
+
+
+## 固定选样与暂时受阻继续（#104）
+
+公共服务 `select_audit_samples(plan_id, contact_email=..., code_identity=...)` 依次推进四刊，在 `audit show/list` 的 sampling 投影中返回冻结 Feed、成员、排除、暂停位置及完整历史。`continue_audit_sampling` 是显式联网写入继续，只重试尚未冻结的 Feed 与当前受阻候选所需路线；已完成路线复用原取得，不重抓已冻结 Feed。继续前核对代码、parser、策略、选样/类别规则身份，变化须新计划。N 是计划唯一 5–10 值，四刊共享该目标但各自选样和去重。
+
+Feed parser v1 支持 RSS、Atom、RSS 1.0 RDF；拒绝 DOCTYPE/ENTITY、NUL宽字符XML及不支持的形状，不让 XML 工具联网。XML 与最小 Feed 形状通过后才冻结唯一整份 source_snapshot 引用；失败仍可显式重取。RDF 存在 Seq 时按其资源序列排列，同时保存物理 item 定位。每刊考察前 50 原位次，重复项消耗位次。DOI 复用 A6 规范化；无 DOI 仅认原样 guid/id/rdf:about，不用题名、DOI前缀或链接推断身份。跨刊同 DOI 不互相排除；日期和精度只披露，不排序。
+
+类别依据仅 ADR-0033 闭集。Wiley category/prism:section 原值保留但不产生判定；Crossref/DataCite 其他明确类型为非 journal-article，dqkx 平台表外值/缺字段为未知，明确正负判定矛盾为冲突。Feed 位置、题名、og:type、citation_doi 均不是类别依据。citation_doi 只用于 AIES 无 DOI/guid 时，经受控 Feed link 取得显式身份，再查 doiRA/适用机构；链接本身不成为稳定标识。
+
+选样期只执行身份/类别需要的路线：已有 DOI 则查 doiRA 与其适用 registry；dqkx 还核对出版者显式类型；AIES 缺 DOI 时先取出版者 citation_doi。doiRA 其他机构只关闭 registry，查询失败/404 保留 agency_unknown 与原始 HTTP 状态；单一机构404不表示全球 DOI 不存在。有效身份但无摘要的来源仍可贡献；未实现摘要矩阵，不因先有摘要而换样。
+
+| 原候选结果 | 含义 | 位次行为 |
+| --- | --- | --- |
+| selected | 稳定身份且有明确 journal-article 依据，无冲突 | 追加成员并推进 |
+| excluded_deterministic | 重复、无稳定身份、明确身份冲突、查完无类别、明确非文章或类别冲突 | 保留独立原因后推进 |
+| blocked_pending | 身份/类别所需路线暂时失败、未核验或结果未知 | 保留原位次，其他刊继续 |
+
+取得在事务外进行，成员/排除/暂停事件在短事务原子追加。选样事件按同刊显式前驱形成历史，不能回写、跳位或改变既有成员。started未结算在显式选样继续中先追加 outcome_unknown 再新建执行，请求数保持未知。这里只交付选样阶段继续；全路线 resume/replay、两个真实进程场景和新 parser 重解释留 #106。
+
+每个成员引用整份 Feed SHA、原位次、ID/DOI定位、来源取得和明确类别依据，不伪造 A6 单 item 字节；模型不持有摘要成败。validate_all 从冻结 Feed 重建候选，再用事件原路线材料重放同一选择逻辑，核对成员、来源、排除及历史，不以哈希一致代替语义核验。基本备份恢复包含这些引用与原字节，恢复后 list/show 不读仓库声明或原 Feed 路径、不获取执行锁、不自动继续。四刊实测、来源稳定性、摘要矩阵与完整阶段 A 均未由本票证明。

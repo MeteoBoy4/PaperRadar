@@ -15,6 +15,8 @@ class FixtureReason(StrEnum):
     DATABASE_BUSY = "database_busy"
     INVALID_CONTACT = "invalid_contact"
     INVALID_PLAN = "invalid_plan"
+    INVALID_FEED = "invalid_feed"
+    PLAN_IDENTITY_MISMATCH = "plan_identity_mismatch"
     PLAN_CONFLICT = "plan_conflict"
     INVALID_REQUEST = "invalid_request"
     REQUEST_CONFLICT = "request_conflict"
@@ -24,6 +26,8 @@ class FixtureReason(StrEnum):
 
 
 _GUIDANCE = {
+    FixtureReason.INVALID_FEED: "Feed结构、编码或XML声明不支持；请核对材料并新建计划",
+    FixtureReason.PLAN_IDENTITY_MISMATCH: "执行代码或规则与计划不符；请新建计划",
     FixtureReason.INVALID_CONTACT: "邮箱缺失或非法；请显式提供 --contact-email",
     FixtureReason.INVALID_PLAN: "审计计划参数不合法；请核对 N=5–10 与规则版本",
     FixtureReason.PLAN_CONFLICT: "计划键已绑定其他内容；请新建计划",

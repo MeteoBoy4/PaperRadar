@@ -606,3 +606,5 @@ API、隐私与语义闭包见[Screening 任务 Contract](docs/contracts/screeni
 Fixture 注册：`paper-radar fixture register fixtures/a10/historical-v1.json --database data/paper-radar.sqlite3 --data-root data` 显式登记历史声明；`fixture check/list/show` 只读核查原字节与历史。另支持 `fixture register pdf-request.json --pdf-file sample.pdf` 登记本机字节、`--backend` 单独追加绑定该 PDF 的期望、`fixture check RECORD_ID --pdf --data-root data` 核查证据。替换保留旧字节和期望，新 PDF 不继承旧 backend 结果。只证明声明/字节登记与恢复，不代表真实四刊审计或 Docling 通过。详见 [fixture 与摘要审计 Contract](docs/contracts/fixture-audit.md)。
 
 来源取得（#103）：公共服务先冻结计划，再以有界 HTTP/通道接口取得并保存安全执行事实；`paper-radar audit list/show --database ... --json` 只读查询。默认只交付 http，其他通道显示未安装；目前不注册空的 run/resume，不代表真实来源审计已执行。
+
+固定选样（#104）：公共服务按四刊原位次冻结前 N 个显式 journal-article 候选，保留未知/冲突/重复/不足和暂停历史；`audit show` 可只读查看成员依据。显式继续保持原 Feed/位次，摘要成败不影响成员。当前仍未执行四刊 live，摘要矩阵与完整恢复继续由后续票交付。

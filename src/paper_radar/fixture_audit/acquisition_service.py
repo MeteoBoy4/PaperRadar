@@ -481,3 +481,45 @@ class AcquisitionService:
             FixtureReason.INVALID_REFERENCE,
             path="conditional_headers.prior_artifact_id",
         )
+
+    def close_unknown_source(
+        self, execution_id: str, *, protection: AuditProtection
+    ) -> RouteExecution:
+        """显式选样继续所需的窄结算,不假定已发送请求数。"""
+        if (
+            protection.fd is None
+            or protection.database.resolve() != self.database.resolve()
+        ):
+            raise FixtureError(FixtureReason.EXECUTION_BUSY, path="plan_id")
+        view = self.show_audit(protection.plan_id)
+        previous = next(
+            (item for item in view.executions if item.execution_id == execution_id),
+            None,
+        )
+        if previous is None:
+            raise FixtureError(FixtureReason.INVALID_REFERENCE, path="execution_id")
+        if previous.settlement is not None:
+            if previous.reason != "outcome_unknown":
+                raise FixtureError(FixtureReason.RESULT_CONFLICT, path="execution_id")
+            return previous
+        settlement = SourceSettlement(reason="outcome_unknown", settled_at=utc_now())
+        engine = open_database(self.database, mode=DatabaseMode.READ_WRITE)
+        try:
+            require_current_revision(engine)
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN IMMEDIATE")
+                connection.execute(
+                    audit_route_settlements.insert().values(
+                        execution_id=execution_id,
+                        settlement_json=settlement.model_dump_json(),
+                        artifact_id=None,
+                    )
+                )
+                connection.commit()
+            return previous.model_copy(update={"settlement": settlement})
+        except SQLAlchemyError:
+            raise FixtureError(
+                FixtureReason.RESULT_CONFLICT, path="execution_id"
+            ) from None
+        finally:
+            engine.dispose()
