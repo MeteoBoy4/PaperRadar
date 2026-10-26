@@ -12,7 +12,9 @@ from paper_radar.papers.text import require_public_url
 
 
 class PdfModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+    model_config = ConfigDict(
+        extra="forbid", frozen=True, strict=True, revalidate_instances="always"
+    )
 
 
 class PdfRegistration(PdfModel):

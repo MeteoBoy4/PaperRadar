@@ -392,9 +392,7 @@ class FixtureAudit:
             request = read_pdf_request(request, PdfBackendRegistration)
         else:
             try:
-                request = PdfBackendRegistration.model_validate_json(
-                    request.model_dump_json()
-                )
+                request = PdfBackendRegistration.model_validate(request)
             except (ValidationError, ValueError):
                 raise FixtureError(
                     FixtureReason.INVALID_DECLARATION, path="pdf_backend"
