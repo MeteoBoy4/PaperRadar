@@ -34,7 +34,7 @@ doiRA `https://doi.org/doiRA/{doi}` 是路由，不是元数据提供方：Cross
 
 只接受 HTTPS、无 userinfo 和隐含凭据；http 不静默升级，逐跳检查白名单，登录/SSO/挑战页主机为受阻。只用 httpx，关闭环境继承，不发送/复用 Cookie，代理显式提供；按主机至少间隔 1 秒，8 MiB 解压后流式上限，连接 10 秒。每路线执行最多两轮（首次加一次重试）；仅连接错误、429、5xx 触发重试。每轮连接/重定向/流式读取共用单调时钟 30 秒总期限，重定向不占重试额度且最多五跳，所有物理 HTTP 请求逐次计数；Retry-After 超过 5 秒为 deferred_retry_after，等待显式 resume。原字节是 Content-Encoding 解压后、charset 解码前的字节，Content-Type/charset/实际解码另存。HTTP 条件头 `if_none_match/if_modified_since` 可空，304 必须引用已保留响应，不作新字节成功。
 
-审计锁固定在 `resolved_database.parent.parent/.paper-radar-audit-locks/{database_path_sha256}/{plan_id}.lock`，命名空间取解析后的数据库绝对路径，避免同库不同拼法产生另一把锁；执行前确认锁目录在解析后的制品根之外，否则受控拒绝。常见 `database=data/db`、`data_root=data` 的锁位于 data 外；锁不进入备份或代码身份。非阻塞 flock，不 unlink、不写 PID，不在数据库写事务中等待。读取不取锁。联系邮箱每次 live 显式提供，仅当次 UA 使用，不持久化、读取个人环境或猜测；缺失/非法时连计划也不建立。不联网的帮助/查询不能要求邮箱。
+审计锁固定在 `resolved_database.parent.parent/.paper-radar-audit-locks/{database_path_sha256}/{plan_id}.lock`，命名空间取解析后的数据库绝对路径，避免同库不同拼法产生另一把锁；执行前确认锁目录在解析后的制品根之外，否则受控拒绝。常见 `database=data/db`、`data_root=data` 的锁位于 data 外；锁不进入备份或代码身份。非阻塞 flock，不 unlink、不写 PID，不在数据库写事务中等待。读取不取锁。联系邮箱每次 live 显式提供，仅当次 UA 使用；来源内容按实际有效解码检查配置邮箱（不区分大小写），无法安全解码或回显邮箱时受控拒绝，不改写合法响应原字节。不持久化邮箱，不读取个人环境或猜测；缺失/非法时连计划也不建立。不联网的帮助/查询不能要求邮箱。
 
 原因沿用 §8.4，审计补充：not_applicable_no_doi、agency_unknown、agency_unsupported、identity_mismatch、unrecognized_page_shape、record_without_abstract、outcome_unknown、deferred_retry_after、not_attempted、disallowed_destination、disallowed_scheme、channel_not_installed。只有有效 Feed 或身份已核验且贡献身份/字段的响应进入 source_snapshot，身份正确但无摘要的页面也保留；失败/限流/挑战/身份未核验 200 仅保留结构化事实。
 
@@ -64,11 +64,11 @@ validate_all 只读核验登记原字节哈希、Pydantic 重建、样本身份�
 | 物理请求 | 实际交给 HTTP transport 的 GET，含重试与每一跳 | 每轮最多 6 次 |
 | 等待 | 按主机最少 1 秒间隔及轮次间退避，保存实际等待总量 | 退避至多 5 秒 |
 
-`Retry-After` 支持 delta-seconds/HTTP-date；过去日期为零，无效值使用 1 秒短退避。超过 5 秒为 deferred_retry_after，不睡到下一轮；退避在两轮之间，30 秒是每轮期限。超时、403/404、304、解析与身份错误不获得额外重试。真实异步 socket I/O 用整轮取消期限，确定性测试同时注入单调时钟和等待；gzip/deflate 在累计 8 MiB 限额内解压，先检查再扩张。关闭环境继承，代理只能显式提供，每跳清空 cookie；不存 Set-Cookie、认证头、邮箱或原始异常。URL 仅固定路由，Feed 身份复用 A6 的完整 query 规则。
+`Retry-After` 支持 delta-seconds/HTTP-date；过去日期为零，无效值使用 1 秒短退避。超过 5 秒为 deferred_retry_after，不睡到下一轮；退避在两轮之间，30 秒是每轮期限。超时、403/404、304、解析与身份错误不获得额外重试。真实异步 socket I/O 用整轮取消期限，确定性测试同时注入单调时钟和等待；gzip/deflate 在累计 8 MiB 限额内解压，先检查再扩张；gzip 的所有拼接 member 共用此上限，完整消费并保留全部解压字节，未完成 member 或无效尾部拒绝。关闭环境继承，代理只能显式提供，每跳清空 cookie；不存 Set-Cookie、认证头、邮箱或原始异常。URL 仅固定路由，Feed 身份复用 A6 的完整 query 规则。
 
 HTTPFacts 只保存安全 URL、状态、轮次/重定向/重试/实际等待与 Content-Type/charset/实际解码方式。响应正文只在瞬时 SourceResponse 中且 repr 隐藏。有效 XML Feed 或显式 DOI 身份核验通过的贡献页面可保留；doiRA 只保存结构化机构事实。失败、挑战页、身份冲突与非 Feed 200 不存正文。此处只判断保留资格，不伪造已选成员、摘要命中或完整轮次。
 
-条件头可空；带条件时必须引用已有同策略/通道/来源取得核验的 source_snapshot。无旧材料在 HTTP 前拒绝。304 只复用该既有引用，标记 reused_prior，不产生新材料或假取得时间；原始来源事实保留。声明、材料引用、请求身份、计数和内容资格在 validate_all 中只读核对，并接入原有备份固定副本；恢复不联网、不取得执行锁、不自动继续。
+条件头可空；带条件时必须引用已有同策略/通道/来源取得核验的 source_snapshot。无旧材料在 HTTP 前拒绝。304 只复用该既有引用，标记 reused_prior，不产生新材料或假取得时间；原始来源事实保留。取得结算的 `content_decoding` 单独记录保留材料的实际解码依据：200 来自实际取得，304 沿匹配原始材料继承，不能用本次无体 HTTP 的默认 UTF-8 代替。`http.charset/decoding` 仍只表示本次 HTTP 响应，不伪填旧头；回放/恢复按 `content_decoding` 重解析并核对原始/复用关系。计划 created_at、路线 started_at 与 settled_at 使用实际生成的 `datetime.isoformat()` UTC（+00:00）规范字符串；非法值、无时区或非规范表示拒绝，保留原始合法字节。墙钟先后不构成新的门禁，请求期限仍使用单调时钟。声明、材料引用、请求身份、计数和内容资格在 validate_all 中只读核对，并接入原有备份固定副本；恢复不联网、不取得执行锁、不自动继续。
 
 本票 CLI 仅 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。run/resume/replay 待后续完整工作流交付，不提前注册空命令。当前未运行真实来源审计，摘要矩阵、完整恢复继续与独立 A10 仍由后续票收口。
 

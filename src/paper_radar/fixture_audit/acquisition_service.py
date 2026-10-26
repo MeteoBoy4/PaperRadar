@@ -45,6 +45,7 @@ from paper_radar.fixture_audit.source_http import (
     SourceExecutor,
     SourceHTTPExecutor,
     SourceResponse,
+    body_is_contact_free,
 )
 from paper_radar.fixture_audit.source_validation import inspect_source
 from paper_radar.storage.artifacts import ArtifactStore
@@ -229,7 +230,9 @@ class AcquisitionService:
                     contact.casefold() in response.facts.model_dump_json().casefold()
                     or (
                         response.body is not None
-                        and contact.casefold().encode() in response.body.lower()
+                        and not body_is_contact_free(
+                            response.body, response.facts.decoding, contact
+                        )
                     )
                 ):
                     raise FixtureError(FixtureReason.INVALID_REQUEST, path="executor")
@@ -298,7 +301,12 @@ class AcquisitionService:
                 )
             store = ArtifactStore(self.database, self.data_root)
             body = store.read_artifact(prior_id)["payload"]
-            inspected = inspect_source(request, body, facts.decoding or "utf-8")
+            prior = self._validate_prior(request)
+            if prior is None or prior.content_decoding is None:
+                raise FixtureError(
+                    FixtureReason.INVALID_REFERENCE, path="prior_artifact_id"
+                )
+            inspected = inspect_source(request, body, prior.content_decoding)
             if not inspected.retain:
                 raise FixtureError(
                     FixtureReason.INVALID_REFERENCE, path="prior_artifact_id"
@@ -311,6 +319,7 @@ class AcquisitionService:
                 size_bytes=len(body),
                 identity_doi=inspected.identity_doi,
                 reused_prior=True,
+                content_decoding=prior.content_decoding,
                 settled_at=utc_now(),
             )
         if facts.reason != "acquired" or response.body is None:
@@ -346,6 +355,7 @@ class AcquisitionService:
             size_bytes=size_bytes,
             identity_doi=inspected.identity_doi,
             agency=inspected.agency,
+            content_decoding=(facts.decoding or "utf-8") if inspected.retain else None,
             settled_at=utc_now(),
         )
 
@@ -353,11 +363,19 @@ class AcquisitionService:
         for view in self.list_audits():
             for execution in view.executions:
                 settlement = execution.settlement
-                self._validate_prior(execution.request)
+                prior = self._validate_prior(execution.request)
                 if settlement is None:
                     continue
                 if settlement.reused_prior != (
                     settlement.http is not None and settlement.http.status_code == 304
+                ):
+                    raise FixtureError(
+                        FixtureReason.CORRUPT_REFERENCE, path="audit.conditional"
+                    )
+                if settlement.reused_prior and (
+                    prior is None
+                    or settlement.artifact_id != prior.artifact_id
+                    or settlement.content_decoding != prior.content_decoding
                 ):
                     raise FixtureError(
                         FixtureReason.CORRUPT_REFERENCE, path="audit.conditional"
@@ -392,6 +410,7 @@ class AcquisitionService:
                     if (
                         settlement.payload_sha256 is not None
                         or settlement.size_bytes is not None
+                        or settlement.content_decoding is not None
                         or (
                             settlement.reason == "acquired"
                             and execution.request.route != "doi_ra"
@@ -415,12 +434,16 @@ class AcquisitionService:
                 inspected = inspect_source(
                     execution.request,
                     body,
-                    settlement.http.decoding
-                    if settlement.http and settlement.http.decoding
-                    else "utf-8",
+                    settlement.content_decoding or "utf-8",
                 )
                 if (
-                    artifact.kind != "source_snapshot"
+                    settlement.content_decoding is None
+                    or (
+                        not settlement.reused_prior
+                        and settlement.content_decoding
+                        != (settlement.http.decoding or "utf-8")
+                    )
+                    or artifact.kind != "source_snapshot"
                     or not inspected.retain
                     or inspected.reason != settlement.reason
                     or inspected.identity_doi != settlement.identity_doi
@@ -432,14 +455,14 @@ class AcquisitionService:
                         FixtureReason.CORRUPT_REFERENCE, path="audit.artifact"
                     )
 
-    def _validate_prior(self, request: SourceRequest) -> None:
+    def _validate_prior(self, request: SourceRequest) -> SourceSettlement | None:
         conditions = request.conditional_headers
         if (
             conditions.if_none_match is None
             and conditions.if_modified_since is None
             and conditions.prior_artifact_id is None
         ):
-            return
+            return None
         if conditions.prior_artifact_id is not None:
             for view in self.list_audits():
                 for execution in view.executions:
@@ -453,7 +476,7 @@ class AcquisitionService:
                         )
                         == request.model_copy(update={"conditional_headers": None})
                     ):
-                        return
+                        return settlement
         raise FixtureError(
             FixtureReason.INVALID_REFERENCE,
             path="conditional_headers.prior_artifact_id",

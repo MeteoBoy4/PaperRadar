@@ -103,6 +103,18 @@ def effective_decoding(charset: str | None, body: bytes | None) -> str | None:
     return "utf-8"
 
 
+def body_is_contact_free(body: bytes, decoding: str | None, contact: str) -> bool:
+    """仅检查本次联系标识;不能安全解码的内容不进入保留路径。"""
+    folded_contact = contact.casefold()
+    if folded_contact.encode() in body.lower():
+        return False
+    try:
+        text = body.decode(decoding or "utf-8")
+    except (UnicodeError, LookupError, TypeError):
+        return False
+    return folded_contact not in text.casefold()
+
+
 class SourceHTTPExecutor:
     def __init__(
         self,
@@ -270,7 +282,9 @@ class SourceHTTPExecutor:
                                     response.headers.get("content-type", "")
                                 )
                                 body = await self._body(response, deadline)
-                                if contact.casefold().encode() in body.lower():
+                                if not body_is_contact_free(
+                                    body, effective_decoding(charset, body), contact
+                                ):
                                     body = None
                                     raise _Rejected("invalid_response")
                                 reason = "acquired"
@@ -331,17 +345,36 @@ class SourceHTTPExecutor:
             async for chunk in response.aiter_raw():
                 if self.monotonic() >= deadline:
                     raise _Rejected("transient_error")
-                try:
-                    decoded = (
-                        decoder.decompress(chunk, SOURCE_BYTE_LIMIT - len(output) + 1)
-                        if decoder
-                        else chunk
+                pending = chunk
+                while pending:
+                    if self.monotonic() >= deadline:
+                        raise _Rejected("transient_error")
+                    if decoder is not None and decoder.eof:
+                        if encoding != "gzip":
+                            raise _Rejected("invalid_response")
+                        decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
+                    try:
+                        decoded = (
+                            decoder.decompress(
+                                pending, SOURCE_BYTE_LIMIT - len(output) + 1
+                            )
+                            if decoder is not None
+                            else pending
+                        )
+                    except zlib.error:
+                        raise _Rejected("invalid_response") from None
+                    if len(output) + len(decoded) > SOURCE_BYTE_LIMIT:
+                        raise _Rejected("invalid_response")
+                    output.extend(decoded)
+                    pending = (
+                        (
+                            decoder.unused_data
+                            if decoder.eof
+                            else decoder.unconsumed_tail
+                        )
+                        if decoder is not None
+                        else b""
                     )
-                except zlib.error:
-                    raise _Rejected("invalid_response") from None
-                if len(output) + len(decoded) > SOURCE_BYTE_LIMIT:
-                    raise _Rejected("invalid_response")
-                output.extend(decoded)
             if decoder is not None and not decoder.eof:
                 raise _Rejected("invalid_response")
         if self.monotonic() >= deadline:

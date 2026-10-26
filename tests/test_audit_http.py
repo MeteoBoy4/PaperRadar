@@ -287,3 +287,86 @@ def test_timeouts_are_not_reclassified_as_connect_retries() -> None:
     assert result.facts.reason == "transient_error"
     assert result.facts.physical_requests == 1
     assert result.facts.retry_count == 0
+
+
+@pytest.mark.parametrize("chunked", [False, True])
+def test_all_concatenated_gzip_members_contribute_to_retained_response_bytes(
+    chunked: bool,
+) -> None:
+    first = b"<rss><channel><title>first"
+    second = b" and second</title></channel></rss>"
+    encoded = gzip.compress(first) + gzip.compress(second)
+
+    class CompressedStream(httpx.AsyncByteStream):
+        async def __aiter__(self) -> AsyncIterator[bytes]:
+            if chunked:
+                for index in range(0, len(encoded), 7):
+                    yield encoded[index : index + 7]
+            else:
+                yield encoded
+
+    response = SourceHTTPExecutor(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200, headers={"Content-Encoding": "gzip"}, stream=CompressedStream()
+            )
+        )
+    ).fetch(
+        SourceRequest(journal="aies", route="feed"), contact_email="audit@example.org"
+    )
+    assert response.facts.reason == "acquired"
+    assert response.body == first + second
+
+
+@pytest.mark.parametrize("suffix", [b"not-a-member", b"\x1f\x8b\x08"])
+def test_gzip_trailing_bytes_must_be_an_entire_valid_member(suffix: bytes) -> None:
+    response = SourceHTTPExecutor(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200,
+                headers={"Content-Encoding": "gzip"},
+                stream=httpx.ByteStream(gzip.compress(b"retained bytes") + suffix),
+            )
+        )
+    ).fetch(
+        SourceRequest(journal="aies", route="feed"), contact_email="audit@example.org"
+    )
+    assert response.facts.reason == "invalid_response"
+    assert response.body is None
+
+
+def test_concatenated_gzip_members_share_one_decompressed_byte_limit() -> None:
+    from paper_radar.fixture_audit.source_http import SOURCE_BYTE_LIMIT
+
+    encoded = gzip.compress(b"x" * SOURCE_BYTE_LIMIT) + gzip.compress(b"y")
+    response = SourceHTTPExecutor(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200,
+                headers={"Content-Encoding": "gzip"},
+                stream=httpx.ByteStream(encoded),
+            )
+        )
+    ).fetch(
+        SourceRequest(journal="aies", route="feed"), contact_email="audit@example.org"
+    )
+    assert response.facts.reason == "invalid_response"
+    assert response.body is None
+
+
+def test_contact_check_rejects_text_that_cannot_be_safely_decoded() -> None:
+    response = SourceHTTPExecutor(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200,
+                headers={"Content-Type": "text/html; charset=utf-16"},
+                stream=httpx.ByteStream(b"\x01"),
+            )
+        )
+    ).fetch(
+        SourceRequest(journal="jgr", route="publisher", doi="10.1029/example"),
+        contact_email="audit@example.org",
+    )
+    assert response.facts.reason == "invalid_response"
+    assert response.facts.physical_requests == 1
+    assert response.body is None

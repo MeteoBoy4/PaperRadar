@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Literal, Self
 
 from pydantic import Field, field_validator, model_validator
@@ -42,6 +42,13 @@ SourceReason = Literal[
 ]
 
 
+def require_utc_timestamp(value: str) -> str:
+    parsed = datetime.fromisoformat(value)
+    if parsed.utcoffset() != timedelta(0) or parsed.isoformat() != value:
+        raise ValueError("canonical_utc_timestamp_required")
+    return value
+
+
 class CodeIdentity(FrozenModel):
     package_version: str = Field(
         default="0.1.0", pattern=r"^[0-9]+\.[0-9]+\.[0-9]+(?:[A-Za-z0-9.+-]*)$"
@@ -74,10 +81,7 @@ class AuditPlan(FrozenModel):
     @field_validator("created_at")
     @classmethod
     def valid_timestamp(cls, value: str) -> str:
-        parsed = datetime.fromisoformat(value)
-        if parsed.utcoffset() is None:
-            raise ValueError("timezone_required")
-        return value
+        return require_utc_timestamp(value)
 
 
 class SourceRequest(FrozenModel):
@@ -161,7 +165,13 @@ class SourceSettlement(FrozenModel):
     identity_doi: str | None = None
     agency: str | None = Field(default=None, pattern=r"^[A-Za-z][A-Za-z0-9 ._-]{0,63}$")
     reused_prior: bool = False
+    content_decoding: str | None = Field(default=None, pattern=r"^[a-z0-9._-]{1,40}$")
     settled_at: str
+
+    @field_validator("settled_at")
+    @classmethod
+    def valid_settlement_time(cls, value: str) -> str:
+        return require_utc_timestamp(value)
 
 
 class RouteExecution(FrozenModel):
@@ -171,6 +181,11 @@ class RouteExecution(FrozenModel):
     request: SourceRequest
     started_at: str
     settlement: SourceSettlement | None = None
+
+    @field_validator("started_at")
+    @classmethod
+    def valid_start_time(cls, value: str) -> str:
+        return require_utc_timestamp(value)
 
     @property
     def reason(self) -> SourceReason | None:
