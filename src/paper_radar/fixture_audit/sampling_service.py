@@ -26,6 +26,7 @@ from paper_radar.fixture_audit.acquisition_service import AcquisitionService
 from paper_radar.fixture_audit.audit_protection import AuditProtection
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
 from paper_radar.fixture_audit.models import Journal
+from paper_radar.fixture_audit.resume_rules import can_continue
 from paper_radar.fixture_audit.sampling_models import (
     FeedCandidate,
     FrozenFeed,
@@ -52,12 +53,7 @@ from paper_radar.storage.database import (
 
 
 def retryable(execution: RouteExecution) -> bool:
-    return execution.reason not in {
-        "acquired",
-        "agency_unsupported",
-        "not_found",
-        "identity_mismatch",
-    }
+    return can_continue(execution)
 
 
 class SamplingService:
@@ -117,18 +113,38 @@ class SamplingService:
         force_retry: bool = False,
     ) -> RouteExecution:
         prefix = f"sample-{journal}-{position or 'feed'}-{route}-"
-        matches = [
-            item
-            for item in self.acquisitions.show_audit(plan_id).executions
-            if item.request_key.startswith(prefix)
-        ]
+        previous: RouteExecution | None = None
+        executions = self.acquisitions.show_audit(plan_id).executions
+        matches = [item for item in executions if item.request_key.startswith(prefix)]
+        if not matches and route != "feed":
+            reusable = next(
+                (
+                    item
+                    for item in reversed(executions)
+                    if item.request == request
+                    and item.reason
+                    in {
+                        "acquired",
+                        "agency_unsupported",
+                        "not_found",
+                        "identity_mismatch",
+                    }
+                ),
+                None,
+            )
+            if reusable is not None:
+                return reusable
         if matches:
             previous = matches[-1]
             if previous.request != request:
                 raise FixtureError(
                     FixtureReason.REQUEST_CONFLICT, path="sampling.request"
                 )
-            if not continuing or (not retryable(previous) and not force_retry):
+            if (
+                previous.reason == "channel_not_installed"
+                or not continuing
+                or (not retryable(previous) and not force_retry)
+            ):
                 return previous
             if previous.settlement is None:
                 previous = self.acquisitions.close_unknown_source(
@@ -140,6 +156,7 @@ class SamplingService:
             request=request,
             contact_email=contact,
             protection=guard,
+            previous_execution_id=previous.execution_id if previous else None,
         )
 
     def _append(self, event: SamplingOutcome) -> SamplingOutcome:
@@ -298,9 +315,7 @@ class SamplingService:
                         contact=contact,
                         guard=guard,
                         continuing=continuing,
-                        force_retry=bool(
-                            state.history and state.history[-1].reason == "invalid_feed"
-                        ),
+                        force_retry=continuing,
                     )
                     reason: SamplingReason | None = None
                     if source.reason != "acquired":

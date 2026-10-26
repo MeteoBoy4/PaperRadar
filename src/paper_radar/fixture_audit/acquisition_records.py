@@ -3,18 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import re
 
 from pydantic import ValidationError
 from sqlalchemy import Connection, select
 
 from paper_radar.fixture_audit.acquisition_models import (
-    ACQUISITION_STRATEGY_VERSION,
-    CATEGORY_RULES_VERSION,
-    CHANNELS_VERSION,
-    HTTP_RULES_VERSION,
-    PARSER_VERSION,
-    SAMPLING_RULES_VERSION,
-    UA_TEMPLATE_VERSION,
     AuditPlan,
     AuditView,
     RouteExecution,
@@ -33,6 +27,8 @@ from paper_radar.fixture_audit.acquisition_tables import (
     audit_route_starts,
 )
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
+from paper_radar.fixture_audit.history_rules import require_historical_plan
+from paper_radar.fixture_audit.resume_rules import can_continue
 
 
 def execution_identity(plan_id: str, request_key: str, request: SourceRequest) -> str:
@@ -52,25 +48,10 @@ def load_audits(connection: Connection) -> tuple[AuditView, ...]:
                 or identity_sha256(plan.model_copy(update={"plan_id": ""}))
                 != plan.plan_id
                 or plan.endpoints != FEED_ENDPOINTS
-                or plan.sampling_rules_version != SAMPLING_RULES_VERSION
-                or plan.category_rules_version != CATEGORY_RULES_VERSION
-                or (
-                    plan.acquisition_strategy_version,
-                    plan.channels_version,
-                    plan.http_rules_version,
-                    plan.parser_version,
-                    plan.ua_template_version,
-                )
-                != (
-                    ACQUISITION_STRATEGY_VERSION,
-                    CHANNELS_VERSION,
-                    HTTP_RULES_VERSION,
-                    PARSER_VERSION,
-                    UA_TEMPLATE_VERSION,
-                )
                 or row["plan_json"] != plan.model_dump_json()
             ):
                 raise FixtureError(FixtureReason.CORRUPT_REFERENCE, path="audit.plan")
+            require_historical_plan(plan)
             plans[plan.plan_id] = plan
         settlements: dict[str, SourceSettlement] = {}
         for row in connection.execute(select(audit_route_settlements)).mappings():
@@ -85,6 +66,8 @@ def load_audits(connection: Connection) -> tuple[AuditView, ...]:
             settlements[row["execution_id"]] = value
         executions: dict[str, list[RouteExecution]] = {key: [] for key in plans}
         seen: set[str] = set()
+        previous_records: dict[str, RouteExecution] = {}
+        continued: set[str] = set()
         for row in connection.execute(
             select(audit_route_starts).order_by(audit_route_starts.c.event_no)
         ).mappings():
@@ -112,6 +95,66 @@ def load_audits(connection: Connection) -> tuple[AuditView, ...]:
                         raise FixtureError(
                             FixtureReason.CORRUPT_REFERENCE, path="audit.http_url"
                         )
+            previous_id = row["previous_execution_id"]
+            sample = re.fullmatch(
+                r"sample-(?:aies|jgr|qjrms|dqkx)-(?:feed|[0-9]+)-(?:feed|doi_ra|registry_crossref|registry_datacite|publisher)-([0-9]+)",
+                key,
+            )
+            matrix = re.fullmatch(
+                r"(matrix-[0-9a-f]{32}-[a-z_]+-[a-z_]+)-resume-([0-9]+)", key
+            )
+            if sample:
+                ordinal = int(sample[1])
+                predecessor = previous_records.get(previous_id or "")
+                if (
+                    ordinal < 1
+                    or (ordinal == 1 and previous_id is not None)
+                    or (
+                        ordinal > 1
+                        and (
+                            predecessor is None
+                            or predecessor.request_key
+                            != key.rsplit("-", 1)[0] + f"-{ordinal - 1}"
+                            or (
+                                request.route != "feed"
+                                and not can_continue(predecessor)
+                            )
+                        )
+                    )
+                ):
+                    raise FixtureError(
+                        FixtureReason.CORRUPT_REFERENCE, path="audit.continuation"
+                    )
+            if matrix:
+                ordinal = int(matrix[2])
+                predecessor = previous_records.get(previous_id or "")
+                if (
+                    ordinal < 1
+                    or predecessor is None
+                    or not can_continue(predecessor)
+                    or (
+                        ordinal > 1
+                        and predecessor.request_key
+                        != f"{matrix[1]}-resume-{ordinal - 1}"
+                    )
+                ):
+                    raise FixtureError(
+                        FixtureReason.CORRUPT_REFERENCE, path="audit.continuation"
+                    )
+            if previous_id is not None:
+                previous = previous_records.get(previous_id)
+                if (
+                    previous is None
+                    or previous.plan_id != plan_id
+                    or previous.request != request
+                    or previous.settlement is None
+                    or previous.reason == "channel_not_installed"
+                    or previous_id in continued
+                ):
+                    raise FixtureError(
+                        FixtureReason.CORRUPT_REFERENCE, path="audit.continuation"
+                    )
+                continued.add(previous_id)
             seen.add(execution_id)
             executions[plan_id].append(
                 RouteExecution(
@@ -120,9 +163,11 @@ def load_audits(connection: Connection) -> tuple[AuditView, ...]:
                     request_key=key,
                     request=request,
                     started_at=row["started_at"],
+                    previous_execution_id=previous_id,
                     settlement=settlements.get(execution_id),
                 )
             )
+            previous_records[execution_id] = executions[plan_id][-1]
         if not settlements.keys() <= seen:
             raise FixtureError(FixtureReason.CORRUPT_REFERENCE, path="audit.settlement")
         return tuple(

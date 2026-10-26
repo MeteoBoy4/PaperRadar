@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import ValidationError
-from sqlalchemy import Connection, select
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.fixture_audit.abstract_models import (
@@ -15,12 +14,11 @@ from paper_radar.fixture_audit.abstract_models import (
     MatrixRow,
 )
 from paper_radar.fixture_audit.abstract_parser import parse_material
+from paper_radar.fixture_audit.abstract_records import load_abstracts as load_abstracts
 from paper_radar.fixture_audit.abstract_rules import (
     applicable_requests,
     matrix_request_key,
-    project,
     retained_acquisition,
-    row_key,
 )
 from paper_radar.fixture_audit.abstract_tables import abstract_rows
 from paper_radar.fixture_audit.acquisition_models import (
@@ -32,7 +30,12 @@ from paper_radar.fixture_audit.acquisition_models import (
 from paper_radar.fixture_audit.acquisition_policy import validate_contact
 from paper_radar.fixture_audit.acquisition_records import load_audits
 from paper_radar.fixture_audit.acquisition_service import AcquisitionService
+from paper_radar.fixture_audit.audit_protection import AuditProtection
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
+from paper_radar.fixture_audit.resume_rules import (
+    can_continue,
+    validate_execution_identity,
+)
 from paper_radar.fixture_audit.sampling_models import SamplingAuditView, SamplingMember
 from paper_radar.fixture_audit.sampling_records import load_sampling
 from paper_radar.fixture_audit.sampling_service import SamplingService
@@ -42,82 +45,6 @@ from paper_radar.storage.database import (
     open_database,
     require_current_revision,
 )
-
-
-def load_abstracts(
-    connection: Connection, views: tuple[SamplingAuditView, ...]
-) -> tuple[AbstractAuditView, ...]:
-    expected = {
-        view.plan.plan_id: {
-            row_key(member.member_id, request): (member, request)
-            for member, request in applicable_requests(view)
-        }
-        for view in views
-    }
-    by_plan = {view.plan.plan_id: view for view in views}
-    all_executions = {
-        execution.execution_id: execution
-        for view in views
-        for execution in view.executions
-    }
-    rows: dict[str, list[MatrixRow]] = {view.plan.plan_id: [] for view in views}
-    try:
-        for record in connection.execute(select(abstract_rows)).mappings():
-            row = MatrixRow.model_validate_json(record["content_json"])
-            key = row_key(row.member_id, row.request)
-            execution = all_executions.get(row.acquisition_id or "")
-            if (
-                row.plan_id not in expected
-                or key not in expected[row.plan_id]
-                or expected[row.plan_id][key][1] != row.request
-                or row.row_id != record["row_id"]
-                or row.plan_id != record["plan_id"]
-                or row.member_id != record["member_id"]
-                or row.request.route != record["route"]
-                or row.request.channel != record["channel"]
-                or row.request.acquisition_strategy_version
-                != record["strategy_version"]
-                or row.acquisition_id != record["acquisition_id"]
-                or row.model_dump_json() != record["content_json"]
-                or identity_sha256(row.model_copy(update={"row_id": ""})) != row.row_id
-                or execution is None
-                or execution.plan_id != row.plan_id
-                or execution.request != row.request
-                or execution.settlement is None
-                or row.observed_at != execution.settlement.settled_at
-                or row.payload_sha256 != execution.settlement.payload_sha256
-            ):
-                raise FixtureError(
-                    FixtureReason.CORRUPT_REFERENCE, path="abstract.matrix"
-                )
-            if row.reason == "not_attempted" and (
-                execution.reason != "not_attempted"
-                or execution.physical_requests != 0
-                or execution.settlement.artifact_id is not None
-                or row.payload_sha256 is not None
-                or row.valid_record
-                or row.candidates
-                or row.excluded_blocks
-            ):
-                raise FixtureError(
-                    FixtureReason.CORRUPT_REFERENCE, path="abstract.matrix"
-                )
-            member, request = expected[row.plan_id][key]
-            prior_id = retained_acquisition(by_plan[row.plan_id], member, request)
-            if (prior_id is not None and execution.execution_id != prior_id) or (
-                prior_id is None
-                and execution.request_key
-                != matrix_request_key(member.member_id, request)
-            ):
-                raise FixtureError(
-                    FixtureReason.CORRUPT_REFERENCE, path="abstract.acquisition"
-                )
-            rows[row.plan_id].append(row)
-        return tuple(project(view, tuple(rows[view.plan.plan_id])) for view in views)
-    except (ValidationError, ValueError, TypeError, KeyError):
-        raise FixtureError(
-            FixtureReason.CORRUPT_REFERENCE, path="abstract.matrix"
-        ) from None
 
 
 class AbstractService:
@@ -248,6 +175,8 @@ class AbstractService:
                 connection.execute(
                     abstract_rows.insert().values(
                         row_id=row.row_id,
+                        generation=row.generation,
+                        previous_row_id=row.previous_row_id,
                         plan_id=row.plan_id,
                         member_id=row.member_id,
                         route=row.request.route,
@@ -290,37 +219,132 @@ class AbstractService:
                 code_identity=code_identity,
                 protection=guard,
             )
-            for member, request in applicable_requests(view):
-                current = self.show_audit(plan.plan_id)
-                if any(
-                    row.member_id == member.member_id
-                    and row.request == request
-                    and row.acquisition_id is not None
-                    and row.reason != "not_attempted"
-                    for row in current.matrix
-                ):
-                    continue
-                prior_id = retained_acquisition(view, member, request)
-                execution = next(
-                    (
-                        value
-                        for value in view.executions
-                        if value.execution_id == prior_id and value.request == request
-                    ),
-                    None,
-                )
-                if execution is None:
-                    execution = self.acquisitions.acquire_source(
-                        plan.plan_id,
-                        request_key=matrix_request_key(member.member_id, request),
-                        request=request,
-                        contact_email=contact,
-                        protection=guard,
-                    )
-                if execution.settlement is not None:
-                    row, _ = self._interpret(view, member, request, execution)
-                    self._append(row)
+            self.advance_matrix(view, contact=contact, guard=guard, continuing=False)
         return self.show_audit(plan.plan_id)
+
+    def resume(
+        self,
+        plan_id: str,
+        *,
+        contact_email: str | None,
+        code_identity: CodeIdentity | None = None,
+    ) -> AbstractAuditView:
+        contact = validate_contact(contact_email)
+        try:
+            view = self.show_audit(plan_id)
+        except FixtureError as error:
+            if error.reason == FixtureReason.UNSUPPORTED_HISTORY:
+                raise FixtureError(
+                    FixtureReason.PLAN_IDENTITY_MISMATCH, path="plan_versions"
+                ) from None
+            raise
+        validate_execution_identity(view.plan, code_identity)
+        with self.acquisitions.audit_execution(plan_id) as guard:
+            sampled = self.sampling.advance(
+                plan_id,
+                contact_email=contact,
+                code_identity=code_identity,
+                continuing=True,
+                protection=guard,
+            )
+            self.advance_matrix(sampled, contact=contact, guard=guard, continuing=True)
+        return self.show_audit(plan_id)
+
+    def advance_matrix(
+        self,
+        view: SamplingAuditView,
+        *,
+        contact: str,
+        guard: AuditProtection,
+        continuing: bool,
+    ) -> None:
+        plan_id = view.plan.plan_id
+        for member, request in applicable_requests(view):
+            current = self.show_audit(plan_id)
+            own = [
+                row
+                for row in current.matrix_history
+                if row.member_id == member.member_id and row.request == request
+            ]
+            latest = own[-1] if own else None
+            root_id = retained_acquisition(current, member, request)
+            execution = next(
+                (
+                    value
+                    for value in current.executions
+                    if value.execution_id == root_id
+                    or (
+                        root_id is None
+                        and value.request_key
+                        == matrix_request_key(member.member_id, request)
+                    )
+                ),
+                None,
+            )
+            existed = execution is not None
+            if execution is None:
+                execution = self.acquisitions.acquire_source(
+                    plan_id,
+                    request_key=matrix_request_key(member.member_id, request),
+                    request=request,
+                    contact_email=contact,
+                    protection=guard,
+                )
+            chain = [execution]
+            while child := next(
+                (
+                    value
+                    for value in current.executions
+                    if value.previous_execution_id == chain[-1].execution_id
+                ),
+                None,
+            ):
+                chain.append(child)
+            # 已取得但未解释的执行仍需引用原事实,不能重新抓取或追认未结算成功。
+            for execution in chain:
+                if any(row.acquisition_id == execution.execution_id for row in own):
+                    continue
+                if execution.settlement is None:
+                    if not continuing:
+                        break
+                    execution = self.acquisitions.close_unknown_source(
+                        execution.execution_id, protection=guard
+                    )
+                row, _ = self._interpret(current, member, request, execution)
+                row = self.with_previous(row, latest)
+                self._append(row)
+                latest = row
+            execution = next(
+                value
+                for value in self.acquisitions.show_audit(plan_id).executions
+                if value.execution_id == chain[-1].execution_id
+            )
+            if continuing and existed and can_continue(execution):
+                assert latest is not None
+                execution = self.acquisitions.acquire_source(
+                    plan_id,
+                    request_key=(
+                        matrix_request_key(member.member_id, request)
+                        + f"-resume-{len(chain)}"
+                    ),
+                    request=request,
+                    contact_email=contact,
+                    protection=guard,
+                    previous_execution_id=execution.execution_id,
+                )
+                row, _ = self._interpret(current, member, request, execution)
+                self._append(self.with_previous(row, latest))
+
+    @staticmethod
+    def with_previous(row: MatrixRow, previous: MatrixRow | None) -> MatrixRow:
+        row = row.model_copy(
+            update={
+                "generation": previous.generation + 1 if previous else 1,
+                "previous_row_id": previous.row_id if previous else None,
+                "row_id": "",
+            }
+        )
+        return row.model_copy(update={"row_id": identity_sha256(row)})
 
     def read_text(self, plan_id: str, candidate_id: str) -> str:
         view = self.show_audit(plan_id)
@@ -340,6 +364,14 @@ class AbstractService:
                     if value.execution_id == row.acquisition_id
                 )
                 replay, texts = self._interpret(view, member, row.request, execution)
+                replay = self.with_previous(replay, None).model_copy(
+                    update={
+                        "generation": row.generation,
+                        "previous_row_id": row.previous_row_id,
+                        "row_id": "",
+                    }
+                )
+                replay = replay.model_copy(update={"row_id": identity_sha256(replay)})
                 if replay != row:
                     raise FixtureError(
                         FixtureReason.CORRUPT_REFERENCE, path="abstract.interpretation"
@@ -366,7 +398,7 @@ class AbstractService:
         finally:
             engine.dispose()
         for view in views:
-            for row in view.matrix:
+            for row in view.matrix_history:
                 # Pending projections carry no persisted interpretation to verify.
                 if row.row_id not in stored_ids:
                     continue
@@ -382,6 +414,14 @@ class AbstractService:
                     if value.execution_id == row.acquisition_id
                 )
                 replay, _ = self._interpret(view, member, row.request, execution)
+                replay = self.with_previous(replay, None).model_copy(
+                    update={
+                        "generation": row.generation,
+                        "previous_row_id": row.previous_row_id,
+                        "row_id": "",
+                    }
+                )
+                replay = replay.model_copy(update={"row_id": identity_sha256(replay)})
                 if replay != row:
                     raise FixtureError(
                         FixtureReason.CORRUPT_REFERENCE, path="abstract.interpretation"

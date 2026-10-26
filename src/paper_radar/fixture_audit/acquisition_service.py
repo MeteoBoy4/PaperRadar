@@ -143,6 +143,67 @@ class AcquisitionService:
         finally:
             engine.dispose()
 
+    def _require_new_execution(
+        self,
+        plan_id: str,
+        request_key: str,
+        request: SourceRequest,
+        previous_execution_id: str | None,
+    ) -> None:
+        # 在公共取得边界核对冻结路线;精确同键重放已在调用前返回。
+        from paper_radar.fixture_audit.abstract_records import load_abstracts
+        from paper_radar.fixture_audit.abstract_rules import matrix_request_key
+        from paper_radar.fixture_audit.resume_rules import can_continue
+        from paper_radar.fixture_audit.sampling_records import load_sampling
+
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+        try:
+            require_current_revision(engine)
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN")
+                view = next(
+                    value
+                    for value in load_abstracts(
+                        connection, load_sampling(connection, load_audits(connection))
+                    )
+                    if value.plan.plan_id == plan_id
+                )
+        finally:
+            engine.dispose()
+        matched = [
+            row
+            for row in view.matrix
+            if row.request == request and row.acquisition_id is not None
+        ]
+        if previous_execution_id is not None:
+            previous = next(
+                (
+                    value
+                    for value in view.executions
+                    if value.execution_id == previous_execution_id
+                ),
+                None,
+            )
+            current = next(
+                (row for row in matched if row.acquisition_id == previous_execution_id),
+                None,
+            )
+            if current and previous and can_continue(previous):
+                if request_key != (
+                    matrix_request_key(current.member_id, request)
+                    + f"-resume-{current.generation}"
+                ):
+                    raise FixtureError(
+                        FixtureReason.REQUEST_CONFLICT, path="audit.continuation_key"
+                    )
+                return
+        frozen_feed = request.route == "feed" and any(
+            state.journal == request.journal and state.feed is not None
+            for state in view.sampling
+        )
+        if view.status == "complete" or matched or frozen_feed:
+            raise FixtureError(FixtureReason.ROUTE_ALREADY_SETTLED, path="audit.route")
+
     def _acquire_source(
         self,
         plan_id: str,
@@ -150,6 +211,7 @@ class AcquisitionService:
         request_key: str,
         request: SourceRequest,
         contact_email: str | None,
+        previous_execution_id: str | None = None,
     ) -> RouteExecution:
         contact = validate_contact(contact_email)
         try:
@@ -176,19 +238,48 @@ class AcquisitionService:
         execution_id = execution_identity(plan_id, request_key, request)
         for value in view.executions:
             if value.request_key == request_key:
-                if value.request != request:
+                if (
+                    value.request != request
+                    or value.previous_execution_id != previous_execution_id
+                ):
                     raise FixtureError(
                         FixtureReason.REQUEST_CONFLICT, path="request_key"
                     )
                 if value.settlement is None:
                     raise FixtureError(FixtureReason.EXECUTION_INCOMPLETE)
                 return value
+        self._require_new_execution(
+            plan_id, request_key, request, previous_execution_id
+        )
+        if previous_execution_id is not None:
+            previous = next(
+                (
+                    item
+                    for item in view.executions
+                    if item.execution_id == previous_execution_id
+                ),
+                None,
+            )
+            if (
+                previous is None
+                or previous.request != request
+                or previous.settlement is None
+                or previous.reason == "channel_not_installed"
+                or any(
+                    item.previous_execution_id == previous_execution_id
+                    for item in view.executions
+                )
+            ):
+                raise FixtureError(
+                    FixtureReason.INVALID_REFERENCE, path="audit.continuation"
+                )
         value = RouteExecution(
             execution_id=execution_id,
             plan_id=plan_id,
             request_key=request_key,
             request=request,
             started_at=utc_now(),
+            previous_execution_id=previous_execution_id,
         )
         engine = open_database(self.database, mode=DatabaseMode.READ_WRITE)
         try:
@@ -202,8 +293,10 @@ class AcquisitionService:
                         request_key=request_key,
                         request_json=request.model_dump_json(),
                         started_at=value.started_at,
+                        previous_execution_id=previous_execution_id,
                     )
                 )
+                load_audits(connection)
                 connection.commit()
             executor = self.executors.get(request.channel)
             if executor is None:
@@ -266,6 +359,7 @@ class AcquisitionService:
         request: SourceRequest,
         contact_email: str | None,
         protection: AuditProtection | None = None,
+        previous_execution_id: str | None = None,
     ) -> RouteExecution:
         validate_contact(contact_email)
         if protection is not None:
@@ -280,6 +374,7 @@ class AcquisitionService:
                 request_key=request_key,
                 request=request,
                 contact_email=contact_email,
+                previous_execution_id=previous_execution_id,
             )
         with self.audit_execution(plan_id):
             return self._acquire_source(
@@ -287,6 +382,7 @@ class AcquisitionService:
                 request_key=request_key,
                 request=request,
                 contact_email=contact_email,
+                previous_execution_id=previous_execution_id,
             )
 
     def _response_settlement(

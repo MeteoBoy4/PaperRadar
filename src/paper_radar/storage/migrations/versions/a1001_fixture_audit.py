@@ -87,6 +87,8 @@ def upgrade() -> None:
             request_key VARCHAR(128) NOT NULL,
             request_json TEXT NOT NULL,
             started_at TEXT NOT NULL,
+            previous_execution_id VARCHAR(64) REFERENCES audit_route_starts(execution_id),
+            UNIQUE(previous_execution_id),
             UNIQUE(plan_id, request_key),
             UNIQUE(execution_id)
         )
@@ -129,7 +131,10 @@ def upgrade() -> None:
 
     op.execute("""
         CREATE TABLE audit_abstract_rows (
-            row_id VARCHAR(64) NOT NULL PRIMARY KEY,
+            event_no INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            row_id VARCHAR(64) NOT NULL UNIQUE,
+            generation INTEGER NOT NULL,
+            previous_row_id VARCHAR(64) REFERENCES audit_abstract_rows(row_id),
             plan_id VARCHAR(64) NOT NULL REFERENCES audit_plans(plan_id),
             member_id VARCHAR(64) NOT NULL,
             route VARCHAR(32) NOT NULL,
@@ -137,6 +142,28 @@ def upgrade() -> None:
             channel VARCHAR(32) NOT NULL,
             acquisition_id VARCHAR(64) NOT NULL REFERENCES audit_route_starts(execution_id),
             content_json TEXT NOT NULL,
-            UNIQUE(plan_id, member_id, route, strategy_version, channel)
+            UNIQUE(previous_row_id),
+            UNIQUE(plan_id, member_id, route, strategy_version, channel, generation)
+        )
+    """)
+
+    op.execute("""
+        CREATE TABLE audit_parser_declarations (
+            declaration_id VARCHAR(64) NOT NULL PRIMARY KEY,
+            parser_version VARCHAR(128) NOT NULL UNIQUE,
+            content_json TEXT NOT NULL
+        )
+    """)
+    op.execute("""
+        CREATE TABLE audit_interpretations (
+            event_no INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            interpretation_id VARCHAR(64) NOT NULL UNIQUE,
+            plan_id VARCHAR(64) NOT NULL REFERENCES audit_plans(plan_id),
+            request_key VARCHAR(128) NOT NULL,
+            parser_declaration_id VARCHAR(64) NOT NULL REFERENCES audit_parser_declarations(declaration_id),
+            previous_interpretation_id VARCHAR(64) REFERENCES audit_interpretations(interpretation_id),
+            content_json TEXT NOT NULL,
+            UNIQUE(previous_interpretation_id),
+            UNIQUE(plan_id, request_key)
         )
     """)
