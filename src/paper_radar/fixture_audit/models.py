@@ -16,6 +16,7 @@ from pydantic import (
 )
 
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
+from paper_radar.fixture_audit.pdf_models import PdfFixtureState
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError
 
@@ -150,6 +151,7 @@ class FixtureRecord(FrozenModel):
     entry: FixtureEntry
     current: bool
     byte_verified: bool = True
+    pdf: PdfFixtureState | None = None
 
 
 class RegistrationResult(FrozenModel):

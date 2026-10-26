@@ -8,16 +8,21 @@ import typer
 from pydantic import BaseModel
 
 from paper_radar.backup.cli_support import BatchCommand, BatchGroup
-from paper_radar.fixture_audit.errors import FixtureError
+from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
 from paper_radar.fixture_audit.models import DeclarationCheck
+from paper_radar.fixture_audit.pdf_models import PdfEvidenceCheck
 from paper_radar.fixture_audit.service import FixtureAudit
 from paper_radar.storage.errors import StorageError
 
 HELP = """\
 当前用途：登记版本化 fixture 声明、只读核对原字节并查询完整历史。
 参数：register/check 接受声明文件，show 接受记录 ID；均显式提供 --database。
-register 需 --data-root；list 可用 --history，所有命令支持 --json。
-副作用：register 追加 SQLite 登记；check/list/show 只读，不迁移、不创建业务目录。
+register 需 --data-root；--pdf-file 读取本地 PDF 与请求 JSON，--backend 登记期望 JSON。
+check --pdf 按样本记录 ID 核验本机字节，需 --data-root；list 可用 --history。
+list/show 可显式 --data-root 核验本机证据；所有命令支持 --json。
+副作用：register 追加 SQLite 登记，--pdf-file 还发布 original_pdf。
+check/list/show 只读。
+均不迁移，查询不创建业务目录。PDF byte_verified 仅证明字节，不代表解析质量通过。
 帮助不访问网络、数据库、凭据或源文件。历史与合成材料不代表真实来源已核实。
 自动配额：0 次模型调用，不运行真实来源、浏览器或 Docling。
 输出去向：查询结果写标准输出，受控错误写标准错误；错误退出 1，参数错误退出 2。
@@ -25,6 +30,10 @@ register 需 --data-root；list 可用 --history，所有命令支持 --json。
 示例：paper-radar fixture register fixtures/a10/historical-v1.json
   --database data/paper-radar.sqlite3 --data-root data
 示例：paper-radar fixture list --database data/paper-radar.sqlite3 --history --json
+示例：paper-radar fixture register pdf-request.json --pdf-file sample.pdf
+  --database data/paper-radar.sqlite3 --data-root data
+示例：paper-radar fixture register backend-request.json --backend
+  --database data/paper-radar.sqlite3 --data-root data
 """
 
 
@@ -65,7 +74,7 @@ def _run(operation: Callable[[], object], json_output: bool) -> object:
     elif isinstance(result, DeclarationCheck):
         typer.echo(f"声明核对：{result.status}；源文件可用：{result.source_available}")
     else:
-        typer.echo("样本登记历史（byte_verified 仅指声明字节，不证明来源实测）")
+        typer.echo("样本历史：声明与 PDF 字节核验分列；backend 期望仅做形状校验")
         typer.echo(json.dumps(value, ensure_ascii=False, indent=2))
     return result
 
@@ -80,8 +89,26 @@ def register_command(
         Path, typer.Option("--data-root", help="制品根；本命令不创建目录")
     ],
     json_output: JsonOutput = False,
+    pdf_file: Annotated[
+        Path | None,
+        typer.Option("--pdf-file", help="本机 PDF 文件；source 改为取得请求 JSON"),
+    ] = None,
+    backend: Annotated[
+        bool,
+        typer.Option("--backend", help="source 为绑定 PDF 字节的 backend 期望 JSON"),
+    ] = False,
 ) -> None:
-    _run(lambda: FixtureAudit(database, data_root).register(source), json_output)
+    def register() -> object:
+        service = FixtureAudit(database, data_root)
+        if pdf_file is not None and backend:
+            raise FixtureError(FixtureReason.INVALID_DECLARATION, path="pdf.mode")
+        if pdf_file is not None:
+            return service.register_pdf_request(source, pdf_file)
+        if backend:
+            return service.register_pdf_backend(source)
+        return service.register(source)
+
+    _run(register, json_output)
 
 
 @fixture_app.command(
@@ -91,9 +118,22 @@ def check_command(
     source: Annotated[Path, typer.Argument(help="待核对声明文件")],
     database: Database,
     json_output: JsonOutput = False,
+    pdf: Annotated[
+        bool, typer.Option("--pdf", help="source 是样本 ID；只读核查本机 PDF 证据")
+    ] = False,
+    data_root: Annotated[
+        Path | None, typer.Option("--data-root", help="核验本机 PDF 的制品根")
+    ] = None,
 ) -> None:
-    result = _run(lambda: FixtureAudit(database).check(source), json_output)
-    if isinstance(result, DeclarationCheck) and result.status != "byte_verified":
+    service = FixtureAudit(database, data_root)
+    result = _run(
+        lambda: service.check_pdf(str(source)) if pdf else service.check(source),
+        json_output,
+    )
+    if (
+        isinstance(result, (DeclarationCheck, PdfEvidenceCheck))
+        and result.status != "byte_verified"
+    ):
         raise typer.Exit(1)
 
 
@@ -106,8 +146,11 @@ def list_command(
         bool, typer.Option("--history", help="包含已被替换的完整历史")
     ] = False,
     json_output: JsonOutput = False,
+    data_root: Annotated[
+        Path | None, typer.Option("--data-root", help="可选制品根，用于核验本机字节")
+    ] = None,
 ) -> None:
-    _run(lambda: FixtureAudit(database).list(history=history), json_output)
+    _run(lambda: FixtureAudit(database, data_root).list(history=history), json_output)
 
 
 @fixture_app.command(
@@ -117,5 +160,8 @@ def show_command(
     record_id: Annotated[str, typer.Argument(help="显式样本记录 ID")],
     database: Database,
     json_output: JsonOutput = False,
+    data_root: Annotated[
+        Path | None, typer.Option("--data-root", help="可选制品根，用于核验本机字节")
+    ] = None,
 ) -> None:
-    _run(lambda: FixtureAudit(database).show(record_id), json_output)
+    _run(lambda: FixtureAudit(database, data_root).show(record_id), json_output)
