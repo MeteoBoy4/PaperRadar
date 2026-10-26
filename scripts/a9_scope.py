@@ -565,10 +565,10 @@ REQUIRED_FIXTURE_FILES = (
         "5efa0aec0e41329fe8736dcd533706309fd9c3717aeac14ddbf55d05cce0ed0b",
     ),
     ("README.md", "72c8dc720dba8fa7a8ba76101461ab785b55c1988a3efa3e0670425bc70440a9"),
-    ("GLOSSARY.md", "93f7e9ba809391bff7d9773aef403a2e28d12e2daf210a10113dcd6bbb7a345c"),
+    ("GLOSSARY.md", "d667630bf2457b453be99dbf56f5b456843c24466ed5570c8ab312095b3b6802"),
     (
         "intent/draft.md",
-        "ef685589dab5eb515410c3c87fa95e2efca22442a0b10bf307768a15e7c1e25e",
+        "a39e712727b6d83b6e97fc5116ac4c026b1d429ce8ed2e1fff24eb78690e816f",
     ),
     (
         "docs/contracts/read-validation.md",
