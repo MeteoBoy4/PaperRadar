@@ -94,7 +94,9 @@ def test_nonempty_backup_restores_audit_without_source_or_contact(
     ]
 
 
-@pytest.mark.parametrize("damage", ["counter", "channel", "source_identity"])
+@pytest.mark.parametrize(
+    "damage", ["counter", "channel", "source_identity", "decoding"]
+)
 def test_rehashed_backup_rejects_impossible_audit_facts(
     tmp_path: Path, damage: str
 ) -> None:
@@ -107,7 +109,7 @@ def test_rehashed_backup_rejects_impossible_audit_facts(
             "SELECT execution_id,request_json FROM audit_route_starts "
             "WHERE request_key='feed'"
         ).fetchone()
-        if damage == "counter":
+        if damage in {"counter", "decoding"}:
             value = json.loads(
                 connection.execute(
                     "SELECT settlement_json FROM audit_route_settlements "
@@ -115,7 +117,10 @@ def test_rehashed_backup_rejects_impossible_audit_facts(
                     (execution_id,),
                 ).fetchone()[0]
             )
-            value["http"]["retry_count"] = 1
+            if damage == "counter":
+                value["http"]["retry_count"] = 1
+            else:
+                value["content_decoding"] = "ascii"
             connection.execute(
                 "UPDATE audit_route_settlements SET settlement_json=? "
                 "WHERE execution_id=?",
@@ -154,3 +159,60 @@ def test_rehashed_backup_rejects_impossible_audit_facts(
     with pytest.raises(BackupError) as caught:
         verify_backup(batch.batch_dir)
     assert caught.value.reason == "registration_invalid"
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("settled_at", "not-a-timestamp"),
+        ("settled_at", "2026-10-26T00:00:00"),
+        ("started_at", "not-a-timestamp"),
+    ],
+)
+def test_rehashed_backup_rejects_invalid_execution_times(
+    tmp_path: Path, field: str, value: str
+) -> None:
+    service, _ = populated(tmp_path / "source")
+    assert service.data_root is not None
+    batch = create_backup(service.database, service.data_root, tmp_path / "backups")
+    database = batch.batch_dir / "database.sqlite3"
+    with closing(sqlite3.connect(database)) as connection:
+        if field == "started_at":
+            connection.execute(
+                "UPDATE audit_route_starts SET started_at=? WHERE request_key='feed'",
+                (value,),
+            )
+        else:
+            execution_id = connection.execute(
+                "SELECT execution_id FROM audit_route_starts WHERE request_key='feed'"
+            ).fetchone()[0]
+            settlement = json.loads(
+                connection.execute(
+                    "SELECT settlement_json FROM audit_route_settlements "
+                    "WHERE execution_id=?",
+                    (execution_id,),
+                ).fetchone()[0]
+            )
+            settlement[field] = value
+            connection.execute(
+                "UPDATE audit_route_settlements SET settlement_json=? "
+                "WHERE execution_id=?",
+                (
+                    json.dumps(settlement, ensure_ascii=False, separators=(",", ":")),
+                    execution_id,
+                ),
+            )
+        connection.commit()
+    manifest_path = batch.batch_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_bytes())
+    raw = database.read_bytes()
+    manifest["database"].update(
+        sha256=hashlib.sha256(raw).hexdigest(), size_bytes=len(raw)
+    )
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        + "\n"
+    )
+    with pytest.raises(BackupError) as rejected:
+        verify_backup(batch.batch_dir)
+    assert rejected.value.reason == "registration_invalid"

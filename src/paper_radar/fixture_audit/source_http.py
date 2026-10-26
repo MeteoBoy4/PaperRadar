@@ -331,17 +331,36 @@ class SourceHTTPExecutor:
             async for chunk in response.aiter_raw():
                 if self.monotonic() >= deadline:
                     raise _Rejected("transient_error")
-                try:
-                    decoded = (
-                        decoder.decompress(chunk, SOURCE_BYTE_LIMIT - len(output) + 1)
-                        if decoder
-                        else chunk
+                pending = chunk
+                while pending:
+                    if self.monotonic() >= deadline:
+                        raise _Rejected("transient_error")
+                    if decoder is not None and decoder.eof:
+                        if encoding != "gzip":
+                            raise _Rejected("invalid_response")
+                        decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
+                    try:
+                        decoded = (
+                            decoder.decompress(
+                                pending, SOURCE_BYTE_LIMIT - len(output) + 1
+                            )
+                            if decoder is not None
+                            else pending
+                        )
+                    except zlib.error:
+                        raise _Rejected("invalid_response") from None
+                    if len(output) + len(decoded) > SOURCE_BYTE_LIMIT:
+                        raise _Rejected("invalid_response")
+                    output.extend(decoded)
+                    pending = (
+                        (
+                            decoder.unused_data
+                            if decoder.eof
+                            else decoder.unconsumed_tail
+                        )
+                        if decoder is not None
+                        else b""
                     )
-                except zlib.error:
-                    raise _Rejected("invalid_response") from None
-                if len(output) + len(decoded) > SOURCE_BYTE_LIMIT:
-                    raise _Rejected("invalid_response")
-                output.extend(decoded)
             if decoder is not None and not decoder.eof:
                 raise _Rejected("invalid_response")
         if self.monotonic() >= deadline:
