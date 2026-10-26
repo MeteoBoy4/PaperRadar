@@ -380,3 +380,14 @@ A10 #106 将取得 previous_execution_id、矩阵 generation/previous_row_id 历
 来源引用、前后链和字段增减，不把缺失的新 parser 运行时冒称已重解析；显式提供匹配的注入
 parser 才能回放该新解释。恢复无网络、无执行锁、不自动继续、不读取原配置/声明路径。
 此为基本恢复子集，#107 仍负责完整混合历史隔离演练。
+
+
+## A10 完整混合历史与引用边界（#107）
+
+沿用备份格式 1 和现有自包含布局。固定 SQLite 副本内的 FixtureAudit.validate_all 覆盖声明原字节/替换、实际审计取得与成员/台账、策略/通道、全部矩阵及 parser 解释、完整审计汇总边界和 feed/abstract_audit 引用；即使外层 SQLite SHA 重算，错误成员、来源、规则、边界或汇总仍拒绝。verify 只读不修复，restore 在校验前不发布错误目标。
+
+完整未引用制品仍可存在：发布成功后业务事务失败可留下已登记 source_snapshot/original_pdf；备份核验其自身身份并复制，既不因缺少业务引用判坏，也不凭字节补出成功或自动清理。未实际取得的 PDF 保持未知。论文和审计共享 source_snapshot 是合法去重，未来 GC 必须考虑双方引用。
+
+恢复后的 fixture list/show、audit show/replay 只依赖恢复 SQLite 和制品；check 额外读取工作树时，声明缺失独立为 source_missing，不是 drift 或批次损坏。恢复不刷新登记时间、不注册新记录、不取执行锁、不自动 resume/激活/安装/联网。新 parser 默认只核验声明/引用/差异闭包，不声称已重解析 v2；仅显式提供同版本同实现 SHA 的运行时才重解析。
+
+真实 a704 schema 的非空旧配置/Pi/Paper/Screening 成功失败及 retry 经单一 a1001 升级后保留旧列、ID、时间、原字节及公共投影。旧 a704 批次仍须匹配程序 verify/restore 后显式升级工作副本，不扩大当前 verify 对旧 revision 的保证。WAL 混合演练及独立进程的事实范围见 [A10 引用与恢复覆盖](../../tests/a10-recovery-coverage.md)；仍未验证 live、NAS、正文/渲染/模型和完整阶段 A。

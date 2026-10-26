@@ -31,6 +31,7 @@ list 接受 --database；show 另需 PLAN_ID；--json 输出结构化事实。
       --contact-email EMAIL
 示例：paper-radar audit replay PLAN_ID --database DB --data-root ROOT --json
 resume 每次显式提供邮箱；只补未结算或允许暂时结论，已冻结材料与终态不重抓。
+replay 可用 --summary-sha256 选择已登记完整汇总边界，省略则回放当前事实。
 replay 按历史规则读取保留材料；失败仅回放执行事实，不联网、不取得执行锁。
 新解析器只通过服务API追加解释，产品没有 reinterpret 命令。
 """
@@ -178,7 +179,16 @@ def replay_command(
     database: Database,
     data_root: Annotated[Path, typer.Option("--data-root", help="历史保留材料数据根")],
     json_output: Annotated[bool, typer.Option("--json", help="输出安全 JSON")] = False,
+    summary_sha256: Annotated[
+        str | None,
+        typer.Option("--summary-sha256", help="已登记完整汇总哈希；省略则回放当前事实"),
+    ] = None,
 ) -> None:
     from paper_radar.fixture_audit import FixtureAudit
 
-    _query(lambda: FixtureAudit(database, data_root).replay_audit(plan_id), json_output)
+    _query(
+        lambda: FixtureAudit(database, data_root).replay_audit(
+            plan_id, summary_sha256=summary_sha256
+        ),
+        json_output,
+    )

@@ -39,7 +39,18 @@ class ConditionalHeaders(FrozenModel):
 class AuditReference(FrozenModel):
     plan_id: str = Field(min_length=1)
     summary_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    feed_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    feed_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    feed_snapshots: dict[Journal, str] = Field(default_factory=dict)
+
+    @field_validator("feed_snapshots")
+    @classmethod
+    def validate_snapshots(cls, values: dict[Journal, str]) -> dict[Journal, str]:
+        if any(
+            len(value) != 64 or any(c not in "0123456789abcdef" for c in value)
+            for value in values.values()
+        ):
+            raise ValueError("feed_snapshots")
+        return values
 
 
 class FixtureExpectations(FrozenModel):
@@ -61,7 +72,7 @@ class FixtureExpectations(FrozenModel):
 class FixtureEntry(FrozenModel):
     key: str = Field(pattern=r"^[a-z0-9][a-z0-9._-]{0,127}$")
     purpose: Purpose
-    journal: Journal
+    journal: Journal | None = None
     basis: Basis
     doi: str | None = None
     handle: str | None = Field(default=None, min_length=1)
@@ -99,6 +110,8 @@ class FixtureEntry(FrozenModel):
 
     @model_validator(mode="after")
     def validate_relationships(self) -> Self:
+        if (self.purpose == "abstract_audit") != (self.journal is None):
+            raise ValueError("journal")
         if (self.replaces is None) != (self.replacement_reason is None):
             raise ValueError("replacement_reason")
         if self.audit_reference is not None and (
@@ -152,6 +165,13 @@ class FixtureRecord(FrozenModel):
     current: bool
     byte_verified: bool = True
     pdf: PdfFixtureState | None = None
+    audit_verification: (
+        Literal[
+            "declaration_and_reference_verified",
+            "frozen_v1_material_and_execution_facts_verified",
+        ]
+        | None
+    ) = None
 
 
 class RegistrationResult(FrozenModel):
@@ -165,6 +185,7 @@ class DeclarationCheck(FrozenModel):
     source_available: bool
     declaration_id: str | None = None
     raw_sha256: str | None = None
+    entries: tuple[FixtureRecord, ...] = ()
 
 
 def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:

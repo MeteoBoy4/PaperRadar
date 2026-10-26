@@ -22,6 +22,8 @@ check --pdf 按样本记录 ID 核验本机字节，需 --data-root；list 可�
 list/show 可显式 --data-root 核验本机证据；所有命令支持 --json。
 副作用：register 追加 SQLite 登记，--pdf-file 还发布 original_pdf。
 check/list/show 只读。
+完成审计的 feed 引用单刊快照；abstract_audit 使用 journal=null 引用整计划四刊快照。
+带 --data-root 核验保留材料和执行事实；省略只核验声明/引用，不授予来源通过。
 均不迁移，查询不创建业务目录。PDF byte_verified 仅证明字节，不代表解析质量通过。
 帮助不访问网络、数据库、凭据或源文件。历史与合成材料不代表真实来源已核实。
 自动配额：0 次模型调用，不运行真实来源、浏览器或 Docling。
@@ -122,7 +124,7 @@ def check_command(
         bool, typer.Option("--pdf", help="source 是样本 ID；只读核查本机 PDF 证据")
     ] = False,
     data_root: Annotated[
-        Path | None, typer.Option("--data-root", help="核验本机 PDF 的制品根")
+        Path | None, typer.Option("--data-root", help="核验本机 PDF 或审计引用的制品根")
     ] = None,
 ) -> None:
     service = FixtureAudit(database, data_root)
