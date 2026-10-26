@@ -346,37 +346,42 @@ class AbstractService:
         )
         return row.model_copy(update={"row_id": identity_sha256(row)})
 
+    def _validated_texts(
+        self, view: AbstractAuditView, row: MatrixRow
+    ) -> dict[str, str]:
+        member = next(
+            member
+            for state in view.sampling
+            for member in state.members
+            if member.member_id == row.member_id
+        )
+        execution = next(
+            value
+            for value in view.executions
+            if value.execution_id == row.acquisition_id
+        )
+        replay, texts = self._interpret(view, member, row.request, execution)
+        replay = self.with_previous(replay, None).model_copy(
+            update={
+                "generation": row.generation,
+                "previous_row_id": row.previous_row_id,
+                "row_id": "",
+            }
+        )
+        replay = replay.model_copy(update={"row_id": identity_sha256(replay)})
+        if replay != row:
+            raise FixtureError(
+                FixtureReason.CORRUPT_REFERENCE, path="abstract.interpretation"
+            )
+        return texts
+
     def read_text(self, plan_id: str, candidate_id: str) -> str:
         view = self.show_audit(plan_id)
         for row in view.matrix:
             if any(
                 candidate.candidate_id == candidate_id for candidate in row.candidates
             ):
-                member = next(
-                    member
-                    for state in view.sampling
-                    for member in state.members
-                    if member.member_id == row.member_id
-                )
-                execution = next(
-                    value
-                    for value in view.executions
-                    if value.execution_id == row.acquisition_id
-                )
-                replay, texts = self._interpret(view, member, row.request, execution)
-                replay = self.with_previous(replay, None).model_copy(
-                    update={
-                        "generation": row.generation,
-                        "previous_row_id": row.previous_row_id,
-                        "row_id": "",
-                    }
-                )
-                replay = replay.model_copy(update={"row_id": identity_sha256(replay)})
-                if replay != row:
-                    raise FixtureError(
-                        FixtureReason.CORRUPT_REFERENCE, path="abstract.interpretation"
-                    )
-                return texts[candidate_id]
+                return self._validated_texts(view, row)[candidate_id]
         raise FixtureError(FixtureReason.RECORD_NOT_FOUND, path="candidate_id")
 
     def validate_all(self) -> None:
@@ -402,27 +407,4 @@ class AbstractService:
                 # Pending projections carry no persisted interpretation to verify.
                 if row.row_id not in stored_ids:
                     continue
-                member = next(
-                    member
-                    for state in view.sampling
-                    for member in state.members
-                    if member.member_id == row.member_id
-                )
-                execution = next(
-                    value
-                    for value in view.executions
-                    if value.execution_id == row.acquisition_id
-                )
-                replay, _ = self._interpret(view, member, row.request, execution)
-                replay = self.with_previous(replay, None).model_copy(
-                    update={
-                        "generation": row.generation,
-                        "previous_row_id": row.previous_row_id,
-                        "row_id": "",
-                    }
-                )
-                replay = replay.model_copy(update={"row_id": identity_sha256(replay)})
-                if replay != row:
-                    raise FixtureError(
-                        FixtureReason.CORRUPT_REFERENCE, path="abstract.interpretation"
-                    )
+                self._validated_texts(view, row)
