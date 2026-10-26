@@ -70,7 +70,7 @@ HTTPFacts 只保存安全 URL、状态、轮次/重定向/重试/实际等待与
 
 条件头可空；带条件时必须引用已有同策略/通道/来源取得核验的 source_snapshot。无旧材料在 HTTP 前拒绝。304 只复用该既有引用，标记 reused_prior，不产生新材料或假取得时间；原始来源事实保留。取得结算的 `content_decoding` 单独记录保留材料的实际解码依据：200 来自实际取得，304 沿匹配原始材料继承，不能用本次无体 HTTP 的默认 UTF-8 代替。`http.charset/decoding` 仍只表示本次 HTTP 响应，不伪填旧头；回放/恢复按 `content_decoding` 重解析并核对原始/复用关系。计划 created_at、路线 started_at 与 settled_at 使用实际生成的 `datetime.isoformat()` UTC（+00:00）规范字符串；非法值、无时区或非规范表示拒绝，保留原始合法字节。墙钟先后不构成新的门禁，请求期限仍使用单调时钟。声明、材料引用、请求身份、计数和内容资格在 validate_all 中只读核对，并接入原有备份固定副本；恢复不联网、不取得执行锁、不自动继续。
 
-本票 CLI 仅 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。run/resume/replay 待后续完整工作流交付，不提前注册空命令。当前未运行真实来源审计，摘要矩阵、完整恢复继续与独立 A10 仍由后续票收口。
+初始 #103 CLI 为 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。#105 已接通显式 run 和摘要矩阵（见下文）；resume/replay、完整恢复继续与独立 A10 仍由后续票收口。当前未运行真实来源审计。
 
 ## PDF 字节事实与 backend 期望（#102）
 
@@ -145,7 +145,7 @@ Feed parser v1 支持 RSS、Atom、RSS 1.0 RDF；拒绝 DOCTYPE/ENTITY、NUL宽�
 
 类别依据仅 ADR-0033 闭集。类型路径中的 null、数组或标量容器以及非字符串类型值均不提供明确类别依据，按未知结算；原材料与逐来源事实保留，其他刊继续推进。Wiley category/prism:section 原值保留但不产生判定；Crossref/DataCite 其他明确类型为非 journal-article，dqkx 平台表外值/缺字段为未知，明确正负判定矛盾为冲突。Feed 位置、题名、og:type、citation_doi 均不是类别依据。citation_doi 只用于 AIES 无 DOI/guid 时，经受控 Feed link 取得显式身份，再查 doiRA/适用机构；链接本身不成为稳定标识。
 
-选样期只执行身份/类别需要的路线：已有 DOI 则查 doiRA 与其适用 registry；dqkx 还核对出版者显式类型；AIES 缺 DOI 时先取出版者 citation_doi。doiRA 其他机构只关闭 registry，查询失败/404 保留 agency_unknown 与原始 HTTP 状态；单一机构404不表示全球 DOI 不存在。有效身份但无摘要的来源仍可贡献；未实现摘要矩阵，不因先有摘要而换样。
+选样期只执行身份/类别需要的路线：已有 DOI 则查 doiRA 与其适用 registry；dqkx 还核对出版者显式类型；AIES 缺 DOI 时先取出版者 citation_doi。doiRA 其他机构只关闭 registry，查询失败/404 保留 agency_unknown 与原始 HTTP 状态；单一机构404不表示全球 DOI 不存在。有效身份但无摘要的来源仍可贡献；选样不消费摘要成败，不因先有摘要而换样。
 
 | 原候选结果 | 含义 | 位次行为 |
 | --- | --- | --- |
@@ -156,3 +156,87 @@ Feed parser v1 支持 RSS、Atom、RSS 1.0 RDF；拒绝 DOCTYPE/ENTITY、NUL宽�
 取得在事务外进行，成员/排除/暂停事件在短事务原子追加。选样事件按同刊显式前驱形成历史，不能回写、跳位或改变既有成员。started未结算在显式选样继续中先追加 outcome_unknown 再新建执行，请求数保持未知。这里只交付选样阶段继续；全路线 resume/replay、两个真实进程场景和新 parser 重解释留 #106。
 
 每个成员引用整份 Feed SHA、原位次、ID/DOI定位、来源取得和明确类别依据，不伪造 A6 单 item 字节；模型不持有摘要成败。validate_all 从冻结 Feed 重建候选，再用事件原路线材料重放同一选择逻辑，核对成员、来源、排除及历史，不以哈希一致代替语义核验。基本备份恢复包含这些引用与原字节，恢复后 list/show 不读仓库声明或原 Feed 路径、不获取执行锁、不自动继续。四刊实测、来源稳定性、摘要矩阵与完整阶段 A 均未由本票证明。
+
+## 摘要矩阵与显式运行（#105）
+
+`paper-radar audit run --database DB --data-root ROOT --contact-email EMAIL [--count 5] [--json]`
+先验证临时联系邮箱，再原子提交计划，最后在同一计划执行锁中全轮串行选样和执行成员矩阵。
+整个计划唯一 N=5–10；邮箱只用于如实请求标识，不保存。`run_audit` 是相同公共服务入口，
+允许测试在外部 HTTP transport 注入合成响应；本票不执行 live。
+
+计划新增冻结 `audit-matrix-v1`、`audit-abstract-v1`、`audit-truncation-v1`。
+矩阵身份为 `(member_id, route, acquisition_strategy_version, channel)`，适用性来自冻结策略：
+
+| 条件 | 适用路线/通道 |
+| --- | --- |
+| 所有固定成员 | feed/http，引用该刊唯一冻结 Feed 与成员物理 item 定位 |
+| 有 DOI | doi_ra/http |
+| doiRA 明确为 Crossref 或 DataCite | 对应的 registry/http；其他机构单列 agency_unsupported |
+| AIES 有受控出版者链接，或其他三刊有 DOI | publisher/http 与 publisher/browser_render |
+| official_api、repository | v1 无成员适用目标，汇总显示 0 适用、执行器未交付，不建行 |
+
+无 DOI、agency 未知、机构不支持及出版者目标未知分别披露；不建立四通道笛卡尔积。
+每条适用路线独立执行，不因其他路线已有摘要而短路。选样期取得可直接引用同一 execution、
+source_snapshot、payload SHA 和原 settled_at；矩阵解释不制造新取得时间，不为补分母重抓。
+仅存在 started 的路线显示 outcome_unknown，物理请求数未知；尚未执行的已交付路线显示
+not_attempted。未交付通道显示 channel_not_installed，单列其适用数量，不重试、不计失败，
+摘要覆盖分母为零/不适用；不存在“渲染 0/N 成功率”。本票不提前交付全路线 resume/replay。
+
+主摘要采用正向识别。出版者必须有已核验 DOI 身份，且只有已知主容器贡献题名和摘要：
+AIES/Wiley 为 class/id `abstract`、`article-section__abstract` 或 `abstractSection`；dqkx
+为 `abstract-cn`。零个或多个主容器均为 unrecognized_page_shape；页面其他文本不补齐摘要。
+已知 `challenge-form`、`captcha-form`、`login-form`、`subscription-form` 表单为受阻特征，
+即使 HTTP 200 或带 citation_doi 也不保存正文。未知形状不能自动推断为访问受阻。
+已核验身份但无主容器的材料仍可保留供历史重解析，不能贡献页面题名。
+已知主容器存在但为空时为 record_without_abstract，有效记录与非空摘要分开。
+
+RSS/Atom/RDF 按固定成员的物理 item 解析 description/summary/content；Wiley/AMS 有完整
+字面 Abstract/摘要标签时只消费该标签后、下一个附加标签前的主区块，之前段落单列前置区块。
+dqkx Feed 只取 p 内正文，p 外引文尾行不参与仲裁。Significance Statement、Plain Language
+Summary、Key Points 及 abstract-en 只保存存在与定位；已知附加 class/id 也从主容器排除。
+Crossref 只取 message.abstract（允许 JATS 标记），DataCite 只取首个 descriptionType=Abstract。
+不翻译、不拼接不同来源、不从正文、搜索摘要或未标记页面取摘要。
+
+HTML 实体解码一次、去标记与段落连接整体属于 abstract v1；相邻段落以一个换行连接，
+内部空白、Unicode、原语言和数学比较保留，最后调用 A6 normalize_text v1。
+实体解码后仍呈真实标签的字面残留先记 markup_residue，再清除真实残留标记后规范化。
+受控 HTML 解析最大嵌套深度 100；超过时记录 invalid_response，不影响其他成员。
+截断逐项信号是同一纯规则的输出，bool 等于 signals 非空：
+
+| 信号 | 机械条件 |
+| --- | --- |
+| short_under_100 | 最终规范文本不足 100 Unicode code point，100 不命中 |
+| trailing_ellipsis | 去尾随闭引号/括号后以 `...` 或 `…` 结束 |
+| read_more | 尾部 Read more（忽略大小写）或阅读更多，可后接空白/句末标点 |
+| markup_residue | 实体解码后的文本仍有真实标记残留，数学 `x < y` 不命中 |
+| missing_terminal_punctuation | 不以 `.?!。？！` 结束（允许相邻尾随闭引号/括号）；省略号不算终止标点 |
+
+v1 尾随闭字符集合为 ASCII 单/双引号、`”’»）)]}】》」』`。短摘要保留且可获选；未命中
+只说明未发现这些信号，不证明完整。候选持久化仅含字段/来源/定位、文本 SHA、code point
+长度及截断信号，普通 list/show/repr/异常不含摘要原文。`read_audit_text(plan_id, candidate_id)`
+是显式受控读取入口：从原材料按历史 v1 规则重解析并核对安全解释后返回原语言文本。
+
+成员全部适用路线结算后，构造 A6 RankedObservation 并调用原 choose_fields：
+`observed_at=原取得 settled_at`，`payload_sha256=原响应体 SHA`，`parser_version=1` 对应
+abstract v1，`stream=(plan_id, member_id:route:strategy_version:channel)`；字段引用为
+`(candidate_id, acquisition_id)`。保留 A6 同流同 payload 的最高 parser、publisher > registry >
+feed、实际取得时间、payload SHA、parser、stream 的稳定降序排序。题名/摘要分别获选，
+final_abstract_source 只描述摘要；不按长度或截断改写优先级。候选与每字段获选/低优先级/
+较早观察或稳定 tie-break 依据可重建；高优先级获选片段与低优先级未命中截断的冲突按刊计数。
+尚未全部结算的成员 `routes_settled=false`，最终字段为空，分布单列 pending。
+
+汇总保持策略/通道分离，列明目标、入样、考察、排除、未知、冲突、不足、原日期跨度与未知日期，
+以及路线适用/尝试/未尝试/未安装、有效记录、非空摘要、截断、错误和最终摘要来源。
+非空摘要覆盖同时给分子和适用且已交付通道的分母，分母为零给 ratio=null/不适用。
+doiRA 只是机构路由，不是摘要提供方，摘要分母恒为零；适用及执行计数独立保留。
+物理 HTTP 请求、redirect、retry 和未知执行另列，不混成成员路线覆盖率。
+
+complete 仅表示四刊选样已结算且固定成员应有路线均有终态；不足样本、全无摘要、受阻与
+来源稳定性各自披露。暂时受阻的选样或未结算成员使状态为 partial。不会生成 Paper、
+metadata_ready、metadata_unobtainable、人工队列、Screening 或门禁事件。完整候选优先、
+附加区块是否供 Screening、阶段 B 稳定性阻断判据仍待后续裁决。
+
+每条路线的取得引用、候选安全解释与区块定位在短事务原子追加；汇总从事实派生。
+新增 audit_abstract_rows 随唯一未发布 a1001 revision 从 a704 建立，validate_all 和既有
+backup/restore 固定副本重读原材料核对解释；重算行 ID/备份 SHA 也不能篡改候选长度或信号，不能将冻结 Feed/选样原取得替换为同路线另一次取得；没有原取得的路线只认确定的 matrix 请求键。
+完整历史重解释/混合恢复与独立 A10 门禁继续由 #106–#108 收口；本票不宣称全量门禁通过。

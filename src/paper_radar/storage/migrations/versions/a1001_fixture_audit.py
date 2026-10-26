@@ -126,3 +126,17 @@ def upgrade() -> None:
             UNIQUE(previous_event_id)
         )
     """)
+
+    op.execute("""
+        CREATE TABLE audit_abstract_rows (
+            row_id VARCHAR(64) NOT NULL PRIMARY KEY,
+            plan_id VARCHAR(64) NOT NULL REFERENCES audit_plans(plan_id),
+            member_id VARCHAR(64) NOT NULL,
+            route VARCHAR(32) NOT NULL,
+            strategy_version VARCHAR(64) NOT NULL,
+            channel VARCHAR(32) NOT NULL,
+            acquisition_id VARCHAR(64) NOT NULL REFERENCES audit_route_starts(execution_id),
+            content_json TEXT NOT NULL,
+            UNIQUE(plan_id, member_id, route, strategy_version, channel)
+        )
+    """)

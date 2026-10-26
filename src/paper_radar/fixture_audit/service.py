@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from sqlalchemy import Connection, select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
+from paper_radar.fixture_audit.abstract_models import AbstractAuditView
+from paper_radar.fixture_audit.abstract_service import AbstractService
 from paper_radar.fixture_audit.acquisition_models import (
     AuditPlan,
     Channel,
@@ -37,7 +39,6 @@ from paper_radar.fixture_audit.pdf_models import (
     PdfRegistration,
 )
 from paper_radar.fixture_audit.pdf_records import load_pdf_states
-from paper_radar.fixture_audit.sampling_models import SamplingAuditView
 from paper_radar.fixture_audit.sampling_service import SamplingService
 from paper_radar.fixture_audit.source_http import SourceExecutor
 from paper_radar.fixture_audit.tables import fixture_declarations, fixture_records
@@ -150,6 +151,9 @@ class FixtureAudit:
         self.data_root = data_root
         self.acquisitions = AcquisitionService(database, data_root, source_executors)
         self.sampling = SamplingService(database, data_root, self.acquisitions)
+        self.abstracts = AbstractService(
+            database, data_root, self.acquisitions, self.sampling
+        )
 
     def register(self, source: Path) -> RegistrationResult:
         try:
@@ -373,11 +377,29 @@ class FixtureAudit:
             protection=protection,
         )
 
-    def list_audits(self) -> tuple[SamplingAuditView, ...]:
-        return self.sampling.list_audits()
+    def list_audits(self) -> tuple[AbstractAuditView, ...]:
+        return self.abstracts.list_audits()
 
-    def show_audit(self, plan_id: str) -> SamplingAuditView:
-        return self.sampling.show_audit(plan_id)
+    def show_audit(self, plan_id: str) -> AbstractAuditView:
+        return self.abstracts.show_audit(plan_id)
+
+    def run_audit(
+        self,
+        *,
+        contact_email: str | None,
+        target_count: int = 5,
+        plan_key: str | None = None,
+        code_identity: CodeIdentity | None = None,
+    ) -> AbstractAuditView:
+        return self.abstracts.run(
+            contact_email=contact_email,
+            target_count=target_count,
+            plan_key=plan_key,
+            code_identity=code_identity,
+        )
+
+    def read_audit_text(self, plan_id: str, candidate_id: str) -> str:
+        return self.abstracts.read_text(plan_id, candidate_id)
 
     def select_audit_samples(
         self,
@@ -385,10 +407,11 @@ class FixtureAudit:
         *,
         contact_email: str | None,
         code_identity: CodeIdentity | None = None,
-    ) -> SamplingAuditView:
-        return self.sampling.advance(
+    ) -> AbstractAuditView:
+        self.sampling.advance(
             plan_id, contact_email=contact_email, code_identity=code_identity
         )
+        return self.show_audit(plan_id)
 
     def continue_audit_sampling(
         self,
@@ -396,13 +419,14 @@ class FixtureAudit:
         *,
         contact_email: str | None,
         code_identity: CodeIdentity | None = None,
-    ) -> SamplingAuditView:
-        return self.sampling.advance(
+    ) -> AbstractAuditView:
+        self.sampling.advance(
             plan_id,
             contact_email=contact_email,
             code_identity=code_identity,
             continuing=True,
         )
+        return self.show_audit(plan_id)
 
     def register_pdf(
         self,
@@ -526,3 +550,4 @@ class FixtureAudit:
             raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
         self.acquisitions.validate_all()
         self.sampling.validate_all()
+        self.abstracts.validate_all()

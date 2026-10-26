@@ -36,7 +36,12 @@ class _IdentityMetadata(HTMLParser):
             and values.get("content")
         ):
             self.dois.append(values["content"] or "")
-        if tag == "form" and values.get("id") in {"challenge-form", "captcha-form"}:
+        if tag == "form" and values.get("id") in {
+            "challenge-form",
+            "captcha-form",
+            "login-form",
+            "subscription-form",
+        }:
             self.challenge = True
 
 
