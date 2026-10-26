@@ -213,7 +213,7 @@ def test_four_purposes_are_separate_and_file_location_does_not_change_identity(
             {
                 "key": "one-logical-key",
                 "purpose": purpose,
-                "journal": "jgr",
+                "journal": None if purpose == "abstract_audit" else "jgr",
                 "basis": "synthetic",
                 "source_basis": "手写合成向量，不是真实来源",
             }

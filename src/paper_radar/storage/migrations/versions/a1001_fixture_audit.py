@@ -30,8 +30,10 @@ def upgrade() -> None:
                 REFERENCES fixture_declarations(declaration_id),
             purpose VARCHAR(32) NOT NULL
                 CHECK(purpose IN ('feed','abstract_audit','references','pdf')),
-            journal VARCHAR(16) NOT NULL
-                CHECK(journal IN ('aies','jgr','qjrms','dqkx')),
+            journal VARCHAR(16)
+                CHECK((purpose='abstract_audit' AND journal IS NULL) OR
+                    (purpose!='abstract_audit' AND journal IS NOT NULL AND
+                     journal IN ('aies','jgr','qjrms','dqkx'))),
             sample_key VARCHAR(128) NOT NULL,
             entry_json TEXT NOT NULL,
             replaces VARCHAR(64) REFERENCES fixture_records(record_id),
@@ -132,7 +134,7 @@ def upgrade() -> None:
     op.execute("""
         CREATE TABLE audit_abstract_rows (
             event_no INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            row_id VARCHAR(64) NOT NULL UNIQUE,
+            row_id VARCHAR(64) NOT NULL,
             generation INTEGER NOT NULL,
             previous_row_id VARCHAR(64) REFERENCES audit_abstract_rows(row_id),
             plan_id VARCHAR(64) NOT NULL REFERENCES audit_plans(plan_id),
@@ -143,27 +145,37 @@ def upgrade() -> None:
             acquisition_id VARCHAR(64) NOT NULL REFERENCES audit_route_starts(execution_id),
             content_json TEXT NOT NULL,
             UNIQUE(previous_row_id),
-            UNIQUE(plan_id, member_id, route, strategy_version, channel, generation)
+            UNIQUE(plan_id, member_id, route, strategy_version, channel, generation),
+            UNIQUE(row_id)
         )
     """)
 
     op.execute("""
         CREATE TABLE audit_parser_declarations (
             declaration_id VARCHAR(64) NOT NULL PRIMARY KEY,
-            parser_version VARCHAR(128) NOT NULL UNIQUE,
-            content_json TEXT NOT NULL
+            parser_version VARCHAR(128) NOT NULL,
+            content_json TEXT NOT NULL,
+            UNIQUE(parser_version)
         )
     """)
     op.execute("""
         CREATE TABLE audit_interpretations (
             event_no INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            interpretation_id VARCHAR(64) NOT NULL UNIQUE,
+            interpretation_id VARCHAR(64) NOT NULL,
             plan_id VARCHAR(64) NOT NULL REFERENCES audit_plans(plan_id),
             request_key VARCHAR(128) NOT NULL,
             parser_declaration_id VARCHAR(64) NOT NULL REFERENCES audit_parser_declarations(declaration_id),
             previous_interpretation_id VARCHAR(64) REFERENCES audit_interpretations(interpretation_id),
             content_json TEXT NOT NULL,
             UNIQUE(previous_interpretation_id),
-            UNIQUE(plan_id, request_key)
+            UNIQUE(plan_id, request_key),
+            UNIQUE(interpretation_id)
+        )
+    """)
+    op.execute("""
+        CREATE TABLE audit_summaries (
+            summary_sha256 VARCHAR(64) NOT NULL PRIMARY KEY,
+            plan_id VARCHAR(64) NOT NULL REFERENCES audit_plans(plan_id),
+            content_json TEXT NOT NULL
         )
     """)

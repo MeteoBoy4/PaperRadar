@@ -23,7 +23,7 @@ from paper_radar.fixture_audit.pdf_tables import (
 )
 from paper_radar.storage.artifacts import ArtifactStore
 
-SampleScope = tuple[str, str, str]
+SampleScope = tuple[str, str | None, str]
 
 
 def acquisition_identity(content: dict[str, object]) -> str:

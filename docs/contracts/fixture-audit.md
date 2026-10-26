@@ -6,7 +6,7 @@
 
 声明唯一目录是仓库 `fixtures/a10/`，历史种子唯一文件 `historical-v1.json`。JSON 原字节先校验，再以 `(declaration_key, declared_version)` 不可变登记；同键同字节幂等，空白/键序/换行变化同样属于同键异字节。修正必须新版本，数据库保留原字节和独立 SHA-256。未知字段/格式/版本拒绝，安全错误仅给字段路径、原因和补救，不回显原输入。
 
-逻辑样本身份为 `(purpose, journal, key)`，key 必须显式给定，DOI/handle/数组下标/路径不能代替。四用途 `feed/abstract_audit/references/pdf`，三种依据 `historical_declaration/synthetic/acquired` 分开。引用及声明原字节在短事务内原子登记。初次登记选择当前项，后续只按显式 `replaces` 及非空原因替换同逻辑样本；禁止悬空、跨用途/期刊/key、分叉与循环。时间和版本字符串排序不参与选择。list 默认当前项，show 可查任何旧记录，history 投影保留完整历史。check 只对源文件与登记字节比较，分别报告 source_missing / unregistered / drift / byte_verified，不切换选择。
+逻辑样本身份为 `(purpose, journal, key)`，其中 `abstract_audit` 固定 `journal=null` 表示整计划，其余用途必须给出四刊之一，key 必须显式给定，DOI/handle/数组下标/路径不能代替。四用途 `feed/abstract_audit/references/pdf`，三种依据 `historical_declaration/synthetic/acquired` 分开。引用及声明原字节在短事务内原子登记。初次登记选择当前项，后续只按显式 `replaces` 及非空原因替换同逻辑样本；禁止悬空、跨用途/期刊/key、分叉与循环。时间和版本字符串排序不参与选择。list 默认当前项，show 可查任何旧记录，history 投影保留完整历史。check 只对源文件与登记字节比较，分别报告 source_missing / unregistered / drift / byte_verified，不切换选择。
 
 参考文献期望保留出版者/Crossref 计数与历史风险；PDF 声明保留 DOI/handle、候选、版式与已知失败，不填假哈希、假许可或 parser 结果。历史说明与 2026-10-25 只读预检注记分开。acquired 证据只能由实际取得入口核验；文件声明自报哈希或尚未完成审计引用不能升级成真实证据。feed/abstract_audit 的 acquired 注册只引用完成计划、汇总哈希与 Feed 快照，不复制审计权威事实。
 
@@ -315,3 +315,34 @@ available_material_reparsed。恢复不需要原声明/配置路径、不联网�
 仍可推进。无 DOI 的重复候选若请求指向同一个已核验出版者材料，选样直接复用原响应作身份
 依据，再按 DOI 判重复，不能借新候选位置重新抓取同一已冻结路线。尚未保存解释的成功取得
 通过 interpretation_pending=true 与真实 reason=acquired 同时披露，不再把真实已请求误称未尝试。
+
+
+## 完成审计引用与完整恢复（#107）
+
+`fixture register` 对 acquired 的 feed/abstract_audit 声明只登记引用，其他用途仍须各自的实际取得入口，不能自报取得成功。两种引用都要求完整计划；单刊 Feed 已冻结但整轮尚未完成时拒绝。完整只表示终态齐备，不足、失败、unsupported agency、未安装通道或缺摘要不妨碍登记，也不转化为来源通过。
+
+| 用途 | 作用域 | audit_reference 必填 | 禁止混用 |
+| --- | --- | --- | --- |
+| feed | `(plan_id, journal, feed_snapshot)`，journal 必填 | plan_id、准确 summary_sha256、该刊 feed_sha256 | 非空 feed_snapshots |
+| abstract_audit | 整计划，journal=null 或省略 | plan_id、准确 summary_sha256、feed_snapshots 中 aies/jgr/qjrms/dqkx 四刊各一 SHA | 单个 feed_sha256、任意刊名缩小作用域 |
+
+汇总哈希是 `audit replay` 的 semantic_sha256，包含冻结规则/策略/通道、执行、成员、矩阵和派生汇总；Feed SHA 是该计划实际冻结的完整响应 payload_sha256，不能用其他刊或后一次取得替代。可选 DOI/上游稳定标识必须属于引用范围内的真实成员；可选 parser_version 与计划来源 parser 一致，可选 Feed conditional_headers 与实际取得请求一致，整计划不接受单刊条件头。错成员、策略、通道、来源、哈希或缺少材料均受控拒绝。
+
+登记先在只读快照中捕获并核验完整审计汇总边界，材料读取/重解析在写锁外；短写事务复核引用身份，原子追加 `audit_summaries` 边界和声明。边界仅保存 plan/hash、执行 ID/可见结算身份、矩阵行 ID、Feed freeze ID 和选样事件 ID。后续合法 resume 仍保留旧边界，替换引用须新声明版本、replaces 和原因。原声明字节、旧计划和旧汇总始终可查；没有新审计内容副本。
+
+`fixture register/check/list/show` 带 --data-root 时返回相同 `audit_verification=frozen_v1_material_and_execution_facts_verified`，核验 v1 保留材料及执行事实。未提供制品根的只读查询明确为 declaration_and_reference_verified，byte_verified 仅指声明原字节；失败/未安装/未知执行没有保留正文，仍只能回放结构化事实。check 的 entries 同样暴露引用与该核验程度。v2 默认只校验声明/引用/结构闭包，必须显式注入匹配 parser 才能称 available_material_reparsed。
+
+```bash
+paper-radar fixture register fixtures/a10/completed-audit-v1.json --database DB --data-root ROOT --json
+paper-radar fixture check fixtures/a10/completed-audit-v1.json --database DB --data-root ROOT --json
+paper-radar fixture list --database DB --data-root ROOT --history --json
+paper-radar audit replay PLAN_ID --summary-sha256 SUMMARY_SHA --database DB --data-root ROOT --json
+```
+
+上述 completed-audit-v1.json 是用户在真实审计完成后编写的声明示例路径，仓库没有预填真实审计或假哈希。`replay_audit(plan_id, summary_sha256=...)` / `audit replay --summary-sha256` 只读选择已登记完整边界；省略则回放当前事实，不补写 checkpoint、不联网、不执行 resume、不创建审计锁。
+
+validate_all 与备份固定副本核验声明原字节/替换链、全部审计引用和边界、来源种类/哈希、成员与排除台账、started/结算、规则/策略/通道、矩阵解释和新 parser 引用。完整未引用 source_snapshot/original_pdf 仍合法保留；它们不能补出业务成功。未本地取得的 PDF 是未知，不能当作缺失备份制品。共享 source_snapshot 允许论文与审计去重，未来 GC 必须检查两类引用。
+
+恢复仅依赖 SQLite 原声明字节及批次内 ArtifactStore，保留 format 1 与自包含布局。源文件不存在时 check 独立报告 source_missing，list/show/replay 正常，不能误报 drift 或恢复损坏。旧 a704 批次仍由匹配程序 verify/restore，之后显式 upgrade 工作副本；当前程序不重写旧批次或直接接收旧 revision。恢复不安装 Pi/parser、不激活、不调用模型、不访问源目录、不探测来源、不自动继续；以后显式继续仍须代码/规则/策略核对。
+
+本票以真实 a704 五类非空历史、活跃 WAL 同库混合历史、原目录禁止访问/禁网、移根与独立进程验证；覆盖映射见 tests/a10-recovery-coverage.md。它不代表四刊 live、长期来源稳定、正文/Docling、渲染运行时或完整阶段 A 通过。#108 负责 scope 重绑和同次完整门禁，本票只记录行为子集。

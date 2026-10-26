@@ -12,6 +12,7 @@ from sqlalchemy import Connection, select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
 from paper_radar.fixture_audit.abstract_models import AbstractAuditView
+from paper_radar.fixture_audit.abstract_records import load_abstracts
 from paper_radar.fixture_audit.abstract_service import AbstractService
 from paper_radar.fixture_audit.acquisition_models import (
     AuditPlan,
@@ -20,6 +21,7 @@ from paper_radar.fixture_audit.acquisition_models import (
     RouteExecution,
     SourceRequest,
 )
+from paper_radar.fixture_audit.acquisition_records import load_audits
 from paper_radar.fixture_audit.acquisition_service import AcquisitionService
 from paper_radar.fixture_audit.audit_protection import AuditProtection
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
@@ -46,9 +48,17 @@ from paper_radar.fixture_audit.pdf_models import (
 )
 from paper_radar.fixture_audit.pdf_records import load_pdf_states
 from paper_radar.fixture_audit.replay_models import AuditReplay, ReplayProof
+from paper_radar.fixture_audit.sampling_records import load_sampling
 from paper_radar.fixture_audit.sampling_service import SamplingService
 from paper_radar.fixture_audit.source_http import SourceExecutor
+from paper_radar.fixture_audit.summary_records import (
+    SummaryBoundary,
+    boundary_for,
+    load_summary,
+    validate_summaries,
+)
 from paper_radar.fixture_audit.tables import fixture_declarations, fixture_records
+from paper_radar.papers.doi import normalize_doi
 from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.database import (
     DatabaseMode,
@@ -58,7 +68,9 @@ from paper_radar.storage.database import (
 
 
 def _record_id(declaration_id: str, entry: FixtureEntry) -> str:
-    identity = "\0".join((declaration_id, entry.purpose, entry.journal, entry.key))
+    identity = "\0".join(
+        (declaration_id, entry.purpose, entry.journal or "plan", entry.key)
+    )
     return hashlib.sha256(identity.encode()).hexdigest()
 
 
@@ -72,6 +84,104 @@ def _database_error(error: SQLAlchemyError) -> FixtureError:
     return FixtureError(FixtureReason.CORRUPT_REFERENCE)
 
 
+def _validate_audit_references(
+    connection: Connection,
+    entries: tuple[FixtureEntry, ...],
+    *,
+    reason: FixtureReason = FixtureReason.CORRUPT_REFERENCE,
+    register: bool = False,
+    captured: dict[str, SummaryBoundary] | None = None,
+) -> None:
+    acquired = tuple(entry for entry in entries if entry.basis == "acquired")
+    if not acquired:
+        return
+    views = {
+        view.plan.plan_id: view
+        for view in load_abstracts(
+            connection, load_sampling(connection, load_audits(connection))
+        )
+    }
+    for entry in acquired:
+        reference = entry.audit_reference
+        if reference is None:
+            raise FixtureError(reason, path="entries.audit_reference")
+        view = views.get(reference.plan_id)
+        if view is None:
+            raise FixtureError(reason, path="entries.audit_reference.plan_id")
+        view = load_summary(
+            connection,
+            view,
+            reference.summary_sha256,
+            register=register,
+            captured=(captured or {}).get(reference.summary_sha256),
+            reason=reason,
+        )
+        feed = next(
+            (state.feed for state in view.sampling if state.journal == entry.journal),
+            None,
+        )
+        execution = next(
+            (
+                value
+                for value in view.executions
+                if feed is not None and value.execution_id == feed.acquisition_id
+            ),
+            None,
+        )
+        if (
+            entry.parser_version is not None
+            and entry.parser_version != view.plan.parser_version
+        ) or (
+            entry.conditional_headers is not None
+            and (
+                execution is None
+                or entry.conditional_headers != execution.request.conditional_headers
+            )
+        ):
+            raise FixtureError(reason, path="entries.audit_reference.request")
+        snapshots = {
+            state.journal: state.feed.payload_sha256
+            for state in view.sampling
+            if state.feed is not None
+        }
+        if (
+            reference.summary_sha256
+            != hashlib.sha256(view.model_dump_json().encode()).hexdigest()
+            or set(snapshots) != {"aies", "jgr", "qjrms", "dqkx"}
+            or (
+                entry.purpose == "feed"
+                and (
+                    entry.journal is None
+                    or reference.feed_sha256 != snapshots[entry.journal]
+                    or reference.feed_snapshots
+                )
+            )
+            or (
+                entry.purpose == "abstract_audit"
+                and (
+                    reference.feed_sha256 is not None
+                    or reference.feed_snapshots != snapshots
+                )
+            )
+            or entry.purpose not in {"feed", "abstract_audit"}
+        ):
+            raise FixtureError(reason, path="entries.audit_reference")
+        members = tuple(
+            member
+            for state in view.sampling
+            if entry.journal is None or state.journal == entry.journal
+            for member in state.members
+        )
+        if (
+            entry.doi is not None
+            and normalize_doi(entry.doi) not in {member.doi for member in members}
+        ) or any(
+            value is not None and value not in {member.entry_id for member in members}
+            for value in (entry.handle, entry.upstream_id)
+        ):
+            raise FixtureError(reason, path="entries.audit_reference.member")
+
+
 def _load_records(connection: Connection) -> tuple[FixtureRecord, ...]:
     declarations: dict[str, tuple[FixtureDeclaration, str]] = {}
     expected: dict[str, FixtureEntry] = {}
@@ -81,8 +191,7 @@ def _load_records(connection: Connection) -> tuple[FixtureRecord, ...]:
             raise FixtureError(FixtureReason.CORRUPT_REFERENCE)
         digest = hashlib.sha256(raw).hexdigest()
         declaration = parse_declaration(raw)
-        if any(entry.basis == "acquired" for entry in declaration.entries):
-            raise FixtureError(FixtureReason.CORRUPT_REFERENCE, path="entries.basis")
+        _validate_audit_references(connection, declaration.entries)
         if (
             digest != row["raw_sha256"]
             or digest != row["declaration_id"]
@@ -95,7 +204,7 @@ def _load_records(connection: Connection) -> tuple[FixtureRecord, ...]:
         for entry in declaration.entries:
             expected[_record_id(digest, entry)] = entry
     records: list[FixtureRecord] = []
-    current: dict[tuple[str, str, str], str] = {}
+    current: dict[tuple[str, str | None, str], str] = {}
     seen: set[str] = set()
     replaced: set[str] = set()
     for row in connection.execute(
@@ -134,6 +243,9 @@ def _load_records(connection: Connection) -> tuple[FixtureRecord, ...]:
                 raw_sha256=digest,
                 entry=entry,
                 current=True,
+                audit_verification="declaration_and_reference_verified"
+                if entry.audit_reference
+                else None,
             )
         )
     if seen != set(expected):
@@ -171,8 +283,18 @@ class FixtureAudit:
         except OSError:
             raise FixtureError(FixtureReason.SOURCE_UNAVAILABLE) from None
         declaration = parse_declaration(raw)
+        captured: dict[str, SummaryBoundary] = {}
         if any(entry.basis == "acquired" for entry in declaration.entries):
-            raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="entries.basis")
+            if any(
+                entry.basis == "acquired" and entry.audit_reference is None
+                for entry in declaration.entries
+            ):
+                raise FixtureError(
+                    FixtureReason.EVIDENCE_REQUIRED, path="entries.basis"
+                )
+            if self.data_root is None:
+                raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
+            captured = self._capture_references(declaration.entries)
         digest = hashlib.sha256(raw).hexdigest()
         engine = open_database(self.database, mode=DatabaseMode.READ_WRITE)
         try:
@@ -180,6 +302,13 @@ class FixtureAudit:
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN IMMEDIATE")
                 records = _load_records(connection)
+                _validate_audit_references(
+                    connection,
+                    declaration.entries,
+                    reason=FixtureReason.INVALID_REFERENCE,
+                    register=True,
+                    captured=captured,
+                )
                 existing = (
                     connection.execute(
                         select(fixture_declarations).where(
@@ -198,10 +327,12 @@ class FixtureAudit:
                     return RegistrationResult(
                         declaration_id=digest,
                         raw_sha256=digest,
-                        entries=tuple(
-                            record
-                            for record in records
-                            if record.declaration_id == digest
+                        entries=self._audit_proofs(
+                            tuple(
+                                record
+                                for record in records
+                                if record.declaration_id == digest
+                            )
                         ),
                     )
                 current = {
@@ -248,7 +379,9 @@ class FixtureAudit:
                 )
                 connection.commit()
                 return RegistrationResult(
-                    declaration_id=digest, raw_sha256=digest, entries=saved
+                    declaration_id=digest,
+                    raw_sha256=digest,
+                    entries=self._audit_proofs(saved),
                 )
         except SQLAlchemyError as error:
             raise _database_error(error) from None
@@ -262,6 +395,10 @@ class FixtureAudit:
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN")
                 records = _load_records(connection)
+                if self.data_root is not None and any(
+                    record.entry.audit_reference for record in records
+                ):
+                    self._validate_audit_materials()
                 samples = {
                     record.record_id: (
                         record.entry.purpose,
@@ -276,20 +413,22 @@ class FixtureAudit:
                     ArtifactStore(self.database, self.data_root or Path(".")),
                     verify_bytes=self.data_root is not None,
                 )
-                return tuple(
-                    record.model_copy(
-                        update={
-                            "pdf": states.get(
-                                (
-                                    record.entry.purpose,
-                                    record.entry.journal,
-                                    record.entry.key,
+                return self._audit_proofs(
+                    tuple(
+                        record.model_copy(
+                            update={
+                                "pdf": states.get(
+                                    (
+                                        record.entry.purpose,
+                                        record.entry.journal,
+                                        record.entry.key,
+                                    )
                                 )
-                            )
-                        }
+                            }
+                        )
+                        for record in records
+                        if history or record.current
                     )
-                    for record in records
-                    if history or record.current
                 )
         except SQLAlchemyError as error:
             raise _database_error(error) from None
@@ -331,6 +470,11 @@ class FixtureAudit:
             return DeclarationCheck(status="source_missing", source_available=False)
         declaration = parse_declaration(raw)
         records = FixtureAudit(self.database).list(history=True)
+        if self.data_root is not None and any(
+            record.entry.audit_reference is not None for record in records
+        ):
+            self._validate_audit_materials()
+            records = self._audit_proofs(records)
         matches = [
             record
             for record in records
@@ -350,6 +494,58 @@ class FixtureAudit:
             source_available=True,
             declaration_id=stored.declaration_id,
             raw_sha256=digest,
+            entries=tuple(matches),
+        )
+
+    def _capture_references(
+        self, entries: tuple[FixtureEntry, ...]
+    ) -> dict[str, SummaryBoundary]:
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+        try:
+            require_current_revision(engine)
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN")
+                views = load_abstracts(
+                    connection, load_sampling(connection, load_audits(connection))
+                )
+                captured = {
+                    boundary.summary_sha256: boundary
+                    for view in views
+                    if view.status == "complete"
+                    for boundary in (boundary_for(view),)
+                }
+                _validate_audit_references(
+                    connection,
+                    entries,
+                    reason=FixtureReason.INVALID_REFERENCE,
+                    captured=captured,
+                )
+                # 所有材料回放均在写锁外;引用集合来自仍持有的只读快照。
+                self._validate_audit_materials()
+                return captured
+        finally:
+            engine.dispose()
+
+    def _validate_audit_materials(self) -> None:
+        self.acquisitions.validate_all()
+        self.sampling.validate_all()
+        self.abstracts.validate_all()
+        self.interpretations.list()
+
+    def _audit_proofs(
+        self, records: tuple[FixtureRecord, ...]
+    ) -> tuple[FixtureRecord, ...]:
+        return tuple(
+            record.model_copy(
+                update={
+                    "audit_verification": (
+                        "frozen_v1_material_and_execution_facts_verified"
+                    )
+                }
+            )
+            if self.data_root is not None and record.entry.audit_reference is not None
+            else record
+            for record in records
         )
 
     def create_audit_plan(
@@ -432,9 +628,27 @@ class FixtureAudit:
         self.validate_all()
         return self.interpretations.replay(plan_id, interpretation_id, parser=parser)
 
-    def replay_audit(self, plan_id: str) -> AuditReplay:
+    def replay_audit(
+        self, plan_id: str, *, summary_sha256: str | None = None
+    ) -> AuditReplay:
         self.validate_all()
         view = self.show_audit(plan_id)
+        if summary_sha256 is not None:
+            engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+            try:
+                with engine.connect() as connection:
+                    connection.exec_driver_sql("BEGIN")
+                    views = load_abstracts(
+                        connection, load_sampling(connection, load_audits(connection))
+                    )
+                    view = load_summary(
+                        connection,
+                        next(value for value in views if value.plan.plan_id == plan_id),
+                        summary_sha256,
+                        reason=FixtureReason.INVALID_REFERENCE,
+                    )
+            finally:
+                engine.dispose()
         return AuditReplay(
             view=view,
             semantic_sha256=hashlib.sha256(view.model_dump_json().encode()).hexdigest(),
@@ -610,6 +824,18 @@ class FixtureAudit:
 
     def validate_all(self) -> None:
         records = self.list(history=True)
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+        try:
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN")
+                validate_summaries(
+                    connection,
+                    load_abstracts(
+                        connection, load_sampling(connection, load_audits(connection))
+                    ),
+                )
+        finally:
+            engine.dispose()
         if self.data_root is None and any(record.pdf is not None for record in records):
             raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
         self.acquisitions.validate_all()

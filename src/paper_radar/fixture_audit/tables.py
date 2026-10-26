@@ -16,6 +16,7 @@ from paper_radar.fixture_audit import abstract_tables as abstract_tables
 from paper_radar.fixture_audit import acquisition_tables as acquisition_tables
 from paper_radar.fixture_audit import interpretation_tables as interpretation_tables
 from paper_radar.fixture_audit import sampling_tables as sampling_tables
+from paper_radar.fixture_audit import summary_records as summary_records
 from paper_radar.storage.schema import metadata
 
 fixture_declarations = Table(
@@ -46,7 +47,7 @@ fixture_records = Table(
         nullable=False,
     ),
     Column("purpose", String(32), nullable=False),
-    Column("journal", String(16), nullable=False),
+    Column("journal", String(16)),
     Column("sample_key", String(128), nullable=False),
     Column("entry_json", Text, nullable=False),
     Column(
@@ -54,6 +55,10 @@ fixture_records = Table(
     ),
     UniqueConstraint("declaration_id", "purpose", "journal", "sample_key"),
     CheckConstraint("purpose IN ('feed','abstract_audit','references','pdf')"),
-    CheckConstraint("journal IN ('aies','jgr','qjrms','dqkx')"),
+    CheckConstraint(
+        "(purpose='abstract_audit' AND journal IS NULL) OR "
+        "(purpose!='abstract_audit' AND journal IS NOT NULL AND "
+        "journal IN ('aies','jgr','qjrms','dqkx'))"
+    ),
     CheckConstraint("length(record_id)=64 AND record_id NOT GLOB '*[^0-9a-f]*'"),
 )
