@@ -2,6 +2,8 @@
 
 from typing import Literal
 
+from pydantic import Field
+
 from paper_radar.fixture_audit.acquisition_models import (
     Channel,
     SourceReason,
@@ -47,6 +49,8 @@ class ExcludedBlock(FrozenModel):
 
 class MatrixRow(FrozenModel):
     row_id: str
+    generation: int = Field(default=1, ge=1)
+    previous_row_id: str | None = None
     plan_id: str
     member_id: str
     request: SourceRequest
@@ -139,6 +143,7 @@ class JournalSummary(FrozenModel):
 class AbstractAuditView(SamplingAuditView):
     status: Literal["partial", "complete"] = "partial"
     matrix: tuple[MatrixRow, ...] = ()
+    matrix_history: tuple[MatrixRow, ...] = ()
     members: tuple[MemberAbstract, ...] = ()
     route_summaries: tuple[RouteSummary, ...] = ()
     journal_summaries: tuple[JournalSummary, ...] = ()

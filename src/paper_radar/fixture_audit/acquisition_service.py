@@ -150,6 +150,7 @@ class AcquisitionService:
         request_key: str,
         request: SourceRequest,
         contact_email: str | None,
+        previous_execution_id: str | None = None,
     ) -> RouteExecution:
         contact = validate_contact(contact_email)
         try:
@@ -176,19 +177,45 @@ class AcquisitionService:
         execution_id = execution_identity(plan_id, request_key, request)
         for value in view.executions:
             if value.request_key == request_key:
-                if value.request != request:
+                if (
+                    value.request != request
+                    or value.previous_execution_id != previous_execution_id
+                ):
                     raise FixtureError(
                         FixtureReason.REQUEST_CONFLICT, path="request_key"
                     )
                 if value.settlement is None:
                     raise FixtureError(FixtureReason.EXECUTION_INCOMPLETE)
                 return value
+        if previous_execution_id is not None:
+            previous = next(
+                (
+                    item
+                    for item in view.executions
+                    if item.execution_id == previous_execution_id
+                ),
+                None,
+            )
+            if (
+                previous is None
+                or previous.request != request
+                or previous.settlement is None
+                or previous.reason == "channel_not_installed"
+                or any(
+                    item.previous_execution_id == previous_execution_id
+                    for item in view.executions
+                )
+            ):
+                raise FixtureError(
+                    FixtureReason.INVALID_REFERENCE, path="audit.continuation"
+                )
         value = RouteExecution(
             execution_id=execution_id,
             plan_id=plan_id,
             request_key=request_key,
             request=request,
             started_at=utc_now(),
+            previous_execution_id=previous_execution_id,
         )
         engine = open_database(self.database, mode=DatabaseMode.READ_WRITE)
         try:
@@ -202,6 +229,7 @@ class AcquisitionService:
                         request_key=request_key,
                         request_json=request.model_dump_json(),
                         started_at=value.started_at,
+                        previous_execution_id=previous_execution_id,
                     )
                 )
                 connection.commit()
@@ -266,6 +294,7 @@ class AcquisitionService:
         request: SourceRequest,
         contact_email: str | None,
         protection: AuditProtection | None = None,
+        previous_execution_id: str | None = None,
     ) -> RouteExecution:
         validate_contact(contact_email)
         if protection is not None:
@@ -280,6 +309,7 @@ class AcquisitionService:
                 request_key=request_key,
                 request=request,
                 contact_email=contact_email,
+                previous_execution_id=previous_execution_id,
             )
         with self.audit_execution(plan_id):
             return self._acquire_source(
@@ -287,6 +317,7 @@ class AcquisitionService:
                 request_key=request_key,
                 request=request,
                 contact_email=contact_email,
+                previous_execution_id=previous_execution_id,
             )
 
     def _response_settlement(

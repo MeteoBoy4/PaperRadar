@@ -28,6 +28,12 @@ audit_route_starts = Table(
     Column("request_key", String(128), nullable=False),
     Column("request_json", Text, nullable=False),
     Column("started_at", Text, nullable=False),
+    Column(
+        "previous_execution_id",
+        String(64),
+        ForeignKey("audit_route_starts.execution_id"),
+        unique=True,
+    ),
     UniqueConstraint("plan_id", "request_key"),
 )
 audit_route_settlements = Table(

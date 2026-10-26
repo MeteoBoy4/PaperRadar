@@ -23,6 +23,12 @@ from paper_radar.fixture_audit.acquisition_models import (
 from paper_radar.fixture_audit.acquisition_service import AcquisitionService
 from paper_radar.fixture_audit.audit_protection import AuditProtection
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
+from paper_radar.fixture_audit.interpretation_models import (
+    AuditInterpretation,
+    AuditMaterialParser,
+    InterpretationReplay,
+)
+from paper_radar.fixture_audit.interpretation_service import InterpretationService
 from paper_radar.fixture_audit.models import (
     DeclarationCheck,
     FixtureDeclaration,
@@ -39,6 +45,7 @@ from paper_radar.fixture_audit.pdf_models import (
     PdfRegistration,
 )
 from paper_radar.fixture_audit.pdf_records import load_pdf_states
+from paper_radar.fixture_audit.replay_models import AuditReplay, ReplayProof
 from paper_radar.fixture_audit.sampling_service import SamplingService
 from paper_radar.fixture_audit.source_http import SourceExecutor
 from paper_radar.fixture_audit.tables import fixture_declarations, fixture_records
@@ -153,6 +160,9 @@ class FixtureAudit:
         self.sampling = SamplingService(database, data_root, self.acquisitions)
         self.abstracts = AbstractService(
             database, data_root, self.acquisitions, self.sampling
+        )
+        self.interpretations = InterpretationService(
+            database, data_root, self.abstracts
         )
 
     def register(self, source: Path) -> RegistrationResult:
@@ -398,6 +408,58 @@ class FixtureAudit:
             code_identity=code_identity,
         )
 
+    def reinterpret_audit(
+        self, plan_id: str, *, parser: AuditMaterialParser, request_key: str
+    ) -> AuditInterpretation:
+        return self.interpretations.append(
+            plan_id, parser=parser, request_key=request_key
+        )
+
+    def list_audit_interpretations(
+        self, plan_id: str
+    ) -> tuple[AuditInterpretation, ...]:
+        return self.interpretations.list(plan_id)
+
+    def replay_audit_interpretation(
+        self,
+        plan_id: str,
+        interpretation_id: str,
+        *,
+        parser: AuditMaterialParser | None = None,
+    ) -> InterpretationReplay:
+        self.validate_all()
+        return self.interpretations.replay(plan_id, interpretation_id, parser=parser)
+
+    def replay_audit(self, plan_id: str) -> AuditReplay:
+        self.validate_all()
+        view = self.show_audit(plan_id)
+        return AuditReplay(
+            view=view,
+            semantic_sha256=hashlib.sha256(view.model_dump_json().encode()).hexdigest(),
+            proofs=tuple(
+                ReplayProof(
+                    execution_id=value.execution_id,
+                    level="material_reparsed"
+                    if value.settlement and value.settlement.artifact_id
+                    else "execution_facts_only",
+                    outcome_unknown=value.settlement is None
+                    or value.reason == "outcome_unknown",
+                )
+                for value in view.executions
+            ),
+        )
+
+    def resume_audit(
+        self,
+        plan_id: str,
+        *,
+        contact_email: str | None,
+        code_identity: CodeIdentity | None = None,
+    ) -> AbstractAuditView:
+        return self.abstracts.resume(
+            plan_id, contact_email=contact_email, code_identity=code_identity
+        )
+
     def read_audit_text(self, plan_id: str, candidate_id: str) -> str:
         return self.abstracts.read_text(plan_id, candidate_id)
 
@@ -551,3 +613,4 @@ class FixtureAudit:
         self.acquisitions.validate_all()
         self.sampling.validate_all()
         self.abstracts.validate_all()
+        self.interpretations.list()

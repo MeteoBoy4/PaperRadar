@@ -76,9 +76,9 @@ class AuditPlan(FrozenModel):
     sampling_rules_version: str = SAMPLING_RULES_VERSION
     category_rules_version: str = CATEGORY_RULES_VERSION
     ua_template_version: str = UA_TEMPLATE_VERSION
-    abstract_rules_version: Literal["audit-abstract-v1"] = "audit-abstract-v1"
-    truncation_rules_version: Literal["audit-truncation-v1"] = "audit-truncation-v1"
-    matrix_rules_version: Literal["audit-matrix-v1"] = "audit-matrix-v1"
+    abstract_rules_version: str = "audit-abstract-v1"
+    truncation_rules_version: str = "audit-truncation-v1"
+    matrix_rules_version: str = "audit-matrix-v1"
     created_at: str
 
     @field_validator("created_at")
@@ -183,6 +183,7 @@ class RouteExecution(FrozenModel):
     request_key: str
     request: SourceRequest
     started_at: str
+    previous_execution_id: str | None = None
     settlement: SourceSettlement | None = None
 
     @field_validator("started_at")

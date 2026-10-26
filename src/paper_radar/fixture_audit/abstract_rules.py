@@ -418,6 +418,7 @@ def project(
         )
         else "partial",
         matrix=rows,
+        matrix_history=stored,
         members=tuple(members),
         route_summaries=tuple(summaries),
         journal_summaries=tuple(journals),

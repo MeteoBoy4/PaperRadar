@@ -10,10 +10,11 @@ import typer
 from paper_radar.backup.cli_support import BatchCommand, BatchGroup
 from paper_radar.fixture_audit.acquisition_models import AuditView
 from paper_radar.fixture_audit.errors import FixtureError
+from paper_radar.fixture_audit.replay_models import AuditReplay
 from paper_radar.storage.errors import StorageError
 
 HELP = """\
-当前用途：显式 run 固定选样并执行摘要矩阵；list/show 只读查询材料哈希和安全计数。
+当前用途：run 固定选样，resume 显式联网写入继续；replay/list/show 只读核查。
 参数：run 需 --database、--data-root、--contact-email，--count 为全轮 N=5–10；
 list 接受 --database；show 另需 PLAN_ID；--json 输出结构化事实。
 副作用：list/show 只读，不迁移、不联网、不创建目录或执行锁；帮助不访问任何业务资源。
@@ -26,12 +27,17 @@ list 接受 --database；show 另需 PLAN_ID；--json 输出结构化事实。
       --contact-email audit@example.org --count 5
 示例：paper-radar audit list --database data/paper-radar.sqlite3 --json
 示例：paper-radar audit show PLAN_ID --database data/paper-radar.sqlite3 --json
+示例：paper-radar audit resume PLAN_ID --database DB --data-root ROOT --contact-email EMAIL
+示例：paper-radar audit replay PLAN_ID --database DB --data-root ROOT --json
+resume 每次显式提供邮箱；只补未结算或允许暂时结论，已冻结材料与终态不重抓。
+replay 按历史规则读取保留材料；失败仅回放执行事实，不联网、不取得执行锁。
+新解析器只通过服务API追加解释，产品没有 reinterpret 命令。
 """
 
 
 class AuditGroup(BatchGroup):
     parameter_error = "审计参数不正确；请查看 paper-radar audit --help"
-    unknown_command_error = "审计子命令尚未交付；当前使用 run/list/show"
+    unknown_command_error = "审计子命令尚未交付；当前使用 run/resume/replay/list/show"
 
 
 class AuditCommand(BatchCommand):
@@ -62,7 +68,8 @@ def audit_projection(view: AuditView) -> dict[str, object]:
 
 
 def _query(
-    operation: Callable[[], tuple[AuditView, ...] | AuditView], json_output: bool
+    operation: Callable[[], tuple[AuditView, ...] | AuditView | AuditReplay],
+    json_output: bool,
 ) -> None:
     try:
         value = operation()
@@ -70,12 +77,16 @@ def _query(
         typer.echo(str(error), err=True)
         raise typer.Exit(1) from None
     result = (
-        [audit_projection(item) for item in value]
-        if isinstance(value, tuple)
-        else audit_projection(value)
+        value.model_dump(mode="json")
+        if isinstance(value, AuditReplay)
+        else (
+            [audit_projection(item) for item in value]
+            if isinstance(value, tuple)
+            else audit_projection(value)
+        )
     )
     if not json_output:
-        typer.echo("审计历史（只读；complete 不代表来源稳定或生产就绪）")
+        typer.echo("审计结果（complete 不代表来源稳定或生产就绪）")
     typer.echo(
         json.dumps(result, ensure_ascii=False, indent=None if json_output else 2)
     )
@@ -132,3 +143,41 @@ def run_command(
         ),
         json_output,
     )
+
+
+@audit_app.command(
+    "resume", cls=AuditCommand, help="显式联网写入继续同一计划；邮箱不保存。\n\n" + HELP
+)
+def resume_command(
+    plan_id: Annotated[str, typer.Argument(help="同一冻结计划 ID")],
+    database: Database,
+    data_root: Annotated[Path, typer.Option("--data-root", help="保留材料数据根")],
+    contact_email: Annotated[
+        str | None, typer.Option("--contact-email", help="本次显式联系邮箱")
+    ] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="输出安全 JSON")] = False,
+) -> None:
+    from paper_radar.fixture_audit import FixtureAudit
+
+    _query(
+        lambda: FixtureAudit(database, data_root).resume_audit(
+            plan_id, contact_email=contact_email
+        ),
+        json_output,
+    )
+
+
+@audit_app.command(
+    "replay",
+    cls=AuditCommand,
+    help="只读按历史规则核验材料、解释和汇总；不联网、不取锁。\n\n" + HELP,
+)
+def replay_command(
+    plan_id: Annotated[str, typer.Argument(help="历史计划 ID")],
+    database: Database,
+    data_root: Annotated[Path, typer.Option("--data-root", help="历史保留材料数据根")],
+    json_output: Annotated[bool, typer.Option("--json", help="输出安全 JSON")] = False,
+) -> None:
+    from paper_radar.fixture_audit import FixtureAudit
+
+    _query(lambda: FixtureAudit(database, data_root).replay_audit(plan_id), json_output)

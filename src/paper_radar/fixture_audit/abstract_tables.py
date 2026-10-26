@@ -1,13 +1,29 @@
 """按成员/路线/策略/通道原子追加的安全摘要解释。"""
 
-from sqlalchemy import Column, ForeignKey, String, Table, Text, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+)
 
 from paper_radar.storage.schema import metadata
 
 abstract_rows = Table(
     "audit_abstract_rows",
     metadata,
-    Column("row_id", String(64), primary_key=True),
+    Column("event_no", Integer, primary_key=True, autoincrement=True),
+    Column("row_id", String(64), nullable=False, unique=True),
+    Column("generation", Integer, nullable=False),
+    Column(
+        "previous_row_id",
+        String(64),
+        ForeignKey("audit_abstract_rows.row_id"),
+        unique=True,
+    ),
     Column("plan_id", String(64), ForeignKey("audit_plans.plan_id"), nullable=False),
     Column("member_id", String(64), nullable=False),
     Column("route", String(32), nullable=False),
@@ -20,5 +36,7 @@ abstract_rows = Table(
         nullable=False,
     ),
     Column("content_json", Text, nullable=False),
-    UniqueConstraint("plan_id", "member_id", "route", "strategy_version", "channel"),
+    UniqueConstraint(
+        "plan_id", "member_id", "route", "strategy_version", "channel", "generation"
+    ),
 )

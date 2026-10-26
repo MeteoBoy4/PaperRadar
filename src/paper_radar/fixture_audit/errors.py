@@ -4,6 +4,7 @@ from enum import StrEnum
 
 
 class FixtureReason(StrEnum):
+    UNSUPPORTED_HISTORY = "unsupported_history"
     INVALID_DECLARATION = "invalid_declaration"
     UNSUPPORTED_FORMAT = "unsupported_format"
     DECLARATION_CONFLICT = "declaration_conflict"
@@ -26,6 +27,7 @@ class FixtureReason(StrEnum):
 
 
 _GUIDANCE = {
+    FixtureReason.UNSUPPORTED_HISTORY: "不支持该历史规则或解释版本；请使用匹配版本的程序或显式提供对应解析器",
     FixtureReason.INVALID_FEED: "Feed结构、编码或XML声明不支持；请核对材料并新建计划",
     FixtureReason.PLAN_IDENTITY_MISMATCH: "执行代码或规则与计划不符；请新建计划",
     FixtureReason.INVALID_CONTACT: "邮箱缺失或非法；请显式提供 --contact-email",
