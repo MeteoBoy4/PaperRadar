@@ -114,11 +114,26 @@ class SamplingService:
     ) -> RouteExecution:
         prefix = f"sample-{journal}-{position or 'feed'}-{route}-"
         previous: RouteExecution | None = None
-        matches = [
-            item
-            for item in self.acquisitions.show_audit(plan_id).executions
-            if item.request_key.startswith(prefix)
-        ]
+        executions = self.acquisitions.show_audit(plan_id).executions
+        matches = [item for item in executions if item.request_key.startswith(prefix)]
+        if not matches and route != "feed":
+            reusable = next(
+                (
+                    item
+                    for item in reversed(executions)
+                    if item.request == request
+                    and item.reason
+                    in {
+                        "acquired",
+                        "agency_unsupported",
+                        "not_found",
+                        "identity_mismatch",
+                    }
+                ),
+                None,
+            )
+            if reusable is not None:
+                return reusable
         if matches:
             previous = matches[-1]
             if previous.request != request:

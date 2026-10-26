@@ -1,4 +1,4 @@
-"""注入解析器的追加解释；默认核验声明与引用，显式运行时才重解析新版本。"""
+"""注入解析器的追加解释;默认核验声明与引用,显式运行时才重解析新版本。"""
 
 from __future__ import annotations
 
@@ -110,6 +110,18 @@ def baseline(view: AbstractAuditView, row: MatrixRow) -> tuple[InterpretedField,
             )
         )
     return tuple(sorted(values, key=lambda value: value.field))
+
+
+def previous_fields(
+    view: AbstractAuditView, row: MatrixRow, previous: AuditInterpretation | None
+) -> tuple[InterpretedField, ...]:
+    if previous is not None:
+        by_id = {value.row_id: value for value in view.matrix_history}
+        for item in previous.rows:
+            before = by_id[item.base_row_id]
+            if (before.member_id, before.request) == (row.member_id, row.request):
+                return item.fields
+    return baseline(view, row)
 
 
 def row_projection(
@@ -235,7 +247,10 @@ def load_interpretations(
                 )
                 material = bool(source.settlement and source.settlement.artifact_id)
                 if row_projection(
-                    row, baseline(view, row), item.fields, material=material
+                    row,
+                    previous_fields(view, row, previous),
+                    item.fields,
+                    material=material,
                 ) != item or (not material and item.fields != baseline(view, row)):
                     raise FixtureError(
                         FixtureReason.CORRUPT_REFERENCE,
@@ -275,7 +290,7 @@ class InterpretationService:
             require_current_revision(engine)
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN")
-                from paper_radar.fixture_audit.abstract_service import load_abstracts
+                from paper_radar.fixture_audit.abstract_records import load_abstracts
                 from paper_radar.fixture_audit.acquisition_records import load_audits
                 from paper_radar.fixture_audit.sampling_records import load_sampling
 
@@ -319,17 +334,20 @@ class InterpretationService:
         view: AbstractAuditView,
         rows: tuple[MatrixRow, ...],
         parser: AuditMaterialParser,
+        previous: AuditInterpretation | None = None,
     ) -> tuple[InterpretationRow, ...]:
         result = []
         for row in rows:
-            old = baseline(view, row)
+            old = previous_fields(view, row, previous)
             source = next(
                 value
                 for value in view.executions
                 if value.execution_id == row.acquisition_id
             )
             if not source.settlement or not source.settlement.artifact_id:
-                result.append(row_projection(row, old, old, material=False))
+                result.append(
+                    row_projection(row, old, baseline(view, row), material=False)
+                )
                 continue
             if self.data_root is None:
                 raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
@@ -392,7 +410,26 @@ class InterpretationService:
             prior = next(
                 (value for value in existing if value.request_key == request_key), None
             )
-            rows = self._rows(view, view.matrix, parser)
+            previous_id = (
+                prior.previous_interpretation_id
+                if prior
+                else existing[-1].interpretation_id
+                if existing
+                else None
+            )
+            previous = next(
+                (value for value in existing if value.interpretation_id == previous_id),
+                None,
+            )
+            originals = {row.row_id: row for row in view.matrix_history}
+            rows = self._rows(
+                view,
+                tuple(originals[item.base_row_id] for item in prior.rows)
+                if prior
+                else view.matrix,
+                parser,
+                previous,
+            )
             try:
                 value = AuditInterpretation(
                     interpretation_id="",
@@ -462,7 +499,7 @@ class InterpretationService:
                             content_json=value.model_dump_json(),
                         )
                     )
-                    from paper_radar.fixture_audit.abstract_service import (
+                    from paper_radar.fixture_audit.abstract_records import (
                         load_abstracts,
                     )
                     from paper_radar.fixture_audit.acquisition_records import (
@@ -493,12 +530,9 @@ class InterpretationService:
         *,
         parser: AuditMaterialParser | None = None,
     ) -> InterpretationReplay:
+        values = self.list(plan_id)
         value = next(
-            (
-                value
-                for value in self.list(plan_id)
-                if value.interpretation_id == interpretation_id
-            ),
+            (value for value in values if value.interpretation_id == interpretation_id),
             None,
         )
         if value is None:
@@ -507,8 +541,16 @@ class InterpretationService:
             raise FixtureError(FixtureReason.UNSUPPORTED_HISTORY, path="audit.parser")
         view = self.abstracts.show_audit(plan_id)
         by_id = {row.row_id: row for row in view.matrix_history}
+        previous = next(
+            (
+                item
+                for item in values
+                if item.interpretation_id == value.previous_interpretation_id
+            ),
+            None,
+        )
         rows = self._rows(
-            view, tuple(by_id[row.base_row_id] for row in value.rows), parser
+            view, tuple(by_id[row.base_row_id] for row in value.rows), parser, previous
         )
         if rows != value.rows:
             raise FixtureError(

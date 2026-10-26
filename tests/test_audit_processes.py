@@ -1,4 +1,4 @@
-"""两类真实进程验收：同计划互斥，以及 started 后 kill 再继续。"""
+"""两类真实进程验收:同计划互斥,以及 started 后 kill 再继续。"""
 
 import json
 from pathlib import Path

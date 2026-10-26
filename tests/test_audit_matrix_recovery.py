@@ -93,12 +93,17 @@ def test_matrix_cannot_replace_frozen_feed_with_later_rehashed_acquisition(
 
     sources = MatrixSources()
     service = sampling_service(tmp_path, sources)
-    view = service.run_audit(contact_email="audit@example.org", code_identity=CODE)
+    plan = service.create_audit_plan(
+        contact_email="audit@example.org", code_identity=CODE, plan_key="binding-source"
+    )
     later = service.acquire_source(
-        view.plan.plan_id,
+        plan.plan_id,
         request_key="unrelated-feed",
         request=SourceRequest(journal="jgr", route="feed"),
         contact_email="audit@example.org",
+    )
+    service.run_audit(
+        contact_email="audit@example.org", code_identity=CODE, plan_key="binding-source"
     )
     assert later.settlement
     with closing(sqlite3.connect(service.database)) as connection:
@@ -258,7 +263,8 @@ def test_acquired_material_without_persisted_interpretation_can_be_backed_up(
         and row.request.route == "publisher"
         and row.request.channel == "http"
     )
-    assert pending.reason == "not_attempted"
+    assert pending.reason == "acquired"
+    assert pending.interpretation_pending
     assert pending.acquisition_id is not None
     assert not pending.valid_record and not pending.candidates
     acquired = next(

@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import ValidationError
-from sqlalchemy import Connection, select
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.fixture_audit.abstract_models import (
@@ -15,12 +14,11 @@ from paper_radar.fixture_audit.abstract_models import (
     MatrixRow,
 )
 from paper_radar.fixture_audit.abstract_parser import parse_material
+from paper_radar.fixture_audit.abstract_records import load_abstracts as load_abstracts
 from paper_radar.fixture_audit.abstract_rules import (
     applicable_requests,
     matrix_request_key,
-    project,
     retained_acquisition,
-    row_key,
 )
 from paper_radar.fixture_audit.abstract_tables import abstract_rows
 from paper_radar.fixture_audit.acquisition_models import (
@@ -47,107 +45,6 @@ from paper_radar.storage.database import (
     open_database,
     require_current_revision,
 )
-
-
-def load_abstracts(
-    connection: Connection, views: tuple[SamplingAuditView, ...]
-) -> tuple[AbstractAuditView, ...]:
-    expected = {
-        view.plan.plan_id: {
-            row_key(member.member_id, request): (member, request)
-            for member, request in applicable_requests(view)
-        }
-        for view in views
-    }
-    by_plan = {view.plan.plan_id: view for view in views}
-    all_executions = {
-        execution.execution_id: execution
-        for view in views
-        for execution in view.executions
-    }
-    rows: dict[str, list[MatrixRow]] = {view.plan.plan_id: [] for view in views}
-    try:
-        latest: dict[tuple[str, tuple[str, str, str, str]], MatrixRow] = {}
-        for record in connection.execute(
-            select(abstract_rows).order_by(abstract_rows.c.event_no)
-        ).mappings():
-            row = MatrixRow.model_validate_json(record["content_json"])
-            key = row_key(row.member_id, row.request)
-            execution = all_executions.get(row.acquisition_id or "")
-            if (
-                row.plan_id not in expected
-                or key not in expected[row.plan_id]
-                or expected[row.plan_id][key][1] != row.request
-                or row.row_id != record["row_id"]
-                or row.generation != record["generation"]
-                or row.previous_row_id != record["previous_row_id"]
-                or row.plan_id != record["plan_id"]
-                or row.member_id != record["member_id"]
-                or row.request.route != record["route"]
-                or row.request.channel != record["channel"]
-                or row.request.acquisition_strategy_version
-                != record["strategy_version"]
-                or row.acquisition_id != record["acquisition_id"]
-                or row.model_dump_json() != record["content_json"]
-                or identity_sha256(row.model_copy(update={"row_id": ""})) != row.row_id
-                or execution is None
-                or execution.plan_id != row.plan_id
-                or execution.request != row.request
-                or execution.settlement is None
-                or row.observed_at != execution.settlement.settled_at
-                or row.payload_sha256 != execution.settlement.payload_sha256
-            ):
-                raise FixtureError(
-                    FixtureReason.CORRUPT_REFERENCE, path="abstract.matrix"
-                )
-            if row.reason == "not_attempted" and (
-                execution.reason != "not_attempted"
-                or execution.physical_requests != 0
-                or execution.settlement.artifact_id is not None
-                or row.payload_sha256 is not None
-                or row.valid_record
-                or row.candidates
-                or row.excluded_blocks
-            ):
-                raise FixtureError(
-                    FixtureReason.CORRUPT_REFERENCE, path="abstract.matrix"
-                )
-            member, request = expected[row.plan_id][key]
-            prior_id = retained_acquisition(by_plan[row.plan_id], member, request)
-            previous = latest.get((row.plan_id, key))
-            if previous is None:
-                if (
-                    row.generation != 1
-                    or row.previous_row_id is not None
-                    or (
-                        prior_id is None and execution.previous_execution_id is not None
-                    )
-                    or (prior_id is not None and execution.execution_id != prior_id)
-                    or (
-                        prior_id is None
-                        and execution.request_key
-                        != matrix_request_key(member.member_id, request)
-                    )
-                ):
-                    raise FixtureError(
-                        FixtureReason.CORRUPT_REFERENCE, path="abstract.acquisition"
-                    )
-            elif (
-                row.generation != previous.generation + 1
-                or row.previous_row_id != previous.row_id
-                or execution.previous_execution_id != previous.acquisition_id
-                or not can_continue(all_executions[previous.acquisition_id or ""])
-            ):
-                raise FixtureError(
-                    FixtureReason.CORRUPT_REFERENCE, path="abstract.continuation"
-                )
-            latest[(row.plan_id, key)] = row
-            rows[row.plan_id].append(row)
-        return tuple(project(view, tuple(rows[view.plan.plan_id])) for view in views)
-    except (ValidationError, ValueError, TypeError, KeyError):
-        raise FixtureError(
-            FixtureReason.CORRUPT_REFERENCE, path="abstract.matrix"
-        ) from None
 
 
 class AbstractService:
@@ -333,7 +230,14 @@ class AbstractService:
         code_identity: CodeIdentity | None = None,
     ) -> AbstractAuditView:
         contact = validate_contact(contact_email)
-        view = self.show_audit(plan_id)
+        try:
+            view = self.show_audit(plan_id)
+        except FixtureError as error:
+            if error.reason == FixtureReason.UNSUPPORTED_HISTORY:
+                raise FixtureError(
+                    FixtureReason.PLAN_IDENTITY_MISMATCH, path="plan_versions"
+                ) from None
+            raise
         validate_execution_identity(view.plan, code_identity)
         with self.acquisitions.audit_execution(plan_id) as guard:
             sampled = self.sampling.advance(
@@ -396,7 +300,7 @@ class AbstractService:
                 None,
             ):
                 chain.append(child)
-            # 已取得但未解释的执行仍需引用原事实，不能重新抓取或追认未结算成功。
+            # 已取得但未解释的执行仍需引用原事实,不能重新抓取或追认未结算成功。
             for execution in chain:
                 if any(row.acquisition_id == execution.execution_id for row in own):
                     continue
@@ -419,7 +323,10 @@ class AbstractService:
                 assert latest is not None
                 execution = self.acquisitions.acquire_source(
                     plan_id,
-                    request_key=f"{matrix_request_key(member.member_id, request)}-resume-{len(chain)}",
+                    request_key=(
+                        matrix_request_key(member.member_id, request)
+                        + f"-resume-{len(chain)}"
+                    ),
                     request=request,
                     contact_email=contact,
                     protection=guard,

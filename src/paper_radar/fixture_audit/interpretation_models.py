@@ -1,4 +1,4 @@
-"""新解析器是显式注入接口；持久化解释不携带原摘要文本。"""
+"""新解析器是显式注入接口;持久化解释不携带原摘要文本。"""
 
 from collections.abc import Mapping
 from typing import Literal, Protocol

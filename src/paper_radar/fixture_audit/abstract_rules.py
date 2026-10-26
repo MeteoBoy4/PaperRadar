@@ -144,20 +144,57 @@ def retained_acquisition(
 
 
 def pending_row(
-    view: SamplingAuditView, member: SamplingMember, request: SourceRequest
+    view: SamplingAuditView,
+    member: SamplingMember,
+    request: SourceRequest,
+    previous: MatrixRow | None = None,
 ) -> MatrixRow:
     key = matrix_request_key(member.member_id, request)
+    retained = retained_acquisition(view, member, request)
     execution = next(
-        (item for item in view.executions if item.request_key == key), None
+        (
+            item
+            for item in view.executions
+            if item.execution_id == retained
+            or (retained is None and item.request_key == key)
+        ),
+        None,
     )
+    ordinal = 1
+    while execution is not None:
+        child = next(
+            (
+                item
+                for item in view.executions
+                if item.previous_execution_id == execution.execution_id
+                and item.request_key == f"{key}-resume-{ordinal}"
+            ),
+            None,
+        )
+        if child is None:
+            break
+        execution = child
+        ordinal += 1
+    if previous is not None and (
+        execution is None or execution.execution_id == previous.acquisition_id
+    ):
+        return previous
+    settlement = execution.settlement if execution else None
     row = MatrixRow(
         row_id="",
+        generation=previous.generation + 1 if previous else 1,
+        previous_row_id=previous.row_id if previous else None,
+        interpretation_pending=True,
         plan_id=view.plan.plan_id,
         member_id=member.member_id,
         request=request,
         acquisition_id=execution.execution_id if execution else None,
-        reason="outcome_unknown"
-        if execution and execution.settlement is None
+        observed_at=settlement.settled_at if settlement else None,
+        payload_sha256=settlement.payload_sha256 if settlement else None,
+        reason=settlement.reason
+        if settlement
+        else "outcome_unknown"
+        if execution
         else "channel_not_installed"
         if request.channel != "http"
         else "not_attempted",
@@ -170,8 +207,9 @@ def project(
 ) -> AbstractAuditView:
     by_key = {row_key(row.member_id, row.request): row for row in stored}
     rows = tuple(
-        by_key.get(row_key(member.member_id, request))
-        or pending_row(view, member, request)
+        pending_row(
+            view, member, request, by_key.get(row_key(member.member_id, request))
+        )
         for member, request in applicable_requests(view)
     )
     executions = {value.execution_id: value for value in view.executions}
@@ -201,7 +239,8 @@ def project(
                 if row.candidates
             )
             settled = all(
-                row.reason != "not_attempted"
+                not row.interpretation_pending
+                and row.reason != "not_attempted"
                 and row.acquisition_id
                 and executions[row.acquisition_id].settlement is not None
                 for row in own
@@ -411,7 +450,8 @@ def project(
         status="complete"
         if all(state.status == "complete" for state in view.sampling)
         and all(
-            row.reason != "not_attempted"
+            not row.interpretation_pending
+            and row.reason != "not_attempted"
             and row.acquisition_id
             and executions[row.acquisition_id].settlement is not None
             for row in rows

@@ -51,6 +51,7 @@ class MatrixRow(FrozenModel):
     row_id: str
     generation: int = Field(default=1, ge=1)
     previous_row_id: str | None = None
+    interpretation_pending: bool = False
     plan_id: str
     member_id: str
     request: SourceRequest

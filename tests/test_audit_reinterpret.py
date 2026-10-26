@@ -1,4 +1,4 @@
-"""显式测试解析器只追加新解释和字段差异，不改冻结 v1 结论。"""
+"""显式测试解析器只追加新解释和字段差异,不改冻结 v1 结论。"""
 
 from collections.abc import Mapping
 from pathlib import Path
@@ -57,7 +57,7 @@ def test_new_parser_appends_safe_interpretation_and_preserves_v1_summary(
     service.validate_all()
 
 
-def test_v2_replay_requires_matching_runtime_and_does_not_confuse_new_fields_with_v1_damage(
+def test_v2_replay_requires_runtime_without_treating_new_fields_as_v1_damage(
     tmp_path: Path,
 ) -> None:
     import pytest
@@ -80,5 +80,43 @@ def test_v2_replay_requires_matching_runtime_and_does_not_confuse_new_fields_wit
     assert (
         result.interpretation == value
         and result.proof_level == "available_material_reparsed"
+    )
+    assert service.show_audit(original.plan.plan_id) == original
+
+
+def test_interpretation_chain_differences_compare_previous_interpretation(
+    tmp_path: Path,
+) -> None:
+    class SyntheticV3(SyntheticV2):
+        version = "synthetic-abstract-v3"
+        implementation_sha256 = "3" * 64
+
+        def parse(
+            self,
+            request: SourceRequest,
+            raw: bytes,
+            *,
+            decoding: str,
+            entry_locator: str | None,
+        ) -> Mapping[str, str | None]:
+            return {"title": "New v3 title."}
+
+    service = sampling_service(tmp_path, MatrixSources())
+    original = service.run_audit(contact_email="audit@example.org", code_identity=CODE)
+    first = service.reinterpret_audit(
+        original.plan.plan_id, parser=SyntheticV2(), request_key="v2"
+    )
+    second = service.reinterpret_audit(
+        original.plan.plan_id, parser=SyntheticV3(), request_key="v3"
+    )
+    assert second.previous_interpretation_id == first.interpretation_id
+    assert any(
+        row.added == ("title",) and "abstract" in row.removed for row in second.rows
+    )
+    assert (
+        service.replay_audit_interpretation(
+            original.plan.plan_id, second.interpretation_id, parser=SyntheticV3()
+        ).interpretation
+        == second
     )
     assert service.show_audit(original.plan.plan_id) == original

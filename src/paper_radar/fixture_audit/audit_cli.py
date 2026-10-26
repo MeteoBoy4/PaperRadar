@@ -27,7 +27,8 @@ list 接受 --database；show 另需 PLAN_ID；--json 输出结构化事实。
       --contact-email audit@example.org --count 5
 示例：paper-radar audit list --database data/paper-radar.sqlite3 --json
 示例：paper-radar audit show PLAN_ID --database data/paper-radar.sqlite3 --json
-示例：paper-radar audit resume PLAN_ID --database DB --data-root ROOT --contact-email EMAIL
+示例：paper-radar audit resume PLAN_ID --database DB --data-root ROOT
+      --contact-email EMAIL
 示例：paper-radar audit replay PLAN_ID --database DB --data-root ROOT --json
 resume 每次显式提供邮箱；只补未结算或允许暂时结论，已冻结材料与终态不重抓。
 replay 按历史规则读取保留材料；失败仅回放执行事实，不联网、不取得执行锁。

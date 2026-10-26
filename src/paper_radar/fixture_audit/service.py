@@ -378,6 +378,7 @@ class FixtureAudit:
         request: SourceRequest,
         contact_email: str | None,
         protection: AuditProtection | None = None,
+        previous_execution_id: str | None = None,
     ) -> RouteExecution:
         return self.acquisitions.acquire_source(
             plan_id,
@@ -385,6 +386,7 @@ class FixtureAudit:
             request=request,
             contact_email=contact_email,
             protection=protection,
+            previous_execution_id=previous_execution_id,
         )
 
     def list_audits(self) -> tuple[AbstractAuditView, ...]:

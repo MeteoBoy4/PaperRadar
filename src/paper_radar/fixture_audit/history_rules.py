@@ -1,4 +1,4 @@
-"""按保存版本选择历史实现；当前默认版本不代替历史版本。"""
+"""按保存版本选择历史实现;当前默认版本不代替历史版本。"""
 
 from paper_radar.fixture_audit.acquisition_models import AuditPlan
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason

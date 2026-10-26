@@ -21,12 +21,15 @@ if mode == "resume":
     sources = MatrixSources()
     clock = SamplingClock()
     def handler(request):
-        if request.url.host == "agupubs.onlinelibrary.wiley.com" and "/doi/" in request.url.path:
+        if (request.url.host == "agupubs.onlinelibrary.wiley.com"
+            and "/doi/" in request.url.path):
             print("http-started", flush=True)
             sys.stdin.readline()
         return sources(request)
-    executor = SourceHTTPExecutor(transport=httpx.MockTransport(handler), monotonic=clock.monotonic, sleep=clock.sleep)
-    service = FixtureAudit(Path(database), Path(root), source_executors={"http": executor})
+    executor = SourceHTTPExecutor(transport=httpx.MockTransport(handler),
+        monotonic=clock.monotonic, sleep=clock.sleep)
+    service = FixtureAudit(Path(database), Path(root),
+        source_executors={"http": executor})
     service.resume_audit(plan, contact_email="process@example.org", code_identity=CODE)
     print("complete", flush=True)
 elif mode == "lock":
@@ -40,7 +43,8 @@ else:
     socket.socket.connect = forbidden
     service = FixtureAudit(Path(database), Path(root), source_executors={})
     result = service.replay_audit(plan)
-    print(json.dumps({"status": result.status, "semantic_sha256": result.semantic_sha256}), flush=True)
+    print(json.dumps({"status": result.status,
+        "semantic_sha256": result.semantic_sha256}), flush=True)
 """
 
 

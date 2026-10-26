@@ -605,8 +605,10 @@ API、隐私与语义闭包见[Screening 任务 Contract](docs/contracts/screeni
 
 Fixture 注册：`paper-radar fixture register fixtures/a10/historical-v1.json --database data/paper-radar.sqlite3 --data-root data` 显式登记历史声明；`fixture check/list/show` 只读核查原字节与历史。另支持 `fixture register pdf-request.json --pdf-file sample.pdf` 登记本机字节、`--backend` 单独追加绑定该 PDF 的期望、`fixture check RECORD_ID --pdf --data-root data` 核查证据。替换保留旧字节和期望，新 PDF 不继承旧 backend 结果。只证明声明/字节登记与恢复，不代表真实四刊审计或 Docling 通过。详见 [fixture 与摘要审计 Contract](docs/contracts/fixture-audit.md)。
 
-来源取得（#103）：公共服务先冻结计划，再以有界 HTTP/通道接口取得并保存安全执行事实；`paper-radar audit list/show --database ... --json` 只读查询。默认只交付 http，其他通道显示未安装；显式 run 已由 #105 接通，resume/replay 待 #106；不代表真实来源审计已执行。
+来源取得（#103）：公共服务先冻结计划，再以有界 HTTP/通道接口取得并保存安全执行事实；`paper-radar audit list/show --database ... --json` 只读查询。默认只交付 http，其他通道显示未安装；显式 run 已由 #105 接通，resume/replay 已由 #106 接通；不代表真实来源审计已执行。
 
-固定选样（#104）：公共服务按四刊原位次冻结前 N 个显式 journal-article 候选，保留未知/冲突/重复/不足和暂停历史；`audit show` 可只读查看成员依据。显式继续保持原 Feed/位次，摘要成败不影响成员。当前仍未执行四刊 live；摘要矩阵由 #105 交付，完整恢复继续由后续票收口。
+固定选样（#104）：公共服务按四刊原位次冻结前 N 个显式 journal-article 候选，保留未知/冲突/重复/不足和暂停历史；`audit show` 可只读查看成员依据。显式继续保持原 Feed/位次，摘要成败不影响成员。当前仍未执行四刊 live；摘要矩阵由 #105 交付，显式恢复继续由 #106 交付，完整混合历史恢复由后续票收口。
 
 摘要矩阵（#105）：`paper-radar audit run --database DB --data-root ROOT --contact-email EMAIL --count 5 --json` 显式固定选样并执行适用路线；联系邮箱只用于请求标识，不保存。复用选样响应及原取得时间，题名/摘要分别调用 A6 仲裁；普通 show 只输出哈希、定位、截断信号及真实分母。原摘要通过显式服务 `read_audit_text` 读取。http 与未安装的适用渲染通道分列，official_api/repository 无适用目标；doiRA 不进入摘要命中分母。complete 只表示终态齐备，即使不足样本也不表示长期稳定或生产就绪。本票验证离线子集和基本恢复；完整门禁留 #108，不执行 live。
+
+审计继续与回放（#106）：`paper-radar audit resume PLAN_ID --database DB --data-root ROOT --contact-email EMAIL` 显式联网写入，只继续未结算或受控暂时路线，保留 unknown 和全部执行/矩阵历史；`audit replay PLAN_ID --database DB --data-root ROOT --json` 只读核验冻结 v1，按材料重解析或仅执行事实分级。代码/规则变化需新计划，未安装通道不重试。新 parser 只经服务 API 追加解释和前后字段差异，默认备份只证明其声明/引用/差异闭包；显式匹配运行时才重解析新版本。已验证两类真实进程和离线恢复子集，未执行 live 或完整 A10 门禁。

@@ -1,4 +1,4 @@
-"""显式恢复保持冻结成员和已结算历史，只补未结算或暂时路线。"""
+"""显式恢复保持冻结成员和已结算历史,只补未结算或暂时路线。"""
 
 from pathlib import Path
 
@@ -60,6 +60,16 @@ def test_resume_retries_only_transient_matrix_route_and_keeps_old_result(
         if value.execution_id == current.acquisition_id
     )
     assert execution.previous_execution_id == old.acquisition_id
+    assert (
+        service.acquire_source(
+            original.plan.plan_id,
+            request_key=execution.request_key,
+            request=execution.request,
+            contact_email="replay@example.org",
+            previous_execution_id=execution.previous_execution_id,
+        )
+        == execution
+    )
     count = len(sources.calls)
     assert (
         service.resume_audit(
@@ -182,7 +192,7 @@ def test_resume_preserves_failed_sampling_source_chain_and_original_position(
     service.replay_audit(before.plan.plan_id)
 
 
-def test_replay_rejects_removed_execution_predecessor_in_sampling_history(
+def test_replay_rejects_removed_sampling_execution_predecessor(
     tmp_path: Path,
 ) -> None:
     import sqlite3
@@ -211,7 +221,8 @@ def test_replay_rejects_removed_execution_predecessor_in_sampling_history(
     child = next(value for value in resumed.executions if value.previous_execution_id)
     with closing(sqlite3.connect(service.database)) as connection:
         connection.execute(
-            "UPDATE audit_route_starts SET previous_execution_id=NULL WHERE execution_id=?",
+            "UPDATE audit_route_starts SET previous_execution_id=NULL "
+            "WHERE execution_id=?",
             (child.execution_id,),
         )
         connection.commit()
@@ -219,3 +230,114 @@ def test_replay_rejects_removed_execution_predecessor_in_sampling_history(
         service.replay_audit(original.plan.plan_id)
     assert caught.value.reason == "corrupt_reference"
     assert caught.value.path == "audit.continuation"
+
+
+def test_active_retry_is_partial_and_keeps_old_settlement_as_history(
+    tmp_path: Path,
+) -> None:
+    class PhasedSources(MatrixSources):
+        phase = "failed"
+
+        def __call__(self, request: httpx.Request) -> httpx.Response:
+            if (
+                request.url.host == "agupubs.onlinelibrary.wiley.com"
+                and "/doi/" in request.url.path
+            ):
+                if self.phase == "failed":
+                    return httpx.Response(503)
+                if self.phase == "interrupted":
+                    raise KeyboardInterrupt
+            return super().__call__(request)
+
+    sources = PhasedSources()
+    service = sampling_service(tmp_path, sources)
+    original = service.run_audit(contact_email="first@example.org", code_identity=CODE)
+    sources.phase = "interrupted"
+    with pytest.raises(KeyboardInterrupt):
+        service.resume_audit(
+            original.plan.plan_id,
+            contact_email="second@example.org",
+            code_identity=CODE,
+        )
+    partial = service.show_audit(original.plan.plan_id)
+    assert partial.status == "partial"
+    current = next(
+        row
+        for row in partial.matrix
+        if row.request.journal == "jgr"
+        and row.request.route == "publisher"
+        and row.request.channel == "http"
+    )
+    assert current.reason == "outcome_unknown"
+    assert partial.matrix_history == original.matrix_history
+    assert service.replay_audit(original.plan.plan_id).view == partial
+    sources.phase = "recovered"
+    finished = service.resume_audit(
+        original.plan.plan_id, contact_email="third@example.org", code_identity=CODE
+    )
+    assert finished.status == "complete"
+    assert len(finished.matrix_history) == 21
+
+
+def test_complete_plan_rejects_fresh_acquisition_keys_but_replays_exact_execution(
+    tmp_path: Path,
+) -> None:
+    from paper_radar.fixture_audit import FixtureError
+
+    sources = MatrixSources()
+    service = sampling_service(tmp_path, sources)
+    original = service.run_audit(contact_email="first@example.org", code_identity=CODE)
+    existing = next(
+        value
+        for value in original.executions
+        if value.request.journal == "jgr"
+        and value.request.route == "publisher"
+        and value.request.channel == "http"
+    )
+    calls = tuple(sources.calls)
+    assert (
+        service.acquire_source(
+            original.plan.plan_id,
+            request_key=existing.request_key,
+            request=existing.request,
+            contact_email="second@example.org",
+        )
+        == existing
+    )
+    feed = next(
+        value
+        for value in original.executions
+        if value.request.journal == "jgr" and value.request.route == "feed"
+    )
+    for value in (existing, feed):
+        with pytest.raises(FixtureError) as settled:
+            service.acquire_source(
+                original.plan.plan_id,
+                request_key=f"fresh-key-{value.request.route}",
+                request=value.request,
+                contact_email="second@example.org",
+            )
+        assert settled.value.reason == "route_already_settled"
+    assert service.show_audit(original.plan.plan_id) == original
+    assert tuple(sources.calls) == calls
+
+
+def test_repeated_unidentified_candidate_reuses_verified_publisher_material(
+    tmp_path: Path,
+) -> None:
+    sources = MatrixSources()
+    for url, raw in list(sources.feeds.items()):
+        if "journalissuetocrss" in url:
+            item = raw.split(b"<item>")[1].split(b"</item>")[0]
+            sources.feeds[url] = raw.replace(
+                b"</channel>", b"<item>" + item + b"</item></channel>"
+            )
+    service = sampling_service(tmp_path, sources)
+    view = service.run_audit(contact_email="audit@example.org", code_identity=CODE)
+    assert [entry.result for entry in view.sampling[0].entries] == [
+        "selected",
+        "excluded_deterministic",
+    ]
+    assert view.sampling[0].entries[1].reason == "duplicate"
+    assert sum("/view/journals/aies/" in url for url in sources.calls) == 1
+    assert view.status == "complete"

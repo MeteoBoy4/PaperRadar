@@ -143,6 +143,67 @@ class AcquisitionService:
         finally:
             engine.dispose()
 
+    def _require_new_execution(
+        self,
+        plan_id: str,
+        request_key: str,
+        request: SourceRequest,
+        previous_execution_id: str | None,
+    ) -> None:
+        # 在公共取得边界核对冻结路线;精确同键重放已在调用前返回。
+        from paper_radar.fixture_audit.abstract_records import load_abstracts
+        from paper_radar.fixture_audit.abstract_rules import matrix_request_key
+        from paper_radar.fixture_audit.resume_rules import can_continue
+        from paper_radar.fixture_audit.sampling_records import load_sampling
+
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+        try:
+            require_current_revision(engine)
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN")
+                view = next(
+                    value
+                    for value in load_abstracts(
+                        connection, load_sampling(connection, load_audits(connection))
+                    )
+                    if value.plan.plan_id == plan_id
+                )
+        finally:
+            engine.dispose()
+        matched = [
+            row
+            for row in view.matrix
+            if row.request == request and row.acquisition_id is not None
+        ]
+        if previous_execution_id is not None:
+            previous = next(
+                (
+                    value
+                    for value in view.executions
+                    if value.execution_id == previous_execution_id
+                ),
+                None,
+            )
+            current = next(
+                (row for row in matched if row.acquisition_id == previous_execution_id),
+                None,
+            )
+            if current and previous and can_continue(previous):
+                if request_key != (
+                    matrix_request_key(current.member_id, request)
+                    + f"-resume-{current.generation}"
+                ):
+                    raise FixtureError(
+                        FixtureReason.REQUEST_CONFLICT, path="audit.continuation_key"
+                    )
+                return
+        frozen_feed = request.route == "feed" and any(
+            state.journal == request.journal and state.feed is not None
+            for state in view.sampling
+        )
+        if view.status == "complete" or matched or frozen_feed:
+            raise FixtureError(FixtureReason.ROUTE_ALREADY_SETTLED, path="audit.route")
+
     def _acquire_source(
         self,
         plan_id: str,
@@ -187,6 +248,9 @@ class AcquisitionService:
                 if value.settlement is None:
                     raise FixtureError(FixtureReason.EXECUTION_INCOMPLETE)
                 return value
+        self._require_new_execution(
+            plan_id, request_key, request, previous_execution_id
+        )
         if previous_execution_id is not None:
             previous = next(
                 (
@@ -232,6 +296,7 @@ class AcquisitionService:
                         previous_execution_id=previous_execution_id,
                     )
                 )
+                load_audits(connection)
                 connection.commit()
             executor = self.executors.get(request.channel)
             if executor is None:

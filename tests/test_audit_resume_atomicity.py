@@ -20,12 +20,20 @@ def test_resume_recovers_publication_or_interpretation_transaction_failure(
     service = sampling_service(tmp_path, sources)
     with closing(sqlite3.connect(service.database)) as connection:
         predicate = (
-            'NEW.execution_id IN (SELECT execution_id FROM audit_route_starts WHERE request_json LIKE \'%"journal":"jgr"%\' AND request_json LIKE \'%"route":"publisher"%\')'
+            (
+                "NEW.execution_id IN (SELECT execution_id FROM audit_route_starts "
+                'WHERE request_json LIKE \'%"journal":"jgr"%\' '
+                'AND request_json LIKE \'%"route":"publisher"%\')'
+            )
             if table == "audit_route_settlements"
-            else "NEW.route='publisher' AND NEW.channel='http' AND NEW.content_json LIKE '%\"journal\":\"jgr\"%'"
+            else (
+                "NEW.route='publisher' AND NEW.channel='http' "
+                'AND NEW.content_json LIKE \'%"journal":"jgr"%\''
+            )
         )
         connection.execute(
-            f"CREATE TRIGGER injected_failure BEFORE INSERT ON {table} WHEN {predicate} BEGIN SELECT RAISE(ABORT, 'injected'); END"
+            f"CREATE TRIGGER injected_failure BEFORE INSERT ON {table} "
+            f"WHEN {predicate} BEGIN SELECT RAISE(ABORT, 'injected'); END"
         )
         connection.commit()
     with pytest.raises(FixtureError) as caught:

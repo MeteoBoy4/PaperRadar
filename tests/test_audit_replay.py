@@ -72,6 +72,11 @@ def test_missing_historical_version_is_distinct_from_unrehashed_plan_corruption(
     with pytest.raises(FixtureError) as unsupported:
         service.replay_audit(value["plan_id"])
     assert unsupported.value.reason == "unsupported_history"
+    with pytest.raises(FixtureError) as incompatible:
+        service.resume_audit(
+            value["plan_id"], contact_email="audit@example.org", code_identity=CODE
+        )
+    assert incompatible.value.reason == "plan_identity_mismatch"
 
 
 def test_frozen_v1_replay_does_not_consume_current_default_version(
