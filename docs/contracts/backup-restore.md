@@ -352,7 +352,9 @@ A7 将上述登记、尝试、双阶段成功、retry 与完整隔离恢复逐�
 
 ## A10 fixture 登记闭包
 
-备份固定副本只读调用 FixtureAudit.validate_all，校验不可变声明原字节、解释与显式替换历史；恢复不读原声明或远端 URL。取得字节继续使用 ArtifactStore，当前 #101 只交付声明闭包，PDF 与审计闭包随后续票扩展。共享 source_snapshot 的清理必须同时纳入论文与审计引用。
+备份固定副本只读调用 FixtureAudit.validate_all，校验不可变声明原字节、解释与显式替换历史；恢复不读原声明或远端 URL。取得字节继续使用 ArtifactStore，当前 #101–#103 已接入声明、PDF 与来源取得闭包，后续票继续扩展成员、矩阵与恢复继续历史。共享 source_snapshot 的清理必须同时纳入论文与审计引用。
+
+A10 #103 的计划、started/结算与条件材料复用也由 FixtureAudit.validate_all 进入固定副本语义闭包；核对规范请求身份、策略/通道、真实 HTTP 计数及 retained source_snapshot 的种类/字节/身份。失败只保存结构化事实，不要求缺失错误页正文；恢复和只读查询不访问来源或创建审计锁。
 
 
 ### A10 PDF 登记闭包

@@ -224,3 +224,6 @@ __marimo__/
 .scratch/
 # 项目独立 Node/Pi 安装、staging 与私有缓存。
 .tools/
+
+# 审计执行锁不参与代码身份或备份材料。
+.paper-radar-audit-locks/

@@ -4,12 +4,23 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+from collections.abc import Mapping
 from pathlib import Path
 
 from pydantic import ValidationError
 from sqlalchemy import Connection, select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
+from paper_radar.fixture_audit.acquisition_models import (
+    AuditPlan,
+    AuditView,
+    Channel,
+    CodeIdentity,
+    RouteExecution,
+    SourceRequest,
+)
+from paper_radar.fixture_audit.acquisition_service import AcquisitionService
+from paper_radar.fixture_audit.audit_protection import AuditProtection
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
 from paper_radar.fixture_audit.models import (
     DeclarationCheck,
@@ -27,6 +38,7 @@ from paper_radar.fixture_audit.pdf_models import (
     PdfRegistration,
 )
 from paper_radar.fixture_audit.pdf_records import load_pdf_states
+from paper_radar.fixture_audit.source_http import SourceExecutor
 from paper_radar.fixture_audit.tables import fixture_declarations, fixture_records
 from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.database import (
@@ -126,9 +138,16 @@ def _load_records(connection: Connection) -> tuple[FixtureRecord, ...]:
 class FixtureAudit:
     """构造不打开数据库、不创建目录;实际取得字节由后续入口登记。"""
 
-    def __init__(self, database: Path, data_root: Path | None = None) -> None:
+    def __init__(
+        self,
+        database: Path,
+        data_root: Path | None = None,
+        *,
+        source_executors: Mapping[Channel, SourceExecutor] | None = None,
+    ) -> None:
         self.database = database
         self.data_root = data_root
+        self.acquisitions = AcquisitionService(database, data_root, source_executors)
 
     def register(self, source: Path) -> RegistrationResult:
         try:
@@ -317,6 +336,47 @@ class FixtureAudit:
             raw_sha256=digest,
         )
 
+    def create_audit_plan(
+        self,
+        *,
+        contact_email: str | None,
+        target_count: int = 5,
+        plan_key: str | None = None,
+        code_identity: CodeIdentity | None = None,
+    ) -> AuditPlan:
+        return self.acquisitions.create_audit_plan(
+            contact_email=contact_email,
+            target_count=target_count,
+            plan_key=plan_key,
+            code_identity=code_identity,
+        )
+
+    def audit_execution(self, plan_id: str) -> AuditProtection:
+        return self.acquisitions.audit_execution(plan_id)
+
+    def acquire_source(
+        self,
+        plan_id: str,
+        *,
+        request_key: str,
+        request: SourceRequest,
+        contact_email: str | None,
+        protection: AuditProtection | None = None,
+    ) -> RouteExecution:
+        return self.acquisitions.acquire_source(
+            plan_id,
+            request_key=request_key,
+            request=request,
+            contact_email=contact_email,
+            protection=protection,
+        )
+
+    def list_audits(self) -> tuple[AuditView, ...]:
+        return self.acquisitions.list_audits()
+
+    def show_audit(self, plan_id: str) -> AuditView:
+        return self.acquisitions.show_audit(plan_id)
+
     def register_pdf(
         self,
         record_id: str,
@@ -437,3 +497,4 @@ class FixtureAudit:
         records = self.list(history=True)
         if self.data_root is None and any(record.pdf is not None for record in records):
             raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
+        self.acquisitions.validate_all()
