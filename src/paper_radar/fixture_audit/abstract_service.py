@@ -90,6 +90,18 @@ def load_abstracts(
                 raise FixtureError(
                     FixtureReason.CORRUPT_REFERENCE, path="abstract.matrix"
                 )
+            if row.reason == "not_attempted" and (
+                execution.reason != "not_attempted"
+                or execution.physical_requests != 0
+                or execution.settlement.artifact_id is not None
+                or row.payload_sha256 is not None
+                or row.valid_record
+                or row.candidates
+                or row.excluded_blocks
+            ):
+                raise FixtureError(
+                    FixtureReason.CORRUPT_REFERENCE, path="abstract.matrix"
+                )
             member, request = expected[row.plan_id][key]
             prior_id = retained_acquisition(by_plan[row.plan_id], member, request)
             if (prior_id is not None and execution.execution_id != prior_id) or (
@@ -336,21 +348,27 @@ class AbstractService:
         raise FixtureError(FixtureReason.RECORD_NOT_FOUND, path="candidate_id")
 
     def validate_all(self) -> None:
-        for view in self.list_audits():
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+        try:
+            require_current_revision(engine)
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN")
+                views = load_abstracts(
+                    connection, load_sampling(connection, load_audits(connection))
+                )
+                stored_ids = set(
+                    connection.execute(select(abstract_rows.c.row_id)).scalars()
+                )
+        except SQLAlchemyError:
+            raise FixtureError(
+                FixtureReason.CORRUPT_REFERENCE, path="abstract.matrix"
+            ) from None
+        finally:
+            engine.dispose()
+        for view in views:
             for row in view.matrix:
-                if (
-                    row.acquisition_id is None
-                    or row.reason == "not_attempted"
-                    or next(
-                        (
-                            value
-                            for value in view.executions
-                            if value.execution_id == row.acquisition_id
-                            and value.settlement is None
-                        ),
-                        None,
-                    )
-                ):
+                # Pending projections carry no persisted interpretation to verify.
+                if row.row_id not in stored_ids:
                     continue
                 member = next(
                     member
