@@ -49,7 +49,10 @@ def inspect_source(
         if request.route == "feed":
             if b"\x00" in body or re.search(rb"<!\s*(?:DOCTYPE|ENTITY)\b", body, re.I):
                 return SourceInspection("invalid_response")
-            root = ElementTree.fromstring(body.decode(decoding))
+            decoded = body.decode(decoding)
+            if re.search(r"<!\s*(?:DOCTYPE|ENTITY)\b", decoded, re.I):
+                return SourceInspection("invalid_response")
+            root = ElementTree.fromstring(decoded)
             name = root.tag.rsplit("}", 1)[-1]
             child_names = {item.tag.rsplit("}", 1)[-1] for item in root}
             if not (
