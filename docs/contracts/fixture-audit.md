@@ -72,7 +72,8 @@ validate_all 只读核验登记原字节哈希、Pydantic 重建、样本身份�
 `pdf_id/pdf_sha256`。字段为 `request_key`、`backend_component/backend_version`、显式
 模型版本集合 `model_versions`、`extraction_fingerprint`、`reading_sha256`，以及各自独立的
 `methods_data`、`availability_open_research`。组件/模型版本非空，哈希为64位小写hex，
-模型名称不得重复。同一 PDF、backend 组件/版本、模型版本集合与 extraction fingerprint
+模型名称不得重复，具名模型集合的输入顺序不进入 backend 身份；历史请求顺序仍原样保留。
+同一 PDF、backend 组件/版本、模型版本集合与 extraction fingerprint
 绑定一组不可变期望，不用新的请求键覆盖相同身份。旧 backend 的期望不变，更换 PDF 后
 不自动复制到新 SHA。登记成功的证明级别恒为 `shape_only`，不重算提取语义或运行 Docling。
 
@@ -98,6 +99,7 @@ paper-radar fixture show RECORD_ID --database DB --data-root ROOT --json
 
 `pdf-request.json` 对应 `PdfRegistration`，`backend-request.json` 对应
 `PdfBackendRegistration`；JSON 未知/重复字段、无效日期、空版本与无效引用安全拒绝。
+公共模型接收在序列化前递归重校验实例，畸形模型只返回安全原因，不产生含字段原值的序列化诊断。
 `--pdf-file` 与 `--backend` 不可同用。`fixture check FILE` 仍只对声明原字节比对，
 `check RECORD_ID --pdf` 单独验证本机字节，返回 not_registered 或 byte_verified 及期望数；
 没有材料不等于声明漂移。`list/show` 无 `--data-root` 时查询历史登记事实，显式提供根时

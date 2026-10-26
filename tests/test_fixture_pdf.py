@@ -417,3 +417,109 @@ def test_declaration_check_and_local_pdf_integrity_are_independent(
     assert rejected.value.reason == "blob_corrupt"
     recorded = FixtureAudit(service.database).show(record_id)
     assert recorded.pdf is not None and recorded.pdf.current_pdf_id == pdf.pdf_id
+
+
+@pytest.mark.parametrize("field", ["model_versions", "methods_data"])
+def test_malformed_backend_models_do_not_emit_private_serializer_diagnostics(
+    tmp_path: Path, field: str
+) -> None:
+    import warnings
+
+    from paper_radar.fixture_audit.pdf_models import PdfBackendRegistration
+
+    service, record_id = registered_jgr(tmp_path)
+    source = tmp_path / "sample.pdf"
+    source.write_bytes(PDF_BYTES)
+    pdf = service.register_pdf(
+        record_id,
+        source,
+        request_key="pdf",
+        source_url="https://repository.example.org/pdf",
+        access_basis="manual",
+        license_basis="synthetic fixture",
+        observed_date="2026-10-26",
+    )
+    valid = PdfBackendRegistration.model_validate(
+        {
+            "request_key": "backend",
+            "pdf_id": pdf.pdf_id,
+            "pdf_sha256": PDF_SHA256,
+            "backend_component": "docling",
+            "backend_version": "synthetic-v1",
+            "extraction_fingerprint": "a" * 64,
+            "reading_sha256": "b" * 64,
+            "methods_data": {"state": "unverified"},
+            "availability_open_research": {"state": "unverified"},
+        }
+    )
+    value: object = (
+        ("PDF_PRIVATE_DIAGNOSTIC_SENTINEL",)
+        if field == "model_versions"
+        else "PDF_PRIVATE_DIAGNOSTIC_SENTINEL"
+    )
+    malformed = valid.model_copy(update={field: value})
+    with warnings.catch_warnings(record=True) as diagnostic:
+        warnings.simplefilter("always")
+        with pytest.raises(FixtureError) as rejected:
+            service.register_pdf_backend(malformed)
+    assert rejected.value.reason == "invalid_declaration"
+    assert rejected.value.path == "pdf_backend"
+    assert "PDF_PRIVATE_DIAGNOSTIC_SENTINEL" not in str(rejected.value)
+    assert diagnostic == []
+    assert service.check_pdf(record_id).backend_expectation_count == 0
+
+
+def test_reordering_the_same_named_model_set_cannot_change_backend_expectations(
+    tmp_path: Path,
+) -> None:
+    from paper_radar.fixture_audit.pdf_models import PdfBackendRegistration
+
+    service, record_id = registered_jgr(tmp_path)
+    source = tmp_path / "sample.pdf"
+    source.write_bytes(PDF_BYTES)
+    pdf = service.register_pdf(
+        record_id,
+        source,
+        request_key="pdf",
+        source_url="https://repository.example.org/pdf",
+        access_basis="manual",
+        license_basis="synthetic fixture",
+        observed_date="2026-10-26",
+    )
+    request = PdfBackendRegistration.model_validate(
+        {
+            "request_key": "backend-original",
+            "pdf_id": pdf.pdf_id,
+            "pdf_sha256": PDF_SHA256,
+            "backend_component": "docling",
+            "backend_version": "synthetic-v1",
+            "model_versions": (
+                {"name": "table", "version": "model-v1"},
+                {"name": "layout", "version": "model-v1"},
+            ),
+            "extraction_fingerprint": "a" * 64,
+            "reading_sha256": "b" * 64,
+            "methods_data": {"state": "unverified"},
+            "availability_open_research": {"state": "unverified"},
+        }
+    )
+    original = service.register_pdf_backend(request)
+    reordered = request.model_copy(
+        update={
+            "request_key": "backend-reordered",
+            "model_versions": tuple(reversed(request.model_versions)),
+            "reading_sha256": "c" * 64,
+        }
+    )
+    with pytest.raises(FixtureError) as rejected:
+        service.register_pdf_backend(reordered)
+    assert rejected.value.reason == "declaration_conflict"
+    assert rejected.value.path == "pdf_backend.backend_identity"
+    state = service.show(record_id).pdf
+    assert state is not None
+    assert state.acquisitions[0].backend_expectations == (original,)
+    assert [model.name for model in original.registration.model_versions] == [
+        "table",
+        "layout",
+    ]
+    service.validate_all()

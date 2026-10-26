@@ -122,14 +122,16 @@ def load_pdf_states(
 
 
 def backend_identity(request: PdfBackendRegistration) -> str:
-    return acquisition_identity(
-        request.model_dump(
-            mode="json",
-            include={
-                "backend_component",
-                "backend_version",
-                "model_versions",
-                "extraction_fingerprint",
-            },
-        )
+    identity = request.model_dump(
+        mode="json",
+        include={
+            "backend_component",
+            "backend_version",
+            "extraction_fingerprint",
+        },
     )
+    identity["model_versions"] = [
+        model.model_dump(mode="json")
+        for model in sorted(request.model_versions, key=lambda model: model.name)
+    ]
+    return acquisition_identity(identity)
