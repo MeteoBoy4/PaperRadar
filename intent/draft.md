@@ -428,6 +428,10 @@ paper-radar run-due --date YYYY-MM-DD
 
 ### 4.3 元数据与来源仲裁
 
+A10 裁决（#100）：类别依据只采用 Crossref `message.type=journal-article`、DataCite `types.resourceTypeGeneral=JournalArticle`、《大气科学》current Feed `dc:type=article` 与出版者 `dc.type=论文`。注册机构其他明确类型为非 journal-article，平台表外值/缺字段为未知，不同明确判定矛盾为冲突，分别计数；Wiley `category`/`prism:section` 只保存原值，不用子类型预过滤。doiRA `https://doi.org/doiRA/{doi}` 只用于机构路由，Crossref/DataCite 各走适用机构，其他 RA 为 `agency_unsupported`，查询失败或 404 为 `agency_unknown`，单机构 404 不证明 DOI 不存在（ADR-0033/0034）。
+
+主摘要边界同时用于 Feed 和出版者：只取 Abstract/摘要 主区块；《大气科学》取中文 abstract-cn，英文 abstract-en、Significance Statement、Plain Language Summary、Key Points 只保留存在与定位。Wiley Feed 的 Abstract 前置段与《大气科学》`<p>` 外引文尾行均不并入摘要，不拼接另一语种或来源。区块切分、实体解码、去标记和段落连接整体版本化；Screening 是否消费这些额外区块留待阶段 C 裁决。
+
 第一版只接入：
 
 - 四刊出版者页面或结构化接口（含 §4.8 允许的正常请求头与受控浏览器渲染）；
@@ -1669,7 +1673,7 @@ src/paper_radar/
 - 外部适配器不直接更新 papers 当前事实，必须先形成来源观察并经仲裁；
 - sources/ 下各获取通道（普通 HTTP、browser_render、官方 API、仓储）只产生取得事实与来源材料；获取策略版本、通道、访问依据与凭据类别随取得事实记录（ADR-0032）；browser_render 不实现验证码求解、指纹伪造或代理轮换。
 
-SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic、Pi RPC adapter、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx、feedparser 和 Docling slim；具体版本在阶段 A 锁定并进入验收证据。Pi 是按 §7.8 固定供给、由明确 Node 入口启动的本机子进程，不是 Python 包；不为接入它另建 Node 业务服务，Python 依赖仍统一由 uv 与已提交 lockfile 管理。真实模型调用前 doctor 检查已供给 Pi/Node 的版本与安装身份、固定模型与认证可用性及隔离策略，缺失时报告具体配置或安装原因，不执行自动供给；`--help` 不探测 Pi、模型或凭证。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。受控浏览器渲染同样以可选依赖（如 `paper-radar[render]`，Playwright 及固定浏览器制品）声明，未启用时公开页面只走普通 HTTP 通道。
+SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic、Pi RPC adapter、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx 和 Docling slim；Feed 解析初版采用标准库 XML（拒绝 DOCTYPE/ENTITY）与 html.parser，feedparser 仅按需评估；具体版本在阶段 A 锁定并进入验收证据。Pi 是按 §7.8 固定供给、由明确 Node 入口启动的本机子进程，不是 Python 包；不为接入它另建 Node 业务服务，Python 依赖仍统一由 uv 与已提交 lockfile 管理。真实模型调用前 doctor 检查已供给 Pi/Node 的版本与安装身份、固定模型与认证可用性及隔离策略，缺失时报告具体配置或安装原因，不执行自动供给；`--help` 不探测 Pi、模型或凭证。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。受控浏览器渲染同样以可选依赖（如 `paper-radar[render]`，Playwright 及固定浏览器制品）声明，未启用时公开页面只走普通 HTTP 通道。
 
 ## 十一、九阶段实施与验收
 
@@ -2314,6 +2318,8 @@ DoD：
 
 ### 13.1 Feed
 
+A10 的声明唯一来源为 `fixtures/a10/`，格式与只读/登记命令见 [fixture 与摘要审计 Contract](../docs/contracts/fixture-audit.md)。历史声明、合成向量和实际取得分开；HTTP 条件头可空，304 必须引用已保留响应。阶段 A 只审计已交付通道；A10 只执行 http，渲染通道待阶段 F 以新策略版本补跑。doiRA、类别依据与主摘要区块采用 §4.3 的裁决，真实预检不能冒充本轮审计。
+
 - AIES：AMETSOC RSS；
 - JGR: Atmospheres：Wiley/AGU eTOC RSS；
 - QJRMS：Wiley most-recent RSS；
@@ -2335,6 +2341,8 @@ DoD：
 |QJRMS|`10.1002/qj.70303`|出版者与 Crossref 均为 66 条；部分 DOI 含 Unicode 连字符|
 |《大气科学》|`10.3878/j.issn.1006-9895.2604.26034`|出版者完整提供 78 条，Crossref 无记录|
 |《大气科学》|`10.3878/j.issn.1006-9895.2512.24134`|出版者完整提供 32 条，Crossref 无记录|
+
+后续注记（2026-10-25 只读预检）：两篇《大气科学》DOI 的 doiRA 返回 ISTIC，对 V1 注册机构链为 `agency_unsupported`；这不改写上表 2026-09-13 的“Crossref 无记录”历史，也不是本票实测。
 
 另外，Wiley PDF 的 403 代表访问受阻，不代表论文不是开放获取；TDM 通道下先用固定已知 OA DOI 探测区分 token 失效与单篇无权限（§4.8）。
 

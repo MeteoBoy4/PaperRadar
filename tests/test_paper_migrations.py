@@ -97,8 +97,8 @@ def test_nonempty_a405_upgrade_preserves_config_artifact_and_pi_history(
                 ).fetchall()
                 == []
             )
-    assert upgrade_database(old) == "a704_screening_retry"
-    assert upgrade_database(old) == "a704_screening_retry"
+    assert upgrade_database(old) == "a1001_fixture_audit"
+    assert upgrade_database(old) == "a1001_fixture_audit"
     with closing(sqlite3.connect(old)) as previous:
         assert {
             table: previous.execute(f"SELECT * FROM {table}").fetchall()

@@ -349,3 +349,7 @@ A7 将上述登记、尝试、双阶段成功、retry 与完整隔离恢复逐�
 新增组合沿用本 Contract 的格式、revision 准入与独立副本算法。
 双历史配置、四份合法 `model_success_response` 的隔离恢复和明确未验证项统一见
 [Read 恢复范围](read-validation.md#恢复范围98)；消费上下文来自测试常量，不是备份产物。
+
+## A10 fixture 登记闭包
+
+备份固定副本只读调用 FixtureAudit.validate_all，校验不可变声明原字节、解释与显式替换历史；恢复不读原声明或远端 URL。取得字节继续使用 ArtifactStore，当前 #101 只交付声明闭包，PDF 与审计闭包随后续票扩展。共享 source_snapshot 的清理必须同时纳入论文与审计引用。

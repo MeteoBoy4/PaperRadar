@@ -1,0 +1,192 @@
+{
+  "format_version": 1,
+  "declaration_key": "v1-historical-samples",
+  "declared_version": "v1",
+  "entries": [
+    {
+      "key": "aies-references-0111",
+      "purpose": "references",
+      "journal": "aies",
+      "basis": "historical_declaration",
+      "doi": "10.1175/AIES-D-25-0111.1",
+      "declared_date": "2026-09-13",
+      "source_basis": "intent/draft.md §13.2，2026-09-13 历史调查声明；不是 A10 实测",
+      "notes": [
+        "出版者/PDF 提供 77 条，Crossref 为 0"
+      ],
+      "expectations": {
+        "publisher_count": 77,
+        "registry_count": 0
+      }
+    },
+    {
+      "key": "aies-references-0103",
+      "purpose": "references",
+      "journal": "aies",
+      "basis": "historical_declaration",
+      "doi": "10.1175/AIES-D-25-0103.1",
+      "declared_date": "2026-09-13",
+      "source_basis": "intent/draft.md §13.2，2026-09-13 历史调查声明；不是 A10 实测",
+      "notes": [
+        "DOI 可能位于 unstructured 原始串"
+      ],
+      "expectations": {
+        "publisher_count": 20,
+        "registry_count": 20
+      }
+    },
+    {
+      "key": "qjrms-references-70299",
+      "purpose": "references",
+      "journal": "qjrms",
+      "basis": "historical_declaration",
+      "doi": "10.1002/qj.70299",
+      "declared_date": "2026-09-13",
+      "source_basis": "intent/draft.md §13.2，2026-09-13 历史调查声明；不是 A10 实测",
+      "notes": [
+        "仍需规范原始 DOI"
+      ],
+      "expectations": {
+        "publisher_count": 57,
+        "registry_count": 57
+      }
+    },
+    {
+      "key": "qjrms-references-70303",
+      "purpose": "references",
+      "journal": "qjrms",
+      "basis": "historical_declaration",
+      "doi": "10.1002/qj.70303",
+      "declared_date": "2026-09-13",
+      "source_basis": "intent/draft.md §13.2，2026-09-13 历史调查声明；不是 A10 实测",
+      "notes": [
+        "部分 DOI 含 Unicode 连字符"
+      ],
+      "expectations": {
+        "publisher_count": 66,
+        "registry_count": 66
+      }
+    },
+    {
+      "key": "dqkx-references-26034",
+      "purpose": "references",
+      "journal": "dqkx",
+      "basis": "historical_declaration",
+      "doi": "10.3878/j.issn.1006-9895.2604.26034",
+      "declared_date": "2026-09-13",
+      "source_basis": "intent/draft.md §13.2，2026-09-13 历史调查声明；不是 A10 实测",
+      "notes": [
+        "2026-09-13 历史调查：Crossref 无记录",
+        "2026-10-25 只读预检注记（非 A10 实测）：doiRA=ISTIC，agency_unsupported"
+      ],
+      "expectations": {
+        "publisher_count": 78,
+        "registry_record_absent": true
+      }
+    },
+    {
+      "key": "dqkx-references-24134",
+      "purpose": "references",
+      "journal": "dqkx",
+      "basis": "historical_declaration",
+      "doi": "10.3878/j.issn.1006-9895.2512.24134",
+      "declared_date": "2026-09-13",
+      "source_basis": "intent/draft.md §13.2，2026-09-13 历史调查声明；不是 A10 实测",
+      "notes": [
+        "2026-09-13 历史调查：Crossref 无记录",
+        "2026-10-25 只读预检注记（非 A10 实测）：doiRA=ISTIC，agency_unsupported"
+      ],
+      "expectations": {
+        "publisher_count": 32,
+        "registry_record_absent": true
+      }
+    },
+    {
+      "key": "aies-pdf-layout",
+      "purpose": "pdf",
+      "journal": "aies",
+      "basis": "historical_declaration",
+      "declared_date": "2026-09-13",
+      "source_basis": "intent/draft.md §13.3 既定版式要求；尚无本机 PDF 字节核验",
+      "expectations": {
+        "layout_features": [
+          "正式双栏",
+          "跨栏图表",
+          "长篇 online-first",
+          "公式空文本"
+        ],
+        "candidate_dois": [
+          "10.1175/AIES-D-25-0111.1",
+          "10.1175/AIES-D-25-0103.1"
+        ]
+      }
+    },
+    {
+      "key": "jgr-pdf-layout",
+      "purpose": "pdf",
+      "journal": "jgr",
+      "basis": "historical_declaration",
+      "declared_date": "2026-09-13",
+      "source_basis": "intent/draft.md §13.3 既定版式要求；尚无本机 PDF 字节核验",
+      "expectations": {
+        "layout_features": [
+          "机构库封面",
+          "左侧元数据栏",
+          "标题层级",
+          "范围字符风险"
+        ],
+        "known_failures": [
+          "去除仓储封面",
+          "修复标题层级",
+          "去除重复页眉",
+          "2–3 min 被合并为 23 min 的精确字符降级回归"
+        ]
+      },
+      "doi": "10.1029/2025JD043927",
+      "handle": "11094/103589",
+      "notes": [
+        "2026-09-13 历史本机审计约 16 秒、峰值约 2.32 GiB；不作为 A10 实测"
+      ]
+    },
+    {
+      "key": "qjrms-pdf-layout",
+      "purpose": "pdf",
+      "journal": "qjrms",
+      "basis": "historical_declaration",
+      "declared_date": "2026-09-13",
+      "source_basis": "intent/draft.md §13.3 既定版式要求；尚无本机 PDF 字节核验",
+      "expectations": {
+        "layout_features": [
+          "机构库权利页",
+          "双栏",
+          "编号小节",
+          "复杂宽表"
+        ],
+        "candidate_dois": [
+          "10.1002/qj.70299",
+          "10.1002/qj.70303"
+        ]
+      }
+    },
+    {
+      "key": "dqkx-pdf-layout",
+      "purpose": "pdf",
+      "journal": "dqkx",
+      "basis": "historical_declaration",
+      "declared_date": "2026-09-13",
+      "source_basis": "intent/draft.md §13.3 既定版式要求；尚无本机 PDF 字节核验",
+      "expectations": {
+        "layout_features": [
+          "中文双栏",
+          "出版者推荐封面",
+          "中文章节",
+          "公式"
+        ],
+        "candidate_dois": [
+          "10.3878/j.issn.1006-9895.2604.26034",
+          "10.3878/j.issn.1006-9895.2512.24134"
+        ]
+      }
+    }
+  ]
+}

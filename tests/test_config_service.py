@@ -130,6 +130,17 @@ def test_same_inputs_moved_to_another_root_keep_identity(tmp_path: Path) -> None
 
 
 def test_upgrade_is_idempotent_and_schema_matches_metadata(tmp_path: Path) -> None:
+    # Register every real schema module explicitly, independent of collection order.
+    from importlib import import_module
+
+    for module in (
+        "paper_radar.fixture_audit.tables",
+        "paper_radar.papers.tables",
+        "paper_radar.pi_supply.tables",
+        "paper_radar.screening_tasks.tables",
+    ):
+        import_module(module)
+
     db = tmp_path / "db.sqlite3"
     assert upgrade_database(db) == current_revision()
     assert upgrade_database(db) == current_revision()
