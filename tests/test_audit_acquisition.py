@@ -642,3 +642,88 @@ def test_conditional_hit_reuses_non_utf8_decoding_and_current_http_facts(
     )
     assert recovered.show_audit(plan.plan_id) == service.show_audit(plan.plan_id)
     recovered.validate_all()
+
+
+@pytest.mark.parametrize(
+    "source_request,text,encoding,expected_reason",
+    [
+        (
+            SourceRequest(journal="jgr", route="feed"),
+            '<!DOCTYPE rss [<!ENTITY x "value">]>'
+            "<rss><channel><title>&x;</title></channel></rss>",
+            "cp037",
+            "invalid_response",
+        ),
+        (
+            SourceRequest(journal="jgr", route="feed"),
+            '<!DOCTYPE rss [<!ENTITY x "value">]>'
+            "<rss><channel><title>&x;</title></channel></rss>",
+            "cp500",
+            "invalid_response",
+        ),
+        (
+            SourceRequest(journal="jgr", route="feed"),
+            "<rss><channel><title>valid encoded feed</title></channel></rss>",
+            "cp037",
+            "acquired",
+        ),
+        (
+            SourceRequest(journal="jgr", route="publisher", doi="10.1029/example"),
+            "<!DOCTYPE html><html>"
+            '<meta name="citation_doi" content="10.1029/example"></html>',
+            "cp037",
+            "acquired",
+        ),
+    ],
+)
+def test_feed_xml_guards_inspect_decoded_text_without_rewriting_source_bytes(
+    tmp_path: Path,
+    source_request: SourceRequest,
+    text: str,
+    encoding: str,
+    expected_reason: str,
+) -> None:
+    import httpx
+
+    from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
+    from paper_radar.storage.artifacts import ArtifactStore
+
+    raw = text.encode(encoding)
+    database = tmp_path / "facts.sqlite3"
+    upgrade_database(database)
+    service = FixtureAudit(
+        database,
+        tmp_path / "data",
+        source_executors={
+            "http": SourceHTTPExecutor(
+                transport=httpx.MockTransport(
+                    lambda request: httpx.Response(
+                        200,
+                        headers={"Content-Type": f"text/plain; charset={encoding}"},
+                        stream=httpx.ByteStream(raw),
+                    )
+                )
+            )
+        },
+    )
+    plan = service.create_audit_plan(
+        contact_email="audit@example.org", code_identity=CodeIdentity(basis="synthetic")
+    )
+    result = service.acquire_source(
+        plan.plan_id,
+        request_key="source",
+        request=source_request,
+        contact_email="audit@example.org",
+    )
+    assert result.reason == expected_reason
+    assert result.settlement is not None and result.settlement.http is not None
+    assert result.settlement.http.decoding == encoding
+    assert service.data_root is not None
+    store = ArtifactStore(database, service.data_root)
+    if expected_reason == "invalid_response":
+        assert result.settlement.artifact_id is None
+        assert store.list_artifacts() == ()
+    else:
+        assert result.settlement.artifact_id is not None
+        assert store.read_artifact(result.settlement.artifact_id) == {"payload": raw}
+    service.validate_all()
