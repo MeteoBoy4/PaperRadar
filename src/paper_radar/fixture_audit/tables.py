@@ -12,6 +12,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 
+from paper_radar.fixture_audit import abstract_tables as abstract_tables
 from paper_radar.fixture_audit import acquisition_tables as acquisition_tables
 from paper_radar.fixture_audit import sampling_tables as sampling_tables
 from paper_radar.storage.schema import metadata

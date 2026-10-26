@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from pathlib import Path
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -250,6 +251,7 @@ class SamplingService:
         contact_email: str | None,
         code_identity: CodeIdentity | None = None,
         continuing: bool = False,
+        protection: AuditProtection | None = None,
     ) -> SamplingAuditView:
         contact = validate_contact(contact_email)
         view = self.show_audit(plan_id)
@@ -271,7 +273,11 @@ class SamplingService:
             raise FixtureError(
                 FixtureReason.PLAN_IDENTITY_MISMATCH, path="code_identity"
             )
-        with self.acquisitions.audit_execution(plan_id) as guard:
+        with (
+            nullcontext(protection)
+            if protection is not None
+            else self.acquisitions.audit_execution(plan_id)
+        ) as guard:
             for endpoint in view.plan.endpoints:
                 state = next(
                     item
