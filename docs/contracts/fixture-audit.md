@@ -66,7 +66,7 @@ validate_all 只读核验登记原字节哈希、Pydantic 重建、样本身份�
 
 `Retry-After` 支持 delta-seconds/HTTP-date；过去日期为零，无效值使用 1 秒短退避。超过 5 秒为 deferred_retry_after，不睡到下一轮；退避在两轮之间，30 秒是每轮期限。超时、403/404、304、解析与身份错误不获得额外重试。真实异步 socket I/O 用整轮取消期限，确定性测试同时注入单调时钟和等待；gzip/deflate 在累计 8 MiB 限额内解压，先检查再扩张；gzip 的所有拼接 member 共用此上限，完整消费并保留全部解压字节，未完成 member 或无效尾部拒绝。关闭环境继承，代理只能显式提供，每跳清空 cookie；不存 Set-Cookie、认证头、邮箱或原始异常。URL 仅固定路由，Feed 身份复用 A6 的完整 query 规则。
 
-HTTPFacts 只保存安全 URL、状态、轮次/重定向/重试/实际等待与 Content-Type/charset/实际解码方式。响应正文只在瞬时 SourceResponse 中且 repr 隐藏。有效 XML Feed 或显式 DOI 身份核验通过的贡献页面可保留；doiRA 只保存结构化机构事实。失败、挑战页、身份冲突与非 Feed 200 不存正文。此处只判断保留资格，不伪造已选成员、摘要命中或完整轮次。
+HTTPFacts 只保存安全 URL、状态、轮次/重定向/重试/实际等待与 Content-Type/charset/实际解码方式。响应正文只在瞬时 SourceResponse 中且 repr 隐藏。Feed XML 在原字节和有效解码文本两层拒绝 DOCTYPE/ENTITY，此规则仅用于 Feed。有效 XML Feed 或显式 DOI 身份核验通过的贡献页面可保留；doiRA 只保存结构化机构事实。失败、挑战页、身份冲突与非 Feed 200 不存正文。此处只判断保留资格，不伪造已选成员、摘要命中或完整轮次。
 
 条件头可空；带条件时必须引用已有同策略/通道/来源取得核验的 source_snapshot。无旧材料在 HTTP 前拒绝。304 只复用该既有引用，标记 reused_prior，不产生新材料或假取得时间；原始来源事实保留。取得结算的 `content_decoding` 单独记录保留材料的实际解码依据：200 来自实际取得，304 沿匹配原始材料继承，不能用本次无体 HTTP 的默认 UTF-8 代替。`http.charset/decoding` 仍只表示本次 HTTP 响应，不伪填旧头；回放/恢复按 `content_decoding` 重解析并核对原始/复用关系。计划 created_at、路线 started_at 与 settled_at 使用实际生成的 `datetime.isoformat()` UTC（+00:00）规范字符串；非法值、无时区或非规范表示拒绝，保留原始合法字节。墙钟先后不构成新的门禁，请求期限仍使用单调时钟。声明、材料引用、请求身份、计数和内容资格在 validate_all 中只读核对，并接入原有备份固定副本；恢复不联网、不取得执行锁、不自动继续。
 
