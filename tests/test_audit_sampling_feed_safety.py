@@ -100,7 +100,7 @@ def test_decoded_xml_declarations_are_rejected_for_non_utf_charsets(
                 self.calls.append(str(request.url))
                 body = (
                     '<!DOCTYPE rss [<!ENTITY x "expanded">]>'
-                    '<rss><channel><title>&x;</title></channel></rss>'
+                    "<rss><channel><title>&x;</title></channel></rss>"
                 ).encode("cp037")
                 return httpx.Response(
                     200,

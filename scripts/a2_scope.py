@@ -5,7 +5,7 @@ from __future__ import annotations
 SCOPE = "a2_01_profile_runtime_config_snapshots"
 ISSUE = 16
 SNAPSHOT_FORMAT_VERSION = 1
-MIGRATION_REVISION = "a704_screening_retry"
+MIGRATION_REVISION = "a1001_fixture_audit"
 
 # 材料组装重构只更新 service 并登记 material_assembly, 原固定测试不变。
 # 哈希在完成本票改动后固定。预期值不能从被检查文件动态生成。
@@ -15,7 +15,7 @@ MIGRATION_REVISION = "a704_screening_retry"
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_config_service.py",
-        "ccd7cea316e16348e14bcea400d392568954d5377b5f6a8a5bc36a0c4cad2d98",
+        "709e6e64338a15ad99844144f4adb26592601f1300b638b415e8ffc31e09b5f1",
     ),
     (
         "tests/test_config_validation.py",
@@ -31,7 +31,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_acceptance.py",
-        "862d629d962f7b04037baba01ccddf17c75a96f71420e1fe9fbd572844abf1bb",
+        "def2184ac25d517658f3fa040991b315d0f8d888eeb8d26ace93546df2ca1883",
     ),
 )
 
@@ -50,7 +50,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/cli.py",
-        "b5bf7b9f643fc84dcccf1227af608d8602deec167f5aeedff7efdd02d536cb66",
+        "47eff2ad8955e2e42f2f76033031334e61d1be4f6535f9d103c44e755887aa3a",
     ),
     (
         "src/paper_radar/config/__init__.py",
@@ -138,7 +138,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/check-offline",
-        "7da9535adf65a7ae809242d556d40412f65851602d6a4cde84426038ec364382",
+        "41a205087015281e5a8a921f20815f0828ef8457c57445d40f95be2bdb6d99d8",
     ),
     (
         "scripts/a2_acceptance.py",

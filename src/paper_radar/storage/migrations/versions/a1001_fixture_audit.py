@@ -89,7 +89,8 @@ def upgrade() -> None:
             request_key VARCHAR(128) NOT NULL,
             request_json TEXT NOT NULL,
             started_at TEXT NOT NULL,
-            previous_execution_id VARCHAR(64) REFERENCES audit_route_starts(execution_id),
+            previous_execution_id VARCHAR(64)
+                REFERENCES audit_route_starts(execution_id),
             UNIQUE(previous_execution_id),
             UNIQUE(plan_id, request_key),
             UNIQUE(execution_id)
@@ -142,7 +143,8 @@ def upgrade() -> None:
             route VARCHAR(32) NOT NULL,
             strategy_version VARCHAR(64) NOT NULL,
             channel VARCHAR(32) NOT NULL,
-            acquisition_id VARCHAR(64) NOT NULL REFERENCES audit_route_starts(execution_id),
+            acquisition_id VARCHAR(64) NOT NULL
+                REFERENCES audit_route_starts(execution_id),
             content_json TEXT NOT NULL,
             UNIQUE(previous_row_id),
             UNIQUE(plan_id, member_id, route, strategy_version, channel, generation),
@@ -164,8 +166,10 @@ def upgrade() -> None:
             interpretation_id VARCHAR(64) NOT NULL,
             plan_id VARCHAR(64) NOT NULL REFERENCES audit_plans(plan_id),
             request_key VARCHAR(128) NOT NULL,
-            parser_declaration_id VARCHAR(64) NOT NULL REFERENCES audit_parser_declarations(declaration_id),
-            previous_interpretation_id VARCHAR(64) REFERENCES audit_interpretations(interpretation_id),
+            parser_declaration_id VARCHAR(64) NOT NULL
+                REFERENCES audit_parser_declarations(declaration_id),
+            previous_interpretation_id VARCHAR(64)
+                REFERENCES audit_interpretations(interpretation_id),
             content_json TEXT NOT NULL,
             UNIQUE(previous_interpretation_id),
             UNIQUE(plan_id, request_key),

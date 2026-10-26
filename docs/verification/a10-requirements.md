@@ -1,0 +1,21 @@
+# A10 规格覆盖与证明边界
+
+本材料保留 #100–#108 的693个原库存ID与原文；37份完整Issue/body/comment快照嵌入 a10_coverage.json，其中新增13份完成/补修回帖只列操作证据。验收执行不访问GitHub，源原文SHA与台账最终由scope固定；不把网页后续变化静默算作本次范围。
+
+`covered`表示有效工程要求已经映射到具体公共行为、真实存在的测试和应保护材料，不表示本次门禁已经执行或通过。`superseded`保留旧原文并链接较新裁决；部分被覆盖的条款保留有效部分及片段依据。`not_assessed`只用于明确后续能力且具责任；`operational`是历史观察、裁决背景或完成记录，不充产品覆盖。草稿的null/unresolved会阻断writer，不能把缺产品AC挪入NOT_ASSESSED。
+
+采用的后续裁决：封闭来源类型与固定doiRA；Feed主摘要同样剥离前置/尾随区块；每刊前50原位次独立去重、跨刊保留关联；selected/excluded_deterministic/blocked_pending三态；HTTP一次路线最多两轮（首次+一次重试），每轮连接/重定向/流式共用30秒，最多5跳且物理请求另计；渲染等通道在A10只留枚举/接口，未安装与未执行分列；resume是联网追加，replay是历史只读，reinterpret不换成员或旧汇总。#105更具体范围只披露受阻，不实现生产人工队列，因此早期“进入人工队列”不能扩大本批职责。
+
+#107补齐整计划abstract_audit（journal=null、准确summary及四刊Feed集合）、单刊feed引用、完整summary checkpoint与旧可见settlement边界；同计划合法追加不使已登记旧完整汇总失效。真实a704五类非空迁移、活跃WAL混合、原/改名目录强隔离、移根双进程恢复、孤儿登记制品合法保留及9类重哈希语义反例均映射具体公共测试。
+
+所有安全补修独立列在extra_safety_assertions：PDF畸形模型诊断及具名模型集合身份、拼接gzip/304历史解码/UTC时间形状、解码后邮箱与Feed XML守卫、DataCite非对象类型、stored not_attempted不能跳过解释重验、complete新key取得准入/无DOI重复候选材料复用，以及summary checkpoint边界。历史补修日志不代替当前同次测试执行。
+
+三层证明不可合并：冻结v1回放重建原结论；默认validate_all/backup对新parser只证明declaration_and_reference_verified；显式匹配version/implementation声明的运行时才可available_material_reparsed。缺运行时为unsupported_history，不能把v2差异当v1损坏，也不能让backup成功冒充所有历史parser运行可用。
+
+未验范围及责任逐项保留在not_assessed：显式四刊live及来源稳定/B降级判据；阶段C完整候选优先/额外区块Screening语义/A6来源假设/生产适配；阶段D参考文献处理；阶段F正文/PDF/Docling/原字符哈希和合法渲染/授权/API/仓储运行时；Pi生产执行/认证/模型；NAS/无人值守及完整阶段A。旧a704批次仍须匹配程序恢复后显式升级工作库。本批不授予校准、生产或长期稳定资格，不修改/关闭父票100。
+
+七个能力组为registration/http_acquisition/fixed_sampling/abstract_matrix/resume_replay/isolated_recovery/same_run_acceptance。capabilities.cases只列真实测试指针，materials列实际repo路径；实际分母独立由scope固定，不从结果回填。本材料不记录未知run_id，也不在运行后填成功导致自哈希循环；同次真实check-offline/状态终态必须在台账冻结后由验收制品证明。
+
+三类必要公共断言已由 `ce106590`（集成 `881d324`）补齐并逐项接入16条关联要求：非空生产Paper/Feed/Screening/config事实在run/resume/reinterpret前后保持且无写入；8类非类型线索逐项不能提供类别依据；独立字面日期跨度/未知日期数含被排除记录。当前没有校准batch/member/evaluation表，只保护已经存在的配置与语义基线，不虚构校准事实。
+
+最终静态处置为550 covered、7 superseded、28 not_assessed、108 operational，保留693个原ID；37份来源原文逐字匹配缓存的完整任务图。全部已决条目/额外安全断言均有具体真实测试和固定文件指针；无未决项和owner冲突。存在符号仍须是可收集的test函数，不能以helper/fixture充数；实际执行与可信终态继续由冻结后的同次门禁证明。

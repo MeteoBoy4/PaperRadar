@@ -5,7 +5,7 @@ ISSUE = 85
 PARENT_ISSUE = 85
 FORMAT_VERSION = 1
 SUFFIX = ".a8.json"
-MIGRATION_REVISION = "a704_screening_retry"
+MIGRATION_REVISION = "a1001_fixture_audit"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
 FORMAT_VERSIONS = {
@@ -143,15 +143,15 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a8_acceptance.py",
-        "cded954f82704e3cf982292c6ec5bf0138ad84d508f6146a6f420d7d16a18cab",
+        "14ef2c0f21320393a95df27b722e3ae9646dce8380fddd489ff5d3e8ab567d0f",
     ),
     (
         "tests/test_a8_integrity.py",
-        "724441b4e5198c00519ee6f1a18c12a8f76d209a7c87b92a46fda7a52ff730cc",
+        "bc4241a064a463e9819baa14e9d81a7e8931ba294c675c21c6b62e9c57bf71e9",
     ),
     (
         "tests/test_a8_entry.py",
-        "673c06d68d92d90b30439dc4ac8bd29d266d6a7a3d84af3c786ced4aa585ecf2",
+        "148090d5270b8a1989ee4681ff52f6a5e1d5a38fe0faf8414c0a769c4fa5d604",
     ),
     (
         "tests/test_a8_status.py",
@@ -201,7 +201,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "tests/a8_acceptance_support.py",
-        "2a4516dc9d4f462d4f2a7f6c3106b5b0631e605f9c656e4c91e0fe96b12bd057",
+        "2bc2b90eaa623493b9b4b2ac449d72e8b6e82e0790893146103abada5e2e64fe",
     ),
     (
         "tests/a8_call_support.py",
@@ -241,11 +241,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "b90a29fb1b645c47960f7f1ca9db816495225a68d1b6ac60a6e43096f0d40840",
+        "ea761e76debed029efb9b37022c2d5dac78fccd32d31184015696618c5a9a204",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "795596859f24d1241c589afd3d28902cbc148724b0aaa25fdbfafeaec4bd1593",
+        "38b0fcea6a0028c3652dfc272829f5ac76c201430fcd2d4d187c629db85032e5",
     ),
     (
         "scripts/a1_scope.py",
@@ -253,27 +253,27 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "8022620adb20868eb7d006285baafb04991ce8e40e282d3de85b4b38b96b28e7",
+        "13652d399793600e37a62314fbb526e4e80b64c5d06fc08eadafac1216f0211a",
     ),
     (
         "scripts/a3_scope.py",
-        "3738ed6011aacbf1ce22307dc456c4168caf8a5bef57c07536a014b1451354f3",
+        "7f3988e9cfd9fe791d28dc4e179789b957cdbcd7de8c3d9f3a72eb9eddecedb2",
     ),
     (
         "scripts/a5_scope.py",
-        "ab247f370816520d8147fcf16c5d93330efb24254e580c55f87ab12af750bc4d",
+        "1577b770d8333b0448ef98677a5be1536bca5408c5aeaf7a3624dec30c3cbf0c",
     ),
     (
         "scripts/a6_scope.py",
-        "36363c351ff407b1fe746c4df37b599395e8c87341367d0f63c7c9307222a5cf",
+        "7129a93e72012c471043bbf0a6fe40f355135d7944a24a487294113ee13ec722",
     ),
     (
         "scripts/a7_scope.py",
-        "c8044cbca5252649366400a9c253c5719781df4c2304e963ebfc7b45857c0d79",
+        "2c5e6f6aed116c6f67a97e7822b1a19ed4c8f97a92453c7007586cdb21ea8ea1",
     ),
     (
         "scripts/check-offline",
-        "7da9535adf65a7ae809242d556d40412f65851602d6a4cde84426038ec364382",
+        "41a205087015281e5a8a921f20815f0828ef8457c57445d40f95be2bdb6d99d8",
     ),
     (
         "scripts/offline_evidence.py",
@@ -297,7 +297,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/verification_status.py",
-        "4db5d49e411b45777a2b32a2ac1d739b746274c1cdf7115e62c50c96640630a7",
+        "081a13f82706ebc16aee21138c40bcf6620ad8daeb8efa6338a1512f07edd1c5",
     ),
     (
         "scripts/verification_scope_registry.py",
@@ -335,15 +335,15 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/verification-status.md",
-        "ccd6c5f223cee2c7eb4d3f5d65fcc2c056293f6e50210942e7020273dcac1739",
+        "2678cca8a20454cdf01b0758bea5a904140a0ab065e573f14e9e527863d3705d",
     ),
     (
         "docs/verification/offline-evidence.md",
-        "145f4881829af1f140b3d63dfa7bd1cdccb80b07a12fbf92f7580ed54891e612",
+        "7e3aec1a3b9742792df7e29e0ba151f29775c5f70ca456f1db48ac30e9946813",
     ),
     (
         "docs/verification/a8-requirements.md",
         "102cb0f2bd14ac6ad57467b9f8cfb766d7f19620058b29bbd23ebd0a5615307f",
     ),
-    ("README.md", "72c8dc720dba8fa7a8ba76101461ab785b55c1988a3efa3e0670425bc70440a9"),
+    ("README.md", "9c21c0726ee8b270bebcfbd4c0636656354416089059299f4ea214e15d397173"),
 )

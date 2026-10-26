@@ -126,7 +126,7 @@ rpc_verified/live_verified/stage_a_verified 恒为 false。旧终态按其冻结
 
 ## A9 格式与当前输出范围
 
-状态读者支持 `.a9.json` 格式 1，并保留 A1–A8 历史格式。当前十一份主要文件加
+状态读者支持 `.a9.json` 格式 1，并保留 A1–A8 历史格式。A9 注册时十一份主要文件加
 实际 pytest 回执与 terminal 共十三份 JSON。terminal 的 A9 required 项绑定同次
 文件名、原字节哈希、格式、代码/工作树/lockfile 身份与 a9_verified；缺失、篡改、
 错误run或不支持格式都不能返回 passed/verified。
@@ -135,3 +135,13 @@ A9 自身只直接核对同次 A1、完整 A2、A3，不继承 A4–A8 通过状
 所有 required 组通过。旧terminal不自动补上A9，历史通过保持历史适用范围。
 `applicability=same` 仍独立要求当前代码、完整工作树及lockfile与运行身份一致，
 运行中或缺可信终态时不能以pytest回执宣称成功。
+
+
+## A10 结论支持
+
+当前读者增加 `.a10.json` 格式 1，保留 A1–A9 全部历史格式（完整 A2 仍为格式2）。
+当前完整成功为十二份主要文件、回执与终态，共十四份 JSON。A10 required 终态项必须
+绑定同次结论实际字节；缺失、篡改、未知格式或没有可信 terminal 均不显示 verified passed。
+A10 直接依赖 A1、完整 A2、A3、A6；其余必需组失败仍使总入口失败。
+状态只读核验既有证据，不补跑、不刷新 scope 或需求映射；登记范围外能力不随通过升级。
+最终集成树改变后旧run的applicability不同，须在最终身份重新执行完整门禁。

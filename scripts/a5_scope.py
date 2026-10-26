@@ -5,7 +5,7 @@ ISSUE = 47
 PARENT_ISSUE = 47
 FORMAT_VERSION = 1
 SUFFIX = ".a5.json"
-MIGRATION_REVISION = "a704_screening_retry"
+MIGRATION_REVISION = "a1001_fixture_audit"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
 FORMAT_VERSIONS = {
@@ -101,7 +101,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a5_acceptance.py",
-        "67e7bb7532bf7495f17e26bc13c5f77c35402fd299c0d1d07ca2f9d27214df5a",
+        "9d3fcede88c46f9c61081a1afe230b72f7d64f6c5d816ff64fb71c33c828c2bf",
     ),
     (
         "tests/test_a5_entry.py",
@@ -139,23 +139,23 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "8022620adb20868eb7d006285baafb04991ce8e40e282d3de85b4b38b96b28e7",
+        "13652d399793600e37a62314fbb526e4e80b64c5d06fc08eadafac1216f0211a",
     ),
     (
         "scripts/a3_scope.py",
-        "3738ed6011aacbf1ce22307dc456c4168caf8a5bef57c07536a014b1451354f3",
+        "7f3988e9cfd9fe791d28dc4e179789b957cdbcd7de8c3d9f3a72eb9eddecedb2",
     ),
     (
         "scripts/a4_scope.py",
-        "51f1d264fa5e092d0745cd50155072d67e6a4c2d723f05ea40994f585d927d37",
+        "3bb19c085d35ef10cbc5db45e7a78d10b330435cef14b397dc2aaa3867901326",
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "b90a29fb1b645c47960f7f1ca9db816495225a68d1b6ac60a6e43096f0d40840",
+        "ea761e76debed029efb9b37022c2d5dac78fccd32d31184015696618c5a9a204",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "795596859f24d1241c589afd3d28902cbc148724b0aaa25fdbfafeaec4bd1593",
+        "38b0fcea6a0028c3652dfc272829f5ac76c201430fcd2d4d187c629db85032e5",
     ),
     (
         "scripts/offline_evidence.py",
@@ -179,7 +179,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/check-offline",
-        "7da9535adf65a7ae809242d556d40412f65851602d6a4cde84426038ec364382",
+        "41a205087015281e5a8a921f20815f0828ef8457c57445d40f95be2bdb6d99d8",
     ),
     (
         "tests/a5_acceptance_support.py",

@@ -7,7 +7,7 @@ from scripts.verification_checks import ReceiptCounter as ReceiptCounter
 SCOPE = "a2_versioned_config_snapshots"
 ISSUE = 25
 FORMAT_VERSION = 2
-MIGRATION_REVISION = "a704_screening_retry"
+MIGRATION_REVISION = "a1001_fixture_audit"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML")
 # 固定用例数量在独立收集核对后登记。回执必须同时证明收集和三阶段通过。
@@ -142,11 +142,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_acceptance.py",
-        "862d629d962f7b04037baba01ccddf17c75a96f71420e1fe9fbd572844abf1bb",
+        "def2184ac25d517658f3fa040991b315d0f8d888eeb8d26ace93546df2ca1883",
     ),
     (
         "tests/test_a2_full_acceptance.py",
-        "dddced8dc74d42e6655d8b17fac8312cf07b022264f1b6b06e979822b8600bff",
+        "ff70beead1d601759c8bae3c826b71a470022b9efdce09a92491d39a8806c297",
     ),
     (
         "tests/test_a2_full_entry.py",
@@ -310,7 +310,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_config_service.py",
-        "ccd7cea316e16348e14bcea400d392568954d5377b5f6a8a5bc36a0c4cad2d98",
+        "709e6e64338a15ad99844144f4adb26592601f1300b638b415e8ffc31e09b5f1",
     ),
     (
         "tests/test_config_snapshot_architecture.py",
@@ -380,15 +380,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "b90a29fb1b645c47960f7f1ca9db816495225a68d1b6ac60a6e43096f0d40840",
+        "ea761e76debed029efb9b37022c2d5dac78fccd32d31184015696618c5a9a204",
     ),
     (
         "scripts/a2_test_receipt.py",
-        "795596859f24d1241c589afd3d28902cbc148724b0aaa25fdbfafeaec4bd1593",
+        "38b0fcea6a0028c3652dfc272829f5ac76c201430fcd2d4d187c629db85032e5",
     ),
     (
         "scripts/check-offline",
-        "7da9535adf65a7ae809242d556d40412f65851602d6a4cde84426038ec364382",
+        "41a205087015281e5a8a921f20815f0828ef8457c57445d40f95be2bdb6d99d8",
     ),
     (
         "scripts/offline_evidence.py",
@@ -396,7 +396,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/cli.py",
-        "b5bf7b9f643fc84dcccf1227af608d8602deec167f5aeedff7efdd02d536cb66",
+        "47eff2ad8955e2e42f2f76033031334e61d1be4f6535f9d103c44e755887aa3a",
     ),
     (
         "src/paper_radar/config/__init__.py",

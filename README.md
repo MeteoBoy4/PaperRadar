@@ -302,7 +302,7 @@ manifest 审计变化，同次调用只允许一份一致正文。从相同摘�
 重新取得的制品成员验证四阶段重建；不同 hashseed、cwd 和无序集合构造顺序保持身份，
 纯构造、回放与比较不执行 I/O。独立复现命令见[离线证据说明](docs/verification/offline-evidence.md)。
 独立 A5 验收由 #54 接入，固定绑定四阶段、回放、比较与隔离恢复能力。
-A5 当时的 check-offline 输出七份主要文件，A6 注册时为八份主要文件、总十份 JSON；A7 注册时为九份主要文件、总十一份 JSON；A8 注册时为十份主要文件、总十二份 JSON；当前 A9 为十一份主要文件、总十三份 JSON，见[当前离线证据](docs/verification/offline-evidence.md)。另有实际 pytest 执行回执与控制方终态记录；
+A5 当时的 check-offline 输出七份主要文件，A6 注册时为八份主要文件、总十份 JSON；A7 注册时为九份主要文件、总十一份 JSON；A8 注册时为十份主要文件、总十二份 JSON；A9 注册时为十一份主要文件、总十三份 JSON；当前 A10 为十二份主要文件、总十四份 JSON，见[当前离线证据](docs/verification/offline-evidence.md)。另有实际 pytest 执行回执与控制方终态记录；
 本服务不调度任务或改写人工决定，也不证明 PDF/正文的真实质量。
 
 论文事实可通过 `PaperFacts(database).map_screening_inputs(snapshot_id=..., paper_id=...)`
@@ -398,9 +398,9 @@ pytest 测试（包括冻结契约导出与只读检查测试），最后用一�
 `<run_id>.a1.json` 独立 A1 结论、`<run_id>.a2.json` 历史范围的 A2-01 结论，
 `<run_id>.a2-full.json` 完整 A2、`<run_id>.a3.json` 存储/恢复 A3 与
 `<run_id>.a4.json` Pi 供给生命周期 A4、`<run_id>.a5.json` 四阶段输入 A5 与
-`<run_id>.a6.json` 论文事实 A6 与 `<run_id>.a7.json` Screening 任务 A7 与 `<run_id>.a8.json` RPC 离线协议/任务接线 A8、`<run_id>.a9.json` Read 离线校验/配置/恢复 A9 独立结论。
-十一份主要文件共用本次 `run_id`，不重复执行整套检查。只有本次 A1、完整 A2、A3、A4、
-A5、A6、A7、A8 与 A9 都通过时返回 0；A2-01 独立保留，仍不决定整体通过。
+`<run_id>.a6.json` 论文事实 A6 与 `<run_id>.a7.json` Screening 任务 A7 与 `<run_id>.a8.json` RPC 离线协议/任务接线 A8、`<run_id>.a9.json` Read 离线校验/配置/恢复 A9、`<run_id>.a10.json` fixture/摘要审计 A10 独立结论。
+十二份主要文件共用本次 `run_id`，不重复执行整套检查。只有本次 A1、完整 A2、A3、A4、
+A5、A6、A7、A8、A9 与 A10 都通过时返回 0；A2-01 独立保留，仍不决定整体通过。
 `<run_id>.pytest.json` 另行记录脱敏测试执行回执；固定范围的收集和完整通过数量
 必须与已审查清单一致，跳过、取消选择、未完成或缺回执均不能通过。
 一次运行由 `scripts/verification_run.py` 统一组织，验收组在
@@ -427,7 +427,7 @@ A5 历史 `paper_fact_mapping` 未覆盖项保留，新增映射证明属于 A6�
 回执和终态，共十份 JSON；要求与未验证来源假设见[A6 规格对照](docs/verification/a6-requirements.md)。
 A7 独立绑定同次 A1、完整 A2、A3、A5、A6，固定 boundary/value 任务、原权威严格 JSON、
 真实 a704 migration、生产格式、源码/材料、用例分母与实际 pytest 回执；A4 仍为整体必需。
-当前正常运行共十三份 JSON；缺失或篡改 terminal、少执行、跳过、身份漂移和中断均不能通过。
+当前正常运行共十四份 JSON；缺失或篡改 terminal、少执行、跳过、身份漂移和中断均不能通过。
 15 项能力与排除项见[A7 规格对照](docs/verification/a7-requirements.md)。
 A8 另以 `.a8.json` 格式 1 直接核对同次 A1、完整 A2、A3、A5、A6、A7、实际原始字节和
 固定用例回执；13 项离线能力、40 条故事及全部子票/裁决落点见
@@ -614,3 +614,14 @@ Fixture 注册：`paper-radar fixture register fixtures/a10/historical-v1.json -
 审计继续与回放（#106）：`paper-radar audit resume PLAN_ID --database DB --data-root ROOT --contact-email EMAIL` 显式联网写入，只继续未结算或受控暂时路线，保留 unknown 和全部执行/矩阵历史；`audit replay PLAN_ID --database DB --data-root ROOT --json` 只读核验冻结 v1，按材料重解析或仅执行事实分级。代码/规则变化需新计划，未安装通道不重试。新 parser 只经服务 API 追加解释和前后字段差异，默认备份只证明其声明/引用/差异闭包；显式匹配运行时才重解析新版本。已验证两类真实进程和离线恢复子集，未执行 live 或完整 A10 门禁。
 
 完成审计引用与完整恢复（#107）：`fixture register` 可把完整审计登记为 feed 单刊引用或 `journal=null` 的 abstract_audit 整计划引用，后者核对四刊快照集合；引用只保存 plan/准确汇总/Feed SHA。完整但结果不佳仍可登记。登记原子保留当时的事实边界，后来显式 resume 不改变旧引用；`audit replay PLAN_ID --summary-sha256 SHA --database DB --data-root ROOT --json` 只读回放旧完整依据。--data-root 的 fixture 查询会明确区分材料核验与仅声明/引用核验。已通过真实 a704 五类非空升级及活跃 WAL 混合历史禁网隔离恢复/移根双进程子集；完整 A10 门禁仍由 #108 收口，真实来源和阶段 A 未验收。
+
+
+A10 以 `.a10.json` 格式 1 直接核对同次 A1、完整 A2、A3、A6；其他必需组仍决定
+总入口。固定四类注册、HTTP/策略/通道/解析/截断规则、四刊合成材料、完整历史恢复、
+实际源码与精确测试分母，完整任务图见 [A10 需求台账](docs/verification/a10-requirements.md)。
+未安装通道与未尝试分列、不计失败；产品不引入浏览器或凭据运行时。A10 仍只证明
+登记范围内的 HTTP 离线工程；四刊各 5–10 篇实际审计、来源稳定性及阶段 B 阻断判据、
+完整摘要优先与额外区块的 Screening 语义、A6 来源假设、AMS 403 后续策略、渲染/授权、
+PDF/Docling/生产导入/NAS 与完整阶段 A 均待后续。未来合法获取方式按新策略另行交付。
+`stage_a_verified/live_verified/rpc_verified` 恒 false；历史声明、合成 fixture 与评论预检
+都不是本轮 live 证据；live 产物不进入 `verification-runs/`。

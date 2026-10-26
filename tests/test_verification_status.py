@@ -42,6 +42,7 @@ def test_controller_publishes_bound_terminal_after_all_groups(
         ".a7.json",
         ".a8.json",
         ".a9.json",
+        ".a10.json",
     ]
     before = {path: path.read_bytes() for path in run.output_dir.iterdir()}
     result = subprocess.run(

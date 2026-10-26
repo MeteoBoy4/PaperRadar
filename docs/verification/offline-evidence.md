@@ -11,11 +11,12 @@
 在 `<run_id>.a5.json` 生成 #47/#54 独立 A5 结论，在 `<run_id>.a6.json` 生成 #67/#75 独立 A6 结论，
 在 `<run_id>.a7.json` 生成 #76/#84 独立 A7 结论，
 在 `<run_id>.a8.json` 生成 #85/#91 独立 A8 离线协议/任务接线结论，
-在 `<run_id>.a9.json` 生成 #92/#99 独立 Read 离线校验/配置/恢复结论；终端打印十一个主要路径及结果。测试另外生成同次
+在 `<run_id>.a9.json` 生成 #92/#99 独立 Read 离线校验/配置/恢复结论，
+在 `<run_id>.a10.json` 生成 #100/#108 fixture/摘要审计结论；终端打印十二个主要路径及结果。测试另外生成同次
 `<run_id>.pytest.json` 脱敏执行回执。控制方在全部组发布后，最后写出
-`<run_id>.terminal.json` 终态记录并打印路径，正常成功共十三份 JSON。
+`<run_id>.terminal.json` 终态记录并打印路径，正常成功共十四份 JSON。
 整套检查仅执行一次，各文件
-共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3、A4、A5、A6、A7、A8 与 A9 均通过时入口返回 0，
+共享本次 `run_id` 并绑定实际证据哈希。仅本次 A1、完整 A2、A3、A4、A5、A6、A7、A8、A9 与 A10 均通过时入口返回 0，
 A2-01 继续独立记录原有范围。离线测试与迁移验收使用临时数据库，不操作用户数据库。
 重跑不会覆盖旧证据或结论，也不会沿用旧检查状态。入口使用
 `uv run --offline --locked` 启动项目 Python；若 uv 在启动 Python 前失败，
@@ -805,7 +806,7 @@ A8 只证明离线合成协议及 test 任务接线；基础证据 #12 的 llm n
 
 ## A9 独立 Read 离线结论（#92/#99）
 
-当前完整入口生成十一份主要证据/结论，加实际 pytest 回执和可信 terminal 共十三份
+A9 注册时完整入口生成十一份主要证据/结论，加实际 pytest 回执和可信 terminal 共十三份
 JSON；六项基础检查与 A1 四份契约的历史选择不变。A9 的 required 登记直接依赖
 同次 A1、完整 A2、A3；这三组分别提供契约、配置和恢复底座。A4–A8 继续决定总门禁，
 不作为 A9 通过资格的直接前置，也不能以其历史成功替代 Read 证明。
@@ -833,3 +834,28 @@ A9 scope 固定实际 reading 全包、配置/恢复消费者、新测试、work
 stage_a_verified、live_verified、rpc_verified 恒 false。orig 哈希覆盖、真实 PDF/
 正文质量、四刊 fixture、语义蕴含、map 来源链、Read StageInput/任务/预算、生产
 Pi/模型、校准/NAS及完整阶段 A 仍未验证，完整范围见 [Read Contract](../contracts/read-validation.md)。
+
+
+## A10 独立 HTTP 工程结论（#100/#108）
+
+当前完整入口生成十二份主要文件与 pytest 回执、控制方 terminal，共十四份 JSON。
+A10 required 直接前置精确为同次 A1、完整 A2、A3、A6；A2-01 历史非必需范围保留，
+其他既有 required 组仍共同决定总出口。A1 四份检查选择、全产品五份契约和六检查不变。
+
+writer 固定真实 registration/acquisition_strategy/channels/http/parser/UA/sampling/category/
+abstract/truncation/matrix、A6 规则与 backup 格式；真实临时库 base→head 必须到达
+`a1001_fixture_audit`。源码、声明/合成材料、任务图 ledger 及其引用测试/文档都冻结，
+精确逐模块分母由源码/参数化独立审阅，collect 只核对。完整要求与处置见
+[A10 需求台账](a10-requirements.md)，必要 scope 变更见 [审阅记录](a10-scope-review.md)。
+
+结论绑定实际同次前置原字节与反向链接、真实完整执行回执及前后代码/工作树/lockfile。
+缺测、skip/deselect/collect-only、错误分母、源码/材料/台账漂移、旧回执/旧前置、错误策略/
+channel、未知格式或发布中断均不能通过。发布后仍须可信 terminal，状态为 passed / verified /
+applicability=same；最终集成提交或审查修复变动后须重新出具同次完整结论。
+
+7项 capabilities 只证明注册、HTTP、固定选样、摘要矩阵、resume/replay、隔离恢复及同次验收。
+stage_a_verified/live_verified/rpc_verified 恒 false；四刊实际5–10篇、稳定性/B门禁判据、
+完整摘要优先与额外区块的Screening语义、A6来源假设、AMS403、渲染/授权/其他执行器、
+正文/PDF/Docling、生产导入、NAS、模型与完整阶段A均未验。未来合法通道可提升策略版本
+独立补跑，不改旧审计；评论预检/历史声明/synthetic不构成本轮live。真实live材料另存，
+不进入离线运行证据目录。
