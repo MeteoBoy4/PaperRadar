@@ -565,7 +565,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/abstract_service.py",
-        "806d5728927e1f92d2ce7ea1779d8587ff0b47be048cc469d9b54fde190afe38",
+        "ae91e9c10fe61ae93c6874616f17b6ef8f6aae6671a0117b6f93effa7bc2d30a",
     ),
     (
         "src/paper_radar/fixture_audit/abstract_tables.py",
