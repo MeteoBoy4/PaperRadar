@@ -314,13 +314,17 @@ class AcquisitionService:
                 settled_at=utc_now(),
             )
         if facts.reason != "acquired" or response.body is None:
-            return SourceSettlement(
-                reason=facts.reason
+            reason = (
+                facts.reason
                 if response.body is not None or facts.reason != "acquired"
-                else "invalid_response",
-                http=facts,
-                settled_at=utc_now(),
+                else "invalid_response"
             )
+            if request.route == "doi_ra" and reason not in {
+                "not_attempted",
+                "channel_not_installed",
+            }:
+                reason = "agency_unknown"
+            return SourceSettlement(reason=reason, http=facts, settled_at=utc_now())
         inspected = inspect_source(request, response.body, facts.decoding or "utf-8")
         artifact_id, sha256, size_bytes = None, None, None
         if inspected.retain:

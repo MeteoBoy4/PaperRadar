@@ -43,6 +43,35 @@ def upgrade() -> None:
     """)
 
     op.execute("""
+        CREATE TABLE fixture_pdf_acquisitions (
+            event_no INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            pdf_id VARCHAR(64) NOT NULL,
+            sample_record_id VARCHAR(64) NOT NULL REFERENCES fixture_records(record_id),
+            request_key VARCHAR(128) NOT NULL,
+            artifact_id VARCHAR(64) NOT NULL REFERENCES artifacts(artifact_id),
+            content_json TEXT NOT NULL,
+            replaces VARCHAR(64) REFERENCES fixture_pdf_acquisitions(pdf_id),
+            UNIQUE(pdf_id),
+            UNIQUE(replaces),
+            UNIQUE(sample_record_id, request_key)
+        )
+    """)
+
+    op.execute("""
+        CREATE TABLE fixture_pdf_expectations (
+            event_no INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            expectation_id VARCHAR(64) NOT NULL,
+            pdf_id VARCHAR(64) NOT NULL REFERENCES fixture_pdf_acquisitions(pdf_id),
+            request_key VARCHAR(128) NOT NULL,
+            backend_identity VARCHAR(64) NOT NULL,
+            content_json TEXT NOT NULL,
+            UNIQUE(expectation_id),
+            UNIQUE(pdf_id, request_key),
+            UNIQUE(pdf_id, backend_identity)
+        )
+    """)
+
+    op.execute("""
         CREATE TABLE audit_plans (
             plan_id VARCHAR(64) NOT NULL PRIMARY KEY,
             plan_key VARCHAR(128) NOT NULL,

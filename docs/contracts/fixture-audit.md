@@ -1,6 +1,6 @@
 # Fixture 注册与摘要审计 Contract v1
 
-本 Contract 落实 #100 评论裁决；权威注册格式为 `paper_radar.fixture_audit.models.FixtureDeclaration`，不加入 `CONTRACT_NAMES` 或五份 Frozen Contract。#101 交付声明登记、只读历史与基本恢复；PDF 取得、路线执行、选样、矩阵及独立 A10 验收按 #102–#108 后续交付。当前不代表真实来源、Docling、模型或完整阶段 A 通过。
+本 Contract 落实 #100 评论裁决；权威注册格式为 `paper_radar.fixture_audit.models.FixtureDeclaration`，不加入 `CONTRACT_NAMES` 或五份 Frozen Contract。#101 交付声明登记、只读历史与基本恢复；#102 交付本机 PDF 字节及 backend 期望登记；路线执行、选样、矩阵及独立 A10 验收按 #103–#108 后续交付。当前不代表真实来源、Docling、模型或完整阶段 A 通过。
 
 ## 声明与身份
 
@@ -71,3 +71,67 @@ HTTPFacts 只保存安全 URL、状态、轮次/重定向/重试/实际等待与
 条件头可空；带条件时必须引用已有同策略/通道/来源取得核验的 source_snapshot。无旧材料在 HTTP 前拒绝。304 只复用该既有引用，标记 reused_prior，不产生新材料或假取得时间；原始来源事实保留。声明、材料引用、请求身份、计数和内容资格在 validate_all 中只读核对，并接入原有备份固定副本；恢复不联网、不取得执行锁、不自动继续。
 
 本票 CLI 仅 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。run/resume/replay 待后续完整工作流交付，不提前注册空命令。当前未运行真实来源审计，四刊选样、摘要矩阵、恢复继续与独立 A10 仍由后续票收口。
+
+## PDF 字节事实与 backend 期望（#102）
+
+`FixtureAudit.register_pdf(record_id, source, ...)` 读取本机给定文件，由既有 ArtifactStore
+按真实字节登记 `original_pdf`，核验长度及 SHA-256。`record_id` 必须指向已登记的 PDF
+逻辑样本，handle 仍只是来源定位。取得请求包含 `request_key`、`sample_record_id`、
+公开 `source_url`（无 userinfo/query/fragment）、`access_basis`、`license_basis` 与
+真实合法的 `observed_date`；可提供 `expected_sha256`，它必须匹配实际字节，不能代替读取。
+取得请求和结果仅在 SQLite 中保存，原声明文件不回写，源 PDF 路径不保存。许可/访问依据
+是调用方提供的取得记录，不表示许可已被判定或获准在公开仓库再分发。
+
+登记文件只证明本机给定的非空字节被完整保留，不证明 PDF 可解析、DOI/handle 与内容
+相符、合法性或版式质量通过。原声明的 `basis` 不因追加本机取得而改写；查询的 `pdf`
+投影另列字节事实、当前 PDF 和全部历史。没有本机取得时 `pdf=null`，不填占位 SHA、
+默认许可或 backend 结果。普通 acquired 声明仍不能直接绕过实际证据入口。
+
+首次取得形成 PDF 当前选择；再次选择必须显式 `replaces=当前 pdf_id` 及非空
+`replacement_reason`。替换只在同一 `(purpose, journal, key)` 下追加，旧字节与旧期望
+保持可查；悬空、跨对象、过期或循环关系拒绝。相同样本的 `request_key` 绑定完整取得
+事实，精确重试幂等，异字节、异旧记录、异原因或异取得依据均拒绝。失败最多留下合法的
+完整未引用制品，不能补出成功取得事实。
+
+`register_pdf_backend(PdfBackendRegistration | Path)` 另行追加期望，必须绑定准确的
+`pdf_id/pdf_sha256`。字段为 `request_key`、`backend_component/backend_version`、显式
+模型版本集合 `model_versions`、`extraction_fingerprint`、`reading_sha256`，以及各自独立的
+`methods_data`、`availability_open_research`。组件/模型版本非空，哈希为64位小写hex，
+模型名称不得重复，具名模型集合的输入顺序不进入 backend 身份；历史请求顺序仍原样保留。
+同一 PDF、backend 组件/版本、模型版本集合与 extraction fingerprint
+绑定一组不可变期望，不用新的请求键覆盖相同身份。旧 backend 的期望不变，更换 PDF 后
+不自动复制到新 SHA。登记成功的证明级别恒为 `shape_only`，不重算提取语义或运行 Docling。
+
+两类章节定位分别为：
+
+| state | locator | inspection_basis |
+| --- | --- | --- |
+| unverified | 不得填写 | 不得填写 |
+| located | 必须明确填写 | 必须填写检查依据 |
+| confirmed_absent | 不得虚构位置 | 必须填写确认不存在的检查依据 |
+
+未检查或缺材料不能填写 confirmed_absent。期望登记只核对检查依据存在及字段形状，
+不自行判定原文是否存在对应章节。
+
+CLI 保持四个子命令，新增显式模式：
+
+```bash
+paper-radar fixture register pdf-request.json --pdf-file sample.pdf --database DB --data-root ROOT
+paper-radar fixture register backend-request.json --backend --database DB --data-root ROOT
+paper-radar fixture check RECORD_ID --pdf --database DB --data-root ROOT --json
+paper-radar fixture show RECORD_ID --database DB --data-root ROOT --json
+```
+
+`pdf-request.json` 对应 `PdfRegistration`，`backend-request.json` 对应
+`PdfBackendRegistration`；JSON 未知/重复字段、无效日期、空版本与无效引用安全拒绝。
+公共模型接收在序列化前递归重校验实例，畸形模型只返回安全原因，不产生含字段原值的序列化诊断。
+`--pdf-file` 与 `--backend` 不可同用。`fixture check FILE` 仍只对声明原字节比对，
+`check RECORD_ID --pdf` 单独验证本机字节，返回 not_registered 或 byte_verified 及期望数；
+没有材料不等于声明漂移。`list/show` 无 `--data-root` 时查询历史登记事实，显式提供根时
+进一步核验本机字节。`validate_all` 在存在 PDF 事实时必须提供制品根。
+
+PDF 及全部旧 backend 期望进入既有 backup/restore 闭包；恢复只依赖 SQLite 和批次内
+制品，不访问原文件、来源 URL 或原声明路径，不下载 PDF、不自动解析。只有远端要求的
+待补齐声明不产生缺失制品。相同字节按既有内容寻址复用。语义核验除字节闭包外重建取得
+身份、样本作用域、替换链、预期/实际 SHA 一致性及 backend 引用；重算外层备份哈希也
+不能绕过这些检查。本批继续使用未发布 a1001 revision，所有测试从 a704 重新升级。

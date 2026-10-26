@@ -7,6 +7,7 @@ import sqlite3
 from collections.abc import Mapping
 from pathlib import Path
 
+from pydantic import ValidationError
 from sqlalchemy import Connection, select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
@@ -29,8 +30,17 @@ from paper_radar.fixture_audit.models import (
     RegistrationResult,
     parse_declaration,
 )
+from paper_radar.fixture_audit.pdf_models import (
+    PdfAcquisition,
+    PdfBackendExpectation,
+    PdfBackendRegistration,
+    PdfEvidenceCheck,
+    PdfRegistration,
+)
+from paper_radar.fixture_audit.pdf_records import load_pdf_states
 from paper_radar.fixture_audit.source_http import SourceExecutor
 from paper_radar.fixture_audit.tables import fixture_declarations, fixture_records
+from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.database import (
     DatabaseMode,
     open_database,
@@ -236,7 +246,35 @@ class FixtureAudit:
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN")
                 records = _load_records(connection)
-                return tuple(record for record in records if history or record.current)
+                samples = {
+                    record.record_id: (
+                        record.entry.purpose,
+                        record.entry.journal,
+                        record.entry.key,
+                    )
+                    for record in records
+                }
+                states = load_pdf_states(
+                    connection,
+                    samples,
+                    ArtifactStore(self.database, self.data_root or Path(".")),
+                    verify_bytes=self.data_root is not None,
+                )
+                return tuple(
+                    record.model_copy(
+                        update={
+                            "pdf": states.get(
+                                (
+                                    record.entry.purpose,
+                                    record.entry.journal,
+                                    record.entry.key,
+                                )
+                            )
+                        }
+                    )
+                    for record in records
+                    if history or record.current
+                )
         except SQLAlchemyError as error:
             raise _database_error(error) from None
         finally:
@@ -276,7 +314,7 @@ class FixtureAudit:
         except OSError:
             return DeclarationCheck(status="source_missing", source_available=False)
         declaration = parse_declaration(raw)
-        records = self.list(history=True)
+        records = FixtureAudit(self.database).list(history=True)
         matches = [
             record
             for record in records
@@ -339,6 +377,124 @@ class FixtureAudit:
     def show_audit(self, plan_id: str) -> AuditView:
         return self.acquisitions.show_audit(plan_id)
 
+    def register_pdf(
+        self,
+        record_id: str,
+        source: Path,
+        *,
+        request_key: str,
+        source_url: str,
+        access_basis: str,
+        license_basis: str,
+        observed_date: str,
+        expected_sha256: str | None = None,
+        replaces: str | None = None,
+        replacement_reason: str | None = None,
+    ) -> PdfAcquisition:
+        from paper_radar.fixture_audit.pdf_service import register_pdf
+
+        if self.data_root is None:
+            raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
+        try:
+            request = PdfRegistration.model_validate(
+                {
+                    "sample_record_id": record_id,
+                    "request_key": request_key,
+                    "source_url": source_url,
+                    "access_basis": access_basis,
+                    "license_basis": license_basis,
+                    "observed_date": observed_date,
+                    "expected_sha256": expected_sha256,
+                    "replaces": replaces,
+                    "replacement_reason": replacement_reason,
+                }
+            )
+        except (ValidationError, ValueError):
+            raise FixtureError(FixtureReason.INVALID_DECLARATION, path="pdf") from None
+        records = self.list(history=True)
+        samples = {
+            record.record_id: (
+                record.entry.purpose,
+                record.entry.journal,
+                record.entry.key,
+            )
+            for record in records
+        }
+        try:
+            return register_pdf(self.database, self.data_root, source, request, samples)
+        except SQLAlchemyError as error:
+            raise _database_error(error) from None
+
+    def register_pdf_request(self, request_file: Path, source: Path) -> PdfAcquisition:
+        from paper_radar.fixture_audit.pdf_requests import read_pdf_request
+
+        request = read_pdf_request(request_file, PdfRegistration)
+        return self.register_pdf(
+            request.sample_record_id,
+            source,
+            request_key=request.request_key,
+            source_url=request.source_url,
+            access_basis=request.access_basis,
+            license_basis=request.license_basis,
+            observed_date=request.observed_date,
+            expected_sha256=request.expected_sha256,
+            replaces=request.replaces,
+            replacement_reason=request.replacement_reason,
+        )
+
+    def register_pdf_backend(
+        self, request: PdfBackendRegistration | Path
+    ) -> PdfBackendExpectation:
+        from paper_radar.fixture_audit.pdf_requests import read_pdf_request
+        from paper_radar.fixture_audit.pdf_service import register_pdf_backend
+
+        if isinstance(request, Path):
+            request = read_pdf_request(request, PdfBackendRegistration)
+        else:
+            try:
+                request = PdfBackendRegistration.model_validate(request)
+            except (ValidationError, ValueError):
+                raise FixtureError(
+                    FixtureReason.INVALID_DECLARATION, path="pdf_backend"
+                ) from None
+        if self.data_root is None:
+            raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
+        records = self.list(history=True)
+        samples = {
+            record.record_id: (
+                record.entry.purpose,
+                record.entry.journal,
+                record.entry.key,
+            )
+            for record in records
+        }
+        try:
+            return register_pdf_backend(self.database, self.data_root, request, samples)
+        except SQLAlchemyError as error:
+            raise _database_error(error) from None
+
+    def check_pdf(self, record_id: str) -> PdfEvidenceCheck:
+        if self.data_root is None:
+            raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
+        record = self.show(record_id)
+        if record.entry.purpose != "pdf":
+            raise FixtureError(
+                FixtureReason.INVALID_REFERENCE, path="pdf.sample_record_id"
+            )
+        state = record.pdf
+        return PdfEvidenceCheck(
+            status="byte_verified" if state is not None else "not_registered",
+            current_pdf_id=state.current_pdf_id if state is not None else None,
+            acquisition_count=len(state.acquisitions) if state is not None else 0,
+            backend_expectation_count=sum(
+                len(item.backend_expectations) for item in state.acquisitions
+            )
+            if state is not None
+            else 0,
+        )
+
     def validate_all(self) -> None:
-        self.list(history=True)
+        records = self.list(history=True)
+        if self.data_root is None and any(record.pdf is not None for record in records):
+            raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
         self.acquisitions.validate_all()

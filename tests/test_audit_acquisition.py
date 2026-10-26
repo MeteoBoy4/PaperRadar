@@ -528,3 +528,35 @@ def test_model_copy_cannot_bypass_validation_or_emit_secret_warnings(
         )
         assert "secret" not in str(caught.value)
         assert emitted == []
+
+
+def test_doi_ra_404_is_unknown_agency_with_original_http_status(tmp_path: Path) -> None:
+    import httpx
+
+    from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
+
+    database = tmp_path / "facts.sqlite3"
+    upgrade_database(database)
+    service = FixtureAudit(
+        database,
+        tmp_path / "data",
+        source_executors={
+            "http": SourceHTTPExecutor(
+                transport=httpx.MockTransport(lambda request: httpx.Response(404))
+            )
+        },
+    )
+    plan = service.create_audit_plan(
+        contact_email="audit@example.org", code_identity=CodeIdentity(basis="synthetic")
+    )
+    result = service.acquire_source(
+        plan.plan_id,
+        request_key="ra",
+        request=SourceRequest(journal="dqkx", route="doi_ra", doi="10.3878/example"),
+        contact_email="audit@example.org",
+    )
+    assert result.reason == "agency_unknown"
+    assert result.settlement is not None and result.settlement.http is not None
+    assert result.settlement.http.reason == "not_found"
+    assert result.settlement.http.status_code == 404
+    assert result.settlement.artifact_id is None
