@@ -26,16 +26,7 @@ from paper_radar.fixture_audit.sampling_rules import (
 
 
 def material_decoding(settlement: SourceSettlement) -> str:
-    # #103's pending integrity fix adds the retained-content field. Until that
-    # integration arrives the original non-304 source still carries http.decoding.
-    retained = getattr(settlement, "content_decoding", None)
-    return (
-        retained
-        if isinstance(retained, str)
-        else settlement.http.decoding
-        if settlement.http and settlement.http.decoding
-        else "utf-8"
-    )
+    return settlement.content_decoding or "utf-8"
 
 
 def evaluate_candidate(
