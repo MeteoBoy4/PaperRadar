@@ -41,7 +41,7 @@ def test_a7_only_failure_blocks_real_entry_even_when_full_a2_passes(
     assert a7["status"] == "failed" and not a7["a7_verified"]
     assert {reason["code"] for reason in a7["reasons"]} == {"scope_drift"}
     assert all(value == "failed" for value in a7["capabilities"].values())
-    assert len(tuple(output.glob("*.json"))) == 13
+    assert len(tuple(output.glob("*.json"))) == 14
 
 
 @pytest.mark.parametrize("failure", ["interrupt", "io"])

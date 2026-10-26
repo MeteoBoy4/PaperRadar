@@ -19,3 +19,5 @@
 三类必要公共断言已由 `ce106590`（集成 `881d324`）补齐并逐项接入16条关联要求：非空生产Paper/Feed/Screening/config事实在run/resume/reinterpret前后保持且无写入；8类非类型线索逐项不能提供类别依据；独立字面日期跨度/未知日期数含被排除记录。当前没有校准batch/member/evaluation表，只保护已经存在的配置与语义基线，不虚构校准事实。
 
 最终静态处置为550 covered、7 superseded、28 not_assessed、108 operational，保留693个原ID；37份来源原文逐字匹配缓存的完整任务图。全部已决条目/额外安全断言均有具体真实测试和固定文件指针；无未决项和owner冲突。存在符号仍须是可收集的test函数，不能以helper/fixture充数；实际执行与可信终态继续由冻结后的同次门禁证明。
+
+首轮完整门禁还发现fixture包和CLI提前加载服务破坏既有禁I/O帮助场景；按既有延迟加载边界修正，禁网/禁SQLite守卫保持。七个根/fixture/audit帮助向量独立固定在A10分母，未把此产品兼容缺陷记为未验能力。

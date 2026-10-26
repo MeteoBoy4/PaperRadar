@@ -1483,7 +1483,8 @@
         "tests/test_a10_integrity.py::test_actual_rule_support_and_coverage_bytes_are_fixed",
         "tests/test_a10_acceptance.py::test_real_pytest_plugin_records_execution_and_rejects_short_scope",
         "tests/test_a10_coverage.py::test_rebound_requirement_ledger_must_be_complete_and_point_to_real_fixed_behavior",
-        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed"
+        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -1520,7 +1521,9 @@
         "docs/contracts/backup-restore.md",
         "README.md",
         "docs/verification/offline-evidence.md",
-        "docs/contracts/verification-status.md"
+        "docs/contracts/verification-status.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -1742,7 +1745,8 @@
         "tests/test_a10_complete_recovery.py::test_mixed_wal_history_restores_with_denied_sources_and_moves_between_processes",
         "tests/test_a10_reference_recovery.py::test_rehashed_reference_damage_rejects_verify_and_never_publishes_restore",
         "tests/test_audit_matrix_recovery.py::test_acquired_material_without_persisted_interpretation_can_be_backed_up",
-        "tests/test_audit_matrix_recovery.py::test_stored_zero_request_not_attempted_settlement_remains_valid"
+        "tests/test_audit_matrix_recovery.py::test_stored_zero_request_not_attempted_settlement_remains_valid",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -1808,7 +1812,10 @@
         "tests/deny_network/sitecustomize.py",
         "tests/paper_recovery_reader.py",
         "tests/paper_recovery_support.py",
-        "tests/a10-recovery-coverage.md"
+        "tests/a10-recovery-coverage.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -2106,7 +2113,8 @@
         "tests/test_a10_integrity.py::test_actual_rule_support_and_coverage_bytes_are_fixed",
         "tests/test_a10_acceptance.py::test_real_pytest_plugin_records_execution_and_rejects_short_scope",
         "tests/test_a10_coverage.py::test_rebound_requirement_ledger_must_be_complete_and_point_to_real_fixed_behavior",
-        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed"
+        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -2143,7 +2151,9 @@
         "docs/contracts/backup-restore.md",
         "README.md",
         "docs/verification/offline-evidence.md",
-        "docs/contracts/verification-status.md"
+        "docs/contracts/verification-status.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": [
@@ -2552,7 +2562,8 @@
         "tests/test_fixture_pdf_recovery.py::test_pdf_publication_followed_by_registration_failure_leaves_no_acquisition",
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
-        "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations"
+        "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -2574,7 +2585,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -2662,7 +2676,8 @@
         "tests/test_fixture_audit_references.py::test_checkpoint_and_declaration_rollback_together_when_registration_fails",
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
-        "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary"
+        "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -2676,7 +2691,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -3036,7 +3054,8 @@
         "tests/test_fixture_pdf_recovery.py::test_pdf_publication_followed_by_registration_failure_leaves_no_acquisition",
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
-        "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations"
+        "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -3058,7 +3077,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -7239,7 +7261,8 @@
         "tests/test_audit_acquisition_recovery.py::test_nonempty_backup_restores_audit_without_source_or_contact",
         "tests/test_audit_acquisition_recovery.py::test_rehashed_backup_rejects_impossible_audit_facts",
         "tests/test_audit_acquisition.py::test_feed_xml_guards_inspect_decoded_text_without_rewriting_source_bytes",
-        "tests/test_audit_sampling_feed_safety.py::test_decoded_xml_declarations_are_rejected_for_non_utf_charsets"
+        "tests/test_audit_sampling_feed_safety.py::test_decoded_xml_declarations_are_rejected_for_non_utf_charsets",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -7269,7 +7292,10 @@
         "tests/test_audit_resume.py",
         "tests/test_audit_acquisition_recovery.py",
         "tests/test_audit_sampling_feed_safety.py",
-        "docs/contracts/fixture-audit.md"
+        "docs/contracts/fixture-audit.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -7583,7 +7609,8 @@
         "tests/test_fixture_audit_references.py::test_checkpoint_and_declaration_rollback_together_when_registration_fails",
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
-        "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary"
+        "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -7597,7 +7624,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -9282,7 +9312,8 @@
         "tests/test_audit_matrix_recovery.py::test_matrix_restores_original_text_without_original_directory_or_contact",
         "tests/test_audit_resume_cli.py::test_resume_and_replay_help_are_local_and_missing_contact_is_safe",
         "tests/test_audit_resume_cli.py::test_replay_cli_uses_retained_material_and_safe_proof_projection",
-        "tests/test_audit_resume_cli.py::test_cli_resume_retries_one_transient_route_with_new_explicit_contact"
+        "tests/test_audit_resume_cli.py::test_cli_resume_retries_one_transient_route_with_new_explicit_contact",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/cli.py",
@@ -9292,7 +9323,10 @@
         "tests/test_audit_matrix_cli.py",
         "tests/test_audit_matrix.py",
         "tests/test_audit_matrix_recovery.py",
-        "tests/test_audit_resume_cli.py"
+        "tests/test_audit_resume_cli.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -10226,7 +10260,8 @@
         "tests/test_fixture_audit_references.py::test_checkpoint_and_declaration_rollback_together_when_registration_fails",
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
-        "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary"
+        "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -10240,7 +10275,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -11978,7 +12016,8 @@
         "tests/test_audit_matrix_recovery.py::test_matrix_restores_original_text_without_original_directory_or_contact",
         "tests/test_audit_resume_cli.py::test_resume_and_replay_help_are_local_and_missing_contact_is_safe",
         "tests/test_audit_resume_cli.py::test_replay_cli_uses_retained_material_and_safe_proof_projection",
-        "tests/test_audit_resume_cli.py::test_cli_resume_retries_one_transient_route_with_new_explicit_contact"
+        "tests/test_audit_resume_cli.py::test_cli_resume_retries_one_transient_route_with_new_explicit_contact",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/cli.py",
@@ -11988,7 +12027,10 @@
         "tests/test_audit_matrix_cli.py",
         "tests/test_audit_matrix.py",
         "tests/test_audit_matrix_recovery.py",
-        "tests/test_audit_resume_cli.py"
+        "tests/test_audit_resume_cli.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -17837,7 +17879,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -17860,7 +17903,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "原评论的调查背景/结构标签/备选说明，仅保留溯源；有效行为要求由同段后续规范条款及裁决映射。",
       "not_assessed_refs": []
@@ -17986,7 +18032,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -18009,7 +18056,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "原评论的调查背景/结构标签/备选说明，仅保留溯源；有效行为要求由同段后续规范条款及裁决映射。",
       "not_assessed_refs": []
@@ -18135,7 +18185,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -18158,7 +18209,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -18363,7 +18417,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -18386,7 +18441,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "原评论的调查背景/结构标签/备选说明，仅保留溯源；有效行为要求由同段后续规范条款及裁决映射。",
       "not_assessed_refs": []
@@ -18512,7 +18570,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -18535,7 +18594,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "原评论的调查背景/结构标签/备选说明，仅保留溯源；有效行为要求由同段后续规范条款及裁决映射。",
       "not_assessed_refs": []
@@ -18661,7 +18723,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -18684,7 +18747,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "原评论的调查背景/结构标签/备选说明，仅保留溯源；有效行为要求由同段后续规范条款及裁决映射。",
       "not_assessed_refs": []
@@ -18810,7 +18876,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -18833,7 +18900,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "原评论的调查背景/结构标签/备选说明，仅保留溯源；有效行为要求由同段后续规范条款及裁决映射。",
       "not_assessed_refs": []
@@ -18957,7 +19027,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -18980,7 +19051,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "原评论的调查背景/结构标签/备选说明，仅保留溯源；有效行为要求由同段后续规范条款及裁决映射。",
       "not_assessed_refs": []
@@ -19106,7 +19180,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -19129,7 +19204,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -19255,7 +19333,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -19278,7 +19357,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -19404,7 +19486,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -19427,7 +19510,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -19553,7 +19639,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -19576,7 +19663,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -19702,7 +19792,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -19725,7 +19816,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -19851,7 +19945,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -19874,7 +19969,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -20000,7 +20098,8 @@
         "tests/test_fixture_pdf.py::test_preconstructed_backend_models_cannot_bypass_the_public_boundary",
         "tests/test_fixture_pdf.py::test_malformed_backend_models_do_not_emit_private_serializer_diagnostics",
         "tests/test_fixture_pdf.py::test_reordering_the_same_named_model_set_cannot_change_backend_expectations",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -20023,7 +20122,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -28581,7 +28683,8 @@
         "tests/test_audit_matrix_recovery.py::test_matrix_restores_original_text_without_original_directory_or_contact",
         "tests/test_audit_resume_cli.py::test_resume_and_replay_help_are_local_and_missing_contact_is_safe",
         "tests/test_audit_resume_cli.py::test_replay_cli_uses_retained_material_and_safe_proof_projection",
-        "tests/test_audit_resume_cli.py::test_cli_resume_retries_one_transient_route_with_new_explicit_contact"
+        "tests/test_audit_resume_cli.py::test_cli_resume_retries_one_transient_route_with_new_explicit_contact",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/cli.py",
@@ -28591,7 +28694,10 @@
         "tests/test_audit_matrix_cli.py",
         "tests/test_audit_matrix.py",
         "tests/test_audit_matrix_recovery.py",
-        "tests/test_audit_resume_cli.py"
+        "tests/test_audit_resume_cli.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -28669,7 +28775,8 @@
         "tests/test_audit_matrix_recovery.py::test_matrix_restores_original_text_without_original_directory_or_contact",
         "tests/test_audit_resume_cli.py::test_resume_and_replay_help_are_local_and_missing_contact_is_safe",
         "tests/test_audit_resume_cli.py::test_replay_cli_uses_retained_material_and_safe_proof_projection",
-        "tests/test_audit_resume_cli.py::test_cli_resume_retries_one_transient_route_with_new_explicit_contact"
+        "tests/test_audit_resume_cli.py::test_cli_resume_retries_one_transient_route_with_new_explicit_contact",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/cli.py",
@@ -28679,7 +28786,10 @@
         "tests/test_audit_matrix_cli.py",
         "tests/test_audit_matrix.py",
         "tests/test_audit_matrix_recovery.py",
-        "tests/test_audit_resume_cli.py"
+        "tests/test_audit_resume_cli.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -28757,7 +28867,8 @@
         "tests/test_audit_matrix_recovery.py::test_matrix_restores_original_text_without_original_directory_or_contact",
         "tests/test_audit_resume_cli.py::test_resume_and_replay_help_are_local_and_missing_contact_is_safe",
         "tests/test_audit_resume_cli.py::test_replay_cli_uses_retained_material_and_safe_proof_projection",
-        "tests/test_audit_resume_cli.py::test_cli_resume_retries_one_transient_route_with_new_explicit_contact"
+        "tests/test_audit_resume_cli.py::test_cli_resume_retries_one_transient_route_with_new_explicit_contact",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/cli.py",
@@ -28767,7 +28878,10 @@
         "tests/test_audit_matrix_cli.py",
         "tests/test_audit_matrix.py",
         "tests/test_audit_matrix_recovery.py",
-        "tests/test_audit_resume_cli.py"
+        "tests/test_audit_resume_cli.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -39534,7 +39648,8 @@
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
         "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -39549,7 +39664,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "表头/依据/代价背景，规范行为由相邻封闭表/范围条款覆盖；不将历史比例视为本轮live。",
       "not_assessed_refs": []
@@ -39640,7 +39758,8 @@
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
         "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -39655,7 +39774,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -39746,7 +39868,8 @@
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
         "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -39761,7 +39884,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -39852,7 +39978,8 @@
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
         "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -39867,7 +39994,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -39958,7 +40088,8 @@
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
         "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -39973,7 +40104,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -40064,7 +40198,8 @@
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
         "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -40079,7 +40214,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -40170,7 +40308,8 @@
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
         "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -40185,7 +40324,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -40291,7 +40433,8 @@
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
         "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
-        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements"
+        "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -40306,7 +40449,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -47833,7 +47979,8 @@
         "tests/test_a10_scope.py::test_unhashed_a10_scope_bytes_still_change_the_bound_run_identity",
         "tests/test_a10_coverage.py::test_rebound_requirement_ledger_must_be_complete_and_point_to_real_fixed_behavior",
         "tests/test_a10_isolation.py::test_product_imports_do_not_require_browser_automation",
-        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed"
+        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -47861,7 +48008,9 @@
         "scripts/check-offline",
         "scripts/verification_run.py",
         "docs/verification/offline-evidence.md",
-        "docs/contracts/verification-status.md"
+        "docs/contracts/verification-status.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "原评论的只读操作、旧状态或选择依据，规范接线与版本约束由后续具体条款固定。",
       "not_assessed_refs": []
@@ -47966,7 +48115,8 @@
         "tests/test_a10_scope.py::test_unhashed_a10_scope_bytes_still_change_the_bound_run_identity",
         "tests/test_a10_coverage.py::test_rebound_requirement_ledger_must_be_complete_and_point_to_real_fixed_behavior",
         "tests/test_a10_isolation.py::test_product_imports_do_not_require_browser_automation",
-        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed"
+        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -47994,7 +48144,9 @@
         "scripts/check-offline",
         "scripts/verification_run.py",
         "docs/verification/offline-evidence.md",
-        "docs/contracts/verification-status.md"
+        "docs/contracts/verification-status.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -48099,7 +48251,8 @@
         "tests/test_a10_scope.py::test_unhashed_a10_scope_bytes_still_change_the_bound_run_identity",
         "tests/test_a10_coverage.py::test_rebound_requirement_ledger_must_be_complete_and_point_to_real_fixed_behavior",
         "tests/test_a10_isolation.py::test_product_imports_do_not_require_browser_automation",
-        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed"
+        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -48127,7 +48280,9 @@
         "scripts/check-offline",
         "scripts/verification_run.py",
         "docs/verification/offline-evidence.md",
-        "docs/contracts/verification-status.md"
+        "docs/contracts/verification-status.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -48232,7 +48387,8 @@
         "tests/test_a10_scope.py::test_unhashed_a10_scope_bytes_still_change_the_bound_run_identity",
         "tests/test_a10_coverage.py::test_rebound_requirement_ledger_must_be_complete_and_point_to_real_fixed_behavior",
         "tests/test_a10_isolation.py::test_product_imports_do_not_require_browser_automation",
-        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed"
+        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -48260,7 +48416,9 @@
         "scripts/check-offline",
         "scripts/verification_run.py",
         "docs/verification/offline-evidence.md",
-        "docs/contracts/verification-status.md"
+        "docs/contracts/verification-status.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -48365,7 +48523,8 @@
         "tests/test_a10_scope.py::test_unhashed_a10_scope_bytes_still_change_the_bound_run_identity",
         "tests/test_a10_coverage.py::test_rebound_requirement_ledger_must_be_complete_and_point_to_real_fixed_behavior",
         "tests/test_a10_isolation.py::test_product_imports_do_not_require_browser_automation",
-        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed"
+        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -48393,7 +48552,9 @@
         "scripts/check-offline",
         "scripts/verification_run.py",
         "docs/verification/offline-evidence.md",
-        "docs/contracts/verification-status.md"
+        "docs/contracts/verification-status.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -52095,7 +52256,8 @@
         "tests/test_a10_status.py::test_a10_status_format_and_real_receipt_registration",
         "tests/test_a10_status.py::test_status_recognizes_a10_without_changing_historical_formats",
         "tests/test_a10_status.py::test_status_requires_same_a10_bytes_and_terminal",
-        "tests/test_a10_integrity.py::test_channel_enum_values_cannot_change_without_scope_review"
+        "tests/test_a10_integrity.py::test_channel_enum_values_cannot_change_without_scope_review",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "docs/contracts/fixture-audit.md",
@@ -52143,7 +52305,9 @@
         "docs/verification/offline-evidence.md",
         "docs/contracts/verification-status.md",
         "scripts/check-offline",
-        "scripts/verification_run.py"
+        "scripts/verification_run.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -52216,7 +52380,8 @@
         "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database",
         "tests/test_fixture_registry.py::test_historical_seed_has_six_reference_counts_and_four_pdf_requirements",
         "tests/test_fixture_recovery.py::test_backup_restore_reconstructs_registered_bytes_without_source_file",
-        "tests/test_fixture_recovery.py::test_rehashed_entry_tampering_is_rejected_by_backup_semantic_validation"
+        "tests/test_fixture_recovery.py::test_rehashed_entry_tampering_is_rejected_by_backup_semantic_validation",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -52227,7 +52392,10 @@
         "src/paper_radar/backup/restore.py",
         "tests/test_fixture_registry.py",
         "tests/test_fixture_cli.py",
-        "tests/test_fixture_recovery.py"
+        "tests/test_fixture_recovery.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -52377,7 +52545,8 @@
         "tests/test_a10_status.py::test_a10_status_format_and_real_receipt_registration",
         "tests/test_a10_status.py::test_status_recognizes_a10_without_changing_historical_formats",
         "tests/test_a10_status.py::test_status_requires_same_a10_bytes_and_terminal",
-        "tests/test_a10_integrity.py::test_channel_enum_values_cannot_change_without_scope_review"
+        "tests/test_a10_integrity.py::test_channel_enum_values_cannot_change_without_scope_review",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "docs/contracts/fixture-audit.md",
@@ -52425,7 +52594,9 @@
         "docs/verification/offline-evidence.md",
         "docs/contracts/verification-status.md",
         "scripts/check-offline",
-        "scripts/verification_run.py"
+        "scripts/verification_run.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -52817,14 +52988,18 @@
         "tests/test_fixture_registry.py::test_register_retains_exact_bytes_after_source_is_deleted",
         "tests/test_fixture_registry.py::test_exact_bytes_freeze_even_semantically_equivalent_whitespace",
         "tests/test_fixture_registry.py::test_invalid_declarations_are_safe_and_leave_no_records",
-        "tests/test_fixture_registry.py::test_four_purposes_are_separate_and_file_location_does_not_change_identity"
+        "tests/test_fixture_registry.py::test_four_purposes_are_separate_and_file_location_does_not_change_identity",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/cli.py",
         "src/paper_radar/fixture_audit/service.py",
         "src/paper_radar/fixture_audit/models.py",
         "tests/test_fixture_cli.py",
-        "tests/test_fixture_registry.py"
+        "tests/test_fixture_registry.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "沿用既有人工作业map，结合当前107完整恢复与108范围协议审查；不由旧子集通过数推覆盖。",
       "not_assessed_refs": []
@@ -53028,11 +53203,15 @@
       "specific_test_pointers": [
         "tests/test_fixture_cli.py::test_cli_register_check_list_show_and_missing_source",
         "tests/test_fixture_cli.py::test_fixture_help_has_no_business_side_effects",
-        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database"
+        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/cli.py",
-        "tests/test_fixture_cli.py"
+        "tests/test_fixture_cli.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "沿用既有人工作业map，结合当前107完整恢复与108范围协议审查；不由旧子集通过数推覆盖。",
       "not_assessed_refs": []
@@ -53419,7 +53598,8 @@
         "tests/test_a10_integrity.py::test_actual_rule_support_and_coverage_bytes_are_fixed",
         "tests/test_a10_acceptance.py::test_real_pytest_plugin_records_execution_and_rejects_short_scope",
         "tests/test_a10_coverage.py::test_rebound_requirement_ledger_must_be_complete_and_point_to_real_fixed_behavior",
-        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed"
+        "tests/test_a10_isolation.py::test_lockfile_and_existing_dependency_semantics_remain_fixed",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -53449,7 +53629,9 @@
         "docs/contracts/backup-restore.md",
         "README.md",
         "docs/verification/offline-evidence.md",
-        "docs/contracts/verification-status.md"
+        "docs/contracts/verification-status.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -53613,14 +53795,18 @@
         "tests/test_fixture_registry.py::test_dangling_and_cross_object_replacement_is_atomic",
         "tests/test_fixture_cli.py::test_cli_register_check_list_show_and_missing_source",
         "tests/test_fixture_cli.py::test_fixture_help_has_no_business_side_effects",
-        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database"
+        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/models.py",
         "src/paper_radar/fixture_audit/service.py",
         "src/paper_radar/fixture_audit/cli.py",
         "tests/test_fixture_registry.py",
-        "tests/test_fixture_cli.py"
+        "tests/test_fixture_cli.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "沿用既有人工作业map，结合当前107完整恢复与108范围协议审查；不由旧子集通过数推覆盖。",
       "not_assessed_refs": []
@@ -53672,14 +53858,18 @@
         "tests/test_fixture_cli.py::test_fixture_help_has_no_business_side_effects",
         "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database",
         "tests/test_fixture_pdf.py::test_declaration_check_and_local_pdf_integrity_are_independent",
-        "tests/test_fixture_pdf_cli.py::test_cli_registers_pdf_then_backend_and_reports_separate_evidence_check"
+        "tests/test_fixture_pdf_cli.py::test_cli_registers_pdf_then_backend_and_reports_separate_evidence_check",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/cli.py",
         "src/paper_radar/fixture_audit/service.py",
         "tests/test_fixture_cli.py",
         "tests/test_fixture_pdf.py",
-        "tests/test_fixture_pdf_cli.py"
+        "tests/test_fixture_pdf_cli.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "沿用既有人工作业map，结合当前107完整恢复与108范围协议审查；不由旧子集通过数推覆盖。",
       "not_assessed_refs": []
@@ -53908,7 +54098,8 @@
         "tests/test_fixture_registry.py::test_invalid_declarations_are_safe_and_leave_no_records",
         "tests/test_fixture_cli.py::test_cli_register_check_list_show_and_missing_source",
         "tests/test_fixture_cli.py::test_fixture_help_has_no_business_side_effects",
-        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database"
+        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -53923,7 +54114,10 @@
         "tests/test_fixture_pdf_cli.py",
         "tests/test_fixture_pdf_recovery.py",
         "tests/test_fixture_registry.py",
-        "tests/test_fixture_cli.py"
+        "tests/test_fixture_cli.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -61832,7 +62026,8 @@
         "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
         "tests/test_fixture_cli.py::test_cli_register_check_list_show_and_missing_source",
         "tests/test_fixture_cli.py::test_fixture_help_has_no_business_side_effects",
-        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database"
+        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -61845,7 +62040,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -62297,7 +62495,8 @@
         "tests/test_fixture_registry.py::test_invalid_declarations_are_safe_and_leave_no_records",
         "tests/test_fixture_cli.py::test_cli_register_check_list_show_and_missing_source",
         "tests/test_fixture_cli.py::test_fixture_help_has_no_business_side_effects",
-        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database"
+        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/backup/service.py",
@@ -62318,7 +62517,10 @@
         "tests/a10_recovery_reader.py",
         "tests/deny_network/sitecustomize.py",
         "tests/paper_recovery_reader.py",
-        "tests/paper_recovery_support.py"
+        "tests/paper_recovery_support.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -63194,7 +63396,8 @@
         "tests/test_fixture_cli.py::test_cli_register_check_list_show_and_missing_source",
         "tests/test_fixture_cli.py::test_fixture_help_has_no_business_side_effects",
         "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database",
-        "tests/test_a10_complete_recovery.py::test_mixed_wal_history_restores_with_denied_sources_and_moves_between_processes"
+        "tests/test_a10_complete_recovery.py::test_mixed_wal_history_restores_with_denied_sources_and_moves_between_processes",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -63209,7 +63412,10 @@
         "tests/a10_recovery_reader.py",
         "tests/deny_network/sitecustomize.py",
         "tests/paper_recovery_reader.py",
-        "tests/paper_recovery_support.py"
+        "tests/paper_recovery_support.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": []
@@ -66056,7 +66262,8 @@
         "tests/test_fixture_audit_references.py::test_checkpoint_and_declaration_rollback_together_when_registration_fails",
         "tests/test_fixture_audit_references.py::test_summary_preserves_unreferenced_started_execution_before_later_settlement",
         "tests/test_fixture_audit_references.py::test_reference_replacement_preserves_old_plan_and_original_bytes",
-        "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary"
+        "tests/test_fixture_audit_references.py::test_fixture_cli_matches_reference_proofs_and_replays_selected_summary",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "materials": [
         "src/paper_radar/fixture_audit/service.py",
@@ -66079,7 +66286,10 @@
         "docs/contracts/backup-restore.md",
         "GLOSSARY.md",
         "intent/draft.md",
-        "README.md"
+        "README.md",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ],
       "behavior_ids": [
         "declaration_exact_bytes",
@@ -66768,6 +66978,22 @@
         "README.md"
       ],
       "note": "实现加固回归，归原有效安全/闭包要求；操作回帖不是新产品规格。"
+    },
+    {
+      "assertion_id": "safety-local-cli-help",
+      "behavior_id": "fixture_cli",
+      "status": "covered",
+      "public_behavior": "根、fixture、audit帮助保持纯本地，服务延迟加载；保留既有禁网/禁SQLite替身，避免非业务CLI因SSL初始化失败。",
+      "specific_test_pointers": [
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
+      ],
+      "scope_materials": [
+        "src/paper_radar/fixture_audit/__init__.py",
+        "src/paper_radar/fixture_audit/cli.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
+      ],
+      "note": "首轮完整门禁真实暴露；旧cli_help与contract_cli共同回归，7参数新保护在A10分母中独立登记。"
     }
   ],
   "behavior_catalog": [
@@ -66873,7 +67099,7 @@
     {
       "behavior_id": "fixture_cli",
       "status": "covered",
-      "public_behavior": "fixture register/check/list/show通过公共服务读写；帮助和缺库查询不创建业务资源。",
+      "public_behavior": "fixture register/check/list/show通过公共服务读写；帮助和缺库查询不创建业务资源。 根/fixture/audit帮助在禁网络/SQLite子进程中保持可用；服务仅在实际调用时加载。",
       "public_behavior_pointers": [
         "src/paper_radar/fixture_audit/cli.py::register_command",
         "src/paper_radar/fixture_audit/cli.py::check_command",
@@ -66883,7 +67109,8 @@
       "specific_test_pointers": [
         "tests/test_fixture_cli.py::test_cli_register_check_list_show_and_missing_source",
         "tests/test_fixture_cli.py::test_fixture_help_has_no_business_side_effects",
-        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database"
+        "tests/test_fixture_cli.py::test_read_only_cli_never_creates_missing_database",
+        "tests/test_a10_isolation.py::test_root_fixture_and_audit_help_remain_local_without_business_io"
       ],
       "documentation_pointers": [],
       "limits": [],
@@ -66892,7 +67119,10 @@
       "scope_state": "required_by_A10_scope",
       "scope_materials": [
         "src/paper_radar/fixture_audit/cli.py",
-        "tests/test_fixture_cli.py"
+        "tests/test_fixture_cli.py",
+        "src/paper_radar/fixture_audit/__init__.py",
+        "tests/test_a10_isolation.py",
+        "tests/deny_external_io/sitecustomize.py"
       ]
     },
     {

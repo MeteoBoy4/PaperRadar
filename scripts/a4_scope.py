@@ -182,19 +182,19 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a4_entry.py",
-        "48ab0e4eccee9ed0f641b183fe3721c0f52da75e3e5bf9cf0997fcdfdba220f7",
+        "4ed30b5a4bfee215a6c926f375a5cc865289157ed3a0d11a16fc652e2cd45278",
     ),
     (
         "tests/test_a2_full_entry.py",
-        "170e631f6d67bbb1d904d61ecc6a712b1884e1d8407d22dc70458c95485fa16b",
+        "f335f488299732292d94f7931dcdc91e0367c5798e5d67aa5689454da17da192",
     ),
     (
         "tests/test_verification_run.py",
-        "65196031de305c040b73b3f7ae832813e1eb2af12db10b10ffe0493393c9a6ab",
+        "6b8d8b0de2cbb768c9c6987a52f7dd9b12d42ce1838873ff52e26854b7cda620",
     ),
     (
         "tests/test_verification_compatibility.py",
-        "77ddd42b829b2ea9c4cbff486ca54da3d40c9eefc3e27b4682e560841cd7b17d",
+        "33adb6c58a86acb91f81309fd603c51ae04e8ebd0738e2d28027fa5b53313897",
     ),
     (
         "tests/test_verification_integrity.py",
@@ -336,11 +336,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a3_scope.py",
-        "7f3988e9cfd9fe791d28dc4e179789b957cdbcd7de8c3d9f3a72eb9eddecedb2",
+        "8efe0301841c50ae5e0708d16d4ebba613eee56e988636b66e764e72e5058cb9",
     ),
     (
         "scripts/a2_full_scope.py",
-        "13652d399793600e37a62314fbb526e4e80b64c5d06fc08eadafac1216f0211a",
+        "44383d7a39da7e1601a0a0f876c212a68e04b1e5df936bbaf9f573d9cd597f81",
     ),
     (
         "scripts/a1_scope.py",

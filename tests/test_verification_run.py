@@ -50,7 +50,7 @@ def test_registered_group_publishes_same_run_and_can_affect_overall_result(
     assert run.conclusions["A5"][1]["a5_verified"]
     assert run.passed is (not required)
     assert len(log.read_text(encoding="utf-8").splitlines()) == 6
-    assert len(list(run.output_dir.glob("*.json"))) == 14
+    assert len(list(run.output_dir.glob("*.json"))) == 15
 
 
 @pytest.mark.parametrize(

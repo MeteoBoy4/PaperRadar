@@ -105,7 +105,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a5_entry.py",
-        "c2964e07e423525bc23a7f3c992ad169640f00727b7e716370eaf425c74b8027",
+        "0b4cde834b9fee665da07f4c00f6403584749c955bf23b61d8c6d70e632fe8a6",
     ),
     (
         "tests/test_a5_test_receipt.py",
@@ -139,15 +139,15 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "13652d399793600e37a62314fbb526e4e80b64c5d06fc08eadafac1216f0211a",
+        "44383d7a39da7e1601a0a0f876c212a68e04b1e5df936bbaf9f573d9cd597f81",
     ),
     (
         "scripts/a3_scope.py",
-        "7f3988e9cfd9fe791d28dc4e179789b957cdbcd7de8c3d9f3a72eb9eddecedb2",
+        "8efe0301841c50ae5e0708d16d4ebba613eee56e988636b66e764e72e5058cb9",
     ),
     (
         "scripts/a4_scope.py",
-        "3bb19c085d35ef10cbc5db45e7a78d10b330435cef14b397dc2aaa3867901326",
+        "f88eb0fb9a301a3ed13788600ed740f840645b25c0844f8e74d52f3b537011dd",
     ),
     (
         "scripts/a2_full_acceptance.py",

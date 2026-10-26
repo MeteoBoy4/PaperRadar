@@ -60,7 +60,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a10_coverage.py": 21,
     "tests/test_a10_entry.py": 10,
     "tests/test_a10_integrity.py": 106,
-    "tests/test_a10_isolation.py": 2,
+    "tests/test_a10_isolation.py": 9,
     "tests/test_a10_reference_recovery.py": 9,
     "tests/test_a10_scope.py": 4,
     "tests/test_a10_status.py": 11,
@@ -119,7 +119,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a10_isolation.py",
-        "eeb601ec91837408596ad581787426777f6a2141339a3bd8fc000c2e77814c91",
+        "b53e9972f960cbde722e739385e7a37b765802efbf982998b47588d18b57b25c",
     ),
     (
         "tests/test_a10_reference_recovery.py",
@@ -273,7 +273,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "13652d399793600e37a62314fbb526e4e80b64c5d06fc08eadafac1216f0211a",
+        "44383d7a39da7e1601a0a0f876c212a68e04b1e5df936bbaf9f573d9cd597f81",
     ),
     (
         "scripts/a2_test_receipt.py",
@@ -285,7 +285,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "7f3988e9cfd9fe791d28dc4e179789b957cdbcd7de8c3d9f3a72eb9eddecedb2",
+        "8efe0301841c50ae5e0708d16d4ebba613eee56e988636b66e764e72e5058cb9",
     ),
     (
         "scripts/a4_acceptance.py",
@@ -293,7 +293,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a4_scope.py",
-        "3bb19c085d35ef10cbc5db45e7a78d10b330435cef14b397dc2aaa3867901326",
+        "f88eb0fb9a301a3ed13788600ed740f840645b25c0844f8e74d52f3b537011dd",
     ),
     (
         "scripts/a5_acceptance.py",
@@ -301,7 +301,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a5_scope.py",
-        "1577b770d8333b0448ef98677a5be1536bca5408c5aeaf7a3624dec30c3cbf0c",
+        "a970107ec870a31d88d96642e9fb2cfb5e65a7911811312302f3c04bad1cf2cf",
     ),
     (
         "scripts/a6_acceptance.py",
@@ -309,7 +309,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a6_scope.py",
-        "7129a93e72012c471043bbf0a6fe40f355135d7944a24a487294113ee13ec722",
+        "48a18ddac4f5e7fffcf093f3c88da4e35995423aae1e65d50766ab1a56cc363e",
     ),
     (
         "scripts/a7_acceptance.py",
@@ -317,7 +317,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a7_scope.py",
-        "2c5e6f6aed116c6f67a97e7822b1a19ed4c8f97a92453c7007586cdb21ea8ea1",
+        "9f1d21c34b3e8c3f211b9917160cf5c8de9c5708b7147a4f3a1f978b22d6b993",
     ),
     (
         "scripts/a8_acceptance.py",
@@ -325,7 +325,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "f2071d78123a5d5bcaab5bfc4e54ee803a30905966073fcd1be1637748bac3f9",
+        "c865344a083765e906a0eddf0907ef16e8479c732ca9df4c68be2e7a3d976152",
     ),
     (
         "scripts/a9_acceptance.py",
@@ -333,7 +333,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_scope.py",
-        "d8f9dc45264bdf41ca9cb930a9bf7bf9bfb2823086b3f7f21d067af76f4b107c",
+        "b54b2590aeceed9cd1e47024c4f8abe5a9cbb5013ee014e2a38967b19a3d0436",
     ),
     (
         "scripts/audit-verification-scope",
@@ -545,7 +545,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/__init__.py",
-        "62ca4edb4cbe9f438b35af89bf54069831de6a1301a836326c5ccae6a114f7fe",
+        "f48b5256ad1b729775953ef46326713d3336f7abb143acac9ab9ed8caa9f92a9",
     ),
     (
         "src/paper_radar/fixture_audit/abstract_models.py",
@@ -605,7 +605,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/cli.py",
-        "1f061fe401007e357fbc01bdb805a8d45dc505adab9cd3f8b205d7cd71a87c0c",
+        "b7a2736f6d58cc2064abf97c3c652866a8c86922d5714628f134757b8bdc84c6",
     ),
     (
         "src/paper_radar/fixture_audit/errors.py",
@@ -1284,6 +1284,10 @@ REQUIRED_SOURCE_MODULES = (
         "b34d3a45de0d377f3a78db7d6ceed20ec2616ad36eecdfb7257f0d20a80c1ef7",
     ),
     (
+        "tests/deny_external_io/sitecustomize.py",
+        "f0148752ef89a004fcf76048cbc1f070448152683921b6d9d7c452d102a2d48d",
+    ),
+    (
         "tests/deny_network/sitecustomize.py",
         "dfce12fb68aaefd9b19ec26f1ff6bfb10b3f726fdafe6f466ec031cc2acc3288",
     ),
@@ -1365,11 +1369,11 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/a10-requirements.md",
-        "d78e1c29ccc2f0180845b28de359624559f3fa8c537d99912274643f83939214",
+        "cb62a594c4b53216dab9b2fe90a18f82d9727fb8fa27be5ad36c666f87b937c6",
     ),
     (
         "docs/verification/a10-scope-review.md",
-        "0330de041c960b27c6fa38f00db42485d2ea932a5b36dc779ce450acb888221f",
+        "3d4348c03be6d5e2e866ab0468593e6e4d2dd08ce24eb19acb17d8890f49beb2",
     ),
     (
         "docs/verification/offline-evidence.md",
@@ -1409,7 +1413,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "tests/fixtures/a10_coverage.json",
-        "06a1d534304f615b88977a2375aa7d112f1bc8c5f300cb917968a791be794318",
+        "308191db2dfe5308dbe9760625dbd27e92f7e758720d64335a6a8878b869f09b",
     ),
     ("uv.lock", "11aa458753aad1447061e7b8e5ef3adc74e53db4db98ecd36da5d88e14267512"),
 )

@@ -339,11 +339,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "13652d399793600e37a62314fbb526e4e80b64c5d06fc08eadafac1216f0211a",
+        "44383d7a39da7e1601a0a0f876c212a68e04b1e5df936bbaf9f573d9cd597f81",
     ),
     (
         "scripts/a3_scope.py",
-        "7f3988e9cfd9fe791d28dc4e179789b957cdbcd7de8c3d9f3a72eb9eddecedb2",
+        "8efe0301841c50ae5e0708d16d4ebba613eee56e988636b66e764e72e5058cb9",
     ),
     (
         "scripts/a2_full_acceptance.py",
@@ -479,23 +479,23 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a4_scope.py",
-        "3bb19c085d35ef10cbc5db45e7a78d10b330435cef14b397dc2aaa3867901326",
+        "f88eb0fb9a301a3ed13788600ed740f840645b25c0844f8e74d52f3b537011dd",
     ),
     (
         "scripts/a5_scope.py",
-        "1577b770d8333b0448ef98677a5be1536bca5408c5aeaf7a3624dec30c3cbf0c",
+        "a970107ec870a31d88d96642e9fb2cfb5e65a7911811312302f3c04bad1cf2cf",
     ),
     (
         "scripts/a6_scope.py",
-        "7129a93e72012c471043bbf0a6fe40f355135d7944a24a487294113ee13ec722",
+        "48a18ddac4f5e7fffcf093f3c88da4e35995423aae1e65d50766ab1a56cc363e",
     ),
     (
         "scripts/a7_scope.py",
-        "2c5e6f6aed116c6f67a97e7822b1a19ed4c8f97a92453c7007586cdb21ea8ea1",
+        "9f1d21c34b3e8c3f211b9917160cf5c8de9c5708b7147a4f3a1f978b22d6b993",
     ),
     (
         "scripts/a8_scope.py",
-        "f2071d78123a5d5bcaab5bfc4e54ee803a30905966073fcd1be1637748bac3f9",
+        "c865344a083765e906a0eddf0907ef16e8479c732ca9df4c68be2e7a3d976152",
     ),
 )
 

@@ -11,7 +11,6 @@ from paper_radar.backup.cli_support import BatchCommand, BatchGroup
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
 from paper_radar.fixture_audit.models import DeclarationCheck
 from paper_radar.fixture_audit.pdf_models import PdfEvidenceCheck
-from paper_radar.fixture_audit.service import FixtureAudit
 from paper_radar.storage.errors import StorageError
 
 HELP = """\
@@ -100,6 +99,8 @@ def register_command(
         typer.Option("--backend", help="source 为绑定 PDF 字节的 backend 期望 JSON"),
     ] = False,
 ) -> None:
+    from paper_radar.fixture_audit.service import FixtureAudit
+
     def register() -> object:
         service = FixtureAudit(database, data_root)
         if pdf_file is not None and backend:
@@ -127,6 +128,8 @@ def check_command(
         Path | None, typer.Option("--data-root", help="核验本机 PDF 或审计引用的制品根")
     ] = None,
 ) -> None:
+    from paper_radar.fixture_audit.service import FixtureAudit
+
     service = FixtureAudit(database, data_root)
     result = _run(
         lambda: service.check_pdf(str(source)) if pdf else service.check(source),
@@ -152,6 +155,8 @@ def list_command(
         Path | None, typer.Option("--data-root", help="可选制品根，用于核验本机字节")
     ] = None,
 ) -> None:
+    from paper_radar.fixture_audit.service import FixtureAudit
+
     _run(lambda: FixtureAudit(database, data_root).list(history=history), json_output)
 
 
@@ -166,4 +171,6 @@ def show_command(
         Path | None, typer.Option("--data-root", help="可选制品根，用于核验本机字节")
     ] = None,
 ) -> None:
+    from paper_radar.fixture_audit.service import FixtureAudit
+
     _run(lambda: FixtureAudit(database, data_root).show(record_id), json_output)

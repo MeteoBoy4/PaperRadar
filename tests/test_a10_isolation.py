@@ -6,6 +6,8 @@ import importlib
 import tomllib
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -51,3 +53,42 @@ def test_lockfile_and_existing_dependency_semantics_remain_fixed() -> None:
             expected
             == importlib.import_module(f"scripts.{scope}_scope").REQUIRED_DEPENDENCIES
         )
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ["--help"],
+        ["fixture", "--help"],
+        ["fixture", "register", "--help"],
+        ["audit", "--help"],
+        ["audit", "run", "--help"],
+        ["audit", "resume", "--help"],
+        ["audit", "replay", "--help"],
+    ],
+)
+def test_root_fixture_and_audit_help_remain_local_without_business_io(
+    tmp_path: Path, arguments: list[str]
+) -> None:
+    import os
+    import subprocess
+    import sys
+
+    executed = subprocess.run(
+        [str(Path(sys.executable).parent / "paper-radar"), *arguments],
+        cwd=tmp_path,
+        env={
+            "PATH": os.environ["PATH"],
+            "PYTHONPATH": str(ROOT / "tests/deny_external_io"),
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONIOENCODING": "utf-8",
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert executed.returncode == 0, executed.stderr
+    assert "示例" in executed.stdout
+    assert executed.stderr == ""
+    assert list(tmp_path.iterdir()) == []

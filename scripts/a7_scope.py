@@ -238,7 +238,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_entry.py",
-        "d1d0d074380da63ba1aab8145ba0fc210e2aa692820000cfb5ed32ef4d9710df",
+        "e59861bb282e5dfb07a5254ec7849ea9aad93885e0833bfef83ef8187dc9ede1",
     ),
     (
         "tests/test_a7_status.py",
@@ -268,7 +268,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "13652d399793600e37a62314fbb526e4e80b64c5d06fc08eadafac1216f0211a",
+        "44383d7a39da7e1601a0a0f876c212a68e04b1e5df936bbaf9f573d9cd597f81",
     ),
     (
         "scripts/a2_test_receipt.py",
@@ -276,15 +276,15 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "7f3988e9cfd9fe791d28dc4e179789b957cdbcd7de8c3d9f3a72eb9eddecedb2",
+        "8efe0301841c50ae5e0708d16d4ebba613eee56e988636b66e764e72e5058cb9",
     ),
     (
         "scripts/a5_scope.py",
-        "1577b770d8333b0448ef98677a5be1536bca5408c5aeaf7a3624dec30c3cbf0c",
+        "a970107ec870a31d88d96642e9fb2cfb5e65a7911811312302f3c04bad1cf2cf",
     ),
     (
         "scripts/a6_scope.py",
-        "7129a93e72012c471043bbf0a6fe40f355135d7944a24a487294113ee13ec722",
+        "48a18ddac4f5e7fffcf093f3c88da4e35995423aae1e65d50766ab1a56cc363e",
     ),
     (
         "scripts/a7_acceptance.py",

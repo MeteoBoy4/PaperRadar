@@ -130,11 +130,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_verification_run.py",
-        "65196031de305c040b73b3f7ae832813e1eb2af12db10b10ffe0493393c9a6ab",
+        "6b8d8b0de2cbb768c9c6987a52f7dd9b12d42ce1838873ff52e26854b7cda620",
     ),
     (
         "tests/test_verification_compatibility.py",
-        "77ddd42b829b2ea9c4cbff486ca54da3d40c9eefc3e27b4682e560841cd7b17d",
+        "33adb6c58a86acb91f81309fd603c51ae04e8ebd0738e2d28027fa5b53313897",
     ),
     (
         "tests/test_config_material_compatibility.py",
@@ -150,7 +150,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a2_full_entry.py",
-        "170e631f6d67bbb1d904d61ecc6a712b1884e1d8407d22dc70458c95485fa16b",
+        "f335f488299732292d94f7931dcdc91e0367c5798e5d67aa5689454da17da192",
     ),
     (
         "tests/test_a2_full_examples.py",
