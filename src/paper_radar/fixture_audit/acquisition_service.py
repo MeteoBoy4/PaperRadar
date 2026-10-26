@@ -45,6 +45,7 @@ from paper_radar.fixture_audit.source_http import (
     SourceExecutor,
     SourceHTTPExecutor,
     SourceResponse,
+    body_is_contact_free,
 )
 from paper_radar.fixture_audit.source_validation import inspect_source
 from paper_radar.storage.artifacts import ArtifactStore
@@ -229,7 +230,9 @@ class AcquisitionService:
                     contact.casefold() in response.facts.model_dump_json().casefold()
                     or (
                         response.body is not None
-                        and contact.casefold().encode() in response.body.lower()
+                        and not body_is_contact_free(
+                            response.body, response.facts.decoding, contact
+                        )
                     )
                 ):
                     raise FixtureError(FixtureReason.INVALID_REQUEST, path="executor")

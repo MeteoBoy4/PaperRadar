@@ -352,3 +352,21 @@ def test_concatenated_gzip_members_share_one_decompressed_byte_limit() -> None:
     )
     assert response.facts.reason == "invalid_response"
     assert response.body is None
+
+
+def test_contact_check_rejects_text_that_cannot_be_safely_decoded() -> None:
+    response = SourceHTTPExecutor(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200,
+                headers={"Content-Type": "text/html; charset=utf-16"},
+                stream=httpx.ByteStream(b"\x01"),
+            )
+        )
+    ).fetch(
+        SourceRequest(journal="jgr", route="publisher", doi="10.1029/example"),
+        contact_email="audit@example.org",
+    )
+    assert response.facts.reason == "invalid_response"
+    assert response.facts.physical_requests == 1
+    assert response.body is None
