@@ -15,6 +15,8 @@ CHANNELS_VERSION = "audit-channels-v1"
 HTTP_RULES_VERSION = "audit-http-v1"
 PARSER_VERSION = "audit-parser-v1"
 UA_TEMPLATE_VERSION = "identified-public-v1"
+SAMPLING_RULES_VERSION = "audit-sampling-v1"
+CATEGORY_RULES_VERSION = "audit-category-v1"
 Channel = Literal["http", "browser_render", "official_api", "repository"]
 Route = Literal["feed", "doi_ra", "registry_crossref", "registry_datacite", "publisher"]
 SourceReason = Literal[
@@ -64,6 +66,8 @@ class AuditPlan(FrozenModel):
     channels_version: str = CHANNELS_VERSION
     http_rules_version: str = HTTP_RULES_VERSION
     parser_version: str = PARSER_VERSION
+    sampling_rules_version: str = SAMPLING_RULES_VERSION
+    category_rules_version: str = CATEGORY_RULES_VERSION
     ua_template_version: str = UA_TEMPLATE_VERSION
     created_at: str
 

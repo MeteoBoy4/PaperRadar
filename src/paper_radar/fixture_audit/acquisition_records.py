@@ -9,9 +9,11 @@ from sqlalchemy import Connection, select
 
 from paper_radar.fixture_audit.acquisition_models import (
     ACQUISITION_STRATEGY_VERSION,
+    CATEGORY_RULES_VERSION,
     CHANNELS_VERSION,
     HTTP_RULES_VERSION,
     PARSER_VERSION,
+    SAMPLING_RULES_VERSION,
     UA_TEMPLATE_VERSION,
     AuditPlan,
     AuditView,
@@ -50,6 +52,8 @@ def load_audits(connection: Connection) -> tuple[AuditView, ...]:
                 or identity_sha256(plan.model_copy(update={"plan_id": ""}))
                 != plan.plan_id
                 or plan.endpoints != FEED_ENDPOINTS
+                or plan.sampling_rules_version != SAMPLING_RULES_VERSION
+                or plan.category_rules_version != CATEGORY_RULES_VERSION
                 or (
                     plan.acquisition_strategy_version,
                     plan.channels_version,

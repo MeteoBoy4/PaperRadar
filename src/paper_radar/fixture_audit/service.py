@@ -13,7 +13,6 @@ from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
 from paper_radar.fixture_audit.acquisition_models import (
     AuditPlan,
-    AuditView,
     Channel,
     CodeIdentity,
     RouteExecution,
@@ -38,6 +37,8 @@ from paper_radar.fixture_audit.pdf_models import (
     PdfRegistration,
 )
 from paper_radar.fixture_audit.pdf_records import load_pdf_states
+from paper_radar.fixture_audit.sampling_models import SamplingAuditView
+from paper_radar.fixture_audit.sampling_service import SamplingService
 from paper_radar.fixture_audit.source_http import SourceExecutor
 from paper_radar.fixture_audit.tables import fixture_declarations, fixture_records
 from paper_radar.storage.artifacts import ArtifactStore
@@ -148,6 +149,7 @@ class FixtureAudit:
         self.database = database
         self.data_root = data_root
         self.acquisitions = AcquisitionService(database, data_root, source_executors)
+        self.sampling = SamplingService(database, data_root, self.acquisitions)
 
     def register(self, source: Path) -> RegistrationResult:
         try:
@@ -371,11 +373,36 @@ class FixtureAudit:
             protection=protection,
         )
 
-    def list_audits(self) -> tuple[AuditView, ...]:
-        return self.acquisitions.list_audits()
+    def list_audits(self) -> tuple[SamplingAuditView, ...]:
+        return self.sampling.list_audits()
 
-    def show_audit(self, plan_id: str) -> AuditView:
-        return self.acquisitions.show_audit(plan_id)
+    def show_audit(self, plan_id: str) -> SamplingAuditView:
+        return self.sampling.show_audit(plan_id)
+
+    def select_audit_samples(
+        self,
+        plan_id: str,
+        *,
+        contact_email: str | None,
+        code_identity: CodeIdentity | None = None,
+    ) -> SamplingAuditView:
+        return self.sampling.advance(
+            plan_id, contact_email=contact_email, code_identity=code_identity
+        )
+
+    def continue_audit_sampling(
+        self,
+        plan_id: str,
+        *,
+        contact_email: str | None,
+        code_identity: CodeIdentity | None = None,
+    ) -> SamplingAuditView:
+        return self.sampling.advance(
+            plan_id,
+            contact_email=contact_email,
+            code_identity=code_identity,
+            continuing=True,
+        )
 
     def register_pdf(
         self,
@@ -498,3 +525,4 @@ class FixtureAudit:
         if self.data_root is None and any(record.pdf is not None for record in records):
             raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
         self.acquisitions.validate_all()
+        self.sampling.validate_all()
