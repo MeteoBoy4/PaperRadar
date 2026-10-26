@@ -560,3 +560,85 @@ def test_doi_ra_404_is_unknown_agency_with_original_http_status(tmp_path: Path) 
     assert result.settlement.http.reason == "not_found"
     assert result.settlement.http.status_code == 404
     assert result.settlement.artifact_id is None
+
+
+def test_conditional_hit_reuses_non_utf8_decoding_and_current_http_facts(
+    tmp_path: Path,
+) -> None:
+    import httpx
+
+    from paper_radar.backup import create_backup
+    from paper_radar.backup.restore import restore_backup
+    from paper_radar.fixture_audit.models import ConditionalHeaders
+    from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
+    from paper_radar.storage.artifacts import ArtifactStore
+
+    raw = (
+        '<?xml version="1.0" encoding="gb18030"?>'
+        "<rss><channel><title>中文摘要来源</title></channel></rss>"
+    ).encode("gb18030")
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if len(calls) == 1:
+            return httpx.Response(
+                200,
+                headers={"Content-Type": "application/rss+xml; charset=gb18030"},
+                stream=httpx.ByteStream(raw),
+            )
+        return httpx.Response(304)
+
+    database = tmp_path / "facts.sqlite3"
+    upgrade_database(database)
+    service = FixtureAudit(
+        database,
+        tmp_path / "data",
+        source_executors={
+            "http": SourceHTTPExecutor(transport=httpx.MockTransport(handler))
+        },
+    )
+    plan = service.create_audit_plan(
+        contact_email="audit@example.org", code_identity=CodeIdentity(basis="synthetic")
+    )
+    first = service.acquire_source(
+        plan.plan_id,
+        request_key="original",
+        request=SourceRequest(journal="aies", route="feed"),
+        contact_email="audit@example.org",
+    )
+    assert first.settlement is not None and first.settlement.artifact_id is not None
+    second = service.acquire_source(
+        plan.plan_id,
+        request_key="conditional",
+        request=SourceRequest(
+            journal="aies",
+            route="feed",
+            conditional_headers=ConditionalHeaders(
+                if_none_match='"revision-one"',
+                prior_artifact_id=first.settlement.artifact_id,
+            ),
+        ),
+        contact_email="audit@example.org",
+    )
+    assert second.reason == "acquired"
+    assert second.settlement is not None and second.settlement.http is not None
+    assert second.settlement.content_decoding == "gb18030"
+    assert second.settlement.http.status_code == 304
+    assert second.settlement.http.charset is None
+    assert second.settlement.http.decoding is None
+    assert second.settlement.artifact_id == first.settlement.artifact_id
+    assert first.settlement.content_decoding == "gb18030"
+    assert len(calls) == 2
+    assert service.data_root is not None
+    assert ArtifactStore(database, service.data_root).read_artifact(
+        first.settlement.artifact_id
+    ) == {"payload": raw}
+    service.validate_all()
+    batch = create_backup(database, service.data_root, tmp_path / "backups")
+    restored = restore_backup(batch.batch_dir, tmp_path / "restored")
+    recovered = FixtureAudit(
+        restored.target_dir / "database.sqlite3", restored.target_dir
+    )
+    assert recovered.show_audit(plan.plan_id) == service.show_audit(plan.plan_id)
+    recovered.validate_all()
