@@ -31,6 +31,14 @@ class _PublisherType(HTMLParser):
             self.values.append(values["content"] or "")
 
 
+def _mapped_value(value: object, *path: str) -> object:
+    for field in path:
+        if not isinstance(value, dict):
+            return None
+        value = value.get(field)
+    return value
+
+
 def category_bases(
     journal: Journal,
     route: Route,
@@ -56,14 +64,11 @@ def category_bases(
     elif route in ("registry_crossref", "registry_datacite") and raw is not None:
         value = json.loads(raw)
         if route == "registry_crossref":
-            label = value.get("message", {}).get("type")
+            label = _mapped_value(value, "message", "type")
             locator, accepted = "message.type", "journal-article"
         else:
-            label = (
-                value.get("data", {})
-                .get("attributes", {})
-                .get("types", {})
-                .get("resourceTypeGeneral")
+            label = _mapped_value(
+                value, "data", "attributes", "types", "resourceTypeGeneral"
             )
             locator, accepted = (
                 "data.attributes.types.resourceTypeGeneral",

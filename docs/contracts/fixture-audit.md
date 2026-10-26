@@ -143,7 +143,7 @@ PDF 及全部旧 backend 期望进入既有 backup/restore 闭包；恢复只依
 
 Feed parser v1 支持 RSS、Atom、RSS 1.0 RDF；拒绝 DOCTYPE/ENTITY、NUL宽字符XML及不支持的形状，不让 XML 工具联网。XML 与最小 Feed 形状通过后才冻结唯一整份 source_snapshot 引用；失败仍可显式重取。RDF 存在 Seq 时按其资源序列排列，同时保存物理 item 定位。每刊考察前 50 原位次，重复项消耗位次。DOI 复用 A6 规范化；无 DOI 仅认原样 guid/id/rdf:about，不用题名、DOI前缀或链接推断身份。跨刊同 DOI 不互相排除；日期和精度只披露，不排序。
 
-类别依据仅 ADR-0033 闭集。Wiley category/prism:section 原值保留但不产生判定；Crossref/DataCite 其他明确类型为非 journal-article，dqkx 平台表外值/缺字段为未知，明确正负判定矛盾为冲突。Feed 位置、题名、og:type、citation_doi 均不是类别依据。citation_doi 只用于 AIES 无 DOI/guid 时，经受控 Feed link 取得显式身份，再查 doiRA/适用机构；链接本身不成为稳定标识。
+类别依据仅 ADR-0033 闭集。类型路径中的 null、数组或标量容器以及非字符串类型值均不提供明确类别依据，按未知结算；原材料与逐来源事实保留，其他刊继续推进。Wiley category/prism:section 原值保留但不产生判定；Crossref/DataCite 其他明确类型为非 journal-article，dqkx 平台表外值/缺字段为未知，明确正负判定矛盾为冲突。Feed 位置、题名、og:type、citation_doi 均不是类别依据。citation_doi 只用于 AIES 无 DOI/guid 时，经受控 Feed link 取得显式身份，再查 doiRA/适用机构；链接本身不成为稳定标识。
 
 选样期只执行身份/类别需要的路线：已有 DOI 则查 doiRA 与其适用 registry；dqkx 还核对出版者显式类型；AIES 缺 DOI 时先取出版者 citation_doi。doiRA 其他机构只关闭 registry，查询失败/404 保留 agency_unknown 与原始 HTTP 状态；单一机构404不表示全球 DOI 不存在。有效身份但无摘要的来源仍可贡献；未实现摘要矩阵，不因先有摘要而换样。
 

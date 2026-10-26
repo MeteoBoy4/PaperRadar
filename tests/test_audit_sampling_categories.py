@@ -151,3 +151,106 @@ def test_only_closed_explicit_fields_supply_category_evidence(
     if mode == "publisher_type_missing":
         assert [basis.locator for basis in outcome.category_bases] == ["item/dc:type"]
     service.validate_all()
+
+
+class NonMappingTypeSources(SamplingSources):
+    def __init__(self, types: object) -> None:
+        import json
+
+        super().__init__()
+        self.registry_raw = json.dumps(
+            {
+                "data": {
+                    "id": "10.1002/qj.synthetic",
+                    "attributes": {"doi": "10.1002/qj.synthetic", "types": types},
+                }
+            },
+            separators=(",", ":"),
+        ).encode()
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        if request.url.host == "api.datacite.org":
+            self.calls.append(str(request.url))
+            return httpx.Response(
+                200,
+                headers={"Content-Type": "application/json"},
+                stream=httpx.ByteStream(self.registry_raw),
+            )
+        return super().__call__(request)
+
+
+@pytest.mark.parametrize(
+    "types", [None, [], ["JournalArticle"], "JournalArticle", False, 5]
+)
+def test_non_mapping_type_containers_preserve_source_and_continue_other_journals(
+    tmp_path: Path, types: object
+) -> None:
+    from paper_radar.fixture_audit.acquisition_policy import FEED_ENDPOINTS
+    from paper_radar.storage.artifacts import ArtifactStore
+
+    sources = NonMappingTypeSources(types)
+    service = sampling_service(tmp_path, sources)
+    plan = service.create_audit_plan(
+        contact_email="audit@example.org", code_identity=CODE
+    )
+    view = service.select_audit_samples(
+        plan.plan_id, contact_email="audit@example.org", code_identity=CODE
+    )
+    assert [journal.status for journal in view.sampling] == ["complete"] * 4
+    qjrms = view.sampling[2]
+    assert qjrms.members == ()
+    assert qjrms.shortfall == 5
+    assert qjrms.entries[0].result == "excluded_deterministic"
+    assert qjrms.entries[0].reason == "category_unknown"
+    assert qjrms.entries[0].category_bases == ()
+    registry = next(
+        route for route in view.executions if route.request.route == "registry_datacite"
+    )
+    assert registry.reason == "acquired"
+    assert (
+        registry.settlement is not None and registry.settlement.artifact_id is not None
+    )
+    assert service.data_root is not None
+    assert ArtifactStore(service.database, service.data_root).read_artifact(
+        registry.settlement.artifact_id
+    ) == {"payload": sources.registry_raw}
+    assert FEED_ENDPOINTS[3].url in sources.calls
+    assert [len(journal.members) for journal in view.sampling] == [1, 1, 0, 1]
+    assert service.show_audit(plan.plan_id) == view
+    before_calls = tuple(sources.calls)
+    assert (
+        service.continue_audit_sampling(
+            plan.plan_id, contact_email="audit@example.org", code_identity=CODE
+        )
+        == view
+    )
+    assert tuple(sources.calls) == before_calls
+    service.validate_all()
+
+
+def test_unknown_type_source_and_selection_restore_without_original_directory(
+    tmp_path: Path,
+) -> None:
+    from paper_radar.backup import create_backup
+    from paper_radar.backup.restore import restore_backup
+    from paper_radar.fixture_audit import FixtureAudit
+
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    service = sampling_service(source_root, NonMappingTypeSources(None))
+    plan = service.create_audit_plan(
+        contact_email="audit@example.org", code_identity=CODE
+    )
+    before = service.select_audit_samples(
+        plan.plan_id, contact_email="audit@example.org", code_identity=CODE
+    )
+    assert before.sampling[2].entries[0].reason == "category_unknown"
+    assert service.data_root is not None
+    batch = create_backup(service.database, service.data_root, tmp_path / "backups")
+    source_root.rename(tmp_path / "source-unavailable")
+    restored = restore_backup(batch.batch_dir, tmp_path / "restored")
+    recovered = FixtureAudit(
+        restored.target_dir / "database.sqlite3", restored.target_dir
+    )
+    assert recovered.show_audit(plan.plan_id) == before
+    recovered.validate_all()
