@@ -21,7 +21,7 @@ def test_a8_records_production_formats_and_only_offline_capabilities(
     path, result = conclude(tmp_path, same_a8_run(tmp_path))
     assert result["status"] == "passed", result["reasons"]
     assert result["a8_verified"] is True
-    assert result["migration_revision"] == "a704_screening_retry"
+    assert result["migration_revision"] == "a1001_fixture_audit"
     assert (result["format_version"], result["issue"], result["parent_issue"]) == (
         1,
         85,

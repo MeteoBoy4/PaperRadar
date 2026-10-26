@@ -1,0 +1,283 @@
+"""声明登记和历史公共服务;写入短事务,读取固定一致视图。"""
+
+from __future__ import annotations
+
+import hashlib
+import sqlite3
+from pathlib import Path
+
+from sqlalchemy import Connection, select
+from sqlalchemy.exc import DBAPIError, SQLAlchemyError
+
+from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
+from paper_radar.fixture_audit.models import (
+    DeclarationCheck,
+    FixtureDeclaration,
+    FixtureEntry,
+    FixtureRecord,
+    RegistrationResult,
+    parse_declaration,
+)
+from paper_radar.fixture_audit.tables import fixture_declarations, fixture_records
+from paper_radar.storage.database import (
+    DatabaseMode,
+    open_database,
+    require_current_revision,
+)
+
+
+def _record_id(declaration_id: str, entry: FixtureEntry) -> str:
+    identity = "\0".join((declaration_id, entry.purpose, entry.journal, entry.key))
+    return hashlib.sha256(identity.encode()).hexdigest()
+
+
+def _database_error(error: SQLAlchemyError) -> FixtureError:
+    if (
+        isinstance(error, DBAPIError)
+        and isinstance(error.orig, sqlite3.Error)
+        and (getattr(error.orig, "sqlite_errorcode", 0) & 0xFF) == sqlite3.SQLITE_BUSY
+    ):
+        return FixtureError(FixtureReason.DATABASE_BUSY)
+    return FixtureError(FixtureReason.CORRUPT_REFERENCE)
+
+
+def _load_records(connection: Connection) -> tuple[FixtureRecord, ...]:
+    declarations: dict[str, tuple[FixtureDeclaration, str]] = {}
+    expected: dict[str, FixtureEntry] = {}
+    for row in connection.execute(select(fixture_declarations)).mappings():
+        raw = row["raw_content"]
+        if not isinstance(raw, bytes):
+            raise FixtureError(FixtureReason.CORRUPT_REFERENCE)
+        digest = hashlib.sha256(raw).hexdigest()
+        declaration = parse_declaration(raw)
+        if any(entry.basis == "acquired" for entry in declaration.entries):
+            raise FixtureError(FixtureReason.CORRUPT_REFERENCE, path="entries.basis")
+        if (
+            digest != row["raw_sha256"]
+            or digest != row["declaration_id"]
+            or declaration.declaration_key != row["declaration_key"]
+            or declaration.declared_version != row["declared_version"]
+            or declaration.format_version != row["format_version"]
+        ):
+            raise FixtureError(FixtureReason.CORRUPT_REFERENCE)
+        declarations[digest] = declaration, digest
+        for entry in declaration.entries:
+            expected[_record_id(digest, entry)] = entry
+    records: list[FixtureRecord] = []
+    current: dict[tuple[str, str, str], str] = {}
+    seen: set[str] = set()
+    replaced: set[str] = set()
+    for row in connection.execute(
+        select(fixture_records).order_by(fixture_records.c.event_no)
+    ).mappings():
+        identity = row["record_id"]
+        if identity not in expected or row["declaration_id"] not in declarations:
+            raise FixtureError(FixtureReason.CORRUPT_REFERENCE)
+        entry = expected[identity]
+        declaration, digest = declarations[row["declaration_id"]]
+        if (
+            _record_id(digest, entry) != identity
+            or entry.model_dump_json() != row["entry_json"]
+            or entry.purpose != row["purpose"]
+            or entry.journal != row["journal"]
+            or entry.key != row["sample_key"]
+            or entry.replaces != row["replaces"]
+        ):
+            raise FixtureError(FixtureReason.CORRUPT_REFERENCE)
+        logical = entry.purpose, entry.journal, entry.key
+        if entry.replaces is None:
+            if logical in current:
+                raise FixtureError(FixtureReason.CORRUPT_REFERENCE)
+        elif entry.replaces not in seen or current.get(logical) != entry.replaces:
+            raise FixtureError(FixtureReason.CORRUPT_REFERENCE)
+        else:
+            replaced.add(entry.replaces)
+        current[logical] = identity
+        seen.add(identity)
+        records.append(
+            FixtureRecord(
+                record_id=identity,
+                declaration_id=digest,
+                declaration_key=declaration.declaration_key,
+                declared_version=declaration.declared_version,
+                raw_sha256=digest,
+                entry=entry,
+                current=True,
+            )
+        )
+    if seen != set(expected):
+        raise FixtureError(FixtureReason.CORRUPT_REFERENCE)
+    return tuple(
+        record.model_copy(update={"current": record.record_id not in replaced})
+        for record in records
+    )
+
+
+class FixtureAudit:
+    """构造不打开数据库、不创建目录;实际取得字节由后续入口登记。"""
+
+    def __init__(self, database: Path, data_root: Path | None = None) -> None:
+        self.database = database
+        self.data_root = data_root
+
+    def register(self, source: Path) -> RegistrationResult:
+        try:
+            raw = source.read_bytes()
+        except OSError:
+            raise FixtureError(FixtureReason.SOURCE_UNAVAILABLE) from None
+        declaration = parse_declaration(raw)
+        if any(entry.basis == "acquired" for entry in declaration.entries):
+            raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="entries.basis")
+        digest = hashlib.sha256(raw).hexdigest()
+        engine = open_database(self.database, mode=DatabaseMode.READ_WRITE)
+        try:
+            require_current_revision(engine)
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN IMMEDIATE")
+                records = _load_records(connection)
+                existing = (
+                    connection.execute(
+                        select(fixture_declarations).where(
+                            fixture_declarations.c.declaration_key
+                            == declaration.declaration_key,
+                            fixture_declarations.c.declared_version
+                            == declaration.declared_version,
+                        )
+                    )
+                    .mappings()
+                    .first()
+                )
+                if existing is not None:
+                    if existing["raw_content"] != raw:
+                        raise FixtureError(FixtureReason.DECLARATION_CONFLICT)
+                    return RegistrationResult(
+                        declaration_id=digest,
+                        raw_sha256=digest,
+                        entries=tuple(
+                            record
+                            for record in records
+                            if record.declaration_id == digest
+                        ),
+                    )
+                current = {
+                    (
+                        record.entry.purpose,
+                        record.entry.journal,
+                        record.entry.key,
+                    ): record.record_id
+                    for record in records
+                    if record.current
+                }
+                for entry in declaration.entries:
+                    logical = entry.purpose, entry.journal, entry.key
+                    if entry.replaces != current.get(logical):
+                        raise FixtureError(
+                            FixtureReason.INVALID_REFERENCE, path="entries.replaces"
+                        )
+                connection.execute(
+                    fixture_declarations.insert().values(
+                        declaration_id=digest,
+                        declaration_key=declaration.declaration_key,
+                        declared_version=declaration.declared_version,
+                        format_version=declaration.format_version,
+                        raw_sha256=digest,
+                        raw_content=raw,
+                    )
+                )
+                for entry in declaration.entries:
+                    connection.execute(
+                        fixture_records.insert().values(
+                            record_id=_record_id(digest, entry),
+                            declaration_id=digest,
+                            purpose=entry.purpose,
+                            journal=entry.journal,
+                            sample_key=entry.key,
+                            entry_json=entry.model_dump_json(),
+                            replaces=entry.replaces,
+                        )
+                    )
+                saved = tuple(
+                    record
+                    for record in _load_records(connection)
+                    if record.declaration_id == digest
+                )
+                connection.commit()
+                return RegistrationResult(
+                    declaration_id=digest, raw_sha256=digest, entries=saved
+                )
+        except SQLAlchemyError as error:
+            raise _database_error(error) from None
+        finally:
+            engine.dispose()
+
+    def list(self, *, history: bool = False) -> tuple[FixtureRecord, ...]:
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+        try:
+            require_current_revision(engine)
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN")
+                records = _load_records(connection)
+                return tuple(record for record in records if history or record.current)
+        except SQLAlchemyError as error:
+            raise _database_error(error) from None
+        finally:
+            engine.dispose()
+
+    def show(self, record_id: str) -> FixtureRecord:
+        for record in self.list(history=True):
+            if record.record_id == record_id:
+                return record
+        raise FixtureError(FixtureReason.RECORD_NOT_FOUND, path="record_id")
+
+    def read_declaration(self, declaration_id: str) -> bytes:
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+        try:
+            require_current_revision(engine)
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN")
+                _load_records(connection)
+                raw = connection.execute(
+                    select(fixture_declarations.c.raw_content).where(
+                        fixture_declarations.c.declaration_id == declaration_id
+                    )
+                ).scalar_one_or_none()
+                if not isinstance(raw, bytes):
+                    raise FixtureError(
+                        FixtureReason.RECORD_NOT_FOUND, path="declaration_id"
+                    )
+                return raw
+        except SQLAlchemyError as error:
+            raise _database_error(error) from None
+        finally:
+            engine.dispose()
+
+    def check(self, source: Path) -> DeclarationCheck:
+        try:
+            raw = source.read_bytes()
+        except OSError:
+            return DeclarationCheck(status="source_missing", source_available=False)
+        declaration = parse_declaration(raw)
+        records = self.list(history=True)
+        matches = [
+            record
+            for record in records
+            if record.declaration_key == declaration.declaration_key
+            and record.declared_version == declaration.declared_version
+        ]
+        digest = hashlib.sha256(raw).hexdigest()
+        if not matches:
+            return DeclarationCheck(
+                status="unregistered", source_available=True, raw_sha256=digest
+            )
+        stored = matches[0]
+        return DeclarationCheck(
+            status="byte_verified"
+            if self.read_declaration(stored.declaration_id) == raw
+            else "drift",
+            source_available=True,
+            declaration_id=stored.declaration_id,
+            raw_sha256=digest,
+        )
+
+    def validate_all(self) -> None:
+        self.list(history=True)

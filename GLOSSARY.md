@@ -126,7 +126,7 @@ _Avoid_: 预印本、待发表稿
 _Avoid_: 首选期刊、校准期刊
 
 **期刊文章候选**：
-来源将其标为 `journal-article` 的 Feed 论文。第一版不在 Screening 前进一步区分研究论文、综述、社论、勘误或其他子类型；这些非目标内容可能进入 Screening，再由 Screening 识别并产生相应筛选建议。这是有意接受的初筛噪声。
+来源将其标为 `journal-article` 的 Feed 论文。平台显式类型 `article`/`论文` 按已登记类别依据作为同类声明，不据此细分子类型。第一版不在 Screening 前进一步区分研究论文、综述、社论、勘误或其他子类型；这些非目标内容可能进入 Screening，再由 Screening 识别并产生相应筛选建议。这是有意接受的初筛噪声。
 _Avoid_: 已确认研究论文、已确认综述
 
 **元数据不可得**（`metadata_unobtainable`）：
@@ -590,3 +590,25 @@ _Avoid_: 快照、运行配置快照、来源快照
 **隔离恢复**：
 从完整备份批次向空的独立位置重建并核验副本，使历史查询与制品读取不依赖原目录。恢复保留原事实与身份，不激活配置或续跑任务。
 _Avoid_: 激活配置、自动启用任务、恢复模型会话
+
+## Fixture Audit
+
+**样本声明**：
+对特定用途和期刊下的逻辑样本所作的版本化陈述，分为 historical_declaration、synthetic 与 acquired 三种依据性质。历史陈述与合成材料不能代替本机取得证据。
+_Avoid_: 实测结果、已验证来源
+
+**样本当前选择**：
+首次登记的样本及随后显式替换关系确定的当前依据，旧依据与原字节始终保留。
+_Avoid_: 最新文件、最大版本、登记时间优先
+
+**类别依据**：
+来源显式类型字段按封闭表产生的 journal-article 或非 journal-article 判定；缺字段和表外平台值为未知，明确判定矛盾为冲突。
+_Avoid_: Feed 位置、子类型预过滤、题名推断
+
+**未交付通道**（channel_not_installed）：
+策略已登记但运行时执行器尚未交付的取得通道终态，与可执行而本轮未执行的 not_attempted 分列；两者均不构成来源失败。
+_Avoid_: 网络故障、0% 命中、已执行
+
+**审计路线原因**：
+摘要审计沿用来源失败词表，并区分 not_applicable_no_doi、agency_unknown、agency_unsupported、identity_mismatch、unrecognized_page_shape、record_without_abstract、outcome_unknown、deferred_retry_after、not_attempted、disallowed_destination、disallowed_scheme 与 channel_not_installed。
+_Avoid_: 全部失败、未知即不适用

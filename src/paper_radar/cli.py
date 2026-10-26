@@ -25,6 +25,7 @@ from paper_radar.contracts import (
     export_frozen_contracts,
 )
 from paper_radar.contracts.schema import _SUPPORTED_CONTRACT_VERSIONS
+from paper_radar.fixture_audit.cli import fixture_app
 from paper_radar.papers.cli import paper_app
 from paper_radar.pi_supply.cli import DOCTOR_HELP, DoctorCommand, doctor_command, pi_app
 
@@ -179,6 +180,7 @@ contracts_app = typer.Typer(
     rich_markup_mode="markdown",
 )
 app.add_typer(paper_app, name="paper")
+app.add_typer(fixture_app, name="fixture")
 app.add_typer(contracts_app, name="contracts")
 app.add_typer(db_app, name="db")
 app.add_typer(config_app, name="config")

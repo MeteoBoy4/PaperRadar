@@ -602,3 +602,5 @@ value 从预算首次冻结的历史 snapshot、A5 严格回放和语言事实�
 旧回执精确重放不随最新代际改变。独立 A7 结论只证明这些离线任务能力；真实模型执行仍待后续切片。
 API、隐私与语义闭包见[Screening 任务 Contract](docs/contracts/screening-tasks.md)，
 规格对照与重绑责任见[A7 requirements](docs/verification/a7-requirements.md)。
+
+Fixture 注册：`paper-radar fixture register fixtures/a10/historical-v1.json --database data/paper-radar.sqlite3 --data-root data` 显式登记历史声明；`fixture check/list/show` 只读核查原字节与历史。只证明声明登记与恢复，不代表真实四刊审计或 Docling 通过。详见 [fixture 与摘要审计 Contract](docs/contracts/fixture-audit.md)。

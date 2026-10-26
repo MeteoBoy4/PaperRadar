@@ -121,8 +121,8 @@ def test_nonempty_attempt_upgrade_retains_old_attempts_and_is_atomic(
                 ).fetchall()
                 for name in expected
             } == expected
-    assert upgrade_database(target) == "a704_screening_retry"
-    assert upgrade_database(target) == "a704_screening_retry"
+    assert upgrade_database(target) == "a1001_fixture_audit"
+    assert upgrade_database(target) == "a1001_fixture_audit"
     with closing(sqlite3.connect(target)) as connection:
         assert {
             name: connection.execute(

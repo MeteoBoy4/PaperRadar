@@ -175,13 +175,15 @@ def verify_contents(root: Path, manifest: BackupManifest) -> None:
             raise BackupError(BackupReason.UNSUPPORTED_REVISION)
         blobs, artifacts, snapshot_ids = _registered_contents(database, root)
         # 业务语义只在完整副本上解析,源材料仅供复制与字节完整性检查。
+        from paper_radar.fixture_audit import FixtureAudit, FixtureError
         from paper_radar.papers import PaperError, PaperFacts
         from paper_radar.screening_tasks import ScreeningTasks, TaskError
 
         try:
             PaperFacts(database, root).validate_all()
             ScreeningTasks(database, root).validate_all()
-        except (PaperError, TaskError):
+            FixtureAudit(database, root).validate_all()
+        except (PaperError, TaskError, FixtureError):
             raise BackupError(BackupReason.REGISTRATION_INVALID) from None
         if (
             blobs != manifest.blobs
