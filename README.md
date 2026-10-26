@@ -604,3 +604,5 @@ API、隐私与语义闭包见[Screening 任务 Contract](docs/contracts/screeni
 规格对照与重绑责任见[A7 requirements](docs/verification/a7-requirements.md)。
 
 Fixture 注册：`paper-radar fixture register fixtures/a10/historical-v1.json --database data/paper-radar.sqlite3 --data-root data` 显式登记历史声明；`fixture check/list/show` 只读核查原字节与历史。只证明声明登记与恢复，不代表真实四刊审计或 Docling 通过。详见 [fixture 与摘要审计 Contract](docs/contracts/fixture-audit.md)。
+
+来源取得（#103）：公共服务先冻结计划，再以有界 HTTP/通道接口取得并保存安全执行事实；`paper-radar audit list/show --database ... --json` 只读查询。默认只交付 http，其他通道显示未安装；目前不注册空的 run/resume，不代表真实来源审计已执行。

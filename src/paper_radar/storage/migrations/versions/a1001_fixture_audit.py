@@ -41,3 +41,32 @@ def upgrade() -> None:
             CHECK(length(record_id)=64 AND record_id NOT GLOB '*[^0-9a-f]*')
         )
     """)
+
+    op.execute("""
+        CREATE TABLE audit_plans (
+            plan_id VARCHAR(64) NOT NULL PRIMARY KEY,
+            plan_key VARCHAR(128) NOT NULL,
+            plan_json TEXT NOT NULL,
+            UNIQUE(plan_key)
+        )
+    """)
+    op.execute("""
+        CREATE TABLE audit_route_starts (
+            event_no INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            execution_id VARCHAR(64) NOT NULL,
+            plan_id VARCHAR(64) NOT NULL REFERENCES audit_plans(plan_id),
+            request_key VARCHAR(128) NOT NULL,
+            request_json TEXT NOT NULL,
+            started_at TEXT NOT NULL,
+            UNIQUE(plan_id, request_key),
+            UNIQUE(execution_id)
+        )
+    """)
+    op.execute("""
+        CREATE TABLE audit_route_settlements (
+            execution_id VARCHAR(64) NOT NULL PRIMARY KEY
+                REFERENCES audit_route_starts(execution_id),
+            settlement_json TEXT NOT NULL,
+            artifact_id VARCHAR(64) REFERENCES artifacts(artifact_id)
+        )
+    """)

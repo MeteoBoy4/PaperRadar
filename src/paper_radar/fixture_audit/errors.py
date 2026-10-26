@@ -13,9 +13,25 @@ class FixtureReason(StrEnum):
     EVIDENCE_REQUIRED = "evidence_required"
     CORRUPT_REFERENCE = "corrupt_reference"
     DATABASE_BUSY = "database_busy"
+    INVALID_CONTACT = "invalid_contact"
+    INVALID_PLAN = "invalid_plan"
+    PLAN_CONFLICT = "plan_conflict"
+    INVALID_REQUEST = "invalid_request"
+    REQUEST_CONFLICT = "request_conflict"
+    EXECUTION_BUSY = "execution_busy"
+    EXECUTION_INCOMPLETE = "execution_incomplete"
+    RESULT_CONFLICT = "result_conflict"
 
 
 _GUIDANCE = {
+    FixtureReason.INVALID_CONTACT: "邮箱缺失或非法；请显式提供 --contact-email",
+    FixtureReason.INVALID_PLAN: "审计计划参数不合法；请核对 N=5–10 与规则版本",
+    FixtureReason.PLAN_CONFLICT: "计划键已绑定其他内容；请新建计划",
+    FixtureReason.INVALID_REQUEST: "来源请求不合法；请核对受控路线",
+    FixtureReason.REQUEST_CONFLICT: "请求键已冻结其他内容、策略或通道；请新建计划",
+    FixtureReason.EXECUTION_BUSY: "本计划已有执行者；请等待其退出后显式继续",
+    FixtureReason.EXECUTION_INCOMPLETE: "路线未结算；请保留未知结果并显式 resume",
+    FixtureReason.RESULT_CONFLICT: "结算与既有事实不一致；请核对历史，不能覆盖",
     FixtureReason.INVALID_DECLARATION: "声明字段不合法；请核对格式和字段路径后重交",
     FixtureReason.UNSUPPORTED_FORMAT: "声明格式版本不支持；请使用 format_version=1",
     FixtureReason.DECLARATION_CONFLICT: "同键声明原字节已冻结；请新建声明版本",
