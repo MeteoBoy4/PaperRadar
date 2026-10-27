@@ -36,7 +36,7 @@ NOT_ASSESSED = (
     "rpc_compatibility",
     "pi_execution",
     "real_model_usage_cost",
-    "original_title_language_production_source",
+    "original_title_language_production_wiring",
     "metadata_ready",
     "complete_eligibility",
     "daily_quota",
@@ -230,7 +230,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_acceptance.py",
-        "3611faf8230e99155dbdc3d4e756f4c742349c9e3f1c86ff0d022396ce3ba5ec",
+        "64e0cfc15cdfef290afcaa71c4a11aa951ce17afa58c452e097043bf35c7afe4",
     ),
     (
         "tests/test_a7_integrity.py",

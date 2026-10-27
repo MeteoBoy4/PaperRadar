@@ -10,7 +10,7 @@
 
 > 2026-10-22：按 Issue #67 用户 D1–D4、N1/N2 裁决同步论文版本身份、Feed 回摆和冲突边界，见 [ADR-0030](../docs/adr/0030-paper-version-identity-and-source-observations.md) 与 [论文事实 Contract](../docs/contracts/paper-facts.md)。该语义由 #68 完成文档同步，#69–#75 已实现并注册 A6 离线论文事实底座；真实来源、parser/live 与完整阶段 A 仍未验收。旧固定提交正文不能覆盖后续裁决。
 
-> 2026-10-23：按 Issue #76 用户 D1–D4 裁决同步 §8.5：Screening 预算按 Paper/阶段/指纹，当前适用性完全派生，同指纹跨版本可复用。A7 暂不交付 screening CLI 或 paper trace 组合；语言事实生产来源仍待裁决，详见 [ADR-0031](../docs/adr/0031-screening-budget-and-derived-applicability.md) 与 [任务 Contract](../docs/contracts/screening-tasks.md)。#77–#80 已交付严格 JSON、任务登记、原子领取、租约、失败结算与 boundary 原始候选成功/派生三值适用性；value 成功接收由 #81 交付，显式 retry 与版本化共享查询由 #82 交付；#83 补齐完整历史隔离恢复，#84 注册独立必需 A7 组并纳入可信终态；仍只证明 boundary/value 离线 test 执行边界，不证明真实模型或完整阶段 A。
+> 2026-10-23：按 Issue #76 用户 D1–D4 裁决同步 §8.5：Screening 预算按 Paper/阶段/指纹，当前适用性完全派生，同指纹跨版本可复用。A7 暂不交付 screening CLI 或 paper trace 组合；语言事实生产来源仍待裁决（后于 2026-10-27 由 Feed 归属裁决，见 ADR-0035），详见 [ADR-0031](../docs/adr/0031-screening-budget-and-derived-applicability.md) 与 [任务 Contract](../docs/contracts/screening-tasks.md)。#77–#80 已交付严格 JSON、任务登记、原子领取、租约、失败结算与 boundary 原始候选成功/派生三值适用性；value 成功接收由 #81 交付，显式 retry 与版本化共享查询由 #82 交付；#83 补齐完整历史隔离恢复，#84 注册独立必需 A7 组并纳入可信终态；仍只证明 boundary/value 离线 test 执行边界，不证明真实模型或完整阶段 A。
 
 > 2026-10-24：按 #85 D1–D4/P3 裁决固定 A8 离线调用描述与版本准入；语义取预算首次
 > snapshot，执行审计取回执 snapshot；最终模型不符由 A7 接收器裁决，Pi 零 token
@@ -43,6 +43,12 @@
 > A1、完整 A2、A3、A6，其他必需组仍决定总门禁。只交付 HTTP 离线工程，四刊实际审计、
 > 稳定性/B阻断判据、完整摘要优先/额外区块的Screening语义、A6来源假设、AMS403策略、
 > 渲染/授权/正文/PDF/Docling/生产导入/NAS与完整阶段A仍未验；合法未来通道按新策略补跑。
+
+> 2026-10-27：按用户裁决固定原题名语言事实的生产来源为首发 Feed 归属映射 v1：只有《大气科学》current Feed
+> 取中文原始题名（`true`），AIES、JGR、QJRMS 取非中文（`false`）；不由题名文本或语言检测判断，`false` 只表示
+> 非中文，无 Feed 归属的论文没有该事实且不得登记 value 任务。详见
+> [ADR-0035](../docs/adr/0035-feed-derived-original-title-language-fact.md)。本次只更新文档与 scope 绑定，
+> 未实现自动派生或生产接线。
 
 ## 任务阅读导航
 
@@ -151,6 +157,13 @@ OCR、AI 精确版面解析和可编辑前端可以在第二版以后分别验�
 《大气科学》第一版暂不订阅未列入官方 RSS 目录的 `latest.xml`。因此其优先发表论文可能要等到进入 `current.xml` 后才被发现；这是明确接受的发现延迟，不改变“一旦发现，优先发表属于正式期刊版本”的版本语义。后续加入 `latest.xml` 时必须作为独立 Feed 建立契约监测，并与 `current.xml` 按强标识汇聚发现事实。
 
 Feed 条目只要最终解析为 journal-article 就进入 Screening，不在之前继续区分研究论文、综述、社论或勘误。Feed 自己明确提供的原始文章类别仍原样保存。该选择会带来非目标初筛噪声，但避免因不同出版平台的子类型缺失或不一致漏掉论文。
+
+原题名语言事实也由 Feed 归属决定：四刊中只有《大气科学》的原始题名为中文（`original_title_is_zh=true`），
+AIES、JGR 与 QJRMS 为非中文（`false`）。这是来源级约定，不是按题名、字符集或语言检测逐篇判断；`false` 只
+表示非中文，不声称英文。表以首发期刊为键，同刊新增 Feed（如《大气科学》`latest.xml`）只沿用该刊取值，
+是否纳入发现范围仍按本节规则另行裁决。仅经人工入口加入、没有 Feed 归属的论文没有该事实，不得默认
+`false` 或登记 value 任务，直到另行裁决。登记仍要求显式严格 bool，自动派生与策略版本持久化由后续生产
+接线票交付，见 [ADR-0035](../docs/adr/0035-feed-derived-original-title-language-fact.md)。
 
 在线优先、EarlyView 或优先发表属于正式期刊版本。正式期刊版本出现后优先成为论文的当前版本。
 

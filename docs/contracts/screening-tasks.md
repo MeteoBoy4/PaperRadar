@@ -60,8 +60,16 @@ value 登记必须显式提供严格 `bool` 的 `original_title_is_zh`；通过�
 同 `(paper_id, value, fingerprint)` 首次登记冻结原语言事实和匹配 snapshot；后续
 相反事实受控拒绝、不新增任务、不刷新预算。retry 必须继承原值，不能传新值更正。
 
-**已知限制：同预算范围的误标暂无法纠正。原题名语言的生产来源尚未裁决，必须在产生
-任何真实 value 任务之前另行裁决，最晚在 RPC 票或阶段 D。** 主题集合只从匹配冻结输入
+原题名语言事实的生产来源已由
+[ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md) 固定为首发 Feed 归属映射 v1：
+只有《大气科学》（`dqkx` current Feed）取 `true`，AIES、JGR 与 QJRMS 取 `false`。它是来源级约定，
+不由题名文本、字符集或语言检测判断，`false` 只表示非中文。没有首发 Feed 归属的 Paper
+（仅人工 DOI/URL/PDF 加入）没有该事实，不得默认 `false`，也不得为其登记 value 任务，直到另行裁决；
+同刊新增 Feed 沿用该刊取值，但纳入发现范围仍按主方案 §2.1 另行裁决。登记仍要求显式严格 bool，
+本批不实现自动派生。
+
+**已知限制：同预算范围的误标仍无法纠正。** 生产接线（Feed 归属派生、策略版本持久化与登记集成）
+尚未交付；映射变化只能新版本化，不追溯改写已冻结事实或历史任务。主题集合只从匹配冻结输入
 的同库历史 snapshot 派生，不从当前 topics 文件取得。
 
 ## 3. 一致登记、领取与有限尝试（已交付）
@@ -182,7 +190,8 @@ backup format 保持 1，无新 manifest 字段或计数；head 前移后旧批�
 **两次上限仅对单一档案库连续历史成立；恢复较早备份会丢失其后 attempt，不能保证
 跨备份回退的全局调用上限。** 非空异地恢复须证明全部输入、响应、retry 与未结算
 历史可独立重建。A7 正式结论依赖同次 A1、完整 A2、A3、A5、A6；A4 仍为总门禁必需。
-RPC、live、完整阶段 A 与原题名语言生产来源持续未验收。
+RPC、live、完整阶段 A 与语言事实的生产接线（Feed 归属到 bool 的自动派生、策略版本持久化）
+持续未验收。
 
 ## 8. A7-02 公共登记 API（已交付）
 
@@ -204,7 +213,8 @@ RPC、live、完整阶段 A 与原题名语言生产来源持续未验收。
 boundary/value，source 当前为 scheduled/manual。scheduled 必须有严格 ISO `scheduled_day`
 （`YYYY-MM-DD`），其 request_id/reason/actor 均为空；manual 必须有 request_id/reason/actor，
 scheduled_day 为空。value 的 `original_title_is_zh` 必须由既有 StageInput 上下文权威接收，
-boundary 禁该字段。除此之外的字段一律拒绝，异常不回显调用方字段名/值。
+并按 ADR-0035 的首发 Feed 归属映射取值；boundary 禁该字段。除此之外的字段一律拒绝，
+异常不回显调用方字段名/值。
 
 request_id、reason、actor 检查非空、无 HTML、可 UTF-8 编码及最多 2048 字节；合法文本
 原样保存，不静默 trim 后改变精确重放身份。request_id 在整个任务请求表唯一，与 A6
@@ -456,6 +466,6 @@ A4 继续为整体必需组。结论独立核对各前置的范围、格式、is
 passed/verified 且 applicability=same；它不写回历史或补造新证据。
 
 `rpc_verified`、`live_verified`、`stage_a_verified` 恒 false。not_assessed 明列
-RPC/Pi、真实调用用量/成本、原题名语言生产来源、metadata_ready/完整 eligibility、
+RPC/Pi、真实调用用量/成本、原题名语言生产接线、metadata_ready/完整 eligibility、
 每日配额、两阶段编排、建议/决定、校准可见性、reuse/extraction/Read 任务、merge 预算、
 CLI、NAS、完整阶段 A 与 live。本验收不授予 test 筛选制品生产消费或校准资格。

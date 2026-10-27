@@ -65,7 +65,7 @@ def test_a7_records_actual_task_formats_and_offline_boundaries(tmp_path: Path) -
         "rpc_compatibility",
         "pi_execution",
         "real_model_usage_cost",
-        "original_title_language_production_source",
+        "original_title_language_production_wiring",
         "metadata_ready",
         "complete_eligibility",
         "daily_quota",

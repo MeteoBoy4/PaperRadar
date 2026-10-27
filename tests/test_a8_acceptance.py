@@ -50,7 +50,7 @@ def test_a8_records_production_formats_and_only_offline_capabilities(
     assert {
         "rpc_compatibility",
         "pi_execution",
-        "original_title_language_production_source",
+        "original_title_language_production_wiring",
         "effective_system_instructions_cwd",
         "production_parameter_mapping",
         "provider_retry",

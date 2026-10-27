@@ -491,11 +491,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a7_scope.py",
-        "9f1d21c34b3e8c3f211b9917160cf5c8de9c5708b7147a4f3a1f978b22d6b993",
+        "6882dcbe5c4ab617470e877ecc50c6dea8949aa98132622646a4f81a1ffa14df",
     ),
     (
         "scripts/a8_scope.py",
-        "8affa58d099bd71eb6cdec08151e8afe63850dad128c32a33ddaa0e9d03d9661",
+        "efcbb4889743b94a627fb5f02d52f157f82285cde90c94c6a88d07ed413ee051",
     ),
 )
 
@@ -564,11 +564,11 @@ REQUIRED_FIXTURE_FILES = (
         "examples/contracts/screening/boundary/v1/manifest.json",
         "5efa0aec0e41329fe8736dcd533706309fd9c3717aeac14ddbf55d05cce0ed0b",
     ),
-    ("README.md", "c4d9b87d4abbb77a777e6c90a77ae8892f83b75c8c78adeaf781cc79310eb0d2"),
-    ("GLOSSARY.md", "5836a32db8fd2ba67dc4c088db62e589cc5976e82e742ae3e46a0c18c7f91c01"),
+    ("README.md", "1b8c0a130ce1ad49d006df9fdcce61263123ae5be7748eb34e325611ef7317b4"),
+    ("GLOSSARY.md", "7ba4b1e2ace72178cf21a1ba4c2398f58ac1f6918748db7362e381501c72cac9"),
     (
         "intent/draft.md",
-        "dfcdfb740e38e493b069867b90280f11a96c62f078cc377bef09db01fa9016bb",
+        "6c8380b9778b5e65e3245ceca75476a4884e595147c8fca104a42354e0dfd199",
     ),
     (
         "docs/contracts/read-validation.md",
@@ -604,7 +604,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/offline-evidence.md",
-        "7e3aec1a3b9742792df7e29e0ba151f29775c5f70ca456f1db48ac30e9946813",
+        "49189beae5ae244378f37bfadf2b5fbdd9be3f8b81f18ee3083a909a205009f9",
     ),
     (
         "tests/fixtures/a9_coverage.json",

@@ -38,7 +38,7 @@ US 表示 #76 User Stories，ID 表示 Implementation Decisions；下表列出�
 
 | 正文 | 补充及裁决 | 最终规则与文档落点 | 验收责任/当前状态 |
 | --- | --- | --- | --- |
-| US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝、#81 接收/回放、#82 retry 继承已交付。真实来源列 original_title_language_production_source 未验收 |
+| US25–26、ID12 | D1(a)、评论二五、评论三二 | Contract §2：value 必传严格 bool、首次预算范围冻结、retry 继承不接受更正；boundary 禁字段；语言不进 A5 | #78 登记拒绝、#81 接收/回放、#82 retry 继承已交付。来源规则已由 ADR-0035 裁决为首发 Feed 归属；生产接线列 original_title_language_production_wiring 未验收 |
 | US29/31、ID15–16；测试“当前适用性”“缓存重新使用” | D2(a)、S2、评论二五 | Contract §5、ADR-0031、主方案 §8.5：同明确 snapshot 当前指纹匹配即适用；版本不同但同指纹仍适用；去掉绑定表/API/写入、提交事务论文复核 | #80/#81 boundary/value 三值派生已交付；原 US29 改为映射成功且指纹不同才为 historical，映射失败为 undeterminable+PaperReason；US31 改为只读重建匹配，删除缓存重新绑定行 |
 | 测试“A6 语义联动” | D2(a)、B2/B6、评论二五 | 更高 parser 缺摘要→无当前成功；其他来源补回相同文本→原制品再适用，保留 A6 仲裁 | #80 boundary、#81 value 已交付；#83 在恢复副本组合 value 跨版本、parser 删除与另一来源补回，无再绑定写入 |
 | US24/27、ID12–13 | D3(a)、评论二二、#77 评论 | 原权威内部严格解析；str/bytes/bytearray 任意层重复键/NaN/Infinity 根 `$` invalid_json，先于字段/业务错误；Mapping 路径不变 | #77 已实现；test_screening_strict_json 93 例，新旧相关 332 例；原固定模块/Schema/分母不变 |
@@ -120,7 +120,7 @@ bool/float 不得冒充版本。实际 migration head 为 a704_screening_retry�
 A7 仅证明 boundary/value 任务在离线 test 执行边界的工程能力。
 `rpc_verified`、`live_verified`、`stage_a_verified` 均固定为 false。
 not_assessed 明列 rpc_compatibility、pi_execution、real_model_usage_cost、
-original_title_language_production_source、metadata_ready、complete_eligibility、daily_quota、two_stage_orchestration、
+original_title_language_production_wiring、metadata_ready、complete_eligibility、daily_quota、two_stage_orchestration、
 suggestions_decisions、calibration_visibility、reuse_tasks、extraction_tasks、read_tasks、
 merge_budget、screening_cli、paper_trace_cli、nas_restore、stage_a、live、automatic_fulltext_reading。test 来源不能进入后续生产建议/校准；
 已接收的 test 结构与未知/报告审计不构成真实模型质量、调用次数、用量或成本证明。

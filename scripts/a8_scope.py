@@ -36,7 +36,7 @@ NOT_ASSESSED = (
     "rpc_compatibility",
     "pi_execution",
     "real_model_usage_cost",
-    "original_title_language_production_source",
+    "original_title_language_production_wiring",
     "metadata_ready",
     "complete_eligibility",
     "daily_quota",
@@ -143,7 +143,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a8_acceptance.py",
-        "14ef2c0f21320393a95df27b722e3ae9646dce8380fddd489ff5d3e8ab567d0f",
+        "998f83e2635c3c04e43f2dd6069519f8b7ef335382ee5101781bc9abfc19b4a3",
     ),
     (
         "tests/test_a8_integrity.py",
@@ -269,7 +269,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a7_scope.py",
-        "9f1d21c34b3e8c3f211b9917160cf5c8de9c5708b7147a4f3a1f978b22d6b993",
+        "6882dcbe5c4ab617470e877ecc50c6dea8949aa98132622646a4f81a1ffa14df",
     ),
     (
         "scripts/check-offline",
@@ -331,7 +331,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/pi-rpc.md",
-        "28a0aadcf161ae887e5e6808e35a5fed35ff69b0f9b9cef7fddb1457c10d92d7",
+        "9d143d5bcc634894882063610b1bba7a50c1c4b88143e3fcbfb1e27ea72bf2c1",
     ),
     (
         "docs/contracts/verification-status.md",
@@ -339,11 +339,11 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/offline-evidence.md",
-        "7e3aec1a3b9742792df7e29e0ba151f29775c5f70ca456f1db48ac30e9946813",
+        "49189beae5ae244378f37bfadf2b5fbdd9be3f8b81f18ee3083a909a205009f9",
     ),
     (
         "docs/verification/a8-requirements.md",
-        "102cb0f2bd14ac6ad57467b9f8cfb766d7f19620058b29bbd23ebd0a5615307f",
+        "bf40f43d19886a3b6c7bcd81891302f2c9a8e1e9b4a3206ad93c5609f19dfce3",
     ),
-    ("README.md", "c4d9b87d4abbb77a777e6c90a77ae8892f83b75c8c78adeaf781cc79310eb0d2"),
+    ("README.md", "1b8c0a130ce1ad49d006df9fdcce61263123ae5be7748eb34e325611ef7317b4"),
 )

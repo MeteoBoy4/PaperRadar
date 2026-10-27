@@ -122,7 +122,7 @@ _Avoid_: 论文来源字段、重复论文
 _Avoid_: 预印本、待发表稿
 
 **首发期刊**：
-第一版主动订阅的四种期刊：Artificial Intelligence for the Earth Systems、Journal of Geophysical Research: Atmospheres、Quarterly Journal of the Royal Meteorological Society 和《大气科学》。首发期刊描述发现范围，不构成研究价值判断。
+第一版主动订阅的四种期刊：Artificial Intelligence for the Earth Systems、Journal of Geophysical Research: Atmospheres、Quarterly Journal of the Royal Meteorological Society 和《大气科学》。首发期刊描述发现范围，不构成研究价值判断。Feed、fixture 与审计代码用 `aies`、`jgr`、`qjrms`、`dqkx` 指代这四刊。
 _Avoid_: 首选期刊、校准期刊
 
 **期刊文章候选**：
@@ -248,6 +248,10 @@ _Avoid_: 筛选建议、研究价值
 **价值预测**：
 Screening Agent 仅根据题名、摘要、Research Profile 和已启用主题形成的摘要层预测制品，包含预测研究价值、初步复用可行性及其可判断性、价值类型和理由。它不读取条件式复用摘录，也不冒充基于全文的正式评价。
 _Avoid_: 复用可行性升级、正式评价、筛选建议
+
+**原题名语言事实**（`original_title_is_zh`）：
+value 阶段输出校验使用的严格布尔上下文事实，表示论文原始题名是否为中文，由首发 Feed 归属按封闭表决定：四刊中只有《大气科学》为 `true`，AIES、JGR 与 QJRMS 为 `false`；`false` 只表示非中文，不声称英文。它不是题名语言检测，也不进入阶段输入载荷或指纹；首次登记即冻结于预算范围，retry 继承且不能更正。无 Feed 归属的论文没有该事实（ADR-0031、ADR-0035）。
+_Avoid_: 题名语言检测、翻译标记、英文题名推断
 
 **复用可行性升级**：
 当摘要层研究价值命中版本化触发条件、但复用可行性不可判断时，使用合法取得的 availability、methods 或 data 摘录形成的独立预测制品。它非阻塞地把建议从 `reuse_unknown` 升级，不覆盖摘要层预测，也不等同于正式精读评价。

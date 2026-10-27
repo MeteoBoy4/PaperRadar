@@ -298,7 +298,7 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 与 extraction 投影，不读取 PDF 或运行 Docling，不接收论文元数据。配置缺项或占位
 保持拒绝；无 adapter 的历史快照按已有配置完整性判断，指纹不证明 RPC 可执行。
 value 输入可从明确匹配的历史快照派生同源 `ValuePredictionContext`，原题名语言由调用方
-显式提供；派生失败使用 `BuildReason`，载荷回放失败使用 `ReplayReason`。
+按首发 Feed 归属映射显式提供（ADR-0035）；派生失败使用 `BuildReason`，载荷回放失败使用 `ReplayReason`。
 reuse 消费冻结的有序摘录与来源定位：结构化来源绑定 source_snapshot 的 payload
 成员内容哈希；正文来源从明确 extraction 输入绑定 reading/evidence_map 成员哈希，排除
 manifest 审计变化，同次调用只允许一份一致正文。从相同摘录派生 `ReuseAssessmentContext`，
@@ -583,14 +583,16 @@ A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/co
 及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。#77 已在原权威验证器
 收紧重复 JSON 键和非有限常量；#78–#79 已交付任务登记、冻结回放、两次预算和租约，
 boundary/value 筛选制品接收与三值适用性由 #80/#81 交付，#82 交付显式 retry、共享版本化查询与父链恢复；#83 补齐新进程隔离完整历史恢复，
-#84 将这些能力注册为独立必需 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；真实 value 任务前
-必须先裁决原题名语言事实的生产来源。
+#84 将这些能力注册为独立必需 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；原题名语言事实的
+生产来源已由 [ADR-0035](docs/adr/0035-feed-derived-original-title-language-fact.md) 固定为首发 Feed 归属映射
+（四刊中只有《大气科学》为中文），生产接线仍待后续票。
 
 ### Screening 任务登记、有限尝试与两阶段成功（A7-02 至 A7-08）
 
 公共 `paper_radar.screening_tasks.ScreeningTasks` 已支持用现有论文和明确历史配置快照
 登记 boundary/value 请求，保存规范输入、独立预算范围和精确回执，并在备份恢复后回放。
-value 的原题名语言事实必须显式提供；登记不会调用模型。以请求回执领取时按同一
+value 的原题名语言事实必须显式提供，并按 ADR-0035 的首发 Feed 归属映射取值（只有《大气科学》
+为中文，AIES/JGR/QJRMS 为非中文）；登记不会调用模型。以请求回执领取时按同一
 历史配置快照复核当前指纹，原子占用每代至多两次预算并建立 600 秒租约；时间统一注入。
 可显式续租、提交封闭失败和回收过期尝试，安全只读状态区分 lease_expired 与失败终态。
 到期但未结算的持有者仍可续租或提交，回收后旧凭据失权；没有后台自动回收。

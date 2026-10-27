@@ -79,7 +79,7 @@ TDD 红→绿分别为 bool/整数矛盾副本（4）、签名/redacted 类型�
 本票未运行完整 check-offline；按顺序实施安排由 #91 注册全 A8 后统一执行。
 截至 #88 只证明离线协议/test 接线，不代表独立 A8 验收通过；当时管道及取消握手
 尚未交付，现由下述 #89 补齐。真实 Pi/Node/模型、生产 cwd 白名单、参数生效与
-语言事实生产来源仍未验收。
+语言事实的生产接线（来源规则已由 [ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md) 裁决为 Feed 归属）仍未验收。
 
 ## #87 已新增范围与验证
 
@@ -133,7 +133,7 @@ Ruff 检查/格式（全部 A8 30 文件）和严格 mypy（src 与全部 A8 测
 
 完整 check-offline 与独立 A8 组仍由 #91 注册后在稳定 integration 同次执行；本票未
 运行真实 Pi/Node/模型、抓流 spike 或任何 live 来源。不把离线合成恢复升级为生产
-RPC、权限隔离、采样参数生效、自动外发抑制或原题名语言来源的验收。
+RPC、权限隔离、采样参数生效、自动外发抑制或原题名语言事实生产接线的验收。
 
 
 ## #91 固定验收面与父规格收口
@@ -225,7 +225,7 @@ recovery/history/backup 均指上表对应 test_a8_* 模块；实际固定绑定
 | 37 同次完整证明 | acceptance/integrity/entry/status/test_receipt/formats |
 | 38 三类验收边界 | README/offline-evidence/pi-rpc：安装、离线协议、真实RPC分开 |
 | 39 普通测试无需个人Pi | 仓库合成材料、Python夹具；architecture/deny边界 |
-| 40 语言来源不代裁决 | 原语言严格bool只测试；生产来源仍not_assessed，无模型启用 |
+| 40 语言来源已裁决、A8 不实现 | 原语言严格bool只测试；Feed 归属规则见 [ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md)，生产接线仍 not_assessed，无模型启用 |
 
 ### 实施决定、四条评论与子票 AC
 

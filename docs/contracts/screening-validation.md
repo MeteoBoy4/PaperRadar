@@ -169,19 +169,21 @@ mapping 合法，且验证器不会修改它。显式非空 context 或其他 co
 价值预测必须同时提供以下只读业务事实：
 
 - `enabled_topic_ids: frozenset[str]`：本次可用的已启用主题 ID 集合；
-- `original_title_is_zh: bool`：上游提供的原题名是否中文事实。
+- `original_title_is_zh: bool`：上游按首发 Feed 归属提供的原题名是否中文事实；四刊映射见
+  [ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md)。
 
 推荐调用方显式构造冻结的 `ValuePredictionContext`。公共入口也接受字段完全匹配的
 mapping，并先将其验证为该受控类型；不会把自由键值直接传给业务规则。缺少上下文
 或必需键报 `missing_context`，类型错误、额外键或不适用的上下文报
-`context_mismatch`。验证器只信任 `original_title_is_zh`，不实现语言识别器。
+`context_mismatch`。验证器只信任 `original_title_is_zh`，不实现语言识别器，也不从题名字符集推断。
 
 输出中的主题 ID 必须属于 `enabled_topic_ids` 且不得重复；未知或已停用 ID 都按
 “未启用”拒绝。零匹配合法，不会新增 `unclassified_value` 等模型输出字段。
 boundary 仍只接受 `None` 或空 mapping，上述价值预测上下文不能用于 boundary。
 
 绑定阶段输入时，应通过[阶段输入服务](stage-inputs.md#value-同源验证上下文与扩展义务)
-从匹配 value 投影的明确历史快照派生 `ValuePredictionContext`；原题名语言仍由上游提供。
+从匹配 value 投影的明确历史快照派生 `ValuePredictionContext`；原题名语言仍由上游按
+ADR-0035 的 Feed 归属映射提供。
 
 ### 价值类型 vocabulary
 

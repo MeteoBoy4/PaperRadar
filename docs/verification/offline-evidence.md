@@ -776,7 +776,7 @@ passed/verified 且 applicability=same；历史成功不能替代当前运行，
 
 A7 仅覆盖 boundary/value 离线 test 执行边界，rpc_verified/live_verified/stage_a_verified
 恒 false。not_assessed 明列 rpc_compatibility、pi_execution、real_model_usage_cost、
-original_title_language_production_source、metadata_ready、complete_eligibility、daily_quota、
+original_title_language_production_wiring、metadata_ready、complete_eligibility、daily_quota、
 two_stage_orchestration、suggestions_decisions、calibration_visibility、reuse_tasks、
 extraction_tasks、read_tasks、merge_budget、screening_cli、paper_trace_cli、nas_restore、
 stage_a、live、automatic_fulltext_reading。test 输出不作为生产筛选或校准依据。

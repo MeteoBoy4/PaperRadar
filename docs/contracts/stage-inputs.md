@@ -128,7 +128,8 @@ reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列�
 事实、结果及其载荷引用不可变，repr 隐藏文本与载荷。载荷内嵌题名、摘要与摘录，按敏感业务
 数据处理，不得写入 repr、异常、stdout/stderr、普通日志或验收结论。显式 `.payload_bytes`
 仅供受控业务消费。后续 RPC 只能渲染已绑定的冻结事实；渲染语义变化需 adapter policy
-或阶段格式版本表达，不能额外读取未绑定字段。`original_title_is_zh` 由上游提供，属于
+或阶段格式版本表达，不能额外读取未绑定字段。`original_title_is_zh` 由上游按首发 Feed 归属映射提供
+（[ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md)），属于
 输出验证上下文，不进入 boundary/value 身份。
 
 相同指纹只证明语义输入相同，不证明缓存存在、成功输出、来源合法性、校准通过或当前
@@ -154,6 +155,8 @@ reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列�
 `original_title_is_zh` 必须显式提供严格布尔；遗漏、字符串、整数和其他类型返回
 `invalid_context` 与安全位置，不把 Pydantic 原始错误或提交值留在异常链。语言判断仅改变
 权威输出校验（例如中文原题名不接受 display_title_zh），不改变阶段输入载荷或指纹。
+取值规则由 ADR-0035 固定：只有《大气科学》的 Feed 为 `true`，AIES、JGR、QJRMS 为 `false`；
+无 Feed 归属时不得登记 value 任务。
 摘要来源/提供方、阶段二 artifact 链接同样是审计引用，不是指纹分量。
 `validate_output` 仍独立负责权威 Schema 与业务校验，校验通过不表示制品已发布或落库。
 
@@ -389,4 +392,4 @@ boundary/value/reuse/extraction 各自的当前配方版本 1；构造、回放�
 
 A7-02 已在[任务 Contract](screening-tasks.md#8-a7-02-公共登记-api已交付)落实 boundary/value
 规范载荷持久化；缓存主体是同库 paper/stage/fingerprint，不跨 Paper 共享业务预算。
-A5 的原格式和算法不变，原题名语言只属于任务基线。
+A5 的原格式和算法不变，原题名语言只属于任务基线，取值由首发 Feed 归属按 ADR-0035 决定。

@@ -321,7 +321,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a7_scope.py",
-        "9f1d21c34b3e8c3f211b9917160cf5c8de9c5708b7147a4f3a1f978b22d6b993",
+        "6882dcbe5c4ab617470e877ecc50c6dea8949aa98132622646a4f81a1ffa14df",
     ),
     (
         "scripts/a8_acceptance.py",
@@ -329,7 +329,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "8affa58d099bd71eb6cdec08151e8afe63850dad128c32a33ddaa0e9d03d9661",
+        "efcbb4889743b94a627fb5f02d52f157f82285cde90c94c6a88d07ed413ee051",
     ),
     (
         "scripts/a9_acceptance.py",
@@ -337,7 +337,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_scope.py",
-        "2a57b3bc0754175bfbf38c5550132f99d2393c37496ffa1079fec3c153348725",
+        "834c2666e67881bc3d8609f0ffa4ef4a6182be1e9fd17a76d5a60d7d9f5a38c2",
     ),
     (
         "scripts/audit-verification-scope",
@@ -1345,8 +1345,8 @@ REQUIRED_SOURCE_MODULES = (
     ),
 )
 REQUIRED_FIXTURE_FILES = (
-    ("GLOSSARY.md", "5836a32db8fd2ba67dc4c088db62e589cc5976e82e742ae3e46a0c18c7f91c01"),
-    ("README.md", "c4d9b87d4abbb77a777e6c90a77ae8892f83b75c8c78adeaf781cc79310eb0d2"),
+    ("GLOSSARY.md", "7ba4b1e2ace72178cf21a1ba4c2398f58ac1f6918748db7362e381501c72cac9"),
+    ("README.md", "1b8c0a130ce1ad49d006df9fdcce61263123ae5be7748eb34e325611ef7317b4"),
     (
         "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
         "68b1afc3eaa7c15b2c99a88d3638cd94d48cb1a0e405b15940043ba6f2bedb27",
@@ -1381,7 +1381,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/offline-evidence.md",
-        "7e3aec1a3b9742792df7e29e0ba151f29775c5f70ca456f1db48ac30e9946813",
+        "49189beae5ae244378f37bfadf2b5fbdd9be3f8b81f18ee3083a909a205009f9",
     ),
     (
         "fixtures/a10/historical-v1.json",
@@ -1389,7 +1389,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "intent/draft.md",
-        "dfcdfb740e38e493b069867b90280f11a96c62f078cc377bef09db01fa9016bb",
+        "6c8380b9778b5e65e3245ceca75476a4884e595147c8fca104a42354e0dfd199",
     ),
     (
         "pyproject.toml",

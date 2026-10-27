@@ -235,7 +235,7 @@ A6 交付时备份 head 跟随 a604，当前 head 见[备份 Contract](backup-re
 
 `MappingEvidence` 包含完整 `RevisionView` 的 `paper_id/version_id/revision_no/version_kind/doi/fields/selection`，另带明确 `snapshot_id` 和固定 `source_bytes_verified=false`。`fields` 为该完整修订全部字段及逐字段 provenance，不只取输入子集；`selection` 只能是请求版本的实际适用选择，也可为 null，不表示该修订创建时曾是当前。业务事实尚未成功解析时 evidence=null；已解析事实但缺快照/输入/配置就绪时保留真实 evidence，不凭失败造依据。缺项优先级为 missing_title、missing_abstract、truncation_unknown；快照未在同库登记为 snapshot_not_found，登记后无法重建或引用链损坏为 corrupt_reference。业务 ID、DOI、来源时间、选择事件和书目字段均不进入载荷哈希。文本相同而来源/取得时间/provenance 改变，指纹不变。结果、evidence 与 StageInput 的 repr 隐藏题名、摘要和配置正文；载荷与显式字段访问仍是敏感业务数据。
 
-历史重建从完整旧修订与明确旧快照重新 `build_stage_input`，不调用 A5 `replay_stage_input`，不保存 StageInput 载荷或独立期望指纹；未来任务层仍负有规范载荷持久化义务。不存 original_title_is_zh、不派生 ValuePredictionContext。可靠来源 URL 与完整 metadata_ready 属后续 eligibility，不因映射成功而宣称路线尝试、模型、校准就绪。映射只读，不推进 last_seen、不升级选择。
+历史重建从完整旧修订与明确旧快照重新 `build_stage_input`，不调用 A5 `replay_stage_input`，不保存 StageInput 载荷或独立期望指纹；未来任务层仍负有规范载荷持久化义务。不存 original_title_is_zh、不派生 ValuePredictionContext（该事实的取值规则见 [ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md)，由登记侧提供，不在本文映射中产生）。可靠来源 URL 与完整 metadata_ready 属后续 eligibility，不因映射成功而宣称路线尝试、模型、校准就绪。映射只读，不推进 last_seen、不升级选择。
 
 普通映射仅核对数据库引用链、候选→观察→同一版本及已登记制品 kind=source_snapshot，不全量哈希 blob，不读当前文件补历史。backup verify 与显式 trace 字节核验承担实际字节验证。
 

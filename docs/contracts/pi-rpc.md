@@ -327,5 +327,6 @@ thinking/signature 也计入三份回显。该正例证明固定上限可接收�
 
 rpc_verified、live_verified、stage_a_verified 继续为 false。not_assessed 还包括真实 Pi
 运行与供给激活、凭据、参数效果、OS 文件/进程/网络权限、自动外发抑制、原题名语言
-生产来源、reuse/Read等其他阶段任务、业务资格/编排/每日配额、校准可见性/门禁、CLI、
+事实的生产接线（来源规则见 [ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md)）、reuse/Read等其他阶段任务、业务资格/编排/每日配额、
+校准可见性/门禁、CLI、
 真实论文来源/Docling/NAS/无人值守。A8 只有离线协议与 test 任务接线证明范围。
