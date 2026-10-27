@@ -82,7 +82,7 @@ def test_missing_historical_version_is_distinct_from_unrehashed_plan_corruption(
 def test_frozen_v1_replay_does_not_consume_current_default_version(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from paper_radar.fixture_audit import abstract_models
+    from paper_radar.fixture_audit import FixtureError, abstract_models
 
     service = sampling_service(tmp_path, MatrixSources())
     original = service.run_audit(contact_email="audit@example.org", code_identity=CODE)
@@ -90,4 +90,11 @@ def test_frozen_v1_replay_does_not_consume_current_default_version(
     monkeypatch.setattr(
         abstract_models, "ABSTRACT_RULES_VERSION", "audit-abstract-v999"
     )
+    assert service.replay_audit(original.plan.plan_id) == before
+    with pytest.raises(FixtureError) as mismatch:
+        service.resume_audit(
+            original.plan.plan_id, contact_email="audit@example.org", code_identity=CODE
+        )
+    assert mismatch.value.reason == "plan_identity_mismatch"
+    assert mismatch.value.path == "code_identity"
     assert service.replay_audit(original.plan.plan_id) == before

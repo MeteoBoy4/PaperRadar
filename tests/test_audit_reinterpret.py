@@ -120,3 +120,42 @@ def test_interpretation_chain_differences_compare_previous_interpretation(
         == second
     )
     assert service.show_audit(original.plan.plan_id) == original
+
+
+def test_parser_category_outside_closed_table_is_controlled_and_atomic(
+    tmp_path: Path,
+) -> None:
+    import pytest
+
+    from paper_radar.fixture_audit import FixtureError
+
+    class InvalidCategory(SyntheticV2):
+        def parse(
+            self,
+            request: SourceRequest,
+            raw: bytes,
+            *,
+            decoding: str,
+            entry_locator: str | None,
+        ) -> Mapping[str, str | None]:
+            return {"category": "conference_article"}
+
+    sources = MatrixSources()
+    service = sampling_service(tmp_path, sources)
+    original = service.run_audit(contact_email="audit@example.org", code_identity=CODE)
+    calls = tuple(sources.calls)
+    with pytest.raises(FixtureError) as rejected:
+        service.reinterpret_audit(
+            original.plan.plan_id,
+            parser=InvalidCategory(),
+            request_key="invalid-category",
+        )
+    assert rejected.value.reason == "invalid_request"
+    assert rejected.value.path == "audit.parser_output"
+    assert service.list_audit_interpretations(original.plan.plan_id) == ()
+    assert service.show_audit(original.plan.plan_id) == original
+    assert tuple(sources.calls) == calls
+    accepted = service.reinterpret_audit(
+        original.plan.plan_id, parser=SyntheticV2(), request_key="invalid-category"
+    )
+    assert service.list_audit_interpretations(original.plan.plan_id) == (accepted,)

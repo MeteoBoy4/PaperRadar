@@ -28,6 +28,13 @@ _LABELS = {
     "plain language summary": "plain_language_summary",
     "key points": "key_points",
 }
+_EXTRA_TOKENS = {
+    "abstract-en": "abstract_en",
+    "significance": "significance",
+    "plain-language-summary": "plain_language_summary",
+    "key-points": "key_points",
+}
+
 _BLOCKS = {"p", "div", "section", "br", "li", "jats:p"}
 
 
@@ -128,12 +135,6 @@ def _fragment(
     tree.feed(raw)
     root = tree.root
     excluded: list[ExcludedBlock] = []
-    extra_tokens = {
-        "abstract-en": "abstract_en",
-        "significance": "significance",
-        "plain-language-summary": "plain_language_summary",
-        "key-points": "key_points",
-    }
 
     def prune(node: Node) -> None:
         kept: list[Node | str] = []
@@ -143,7 +144,7 @@ def _fragment(
                     child.attrs.get("id") or ""
                 }
                 kind = next(
-                    (kind for token, kind in extra_tokens.items() if token in tokens),
+                    (kind for token, kind in _EXTRA_TOKENS.items() if token in tokens),
                     None,
                 )
                 if kind:
@@ -313,12 +314,7 @@ def parse_material(
             tokens = set((node.attrs.get("class") or "").split()) | {
                 node.attrs.get("id") or ""
             }
-            for token, kind in (
-                ("abstract-en", "abstract_en"),
-                ("significance", "significance"),
-                ("plain-language-summary", "plain_language_summary"),
-                ("key-points", "key_points"),
-            ):
+            for token, kind in _EXTRA_TOKENS.items():
                 if token in tokens:
                     extras.append(
                         ExcludedBlock.model_validate(

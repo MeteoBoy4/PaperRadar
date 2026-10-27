@@ -41,7 +41,9 @@ from paper_radar.fixture_audit.acquisition_tables import (
 )
 from paper_radar.fixture_audit.audit_protection import AuditProtection
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
+from paper_radar.fixture_audit.service_reads import find_plan, read_snapshot
 from paper_radar.fixture_audit.source_http import (
+    SOURCE_BYTE_LIMIT,
     SourceExecutor,
     SourceHTTPExecutor,
     SourceResponse,
@@ -75,22 +77,10 @@ class AcquisitionService:
         )
 
     def list_audits(self) -> tuple[AuditView, ...]:
-        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
-        try:
-            require_current_revision(engine)
-            with engine.connect() as connection:
-                connection.exec_driver_sql("BEGIN")
-                return load_audits(connection)
-        except SQLAlchemyError:
-            raise FixtureError(FixtureReason.CORRUPT_REFERENCE, path="audit") from None
-        finally:
-            engine.dispose()
+        return read_snapshot(self.database, load_audits, path="audit")
 
     def show_audit(self, plan_id: str) -> AuditView:
-        for view in self.list_audits():
-            if view.plan.plan_id == plan_id:
-                return view
-        raise FixtureError(FixtureReason.RECORD_NOT_FOUND, path="plan_id")
+        return find_plan(self.list_audits(), plan_id)
 
     def create_audit_plan(
         self,
@@ -309,7 +299,7 @@ class AcquisitionService:
                     facts = revalidate_model(response.facts, HTTPFacts)
                     if response.body is not None and (
                         type(response.body) is not bytes
-                        or len(response.body) > 8 * 1024 * 1024
+                        or len(response.body) > SOURCE_BYTE_LIMIT
                     ):
                         raise ValueError("executor_body")
                     response = SourceResponse(facts, response.body)

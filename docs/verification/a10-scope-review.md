@@ -160,3 +160,33 @@ A10不固定仅属optional A2-01的 `scripts/a2_scope.py` 预期字节；它不�
 | src/paper_radar/fixture_audit/__init__.py | 62ca4edb4cbe9f438b35af89bf54069831de6a1301a836326c5ccae6a114f7fe | f48b5256ad1b729775953ef46326713d3336f7abb143acac9ab9ed8caa9f92a9 | 公共服务延迟导出/命令执行时加载，保留help纯本地边界 |
 | src/paper_radar/fixture_audit/cli.py | 1f061fe401007e357fbc01bdb805a8d45dc505adab9cd3f8b205d7cd71a87c0c | b7a2736f6d58cc2064abf97c3c652866a8c86922d5714628f134757b8bdc84c6 | 公共服务延迟导出/命令执行时加载，保留help纯本地边界 |
 | tests/test_a10_isolation.py | eeb601ec91837408596ad581787426777f6a2141339a3bd8fc000c2e77814c91 | b53e9972f960cbde722e739385e7a37b765802efbf982998b47588d18b57b25c | 七个禁网络/SQLite帮助向量，2→9例 |
+
+## r1/r2 follow-up 范围审阅（#100）
+
+基线为 `8f653711986266403a7b7e25c2d98a24c2ece896`。逐项读diff后，仅A10直接材料漂移；`audit-verification-scope` 的DAG表明没有旧scope消费本次变更文件，A1–A9与optional A2-01不重绑、不改分母。A10新增service_reads导入闭包；同次执行身份继续覆盖未固定的报告原文和scope文件本身。表中不登记本文件或A10 scope自己的hash，避免自哈希。
+
+独立静态计数：37个测试模块仍保留；sampling原4例中1例替换成11身份槽×两个公共入口22例，共25；reinterpret新增1例成为4；registry新增1例（内部遍历全部21 reason）成为15；其余34模块不改计数，总425→448。collect只读核对分母；实际执行须提交稳定树后新跑完整check-offline。没有复制旧run通过声明。
+
+维护整理只共享一致的只读事务/查找/材料读取，保留Acquisition/Sampling/Abstract各自加载器、错误path、写事务边界；F4在validate_all单独材料核验，public list照旧，rootless仍执行完整性检查。元数据读取复用现有read_registration(Engine, id)，与原get_artifact同样另开只读快照，不扩存储API。Frozen、A6、migration、lockfile与既有版本字面值均不改。
+
+| 路径 | 基线 SHA-256 | 新 SHA-256 | 审阅理由 |
+| --- | --- | --- | --- |
+| docs/verification/a10-requirements.md | cb62a594c4b53216dab9b2fe90a18f82d9727fb8fa27be5ad36c666f87b937c6 | 7318bb1eb9087363995be9396e447aeaafe77d8de89b6cebdf1197cbdfe1ed85 | 同步22身份向量与独立分母448；不宣称live |
+| src/paper_radar/fixture_audit/abstract_parser.py | 17d18829f53d3b1e72edcd21a0c8a99e3b6083cac901f30d4fdfd41a5c68d750 | 0da46cf78edfb5db1bfcbd0e2bbdb73be221a81fe566839266935b6ea13b641d | F5共享附加区块映射；保留迭代顺序与解析语义 |
+| src/paper_radar/fixture_audit/abstract_service.py | ae91e9c10fe61ae93c6874616f17b6ef8f6aae6671a0117b6f93effa7bc2d30a | 33d75521f2aa14b05108052cf0985897334a710f13b115eded926305712eadac | F1/F3/S2窄只读助手；层级loader与错误path不变 |
+| src/paper_radar/fixture_audit/acquisition_service.py | cc4c79a6632c8cb934f4fc1287b3116edd9502cbbc071f56310d46ef4b1e3e38 | d135c2ef91b3d9f4f22faa0e2ee4adc39abc0963ecee21e5da4684fbd336d178 | F1/F3/S2只读助手；F6复用SOURCE_BYTE_LIMIT |
+| src/paper_radar/fixture_audit/history_rules.py | 52f76f6d89cffd5f1e83d4e3cfe9dfd17f60aa36fee5c044b47d9e53f54ad03f | 2fa30000b9594d3210df58bdceb6190d3edfe4cee8e84e9c7cda24b61518c394 | F2交叉注释；历史v1字面表不改 |
+| src/paper_radar/fixture_audit/interpretation_service.py | 79a1fd69c8061e4c5cfec5157df90cd6e6dc7e90fb21222c95ff290ba6a62ecb | 3e42da057853b85aee7153f6f0cdcaf428bef654e201416a3347803e813c5094 | S3类别alias与S2材料助手；受控错误path保持 |
+| src/paper_radar/fixture_audit/pdf_records.py | c48381c18827ddc2fb49cbc83e37674d71fc37994ad65c86f29fb99f66fb893e | e2b5b2184038d45023554c3b80bc957fd2f256ed7bf52574461c865c9f0f611f | S4无根显式metadata-only登记核验，保留种类/SHA/长度闭包 |
+| src/paper_radar/fixture_audit/resume_rules.py | 8a55061781a97781b24739d4dadecd7439f0e8bd749238dc2eaa55e53b54c48c | 6499998f242fcc9cf2f0f179789e391b9aae9867dadddcd709c2eaeb95dd6594 | F2注释说明当前执行与历史实现独立 |
+| src/paper_radar/fixture_audit/sampling_models.py | 7dfabc48bc6af4dc2bdce67ae7e5adcb7206421a10e56c6cd7671992bbbf04fb | b7f8024c04c87bdec155fb54bda49f0651f52c5d843eacb424f520e6c96adda9 | S3共用封闭类别领域alias；取值不变 |
+| src/paper_radar/fixture_audit/sampling_rules.py | 6778a077d95e179c60c3531cb6ed4c92567c8920b62f9e7de59c61fd6f964f14 | e41e05b22873aeac6e56e9a3ee8732441f2c2113d5f903bb71de25c4acf4c72b | S3消费类别alias，封闭表判定不变 |
+| src/paper_radar/fixture_audit/sampling_service.py | fc92e6fd6d240bd1de3cce531db4600b95d2a99c0f768690ae3042329fd55e9f | 029163c9cbca2e52e7b1ec76dde0845c501f021b011c140bf43dd73817ebb1c0 | S-1共用完整执行身份准入；F1/F3/S2只读助手 |
+| src/paper_radar/fixture_audit/service.py | bad9efdf50d101a70e9e75724735f9a8c02fbc20ec06b73d62d0eaed7e5e1105 | 1f243b1d93b256d7f3b50a0d8a3aa879bd7820e4de1c1429bb2863298c312dfe | F4材料核验去重；S4不再构造cwd假根 |
+| src/paper_radar/fixture_audit/service_reads.py | 新增 | 16c46f30d0a3b10e4f07c0ff0f48efde79b34076cbb806d9a4c1ed1fb75764da | F1/F3/S2新窄助手，写事务和层级loader保留原模块 |
+| tests/fixtures/a10_coverage.json | 308191db2dfe5308dbe9760625dbd27e92f7e758720d64335a6a8878b869f09b | 77e537af3dd3e2adc9aaa5f4fb253ebb8dc46b86c2e1cbad5f5a2b50e8b6ce05 | 更新sampling身份指针和限界；追加三项安全守卫；原693库存/37原文不改 |
+| tests/test_audit_reinterpret.py | 16024c3e8cee6e3261e4b0f4f5705f3b6f2c7fc8bbca5b1f4c85d9a8d8134691 | ea5a47a4a58f8c91aaf557c47d779d99ab3a076f906eb0bc7fa9f1714c4f6121 | S3表外类别受控且原子；3→4例 |
+| tests/test_audit_replay.py | 94da145b1b377150832f4bf2e30d9c5a689d14a4819b7ef7789394001ab6ff0a | 9d1043d51a38e06391b797a30d3d636ae0d5a8b9d6caddfcf86957f7454eb7cd | F2同一历史在当前版本漂移后可回放而拒绝执行；3例不变 |
+| tests/test_audit_sampling.py | 56b8d3a33937ba353862fd30a3247826bf4de26f5e1b2b67336af5ad3c2a935f | 9caf1e175bb5cb58f9122580b1e9c75d512b50c66391537213961de1efaf377e | S-1原1身份例替换22向量：代码+10版本×select/continue；4→25例 |
+| tests/test_fixture_pdf.py | d6815e11a4f3582b5c5d0fa02881b0fdaa442f5223c0f6fc9be240dafb91d0e5 | 33614c8e76c8d2bcdaedfdc42da05c6fbd9b984362dd6569abb557de4a85d1ae | S4扩既有公共rootless案例：损坏blob可查询/登记损坏拒绝/不写cwd；24例不变 |
+| tests/test_fixture_registry.py | 0612b6a336b5a9d7eb6b347c56eee55caa1212ab3067c7405394a32197e5caef | a1a9b7c9540265d25aec7cb047550e20dff8514af9c6f424550923bbb075fc2d | S5公共错误遍历全部声明reason中文可行动守卫；14→15例 |

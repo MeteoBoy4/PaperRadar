@@ -59,11 +59,17 @@ class FrozenFeed(FrozenModel):
     payload_scope: Literal["whole_feed"] = "whole_feed"
 
 
+CategoryDecision = Literal["journal_article", "non_journal_article", "unknown"]
+CategoryResult = Literal[
+    "journal_article", "non_journal_article", "conflict", "unknown"
+]
+
+
 class CategoryBasis(FrozenModel):
     route: Route
     locator: str
     value: str
-    decision: Literal["journal_article", "non_journal_article", "unknown"]
+    decision: CategoryDecision
     acquisition_id: str | None = None
 
 

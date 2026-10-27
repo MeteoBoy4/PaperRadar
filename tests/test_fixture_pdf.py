@@ -391,6 +391,7 @@ def test_preconstructed_backend_models_cannot_bypass_the_public_boundary(
 
 def test_declaration_check_and_local_pdf_integrity_are_independent(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from paper_radar.storage.artifact_contract import ArtifactError
 
@@ -417,6 +418,30 @@ def test_declaration_check_and_local_pdf_integrity_are_independent(
     assert rejected.value.reason == "blob_corrupt"
     recorded = FixtureAudit(service.database).show(record_id)
     assert recorded.pdf is not None and recorded.pdf.current_pdf_id == pdf.pdf_id
+    cwd = tmp_path / "empty-cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    rootless = FixtureAudit(service.database)
+    assert rootless.show(record_id) == recorded
+    assert list(cwd.iterdir()) == []
+    with pytest.raises(FixtureError) as unavailable:
+        rootless.validate_all()
+    assert unavailable.value.reason == "evidence_required"
+    assert unavailable.value.path == "data_root"
+
+    import sqlite3
+    from contextlib import closing
+
+    with closing(sqlite3.connect(service.database)) as connection:
+        connection.execute(
+            "UPDATE content_objects SET size_bytes=size_bytes+1 WHERE sha256=?",
+            (PDF_SHA256,),
+        )
+        connection.commit()
+    with pytest.raises(ArtifactError) as damaged_metadata:
+        rootless.show(record_id)
+    assert damaged_metadata.value.reason == "registration_corrupt"
+    assert list(cwd.iterdir()) == []
 
 
 @pytest.mark.parametrize("field", ["model_versions", "methods_data"])

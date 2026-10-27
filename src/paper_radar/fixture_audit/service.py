@@ -389,14 +389,21 @@ class FixtureAudit:
             engine.dispose()
 
     def list(self, *, history: bool = False) -> tuple[FixtureRecord, ...]:
+        return self._list(history=history, verify_audit_materials=True)
+
+    def _list(
+        self, *, history: bool, verify_audit_materials: bool
+    ) -> tuple[FixtureRecord, ...]:
         engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
         try:
             require_current_revision(engine)
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN")
                 records = _load_records(connection)
-                if self.data_root is not None and any(
-                    record.entry.audit_reference for record in records
+                if (
+                    verify_audit_materials
+                    and self.data_root is not None
+                    and any(record.entry.audit_reference for record in records)
                 ):
                     self._validate_audit_materials()
                 samples = {
@@ -410,7 +417,9 @@ class FixtureAudit:
                 states = load_pdf_states(
                     connection,
                     samples,
-                    ArtifactStore(self.database, self.data_root or Path(".")),
+                    ArtifactStore(self.database, self.data_root)
+                    if self.data_root is not None
+                    else None,
                     verify_bytes=self.data_root is not None,
                 )
                 return self._audit_proofs(
@@ -823,7 +832,7 @@ class FixtureAudit:
         )
 
     def validate_all(self) -> None:
-        records = self.list(history=True)
+        records = self._list(history=True, verify_audit_materials=False)
         engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
         try:
             with engine.connect() as connection:
@@ -838,7 +847,4 @@ class FixtureAudit:
             engine.dispose()
         if self.data_root is None and any(record.pdf is not None for record in records):
             raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
-        self.acquisitions.validate_all()
-        self.sampling.validate_all()
-        self.abstracts.validate_all()
-        self.interpretations.list()
+        self._validate_audit_materials()

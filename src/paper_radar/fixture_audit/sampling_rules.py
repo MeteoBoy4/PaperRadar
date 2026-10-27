@@ -5,12 +5,13 @@ from __future__ import annotations
 import hashlib
 import json
 from html.parser import HTMLParser
-from typing import Literal
 
 from paper_radar.fixture_audit.acquisition_models import Route
 from paper_radar.fixture_audit.models import Journal
 from paper_radar.fixture_audit.sampling_models import (
     CategoryBasis,
+    CategoryDecision,
+    CategoryResult,
     FeedCandidate,
     SamplingOutcome,
 )
@@ -78,9 +79,7 @@ def category_bases(
             values = [(locator, label, accepted, True)]
     result: list[CategoryBasis] = []
     for locator, value, accepted, rejects_other in values:
-        decision: Literal["journal_article", "non_journal_article", "unknown"] = (
-            "unknown"
-        )
+        decision: CategoryDecision = "unknown"
         if value.strip() == accepted:
             decision = "journal_article"
         elif value.strip() and rejects_other:
@@ -99,7 +98,7 @@ def category_bases(
 
 def category_result(
     bases: tuple[CategoryBasis, ...],
-) -> Literal["journal_article", "non_journal_article", "conflict", "unknown"]:
+) -> CategoryResult:
     decisions = {value.decision for value in bases} - {"unknown"}
     if len(decisions) > 1:
         return "conflict"

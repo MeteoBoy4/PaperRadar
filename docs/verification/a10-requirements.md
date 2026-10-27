@@ -21,3 +21,5 @@
 最终静态处置为550 covered、7 superseded、28 not_assessed、108 operational，保留693个原ID；37份来源原文逐字匹配缓存的完整任务图。全部已决条目/额外安全断言均有具体真实测试和固定文件指针；无未决项和owner冲突。存在符号仍须是可收集的test函数，不能以helper/fixture充数；实际执行与可信终态继续由冻结后的同次门禁证明。
 
 首轮完整门禁还发现fixture包和CLI提前加载服务破坏既有禁I/O帮助场景；按既有延迟加载边界修正，禁网/禁SQLite守卫保持。七个根/fixture/audit帮助向量独立固定在A10分母，未把此产品兼容缺陷记为未验能力。
+
+本次 r1/r2 follow-up 将选样执行准入补齐为代码加十槽版本、select/真实暂停continue共22向量，更新原sampling_execution_identity指针和明确证明边界；旧693项库存及37份源原文不变。额外安全断言追加新parser表外类别原子拒绝、全部FixtureReason中文行动守卫和rootless PDF登记闭包，不把维护整理造为额外产品需求。A10独立分母由425→448：sampling 4→25（原1例替换为22例）、reinterpret 3→4、registry 14→15；其他34模块计数不变。历史v1回放与当前执行版本独立；只读共享助手和材料核验去重保持原分层、错误路径和恢复行为。

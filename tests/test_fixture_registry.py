@@ -239,3 +239,16 @@ def test_four_purposes_are_separate_and_file_location_does_not_change_identity(
         "pdf",
     }
     assert len({record.record_id for record in registered.entries}) == 4
+
+
+def test_every_declared_fixture_reason_has_chinese_actionable_guidance() -> None:
+    from paper_radar.fixture_audit.errors import FixtureReason
+
+    for reason in FixtureReason:
+        error = FixtureError(reason, path="review.request")
+        assert error.reason == reason and error.path == "review.request"
+        message = str(error)
+        assert reason.value in message and "review.request" in message
+        explanation, action = message.split("：", 1)[1].split("；", 1)
+        assert any("\u4e00" <= char <= "\u9fff" for char in explanation)
+        assert "请" in action or "不能" in action

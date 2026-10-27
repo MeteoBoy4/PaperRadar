@@ -4,6 +4,7 @@ from paper_radar.fixture_audit.acquisition_models import AuditPlan
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
 
 # 产品只发布这些完整历史实现。新默认值不能悄悄改变这个注册表。
+# resume_rules.validate_execution_identity 比较当前执行版本,不要求与本历史表恒等。
 HISTORICAL_V1 = {
     "acquisition_strategy_version": "audit-acquisition-v1",
     "channels_version": "audit-channels-v1",

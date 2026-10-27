@@ -21,6 +21,7 @@ from paper_radar.fixture_audit.pdf_tables import (
     fixture_pdf_acquisitions,
     fixture_pdf_expectations,
 )
+from paper_radar.storage.artifact_repository import read_registration
 from paper_radar.storage.artifacts import ArtifactStore
 
 SampleScope = tuple[str, str | None, str]
@@ -67,17 +68,23 @@ def load_pdf_states(
             or request.replaces != current.get(scope)
         ):
             raise FixtureError(FixtureReason.CORRUPT_REFERENCE, path="pdf")
-        if store is not None:
-            artifact = store.get_artifact(item.artifact_id)
-            if (
-                artifact.kind != "original_pdf"
-                or len(artifact.members) != 1
-                or artifact.members[0].sha256 != item.pdf_sha256
-                or artifact.members[0].size_bytes != item.size_bytes
-            ):
-                raise FixtureError(FixtureReason.CORRUPT_REFERENCE, path="pdf.artifact")
-            if verify_bytes:
-                store.read_artifact(item.artifact_id)
+        # 缺失 data_root 时仍核验制品登记、种类及引用,不构造 cwd 假根。
+        artifact = (
+            store.get_artifact(item.artifact_id)
+            if store is not None
+            else read_registration(connection.engine, item.artifact_id)[0]
+        )
+        if (
+            artifact.kind != "original_pdf"
+            or len(artifact.members) != 1
+            or artifact.members[0].sha256 != item.pdf_sha256
+            or artifact.members[0].size_bytes != item.size_bytes
+        ):
+            raise FixtureError(FixtureReason.CORRUPT_REFERENCE, path="pdf.artifact")
+        if verify_bytes:
+            if store is None:
+                raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
+            store.read_artifact(item.artifact_id)
         acquisitions.setdefault(scope, []).append(item)
         current[scope] = item.pdf_id
     by_id = {item.pdf_id: item for items in acquisitions.values() for item in items}

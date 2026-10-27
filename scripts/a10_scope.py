@@ -73,13 +73,13 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_audit_matrix_cli.py": 3,
     "tests/test_audit_matrix_recovery.py": 9,
     "tests/test_audit_processes.py": 2,
-    "tests/test_audit_reinterpret.py": 3,
+    "tests/test_audit_reinterpret.py": 4,
     "tests/test_audit_replay.py": 3,
     "tests/test_audit_resume.py": 8,
     "tests/test_audit_resume_atomicity.py": 2,
     "tests/test_audit_resume_cli.py": 3,
     "tests/test_audit_resume_recovery.py": 5,
-    "tests/test_audit_sampling.py": 4,
+    "tests/test_audit_sampling.py": 25,
     "tests/test_audit_sampling_boundaries.py": 5,
     "tests/test_audit_sampling_categories.py": 17,
     "tests/test_audit_sampling_feed_safety.py": 7,
@@ -90,7 +90,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_fixture_pdf_cli.py": 1,
     "tests/test_fixture_pdf_recovery.py": 4,
     "tests/test_fixture_recovery.py": 4,
-    "tests/test_fixture_registry.py": 14,
+    "tests/test_fixture_registry.py": 15,
 }
 REQUIRED_TEST_MODULES = (
     (
@@ -171,11 +171,11 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_audit_reinterpret.py",
-        "16024c3e8cee6e3261e4b0f4f5705f3b6f2c7fc8bbca5b1f4c85d9a8d8134691",
+        "ea5a47a4a58f8c91aaf557c47d779d99ab3a076f906eb0bc7fa9f1714c4f6121",
     ),
     (
         "tests/test_audit_replay.py",
-        "94da145b1b377150832f4bf2e30d9c5a689d14a4819b7ef7789394001ab6ff0a",
+        "9d1043d51a38e06391b797a30d3d636ae0d5a8b9d6caddfcf86957f7454eb7cd",
     ),
     (
         "tests/test_audit_resume.py",
@@ -195,7 +195,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_audit_sampling.py",
-        "56b8d3a33937ba353862fd30a3247826bf4de26f5e1b2b67336af5ad3c2a935f",
+        "9caf1e175bb5cb58f9122580b1e9c75d512b50c66391537213961de1efaf377e",
     ),
     (
         "tests/test_audit_sampling_boundaries.py",
@@ -223,7 +223,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_fixture_pdf.py",
-        "d6815e11a4f3582b5c5d0fa02881b0fdaa442f5223c0f6fc9be240dafb91d0e5",
+        "33614c8e76c8d2bcdaedfdc42da05c6fbd9b984362dd6569abb557de4a85d1ae",
     ),
     (
         "tests/test_fixture_pdf_cli.py",
@@ -239,10 +239,14 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_fixture_registry.py",
-        "0612b6a336b5a9d7eb6b347c56eee55caa1212ab3067c7405394a32197e5caef",
+        "a1a9b7c9540265d25aec7cb047550e20dff8514af9c6f424550923bbb075fc2d",
     ),
 )
 REQUIRED_SOURCE_MODULES = (
+    (
+        "src/paper_radar/fixture_audit/service_reads.py",
+        "16c46f30d0a3b10e4f07c0ff0f48efde79b34076cbb806d9a4c1ed1fb75764da",
+    ),
     (
         "scripts/__init__.py",
         "6c2ae8f51955310e5dca3ef51d02bdbf425b779b7de4afe84ab5768d063caef1",
@@ -553,7 +557,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/abstract_parser.py",
-        "17d18829f53d3b1e72edcd21a0c8a99e3b6083cac901f30d4fdfd41a5c68d750",
+        "0da46cf78edfb5db1bfcbd0e2bbdb73be221a81fe566839266935b6ea13b641d",
     ),
     (
         "src/paper_radar/fixture_audit/abstract_records.py",
@@ -565,7 +569,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/abstract_service.py",
-        "ae91e9c10fe61ae93c6874616f17b6ef8f6aae6671a0117b6f93effa7bc2d30a",
+        "33d75521f2aa14b05108052cf0985897334a710f13b115eded926305712eadac",
     ),
     (
         "src/paper_radar/fixture_audit/abstract_tables.py",
@@ -589,7 +593,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/acquisition_service.py",
-        "cc4c79a6632c8cb934f4fc1287b3116edd9502cbbc071f56310d46ef4b1e3e38",
+        "d135c2ef91b3d9f4f22faa0e2ee4adc39abc0963ecee21e5da4684fbd336d178",
     ),
     (
         "src/paper_radar/fixture_audit/acquisition_tables.py",
@@ -613,7 +617,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/history_rules.py",
-        "52f76f6d89cffd5f1e83d4e3cfe9dfd17f60aa36fee5c044b47d9e53f54ad03f",
+        "2fa30000b9594d3210df58bdceb6190d3edfe4cee8e84e9c7cda24b61518c394",
     ),
     (
         "src/paper_radar/fixture_audit/interpretation_models.py",
@@ -621,7 +625,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/interpretation_service.py",
-        "79a1fd69c8061e4c5cfec5157df90cd6e6dc7e90fb21222c95ff290ba6a62ecb",
+        "3e42da057853b85aee7153f6f0cdcaf428bef654e201416a3347803e813c5094",
     ),
     (
         "src/paper_radar/fixture_audit/interpretation_tables.py",
@@ -637,7 +641,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/pdf_records.py",
-        "c48381c18827ddc2fb49cbc83e37674d71fc37994ad65c86f29fb99f66fb893e",
+        "e2b5b2184038d45023554c3b80bc957fd2f256ed7bf52574461c865c9f0f611f",
     ),
     (
         "src/paper_radar/fixture_audit/pdf_requests.py",
@@ -657,11 +661,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/resume_rules.py",
-        "8a55061781a97781b24739d4dadecd7439f0e8bd749238dc2eaa55e53b54c48c",
+        "6499998f242fcc9cf2f0f179789e391b9aae9867dadddcd709c2eaeb95dd6594",
     ),
     (
         "src/paper_radar/fixture_audit/sampling_models.py",
-        "7dfabc48bc6af4dc2bdce67ae7e5adcb7206421a10e56c6cd7671992bbbf04fb",
+        "b7f8024c04c87bdec155fb54bda49f0651f52c5d843eacb424f520e6c96adda9",
     ),
     (
         "src/paper_radar/fixture_audit/sampling_parser.py",
@@ -673,7 +677,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/sampling_rules.py",
-        "6778a077d95e179c60c3531cb6ed4c92567c8920b62f9e7de59c61fd6f964f14",
+        "e41e05b22873aeac6e56e9a3ee8732441f2c2113d5f903bb71de25c4acf4c72b",
     ),
     (
         "src/paper_radar/fixture_audit/sampling_selection.py",
@@ -681,7 +685,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/sampling_service.py",
-        "fc92e6fd6d240bd1de3cce531db4600b95d2a99c0f768690ae3042329fd55e9f",
+        "029163c9cbca2e52e7b1ec76dde0845c501f021b011c140bf43dd73817ebb1c0",
     ),
     (
         "src/paper_radar/fixture_audit/sampling_tables.py",
@@ -689,7 +693,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/service.py",
-        "bad9efdf50d101a70e9e75724735f9a8c02fbc20ec06b73d62d0eaed7e5e1105",
+        "1f243b1d93b256d7f3b50a0d8a3aa879bd7820e4de1c1429bb2863298c312dfe",
     ),
     (
         "src/paper_radar/fixture_audit/source_http.py",
@@ -1369,11 +1373,11 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/a10-requirements.md",
-        "cb62a594c4b53216dab9b2fe90a18f82d9727fb8fa27be5ad36c666f87b937c6",
+        "7318bb1eb9087363995be9396e447aeaafe77d8de89b6cebdf1197cbdfe1ed85",
     ),
     (
         "docs/verification/a10-scope-review.md",
-        "3d4348c03be6d5e2e866ab0468593e6e4d2dd08ce24eb19acb17d8890f49beb2",
+        "660d46801d7a63c861cc04a20bcb3860cf18d843172ae5c18e5bf22694e4596c",
     ),
     (
         "docs/verification/offline-evidence.md",
@@ -1413,7 +1417,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "tests/fixtures/a10_coverage.json",
-        "308191db2dfe5308dbe9760625dbd27e92f7e758720d64335a6a8878b869f09b",
+        "77e537af3dd3e2adc9aaa5f4fb253ebb8dc46b86c2e1cbad5f5a2b50e8b6ce05",
     ),
     ("uv.lock", "11aa458753aad1447061e7b8e5ef3adc74e53db4db98ecd36da5d88e14267512"),
 )

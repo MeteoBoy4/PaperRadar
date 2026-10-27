@@ -39,7 +39,11 @@ from paper_radar.fixture_audit.resume_rules import (
 from paper_radar.fixture_audit.sampling_models import SamplingAuditView, SamplingMember
 from paper_radar.fixture_audit.sampling_records import load_sampling
 from paper_radar.fixture_audit.sampling_service import SamplingService
-from paper_radar.storage.artifacts import ArtifactStore
+from paper_radar.fixture_audit.service_reads import (
+    find_plan,
+    read_material,
+    read_snapshot,
+)
 from paper_radar.storage.database import (
     DatabaseMode,
     open_database,
@@ -63,39 +67,21 @@ class AbstractService:
         )
 
     def list_audits(self) -> tuple[AbstractAuditView, ...]:
-        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
-        try:
-            require_current_revision(engine)
-            with engine.connect() as connection:
-                connection.exec_driver_sql("BEGIN")
-                return load_abstracts(
-                    connection, load_sampling(connection, load_audits(connection))
-                )
-        except SQLAlchemyError:
-            raise FixtureError(
-                FixtureReason.CORRUPT_REFERENCE, path="abstract.matrix"
-            ) from None
-        finally:
-            engine.dispose()
+        return read_snapshot(
+            self.database,
+            lambda connection: load_abstracts(
+                connection, load_sampling(connection, load_audits(connection))
+            ),
+            path="abstract.matrix",
+        )
 
     def show_audit(self, plan_id: str) -> AbstractAuditView:
-        for view in self.list_audits():
-            if view.plan.plan_id == plan_id:
-                return view
-        raise FixtureError(FixtureReason.RECORD_NOT_FOUND, path="plan_id")
+        return find_plan(self.list_audits(), plan_id)
 
     def _raw(self, execution: RouteExecution) -> bytes:
-        if (
-            self.data_root is None
-            or not execution.settlement
-            or not execution.settlement.artifact_id
-        ):
-            raise FixtureError(
-                FixtureReason.EVIDENCE_REQUIRED, path="abstract.material"
-            )
-        return ArtifactStore(self.database, self.data_root).read_artifact(
-            execution.settlement.artifact_id
-        )["payload"]
+        return read_material(
+            self.database, self.data_root, execution, path="abstract.material"
+        )
 
     def _interpret(
         self,

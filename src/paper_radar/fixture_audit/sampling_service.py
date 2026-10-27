@@ -7,16 +7,12 @@ from pathlib import Path
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from paper_radar.fixture_audit.acquisition_identity import capture_code_identity
 from paper_radar.fixture_audit.acquisition_models import (
-    CATEGORY_RULES_VERSION,
-    SAMPLING_RULES_VERSION,
     CodeIdentity,
     Route,
     RouteExecution,
     SourceRequest,
     identity_sha256,
-    revalidate_model,
 )
 from paper_radar.fixture_audit.acquisition_policy import (
     validate_contact,
@@ -26,7 +22,10 @@ from paper_radar.fixture_audit.acquisition_service import AcquisitionService
 from paper_radar.fixture_audit.audit_protection import AuditProtection
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
 from paper_radar.fixture_audit.models import Journal
-from paper_radar.fixture_audit.resume_rules import can_continue
+from paper_radar.fixture_audit.resume_rules import (
+    can_continue,
+    validate_execution_identity,
+)
 from paper_radar.fixture_audit.sampling_models import (
     FeedCandidate,
     FrozenFeed,
@@ -44,7 +43,11 @@ from paper_radar.fixture_audit.sampling_selection import (
     material_decoding,
 )
 from paper_radar.fixture_audit.sampling_tables import sampling_events, sampling_feeds
-from paper_radar.storage.artifacts import ArtifactStore
+from paper_radar.fixture_audit.service_reads import (
+    find_plan,
+    read_material,
+    read_snapshot,
+)
 from paper_radar.storage.database import (
     DatabaseMode,
     open_database,
@@ -67,37 +70,19 @@ class SamplingService:
         )
 
     def list_audits(self) -> tuple[SamplingAuditView, ...]:
-        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
-        try:
-            require_current_revision(engine)
-            with engine.connect() as connection:
-                connection.exec_driver_sql("BEGIN")
-                return load_sampling(connection, load_audits(connection))
-        except SQLAlchemyError:
-            raise FixtureError(
-                FixtureReason.CORRUPT_REFERENCE, path="sampling"
-            ) from None
-        finally:
-            engine.dispose()
+        return read_snapshot(
+            self.database,
+            lambda connection: load_sampling(connection, load_audits(connection)),
+            path="sampling",
+        )
 
     def show_audit(self, plan_id: str) -> SamplingAuditView:
-        for view in self.list_audits():
-            if view.plan.plan_id == plan_id:
-                return view
-        raise FixtureError(FixtureReason.RECORD_NOT_FOUND, path="plan_id")
+        return find_plan(self.list_audits(), plan_id)
 
     def _raw(self, execution: RouteExecution) -> bytes:
-        if (
-            self.data_root is None
-            or execution.settlement is None
-            or execution.settlement.artifact_id is None
-        ):
-            raise FixtureError(
-                FixtureReason.EVIDENCE_REQUIRED, path="sampling.material"
-            )
-        return ArtifactStore(self.database, self.data_root).read_artifact(
-            execution.settlement.artifact_id
-        )["payload"]
+        return read_material(
+            self.database, self.data_root, execution, path="sampling.material"
+        )
 
     def _route(
         self,
@@ -272,24 +257,7 @@ class SamplingService:
     ) -> SamplingAuditView:
         contact = validate_contact(contact_email)
         view = self.show_audit(plan_id)
-        try:
-            code = (
-                revalidate_model(code_identity, CodeIdentity)
-                if code_identity is not None
-                else capture_code_identity()
-            )
-        except (ValueError, TypeError, RecursionError):
-            raise FixtureError(
-                FixtureReason.PLAN_IDENTITY_MISMATCH, path="code_identity"
-            ) from None
-        if (
-            code != view.plan.code_identity
-            or view.plan.sampling_rules_version != SAMPLING_RULES_VERSION
-            or view.plan.category_rules_version != CATEGORY_RULES_VERSION
-        ):
-            raise FixtureError(
-                FixtureReason.PLAN_IDENTITY_MISMATCH, path="code_identity"
-            )
+        validate_execution_identity(view.plan, code_identity)
         with (
             nullcontext(protection)
             if protection is not None

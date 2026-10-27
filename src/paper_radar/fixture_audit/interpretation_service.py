@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Mapping
 from pathlib import Path
+from typing import get_args
 
 from pydantic import ValidationError
 from sqlalchemy import Connection, select
@@ -31,10 +32,11 @@ from paper_radar.fixture_audit.interpretation_tables import (
     interpretations,
     parser_declarations,
 )
+from paper_radar.fixture_audit.sampling_models import CategoryResult
+from paper_radar.fixture_audit.service_reads import read_material
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError
 from paper_radar.papers.text_rules import normalize_text
-from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.database import (
     DatabaseMode,
     open_database,
@@ -45,12 +47,7 @@ from paper_radar.storage.database import (
 def field_value(name: str, value: str) -> InterpretedField:
     if name == "identity_doi":
         value = normalize_doi(value)
-    elif name == "category" and value not in {
-        "journal_article",
-        "non_journal_article",
-        "unknown",
-        "conflict",
-    }:
+    elif name == "category" and value not in get_args(CategoryResult):
         raise ValueError("category")
     value = normalize_text(value)
     flags = signals(value) if name == "abstract" else ()
@@ -349,11 +346,7 @@ class InterpretationService:
                     row_projection(row, old, baseline(view, row), material=False)
                 )
                 continue
-            if self.data_root is None:
-                raise FixtureError(FixtureReason.EVIDENCE_REQUIRED, path="data_root")
-            raw = ArtifactStore(self.database, self.data_root).read_artifact(
-                source.settlement.artifact_id
-            )["payload"]
+            raw = read_material(self.database, self.data_root, source, path="data_root")
             state = next(
                 value for value in view.sampling if value.journal == row.request.journal
             )

@@ -41,6 +41,7 @@ def validate_execution_identity(
         raise FixtureError(
             FixtureReason.PLAN_IDENTITY_MISMATCH, path="code_identity"
         ) from None
+    # 当前执行准入随默认实现升级;历史回放独立使用 history_rules.HISTORICAL_V1。
     versions = {
         "acquisition_strategy_version": acquisition_models.ACQUISITION_STRATEGY_VERSION,
         "channels_version": acquisition_models.CHANNELS_VERSION,

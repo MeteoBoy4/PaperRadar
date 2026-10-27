@@ -57499,7 +57499,7 @@
         "tests/test_audit_sampling.py::test_temporary_failure_pauses_position_and_continues_other_journals",
         "tests/test_audit_sampling.py::test_explicit_sampling_continue_settles_unknown_before_new_route",
         "tests/test_audit_sampling_categories.py::test_only_closed_explicit_fields_supply_category_evidence",
-        "tests/test_audit_sampling.py::test_plan_freezes_sampling_rules_and_rejects_changed_execution_before_http",
+        "tests/test_audit_sampling.py::test_sampling_checks_full_execution_identity_before_mutation_or_http",
         "tests/test_audit_acquisition.py::test_request_and_plan_keys_reject_changed_strategy_channel_and_contents",
         "tests/test_audit_sampling.py::test_four_journals_freeze_explicit_members_without_abstract_filtering",
         "tests/test_audit_sampling_boundaries.py::test_doi_wrappers_deduplicate_but_opaque_entry_ids_are_preserved",
@@ -66994,6 +66994,75 @@
         "tests/deny_external_io/sitecustomize.py"
       ],
       "note": "首轮完整门禁真实暴露；旧cli_help与contract_cli共同回归，7参数新保护在A10分母中独立登记。"
+    },
+    {
+      "behavior_id": "review_parser_category_closed_table",
+      "public_behavior": "新parser返回表外category时以invalid_request/audit.parser_output受控拒绝且不留下部分解释；同键合法重交成功。",
+      "public_behavior_pointers": [
+        "src/paper_radar/fixture_audit/service.py::FixtureAudit.reinterpret_audit"
+      ],
+      "specific_test_pointers": [
+        "tests/test_audit_reinterpret.py::test_parser_category_outside_closed_table_is_controlled_and_atomic"
+      ],
+      "documentation_pointers": [
+        "docs/verification/a10-requirements.md"
+      ],
+      "limits": [
+        "固定注入parser；非live模型或未来parser覆盖。"
+      ],
+      "status": "covered",
+      "scope_state": "required_by_A10_scope",
+      "scope_materials": [
+        "src/paper_radar/fixture_audit/interpretation_service.py",
+        "src/paper_radar/fixture_audit/sampling_models.py",
+        "tests/test_audit_reinterpret.py"
+      ]
+    },
+    {
+      "behavior_id": "review_fixture_error_guidance",
+      "public_behavior": "所有已声明FixtureReason经公共FixtureError构造均给出中文原因、行动与指定字段路径。",
+      "public_behavior_pointers": [
+        "src/paper_radar/fixture_audit/errors.py::FixtureError"
+      ],
+      "specific_test_pointers": [
+        "tests/test_fixture_registry.py::test_every_declared_fixture_reason_has_chinese_actionable_guidance"
+      ],
+      "documentation_pointers": [
+        "docs/verification/a10-requirements.md"
+      ],
+      "limits": [
+        "守卫当前枚举，不用generic fallback掩盖缺guidance。"
+      ],
+      "status": "covered",
+      "scope_state": "required_by_A10_scope",
+      "scope_materials": [
+        "src/paper_radar/fixture_audit/errors.py",
+        "tests/test_fixture_registry.py"
+      ]
+    },
+    {
+      "behavior_id": "review_rootless_pdf_metadata",
+      "public_behavior": "无data_root时只核验PDF声明及制品登记闭包；损坏blob不阻断查询、损坏登记必须拒绝，validate_all仍要求真实字节根。",
+      "public_behavior_pointers": [
+        "src/paper_radar/fixture_audit/service.py::FixtureAudit.list",
+        "src/paper_radar/fixture_audit/service.py::FixtureAudit.validate_all"
+      ],
+      "specific_test_pointers": [
+        "tests/test_fixture_pdf.py::test_declaration_check_and_local_pdf_integrity_are_independent"
+      ],
+      "documentation_pointers": [
+        "docs/verification/a10-requirements.md"
+      ],
+      "limits": [
+        "元数据查询不证明blob完整或Docling质量。"
+      ],
+      "status": "covered",
+      "scope_state": "required_by_A10_scope",
+      "scope_materials": [
+        "src/paper_radar/fixture_audit/service.py",
+        "src/paper_radar/fixture_audit/pdf_records.py",
+        "tests/test_fixture_pdf.py"
+      ]
     }
   ],
   "behavior_catalog": [
@@ -68126,30 +68195,32 @@
     {
       "behavior_id": "sampling_execution_identity",
       "status": "covered",
-      "public_behavior": "计划冻结sampling/category规则名及代码身份；推进核对执行身份，改变类别规则时零HTTP拒绝；取得请求还核验计划策略。",
+      "public_behavior": "初次选样和真实Feed暂停后的显式继续均在执行锁、写入和HTTP前校验代码身份与完整十槽规则/策略身份；任一变化以plan_identity_mismatch/code_identity拒绝并保持公共视图及HTTP调用不变。",
       "public_behavior_pointers": [
         "src/paper_radar/fixture_audit/service.py::FixtureAudit.select_audit_samples",
         "src/paper_radar/fixture_audit/service.py::FixtureAudit.continue_audit_sampling",
         "src/paper_radar/fixture_audit/sampling_service.py::SamplingService.advance",
-        "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService._acquire_source"
+        "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService._acquire_source",
+        "src/paper_radar/fixture_audit/resume_rules.py::validate_execution_identity"
       ],
       "specific_test_pointers": [
-        "tests/test_audit_sampling.py::test_plan_freezes_sampling_rules_and_rejects_changed_execution_before_http",
+        "tests/test_audit_sampling.py::test_sampling_checks_full_execution_identity_before_mutation_or_http",
         "tests/test_audit_acquisition.py::test_request_and_plan_keys_reject_changed_strategy_channel_and_contents"
       ],
       "documentation_pointers": [],
       "limits": [
-        "现有选样直接回归改变CATEGORY_RULES_VERSION；代码身份不同/采样规则不同及策略不同的选样continue组合不能从该用例自动推断已独立断言。"
+        "固定合成HTTP与真实临时数据库；不证明live来源或未来版本实现可用。"
       ],
       "evidence_kind": "static_review_of_actual_code_and_specific_test_assertions",
-      "test_execution_review": "本轮没有运行测试或收集；既有子集记录仅列为操作证据。",
+      "test_execution_review": "本次review-followup已实跑公共sampling子集25 passed；其中11身份槽×select/continue共22例。最终同次门禁另由冻结树的check-offline证据证明。",
       "scope_state": "required_by_A10_scope",
       "scope_materials": [
         "src/paper_radar/fixture_audit/service.py",
         "src/paper_radar/fixture_audit/sampling_service.py",
         "src/paper_radar/fixture_audit/acquisition_service.py",
         "tests/test_audit_sampling.py",
-        "tests/test_audit_acquisition.py"
+        "tests/test_audit_acquisition.py",
+        "src/paper_radar/fixture_audit/resume_rules.py"
       ]
     },
     {

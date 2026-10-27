@@ -163,25 +163,78 @@ def test_explicit_sampling_continue_settles_unknown_before_new_route(
     service.validate_all()
 
 
-def test_plan_freezes_sampling_rules_and_rejects_changed_execution_before_http(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize("continuing", [False, True], ids=["select", "continue"])
+@pytest.mark.parametrize(
+    "identity_slot",
+    [
+        "code_identity",
+        "ACQUISITION_STRATEGY_VERSION",
+        "CHANNELS_VERSION",
+        "HTTP_RULES_VERSION",
+        "PARSER_VERSION",
+        "SAMPLING_RULES_VERSION",
+        "CATEGORY_RULES_VERSION",
+        "UA_TEMPLATE_VERSION",
+        "ABSTRACT_RULES_VERSION",
+        "TRUNCATION_RULES_VERSION",
+        "MATRIX_RULES_VERSION",
+    ],
+)
+def test_sampling_checks_full_execution_identity_before_mutation_or_http(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    identity_slot: str,
+    continuing: bool,
 ) -> None:
-    import pytest
+    import httpx
 
-    from paper_radar.fixture_audit import FixtureError
-    from paper_radar.fixture_audit import sampling_service as sampling_module
+    from paper_radar.fixture_audit import (
+        FixtureError,
+        abstract_models,
+        acquisition_models,
+    )
 
-    sources = SamplingSources()
+    class PausedSources(SamplingSources):
+        def __call__(self, request: httpx.Request) -> httpx.Response:
+            if request.url.host == "journals.ametsoc.org":
+                self.calls.append(str(request.url))
+                return httpx.Response(503)
+            return super().__call__(request)
+
+    sources = PausedSources()
     service = sampling_service(tmp_path, sources)
     plan = service.create_audit_plan(
         contact_email="audit@example.org", code_identity=CODE
     )
-    assert plan.sampling_rules_version == "audit-sampling-v1"
-    assert plan.category_rules_version == "audit-category-v1"
-    monkeypatch.setattr(sampling_module, "CATEGORY_RULES_VERSION", "audit-category-v2")
-    with pytest.raises(FixtureError) as caught:
-        service.select_audit_samples(
+    if continuing:
+        blocked = service.select_audit_samples(
             plan.plan_id, contact_email="audit@example.org", code_identity=CODE
         )
+        assert blocked.sampling[0].status == "blocked_pending"
+        assert blocked.sampling[0].history[-1].reason == "feed_unavailable"
+    before = service.show_audit(plan.plan_id)
+    calls = tuple(sources.calls)
+    code = CODE
+    if identity_slot == "code_identity":
+        code = CODE.model_copy(update={"commit": "9" * 40})
+    else:
+        module = (
+            abstract_models
+            if identity_slot
+            in {
+                "ABSTRACT_RULES_VERSION",
+                "TRUNCATION_RULES_VERSION",
+                "MATRIX_RULES_VERSION",
+            }
+            else acquisition_models
+        )
+        monkeypatch.setattr(module, identity_slot, "changed-version")
+    advance = (
+        service.continue_audit_sampling if continuing else service.select_audit_samples
+    )
+    with pytest.raises(FixtureError) as caught:
+        advance(plan.plan_id, contact_email="audit@example.org", code_identity=code)
     assert caught.value.reason == "plan_identity_mismatch"
-    assert sources.calls == []
+    assert caught.value.path == "code_identity"
+    assert tuple(sources.calls) == calls
+    assert service.show_audit(plan.plan_id) == before
