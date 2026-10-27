@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repository_root"
+
+# 参数解析沿用只读工具的启动方式; 真正检查由 Python 模块通过 uv 启动。
+project_environment="${UV_PROJECT_ENVIRONMENT-.venv}"
+if [[ "$project_environment" != /* ]]; then
+  project_environment="$repository_root/$project_environment"
+fi
+project_python="$project_environment/bin/python"
+if [[ ! -x "$project_python" ]]; then
+  echo '项目 Python 不可用；请先用 uv run --offline --locked 准备环境。' >&2
+  exit 1
+fi
+export PYTHONDONTWRITEBYTECODE=1
+exec "$project_python" -I -B -c '
+import runpy
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+runpy.run_module("scripts.check_compatibility", run_name="__main__", alter_sys=True)
+' "$repository_root" "$@"

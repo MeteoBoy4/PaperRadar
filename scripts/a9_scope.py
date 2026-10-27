@@ -495,7 +495,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "c865344a083765e906a0eddf0907ef16e8479c732ca9df4c68be2e7a3d976152",
+        "b8213f369c057c4d7329fe762fc7ff8bfb563b0ac9e12393cbb1dfe5d409f166",
     ),
 )
 
@@ -564,7 +564,7 @@ REQUIRED_FIXTURE_FILES = (
         "examples/contracts/screening/boundary/v1/manifest.json",
         "5efa0aec0e41329fe8736dcd533706309fd9c3717aeac14ddbf55d05cce0ed0b",
     ),
-    ("README.md", "9c21c0726ee8b270bebcfbd4c0636656354416089059299f4ea214e15d397173"),
+    ("README.md", "e321939033fb983a9d26a1b372c49d10d95c56df76298315674815f992bf1ef1"),
     ("GLOSSARY.md", "5836a32db8fd2ba67dc4c088db62e589cc5976e82e742ae3e46a0c18c7f91c01"),
     (
         "intent/draft.md",

@@ -345,5 +345,5 @@ REQUIRED_FIXTURE_FILES = (
         "docs/verification/a8-requirements.md",
         "102cb0f2bd14ac6ad57467b9f8cfb766d7f19620058b29bbd23ebd0a5615307f",
     ),
-    ("README.md", "9c21c0726ee8b270bebcfbd4c0636656354416089059299f4ea214e15d397173"),
+    ("README.md", "e321939033fb983a9d26a1b372c49d10d95c56df76298315674815f992bf1ef1"),
 )
