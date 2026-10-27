@@ -12,9 +12,10 @@
 它使用独立精选的公共回归，不自动扩展为所有 scope 测试，也不自动分析变更。
 影响面无法确定时，开发者应运行 `all`。
 
-帮助使用已准备的项目 Python 只读引导，不启动 uv、检查或文件写入。缺少项目
-解释器时退出 1，并提示用 `uv run --offline --locked` 准备环境。
-无参数、未知组合、额外参数或未知选项退出 2，不运行测试。
+帮助优先使用项目 Python，只读引导禁用 site 初始化与字节码；项目解释器缺失时使用
+宿主 `python3`（>=3.12），不启动 uv、检查或文件写入。项目和宿主均无可用解释器时
+退出 1，提示准备环境。无参数、未知组合、额外参数或未知选项退出 2，
+用中文说明原因及查看 `--help` 的下一步，不运行测试。
 
 ## 执行、输出与失败
 
@@ -35,7 +36,12 @@
 清除继承的 `PAPER_RADAR_TEST_RECEIPT`、`PAPER_RADAR_TEST_RUN_ID`、
 `PYTEST_ADDOPTS`、`PYTEST_PLUGINS`，禁用第三方 pytest 插件自动加载、回执插件、
 pytest 缓存与字节码。不写正式 `verification-runs/` 证据，不发布 A1–A10 结论。
+仅清除外部 pytest 环境参数；仓库 `pyproject.toml` 的 `addopts` 保留，不在入口复制。
 所选回归内部为验证发布语义而产生的文件仅位于测试临时目录。
 
 既有产物数量、历史终端输出和禁网络/SQLite 守卫保持独立预期。功能子集通过后运行
 适用组合，最终仍须 `./scripts/check-offline` 返回 0，开发期通过不继承历史验收资格。
+
+入口自身的原因受控为 `empty_selection`、`missing_module`、`missing_node`、
+`empty_module`、`launch_error`；结果为 `passed` 或 `failed`。标准进程退出码保持整数，
+原样保留 uv/pytest 的其他非零返回值，不把外部失败强制归并为内部状态。

@@ -20,7 +20,8 @@
 | 同时触及以上两类，或无法判断影响面 | `./scripts/check-compatibility all` |
 
 `./scripts/check-compatibility --help` 只打印中文帮助与完整选择清单，不启动 uv、
-测试或文件写入；沿用只读工具的项目 Python 引导，项目环境必须已准备。
+测试或文件写入；优先使用项目 Python，缺失时使用宿主 `python3`（>=3.12），
+两者均不可用时退出 1 并提示准备环境。参数错误给出中文原因和 `--help` 下一步。
 实际检查统一通过 `uv run --offline --locked …` 运行。入口只接受一个明确组合名，
 未知参数返回 2，不支持自动影响判断或任意 pytest 参数。
 
@@ -33,6 +34,7 @@ pytest 结果、退出码和实测耗时（入口总耗时含 uv）。参数化�
 pytest 插件自动加载、pytest 缓存和字节码。测试仍会使用临时文件/数据库，uv 可能同步
 锁定环境；不访问实时来源或用户数据库。开发期运行不写正式 `verification-runs/`
 证据，不发布任何 A1–A10 结论，也不取得完整验收资格。
+仓库 `pyproject.toml` 的 pytest `addopts` 仍是权威配置；入口不另维护严格选项副本。
 
 选择依据为独立精选的公共回归，唯一权威在
 `scripts/check_compatibility.py::CHECK_GROUPS`，不是各 scope 的全部业务测试。
@@ -71,7 +73,9 @@ pytest 插件自动加载、pytest 缓存和字节码。测试仍会使用临时
 `all` 是上面所有组合的有序并集，同一节点只执行一次。
 <!-- compatibility-selections:end -->
 
-复现/计时记录保存在被 Git 忽略的 `.scratch/issue-109/`：包含同环境的三个组合、
+版本库保存[首次交付实测摘要](../verification/issue-109-feedback-timings.md)，列出环境、
+数量、耗时与完整门禁对比；它是指定历史提交的测量，不替代后续代码的验收。
+原始复现/计时记录保存在被 Git 忽略的 `.scratch/issue-109/`：包含同环境的三个组合、
 完整门禁的实际数量/耗时，以及隔离副本中“旧产物预期”和“提前服务导入”两类
 受控回归的修前失败、修后通过原始输出。记录仅供开发诊断，不是正式验收文件。
 

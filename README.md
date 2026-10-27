@@ -44,7 +44,8 @@ worktree 环境说明见[测试约定](docs/agents/testing.md#开发环境)。
 
 开发期先跑相关功能测试，再用 `./scripts/check-compatibility acceptance` 检查验收入口/
 回执接线，或用 `./scripts/check-compatibility cli` 检查 CLI 注册/导入链；`all` 运行去重并集。
-`--help` 只读显示组合清单。组合不发布验收结论，最终仍须完整 `./scripts/check-offline`；
+`--help` 只读显示中文清单，项目环境缺失时可用宿主 Python >=3.12。组合不发布验收结论，
+最终仍须完整 `./scripts/check-offline`；
 详见[开发入口契约](docs/contracts/check-compatibility.md)与[测试导航](docs/agents/testing.md)。
 
 离线验证运行可用 `./scripts/verification-status <run_id> [--runs-dir <目录>] [--json]`

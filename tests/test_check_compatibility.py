@@ -37,7 +37,7 @@ def test_developer_selection_documentation_is_generated_from_the_catalog() -> No
     assert generated == selection_documentation()
 
 
-def _run_selection(
+def _run_selected_checks(
     root: Path, selections: tuple[str, ...], **extra_env: str
 ) -> subprocess.CompletedProcess[str]:
     environment = dict(os.environ, **extra_env)
@@ -65,7 +65,7 @@ def _run_selection(
     [
         ((), "empty_selection"),
         (("test_missing.py",), "missing_module"),
-        (("test_sample.py::test_missing",), "not found"),
+        (("test_sample.py::test_missing",), "missing_node"),
         (("test_empty.py",), "empty_module"),
     ],
 )
@@ -77,7 +77,7 @@ def test_empty_or_missing_selection_fails_without_running_other_tests(
     (tmp_path / "test_unselected.py").write_text(
         "raise AssertionError('full suite fallback')\n"
     )
-    result = _run_selection(tmp_path, selections)
+    result = _run_selected_checks(tmp_path, selections)
     assert result.returncode != 0
     assert reason in result.stdout + result.stderr
     assert "full suite fallback" not in result.stdout + result.stderr
@@ -100,7 +100,7 @@ def test_runs_only_selected_unique_nodes_and_preserves_outer_receipt(
     )
     receipt = tmp_path / "outer.pytest.json"
     receipt.write_bytes(b"outer unchanged\n")
-    result = _run_selection(
+    result = _run_selected_checks(
         tmp_path,
         ("test_sample.py", "test_sample.py::test_selected", "test_sample.py"),
         PAPER_RADAR_TEST_RECEIPT=str(receipt),
@@ -124,14 +124,33 @@ def test_selected_failure_or_interruption_is_not_reported_as_success(
     tmp_path: Path, body: str
 ) -> None:
     (tmp_path / "test_sample.py").write_text(f"def test_selected(): {body}\n")
-    result = _run_selection(tmp_path, ("test_sample.py",))
+    result = _run_selected_checks(tmp_path, ("test_sample.py",))
     assert result.returncode != 0
     assert "实际节点总数：1" in result.stdout
     assert "结果：failed" in result.stdout
 
 
+def test_repository_pytest_options_are_preserved_while_inherited_options_are_ignored(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        '[tool.pytest.ini_options]\naddopts = "--strict-markers -rA"\n'
+    )
+    (tmp_path / "test_sample.py").write_text("def test_selected(): pass\n")
+    result = _run_selected_checks(
+        tmp_path,
+        ("test_sample.py",),
+        PYTEST_ADDOPTS="--collect-only -k never_matched",
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "PASSED test_sample.py::test_selected" in result.stdout
+    assert "实际节点总数：1" in result.stdout
+
+
+@pytest.mark.parametrize("project_environment_available", [True, False])
 def test_help_and_unknown_arguments_do_not_start_checks_or_write_files(
     tmp_path: Path,
+    project_environment_available: bool,
 ) -> None:
     import shutil
 
@@ -143,12 +162,23 @@ def test_help_and_unknown_arguments_do_not_start_checks_or_write_files(
         shutil.copy2(ROOT / "scripts" / name, scripts / name)
     environment = dict(os.environ)
     environment.update(
-        UV_PROJECT_ENVIRONMENT=str(Path(sys.executable).parent.parent),
+        UV_PROJECT_ENVIRONMENT=str(
+            Path(sys.executable).parent.parent
+            if project_environment_available
+            else tmp_path / "unprepared"
+        ),
         PYTHONPATH=str(ROOT / "tests/deny_external_io"),
         PYTHONDONTWRITEBYTECODE="1",
     )
     before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
-    for arguments, expected_code in [(["--help"], 0), (["--unknown"], 2), ([], 2)]:
+    for arguments, expected_code, cause in [
+        (["--help"], 0, None),
+        (["--unknown"], 2, "缺少组合名"),
+        ([], 2, "缺少组合名"),
+        (["invalid"], 2, "组合名不受支持"),
+        (["all", "--unknown"], 2, "未知选项或多余参数"),
+        (["cli", "acceptance"], 2, "未知选项或多余参数"),
+    ]:
         result = subprocess.run(
             [str(scripts / "check-compatibility"), *arguments],
             cwd=tmp_path,
@@ -164,4 +194,17 @@ def test_help_and_unknown_arguments_do_not_start_checks_or_write_files(
             assert selection_documentation() in result.stdout
             for word in ("副作用", "输出", "退出码", "未知参数", "不发布"):
                 assert word in result.stdout
+            for english in (
+                "usage:",
+                "positional arguments:",
+                "options:",
+                "show this help message and exit",
+            ):
+                assert english not in result.stdout
+            assert "用法：" in result.stdout
+        else:
+            assert "参数错误" in result.stderr
+            assert cause is not None and cause in result.stderr
+            assert "请运行 ./scripts/check-compatibility --help" in result.stderr
+            assert "error:" not in result.stderr
     assert before == sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
