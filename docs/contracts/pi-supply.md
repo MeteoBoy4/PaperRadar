@@ -490,3 +490,12 @@ CLI 参数或失败返回 2，中断返回 130；失败只输出身份、受控�
 真实来源/NAS/自动精读恒未验收；真实 install_check 仍只能查询用户库本次 prepare 记录。
 细则见 [离线证据](../verification/offline-evidence.md)；
 正文、各轮裁决和补充的责任见 [逐条归属](../verification/a4-requirements.md)。
+
+## B 首次生产供给目标（#111）
+
+B 首次供给目标为 Pi 1.4.0，复用 A8 当前唯一登记的离线协议档案；实际 Node/npm 版本、
+固定供给和安装/RPC 兼容由后续票验证，本票不选择新工具链或安装。A4 1.3.0 固定材料与
+机制 spike、A2 历史配置示例不改写，不能拼成生产兼容或 live/install_check 证明。
+未来升级仍按主方案 §7.8 新建适配器声明版本、供给身份及协议/行为证据并处理语义影响。
+生产启动器的 `/srv/pi-cwd` 和现场隔离要求见 [Pi RPC Contract](pi-rpc.md)，实验用途见
+[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；选择版本不代表这些前置已完成。

@@ -279,8 +279,9 @@ chunking。未选择 adapter 沿用原政策，单独显示 unconfigured，不�
 常量重建。它不发布合成 extraction、不自造上下文序列化、不新增分析成功行；
 无业务引用的成功响应仍可备份。恢复后从新目录/进程加载历史配置与原始响应，复现
 绑定、规则、诊断和合并视图，并阻断原目录。固定上下文不是恢复产物。
-orig 源文本由 document/canonical 哪个成员哈希覆盖留给阶段 F；A5 三元组不包含
-document 成员，本票不发明 evidence-map 生产格式。
+orig 源文本由 document/canonical 哪个成员哈希覆盖原留给 F；#111 前移至 B 生成真实
+canonical/evidence-map 之前确定。A5 三元组不包含 document 成员，A9 历史范围不包含
+生产 evidence-map 格式或真实源文本恢复闭包。
 
 #98 通过真实 migration、SQLite、配置编译、制品发布、backup/verify/restore 验证两份
 历史快照（未选择/显式选择 Read 契约），以及中文/英文 × single/reduce 的四份合法
@@ -449,3 +450,12 @@ Read StageInput/任务/预算/业务持久化、生产 Pi、校准资格、NAS �
 和四评论，writer 校验其闭集和本页编号。A9 scope 直接固定源码、数值/警告实现、
 恢复worker、scanner、测试与契约；scope 自身由完整身份及登记审计保护。
 状态读者支持 `.a9.json` 格式1，完整入口的13份JSON共享同次run_id与可信terminal。
+
+## B 首个真实 Read 消费者前置（#111）
+
+B 最小 Read 票须交付 Read StageInput、任务/预算/租约/retry、analysis 持久化与恢复，
+决定证据/数值规则身份归属；仅改变后处理警告不应未经分析触发模型重跑。
+parser/canonical/normalize/evidence 及源字符持久身份必须先闭合，Read 仍通过本权威接收。
+超出单次安全输入预算时先拒绝，或前移所需完整分块能力，不截断正文或复用 Screening 会话。
+实验根、逐文档质量与不复用/不提升要求见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；这些是目标责任，
+不重写 #92–#99 的历史任务台账或 not_assessed。F 扩展四刊正文供给，G 扩展通用长文 Read。

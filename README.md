@@ -27,7 +27,7 @@ boundary/value 完整候选经既有 A1/A7 同源接收，事件、消息副本�
 边界证明。生产管道组件只包装已启动的独立进程组；Python 夹具已验证双管道背压、
 超时、取消与整组回收。独立字节向量与合成协议测试不运行真实 Pi/模型；非空恢复与
 独立 A8 验收仍按[逐项台账](docs/verification/a8-requirements.md)继续。Pi 强制追加的常量 cwd 例外
-须在真实调用前由生产启动器票确认；当前不授予生产执行或校准资格。
+已由 #111 定为本机 `/srv/pi-cwd`；生产启动器须无默认值显式传入、仅白名单此值，并在任何 prompt live 探测前验证无资源/实际隔离；当前不授予生产执行或校准资格。
 
 ## 环境与安装
 
@@ -576,7 +576,7 @@ trace 展示端点尚未出现、等待合并、已生效三态及真实选择�
 从恢复库候选重建历史 boundary/value 输入。有/无摘要的正式升级、旧预印本及从未获选版本均保留。
 `--verify-source-bytes` 默认关闭，显式开启须同时提供 `--data-root`；遗漏按参数错误退出 2。开启增加只读 blob I/O，包含仅关系材料，失败不输出原响应；缺库、未初始化或旧 revision 保留存储原因与迁移指引。
 A6 独立结论覆盖本地论文事实及隔离历史重建，仍不表示阶段 A、live、RPC、Docling/NAS 或任务续跑已验收。
-**阶段 C 真实 Feed 接入前必须补齐强冲突观察持久化和 parser 升级固定样本回归，
+**首次真实 Feed 导入前必须补齐强冲突观察持久化和 parser 升级固定样本/关键字段损失回归（B 先交付 JGR 切片，C 扩展），
 此前不得将本地拒绝路径直接作为生产写入。**详见[论文事实 Contract](docs/contracts/paper-facts.md)。
 
 A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/contracts/screening-tasks.md)
@@ -585,7 +585,7 @@ A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/co
 boundary/value 筛选制品接收与三值适用性由 #80/#81 交付，#82 交付显式 retry、共享版本化查询与父链恢复；#83 补齐新进程隔离完整历史恢复，
 #84 将这些能力注册为独立必需 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；原题名语言事实的
 生产来源已由 [ADR-0035](docs/adr/0035-feed-derived-original-title-language-fact.md) 固定为首发 Feed 归属映射
-（四刊中只有《大气科学》为中文），生产接线仍待后续票。
+（四刊中只有《大气科学》为中文），生产接线仍待 B；B 首张真实任务票同时交付 failures/retry 与 trace 组合，A7 的历史范围不变。
 
 ### Screening 任务登记、有限尝试与两阶段成功（A7-02 至 A7-08）
 
@@ -628,8 +628,25 @@ A10 以 `.a10.json` 格式 1 直接核对同次 A1、完整 A2、A3、A6；其�
 总入口。固定四类注册、HTTP/策略/通道/解析/截断规则、四刊合成材料、完整历史恢复、
 实际源码与精确测试分母，完整任务图见 [A10 需求台账](docs/verification/a10-requirements.md)。
 未安装通道与未尝试分列、不计失败；产品不引入浏览器或凭据运行时。A10 仍只证明
-登记范围内的 HTTP 离线工程；四刊各 5–10 篇实际审计、来源稳定性及阶段 B 阻断判据、
+登记范围内的 HTTP 离线工程；四刊各 5–10 篇实际审计与来源稳定性仍待实测，B 判据已由 #111 固定但尚未验收；
 完整摘要优先与额外区块的 Screening 语义、A6 来源假设、AMS 403 后续策略、渲染/授权、
 PDF/Docling/生产导入/NAS 与完整阶段 A 均待后续。未来合法获取方式按新策略另行交付。
 `stage_a_verified/live_verified/rpc_verified` 恒 false；历史声明、合成 fixture 与评论预检
 都不是本轮 live 证据；live 产物不进入 `verification-runs/`。
+
+## 阶段 A 收口与 B 前置（#111，目标规格）
+
+[主方案 §11](intent/draft.md#十一九阶段实施与验收) 是统一阅读入口，与 GLOSSARY、ADR、
+Contract 共同约束；[A 收口清单](docs/verification/stage-a-closure.md) 逐项区分历史离线证据与
+剩余责任，A1–A10 通过不等于完整 A 通过。
+
+B 按 [ADR-0036](docs/adr/0036-isolate-stage-b-read-experiment.md) 在独立实验数据根完成
+固定 JGR 纵向链，结果不复用、不提升，暴露清单由 C 跨库导入排除正式校准。四刊先做首轮
+摘要审计；JGR 至少 5 篇固定成员、各有已交付路线取得非疑似截断主摘要方可继续 B，其他刊
+在 C/F 补跑，最迟 D 正式预热冻结/首个批次前逐刊收口。B 的 PDF 最低路径为人工合法附加，
+TDM/授权/渲染留 F，单篇质量不豁免。真实冻结材料留本机，CI 仅用合成/脱敏材料。
+
+A 窄收口负责日志、基础/配置 doctor 与 eligibility/visibility 纯规则；B 前置交付
+Docling extra 兼容验证、首次 Pi 1.4.0 供给/生产接收、Feed/语言事实、正文与 Read 身份/预算。
+安装探测与离线工程可并行，首次真实消费须先满足相应入口。以上均未因本文更新而交付或验收，
+A4 1.3.0 历史材料、A2 示例和历史结论保持不变；未来 Pi 升级仍走 §7.8。

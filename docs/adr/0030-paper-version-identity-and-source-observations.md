@@ -2,6 +2,8 @@
 
 状态：已接受语义；#69–#74 已落地身份、Feed、四源仲裁、版本关系、输入映射及组合隔离恢复，#75 注册独立 A6 验收。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
 
+2026-10-28：#111 将首次真实 Feed 导入前置移到 B，B 先交付 JGR 所需的强冲突观察持久化与 parser 固定样本/字段损失回归，C 扩展四刊。以下“阶段 C”保留当时的延期依据，现行最迟点是首次真实导入；实验根同样不得豁免，见 [ADR-0036](0036-isolate-stage-b-read-experiment.md)。历史 A6 证据和未验证来源假设不改写。
+
 一个 DOI 恒绑定一个 Paper/Version，一个版本最多一个 DOI，preprint/journal 创建后不可变；online-first 到卷期只是同版本修订。不同 DOI 只有权威关系才归入同一 Paper，不能再以“同 DOI 多公开形态”发明版本键。该决策收窄 ADR-0001/0005 的 A6 路径而不实现两个既有 Paper 合并；暂存重复比错误合并安全。
 
 Feed 同源仲裁只用不可变首次 observed_at，A→B→A 不回摆，last_seen 取最大且永不参与仲裁。代价是当前 Feed 文本可能落后于上游回摆，换来重放不会悄悄改写修订依据。publisher/注册机构另按来源流的候选贡献保留变化，不能套用 Feed 字节去重。

@@ -469,3 +469,23 @@ passed/verified 且 applicability=same；它不写回历史或补造新证据。
 RPC/Pi、真实调用用量/成本、原题名语言生产接线、metadata_ready/完整 eligibility、
 每日配额、两阶段编排、建议/决定、校准可见性、reuse/extraction/Read 任务、merge 预算、
 CLI、NAS、完整阶段 A 与 live。本验收不授予 test 筛选制品生产消费或校准资格。
+
+## B 首张真实任务票的责任（#111，尚未交付）
+
+上文“不交付 CLI”继续描述 A7 历史范围；B 首张真实任务票须同时交付
+`screening failures/retry`、`paper trace` 组合及中文 help/退出码/恢复验证，不能继续推到 H。
+B 编排首次执行 `out_of_scope` 停止 value，A7 服务层的独立阶段事实不因此改写。
+
+语言事实接线使用数据库 Feed 身份与发现关系确定受支持期刊，再应用 ADR-0035 v1，
+保存来源及策略版本；同刊多个 Feed 一致，不建立第二个 Feed 权威或 first-seen 规则。
+跨刊冲突影响 bool 时保留冲突并拒绝新不确定登记，无归属人工 Paper 仍不得登记 value；
+冻结预算/retry 继承原值，策略不进 A5 指纹，不可借换策略重置预算。
+
+A 先交 eligibility/visibility 纯规则及合成事实测试，B 的最低元数据、人工决定、PDF/Read
+资格和 show/trace/最小日报首次消费；C 接保留器与未揭晓事实。真实执行成功来源、用量、
+恢复及前置预检复用 A7/A8 接收权威，仍待 B 生产接线验收。
+
+B 全链置于独立实验数据根，普通生产命令拒绝该根；不改同库预算身份、不添加用途维度。
+实验结果不复用、不提升，生产以后同论文从正常路径使用独立预算；样本暴露清单跨库保留，
+见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。窄命令显式单篇，不扫描自动队列；任何自动领取首次引入即须
+持久每日配额，不能因手动启动 run-due 或尚无 timer 而豁免。历史 A7/A8 not_assessed 不变。

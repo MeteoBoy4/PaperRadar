@@ -542,7 +542,12 @@ Docling 是第一版唯一的正文提取器，并以正文提取质量门槛决
 
 ## Release Boundary
 
-第一版仍按九个细化阶段实施，每个阶段必须有可执行、可检验的测试与验收，而不是一次性搭建完整系统。阶段 B 使用 Journal of Geophysical Research: Atmospheres Feed 完成第一条真实发现到日报纵向闭环；实际依赖为 A→B→C→F→D→(E,G)→H→I，使四刊正文与摘录 fixture 在正式校准前通过。
+**B 受限实验**：
+在独立实验数据根内对固定 JGR 纵向样本运行的真实发现到最小日报闭环；仅豁免四刊正文代表性覆盖未完成，仍须逐文档质量通过。结果只作历史回查，不复用、不提升，已暴露论文跨库排除正式校准（[ADR-0036](docs/adr/0036-isolate-stage-b-read-experiment.md)）。
+_Avoid_: 生产 Read 就绪、任意论文试跑、校准样本
+
+
+第一版仍按九个细化阶段实施，每个阶段必须有可执行、可检验的测试与验收，而不是一次性搭建完整系统。阶段 B 使用 Journal of Geophysical Research: Atmospheres Feed 完成第一条真实发现到日报纵向闭环；B 按主方案显式入口汇合各条前置链，C/F 补齐四刊摘要及正文/摘录 fixture 后进入 D，E/G 再扩展到 H/I；阶段字母不构成所有 live 项全部通过的全局闸门。
 
 第一版整体完成要求：四个 Feed 幂等运行；基于总计 32 篇且每刊至少 4 篇盲评标签的当前 calibration evaluation 达到既定筛选指标和最小分母（若曾依据揭晓结果调优，必须标记为非独立验证）；四刊 Docling fixtures 通过；至少一篇中文和一篇英文论文各自走通发现、筛选、PDF、精读、证据与日报；日报不超过五项；NAS 备份恢复通过；单篇失败不阻断同批任务。
 

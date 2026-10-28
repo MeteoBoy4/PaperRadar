@@ -320,7 +320,7 @@ thinking/signature 也计入三份回显。该正例证明固定上限可接收�
   验证禁止自动网络活动（目录刷新、版本检查、遥测、缓存预热、隐含 provider retry）。
 - 通过 --system-prompt 精确传入声明系统指令；防止参数被当成文件路径。确认无默认
   prompt、个人设置、项目资源、skills/extensions/MCP、AGENTS.md/CLAUDE.md 等注入。
-- 回到所有者确认常量中性 cwd 和白名单；该目录无 .pi/、AGENTS.md、CLAUDE.md 或
+- #111 已确认本机 cwd 为 `/srv/pi-cwd`，无默认值显式传入、白名单仅此值；该目录无 .pi/、AGENTS.md、CLAUDE.md 或
   其他项目资源，验证本机路径只在已裁决常量例外内。DERIVED-01/02/03/05/06 必须实测。
 - 在领取任何任务前预检固定供给、模型/凭据可用；验收参数映射、单次模型请求、日期
   别名政策、模型能力、实际用量/停止与事件（DERIVED-04/07/08/09/10），落实 OS 隔离。
@@ -330,3 +330,15 @@ rpc_verified、live_verified、stage_a_verified 继续为 false。not_assessed �
 事实的生产接线（来源规则见 [ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md)）、reuse/Read等其他阶段任务、业务资格/编排/每日配额、
 校准可见性/门禁、CLI、
 真实论文来源/Docling/NAS/无人值守。A8 只有离线协议与 test 任务接线证明范围。
+
+## B 首次生产接线责任（#111，目标规格）
+
+首次生产供给目标为 1.4.0，复用当前唯一登记的离线协议档案，仍须实际安装与 RPC
+兼容验证；DERIVED 假设、参数映射、隔离、隐含调用抑制及完成判据不得假称已 live 验证。
+A4 1.3.0 spike 和 A2 历史配置示例保持原字节；未来升级按主方案 §7.8 新建适配器声明、
+供给身份、协议/行为证据并处理语义变更，不永久锁死 V1。
+
+B 前置交付生产启动器、权限/资源构造、真实执行成功来源、实际用量、恢复与执行前预检，
+复用 A7/A8 权威；不能把真实候选塞入 test 接收器，也不能把真实来源等同于正常消费资格。
+`/srv/pi-cwd` 已确认；缺失/不符/现场隔离未验收时 Pi readiness 阻断，首次发送 prompt
+的 live 探测也受此限。实验根及证据边界见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)，未扩大上述历史 not_assessed 结论。

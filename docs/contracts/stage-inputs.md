@@ -314,12 +314,12 @@ build/replay 均返回不可直接构造的 `StageInput`，其受控 `stage` 固
 
 ### C1 已知未决问题：封面识别的论文元数据依赖
 
-[`intent/draft.md` §4.9](../../intent/draft.md#49-docling-正文提取) 允许确定性后处理使用
+原 [`intent/draft.md` §4.9](../../intent/draft.md#49-docling-正文提取) 曾允许确定性后处理使用
 规范题名、DOI、摘要或首个正文节识别仓储封面，而 extraction 格式 1 不包含这些论文
 元数据。依 [#47 的 C1 用户裁决](https://github.com/MeteoBoy4/PaperRadar/issues/47#issuecomment-6265245363)，
-该分歧留待阶段 F 的 normalize 实现票解决，本票不修改 §4.9 原文或扩充格式 1 配方。
+当时将该分歧留待 F；#111 将所需责任前移到 B 首个 normalize 生产者之前，格式 1 配方不扩充，主方案 §4.9 同步为以下约束。
 
-阶段 F 优先仅用首个正文节、版面事实、可靠编号等文档内信号识别封面。只有四刊 fixture
+B 首个 normalize 及 F 扩展优先仅用首个正文节、版面事实、可靠编号等文档内信号识别封面。只有四刊 fixture
 证明文档内信号达不到“正文起点和前置杂页排除”质量门槛时，才允许讨论纳入论文元数据；
 届时必须提升 extraction 格式（格式 2），同步修订 §12 矩阵与领域不变量中书目补全/
 摘要变化不使正文提取失效的表述，并再次由用户裁决，不能由实现票自行改变。
@@ -393,3 +393,5 @@ boundary/value/reuse/extraction 各自的当前配方版本 1；构造、回放�
 A7-02 已在[任务 Contract](screening-tasks.md#8-a7-02-公共登记-api已交付)落实 boundary/value
 规范载荷持久化；缓存主体是同库 paper/stage/fingerprint，不跨 Paper 共享业务预算。
 A5 的原格式和算法不变，原题名语言只属于任务基线，取值由首发 Feed 归属按 ADR-0035 决定。
+
+#111：B 单样本无法按 C1 达标时先阻断实验，不自行引入未绑定元数据。A5 未实现 Read StageInput；B 最小 Read 票须交付输入身份及相关消费，不能以已有 extraction/reuse 配方替代，见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。

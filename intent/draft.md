@@ -50,6 +50,16 @@
 > [ADR-0035](../docs/adr/0035-feed-derived-original-title-language-fact.md)。本次只更新文档与 scope 绑定，
 > 未实现自动派生或生产接线。
 
+> 2026-10-28：按 [Issue #111 正文及后续用户确认](https://github.com/MeteoBoy4/PaperRadar/issues/111)
+> 同步阶段 A 收口与 B/C/F 前置。七项初始确认来自该票 Further Notes，
+> [固定提交的讨论文件](https://github.com/MeteoBoy4/PaperRadar/blob/212e312/intent/discussions/阶段A剩余工作.md)
+> 只作非规范背景。本文是后续规格的统一阅读入口，与 GLOSSARY、ADR、公共 Contract 共同约束；
+> 冲突须报告并由用户裁决。B 采用独立实验数据根，实验结果不复用、不提升；JGR 摘要入口判据、
+> 首次 Pi 1.4.0 目标、`/srv/pi-cwd`、Docling extra 与 CLI 归属见 §11、
+> [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md) 和
+> [阶段 A 收口清单](../docs/verification/stage-a-closure.md)。本次仅改目标文档与必要 scope 绑定，
+> 不表示这些新能力或任何 live 验收已经交付；历史 A1–A10 证明范围保持不变。
+
 ## 任务阅读导航
 
 > 2026-10-24：#92 最终裁决已同步 §4.10：Read 自有冻结词汇、正文消费身份三元组、
@@ -206,7 +216,8 @@ doctor 必须明确显示这些数据会离开本机。日志不得记录全文�
 
 2026-10-24 所有者裁决的唯一额外外发项是 Pi 强制追加的不含个人信息、每次相同、
 内容无意义的常量执行 cwd 字符串；不涵盖其他机器路径、个人目录、用户名、主机名或
-环境变量。具体常量和无资源目录须由生产启动器票在真实调用前再次确认和验收。
+环境变量。#111 最新裁决已将本机常量定为 `/srv/pi-cwd`；启动器仍须显式传入且无默认值，
+白名单仅允许该值。无项目资源、权限和实际隔离必须在任何发送 prompt 的 live 探测前验收。
 
 ## 三、领域模型与不变量
 
@@ -449,7 +460,7 @@ paper-radar run-due --date YYYY-MM-DD
 处理规则：
 
 - 以 Feed ID + 上游条目 ID + 条目内容指纹保证同一观察幂等；内容未变化只更新 last_seen，内容变化形成新的发现观察而不是新论文；
-- 原始 Feed item 作为发现证据永久保留；A6 的强身份冲突整笔拒绝业务行，最多留下完整未引用来源快照，仅因 A6 没有真实 Feed、只有测试入口，当前丢失窗口为空；阶段 C 接入真实 Feed 前必须补齐强冲突观察持久化，此前适配器不得直接复用 A6 拒绝路径为生产写入；
+- 原始 Feed item 作为发现证据永久保留；A6 的强身份冲突整笔拒绝业务行，最多留下完整未引用来源快照，仅因 A6 没有真实 Feed、只有测试入口，当前丢失窗口为空；首次真实 Feed 导入前必须补齐强冲突观察持久化（B 先交付 JGR 切片，C 扩展），此前适配器不得直接复用 A6 拒绝路径为生产写入；
 - 相同 DOI 的多个条目恒命中同一 Paper/Version；不同 DOI 版本仅凭权威关系归入同一 Paper；
 - Feed 同源排序只用不可变首次 observed_at；A→B→A 最后一次只推进 A 的 last_seen，不回退规范值，first_seen 不变、last_seen 单调取大且永不参与仲裁；所有时钟事实统一 UTC，发布日期另存语义和精度；
 - Feed 条目不能直接覆盖权威非空书目信息；
@@ -463,7 +474,7 @@ paper-radar run-due --date YYYY-MM-DD
 
 A10 裁决（#100）：类别依据只采用 Crossref `message.type=journal-article`、DataCite `types.resourceTypeGeneral=JournalArticle`、《大气科学》current Feed `dc:type=article` 与出版者 `dc.type=论文`。注册机构其他明确类型为非 journal-article，平台表外值/缺字段为未知，不同明确判定矛盾为冲突，分别计数；Wiley `category`/`prism:section` 只保存原值，不用子类型预过滤。doiRA `https://doi.org/doiRA/{doi}` 只用于机构路由，Crossref/DataCite 各走适用机构，其他 RA 为 `agency_unsupported`，查询失败或 404 为 `agency_unknown`，单机构 404 不证明 DOI 不存在（ADR-0033/0034）。
 
-主摘要边界同时用于 Feed 和出版者：只取 Abstract/摘要 主区块；《大气科学》取中文 abstract-cn，英文 abstract-en、Significance Statement、Plain Language Summary、Key Points 只保留存在与定位。Wiley Feed 的 Abstract 前置段与《大气科学》`<p>` 外引文尾行均不并入摘要，不拼接另一语种或来源。区块切分、实体解码、去标记和段落连接整体版本化；Screening 是否消费这些额外区块留待阶段 C 裁决。
+主摘要边界同时用于 Feed 和出版者：只取 Abstract/摘要 主区块；《大气科学》取中文 abstract-cn，英文 abstract-en、Significance Statement、Plain Language Summary、Key Points 只保留存在与定位。Wiley Feed 的 Abstract 前置段与《大气科学》`<p>` 外引文尾行均不并入摘要，不拼接另一语种或来源。区块切分、实体解码、去标记和段落连接整体版本化；B 首次 Screening 只消费主区块并记录这一选择；是否消费这些额外区块留待 C 裁决，不受 B 结果约束。
 
 第一版只接入：
 
@@ -488,7 +499,7 @@ Screening 最低元数据要求：
 
 规范摘要除文本外必须记录来源、取得时间和 `suspected_truncated`。系统至少用长度阈值、末尾省略号或 “Read more”、残留 HTML、缺少合理终止标点等确定性信号标记疑似截断；命中时继续尝试其他适用来源，不能把第一个非空片段直接当作完整摘要。全部路线结束后若只有疑似截断摘要，允许带标记进入 Screening，但校准成员快照必须冻结该标记，evaluation 按来源、期刊和语言披露数量；它不能被算作 `metadata_unobtainable`。
 
-阶段 A 必须先做摘要可得性审计：四刊各取最近 5–10 篇 journal-article，分别记录 Feed description、Crossref/DataCite abstract 和出版者公开页面是否取得摘要、是否疑似截断、使用了哪一版获取策略以及最终规范来源。公开页面路线按 §4.8 允许的正常请求头，并在渲染运行时可用时经受控浏览器渲染执行；渲染、官方 API 或授权通道单独记录可用性，某条通道不可用不能改写公开路线的结论。阶段 A 只审计那时已交付的通道，渲染运行时在阶段 F 交付后以新策略版本补跑，不改写既有审计结论。结果进入 fixture registry；若某刊主要路径无法稳定取得可用摘要，阶段 B 或该刊正式校准不得继续，必须先明确批准降级输入及其校准披露，不能让正常研究论文大批静默进入 `metadata_unobtainable`。
+阶段 A 必须先做摘要可得性审计：四刊各取最近 5–10 篇 journal-article，分别记录 Feed description、Crossref/DataCite abstract 和出版者公开页面是否取得摘要、是否疑似截断、使用了哪一版获取策略以及最终规范来源。公开页面路线按 §4.8 允许的正常请求头，并在渲染运行时可用时经受控浏览器渲染执行；渲染、官方 API 或授权通道单独记录可用性，某条通道不可用不能改写公开路线的结论。阶段 A 只审计那时已交付的通道，渲染运行时在阶段 F 交付后以新策略版本补跑，不改写既有审计结论。结果进入 fixture registry。B 仅由 JGR 的专门入口判据阻断（§11 B：至少 5 篇固定成员全部取得非疑似截断主摘要）；其他刊首轮受阻不阻断 B，失败和不足仍保留，不算 A 全部通过。最迟在 D 正式预热冻结和首个校准批次之前，四刊必须逐刊证明摘要稳定取得；四刊稳定阈值及是否一律排除疑似截断仍须在该轮验收前由用户裁决，不能根据结果倒定门槛。C 按策略版本记录每周命中率，F 交付新通道后以新策略补跑；仍受阻的刊须回到用户裁决降级输入及披露，未裁决不得继续该刊正式校准，不能静默制造大量 `metadata_unobtainable`。本节允许带截断标记的一般 Screening 规则不因 B 的更严入口改变。
 
 字段仲裁采用当前版本优先、字段级来源：
 
@@ -735,7 +746,7 @@ document.json 保存不嵌入 base64 图片的 DoclingDocument，保留原始 pa
 
 确定性后处理只做：
 
-- 用规范题名、DOI、摘要或首个正文节识别并排除仓储封面、授权页、出版者推荐页；
+- 优先用首个正文节、版面事实、可靠编号等文档内信号排除仓储封面、授权页和出版者推荐页；extraction 格式 1 不含题名/DOI/摘要，不得隐式消费。C1 约束最迟在 B 首个 normalize 生产者前落实：只有四刊 fixture 证明必要、提升 extraction 格式并经用户再次裁决后才可纳入论文元数据（[StageInput C1](../docs/contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)）；单样本失败先阻断 B 实验。
 - 过滤重复页眉页脚；
 - 根据可靠编号和版面事实修复标题层级；
 - 保留原 PDF 页码，不重新编号；
@@ -751,6 +762,8 @@ document.json 保存不嵌入 base64 图片的 DoclingDocument，保留原始 pa
 - 无可靠文本层的扫描稿记为 `extraction_failed_no_text_layer`，保留 PDF，不调用 Read 或复用升级。
 
 质量门槛只对规范制品（`reading.md` 与 evidence-map）断言，不依赖特定 backend 的输出形态；任何 backend 的制品（含未来新增）都必须先通过同一套四刊 fixtures 才能成为当前制品。
+
+唯一窄例外是 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md) 的 B 固定 JGR 样本：在实验数据根内可先通过逐文档门槛运行 Read，豁免仅为四刊代表性覆盖未完成；失败样本仍不得调用 Read，实验制品不取得正常当前消费资格。此例外也适用于下述 fixture/失效约束，不能用于复用升级。
 
 四刊 fixture 至少验证：
 
@@ -1321,7 +1334,7 @@ Issue #26 的配置切片已开放 settings 的 adapters 三槽、Pi YAML 与独
 接入必须同时满足：
 
 1. 每个阶段、每次 attempt 使用独立临时会话；长驻 RPC 子进程在调用前明确建立新会话或重建进程，不能继承其他论文、阶段或 attempt 的消息。Read map 各块与 reduce 也各自隔离；所需候选与 evidence 由 Python 显式传入。修正重试只接收同一冻结阶段输入与脱敏校验原因。
-2. 固定 provider/model、有效提示词、Contract、Profile、工具声明及运行策略；禁用自动发现的 context、skills、prompts、extensions、MCP 和个人设置对运行的隐式影响。Pi 必需的系统提示词与显式资源属于可审计配置；Pi 1.4.0 强制追加 cwd 段，有效指令为登记声明指令加该段，例外严格限于 §2.4 已裁决常量。A8 只验 system 补丁形状与 preamble，具体 cwd 白名单与实际隔离留待生产启动器。无法固定、隔离或匹配实际模型时拒绝运行。
+2. 固定 provider/model、有效提示词、Contract、Profile、工具声明及运行策略；禁用自动发现的 context、skills、prompts、extensions、MCP 和个人设置对运行的隐式影响。Pi 必需的系统提示词与显式资源属于可审计配置；Pi 1.4.0 强制追加 cwd 段，有效指令为登记声明指令加该段，例外严格限于 §2.4 已裁决常量。A8 只验 system 补丁形状与 preamble；#111 已确认 cwd 白名单为 `/srv/pi-cwd`，生产启动器须显式传入并实测无资源与实际隔离。无法固定、隔离或匹配实际模型时拒绝运行。
 3. 关闭 Pi agent/provider 隐含 retry、自动 compaction/summarization 及额外模型确认回合。Python 按 §8.3 统一领取尝试预算，一次 attempt 最多一次模型调用；工具循环不能隐藏额外调用。Read map/reduce 仍是既定的显式分块流程，各个输入分别受预算限制，不由 Pi 自主拆分。
 4. RPC `prompt` ACK 只表示命令接收；必须消费到 `agent_settled`，检查最终消息 `stopReason`、实际 provider/model、所选通道、超时、取消与子进程异常。正常完成且仅有一个有效权威结果，再通过严格 JSON 解析、Schema 和业务校验，才形成成功；错误、拒绝、截断、缺失/重复提交或无效内容均失败。超时、取消或进程退出不得提交部分输出，异常进程退出后重建隔离环境，不能阻断同批无关论文。
 5. `prompt_only` 只接收最终 assistant 的完整纯 JSON 文本；围栏、截断补全、类型强转或从解释文本中拼接结果都不能修复成成功。提交工具升级只接收唯一显式工具的参数，经 Python 权威校验成功后返回 validated artifact 并终结该 run；失败、未调用或参数无效时按同一预算处理，不能另取最终文本。
@@ -1706,17 +1719,44 @@ src/paper_radar/
 - 外部适配器不直接更新 papers 当前事实，必须先形成来源观察并经仲裁；
 - sources/ 下各获取通道（普通 HTTP、browser_render、官方 API、仓储）只产生取得事实与来源材料；获取策略版本、通道、访问依据与凭据类别随取得事实记录（ADR-0032）；browser_render 不实现验证码求解、指纹伪造或代理轮换。
 
-SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic、Pi RPC adapter、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx 和 Docling slim；Feed 解析初版采用标准库 XML（拒绝 DOCTYPE/ENTITY）与 html.parser，feedparser 仅按需评估；具体版本在阶段 A 锁定并进入验收证据。Pi 是按 §7.8 固定供给、由明确 Node 入口启动的本机子进程，不是 Python 包；不为接入它另建 Node 业务服务，Python 依赖仍统一由 uv 与已提交 lockfile 管理。真实模型调用前 doctor 检查已供给 Pi/Node 的版本与安装身份、固定模型与认证可用性及隔离策略，缺失时报告具体配置或安装原因，不执行自动供给；`--help` 不探测 Pi、模型或凭证。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。受控浏览器渲染同样以可选依赖（如 `paper-radar[render]`，Playwright 及固定浏览器制品）声明，未启用时公开页面只走普通 HTTP 通道。
+SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic、Pi RPC adapter、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx 和 Docling slim；Feed 解析初版采用标准库 XML（拒绝 DOCTYPE/ENTITY）与 html.parser，feedparser 仅按需评估；基础依赖版本在 A 锁定并进入验收证据；Docling extra 的实际 slim/CPU 组合、lockfile、模型取得与 Python `>=3.12,<3.15` 兼容面由 B 前置独立票验证，可与 A 窄收口并行探测。不兼容须显式限定支持范围或提出新工具链版本，不改写旧清单。Pi 是按 §7.8 固定供给、由明确 Node 入口启动的本机子进程，不是 Python 包；不为接入它另建 Node 业务服务，Python 依赖仍统一由 uv 与已提交 lockfile 管理。真实模型调用前 doctor 检查已供给 Pi/Node 的版本与安装身份、固定模型与认证可用性及隔离策略，缺失时报告具体配置或安装原因，不执行自动供给；`--help` 不探测 Pi、模型或凭证。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。受控浏览器渲染同样以可选依赖（如 `paper-radar[render]`，Playwright 及固定浏览器制品）声明，未启用时公开页面只走普通 HTTP 通道。
 
 ## 十一、九阶段实施与验收
 
-阶段字母保持稳定，但实际依赖顺序为：
+阶段字母保持稳定，按具体能力依赖推进，不能将 A→B 当作 A 所有 live 项全部通过的全局闸门。
+B 的显式入口见下文；A 首轮审计不足可移交 C/F 补跑，A 仍未完成，避免 A 等 F、F 又等 B 的循环。
 
-~~~text
-A → B → C → F → D → (E, G) → H → I
-~~~
+```mermaid
+flowchart TD
+  J[JGR 判据固定] --> Audit[四刊首轮 HTTP 审计]
+  Audit --> Source[JGR 达标或用户新裁决]
+  A[A 窄收口：日志、doctor、纯规则] --> B[B 实验根内纵向闭环]
+  Pi[Pi 离线启动器、权限资源、生产成功来源] --> Live[固定 1.4.0 安装与 RPC 实测]
+  Cwd["/srv/pi-cwd 已确认；现场隔离验收"] --> Live
+  Live --> B
+  Extra[Docling extra 安装与兼容探测] --> Body[正文生产切片、Read 身份与预算]
+  Body --> B
+  Feed[强冲突持久化、JGR 元数据与语言事实] --> B
+  Source --> B
+  B --> C[C 生产根四刊积累、保留器与可见性]
+  C --> F[F 全通道、四刊正文与摘录 fixture]
+  C --> Abstract[四刊摘要稳定证据及判据裁决]
+  F --> Abstract
+  F --> D[D reuse 执行与正式校准]
+  Abstract --> D
+  D --> E[E 参考文献]
+  D --> G[G 长文 Read 与队列]
+  E --> H[H 完整日报与复核]
+  G --> H
+  H --> I[I 最终验收]
+```
 
-章节仍按 A–I 排列以保持既有引用稳定。阶段 C 开始真实 Feed 积累，阶段 F 与样本积累并行；四刊正文与摘录定位 fixture 通过后才能开始阶段 D 的正式盲评。阶段 E 与 G 在 D 工程完成后可以并行，真实自动 Read 仍受 D 的运行门禁控制。
+Docling 探测、Pi 离线启动器、A 窄收口可以并行；日志须先于首次真实生产执行，基础 doctor
+须先于 Pi readiness doctor，eligibility/visibility 纯规则须先于 B 首个消费者。
+联网审计需邮箱、网络和独立审计库/制品根；任何发送 prompt 的 Pi live 探测都需已确认 cwd
+的现场隔离、外发确认、固定 provider/model 与认证。真实 Screening 再要求真实 Profile。
+C 开始长期生产根积累，F 与积累并行；四刊正文/摘录 fixture 和摘要前置齐备后才可进入
+D 正式预热冻结与首个校准批次。E/G 可在 D 工程完成后并行，自动 Read 仍受 D 运行门禁控制。
 
 每阶段保留三类证据：
 
@@ -1729,7 +1769,7 @@ A → B → C → F → D → (E, G) → H → I
 实施：
 
 - 初始化 uv 项目、锁文件、代码质量与测试命令；
-- 声明 Docling slim 可选依赖组，保证常规测试套件不依赖 Docling 安装；
+- Docling slim 可选依赖组移至 B 前置独立票，可与 A 收口并行；常规离线套件不安装 extra 仍须可运行，A 不以安装声明充当兼容验证；
 - 建立配置编译、提示词版本、运行配置快照及阶段/校准配置投影；
 - 建立 §7.7 的有界 Pi RPC adapter，固定运行资源与策略身份；V1 首次只启用 `prompt_only`，专用提交工具保留为显式升级能力；
 - 建立 §7.8 的显式固定供给步骤、安装校验、原子激活、保留上限与显式清理，独立于个人 Pi 更新；配置编译切片只登记配置事实，不承担安装或 RPC 执行；
@@ -1737,8 +1777,8 @@ A → B → C → F → D → (E, G) → H → I
 - 建立逻辑数据模型、Alembic 初始迁移和 repository 边界；
 - 建立内容寻址 blob/artifact store；
 - 实现阶段输入指纹、`normalization_version`、`excerpt_selector_version`、`chunking_version` 和任务 attempt/lease；
-- 建立共享 eligibility 与 calibration visibility Interface；
-- 建立结构化日志、CLI 骨架和 doctor；
+- 建立共享 eligibility 与 calibration visibility 的纯规则接口及合成事实测试，只表达可严谨定义的事实输入和原因；不建无消费者空表，不用永远 false 冒充完整规则。B 接最低元数据、人工 accepted、PDF/Read 资格及首批展示面，C 接保留器、waiting_calibration、版本与七天复查；
+- 收口最小结构化日志、CLI 骨架与基础/配置 doctor：日志先接现有审计/任务服务，以 §8.7 的标识符、stage、fingerprint 摘要、attempt、耗时及受控错误码输出结构事件，明确 `logs/` 落点、输出方式及有限保留；不建遥测平台。doctor 复用 revision、配置编译/历史加载、阶段 readiness、供给诊断及审计结果，区分缺失、非法、已检查通过与未验收，并给出下一步；不自动建库、安装、激活或调用模型；
 - 为根命令和首批命令组建立中文 `--help` 契约；
 - 建立本机 SQLite 一致性快照及隔离恢复命令；
 - 固化四刊 Feed、摘要可得性、参考文献和 PDF fixture 注册格式；
@@ -1752,26 +1792,26 @@ A → B → C → F → D → (E, G) → H → I
 - 相同规范输入生成相同指纹；
 - fake RPC 覆盖 ACK 未完成、正常 settled、错误/截断 stopReason、实际模型不符、超时、取消、子进程退出和 Schema/业务拒绝；仅完整有效输出可以成功，单次故障不阻断其他任务；
 - 固定清单与 fake 供给/进程接口覆盖 Node/Pi 不匹配、包校验失败、安装中断保留旧版本、个人 Pi 更新不影响项目，以及 doctor/run-due 不隐式安装；无真实 Pi/Node 前置；
-- 跨论文、Screening 两阶段、reuse、Read map/reduce 及修正 attempt 的会话隔离；历史 Profile、隐藏结果、全文、自动发现资源与个人设置不能进入当前输入；
+- A 用 fake 验通用会话工厂跨论文/阶段/attempt 的隔离机制，禁止历史 Profile、隐藏结果、全文、自动资源和个人设置混入；B 验真实 Screening/单篇 Read 接线，D 验 reuse，G 验长文 map/reduce 与修正接线，fake 不声称覆盖这些真实消费者；
 - Pi 隐含 retry、compaction、额外模型回合与未许可工具被禁止；同一输入最多两次 Python attempt，重建进程或切换通道不能重置预算；
 - Screening/reuse 的适配器语义变化进入相关指纹与校准差异，纯 Read 策略或进程/会话 ID 变化不误伤 Screening；
-- normalization、excerpt selector 或 chunking 语义版本变化只使相应下游指纹变化；
+- A 验 normalization、excerpt selector、chunking 的配置投影及已交付 A5 配方传播；Read StageInput 与实际失效消费分别在 B、D/F/G 接线，未实现的 Read 指纹不得宣称已验证；
 - 同一声明版本下修改 Profile、提示词、契约或适配器材料内容时运行配置快照编译失败；新增版本并切换 selector 时保留旧文件和旧哈希；
 - 供给清单缺少行为影响判定、依据或证据引用时拒绝冻结；显式清理只删除计划内非保护安装，当前、在途引用与最近验收通过的版本不被移除；
 - 只改变 Read 模型时可得到新运行配置快照，但校准语义基线及 Screening 输入指纹不变；
-- §4.5 工作流、Agent adapter、repository 和测试都导入 `screening/schema.py`，不存在第二份手写字段定义；
-- 规则、盲评、普通复核和元数据命令共享 `screening/reasons.py`，非法的结果/来源组合不能写入；
-- 所有展示面通过同一 calibration visibility Interface 屏蔽 waiting_calibration 与未揭晓批次的 Agent 制品；
-- `paper trace`、调度和各积压列表对同一事实返回一致资格与原因；
-- 改变卷期页码不使 Screening/Read 指纹变化；
-- 改变摘要只使 Screening 及下游相关制品过期；
-- 改变 PDF 使相关 Docling/Read 过期；若该 PDF 的制品贡献了复用摘录，相应升级也按其输入指纹重算，不使题名摘要 Screening 失效；
+- A 验已交付 adapter/repository/测试使用单一 Schema；B/D 的 §4.5 编排接线继续消费同一权威，不建第二份字段定义；
+- A 验原因纯规则及已交付接收边界；B/C/D/H 新建人工决定、元数据、盲评和复核入口时逐一验证共享原因权威及非法组合拒绝；
+- A 用合成事实验 visibility 隐藏规则；B 的 show/trace/最小日报即调用该接口（隐藏集合可为空），C 接 waiting_calibration，D/H 对各新增真实展示面验未揭晓隔离；
+- A 对同一合成事实验 eligibility 资格/原因一致性；B 首接 trace，C/D/G/H/I 随调度及积压消费者加入逐面验一致性，不用纯规则通过替代产品接线证明；
+- A 验卷期页码不影响 Screening 配方及 Read 配置投影；B 首交付 Read StageInput 后验其书目隔离，C/G 扩展版本及任务消费；
+- A 验摘要改变 Screening 指纹及已交付任务派生适用性；B/C/D/G 验相应下游过期消费；
+- A 验 PDF/extraction/reuse 配方传播与 Screening 隔离；B 接真实正文/Read 失效，F/D/G 扩展正文摘录、reuse 重算和长文消费，不宣称 A 已有 Read 任务；
 - 在“文件已落盘、数据库未提交”和“数据库事务中断”处故障注入，重启不产生半条成功事实；
-- 日志 fixture 中的 API key、完整 Profile、摘要和正文不会出现在输出；
-- Pi session/JSONL、完整 RPC 消息与 stderr 不被永久落盘；必要成功输出可按业务制品回查，盲评未揭晓结果仍不出现在任何展示面；
+- 日志合成敏感 fixture 覆盖 §8.7 全部禁项：key/cookie/Authorization/TDM/会话、Profile、Prompt、摘要/正文/摘录、模型响应、临时凭据 URL，以及 RPC/stderr/工具错误；stdout/stderr 与持久日志均不泄漏；
+- A 验 session/JSONL/RPC/stderr 不永久落盘与成功原字节隔离保存的机制；B 验真实进程日志边界，C/D/H 验未揭晓结果在实际展示面的隐藏；
 - 根命令和每个已有子命令的 `--help` 为中文、包含副作用与示例、不访问网络或执行数据库写入；
 - WAL 活跃时建立本机快照，隔离恢复后通过 integrity、foreign key 和清单检查；
-- 摘要审计表按期刊、来源和疑似截断状态可重放；主路径不稳定的期刊会阻断相应真实闭环而不是伪造就绪。
+- 摘要审计表按期刊、来源和疑似截断状态可重放；B 对应 JGR 专门入口，其他刊在 C/F 补跑、最迟 D 前收口；受阻不伪造就绪。
 
 DoD：
 
@@ -1780,66 +1820,69 @@ DoD：
 - doctor 能区分“基础工程可运行”和“因 Profile/模型尚未配置不能校准”；
 - 后续阶段无需重写身份、指纹、制品和事务基础。
 
+[阶段 A 收口清单](../docs/verification/stage-a-closure.md) 保留上述原实施/测试/DoD 的稳定序号、
+历史证据与后续责任。A1–A10 通过不等于完整 A 通过。本 Markdown 是过渡清单；A 真正收口时
+由收口实现票产出机器可读阶段结论，I 聚合。首张 A 收口实现票须确定新增能力 required 组与
+全量 pytest 的验收登记规则，后续沿用；本票不新增组、测试分母或通过字段。
+
 ### 阶段 B：JGR Feed 第一条真实纵向闭环
+
+本阶段是 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md) 的受限实验，整条链
+从 Feed 导入到最小日报均运行于显式实验数据根。目标是验证生产接口的真实单篇接线，
+不授予正常生产消费、正式校准或自动 Read 资格；以下均为待实现责任。
+
+**B 入口条件：**
+
+- 所用 A1/A2/A3/A5/A6/A7/A8/A9/A10 契约、配置、持久化、恢复、任务与接收机制的离线证据齐备，Pi 固定供给复用 A4；未完成 A 的所有 live 项不自动阻止独立工程开发。
+- 四刊首轮 http-only 审计先执行并冻结原位次选样、失败和不足；审计之前即固定 JGR 判据：selected 至少 5 篇，以 A10 矩阵为分母，受阻/失败不剔除，每篇至少一条已交付路线取得非 `suspected_truncated` 的主区块摘要。任一不满足即不放行，交回用户裁决。其余刊不足转 C/F，A 仍未完成。
+- 审计证据须适用于生产路径：复用同一套版本化主区块/截断/HTTP 规则作为共享权威，或将生产解析器经 `reinterpret_audit` 追加到冻结 JGR 材料，完成字段差异审查。B 样本本身也须经生产路径取得完整主摘要；不消费 Key Points/Plain Language Summary。
+- A 最小日志、基础/配置 doctor、eligibility/visibility 纯规则按上文最迟点交付；B 接线验收不能以合成测试代替。
+- Docling extra 独立验证实际 slim/CPU 安装、lockfile、模型取得及 Python 兼容范围；无 extra 的普通离线测试继续可运行。
+- 首次生产供给目标为 Pi 1.4.0，复用 A8 当前唯一登记的离线协议档案，生产兼容须 live 实测；A4 的 1.3.0 spike 与 A2 历史示例不改写、不拼接成兼容证明。未来升级仍按 §7.8 新建适配器声明/供给身份及行为证据。
+- 生产启动器、权限/资源构造、真实执行的 `SuccessCandidate`/`SuccessReceipt` 来源、用量审计、恢复校验及执行前预检须交付；真实来源不得塞进 test 接收器。预算与权威接收复用 A7/A8；真实来源、实验用途、质量资格分别判断。
+- `/srv/pi-cwd` 已获所有者确认，须无默认值显式提供并按唯一白名单核验无 `.pi/`、AGENTS.md、CLAUDE.md 或其他项目资源；缺失/不符/隔离未验收时 Pi readiness 阻断。首次发送 prompt 的 live 探测也不得豁免。真实 Profile、固定模型/认证和外发确认按 §14 就绪。
 
 固定路径：
 
-~~~text
-JGR: Atmospheres Feed
-→ Feed 发现
-→ 论文与版本
-→ 最低元数据
-→ 两阶段 Screening 制品
-→ 用户人工 accepted
-→ 合法自动或人工 PDF
-→ Docling
-→ Read
-→ evidence
-→ 最小 Markdown 日报
-~~~
+```text
+实验数据根：当前 JGR Feed → 发现/论文/版本 → 完整主摘要与最低元数据
+→ boundary → 非 out_of_scope 时 value → 用户人工 accepted
+→ 人工附加合法 PDF → Docling/canonical/normalize/evidence → Read → 最小实验日报
+```
 
 实施：
 
-- 只泛化完成该路径必需的最终接口，不搭建日后推倒的临时状态机；
-- 校准门禁保持关闭，系统建议不能自动触发 Read；
-- 由用户人工 accepted 形成有效决定；
-- 若出版者 PDF 受阻，可以向已确认论文附加合法 PDF；
-- 最小日报使用最终 report run/entry 数据契约；
-- 保存一次真实验收记录，并冻结相应 Feed、元数据、PDF 和模型响应用于离线回放。
+- 首次真实 Feed 写入前交付强冲突观察持久化与 parser 固定样本/字段损失回归；只泛化本链所需最终接口，C 扩展四刊，不建临时主状态机。
+- 语言事实用数据库 Feed 身份/发现关系确定首发期刊，再按 ADR-0035 v1 映射，保存来源及策略版本；同刊多 Feed 一致，不做 first-seen/first-wins。跨刊冲突影响 bool 时保留冲突并拒绝新不确定登记；无归属人工 Paper 不登记 value；旧预算/retry 继承原值，策略不进 A5 指纹、不重置预算。
+- 用户在 Screening 前按研究判断预选当轮 JGR 样本并记录理由，冻结 Paper/版本、Feed 来源和 PDF 哈希（取得后绑定）。`out_of_scope` 不调用 value，保留结果后按同一规则换样、记录原因；不为迁就结果修改 Profile/Prompt。历史 §13.3 PDF 不自动等于当轮样本。
+- 校准关闭；B 可保存两阶段输出、实验范围的确定性建议及人工决定，只有用户人工 accepted 生效。实验建议无自动决定权，Read 的必填 `next_action` 保留；实验材料不流入普通生产建议/自动决定链。
+- 最低 PDF 路径为人工附加合法 PDF，验证内容与版本关联，DOI 检测只产生候选；Wiley TDM、授权/渲染与凭据运行时留 F。B 记录样本峰值并显式单次运行，不能把它当作 F 锁定 fixture 峰值。
+- 生产 parser/canonical/normalize/evidence 切片与逐文档门槛须先交付；C1 禁止未入 extraction 指纹的题名/DOI/摘要，单样本失败阻断实验。真实 canonical/evidence-map 生产前确定 `orig` 回放源文本由哪个持久成员哈希覆盖，恢复后仍可回查。
+- 最小 Read 票交付 Read StageInput、任务/两次预算、租约、显式 retry、analysis 持久化与幂等恢复；决定证据/数值规则身份归属。纯后处理警告变化不得未经分析变成模型重跑；不能仅把 A9 校验器接 RPC 视为完成。
+- 超出单次安全输入预算时，在任何模型调用前拒绝该样本，或前移该样本所需的完整分块能力；不得截断全文、丢章节或借 Screening 会话。G 继续负责通用长文能力。
+- 首张真实任务票同时交付 `screening failures/retry`、`paper trace` 组合、中文 help/退出码与恢复验证；show/trace/最小日报从第一天调用 A visibility 接口。
+- 窄实验命令为显式单篇执行，不扫描自动队列；显式人工精读请求不占自动 Read 名额，但仍受租约、每阶段两次 attempt 和显式 retry 纪律约束。人工 accepted 后由队列自动领取仍占自动名额；手动启动 run-due 不改变自动性质。首次引入任何自动领取时即接持久每日配额与重复运行防超额，不等 timer/H。
+- 最小实验日报使用最终 report run/entry 契约、明确实验范围、可重建且遵守每日五项/全文三项容量，不进入普通生产报告候选。B 导出强标识（DOI 与版本关联）的冻结已暴露清单，C 在保留器启用前导入生产根。
+- 全部真实冻结材料只在本机验收/实验根保存并备份：Profile、配置快照、模型原始响应、正文与证据引文不进 public 仓库。CI/check-offline 仅用合成或脱敏 fixture；许可允许的 PDF/代表页可按 §13.3 单独审查入库。
 
-阶段 B 的真实验收以真实 Research Profile 和显式选择的 Screening/Read 模型为前置；此处 Read 模型可以是阶段 B 的版本化选择，不因此成为正式校准输入，也可在阶段 G 前显式更换。缺少这些配置不阻止阶段 A 工程完成，但阶段 B 只能保持“工程就绪、真实验收待配置”，不能用占位 Profile 宣称闭环成功。
+测试与真实验收：
 
-真实调用还需按 §7.8 完成 Pi/Node/npm 固定供给及安装验证，具备适配器配置、可用的固定模型认证和 `prompt_only` 通道，并通过 §7.7 隔离与完成判据。研究实验、版本号匹配或 artifact 下载成功不能替代该路径验收，也不要求为了闭环接入提交工具或研究 §6 的扩展能力。
-
-测试：
-
-- 同一 JGR Feed fixture 重放两次只产生一条发现事实；
-- 建议 accepted 在校准关闭时不产生自动 Read 任务；
-- 人工 accepted 后 PDF、Docling 和 Read 各自取得资格；
-- 每个持久化边界故障后重跑不会重复 paper、version、analysis、evidence 或 report entry；
-- Agent 字段缺失、越界或 evidence 不存在时不能写成功制品；
-- evidence ID 可以反查 PDF 页码、bbox、章节和支持片段；
-- 最小日报重复渲染不增加成员。
-
-真实验收：
-
-- 从当前 JGR Feed 取得一篇真实论文；
-- 使用真实 Research Profile 和已配置模型运行 Screening；
-- 用户人工接受；
-- 使用合法自动取得的 PDF（含 Wiley TDM 与授权通道）或人工确认的合法 PDF；
-- 为一篇真实英文论文生成默认中文精读和最小日报；
-- 保存所有配置、模型、PDF、Docling 和报告哈希。
-- 保存实际 Pi/adapter 版本与资源身份、固定供给清单与安装验证结果、实际 Node 版本、固定 provider/model、所选通道、脱敏完成判据与用量；成功制品通过生产权威 Schema/业务校验，完整会话不进入验收材料。
+- 重放当前 JGR Feed 幂等；强冲突仍留原观察，最低元数据、语言归属及 out_of_scope 停止规则可审计；真实样本使用真实 Profile、固定 Screening/Read 模型。
+- 实验建议 accepted 不自动建 Read/reuse；人工 accepted、PDF 与逐文档门槛分别控制资格，任一失败不得调用 Read。
+- 同一份合法分析可在显式实验查询中见到，普通生产命令/查询拒绝实验根；备份隔离恢复后仍相同，不能把实验根初始化成生产根。重复发现、版本变化或未来合并不抹去暴露/排除依据。
+- 每个持久化边界故障重跑不重复 paper/version/analysis/evidence/report entry；A9 权威拒绝非法字段/引用，evidence 可回查页码/bbox/章节/源 charspan。
+- 从当轮 JGR Feed 完成一篇真实英文论文的默认中文精读与最小实验日报；保存配置、模型、PDF、Docling、正文/evidence 与报告哈希，实际 Pi/adapter/资源/Node/供给/安装、通道、脱敏完成判据和用量。完整会话不留存。
+- 本机显式脱网重放命令验证原根不可访问时的全链恢复及最小日报重复渲染成员不变；结论注明不在 CI 范围内。
 
 DoD：
 
-- 冻结路径可以完全脱网重放；
-- 真实非 mock 英文论文纵向闭环成功；
-- 该结果不替代阶段 D 的正式校准，也不替代阶段 I 对最终契约的重新验证。
+- 满足以上入口及逐文档质量、隔离、恢复与真实非 mock 纵向验收；证据只覆盖固定样本和该链。
+- 旧实验结果只作历史回查，不复用、不提升、不提供提升入口；四刊 fixture 后来通过也不改变此结论。长期生产根从 C 初始化，同论文以后从头走正常链和独立预算，实验根只绑定冻结样本，不能成为任意论文重置预算的通道。
+- 不替代 F 四刊正文/摘录质量、D 正式校准、G 正式 Read 或 I 最终契约验证。
 
 ### 阶段 C：四刊发现、身份、版本与来源
 
-A6 已由 #69–#75 实现并注册离线论文事实底座，历史语义裁决与 #68 文档同步见 ADR-0030；真实来源、parser/live 与完整阶段 A 仍未验收。本阶段必须先完成强冲突观察持久化再接真实 Feed，parser 升级前必须固定样本回归并声明关键字段减少。A6 的 Feed 唯一身份权威是数据库规范 URL；未来接入配置需明确与数据库对齐，不得建立第二个身份权威。
+A6 已由 #69–#75 实现并注册离线论文事实底座，历史语义裁决与 #68 文档同步见 ADR-0030；真实来源、parser/live 与完整阶段 A 仍未验收。首次真实 Feed 导入前必须完成强冲突观察持久化：B 先交付 JGR 所需切片，C 扩展四刊；parser 每次升级前必须固定样本回归并声明关键字段减少。A6 的 Feed 唯一身份权威是数据库规范 URL；未来接入配置需明确与数据库对齐，不得建立第二个身份权威。
 
 实施：
 
@@ -1853,8 +1896,8 @@ A6 已由 #69–#75 实现并注册离线论文事实底座，历史语义裁决
 - 实现字段级来源仲裁和有事实价值的来源快照；
 - 实现版本变化的分阶段失效；
 - 实现缺少题名/摘要的初次采集、7 天延迟复查、metadata_unobtainable 事实和显式 retry；
-- 实现不读取 Agent 结果的最小校准样本保留器，从真实 Feed 积累开始按 metadata ready time、总计 32 与每刊最低 4 篇目标保留 waiting_calibration 成员；
-- 从四刊首次真实运行起持续记录每周 journal-article 到达率、摘要各来源命中率和疑似截断率，为校准日历与容量评估提供输入。
+- 初始化独立长期生产根；在首次真实四刊积累与保留器启用前导入 B 按 DOI/版本关联导出的冻结暴露清单，机械排除且跨重复发现、版本变化、合并可追踪。最小保留器、保留依据、未揭晓状态、visibility 查询及写入口限制同片交付，不读取 Agent 结果；按 metadata ready time、总计 32 与每刊最低 4 篇保留 waiting_calibration，D 扩展批次/提交/揭晓/evaluation，H 扩展展示面；
+- 从四刊首次真实运行起按策略版本分开记录每周 journal-article 到达率、摘要各来源命中率和疑似截断率；C 可带已披露的单刊摘要受阻状态通过，不默认批准降级，估算须披露不确定性；最迟 D 正式预热冻结及首个批次前逐刊收口，见 §4.3。
 
 测试：
 
@@ -2033,6 +2076,11 @@ DoD：
 
 ### 阶段 F：全文取得与 Docling 质量闭环
 
+F 扩展 B 的生产正文切片，负责四刊合格正文、摘录定位与 fixture 供给；D 负责 reuse
+模型调用、预算/成功制品、有效复用可行性、建议与校准，G 负责通用长文 Read。
+新渲染/官方 API 通道交付后按新策略补跑摘要审计，不改旧失败；仍不稳定的刊交回用户
+裁决降级与披露，未决时 D 正式预热冻结/校准阻断。B 实验不减少本阶段门槛。
+
 实施：
 
 - 完成出版者适配器（《大气科学》/AMS 直连开放端点与公开页面、Wiley 官方 TDM 通道）、合法仓储、Unpaywall OA 定位与 OpenAlex 摘要/全文位置补充；
@@ -2067,7 +2115,7 @@ DoD：
 - no_text_layer/quality_gate 不自动重试，timeout/resource_exhausted 使用剩余预算且最多两次；解析失败记录携带 backend 身份，换 backend 即新指纹重置预算；
 - normalize、evidence 与质量门槛模块不导入 Docling SDK，并由 fake parser backend 驱动离线确定性测试；
 - 解析器、模型、normalization 或 excerpt selector 变化自动要求重跑 fixtures；
-- 任何 fixture 失败阻断新 Read；
+- 任何 fixture 失败阻断正常新 Read/reuse；仅 §11 B/ADR-0036 的实验根固定样本可按逐文档门槛验收，不授予正常资格；
 - GC 永不选择原 PDF、分析引用制品或不可替代成功响应。
 
 黄金 fixture 至少包括：
@@ -2315,7 +2363,8 @@ DoD：
 |扫描 PDF|extraction_failed，不运行 OCR 或 Read|
 |Docling 首次 OOM 或超时|使用同一指纹剩余预算在后续运行重试，最多两次|
 |Docling 无文本层或质量门槛失败|当前指纹永久失败，不做无意义自动重试|
-|Docling 返回文本但 fixture 错序|质量门槛失败，不调用 Read|
+|Docling 返回文本但 fixture 错序|质量门槛失败，不调用 Read；[ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md) 仅豁免 B 四刊覆盖未完成，不豁免样本错序|
+|B 固定 JGR 实验且四刊覆盖未完成|仅实验根、逐文档通过、显式单篇 Read；拒绝正常消费，恢复后仍拒绝，旧结果不复用不提升|
 |公式被检测|启用时保存源文本与公式候选转写及页码/bbox/源 charspan，提供 PDF 裁切人工核查；关闭或无法可靠转写时显示定位占位，未复核候选不得支持精确公式结论|
 |表格含精确数值|显示人工核对警告，不作为未核对关键证据|
 |Read 关键结论的数值未出现在所引片段|分析保留但追加 degraded_content_warning 并在报告标出|
@@ -2407,13 +2456,16 @@ JGR 的已核查合法样本固定为 Wada et al.，DOI `10.1029/2025JD043927`�
 - 按 §7.8 完成 Pi/Node/npm 精确版本供给与安装验证，提供显式运行资源、版本化适配器策略、`prompt_only` 通道及固定模型认证；认证信息不进入版本化配置、SQLite、日志或报告；
 - 外部 LLM 数据发送确认；
 - 供 Unpaywall、Crossref、DataCite 与其他外部 HTTP 客户端复用的联系邮箱；
-- Wiley TDM token（用户在 Wiley Online Library 账户接受点击式 TDM 许可后取得；阶段 B 纵向验收经 TDM 通道取得 JGR 论文 PDF，缺失时降级为人工附加，不阻断其他流程）；
-- 可选：受控浏览器渲染运行时（Playwright 等）的显式启用与版本登记；未启用时公开页面只走普通 HTTP 通道，受渲染限制的路线如实在审计中记为受阻，不伪造成功；
-- 可选：本人合法持有的机构账号/订阅会话的显式启用与凭据位置（不进入版本化配置、SQLite、日志或报告）；未启用时需订阅权限的全文进入人工 PDF 队列；
-- 主机可用于 PaperRadar 的内存上限；doctor 必须对照锁定 fixture 的峰值和安全余量检查，不足时阻止 Docling 自动运行。
+- B Read 前提供人工确认的合法 PDF；Wiley TDM token 与凭据运行时留 F，不作为 B 前置；
+- B 运行 Docling 前提供主机内存上限；B 显式单次执行并记录样本实测峰值，不替代 F 的锁定 fixture 峰值。F 后 doctor 对照锁定 fixture 峰值和安全余量，不足时阻止自动运行。
+
+F 获取通道另需 Wiley TDM token（本人接受 Wiley 点击式 TDM 许可后取得）、受控渲染运行时
+或本人授权会话的显式启用与隔离凭据；B 最低路径不依赖这些通道。未启用渲染时仅走普通 HTTP，
+受限路线如实记为受阻；未启用授权时需订阅权限的全文进入人工 PDF 队列，凭据不进入版本化配置、SQLite、日志或报告。
 
 正式预热、冻结和校准另需：
 
+- 四刊逐刊摘要稳定证据与事先裁决的判据（含是否排除疑似截断），以及 F 四刊正文/摘录 fixture 通过；
 - 用户维护的主题列表；
 - 四刊期刊信誉档位；
 - 由用户手工选择并标注结论的 10–20 篇预热论文；
@@ -2424,7 +2476,7 @@ JGR 的已核查合法样本固定为 Wada et al.，DOI `10.1029/2025JD043927`�
 - NAS 目标和保留策略；
 - 日常运行时间与时区。
 
-自动精读门禁的最早开启时间由四刊中最慢达到 4 个合格样本的期刊和总计 32 篇的到达时间共同决定。阶段 C 必须先用真实 Feed 到达率给出估算；Feed 从阶段 C 开始持续积累，阶段 F 完成后立即可以开始正式盲评，不必等待 E、G 或 H 全部完成。
+自动精读门禁的最早开启时间由四刊中最慢达到 4 个合格样本的期刊和总计 32 篇的到达时间共同决定。阶段 C 必须先用真实 Feed 到达率给出估算；Feed 从阶段 C 开始持续积累，阶段 F 完成且四刊摘要稳定证据/判据已收口后即可开始正式盲评，不必等待 E、G 或 H 全部完成。
 
 doctor 分别报告：
 

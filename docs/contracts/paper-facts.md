@@ -58,7 +58,7 @@ acquisition_id 和可空 observation_id（包括全空解释）。完整字段�
 发现时间与解释提交时间须为微秒 UTC，首次解释 submitted_at 等于 first_seen，last_seen 不得早于任何已登记解释的 submitted_at。
 
 #70 历史切片只开放同出版者流及 Feed；#71 对来源及人工修正的扩展见下节，权威版本关系和正式映射仍未开放。
-阶段 C 强冲突持久化与 parser 固定样本回归门禁保持，第 7/10 节未验证 live 假设不因本票测试通过而转为已验证。
+首次真实 Feed 导入前的强冲突持久化与 parser 固定样本回归门禁保持（B 先交付所需切片，C 扩展），第 7/10 节未验证 live 假设不因本票测试通过而转为已验证。
 
 ### 1.3 #71 四类来源仲裁、人工修正与公共历史读取
 
@@ -140,7 +140,7 @@ publisher/注册机构来源流为 `(来源类别, 提供方, 查询键, 目标�
 
 **全空候选集合是明确例外**：v2 全空返回 not_retained，只保留轻量取得原结果与版本门禁，不替换当前规范字段、不形成清空修订；首次空请求仍不创建 Paper，不以空回执派生字段清空影响。此后新的低 parser 请求仍受单调门禁约束，而精确旧请求继续回原结果。
 
-完整解释是调用方的必要承诺，服务拒绝缺失声明、明确 partial/economical 声明以及可检测的降版本/同版本异解释；不能仅从字段减少断定违规，也不声称能识别声明撒谎的真实解析器。A6 没有真实解析器，其真实性由第 10 节阶段 C 回归门禁承接。
+完整解释是调用方的必要承诺，服务拒绝缺失声明、明确 partial/economical 声明以及可检测的降版本/同版本异解释；不能仅从字段减少断定违规，也不声称能识别声明撒谎的真实解析器。A6 没有真实解析器，其真实性由第 10 节首次真实解析器回归门禁（B 起、C 扩展）承接。
 
 304、限流、失败在输入类型上不可表达；这些取得执行历史仍由未来 task_attempts 承担。轻量取得只记录有效解析请求，不成为通用请求/HTTP日志框架。
 
@@ -164,7 +164,7 @@ Feed 同源排序只用不可变的首次 `observed_at` 和稳定 tie-break。A�
 
 题名、摘要及作者字符串在服务端仅将 CRLF/CR 统一成 LF，再去首尾 Unicode 空白（与 `str.strip()` 一致，包括全角空格、制表符和换行）；内部空白不折叠，内部制表符和连续三个换行保留，不做 Unicode 归一化、翻译、截句或去 HTML。原字节保留，provenance 记录 `text_norm=1`。外围差异归一后相同；内部排版差异仍能改变规范值与指纹，A5 builder 不再清洗。
 
-观察中的题名摘要必须已经是无 HTML 标签的已解析文本，含真正标签、注释等标记受控拒绝 `invalid_text`，不得默默剥除。数学比较 `a < b`、`x > 0` 不是 HTML，须接受；`<p>摘要</p>`、`<!-- comment -->` 拒绝，不能用“含尖括号就拒绝”的近似实现。A6 不是 HTML 解析器，对 `<String>` 这类标签形状无法可靠区分泛型与标记，因此 `List<String>`、`Array<int>` 也受控拒绝；这是明确的输入能力限制，不做已知 HTML 标签白名单放宽。数学比较与 `T <: Number` 保持接受；阶段 C 仍须以真实解析材料核对该边界。固定向量包括 CRLF/CR、全角空格、制表符、连续换行、数学比较与标签边界。孤立代理字符在登记时拒绝。规范后纯空白候选视为缺项，不能覆盖非空事实；不套用模型输出占位词表删除 “No abstract available”。
+观察中的题名摘要必须已经是无 HTML 标签的已解析文本，含真正标签、注释等标记受控拒绝 `invalid_text`，不得默默剥除。数学比较 `a < b`、`x > 0` 不是 HTML，须接受；`<p>摘要</p>`、`<!-- comment -->` 拒绝，不能用“含尖括号就拒绝”的近似实现。A6 不是 HTML 解析器，对 `<String>` 这类标签形状无法可靠区分泛型与标记，因此 `List<String>`、`Array<int>` 也受控拒绝；这是明确的输入能力限制，不做已知 HTML 标签白名单放宽。数学比较与 `T <: Number` 保持接受；B 首次真实解析器及 C 扩展仍须以真实材料核对该边界。固定向量包括 CRLF/CR、全角空格、制表符、连续换行、数学比较与标签边界。孤立代理字符在登记时拒绝。规范后纯空白候选视为缺项，不能覆盖非空事实；不套用模型输出占位词表删除 “No abstract available”。
 
 ### 5.2 字段与优先级
 
@@ -217,11 +217,11 @@ locator 必须非空、无敏感 URL 包装；不联网证明来源真实性。�
 A6 交付时备份 head 跟随 a604，当前 head 见[备份 Contract](backup-restore.md)；
 校验关系、原始断言、locator、制品与取得闭包；两端未齐、跨 Paper 和已生效都合法。
 
-## 7. 写入结果、事务与阶段 C 硬门禁（D4）
+## 7. 写入结果、事务与首次真实 Feed 硬门禁（D4）
 
 强身份冲突 `identity_conflict` 整笔拒绝业务行：不写发现、来源观察、候选、关系、修订或选择，最多保留完整未引用 source_snapshot。细分类别固定为 `doi_owner_conflict`、`target_mismatch`、`version_kind_conflict`、`entry_doi_changed`。关系冲突 `requires_merge` 则观察及关系已保留，是成功结果；`not_retained` 是有效且未新增来源材料/候选正文的独立结果，轻量取得与必要修订已经保存。结果类型须区分 retained/not_retained/rejected，携带 reason_catalog 版本、reason 与可选冲突类别，不用一个失败布尔值混同三者。`requires_merge` 是本次 DOI 涉及既有跨 Paper 关系的成功提示，优先于 `not_retained`，不是 Paper 的主 status，也不声称本次新增了关系或响应材料。普通元数据取得和候选复用均可返回该提示；是否登记材料由独立的 `response_bytes_retained` 表达。精确旧请求永远重放原回执，不按当前关系重算。
 
-**阶段 C 接入真实 Feed 前必须完成强身份冲突观察的持久化；此前适配器不得直接复用 A6 拒绝路径为生产写入。** A6 没有真实 Feed，仅数据库身份/幂等入口及离线测试调用方，因此当前丢失窗口为空，这也是推迟持久化唯一成立依据。阶段 C 必须逐类别验证冲突仍有可查询原始观察，避免正式论文被漏掉；A6 的细分类受控结果为适配器保留扩展点，不能将拒绝混作 not_retained。
+**首次真实 Feed 导入前必须完成强身份冲突观察持久化，B 先交付 JGR 所需切片、C 扩展；此前适配器不得直接复用 A6 拒绝路径为生产写入。** A6 没有真实 Feed，仅数据库身份/幂等入口及离线测试调用方，因此当前丢失窗口为空，这也是推迟持久化唯一成立依据。B/C 接入时必须逐类别验证冲突仍有可查询原始观察，避免正式论文被漏掉；A6 的细分类受控结果为适配器保留扩展点，不能将拒绝混作 not_retained。
 
 写事务 `BEGIN IMMEDIATE`，沿用既有 5 秒 busy_timeout，服务内部无重试循环；耗尽返回 `database_busy`，调用方决定稍后显式重试。读查询显式 `BEGIN` 固定一致读视图，不能依赖 legacy pysqlite 的 SELECT 自动开事务。一次查询中的身份、当前选择、修订、候选、provenance 必须同一视图；来源制品 I/O 在业务写事务之外。发布后/业务事务中/提交后未返回三类故障均可安全重试，最多完整孤立来源制品，无半条成功事实。
 
@@ -281,9 +281,9 @@ CLI 目标固定为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER
 
 隔离恢复从活跃 WAL 备份，禁原目录访问、独立目录恢复并搬迁，新进程只持受控 ID/修订/配置引用及独立预期，不从请求文件带原题名摘要，仍由恢复库候选重建相同输入。恢复不激活、抓取、重算、清理或续跑。
 
-阶段 C 接入真实解析器前，parser_version 每次升级必须先通过固定样本回归，声明字段减少并检查关键字段变化；不得无声明地减少关键字段。A6 只校验完整解释声明和可检测的一致性，真实解析器是否诚实、升级实际损失与运行成本均未验证，不得用离线类型检查替代此硬门禁。
+首次真实解析器从 B 接入、C 扩展，parser_version 每次升级必须先通过固定样本回归，声明字段减少并检查关键字段变化；不得无声明地减少关键字段。A6 只校验完整解释声明和可检测的一致性，真实解析器是否诚实、升级实际损失与运行成本均未验证，不得用离线类型检查替代此硬门禁。
 
-以下均未在 A6 验证，阶段 C 逐项回填已核实/已证伪/仍未验证，并将固定来源材料纳入其验收：JGR/QJRMS guid 裸 DOI 覆盖；Wiley `?af=R` 落地页行为；页码实际为 eLocator；适配器给出的摘要截断标记可靠性；entry ID 跨抓取稳定性；Crossref `is-preprint-of/has-preprint` 真实供给。评论里的 170/170 不替代本组证据。A6 NOT_ASSESSED 必须包括这些来源假设、真实来源、截断检测、merge/undo、arXiv/PMID、metadata_ready/eligibility、任务/预算、完整可见性、RPC、Docling、NAS及完整阶段 A；stage_a_verified/live_verified/rpc_verified=false。
+以下均未在 A6 验证，B 对首条 JGR 路径、C 对四刊扩展逐项回填已核实/已证伪/仍未验证，并将固定来源材料纳入其验收：JGR/QJRMS guid 裸 DOI 覆盖；Wiley `?af=R` 落地页行为；页码实际为 eLocator；适配器给出的摘要截断标记可靠性；entry ID 跨抓取稳定性；Crossref `is-preprint-of/has-preprint` 真实供给。评论里的 170/170 不替代本组证据。A6 NOT_ASSESSED 必须包括这些来源假设、真实来源、截断检测、merge/undo、arXiv/PMID、metadata_ready/eligibility、任务/预算、完整可见性、RPC、Docling、NAS及完整阶段 A；stage_a_verified/live_verified/rpc_verified=false。
 
 ## 11. 实施与验收约定
 
@@ -324,7 +324,7 @@ A6 只在 #75 注册，ISSUE=75，PARENT_ISSUE=67，前置同次 A1、完整 A2�
 证据矛盾由备份/恢复受控拒绝；合法未齐端点和 requires_merge 不报损坏。详见备份恢复 Contract。
 
 新增独立测试不改变旧固定分母，不登记 A6；仅证明离线历史重建，未验证完整阶段 A、live、
-真实来源、RPC、Docling/NAS 或任务续跑。阶段 C 的 parser 固定样本门禁和强冲突材料门禁保持。
+真实来源、RPC、Docling/NAS 或任务续跑。首次真实导入前（B 起、C 扩展）的 parser 固定样本门禁和强冲突材料门禁保持。
 
 
 ### #75 最终独立验收
@@ -337,9 +337,11 @@ A6 scope 的 ISSUE=75、PARENT_ISSUE=67，固定实际末端 a604_version_relati
 A5 当时 `paper_fact_mapping` NOT_ASSESSED 原样保留；正式映射与 #74 历史重建由新增 A6 覆盖。
 不将历史切片说明中的“尚未注册”当成当前注册状态，也不改写历史运行 JSON。
 
-本结论仅证明离线事实闭环，所有第 10 节来源假设和阶段 C 的强冲突材料/parser 固定样本门禁
+本结论仅证明离线事实闭环，所有第 10 节来源假设和首次真实导入前的强冲突材料/parser 固定样本门禁
 继续未验证。stage_a_verified/live_verified/rpc_verified 固定 false，不授予任务资格或模型预算。
 
 A7-02 任务层已持久化 boundary/value 规范输入与请求依据，见[任务 Contract](screening-tasks.md)。
 论文事实包只公开既有连接级 `resolve_revision` 供调用方在 BEGIN 后复核一致性，
 不反向依赖任务服务，不新增语言事实、预算或执行资格。
+
+#111 将首次真实写入责任前移到 B，C 扩展；实验根也是真实写入，不豁免强冲突观察、最终接口或隔离恢复，见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。历史 A6 结论不因此获得 live 证明。
