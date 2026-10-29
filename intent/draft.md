@@ -1726,30 +1726,7 @@ SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、
 阶段字母保持稳定，按具体能力依赖推进，不能将 A→B 当作 A 所有 live 项全部通过的全局闸门。
 B 的显式入口见下文；A 首轮审计不足可移交 C/F 补跑，A 仍未完成，避免 A 等 F、F 又等 B 的循环。
 
-```mermaid
-flowchart TD
-  J[JGR 判据固定] --> Audit[四刊首轮 HTTP 审计]
-  Audit --> Source[JGR 达标或用户新裁决]
-  A[A 窄收口：日志、doctor、纯规则] --> B[B 实验根内纵向闭环]
-  Pi[Pi 离线启动器、权限资源、生产成功来源] --> Live[固定 1.4.0 安装与 RPC 实测]
-  Cwd["/srv/pi-cwd 已确认；现场隔离验收"] --> Live
-  Live --> B
-  Extra[Docling extra 安装与兼容探测] --> Body[正文生产切片、Read 身份与预算]
-  Body --> B
-  Feed[强冲突持久化、JGR 元数据与语言事实] --> B
-  Source --> B
-  B --> C[C 生产根四刊积累、保留器与可见性]
-  C --> F[F 全通道、四刊正文与摘录 fixture]
-  C --> Abstract[四刊摘要稳定证据及判据裁决]
-  F --> Abstract
-  F --> D[D reuse 执行与正式校准]
-  Abstract --> D
-  D --> E[E 参考文献]
-  D --> G[G 长文 Read 与队列]
-  E --> H[H 完整日报与复核]
-  G --> H
-  H --> I[I 最终验收]
-```
+依赖图、模块状态与当前前沿见[路线图](../docs/roadmap.md#模块图)。
 
 Docling 探测、Pi 离线启动器、A 窄收口可以并行；日志须先于首次真实生产执行，基础 doctor
 须先于 Pi readiness doctor，eligibility/visibility 纯规则须先于 B 首个消费者。
@@ -1820,10 +1797,8 @@ DoD：
 - doctor 能区分“基础工程可运行”和“因 Profile/模型尚未配置不能校准”；
 - 后续阶段无需重写身份、指纹、制品和事务基础。
 
-[阶段 A 收口清单](../docs/verification/stage-a-closure.md) 保留上述原实施/测试/DoD 的稳定序号、
-历史证据与后续责任。A1–A10 通过不等于完整 A 通过。本 Markdown 是过渡清单；A 真正收口时
-由收口实现票产出机器可读阶段结论，I 聚合。首张 A 收口实现票须确定新增能力 required 组与
-全量 pytest 的验收登记规则，后续沿用；本票不新增组、测试分母或通过字段。
+A 真正收口时由收口实现票产出机器可读阶段结论，I 聚合。收口责任与验收登记安排见
+[路线图](../docs/roadmap.md#收口安排)。
 
 ### 阶段 B：JGR Feed 第一条真实纵向闭环
 

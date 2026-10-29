@@ -568,11 +568,11 @@ REQUIRED_FIXTURE_FILES = (
     ("GLOSSARY.md", "74381b5b1381c25abb69c460605093adc0352ce970c335a21baa84c91d853853"),
     (
         "intent/draft.md",
-        "232f4e1b855dc6b4c78918bcf6806cbab8a308651c9b208b35938c673f8b0a34",
+        "a8b8b7eb38e593158acd5013592011ee3c2b3e488fba1f8e3cecabaa45a3a9eb",
     ),
     (
         "docs/contracts/read-validation.md",
-        "5c30fa9cae79beae92810bb56f0891ce07ad958a17f963cd0233043c948fcd84",
+        "198bc0a2faaecda891a56cd59ae4beabc70e2c99ae8bf219d8bd35eb1123e6dc",
     ),
     (
         "docs/verification/a9-scope-review.md",

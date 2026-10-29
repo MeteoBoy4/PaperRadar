@@ -337,7 +337,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_scope.py",
-        "5150e260e34a8f93f8a26c0b1953638842ebcde060cb99e385b6a79f82b6457d",
+        "0a0e24494b41b9cf56a5af13251ed9487c2e802192300361a28256ab440c0c18",
     ),
     (
         "scripts/audit-verification-scope",
@@ -1389,7 +1389,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "intent/draft.md",
-        "232f4e1b855dc6b4c78918bcf6806cbab8a308651c9b208b35938c673f8b0a34",
+        "a8b8b7eb38e593158acd5013592011ee3c2b3e488fba1f8e3cecabaa45a3a9eb",
     ),
     (
         "pyproject.toml",

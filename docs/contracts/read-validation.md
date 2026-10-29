@@ -5,13 +5,13 @@
 
 ## 当前交付与命名
 
-#93 已交付 `paper_radar.reading` 的权威 Pydantic 结构及 Read 自有七类价值词汇，
+`paper_radar.reading` 提供权威 Pydantic 结构及 Read 自有七类价值词汇，
 经现有 contracts 服务生成、导出和只读检查。仅通过 Schema 不表示已通过证据业务接收。
-#94 已交付原始字节与可靠文本上下文的纯验证、数值 v1 和警告三视图。
-#95 已接通表格、公式区域源字符与不可靠字符的字段矩阵；#96 已交付 single/reduce
-模式与同正文 map 证据允许集合检查；#97 已交付显式 Read 配置准入与历史比较。
-#98 已验证历史配置与候选原字节的非空隔离恢复，固定上下文由测试常量重建；
-独立必需 A9、同次可信终态与固定范围由 #99 交付。
+公共能力包括原始字节与可靠文本上下文的纯验证、数值 v1 和警告三视图，
+表格、公式区域源字符与不可靠字符的字段矩阵，single/reduce
+模式与同正文 map 证据允许集合检查，以及显式 Read 配置准入与历史比较。
+历史配置与候选原字节具有非空隔离恢复验证，固定上下文由测试常量重建；
+独立必需 A9 绑定同次可信终态与固定范围。
 
 | 名称用途 | 固定名称 |
 | --- | --- |
@@ -42,8 +42,8 @@ Read 自有 `$defs.ValueType.description` 与 `value_types` 属性描述均固�
 Rank、Topic、紧急性和流程决定属于程序边界，不是模型输出字段。
 
 “有意义文本”只拒绝空白、纯标点、明确占位文本，不判断科学内容是否充分；列表内字符串也需
-逐项检查，不能套用摘要层输入不足短语。结构类型/评分/必填性由 #93 交付；
-有意义文本、重复检测、条件非空及上下文业务规则由 #94 交付。
+逐项检查，不能套用摘要层输入不足短语。结构校验涵盖类型/评分/必填性；
+业务校验涵盖有意义文本、重复检测、条件非空及上下文业务规则。
 
 | 必填字段 | 允许空列表 | 有意义文本 | 数值检查 | 证据义务 |
 | --- | --- | --- | --- | --- |
@@ -76,7 +76,7 @@ Rank、Topic、紧急性和流程决定属于程序边界，不是模型输出�
 调用方提交原始 UTF-8 JSON 字节和已合法构造的只读上下文。顶层前后 JSON 空白合法；
 BOM、坏 UTF-8、孤立代理字符、任意层重复键、NaN/Infinity、非对象、围栏、截断和
 非空白尾随内容均拒绝，不作修复。上下文构造错误独立于模型输出拒绝，不得变成
-`output_invalid` 或消耗模型预算。本票不引入预算或接收器。
+`output_invalid` 或消耗模型预算。此校验边界不提供预算或接收器。
 
 公共入口为 `paper_radar.reading.validate_read_output(raw: bytes, context: ReadContext)`。
 只接受原始 bytes；str、bytearray、映射或已处理的模型对象均不作为候选接收。
@@ -459,3 +459,9 @@ parser/canonical/normalize/evidence 及源字符持久身份必须先闭合，Re
 超出单次安全输入预算时先拒绝，或前移所需完整分块能力，不截断正文或复用 Screening 会话。
 实验根、逐文档质量与不复用/不提升要求见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；这些是目标责任，
 不重写 #92–#99 的历史任务台账或 not_assessed。F 扩展四刊正文供给，G 扩展通用长文 Read。
+
+## 相关
+
+依据：[ #92](https://github.com/MeteoBoy4/PaperRadar/issues/92)、[#93](https://github.com/MeteoBoy4/PaperRadar/issues/93)、[#94](https://github.com/MeteoBoy4/PaperRadar/issues/94)、[#95](https://github.com/MeteoBoy4/PaperRadar/issues/95)、[#96](https://github.com/MeteoBoy4/PaperRadar/issues/96)、[#97](https://github.com/MeteoBoy4/PaperRadar/issues/97)、[#98](https://github.com/MeteoBoy4/PaperRadar/issues/98)、[#99](https://github.com/MeteoBoy4/PaperRadar/issues/99)。
+
+目标与判据：[规格 §4.10](../../intent/draft.md#410-read-agent)；决策：[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；生产消费者责任：[路线图 Body/B](../roadmap.md#module-body)。
