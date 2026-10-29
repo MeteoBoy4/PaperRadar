@@ -12,6 +12,7 @@ from paper_radar.backup import create_backup
 from paper_radar.backup.restore import restore_backup
 from paper_radar.config import compile_config
 from paper_radar.feed_pipeline import FeedPipeline, PipelineError
+from paper_radar.feed_pipeline.models import PreparedItem, ValueRegistration
 from paper_radar.fixture_audit.acquisition_policy import FEED_ENDPOINTS
 from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
 from paper_radar.papers import PaperFacts
@@ -33,7 +34,7 @@ FULL = (
 )
 
 
-def setup_pipeline(root: Path):
+def setup_pipeline(root: Path) -> tuple[FeedPipeline, str, str, list[str]]:
     settings, database = value_inputs(root)
     snapshot = compile_config(settings, database)
     data_root = root / "data"
@@ -42,7 +43,7 @@ def setup_pipeline(root: Path):
     )
     calls = []
 
-    def respond(request):
+    def respond(request: httpx.Request) -> httpx.Response:
         calls.append(str(request.url))
         if "showFeed" in str(request.url):
             return httpx.Response(
@@ -88,7 +89,9 @@ def setup_pipeline(root: Path):
     return pipeline, feed.feed_id, snapshot.snapshot_id, calls
 
 
-def boundary(pipeline, paper_id, snapshot_id, value="in_scope"):
+def boundary(
+    pipeline: FeedPipeline, paper_id: str, snapshot_id: str, value: str = "in_scope"
+) -> str:
     tasks = ScreeningTasks(
         pipeline.database, pipeline.data_root, clock=lambda: datetime.now(UTC)
     )
@@ -123,6 +126,7 @@ def test_complete_feed_test_path_freezes_language_and_value_registration(
     )
     (item,) = prepared.items
     assert item.paper_id and item.metadata_request_key
+    assert item.metadata is not None
     assert item.metadata.minimum_complete
     success_id = boundary(pipeline, item.paper_id, snapshot_id)
     request = dict(
@@ -156,12 +160,16 @@ def test_complete_feed_test_path_freezes_language_and_value_registration(
     assert FULL not in repr(prepared)
 
 
-def prepared_request(root):
+def prepared_request(
+    root: Path,
+) -> tuple[FeedPipeline, PreparedItem, dict[str, str], list[str]]:
     pipeline, feed_id, snapshot_id, calls = setup_pipeline(root)
     prepared = pipeline.prepare(
         feed_id, request_id="one", contact_email="contact@example.org"
     )
     (item,) = prepared.items
+    assert item.paper_id is not None
+    assert item.metadata_request_key is not None
     request = dict(
         paper_id=item.paper_id,
         snapshot_id=snapshot_id,
@@ -176,6 +184,8 @@ def test_production_entry_refuses_test_source_without_value_budget(
     tmp_path: Path,
 ) -> None:
     pipeline, item, request, _calls = prepared_request(tmp_path)
+    assert item.paper_id is not None
+    assert item.metadata_request_key is not None
     success = boundary(pipeline, item.paper_id, request["snapshot_id"])
     with pytest.raises(PipelineError, match="test_source"):
         pipeline.register_value(
@@ -193,6 +203,8 @@ def test_no_current_boundary_or_out_of_scope_cannot_register_even_test(
     tmp_path: Path, value: str
 ) -> None:
     pipeline, item, request, _calls = prepared_request(tmp_path)
+    assert item.paper_id is not None
+    assert item.metadata_request_key is not None
     success = boundary(pipeline, item.paper_id, request["snapshot_id"], value)
     reason = "out_of_scope" if value == "out_of_scope" else "boundary_missing"
     with pytest.raises(PipelineError, match=reason):
@@ -207,6 +219,8 @@ def test_value_and_language_and_composition_proof_commit_together(
     tmp_path: Path,
 ) -> None:
     pipeline, item, request, _calls = prepared_request(tmp_path)
+    assert item.paper_id is not None
+    assert item.metadata_request_key is not None
     success = boundary(pipeline, item.paper_id, request["snapshot_id"])
     with closing(sqlite3.connect(pipeline.database)) as connection:
         connection.execute(
@@ -237,6 +251,8 @@ def test_later_language_conflict_does_not_rewrite_exact_registration(
     tmp_path: Path,
 ) -> None:
     pipeline, item, request, _calls = prepared_request(tmp_path)
+    assert item.paper_id is not None
+    assert item.metadata_request_key is not None
     success = boundary(pipeline, item.paper_id, request["snapshot_id"])
     registered = pipeline.register_test_value(
         request,
@@ -267,6 +283,8 @@ def test_isolated_combination_restore_preserves_metadata_language_budget_and_pro
     root = tmp_path / "source"
     root.mkdir()
     pipeline, item, request, _calls = prepared_request(root)
+    assert item.paper_id is not None
+    assert item.metadata_request_key is not None
     success = boundary(pipeline, item.paper_id, request["snapshot_id"])
     registered = pipeline.register_test_value(
         request,
@@ -324,6 +342,8 @@ def test_stale_metadata_is_not_a_new_value_registration_authority(
     tmp_path: Path,
 ) -> None:
     pipeline, item, request, _calls = prepared_request(tmp_path)
+    assert item.paper_id is not None
+    assert item.metadata_request_key is not None
     success = boundary(pipeline, item.paper_id, request["snapshot_id"])
     from tests.test_paper_service import observation
 
@@ -346,6 +366,7 @@ def test_stale_metadata_is_not_a_new_value_registration_authority(
 def test_missing_metadata_cannot_register_test_value(tmp_path: Path) -> None:
     pipeline, feed_id, snapshot_id, _calls = setup_pipeline(tmp_path)
     saved = pipeline.papers.submit(feed_item(feed_id, payload=b"no DOI no abstract"))
+    assert saved.paper_id is not None
     metadata = pipeline.metadata.enrich(
         saved.paper_id, request_id="missing", contact_email="contact@example.org"
     )
@@ -371,12 +392,16 @@ def test_concurrent_combination_registration_replays_one_frozen_basis(
     from concurrent.futures import ThreadPoolExecutor
 
     pipeline, item, request, _calls = prepared_request(tmp_path)
+    assert item.paper_id is not None
+    assert item.metadata_request_key is not None
     success = boundary(pipeline, item.paper_id, request["snapshot_id"])
 
-    def register(_):
+    metadata_request_key = item.metadata_request_key
+
+    def register(_: int) -> ValueRegistration:
         return pipeline.register_test_value(
             request,
-            metadata_request_key=item.metadata_request_key,
+            metadata_request_key=metadata_request_key,
             boundary_success_id=success,
         )
 
@@ -401,6 +426,8 @@ def test_nonempty_metadata_revision_upgrades_to_composition_without_rewriting_fa
     from paper_radar.storage.database import upgrade_database
 
     pipeline, item, request, _calls = prepared_request(tmp_path)
+    assert item.paper_id is not None
+    assert item.metadata_request_key is not None
     expected = pipeline.papers.trace(item.paper_id)
     config = Config()
     config.set_main_option(
@@ -432,6 +459,8 @@ def test_corrupt_combination_proof_refuses_replay_and_backup(tmp_path: Path) -> 
     from paper_radar.backup.manifest import BackupError
 
     pipeline, item, request, _calls = prepared_request(tmp_path)
+    assert item.paper_id is not None
+    assert item.metadata_request_key is not None
     success = boundary(pipeline, item.paper_id, request["snapshot_id"])
     pipeline.register_test_value(
         request,

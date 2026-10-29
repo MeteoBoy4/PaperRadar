@@ -92,8 +92,9 @@ def test_language_observations_reject_invalid_domain_states(
 
     data = value_archive(tmp_path)
     service = discovered(data)
-    basis = service.language_status(data.paper_id)
-    assert basis["status"] == "resolved"
+    resolution = service.language_status(data.paper_id)
+    assert resolution["status"] == "resolved"
+    basis: dict[str, object] = dict(resolution)
     if corruption == "unknown_status":
         basis["status"] = "resovled"
     elif corruption == "resolved_without_bool":
@@ -104,7 +105,10 @@ def test_language_observations_reject_invalid_domain_states(
         basis["status"] = "ambiguous"
         basis["original_title_is_zh"] = None
     else:
-        basis["sources"][0]["original_title_is_zh"] = False
+        basis["sources"] = [
+            {**resolution["sources"][0], "original_title_is_zh": False},
+            *resolution["sources"][1:],
+        ]
     payload = json.dumps(
         basis, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     )
