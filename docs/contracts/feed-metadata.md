@@ -20,8 +20,8 @@
   经真实 `PaperFacts.submit` 仲裁。出版者/注册机构 URL 仅在有效、具有元数据候选的材料上作为来源字段提交。
   无主候选材料及错误页不作为永久来源正文保存。HTTP 和类别/附加区块安全投影保留在路线结果中。
 - `MetadataResult` 提供规范题名、摘要存在/截断标记、可靠 URL、适用机构、各路线依据及
-  `missing`。`minimum_complete` 要求题名、非空摘要、可靠 URL、适用路线已结算且机构路由明确；
-  `nontruncated_complete` 额外要求摘要非疑似截断。普通 V1 截断可带标记，B 仍须通过自身完整主摘要判据。
+  `missing`。`minimum_complete` 要求题名、非空摘要、已知截断状态、可靠 URL、适用路线已结算且机构路由明确；
+  未知截断状态返回 `unknown_truncation` 缺项；`nontruncated_complete` 额外要求摘要截断状态严格为 `false`。普通 V1 截断可带标记，B 仍须通过自身完整主摘要判据。
 - 无 DOI 时明确 `not_applicable_no_doi`，不构造外部目标。后到 DOI 或当前版本变化使旧请求
   标记 `current_version_changed`，不能以未尝试新适用路线的旧结果声称完整；新请求重新取得。
 - `replay(request_key)`、`requests(paper_id)` 默认只返回安全摘要与路线事实；

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, overload
+from typing import overload
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -31,6 +31,11 @@ from paper_radar.screening_tasks.feed_gate import FeedGate
 from paper_radar.screening_tasks.feed_gate import find as find_feed_gate
 from paper_radar.screening_tasks.feed_gate import retain as retain_feed_gate
 from paper_radar.screening_tasks.frozen import load_frozen
+from paper_radar.screening_tasks.language import (
+    LanguageBasis,
+    LanguageObservation,
+    LanguageResolution,
+)
 from paper_radar.screening_tasks.models import FrozenInput, RequestReceipt, ValueRequest
 from paper_radar.screening_tasks.query import QueryService
 from paper_radar.screening_tasks.query_models import TaskQueryResult
@@ -167,7 +172,7 @@ class ScreeningTasks:
             raw_request, policy_version=policy_version, feed_gate=feed_gate
         )
 
-    def language_basis(self, receipt_id: str) -> dict[str, Any]:
+    def language_basis(self, receipt_id: str) -> LanguageBasis:
         from paper_radar.screening_tasks.language import load
 
         receipt = self.get_receipt(receipt_id)
@@ -179,7 +184,7 @@ class ScreeningTasks:
 
     def language_status(
         self, paper_id: str, *, policy_version: str = "v1"
-    ) -> dict[str, Any]:
+    ) -> LanguageResolution:
         from paper_radar.screening_tasks.language import derive, retain
 
         with task_database(self.database, write=True) as engine:
@@ -189,7 +194,7 @@ class ScreeningTasks:
                 retain(connection, basis)
                 return basis
 
-    def language_observations(self, paper_id: str) -> tuple[dict[str, Any], ...]:
+    def language_observations(self, paper_id: str) -> tuple[LanguageObservation, ...]:
         from paper_radar.screening_tasks.language import observations
 
         with (

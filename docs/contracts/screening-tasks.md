@@ -487,6 +487,9 @@ v1 按 ADR-0035 的期刊约定映射：dqkx=true，aies/jgr/qjrms=false，false
 已知端点不能改绑到其他期刊。同刊多个 Feed 和跨刊同 bool 保存全部发现依据；缺失、
 不支持归属或跨刊 bool 歧义拒绝新预算，分别返回 `language_missing` 或 `language_ambiguous`。
 
+语言依据及来源使用明确领域类型；派生状态封闭为 `missing`、`ambiguous`、`resolved`，
+预算读面封闭为 `frozen` 或 `historical_unrecorded`。持久 JSON 读取严格验证字段、bool、
+来源映射与状态一致性，损坏返回 `corrupt_reference`；既有序列化字节、哈希及冻结预算语义不变。
 `language_status(paper_id)` 追加保存当前派生观察并返回状态和发现引用；
 `language_observations(paper_id)` 只读回查已保存的派生历史（含歧义及受控状态）；
 `language_basis(receipt_id)` 查询预算冻结的策略、bool、期刊、Feed 与发现引用，默认没有

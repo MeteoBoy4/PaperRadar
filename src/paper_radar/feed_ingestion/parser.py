@@ -171,7 +171,7 @@ def parse_items(raw: bytes, decoding: str = "utf-8") -> tuple[ParsedItem, ...]:
                     else text,
                     locator=value.locator.replace(candidate.entry_locator, "item"),
                 )
-        except (ValueError, IndexError, KeyError, PaperError):
+        except (ValueError, IndexError, KeyError, PaperError, RecursionError):
             reason = "invalid_item"
         output.append(ParsedItem(candidate, start, end, fields, reason))
     return tuple(output)

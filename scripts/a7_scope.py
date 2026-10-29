@@ -276,15 +276,15 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "a9a51c16a7a733e05eb20527951370240839a7de403ac94568a93ab4177eaeb8",
+        "bedfe01e6fa26838572b5ff7bade6766dbbc85c63c3ccb9711cf404c93a0f1b6",
     ),
     (
         "scripts/a5_scope.py",
-        "95171f4c5564af04f38a847c80515c5c564d4f310e9d618c97766d240a8c38a3",
+        "2020b139cd7e6e0d2a1fe73fb5b20368c27b7339d96df61c52805109a151dd1b",
     ),
     (
         "scripts/a6_scope.py",
-        "3e5660ee72ff1856e58ed541c2b6b4123b2a280e3addbf2e5ce341314fd6fb3a",
+        "10c1779e50903a85352d8c388ef76ad7cd63c1eb9b02889b5142b59121cb33b9",
     ),
     (
         "scripts/a7_acceptance.py",
@@ -332,7 +332,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/backup/service.py",
-        "02ce72862b11588dcec115d78a8084aafcd3104b12b5ecab246fb64324d77d27",
+        "ca0eccbe1b49772e9376172c489e129fef98743a79e12b566a2b6dad33534e4d",
     ),
     (
         "src/paper_radar/config/compile.py",
@@ -488,7 +488,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/service.py",
-        "6b774e5c6367caedb3c3e8080431ba5a10e96eeabaf77b3d226242fe2427c6c7",
+        "4ccaefe1d5815333f7e3ce1b49abf592691be75c7ec21e529a2e8a8aae7341da",
     ),
     (
         "src/paper_radar/screening_tasks/success.py",

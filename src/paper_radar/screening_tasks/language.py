@@ -2,9 +2,10 @@
 
 import hashlib
 import json
-from typing import Any
+from typing import Annotated, Literal, TypedDict
 
 import sqlalchemy as sa
+from pydantic import AfterValidator, ConfigDict, TypeAdapter, with_config
 from sqlalchemy import Connection, select
 
 from paper_radar.papers.tables import (
@@ -18,6 +19,51 @@ from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.tables import budgets
 from paper_radar.sources.feeds import FEED_SUBSCRIPTIONS
 from paper_radar.storage.schema import metadata
+
+Journal = Literal["dqkx", "aies", "jgr", "qjrms"]
+ResolutionStatus = Literal["missing", "ambiguous", "resolved"]
+
+
+@with_config(ConfigDict(strict=True, extra="forbid"))
+class LanguageSource(TypedDict):
+    discovery_id: str
+    feed_id: str
+    journal: Journal | None
+    original_title_is_zh: bool | None
+
+
+class LanguageFacts(TypedDict):
+    paper_id: str
+    policy_version: str
+    original_title_is_zh: bool | None
+    sources: list[LanguageSource]
+
+
+@with_config(ConfigDict(strict=True, extra="forbid"))
+class LanguageResolution(LanguageFacts):
+    status: ResolutionStatus
+
+
+class FrozenLanguageBasis(LanguageFacts):
+    status: Literal["frozen"]
+
+
+class HistoricalLanguageBasis(TypedDict):
+    status: Literal["historical_unrecorded"]
+    original_title_is_zh: bool | None
+    sources: list[LanguageSource]
+
+
+LanguageBasis = FrozenLanguageBasis | HistoricalLanguageBasis
+
+
+class LanguageObservation(LanguageResolution):
+    resolution_id: str
+
+
+class LanguageTrace(TypedDict):
+    observations: tuple[LanguageObservation, ...]
+
 
 policies = sa.Table(
     "title_language_policies",
@@ -75,13 +121,52 @@ POLICIES = {"v1": {"dqkx": True, "aies": False, "jgr": False, "qjrms": False}}
 ENDPOINTS = {item.url: item.journal for item in FEED_SUBSCRIPTIONS}
 
 
+def _consistent_resolution(basis: LanguageResolution) -> LanguageResolution:
+    values = {source["original_title_is_zh"] for source in basis["sources"]}
+    expected: ResolutionStatus = (
+        "missing"
+        if not values or None in values
+        else "ambiguous"
+        if len(values) > 1
+        else "resolved"
+    )
+    if (
+        basis["status"] != expected
+        or basis["original_title_is_zh"]
+        is not (next(iter(values)) if expected == "resolved" else None)
+        or any(
+            source["original_title_is_zh"]
+            is not (
+                POLICIES["v1"][source["journal"]]
+                if source["journal"] is not None
+                else None
+            )
+            for source in basis["sources"]
+        )
+    ):
+        raise ValueError("invalid language resolution")
+    return basis
+
+
+_resolution_adapter: TypeAdapter[LanguageResolution] = TypeAdapter(
+    Annotated[LanguageResolution, AfterValidator(_consistent_resolution)]
+)
+
+
+def _checked_resolution(value: object) -> LanguageResolution:
+    try:
+        return _resolution_adapter.validate_python(value)
+    except (ValueError, TypeError):
+        raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
+
+
 def encode(value: object) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
 def derive(
     connection: Connection, paper_id: str, policy_version: str
-) -> dict[str, Any]:
+) -> LanguageResolution:
     if type(policy_version) is not str or type(paper_id) is not str:
         raise TaskError(TaskReason.INVALID_REQUEST)
     if (
@@ -106,7 +191,7 @@ def derive(
             raise ValueError
     except (ValueError, TypeError):
         raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
-    sources = []
+    sources: list[LanguageSource] = []
     query = (
         select(
             feed_discoveries.c.discovery_id,
@@ -136,23 +221,28 @@ def derive(
             }
         )
     values = {s["original_title_is_zh"] for s in sources}
-    status = (
+    status: ResolutionStatus = (
         "missing"
         if not sources or None in values
         else "ambiguous"
         if len(values) > 1
         else "resolved"
     )
-    return {
-        "paper_id": paper_id,
-        "policy_version": policy_version,
-        "status": status,
-        "original_title_is_zh": next(iter(values)) if status == "resolved" else None,
-        "sources": sources,
-    }
+    return _checked_resolution(
+        {
+            "paper_id": paper_id,
+            "policy_version": policy_version,
+            "status": status,
+            "original_title_is_zh": next(iter(values))
+            if status == "resolved"
+            else None,
+            "sources": sources,
+        }
+    )
 
 
-def retain(connection: Connection, basis: dict[str, Any]) -> str:
+def retain(connection: Connection, basis: LanguageResolution) -> str:
+    basis = _checked_resolution(basis)
     payload = encode(basis)
     identifier = hashlib.sha256(payload.encode()).hexdigest()
     if (
@@ -174,7 +264,7 @@ def retain(connection: Connection, basis: dict[str, Any]) -> str:
     return identifier
 
 
-def load(connection: Connection, budget_id: str) -> dict[str, Any]:
+def load(connection: Connection, budget_id: str) -> LanguageBasis:
     budget = (
         connection.execute(select(budgets).where(budgets.c.budget_id == budget_id))
         .mappings()
@@ -202,7 +292,7 @@ def load(connection: Connection, budget_id: str) -> dict[str, Any]:
             "sources": [],
         }
     try:
-        basis = json.loads(row["basis_json"])
+        basis = _resolution_adapter.validate_json(row["basis_json"])
         if (
             hashlib.sha256(encode(basis).encode()).hexdigest() != row["resolution_id"]
             or basis["status"] != "resolved"
@@ -258,7 +348,7 @@ def validate(connection: Connection) -> None:
         observations(connection, paper_id)
     for row in connection.execute(select(resolutions)).mappings():
         try:
-            basis = json.loads(row["basis_json"])
+            basis = _resolution_adapter.validate_json(row["basis_json"])
             if (
                 hashlib.sha256(encode(basis).encode()).hexdigest()
                 != row["resolution_id"]
@@ -270,15 +360,17 @@ def validate(connection: Connection) -> None:
             raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
 
 
-def observations(connection: Connection, paper_id: str) -> tuple[dict[str, Any], ...]:
-    results = []
+def observations(
+    connection: Connection, paper_id: str
+) -> tuple[LanguageObservation, ...]:
+    results: list[LanguageObservation] = []
     for row in connection.execute(
         select(resolutions)
         .where(resolutions.c.paper_id == paper_id)
         .order_by(resolutions.c.resolution_id)
     ).mappings():
         try:
-            basis = json.loads(row["basis_json"])
+            basis = _resolution_adapter.validate_json(row["basis_json"])
             if (
                 hashlib.sha256(encode(basis).encode()).hexdigest()
                 != row["resolution_id"]

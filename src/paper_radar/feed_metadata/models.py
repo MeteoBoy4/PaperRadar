@@ -23,6 +23,7 @@ MetadataMissing = Literal[
     "current_version_changed",
     "no_title",
     "no_abstract",
+    "unknown_truncation",
     "no_source_url",
     "routes_incomplete",
     "agency_unknown",

@@ -311,7 +311,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/backup/service.py",
-        "02ce72862b11588dcec115d78a8084aafcd3104b12b5ecab246fb64324d77d27",
+        "ca0eccbe1b49772e9376172c489e129fef98743a79e12b566a2b6dad33534e4d",
     ),
     (
         "src/paper_radar/backup/restore.py",
@@ -343,7 +343,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "a9a51c16a7a733e05eb20527951370240839a7de403ac94568a93ab4177eaeb8",
+        "bedfe01e6fa26838572b5ff7bade6766dbbc85c63c3ccb9711cf404c93a0f1b6",
     ),
     (
         "scripts/a2_full_acceptance.py",
@@ -479,23 +479,23 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a4_scope.py",
-        "be9ba009ed5bede78510e0f9611c167a425a9ba6bb3df3491fec02bd3ef61830",
+        "1d7a501775ae2fd83bea1c0875d6916dc6c193d39fc602ac6117380f8507dcff",
     ),
     (
         "scripts/a5_scope.py",
-        "95171f4c5564af04f38a847c80515c5c564d4f310e9d618c97766d240a8c38a3",
+        "2020b139cd7e6e0d2a1fe73fb5b20368c27b7339d96df61c52805109a151dd1b",
     ),
     (
         "scripts/a6_scope.py",
-        "3e5660ee72ff1856e58ed541c2b6b4123b2a280e3addbf2e5ce341314fd6fb3a",
+        "10c1779e50903a85352d8c388ef76ad7cd63c1eb9b02889b5142b59121cb33b9",
     ),
     (
         "scripts/a7_scope.py",
-        "04bc5673785b9fbbc5677aa47a8679c59c38cf9b2db2d063c49b9abe69adf808",
+        "99c37850f7bf821c35128747b045be11bb9b2ba4af574ce6ec8f3b15394659b1",
     ),
     (
         "scripts/a8_scope.py",
-        "5626a37e5a797abf1ceee5e1c56febf3d97f095d808e3a6aa26c759680363d01",
+        "f9d904b685e8ab0e991c922c986a71540f19d2980b57ea74f8e6aaa9959dd276",
     ),
 )
 

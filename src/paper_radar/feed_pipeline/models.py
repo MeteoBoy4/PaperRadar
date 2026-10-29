@@ -1,11 +1,12 @@
 """组合读面默认只返回依据和受控状态。"""
 
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Literal
 
 from paper_radar.feed_ingestion.models import FeedItemReason
 from paper_radar.feed_metadata.models import MetadataResult
 from paper_radar.papers.models import ConflictView
+from paper_radar.screening_tasks.language import LanguageBasis, LanguageTrace
 from paper_radar.screening_tasks.models import RequestReceipt
 
 
@@ -32,7 +33,7 @@ class ValueRegistration:
     receipt: RequestReceipt
     metadata_request_key: str
     boundary_success_id: str
-    language_basis: dict[str, Any]
+    language_basis: LanguageBasis
     scope: str = "仅登记任务;不执行模型、不授予B或自动Read资格"
 
 
@@ -43,5 +44,5 @@ class PipelineTrace:
     revision_no: int
     metadata: tuple[MetadataResult, ...]
     conflicts: tuple[ConflictView, ...]
-    language: dict[str, Any]
+    language: LanguageTrace
     receipts: tuple[RequestReceipt, ...]
