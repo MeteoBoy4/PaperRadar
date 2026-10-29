@@ -1,6 +1,6 @@
 # Wiley OA 全文获取采用官方 TDM API
 
-状态：决策记录（原文未单列接受状态）；日期：2026-10-25；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0024-wiley-oa-fulltext-via-official-tdm-api.md)；补充／部分取代：[ADR-0032](0032-relax-paper-acquisition-without-evading-access-controls.md)。
+状态：决策记录（原文未单列接受状态）；日期：原接受日期未单列；正文补充／修订日期：2026-10-25；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0024-wiley-oa-fulltext-via-official-tdm-api.md)；补充／部分取代：[ADR-0032](0032-relax-paper-acquisition-without-evading-access-controls.md)。
 
 2026-10-25：本文“用户人工引导的自有会话凭证仅属允许边界、第一版只实现 TDM 通道”与“机构订阅仍然禁止”两项，已由 [ADR-0032](0032-relax-paper-acquisition-without-evading-access-controls.md) 的授权通道取代（本人合法持有的机构账号、登录会话或订阅权限默认关闭、显式启用、单篇按需；不得使用他人凭证、不得批量下载或分发受限内容的禁止条款不变）。token 凭证管理、`403` 探测分类与“不绕过访问控制、`403` 不解释为非开放获取、人工 PDF 队列”原则本决议继续适用。
 

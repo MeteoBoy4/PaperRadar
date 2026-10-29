@@ -1,6 +1,6 @@
 # 第一版只保留最小外部数据链
 
-状态：决策记录（原文未单列接受状态）；日期：2026-10-25；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0012-limit-v1-to-a-minimal-provider-chain.md)；补充／部分取代：[ADR-0032](0032-relax-paper-acquisition-without-evading-access-controls.md)。
+状态：决策记录（原文未单列接受状态）；日期：原接受日期未单列；正文补充／修订日期：2026-10-25；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0012-limit-v1-to-a-minimal-provider-chain.md)；补充／部分取代：[ADR-0032](0032-relax-paper-acquisition-without-evading-access-controls.md)。
 
 2026-10-25：OpenAlex 作为摘要与全文位置的必要时补充渠道已由 [ADR-0032](0032-relax-paper-acquisition-without-evading-access-controls.md) 允许；引用关系、被引次数与排序仍不采集，Semantic Scholar 与 OpenCitations 仍不接入。以下原文其余部分继续适用。
 

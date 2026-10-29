@@ -246,7 +246,7 @@ CLI 目标固定为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER
 
 ## 9. `reason_catalog` v1
 
-以下历史目录/验收记录按基线原字节保留；其中逐票状态不作为当前实施前沿，当前责任见[路线图](../roadmap.md#模块承接索引)。
+以下原因目录及指引是现行权威边界；其基线文字保留，不将其误标为历史验收记录。
 
 本表为待实现单一枚举和中文文案表的权威；后续首张代码票在新包定义一次，不扩展 storage/errors.py。名称或含义改动须升版本。错误、repr、日志和离线证据不带题名摘要、原响应、Profile、Prompt 或凭据；原因可带受控字段路径/ID，但不可插入原始输入。
 

@@ -337,7 +337,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_scope.py",
-        "37e78661e3903f8148c9c44cf374e147dc47a2a774afc2210f43d7f3235621f5",
+        "3f859f6fbc945bf2cd0495b1ce421759a168653674fd78b5e05b163a334cfe04",
     ),
     (
         "scripts/audit-verification-scope",
@@ -1349,11 +1349,11 @@ REQUIRED_FIXTURE_FILES = (
     ("README.md", "96610cb0fbf5927f6821912c5da1a01dd37772f1fadccfa35c791c8d4b69a24f"),
     (
         "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
-        "16f271441a41f7e0420f67bfa5bc401e278c4009932952942fd4df94ac5b9e34",
+        "381ad4f95d5ce321f9abc8baab82c0e1c2e3e146d1968e4d08de84a2173f9aa0",
     ),
     (
         "docs/adr/0033-classify-journal-articles-from-explicit-source-types.md",
-        "5a9cb00568619922967b2d45baa15eaf5e16f1441ddd88994f39b9119b7a6672",
+        "0117e647babba2c9298213c984829f12b4cffb94f3a4f88aa54ce37242f0d3c5",
     ),
     (
         "docs/adr/0034-separate-fixture-declarations-and-acquisition-audits.md",
@@ -1365,7 +1365,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/fixture-audit.md",
-        "4023661493a3f270f1368ac0966b8db0bb25e73c08f39b067ea61b5054692e38",
+        "68ef4a0d8eb774db20fd31e97de7813a3932cfda9d76b92ceddea426fc93c72b",
     ),
     (
         "docs/contracts/verification-status.md",
@@ -1389,7 +1389,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "intent/draft.md",
-        "7d5186f620b0dc6dd699d2221b3d7411c3bdf5a003b0bffd1bce1f84177116d7",
+        "1f9cf04bb9338ad522ded78c2a1ea35aced997e513ccd251731d7890b9c016e1",
     ),
     (
         "pyproject.toml",

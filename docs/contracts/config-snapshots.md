@@ -94,6 +94,6 @@ I/O 哨兵；快照发现测试独立于 A1 固定测试和四份历史 v1 契�
 
 ## 相关
 
-依据：[#23](https://github.com/MeteoBoy4/PaperRadar/issues/23)、[#27](https://github.com/MeteoBoy4/PaperRadar/issues/27)。
+依据：[#22](https://github.com/MeteoBoy4/PaperRadar/issues/22)、[#23](https://github.com/MeteoBoy4/PaperRadar/issues/23)、[#27](https://github.com/MeteoBoy4/PaperRadar/issues/27)。
 
 [规格](../../intent/draft.md#七配置与-agent-契约)；[ADR-0023](../adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md)；[路线图承接](../roadmap.md#module-b)。

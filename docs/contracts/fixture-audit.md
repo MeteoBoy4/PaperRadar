@@ -40,7 +40,7 @@ doiRA `https://doi.org/doiRA/{doi}` 是路由，不是元数据提供方：Cross
 
 ## CLI 与持久化
 
-`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 --json；帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计入口为 audit run/resume/list/show/replay。
+`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 --json；帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计入口为 audit run/resume/list/show/replay；未实现的命令不提前注册。
 
 该边界的 revision 为 `a1001_fixture_audit`，基于 `a704_screening_retry`；只追加实际用到的表，种子由显式 register 写入。该 revision 在未发布阶段的调整必须从 a704 重建临时库验证，不能声称原地修补中间库；一旦发布或用于真实库，不再改写。现有配置/论文/Screening 身份不变。历史子集与独立 A10 的证明范围见[路线图状态出处](../roadmap.md#文首记录的状态与出处)。
 

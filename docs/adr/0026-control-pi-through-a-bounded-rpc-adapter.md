@@ -1,6 +1,6 @@
 # 通过有界 RPC 适配器控制 Pi，保留 PaperRadar 的接收权威
 
-状态：已接受；日期：2026-10-11；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)；补充／部分取代：[ADR-0036](0036-isolate-stage-b-read-experiment.md)。
+状态：已接受；日期：2026-10-11；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)；补充／部分取代：[ADR-0036](0036-isolate-stage-b-read-experiment.md)。 关系回链：本记录补充／部分取代 [ADR-0004](0004-do-not-fallback-to-an-uncalibrated-screening-model.md)、[ADR-0008](0008-invalidate-artifacts-with-stage-specific-fingerprints.md)、[ADR-0016](0016-allow-paper-content-to-be-sent-to-configured-llms.md)、[ADR-0017](0017-retain-only-source-and-analysis-bearing-artifacts.md)、[ADR-0020](0020-let-the-user-classify-calibration-impacting-changes.md)、[ADR-0022](0022-conditionally-upgrade-reuse-feasibility-from-fulltext-excerpts.md)、[ADR-0023](0023-separate-runtime-config-snapshots-from-calibration-baselines.md)，具体适用边界见各正文。
 
 2026-10-11：用户接受 [Pi 可行性研究](../../intent/discussions/pi-agent-contract-feasibility.md) §5 及其中“我的决策”，Python 主程序通过 RPC 控制本机 Pi 子进程，作为 V1 的有界 LLM/Agent adapter，取代原 PydanticAI 调用实现选择。Pi 负责固定模型的结构输出调用，PaperRadar 的权威 Pydantic Schema 与业务规则决定能否接收；建议、决定、任务资格、校准、证据构造与持久化继续由确定性程序控制。采用 RPC 是为了让 Python 明确控制隔离、取消、预算与完成边界；代价是需要锁定并管理 Node/Pi 子进程、事件协议和显式运行资源。
 

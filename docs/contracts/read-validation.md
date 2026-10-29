@@ -459,6 +459,6 @@ Read StageInput/任务/预算/业务持久化、生产 Pi、校准资格、NAS �
 
 ## 相关
 
-依据：[ #92](https://github.com/MeteoBoy4/PaperRadar/issues/92)、[#93](https://github.com/MeteoBoy4/PaperRadar/issues/93)、[#94](https://github.com/MeteoBoy4/PaperRadar/issues/94)、[#95](https://github.com/MeteoBoy4/PaperRadar/issues/95)、[#96](https://github.com/MeteoBoy4/PaperRadar/issues/96)、[#97](https://github.com/MeteoBoy4/PaperRadar/issues/97)、[#98](https://github.com/MeteoBoy4/PaperRadar/issues/98)、[#99](https://github.com/MeteoBoy4/PaperRadar/issues/99)。
+依据：[#92](https://github.com/MeteoBoy4/PaperRadar/issues/92)、[#93](https://github.com/MeteoBoy4/PaperRadar/issues/93)、[#94](https://github.com/MeteoBoy4/PaperRadar/issues/94)、[#95](https://github.com/MeteoBoy4/PaperRadar/issues/95)、[#96](https://github.com/MeteoBoy4/PaperRadar/issues/96)、[#97](https://github.com/MeteoBoy4/PaperRadar/issues/97)、[#98](https://github.com/MeteoBoy4/PaperRadar/issues/98)、[#99](https://github.com/MeteoBoy4/PaperRadar/issues/99)。
 
 目标与判据：[规格 §4.10](../../intent/draft.md#410-read-agent)；决策：[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；生产消费者责任：[路线图 Body/B](../roadmap.md#module-body)。

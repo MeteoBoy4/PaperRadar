@@ -30,4 +30,3 @@
 - 待裁决或待探索项关闭时，结论写入规格或 ADR，路线图删除该项并更新依赖。
 
 **skill**：`.agents/skills/` 下的 vendored skill 不修改。项目流程以本文件为准，由 AGENTS.md 引用。
-

@@ -568,11 +568,11 @@ REQUIRED_FIXTURE_FILES = (
     ("GLOSSARY.md", "74381b5b1381c25abb69c460605093adc0352ce970c335a21baa84c91d853853"),
     (
         "intent/draft.md",
-        "7d5186f620b0dc6dd699d2221b3d7411c3bdf5a003b0bffd1bce1f84177116d7",
+        "1f9cf04bb9338ad522ded78c2a1ea35aced997e513ccd251731d7890b9c016e1",
     ),
     (
         "docs/contracts/read-validation.md",
-        "f929336240dbbe4cc04b51a047e5eb7faab906792e70050ba96a8bb48adc8095",
+        "bfe3058fcd67325b9d579d5cf76ca0ec885341c3510f2f87a2387fccb957a974",
     ),
     (
         "docs/verification/a9-scope-review.md",
@@ -592,7 +592,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/config-snapshots.md",
-        "e52c5b88f38de6e89948661ab6f3d781ce5a756af0daa891ad5132c0b4a1b744",
+        "6fafd442fe189b0c25ded1c0dac9e4a9d71a065b1361e26daaf80d45f28d77aa",
     ),
     (
         "docs/contracts/verification-status.md",

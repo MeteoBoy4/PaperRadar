@@ -5,9 +5,11 @@
 > 核心目标：每天从持续到达的论文中找出真正值得精读的工作，并给出能够回到原文核查的精读结果
 > 本文是第一版范围和验收依据；与早期设想冲突时，以本文、根目录 GLOSSARY.md 和已记录 ADR 为准。
 > 本文只陈述 V1 目标要求与判据，不陈述交付状态；状态与计划见[路线图](../docs/roadmap.md)。
-> 本文与 GLOSSARY、ADR、公共 Contract 共同约束；冲突须报告并由用户裁决。旧固定提交正文不能覆盖后续裁决。
+> 本文与 GLOSSARY、ADR、公共 Contract 共同约束；冲突须报告并由用户裁决。
 
 ## 任务阅读导航
+
+当前前沿、模块状态及待裁决/待探索事项见[路线图](../docs/roadmap.md)。
 
 按任务选择下表中的相关行，先读主要章节，再核对联动约束；跨主题任务合并阅读路径，并继续跟随正文中的引用。导航只提供阅读入口，具体规则与验收要求以对应正文为准。
 
@@ -491,6 +493,25 @@ Agent 不知道期刊信誉和最终建议规则，也不输出最终决定、�
 
 摘录定位使用受控、分语言且版本化的标题选择器，availability 优先于 methods/data；未定位段落是合法降级，不是解析异常。若使用 PDF 内容，只能读取通过 §4.9 质量门槛的正文制品；结构化来源摘录必须指回内容寻址来源快照。升级产生 §7.4 的独立 `ReuseAssessmentOutput`，不覆盖阶段二预测。所有合法路线均受阻或段落最终未定位时，任务形成 `reuse_escalation_unavailable`，建议保持 pending；用户可以补 PDF、显式 retry 或直接作人工决定。摘录已就绪但 reuse-assessment 模型两次失败时，保留阶段二 `reuse_unknown` 建议并进入模型失败队列，不把模型故障伪装成内容不可得。
 
+<a id="b-screening-产品接线"></a>
+
+`screening failures/retry` 与 `paper trace` 组合须提供中文 help、受控退出码及恢复验证。
+B 编排首次执行 `out_of_scope` 停止 value，A7 服务层的独立阶段事实不因此改写。
+
+语言事实接线使用数据库 Feed 身份与发现关系确定受支持期刊，再应用 ADR-0035 v1，
+保存来源及策略版本；同刊多个 Feed 一致，不建立第二个 Feed 权威或 first-seen 规则。
+跨刊冲突影响 bool 时保留冲突并拒绝新不确定登记，无归属人工 Paper 仍不得登记 value；
+冻结预算/retry 继承原值，策略不进 A5 指纹，不可借换策略重置预算。
+
+eligibility/visibility 使用共享纯规则与合成事实测试；最低元数据、人工决定、PDF/Read
+资格和 show/trace/最小日报必须消费同一权威，保留器与未揭晓事实同样适用。真实执行成功来源、用量、
+恢复及前置预检复用 A7/A8 接收权威，须经 B 生产接线验收。
+
+B 全链置于独立实验数据根，普通生产命令拒绝该根；不改同库预算身份、不添加用途维度。
+实验结果不复用、不提升，生产以后同论文从正常路径使用独立预算；样本暴露清单跨库保留，
+见 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md)。窄命令显式单篇，不扫描自动队列；任何自动领取首次引入即须
+持久每日配额，不能因手动启动 run-due 或尚无 timer 而豁免。
+
 ### 4.6 盲评校准
 
 正式校准前必须完成预热期：由用户手工挑选 10–20 篇结论明确的正例、反例和边界例，允许反复调整 Profile、提示词、升级参数，并横向比较 2–3 个包含 Screening 与 reuse-assessment 模型的候选组合。waiting_calibration 保留成员不能再选作预热样本；预热优先使用人工提供或已经明确排除出正式校准的论文。比较报告至少展示与已知结论的分歧、各边界例上的判断一致性、无效结构率、token/成本和升级触发比例；这些是选型证据，不冒充正式校准指标。预热样本及其标签永久标为 `warmup`，不得进入正式校准指标。用户确认 Screening 侧组合稳定后，确定当前运行配置快照所对应的校准语义基线，正式批次只能引用该基线。
@@ -814,6 +835,13 @@ A9 只消费合成给定上下文，不定义生产 evidence-map 协议；orig �
 4. 不使用向量 RAG，也不截断论文尾部。
 
 Read Agent 不输出紧急性、priority、Rank、自由标签或无证据的精确公式/表格值。自动 Read 和未指定语言的人工请求使用中文；术语或证据翻译会损坏原义时保留必要原文。用户显式指定 `--language en` 时生成独立英文 analysis；这只改变 Read 指纹，不使元数据、PDF 或 Docling 制品过期。
+
+<a id="b-最小-read-与正文消费"></a>
+
+Read 必须具有 StageInput、任务/预算/租约/retry、analysis 持久化与恢复，并明确证据/数值规则身份归属；仅改变后处理警告不应未经分析触发模型重跑。
+parser/canonical/normalize/evidence 及源字符持久身份必须先闭合，Read 仍通过 [A9 Read 权威验证器](../docs/contracts/read-validation.md#当前交付与命名)接收。
+超出单次安全输入预算时先拒绝，或前移所需完整分块能力，不截断正文或复用 Screening 会话。
+实验根、逐文档质量与不复用/不提升要求见 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md)；F 扩展四刊正文供给，G 扩展通用长文 Read。
 
 ### 4.11 报告与复核
 
@@ -1275,6 +1303,35 @@ V1 首次接入使用 `prompt_only`：提示词要求最终纯 JSON 文本，Pyt
 
 可行性研究 §6 的扩展能力不在本次 V1 决策范围内。模型选择、合法全文取得、PDF 解析、证据构造、建议/决定、自动名额、Topic、持久化与校准均由现有 PaperRadar 模块控制；Pi 仅承接上述有界结构输出调用。
 
+<a id="pi-生产启动器准入"></a>
+
+生产启动器必须在任何真实调用前完成以下准入，并逐项按 DERIVED 编号复核：
+
+- 复用相同管道会话和协议内核；启动描述由上层显式构造命令、env、cwd、系统指令，
+  没有默认值、不继承宿主环境；每并发会话独立 PI_CODING_AGENT_DIR 或整体串行化。
+- 启动前在隔离 PI_CODING_AGENT_DIR/settings.json 预写 cacheWarming="off" 与
+  retry.provider.maxRetries=0；两个 RPC 开关会写全局设置，ACK 不证明写入/隔离。
+  没观察到预热不等于关闭预热（其触发另有 cache TTL/节省条件）。
+- --offline --no-session -ne -ns -np -nc -nt，PI_SKIP_VERSION_CHECK=1、PI_TELEMETRY=0；
+  验证禁止自动网络活动（目录刷新、版本检查、遥测、缓存预热、隐含 provider retry）。
+- 通过 --system-prompt 精确传入声明系统指令；防止参数被当成文件路径。确认无默认
+  prompt、个人设置、项目资源、skills/extensions/MCP、AGENTS.md/CLAUDE.md 等注入。
+- #111 已确认本机 cwd 为 `/srv/pi-cwd`，无默认值显式传入、白名单仅此值；该目录无 .pi/、AGENTS.md、CLAUDE.md 或
+  其他项目资源，验证本机路径只在已裁决常量例外内。DERIVED-01/02/03/05/06 必须实测。
+- 在领取任何任务前预检固定供给、模型/凭据可用；验收参数映射、单次模型请求、日期
+  别名政策、模型能力、实际用量/停止与事件（DERIVED-04/07/08/09/10），落实 OS 隔离。
+
+<a id="b-首次-pi-生产接线"></a>
+
+首次生产供给目标为 1.4.0，复用当前唯一登记的离线协议档案，仍须实际安装与 RPC
+兼容验证；DERIVED 假设、参数映射、隔离、隐含调用抑制及完成判据不得假称已 live 验证。
+A4 1.3.0 spike 和 A2 历史配置示例保持原字节；未来升级按主方案 §7.8 新建适配器声明、
+供给身份、协议/行为证据并处理语义变更，不永久锁死 V1。
+
+生产启动器、权限/资源构造、真实执行成功来源、实际用量、恢复与执行前预检复用 A7/A8 权威；不能把真实候选塞入 test 接收器，也不能把真实来源等同于正常消费资格。
+`/srv/pi-cwd` 已确认；缺失/不符/现场隔离未验收时 Pi readiness 阻断，首次发送 prompt
+的 live 探测也受此限。实验根及证据边界见 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md)。
+
 ### 7.8 Pi 固定版本供给
 
 V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](https://github.com/MeteoBoy4/PaperRadar/issues/26#issuecomment-6116780168)及[补强意见](https://github.com/MeteoBoy4/PaperRadar/issues/26#issuecomment-6116941170)固定程序、依赖与校验依据。默认安装位置为 `.tools/pi/`；安装的生命周期独立于个人交互使用的 Pi，日常 `pi update` 不得改动或清理项目所用版本。不能把 PATH 中的 `pi`、个人安装的可变入口或可能被个人更新清理的 release 路径作为固定供给。
@@ -1659,7 +1716,7 @@ B 的显式入口见下文；A 首轮审计不足可移交 C/F 补跑，A 仍未
 联网审计需邮箱、网络和独立审计库/制品根；任何发送 prompt 的 Pi live 探测都需已确认 cwd
 的现场隔离、外发确认、固定 provider/model 与认证。真实 Screening 再要求真实 Profile。
 C 开始长期生产根积累；四刊正文/摘录 fixture 和摘要前置齐备后才可进入
-D 正式预热冻结与首个校准批次。E/G 须在 D 工程完成后开始，自动 Read 仍受 D 运行门禁控制。
+D 正式预热冻结与首个校准批次。E/G 可在 D 工程完成后并行，自动 Read 仍受 D 运行门禁控制。
 
 每阶段保留三类证据：
 
@@ -2301,7 +2358,7 @@ DoD：
 
 ### 13.1 Feed
 
-A10 的声明唯一来源为 `fixtures/a10/`，格式与只读/登记命令见 [fixture 与摘要审计 Contract](../docs/contracts/fixture-audit.md)。历史声明、合成向量和实际取得分开；HTTP 条件头可空，304 必须引用已保留响应。阶段 A 只审计已交付通道；渲染通道在阶段 F 以新策略版本补跑。doiRA、类别依据与主摘要区块采用 §4.3 的裁决，真实预检不能冒充本轮审计。
+A10 的声明唯一来源为 `fixtures/a10/`，格式与只读/登记命令见 [fixture 与摘要审计 Contract](../docs/contracts/fixture-audit.md)。历史声明、合成向量和实际取得分开；HTTP 条件头可空，304 必须引用已保留响应。阶段 A 只审计已交付通道；A10 只执行 http，渲染通道在阶段 F 以新策略版本补跑。doiRA、类别依据与主摘要区块采用 §4.3 的裁决，真实预检不能冒充本轮审计。
 
 - AIES：AMETSOC RSS；
 - JGR: Atmospheres：Wiley/AGU eTOC RSS；
@@ -2417,64 +2474,3 @@ doctor 分别报告：
 若 80% 精确率或 90% 防漏判指标不达标，可以依据已揭晓结果调整模型、提示词、Research Profile、输出契约、升级参数、Screening/reuse 适配器语义或建议规则，并复用原 32 篇人工标签重新计算。每次调整先创建新版本并编译相应运行配置快照与校准语义基线；检测到可能影响校准语义的差异时生成待分级变更，用户附理由分类为 minor 或 major 后，再引用该快照与基线生成新的 Screening/复用升级制品、建议和 calibration evaluation。配置编译本身不分类变更、不恢复门禁；仅重命名普通声明版本或修改 YAML 注释且实际语义不变时，不产生校准相关差异，受控算法/策略语义版本不能按普通声明标签忽略。旧轮次不可覆盖。重算通过后，第一版允许用户据此开启自动精读，但所有状态页、报告和最终验收都必须明确标记：该结果拟合并复用了已经揭晓的标签，不是新论文上的独立验证；若重算使用的用户可见输入与原批次冻结输入不同，还必须额外显示 human_input_drift。
 
 minor 变更继承既有门禁状态，但不能绕过阶段输入指纹；自动重算只覆盖 waiting_review、waiting_calibration 和尚无生效决定的论文，并在分级前显示篇数与按当前配额估算的耗时。已有人工决定继续生效并标记依据旧 Profile，既有正式分析不因 Profile 演进自动过期或重跑。major 变更立即关闭既有门禁，只有同标签重算或新盲评校准通过、并由用户针对新 evaluation 再次显式启用后才能开启；系统不静默恢复旧 enable。任何可能影响校准语义的变化在用户完成分级前只暂停自动精读，不由系统根据差异大小自行归类。
-
-## 生产接线的补充准入约束
-
-
-### Pi 生产启动器准入
-
-生产启动器票必须在任何真实调用前完成以下准入，并逐项按 DERIVED 编号复核：
-
-- 复用相同管道会话和协议内核；启动描述由上层显式构造命令、env、cwd、系统指令，
-  没有默认值、不继承宿主环境；每并发会话独立 PI_CODING_AGENT_DIR 或整体串行化。
-- 启动前在隔离 PI_CODING_AGENT_DIR/settings.json 预写 cacheWarming="off" 与
-  retry.provider.maxRetries=0；两个 RPC 开关会写全局设置，ACK 不证明写入/隔离。
-  没观察到预热不等于关闭预热（其触发另有 cache TTL/节省条件）。
-- --offline --no-session -ne -ns -np -nc -nt，PI_SKIP_VERSION_CHECK=1、PI_TELEMETRY=0；
-  验证禁止自动网络活动（目录刷新、版本检查、遥测、缓存预热、隐含 provider retry）。
-- 通过 --system-prompt 精确传入声明系统指令；防止参数被当成文件路径。确认无默认
-  prompt、个人设置、项目资源、skills/extensions/MCP、AGENTS.md/CLAUDE.md 等注入。
-- #111 已确认本机 cwd 为 `/srv/pi-cwd`，无默认值显式传入、白名单仅此值；该目录无 .pi/、AGENTS.md、CLAUDE.md 或
-  其他项目资源，验证本机路径只在已裁决常量例外内。DERIVED-01/02/03/05/06 必须实测。
-- 在领取任何任务前预检固定供给、模型/凭据可用；验收参数映射、单次模型请求、日期
-  别名政策、模型能力、实际用量/停止与事件（DERIVED-04/07/08/09/10），落实 OS 隔离。
-
-### B 首次 Pi 生产接线
-
-首次生产供给目标为 1.4.0，复用当前唯一登记的离线协议档案，仍须实际安装与 RPC
-兼容验证；DERIVED 假设、参数映射、隔离、隐含调用抑制及完成判据不得假称已 live 验证。
-A4 1.3.0 spike 和 A2 历史配置示例保持原字节；未来升级按主方案 §7.8 新建适配器声明、
-供给身份、协议/行为证据并处理语义变更，不永久锁死 V1。
-
-B 前置交付生产启动器、权限/资源构造、真实执行成功来源、实际用量、恢复与执行前预检，
-复用 A7/A8 权威；不能把真实候选塞入 test 接收器，也不能把真实来源等同于正常消费资格。
-`/srv/pi-cwd` 已确认；缺失/不符/现场隔离未验收时 Pi readiness 阻断，首次发送 prompt
-的 live 探测也受此限。实验根及证据边界见 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md)。
-
-### B 最小 Read 与正文消费
-
-B 最小 Read 票须交付 Read StageInput、任务/预算/租约/retry、analysis 持久化与恢复，
-决定证据/数值规则身份归属；仅改变后处理警告不应未经分析触发模型重跑。
-parser/canonical/normalize/evidence 及源字符持久身份必须先闭合，Read 仍通过 [A9 Read 权威验证器](../docs/contracts/read-validation.md#当前交付与命名)接收。
-超出单次安全输入预算时先拒绝，或前移所需完整分块能力，不截断正文或复用 Screening 会话。
-实验根、逐文档质量与不复用/不提升要求见 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md)；F 扩展四刊正文供给，G 扩展通用长文 Read。
-
-### B Screening 产品接线
-
-任务 Contract 的“不交付 CLI”继续描述 A7 历史范围；B 首张真实任务票须同时交付
-`screening failures/retry`、`paper trace` 组合及中文 help/退出码/恢复验证，不能继续推到 H。
-B 编排首次执行 `out_of_scope` 停止 value，A7 服务层的独立阶段事实不因此改写。
-
-语言事实接线使用数据库 Feed 身份与发现关系确定受支持期刊，再应用 ADR-0035 v1，
-保存来源及策略版本；同刊多个 Feed 一致，不建立第二个 Feed 权威或 first-seen 规则。
-跨刊冲突影响 bool 时保留冲突并拒绝新不确定登记，无归属人工 Paper 仍不得登记 value；
-冻结预算/retry 继承原值，策略不进 A5 指纹，不可借换策略重置预算。
-
-A 先交 eligibility/visibility 纯规则及合成事实测试，B 的最低元数据、人工决定、PDF/Read
-资格和 show/trace/最小日报首次消费；C 接保留器与未揭晓事实。真实执行成功来源、用量、
-恢复及前置预检复用 A7/A8 接收权威，须经 B 生产接线验收。
-
-B 全链置于独立实验数据根，普通生产命令拒绝该根；不改同库预算身份、不添加用途维度。
-实验结果不复用、不提升，生产以后同论文从正常路径使用独立预算；样本暴露清单跨库保留，
-见 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md)。窄命令显式单篇，不扫描自动队列；任何自动领取首次引入即须
-持久每日配额，不能因手动启动 run-due 或尚无 timer 而豁免。

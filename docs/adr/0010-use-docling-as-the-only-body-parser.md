@@ -1,6 +1,6 @@
 # 用 Docling 作为唯一通用正文解析器
 
-状态：决策记录（原文未单列接受状态）；日期：2026-10-10；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0010-use-docling-as-the-only-body-parser.md)；补充／部分取代：[ADR-0025](0025-allow-local-formula-candidates-with-source-review.md)、[ADR-0036](0036-isolate-stage-b-read-experiment.md)。
+状态：决策记录（原文未单列接受状态）；日期：原接受日期未单列；正文补充／修订日期：2026-10-10；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0010-use-docling-as-the-only-body-parser.md)；补充／部分取代：[ADR-0025](0025-allow-local-formula-candidates-with-source-review.md)、[ADR-0036](0036-isolate-stage-b-read-experiment.md)。
 
 2026-10-10：本文公式增强关闭与仅保存公式占位的限制已由 [ADR-0025](0025-allow-local-formula-candidates-with-source-review.md) 取代；以下保留原决策依据。
 

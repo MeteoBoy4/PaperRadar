@@ -1,6 +1,6 @@
 # 放宽论文获取方式但禁止访问控制规避
 
-状态：决策记录（原文未单列接受状态）；日期：原文未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md)；补充／部分取代：无另列关系；正文边界继续适用。
+状态：决策记录（原文未单列接受状态）；日期：原文未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md)；补充／部分取代：见本行关系回链；正文边界继续适用。 关系回链：本记录补充／部分取代 [ADR-0012](0012-limit-v1-to-a-minimal-provider-chain.md)、[ADR-0024](0024-wiley-oa-fulltext-via-official-tdm-api.md)，具体适用边界见各正文。
 
 PaperRadar 第一版把摘要与全文获取的约束从“只走最少几条无会话通道”改为“正常自动化访问允许、访问控制规避禁止”的两分边界。允许如实标识的正常请求头（`User-Agent`、`Referer`、`Accept` 等，可使用工具自身的默认浏览器 `User-Agent`，但不以伪造或轮换 `User-Agent` 通过限制）、受控浏览器渲染（Playwright 等执行 JavaScript 读取公开页面）、出版者官方 API 与合法申请的 token，以及按站点规则、官方配额与 `robots` 或服务条款设置的频率、超时、退避与重试；摘要与全文位置可按需通过 Crossref、DataCite、Unpaywall、OpenAlex 与合法开放仓储补充。本人合法持有的机构账号、登录会话或订阅权限改为“审慎允许”：默认关闭、用户显式启用、凭据只存文件系统凭证区（0600）、单篇按需、遵守出版方条款、访问依据记为 `licensed`、不批量下载且不分发受限全文。破解或自动求解验证码、伪造浏览器或 TLS 指纹、轮换代理 IP 逃避封禁或限流、绕过付费墙及其他明确的访问控制、未授权批量下载受限全文仍然禁止，并且不因引入渲染通道而放宽：出现验证码或明确的挑战页即记 `access_blocked_403`/`rate_limited` 并进入人工 PDF 队列。
 
