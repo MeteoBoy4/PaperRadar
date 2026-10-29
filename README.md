@@ -644,3 +644,7 @@ JGR Feed 可通过 `JGRFeed(database, data_root).check(feed_id, request_id=...,
 contact_email=...)` 显式取得并登记论文发现；`view`、`replay`、`resume` 提供检查历史、
 只读回放及故障继续。条件 304 不新增发现，单 item 保留原字节，强冲突可回查证据。
 服务接口及边界见 [JGR Feed 生产取得](docs/contracts/feed-ingestion.md)。
+
+JGR 已发现论文可通过 `JGRMetadata.enrich` 显式取得适用注册机构与出版者公开元数据，
+查询最低输入缺项、来源路线和截断标记；`content` 与 `source_bytes` 显式读取规范摘要及
+保留来源原字节。结果不授予 B/Screening 执行资格，详见[元数据生产契约](docs/contracts/feed-metadata.md)。

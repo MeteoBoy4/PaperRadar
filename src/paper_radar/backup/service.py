@@ -185,6 +185,9 @@ def verify_contents(root: Path, manifest: BackupManifest) -> None:
             JGRFeed(database, root).validate_all()
             ScreeningTasks(database, root).validate_all()
             FixtureAudit(database, root).validate_all()
+            from paper_radar.feed_metadata import JGRMetadata
+
+            JGRMetadata(database, root).validate_all()
         except (PaperError, TaskError, FixtureError):
             raise BackupError(BackupReason.REGISTRATION_INVALID) from None
         if (
