@@ -634,19 +634,4 @@ PDF/Docling/生产导入/NAS 与完整阶段 A 均待后续。未来合法获取
 `stage_a_verified/live_verified/rpc_verified` 恒 false；历史声明、合成 fixture 与评论预检
 都不是本轮 live 证据；live 产物不进入 `verification-runs/`。
 
-## 阶段 A 收口与 B 前置（#111，目标规格）
-
-[主方案 §11](intent/draft.md#十一九阶段实施与验收) 是统一阅读入口，与 GLOSSARY、ADR、
-Contract 共同约束；[A 收口清单](docs/verification/stage-a-closure.md) 逐项区分历史离线证据与
-剩余责任，A1–A10 通过不等于完整 A 通过。
-
-B 按 [ADR-0036](docs/adr/0036-isolate-stage-b-read-experiment.md) 在独立实验数据根完成
-固定 JGR 纵向链，结果不复用、不提升，暴露清单由 C 跨库导入排除正式校准。四刊先做首轮
-摘要审计；JGR 至少 5 篇固定成员、各有已交付路线取得非疑似截断主摘要方可继续 B，其他刊
-在 C/F 补跑，最迟 D 正式预热冻结/首个批次前逐刊收口。B 的 PDF 最低路径为人工合法附加，
-TDM/授权/渲染留 F，单篇质量不豁免。真实冻结材料留本机，CI 仅用合成/脱敏材料。
-
-A 窄收口负责日志、基础/配置 doctor 与 eligibility/visibility 纯规则；B 前置交付
-Docling extra 兼容验证、首次 Pi 1.4.0 供给/生产接收、Feed/语言事实、正文与 Read 身份/预算。
-安装探测与离线工程可并行，首次真实消费须先满足相应入口。以上均未因本文更新而交付或验收，
-A4 1.3.0 历史材料、A2 示例和历史结论保持不变；未来 Pi 升级仍走 §7.8。
+V1 目标与判据见[规格](intent/draft.md)，当前前沿、阶段状态与后续责任见[路线图](docs/roadmap.md)。

@@ -329,7 +329,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "2d62eafde146d7e6832a6398b03ecefc638bdc86d34f17758de0e5c2fe781afb",
+        "c75760b6b29a310d4764147d81719107ad1ac96cf2cc056b2dfb5757b3a1690e",
     ),
     (
         "scripts/a9_acceptance.py",
@@ -337,7 +337,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_scope.py",
-        "0a0e24494b41b9cf56a5af13251ed9487c2e802192300361a28256ab440c0c18",
+        "62b62d835675bebde12498d10c6e3cedb470ca511e837f7ee7a032d6fc552b17",
     ),
     (
         "scripts/audit-verification-scope",
@@ -1346,7 +1346,7 @@ REQUIRED_SOURCE_MODULES = (
 )
 REQUIRED_FIXTURE_FILES = (
     ("GLOSSARY.md", "74381b5b1381c25abb69c460605093adc0352ce970c335a21baa84c91d853853"),
-    ("README.md", "4a6977fa9bd229a9519e413450bad8c81315ba65e47a6fda71dbc5932871ce58"),
+    ("README.md", "c535a557aceccc82583180355e4eabb2202e26980cc7bff8beef8849e0ba499a"),
     (
         "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
         "68b1afc3eaa7c15b2c99a88d3638cd94d48cb1a0e405b15940043ba6f2bedb27",
@@ -1357,7 +1357,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/adr/0034-separate-fixture-declarations-and-acquisition-audits.md",
-        "170902ef42c92d1986d4eb63c78887640bf14a7984436ec89e6bbdad89ab052c",
+        "78ebbb23770f7e9d2aed1d84a28e949576ea899cbbfe59bfc2896ba1565b97a3",
     ),
     (
         "docs/contracts/backup-restore.md",
@@ -1389,7 +1389,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "intent/draft.md",
-        "a8b8b7eb38e593158acd5013592011ee3c2b3e488fba1f8e3cecabaa45a3a9eb",
+        "675263d7f42f6e80271966962131c68c8b65c24ea19ccf280ba3126a142af9f9",
     ),
     (
         "pyproject.toml",

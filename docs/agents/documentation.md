@@ -69,3 +69,5 @@
 - 问「下一步」，以路线图 + GitHub 原生关系为准。
 
 真正矛盾时沿用 AGENTS.md：保持已有安全行为，报告，并由用户裁决。
+
+历史引用中的 `CONTEXT.md` 对应现名 `GLOSSARY.md`；重命名依据为提交 `c8cf6b1ad700a3348ea416bd1d2b9b351f1048d1`（100% rename）。
