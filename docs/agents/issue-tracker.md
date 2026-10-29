@@ -52,3 +52,5 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
 - **Frontier query**: apply the Task graph rules in Conventions to the map and its children; select the first issue in map order from the verified current frontier.
 - **Claim**: `gh issue edit <n> --add-assignee @me`, the session's first write.
 - **Resolve**: `gh issue comment <n> --body "<answer>"`, then `gh issue close <n>`, then append a context pointer (gist + link) to the map's Decisions-so-far.
+
+模块级图与前沿见 `docs/roadmap.md`，票级以原生关系为准。

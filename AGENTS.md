@@ -9,6 +9,8 @@
 
 ## 必读文档
 
+- `docs/roadmap.md`：当前前沿与计划。
+
 - `GLOSSARY.md`、`docs/adr/`：具体见 `docs/agents/domain.md`。
 - `intent/draft.md`：V1 规格与验收依据；先看文首「任务阅读导航」，按任务读取主要章节与联动约束。
 
@@ -22,6 +24,8 @@
 - 最终回复：改了什么、跑了哪些验证及结果、剩余风险与未验证的 live 行为。
 
 ## 按需阅读
+
+- [路线图维护](docs/agents/roadmap.md)：to-spec 发布、implement-spec 收尾，或依赖、状态、待裁决、待探索及承接责任变化时。
 
 - [V1 范围](docs/agents/scope.md)：判断能力是否属于 V1 时。
 - [领域不变量](docs/agents/invariants.md)：改动持久化、Paper 身份与合并、Adapter、版本化配置或 Stage fingerprint 前。
