@@ -7,7 +7,10 @@ from paper_radar.storage.schema import metadata
 checks = sa.Table(
     "feed_production_checks",
     metadata,
-    sa.Column("event_no", sa.Integer, primary_key=True, autoincrement=True),
+    # SQLite PRAGMA reports the rowid primary key nullable for this frozen DDL.
+    sa.Column(
+        "event_no", sa.Integer, primary_key=True, autoincrement=True, nullable=True
+    ),
     sa.Column("check_id", sa.String(64), nullable=False, unique=True),
     sa.Column("feed_id", sa.String(36), sa.ForeignKey("feeds.feed_id"), nullable=False),
     sa.Column("request_id", sa.Text, nullable=False),

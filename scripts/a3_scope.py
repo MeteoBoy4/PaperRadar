@@ -306,7 +306,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "8938685fe17b1e608e1e07483eb9781b373258bae05480b43ca48a24c7945c15",
+        "c445710c87437b7a903cc00d54aff67d45445f882dfc97fafecc490d6b44cf1f",
     ),
     (
         "scripts/check-offline",

@@ -136,6 +136,8 @@ def test_nonempty_previous_revision_upgrade_is_atomic_and_retains_all_history(
         }
         assert names == {
             "screening_inputs",
+            "screening_language_basis",
+            "screening_language_requirements",
             "screening_budgets",
             "screening_tasks",
             "screening_requests",

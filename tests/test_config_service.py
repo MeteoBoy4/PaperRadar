@@ -6,10 +6,13 @@ import sqlite3
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
+from sqlalchemy import Connection, create_engine
+from sqlalchemy.engine.interfaces import ReflectedUniqueConstraint
 
 from paper_radar.config import (
     ConfigError,
@@ -135,9 +138,15 @@ def test_upgrade_is_idempotent_and_schema_matches_metadata(tmp_path: Path) -> No
 
     for module in (
         "paper_radar.fixture_audit.tables",
+        "paper_radar.fixture_audit.pdf_tables",
+        "paper_radar.feed_ingestion.tables",
+        "paper_radar.feed_metadata.tables",
         "paper_radar.papers.tables",
+        "paper_radar.papers.conflict_tables",
         "paper_radar.pi_supply.tables",
         "paper_radar.screening_tasks.tables",
+        "paper_radar.screening_tasks.language",
+        "paper_radar.screening_tasks.feed_gate",
     ):
         import_module(module)
 
@@ -145,8 +154,63 @@ def test_upgrade_is_idempotent_and_schema_matches_metadata(tmp_path: Path) -> No
     assert upgrade_database(db) == current_revision()
     assert upgrade_database(db) == current_revision()
     engine = open_database(db, mode=DatabaseMode.READ_WRITE)
+    reflect_uniques = engine.dialect.get_unique_constraints
+    inline_uniques = {
+        "paper_identity_conflicts": "request_sha256",
+        "feed_production_checks": "check_id",
+    }
+
+    def checked_unique_constraints(
+        connection: Connection,
+        table_name: str,
+        schema: str | None = None,
+        **kwargs: object,
+    ) -> list[ReflectedUniqueConstraint]:
+        constraints = reflect_uniques(connection, table_name, schema=schema, **kwargs)
+        column = inline_uniques.get(table_name)
+        if column is None:
+            return constraints
+        # SQLAlchemy 2.0.54's SQLite inline-UNIQUE regex misses VARCHAR(64).
+        # Verify the real constraint before filling only these two reflection gaps.
+        indexes = connection.exec_driver_sql(f"PRAGMA index_list({table_name})").all()
+        assert any(
+            index[2] == 1
+            and index[3] == "u"
+            and index[4] == 0
+            and [
+                row[2]
+                for row in connection.exec_driver_sql(
+                    f'PRAGMA index_info("{index[1]}")'
+                )
+            ]
+            == [column]
+            for index in indexes
+        ), f"missing inline UNIQUE: {table_name}.{column}"
+        if not any(item["column_names"] == [column] for item in constraints):
+            constraints.append({"name": None, "column_names": [column]})
+        return constraints
+
+    damaged_engine = create_engine("sqlite://")
     try:
-        with engine.connect() as connection:
+        with damaged_engine.connect() as damaged:
+            for table, column in inline_uniques.items():
+                damaged.exec_driver_sql(
+                    f"CREATE TABLE {table} ({column} VARCHAR(64) NOT NULL)"
+                )
+                with pytest.raises(AssertionError, match=f"{table}\\.{column}"):
+                    checked_unique_constraints(damaged, table)
+    finally:
+        damaged_engine.dispose()
+
+    try:
+        with (
+            patch.object(
+                engine.dialect,
+                "get_unique_constraints",
+                side_effect=checked_unique_constraints,
+            ),
+            engine.connect() as connection,
+        ):
             assert connection.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1
             assert connection.exec_driver_sql("PRAGMA journal_mode").scalar() == "wal"
             context = MigrationContext.configure(connection)

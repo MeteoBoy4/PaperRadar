@@ -118,7 +118,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_registration_migrations.py",
-        "8ed251cf0ac0fc12f0d5a30d2d9ff1ffed7becf1ca69d70ec71ff82b1b9acfb0",
+        "b54875c45c1cd9b3568165841f345aed3eaf73f76dc1ec5d2a4d1b6b37f8c9ad",
     ),
     (
         "tests/test_a7_registration_backup.py",
@@ -268,7 +268,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "8938685fe17b1e608e1e07483eb9781b373258bae05480b43ca48a24c7945c15",
+        "c445710c87437b7a903cc00d54aff67d45445f882dfc97fafecc490d6b44cf1f",
     ),
     (
         "scripts/a2_test_receipt.py",
@@ -276,15 +276,15 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "bedfe01e6fa26838572b5ff7bade6766dbbc85c63c3ccb9711cf404c93a0f1b6",
+        "bf90615dc11d28d29afdb01b0aa134a91a6850e64ce8ff8704a622868acc50f3",
     ),
     (
         "scripts/a5_scope.py",
-        "2020b139cd7e6e0d2a1fe73fb5b20368c27b7339d96df61c52805109a151dd1b",
+        "83e623fa606abf13435753e04d1b3fe647baf7697b1b15381159cffbc3eb2968",
     ),
     (
         "scripts/a6_scope.py",
-        "10c1779e50903a85352d8c388ef76ad7cd63c1eb9b02889b5142b59121cb33b9",
+        "a871a274a326ba069d2f13b2118f3f6b49809ccbce7dae94d3ac6f81712758a8",
     ),
     (
         "scripts/a7_acceptance.py",

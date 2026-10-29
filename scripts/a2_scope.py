@@ -15,7 +15,7 @@ MIGRATION_REVISION = "feed06_language_provenance"
 REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_config_service.py",
-        "709e6e64338a15ad99844144f4adb26592601f1300b638b415e8ffc31e09b5f1",
+        "bbd817eb48f02893999a2a5e5c1c1522d182ea307cb08fb6460c5198ca352e38",
     ),
     (
         "tests/test_config_validation.py",

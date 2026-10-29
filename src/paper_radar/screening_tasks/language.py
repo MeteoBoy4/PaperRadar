@@ -87,7 +87,12 @@ resolutions = sa.Table(
     sa.Column(
         "paper_id", sa.String(36), sa.ForeignKey("papers.paper_id"), nullable=False
     ),
-    sa.Column("policy_version", sa.Text(), nullable=False),
+    sa.Column(
+        "policy_version",
+        sa.Text(),
+        sa.ForeignKey("title_language_policies.policy_version"),
+        nullable=False,
+    ),
     sa.Column("basis_json", sa.Text(), nullable=False),
 )
 frozen = sa.Table(

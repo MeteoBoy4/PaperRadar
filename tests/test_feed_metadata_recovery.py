@@ -141,7 +141,7 @@ def test_nonempty_previous_revision_migrates_and_preserves_facts(
                     rows,
                 )
         previous.commit()
-    assert upgrade_database(target) == "feed04_metadata"
+    assert upgrade_database(target) == "feed06_language_provenance"
     assert PaperFacts(target, papers.data_root).trace(paper_id) == before
     assert papers.data_root
     JGRMetadata(target, papers.data_root).validate_all()
