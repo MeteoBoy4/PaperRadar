@@ -38,6 +38,8 @@ ROUND_DEADLINE_SECONDS = 30.0
 class SourceResponse:
     facts: HTTPFacts
     body: bytes | None = field(default=None, repr=False)
+    etag: str | None = None
+    last_modified: str | None = None
 
 
 class SourceExecutor(Protocol):
@@ -154,6 +156,7 @@ class SourceHTTPExecutor:
         status: int | None = None
         reason: SourceReason = "invalid_response"
         body: bytes | None = None
+        etag = last_modified = None
         for round_no in (1, 2):
             rounds = round_no
             current = url
@@ -244,6 +247,13 @@ class SourceHTTPExecutor:
                                     current = next_url
                                     redirects += 1
                                     continue
+                                if status in (200, 304):
+                                    etag = safe_condition_header(
+                                        response.headers.get("etag")
+                                    )
+                                    last_modified = safe_condition_header(
+                                        response.headers.get("last-modified")
+                                    )
                                 if status != 200:
                                     reason = (
                                         "access_blocked_403"
@@ -324,6 +334,8 @@ class SourceHTTPExecutor:
                 status_code=status,
             ),
             body,
+            etag,
+            last_modified,
         )
 
     async def _body(self, response: httpx.Response, deadline: float) -> bytes:
@@ -380,3 +392,10 @@ class SourceHTTPExecutor:
         if self.monotonic() >= deadline:
             raise _Rejected("transient_error")
         return bytes(output)
+
+
+def safe_condition_header(value: str | None) -> str | None:
+    """与条件请求准入同一字符边界;不保留邮箱或控制字符。"""
+    if value is None or len(value) > 512 or re.search(r"[^\x20-\x7e]|@", value):
+        return None
+    return value

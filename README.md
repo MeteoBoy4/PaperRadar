@@ -639,3 +639,8 @@ Feed 语言生产登记可通过 `ScreeningTasks.register_feed_value` 调用，�
 Paper 或冲突 ID 回查受控原因与证据摘要，使用 `conflict_bytes(id)` 显式读取原字节，
 使用 `conflict_assertion(id)` 展开原断言。冲突拒绝成功论文事实写入，证据纳入备份及
 隔离恢复；详见[论文事实 Contract](docs/contracts/paper-facts.md)。
+
+JGR Feed 可通过 `JGRFeed(database, data_root).check(feed_id, request_id=...,
+contact_email=...)` 显式取得并登记论文发现；`view`、`replay`、`resume` 提供检查历史、
+只读回放及故障继续。条件 304 不新增发现，单 item 保留原字节，强冲突可回查证据。
+服务接口及边界见 [JGR Feed 生产取得](docs/contracts/feed-ingestion.md)。

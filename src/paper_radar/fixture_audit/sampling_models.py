@@ -46,6 +46,12 @@ class FeedCandidate(FrozenModel):
     )
 
 
+class ProductionFeedCandidate(FeedCandidate):
+    """生产不使用审计前50项上限;其余解释规则与审计相同。"""
+
+    position: int = Field(ge=1)
+
+
 class FrozenFeed(FrozenModel):
     freeze_id: str
     plan_id: str

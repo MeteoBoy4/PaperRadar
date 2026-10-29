@@ -15,6 +15,7 @@ from paper_radar.fixture_audit.models import Journal
 from paper_radar.fixture_audit.sampling_models import (
     FeedCandidate,
     IdentityField,
+    ProductionFeedCandidate,
     RawCategory,
 )
 from paper_radar.papers.doi import normalize_doi
@@ -98,7 +99,12 @@ def _ordered_items(root: ET.Element) -> tuple[str, list[tuple[int, ET.Element]]]
 
 
 def _candidate(
-    journal: Journal, position: int, physical: int, item: ET.Element, order: str
+    journal: Journal,
+    position: int,
+    physical: int,
+    item: ET.Element,
+    order: str,
+    candidate_type: type[FeedCandidate] = FeedCandidate,
 ) -> FeedCandidate:
     identities: list[IdentityField] = []
     entry_id = item.get(f"{{{RDF}}}about")
@@ -175,7 +181,7 @@ def _candidate(
                 else "disallowed_destination"
             )
     date_value, precision = _date_fields(published)
-    return FeedCandidate.model_validate(
+    return candidate_type.model_validate(
         {
             "position": position,
             "entry_locator": f"item[{physical}]",
@@ -216,3 +222,24 @@ def parse_feed(
         )
     except (ValueError, TypeError, UnicodeError, LookupError, ET.ParseError):
         raise FixtureError(FixtureReason.INVALID_FEED, path="feed") from None
+
+
+def production_candidates(
+    raw: bytes, decoding: str = "utf-8"
+) -> tuple[FeedCandidate, ...]:
+    """生产全条目解释;复用审计身份、类别、日期及物理定位规则。"""
+    # The audit parser remains authoritative for safe XML and feed shape.
+    parse_feed("jgr", raw, decoding)
+    root = ET.fromstring(raw.decode(decoding))
+    order, items = _ordered_items(root)
+    return tuple(
+        _candidate(
+            "jgr",
+            position,
+            physical,
+            item,
+            order,
+            candidate_type=ProductionFeedCandidate,
+        )
+        for position, (physical, item) in enumerate(items, 1)
+    )
