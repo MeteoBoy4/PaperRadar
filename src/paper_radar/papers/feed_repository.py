@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from sqlalchemy import Engine, func, select
 
+from paper_radar.papers.conflicts import replay, retain
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.feed import item_fingerprint
 from paper_radar.papers.models import CandidateInput, ObservationInput, WriteResult
@@ -15,7 +16,6 @@ from paper_radar.papers.relation_repository import (
     validate_endpoint_kinds,
 )
 from paper_radar.papers.repository import (
-    identity_conflict_result,
     insert_candidates,
     saved_acquisition_result,
     timestamp,
@@ -55,6 +55,9 @@ def submit_feed(
     with engine.connect() as connection:
         connection.exec_driver_sql("BEGIN IMMEDIATE")
         try:
+            previous_conflict = replay(connection, item)
+            if previous_conflict:
+                return previous_conflict
             if (
                 connection.execute(
                     select(feeds).where(feeds.c.feed_id == item.feed_id)
@@ -107,19 +110,19 @@ def submit_feed(
                 else None
             )
             if version and version["version_kind"] != item.version_kind:
-                return identity_conflict_result("version_kind_conflict")
+                return retain(connection, item, artifact_id, "version_kind_conflict")
             if item.target_version_id and (
                 version is None
                 or item.target_version_id != version_id
                 or item.target_paper_id != version["paper_id"]
             ):
-                return identity_conflict_result("target_mismatch")
+                return retain(connection, item, artifact_id, "target_mismatch")
             if entry and doi and current_doi and doi != current_doi:
-                return identity_conflict_result("entry_doi_changed")
+                return retain(connection, item, artifact_id, "entry_doi_changed")
             if entry and identity and identity["version_id"] != version_id:
-                return identity_conflict_result("doi_owner_conflict")
+                return retain(connection, item, artifact_id, "doi_owner_conflict")
             if item.target_version_id and doi and current_doi != doi:
-                return identity_conflict_result("target_mismatch")
+                return retain(connection, item, artifact_id, "target_mismatch")
             found = (
                 connection.execute(
                     select(feed_discoveries).where(

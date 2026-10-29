@@ -630,3 +630,9 @@ PDF/Docling/生产导入/NAS 与完整阶段 A 均未验证；承接见[路线�
 都不是本轮 live 证据；live 产物不进入 `verification-runs/`。
 
 V1 目标与判据见[规格](intent/draft.md)，当前前沿、阶段状态与后续责任见[路线图](docs/roadmap.md)。
+
+
+强身份冲突可通过 `PaperFacts(database, data_root).conflicts(...)` 按 Feed/entry、
+Paper 或冲突 ID 回查受控原因与证据摘要，使用 `conflict_bytes(id)` 显式读取原字节，
+使用 `conflict_assertion(id)` 展开原断言。冲突拒绝成功论文事实写入，证据纳入备份及
+隔离恢复；详见[论文事实 Contract](docs/contracts/paper-facts.md)。

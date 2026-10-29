@@ -181,6 +181,7 @@ class WriteResult(ClosedModel):
     observation_id: str | None = None
     acquisition_id: str | None = None
     discovery_id: str | None = None
+    conflict_id: str | None = None
 
 
 class FieldFact(ClosedModel):
@@ -399,3 +400,18 @@ class RelationAssertion(ClosedModel):
     raw_source_doi: str
     raw_target_doi: str
     raw_kind: str
+
+
+class ConflictView(ClosedModel):
+    conflict_id: str
+    conflict: ConflictKind
+    explanation: str = "强身份冲突，已拒绝业务写入并保留证据"
+    artifact_id: str
+    payload_sha256: str
+    source_kind: str
+    feed_id: str | None
+    entry_id: str | None
+    parser_version: int
+    observed_at: str
+    raw_doi: str | None
+    version_ids: tuple[str, ...]
