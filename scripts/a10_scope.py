@@ -329,7 +329,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "36bf6604fc605241b42610c4d4bb07a86b448dbd8cfd98eaf18a67b9034fba49",
+        "896a65a08bd461fb66dc2535ea47579e1cf87fc71a77889389d716fbb56173c6",
     ),
     (
         "scripts/a9_acceptance.py",
@@ -337,7 +337,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_scope.py",
-        "1ff2bfa5392f7dcb215df57f1c26fac841bb263f136a4d20c4866a87ed7c9006",
+        "37e78661e3903f8148c9c44cf374e147dc47a2a774afc2210f43d7f3235621f5",
     ),
     (
         "scripts/audit-verification-scope",
@@ -1346,7 +1346,7 @@ REQUIRED_SOURCE_MODULES = (
 )
 REQUIRED_FIXTURE_FILES = (
     ("GLOSSARY.md", "74381b5b1381c25abb69c460605093adc0352ce970c335a21baa84c91d853853"),
-    ("README.md", "30150be8fa2e450f99bf6c8079515e719cf2b281023298bdfa9b585a8eea9a6f"),
+    ("README.md", "96610cb0fbf5927f6821912c5da1a01dd37772f1fadccfa35c791c8d4b69a24f"),
     (
         "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
         "16f271441a41f7e0420f67bfa5bc401e278c4009932952942fd4df94ac5b9e34",
@@ -1389,7 +1389,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "intent/draft.md",
-        "fe7f472436ab6e7ea1bd7d05fb4f5bff9d3367dd2e5a0a213977cd833a5a5d72",
+        "7d5186f620b0dc6dd699d2221b3d7411c3bdf5a003b0bffd1bce1f84177116d7",
     ),
     (
         "pyproject.toml",

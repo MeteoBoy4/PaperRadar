@@ -279,8 +279,9 @@ chunking。未选择 adapter 沿用原政策，单独显示 unconfigured，不�
 常量重建。它不发布合成 extraction、不自造上下文序列化、不新增分析成功行；
 无业务引用的成功响应仍可备份。恢复后从新目录/进程加载历史配置与原始响应，复现
 绑定、规则、诊断和合并视图，并阻断原目录。固定上下文不是恢复产物。
-orig 源文本由 document/canonical 哪个成员哈希覆盖原留给 F；#111 前移至 B 生成真实
-canonical/evidence-map 之前确定。A5 三元组不包含 document 成员，A9 历史范围不包含
+orig 源文本由 document/canonical 哪个成员哈希覆盖，由 Body/B 首个真实正文生产者票
+决定并在该票落实：B 首个正文生产者前确定，F 不再承担。恢复后仍须可逐字节回查，
+不得以给定字符串内部一致代替真实恢复闭包；B 实验制品仍不可复用、不可提升。A5 三元组不包含 document 成员，A9 历史范围不包含
 生产 evidence-map 格式或真实源文本恢复闭包。
 
 #98 通过真实 migration、SQLite、配置编译、制品发布、backup/verify/restore 验证两份

@@ -4924,3 +4924,191 @@ tests/version_relation_process/sitecustomize.py
 ```
 
 </details>
+
+## 用户确认后的同步补记
+
+本节接续 `ea828e1` 的迁移冻结记录；不改写前文当时仍待确认的事实。用户在本轮明确确认三项旧表述同步，F01/F03/F04 与 DEC-4/5/6 已解决；具体哈希成员设计仍由 Body/B 首个真实正文生产者票决定并落实。原有未验收边界、冻结证据和三条底线不变。该同步属于用户明确裁决，不再是无裁决的纯位置迁移。
+
+### 确认同步：intent/draft.md（ea828e1 行 800）
+
+去处：[intent/draft.md](../../intent/draft.md)。
+
+原文：
+
+````text
+A9 只消费合成给定上下文，不定义生产 evidence-map 协议；orig 的哈希覆盖仍由阶段 F
+裁决。非空恢复证明收缩为历史配置加 `model_success_response` 原始候选字节，恢复后用
+````
+
+新文：
+
+````text
+A9 只消费合成给定上下文，不定义生产 evidence-map 协议；orig 的哈希覆盖由 Body/B 首个真实正文生产者票决定并在该票落实，
+在 B 首个正文生产者前确定，F 不再承担。恢复后仍须可逐字节回查，不得以给定字符串内部一致
+代替真实恢复闭包；B 实验制品仍不可复用、不可提升。非空恢复证明收缩为历史配置加 `model_success_response` 原始候选字节，恢复后用
+````
+
+### 确认同步：docs/contracts/read-validation.md（ea828e1 行 282）
+
+去处：[docs/contracts/read-validation.md](../../docs/contracts/read-validation.md)。
+
+原文：
+
+````text
+orig 源文本由 document/canonical 哪个成员哈希覆盖原留给 F；#111 前移至 B 生成真实
+canonical/evidence-map 之前确定。A5 三元组不包含 document 成员，A9 历史范围不包含
+````
+
+新文：
+
+````text
+orig 源文本由 document/canonical 哪个成员哈希覆盖，由 Body/B 首个真实正文生产者票
+决定并在该票落实：B 首个正文生产者前确定，F 不再承担。恢复后仍须可逐字节回查，
+不得以给定字符串内部一致代替真实恢复闭包；B 实验制品仍不可复用、不可提升。A5 三元组不包含 document 成员，A9 历史范围不包含
+````
+
+### 确认同步：docs/contracts/adapter-config.md（ea828e1 行 58）
+
+去处：[docs/contracts/adapter-config.md](../../docs/contracts/adapter-config.md)。
+
+原文：
+
+````text
+接受不含个人信息、每次相同且无意义的常量执行 cwd；具体值、目录无资源与白名单
+须在真实调用前由生产启动器票确认。A8 不选定该常量、不证明隔离。
+````
+
+新文：
+
+````text
+接受不含个人信息、每次相同且无意义的常量执行 cwd；已确认本机值为 `/srv/pi-cwd`，
+生产启动器须无默认值显式提供，白名单仅此常量。目录无项目资源与实际权限隔离仍须在
+首次发送 prompt 的 live 探测前实测验收；A8 离线档案不证明现场隔离。
+````
+
+### 确认同步：README.md（ea828e1 行 10）
+
+去处：[README.md](../../README.md)。
+
+原文：
+
+````text
+真实网络来源、模型执行和完整论文处理流水线尚未实现。
+````
+
+新文：
+
+````text
+生产论文来源的真实网络接线、模型执行和完整论文处理流水线尚未实现；联网摘要审计能力见下文。
+````
+
+### 确认同步：docs/roadmap.md（ea828e1 行 5）
+
+去处：[docs/roadmap.md](../../docs/roadmap.md)。
+
+原文：
+
+````text
+初稿依据基线 `91e5d02e199f1921ca8afd2b7bdb8f257e6264f3` 的规格 §11 和[阶段 A 收口清单](verification/stage-a-closure.md#收口责任与未决项)；模块集合、状态和未决清单待用户合并前确认。A1–A10 的历史离线结论不代表完整阶段 A 完成。
+````
+
+新文：
+
+````text
+初稿依据基线 `91e5d02e199f1921ca8afd2b7bdb8f257e6264f3` 的规格 §11 和[阶段 A 收口清单](verification/stage-a-closure.md#收口责任与未决项)；本轮用户已确认三项旧表述同步；既有模块集合、状态及其余待裁决/待探索清单仍待合并前确认。A1–A10 的历史离线结论不代表完整阶段 A 完成。
+````
+
+### 确认同步：docs/roadmap.md（ea828e1 行 9）
+
+去处：[docs/roadmap.md](../../docs/roadmap.md)。
+
+原文：
+
+````text
+以下为基于文档的初稿判断，尚待核对已有模块票与用户确认。
+````
+
+新文：
+
+````text
+以下状态依据文档与本次开放票核对；后续发布规格时按维护规则更新。
+````
+
+### 确认同步：docs/roadmap.md（ea828e1 行 175）
+
+去处：[docs/roadmap.md](../../docs/roadmap.md)。
+
+原文：
+
+````text
+| DEC-4 | DOC-1：orig 哈希覆盖 F/Body 责任表述是否按较新 B 前置同步 | Body、B | 首个正文生产者前 | [DOC-1](#整理中待确认的既有冲突)；裁决后同步规格 §4.10 与相关 Contract |
+| DEC-5 | DOC-2：README 真实网络来源未实现是否明确限定生产论文来源 | 用户文档入口 | #113 合并前 | [DOC-2](#整理中待确认的既有冲突)；裁决后同步 README |
+| DEC-6 | 旧 adapter-config 的 cwd 待确认文字是否按 #111 已确认值同步 | Pi、Live | 首次发送 prompt 的 live 探测前 | [配置 Contract](contracts/adapter-config.md#选择材料与版本)与[ADR-0026](adr/0026-control-pi-through-a-bounded-rpc-adapter.md)；同步 Contract，现场隔离仍须验收 |
+````
+
+新文：
+
+````text
+
+````
+
+### 确认同步：docs/roadmap.md（ea828e1 行 188）
+
+去处：[docs/roadmap.md](../../docs/roadmap.md)。
+
+原文：
+
+````text
+| EXP-6 | `orig` 由哪个持久成员哈希覆盖（实施票决定） | Body、B，首个正文生产者前 | research／原型；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
+````
+
+新文：
+
+````text
+| EXP-6 | `orig` 持久成员哈希的具体设计与落实（由 Body/B 首个真实正文生产者票决定并在该票落实，B 首个正文生产者前确定；F 不再承担） | Body、B，首个正文生产者前 | research／原型；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
+````
+
+### 确认同步：docs/roadmap.md（ea828e1 行 340）
+
+去处：[docs/roadmap.md](../../docs/roadmap.md)。
+
+原文：
+
+````text
+## 整理中待确认的既有冲突
+````
+
+新文：
+
+````text
+<a id="整理中待确认的既有冲突"></a>
+
+## 整理中既有冲突的裁决结果
+````
+
+### 确认同步：docs/roadmap.md（ea828e1 行 344）
+
+去处：[docs/roadmap.md](../../docs/roadmap.md)。
+
+原文：
+
+````text
+| DOC-1 | orig 哈希覆盖原交 F 裁决，较新 B 前置要求首个正文生产者前明确 | Body/B，首个正文生产者前 | [规格 §4.10](../intent/draft.md#410-read-agent)与[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md#样本与质量)；保留原文待用户裁决是否将旧 F 责任表述同步前移 |
+| DOC-2 | README“真实网络来源尚未实现”与联网审计命令范围措辞不一致 | 文档现状说明，无新增生产资格 | [README](../README.md)；保留原句，待确认是否明确限定为生产论文来源 |
+````
+
+新文：
+
+````text
+| DOC-1 | orig 哈希覆盖原交 F 裁决，较新 B 前置要求首个正文生产者前明确 | Body/B，首个正文生产者前 | [规格 §4.10](../intent/draft.md#410-read-agent)与[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md#样本与质量)；用户已裁决前移 Body/B 首个真实正文生产者票决定并落实，B 首个正文生产者前确定，F 不再承担；恢复后逐字节回查、真实恢复闭包及实验制品不可复用/不可提升均保留 |
+| DOC-2 | README“真实网络来源尚未实现”与联网审计命令范围措辞不一致 | 文档现状说明，无新增生产资格 | [README](../README.md)；用户已确认限定为生产论文来源；联网审计能力不受影响 |
+| DOC-3 | adapter-config 旧 cwd 待确认文字 | Pi/Live，首次发送 prompt 的 live 探测前 | 用户已确认同步 `/srv/pi-cwd`，无默认值显式提供、白名单仅此常量，现场无资源与权限隔离仍须实测 |
+````
+
+### 确认同步验证
+
+- 本轮两轴独立复核：三项裁决与三条底线均保全，不扩大就绪或验收范围；路线图表格格式问题已修正。
+- `uv run --offline --locked pytest tests/test_paper_inputs.py tests/test_check_compatibility.py tests/test_a8_integrity.py tests/test_a9_integrity.py tests/test_a10_integrity.py tests/test_verification_scope_audit.py -q`：427 passed（63.03s）。
+- scope 审计退出 0，`issues=[]`、`affected_groups=[]`；只重绑实际文档变化及 A8/A9/A10 传递引用。
+- 原迁移台账前缀字节不变，新增补记；规格/Contract 标题和表格保持，相关链接检查通过。
+- 未运行完整离线门禁；未执行 live。整体路线图的模块/状态及其余未决清单与三项裁决分开确认。

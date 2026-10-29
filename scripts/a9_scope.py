@@ -495,7 +495,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "36bf6604fc605241b42610c4d4bb07a86b448dbd8cfd98eaf18a67b9034fba49",
+        "896a65a08bd461fb66dc2535ea47579e1cf87fc71a77889389d716fbb56173c6",
     ),
 )
 
@@ -564,15 +564,15 @@ REQUIRED_FIXTURE_FILES = (
         "examples/contracts/screening/boundary/v1/manifest.json",
         "5efa0aec0e41329fe8736dcd533706309fd9c3717aeac14ddbf55d05cce0ed0b",
     ),
-    ("README.md", "30150be8fa2e450f99bf6c8079515e719cf2b281023298bdfa9b585a8eea9a6f"),
+    ("README.md", "96610cb0fbf5927f6821912c5da1a01dd37772f1fadccfa35c791c8d4b69a24f"),
     ("GLOSSARY.md", "74381b5b1381c25abb69c460605093adc0352ce970c335a21baa84c91d853853"),
     (
         "intent/draft.md",
-        "fe7f472436ab6e7ea1bd7d05fb4f5bff9d3367dd2e5a0a213977cd833a5a5d72",
+        "7d5186f620b0dc6dd699d2221b3d7411c3bdf5a003b0bffd1bce1f84177116d7",
     ),
     (
         "docs/contracts/read-validation.md",
-        "d31da760c8d919af0f5197d74a2b404976f34baa92e23f1e205ca5d8681811fd",
+        "f929336240dbbe4cc04b51a047e5eb7faab906792e70050ba96a8bb48adc8095",
     ),
     (
         "docs/verification/a9-scope-review.md",
