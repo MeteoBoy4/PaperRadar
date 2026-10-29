@@ -43,7 +43,7 @@ flowchart TD
 
 ## 模块
 
-所有模块的规格与完成判据均以[§11](../intent/draft.md#十一九阶段实施与验收)为准；B 及前置同时受[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md)约束。现有边界从[收口证据索引](verification/stage-a-closure.md#证据索引与范围)进入对应 Contract；同次开放票查询未见这些生产模块的 spec issue。
+所有模块的规格与完成判据均以[§11](../intent/draft.md#十一九阶段实施与验收)为准；B 及前置同时受[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md)约束。现有边界从[收口证据索引](verification/stage-a-closure.md#证据索引与范围)进入对应 Contract；已发布的 spec issue 见模块表。
 
 | ID | 模块 | 状态 | 依赖 | 执行方式 |
 | --- | --- | --- | --- | --- |
@@ -56,7 +56,7 @@ flowchart TD
 | <a id="module-live"></a>Live | 固定 1.4.0 安装与 RPC 实测 | 待探索 | Pi、Cwd | HITL |
 | <a id="module-extra"></a>Extra | Docling extra 安装与兼容探测 | 待探索 | 无 | HITL |
 | <a id="module-body"></a>Body | 正文生产切片、Read 身份与预算 | 未成形 | Extra | AFK |
-| <a id="module-feed"></a>Feed | 强冲突持久化、JGR 元数据与语言事实 | 可规格化 | 无 | AFK |
+| <a id="module-feed"></a>Feed | 强冲突持久化、JGR 元数据与语言事实 | 已规格化（[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)） | 无 | AFK |
 | <a id="module-b"></a>B | B 实验根内纵向闭环 | 未成形 | A、Live、Body、Feed、Source | HITL |
 | <a id="module-c"></a>C | C 生产根四刊积累、保留器与可见性 | 未成形 | B | HITL |
 | <a id="module-f"></a>F | F 全通道、四刊正文与摘录 fixture | 未成形 | C | HITL |
