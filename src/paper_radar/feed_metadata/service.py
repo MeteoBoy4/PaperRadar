@@ -386,6 +386,8 @@ class JGRMetadata:
             missing.append("no_title")
         if abstract_value is None:
             missing.append("no_abstract")
+        elif abstract_value.is_truncated is None:
+            missing.append("unknown_truncation")
         if url is None:
             missing.append("no_source_url")
         if not routes_settled:
@@ -410,7 +412,7 @@ class JGRMetadata:
             minimum_complete=not missing,
             nontruncated_complete=not missing
             and abstract_value is not None
-            and not abstract_value.is_truncated,
+            and abstract_value.is_truncated is False,
             missing=tuple(missing),
         )
 

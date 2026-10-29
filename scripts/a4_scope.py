@@ -336,7 +336,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a3_scope.py",
-        "a9a51c16a7a733e05eb20527951370240839a7de403ac94568a93ab4177eaeb8",
+        "bedfe01e6fa26838572b5ff7bade6766dbbc85c63c3ccb9711cf404c93a0f1b6",
     ),
     (
         "scripts/a2_full_scope.py",
