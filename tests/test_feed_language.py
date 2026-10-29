@@ -148,7 +148,9 @@ def test_policy_identity_and_feed_binding_are_immutable(tmp_path: Path) -> None:
     service.register_language_policy("v2")
     service.register_language_policy("v2")
     receipt = service.register_feed_value(request, policy_version="v2")
-    assert service.language_basis(receipt.receipt_id)["policy_version"] == "v2"
+    basis = service.language_basis(receipt.receipt_id)
+    assert basis["status"] == "frozen"
+    assert basis["policy_version"] == "v2"
     assert service.register_feed_value(request, policy_version="v1") == receipt
     feed = PaperFacts(data.database).register_feed("https://example.test/dqkx")
     with pytest.raises(TaskError, match="context_conflict"):

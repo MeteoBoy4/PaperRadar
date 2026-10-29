@@ -1,6 +1,7 @@
 """JGR生产服务只替换HTTP transport。"""
 
 import sqlite3
+from collections.abc import Callable
 from contextlib import closing
 from pathlib import Path
 
@@ -10,9 +11,12 @@ import pytest
 from paper_radar.backup import create_backup
 from paper_radar.backup.restore import restore_backup
 from paper_radar.feed_ingestion import JGRFeed
+from paper_radar.feed_ingestion.models import FeedCheck
 from paper_radar.fixture_audit.acquisition_policy import FEED_ENDPOINTS
 from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
+from paper_radar.papers import AbstractValue, PaperFacts
 from paper_radar.papers.errors import PaperError
+from paper_radar.papers.models import FeedFact
 from tests.feed_support import facts
 
 URL = next(value.url for value in FEED_ENDPOINTS if value.journal == "jgr")
@@ -44,6 +48,7 @@ def test_jgr_feed_preserves_item_bytes_and_conditional_check(tmp_path: Path) -> 
             )
         return httpx.Response(304)
 
+    assert papers.data_root is not None
     service = JGRFeed(
         papers.database,
         papers.data_root,
@@ -53,11 +58,14 @@ def test_jgr_feed_preserves_item_bytes_and_conditional_check(tmp_path: Path) -> 
         feed.feed_id, request_id="first", contact_email="contact@example.org"
     )
     assert check.reason == "acquired"
+    assert check.items[0].result is not None
     assert check.items[0].result.status == "retained"
     paper_id = check.items[0].result.paper_id
     assert paper_id
     assert papers.show(paper_id).fields["title"].value == "Original title"
-    assert papers.show(paper_id).fields["abstract"].value.is_truncated is False
+    abstract = papers.show(paper_id).fields["abstract"].value
+    assert isinstance(abstract, AbstractValue)
+    assert abstract.is_truncated is False
     trace = papers.trace(paper_id)
     assert trace.discoveries[0].item_fingerprint
     assert service.item_bytes(check.check_id, 1) == ITEM
@@ -81,7 +89,9 @@ def test_jgr_feed_preserves_item_bytes_and_conditional_check(tmp_path: Path) -> 
     service.validate_all()
 
 
-def feed_service(tmp_path: Path, respond):
+def feed_service(
+    tmp_path: Path, respond: Callable[[httpx.Request], httpx.Response]
+) -> tuple[PaperFacts, FeedFact, JGRFeed]:
     papers = facts(tmp_path)
     feed = papers.register_feed(URL)
     assert papers.data_root is not None
@@ -93,7 +103,7 @@ def feed_service(tmp_path: Path, respond):
     return papers, feed, service
 
 
-def run_check(service, feed, key="test"):
+def run_check(service: JGRFeed, feed: FeedFact, key: str = "test") -> FeedCheck:
     return service.check(
         feed.feed_id, request_id=key, contact_email="contact@example.org"
     )
@@ -114,7 +124,7 @@ def test_failed_http_check_is_queryable_without_error_page_retention(
 ) -> None:
     requests = []
 
-    def respond(request):
+    def respond(request: httpx.Request) -> httpx.Response:
         requests.append(request)
         return httpx.Response(status, content=b"<html>failure</html>")
 
@@ -134,7 +144,7 @@ def test_unsafe_redirect_is_recorded_without_contact_or_credentials(
 ) -> None:
     requests = []
 
-    def respond(request):
+    def respond(request: httpx.Request) -> httpx.Response:
         requests.append(request)
         return httpx.Response(302, headers={"Location": "https://127.0.0.1/private"})
 
@@ -200,6 +210,7 @@ def test_doi_path_extraction_is_separate_from_strict_doi_query_handling(
     assert check.items[0].doi == "10.1029/2025jd043927"
     assert check.items[1].doi is None
     assert check.items[0].result
+    assert check.items[0].result.paper_id is not None
     assert (
         papers.show(check.items[0].result.paper_id).fields["source_url"].value
         == "https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2025JD043927"
@@ -222,7 +233,7 @@ def test_isolated_restore_can_replay_original_checks_and_item_bytes(
     root.rename(tmp_path / "unavailable")
     restored = restore_backup(batch.batch_dir, tmp_path / "restored")
 
-    def deny(request):
+    def deny(request: httpx.Request) -> httpx.Response:
         raise AssertionError("replay must not access HTTP")
 
     service = JGRFeed(
@@ -306,6 +317,7 @@ def test_repeated_changes_supplement_doi_and_conflicts_keep_batch_progress(
     third = run_check(service, feed, "a-again")
     assert first.items[0].result and second.items[0].result and third.items[0].result
     paper_id = first.items[0].result.paper_id
+    assert paper_id is not None
     assert paper_id == second.items[0].result.paper_id == third.items[0].result.paper_id
     assert papers.show(paper_id).doi == "10.1/a"
     assert papers.show(paper_id).fields["title"].value == "B"
@@ -329,6 +341,7 @@ def test_concurrent_same_request_has_one_check_and_stable_discovery(
     assert values[0] == values[1]
     assert len(service.view(feed.feed_id).checks) == 1
     assert values[0].items[0].result
+    assert values[0].items[0].result.paper_id is not None
     assert len(papers.trace(values[0].items[0].result.paper_id).discoveries) == 1
 
 
@@ -363,6 +376,7 @@ def test_nonempty_previous_revision_upgrade_preserves_paper_and_language_schema(
     upgrade_database(papers.database)
     assert papers.trace(receipt.paper_id) == expected
     assert papers.submit(item(feed.feed_id)) == receipt
+    assert papers.data_root is not None
     assert JGRFeed(papers.database, papers.data_root).view(feed.feed_id).checks == ()
 
 
@@ -382,6 +396,7 @@ def test_damaged_check_references_are_controlled_and_backup_rejected(
         connection.commit()
     with pytest.raises(PaperError, match="corrupt_reference"):
         service.replay(check.check_id)
+    assert papers.data_root is not None
     with pytest.raises(BackupError) as error:
         create_backup(papers.database, papers.data_root, tmp_path / "backups")
     assert error.value.reason == "registration_invalid"
@@ -428,7 +443,7 @@ def test_conditional_304_inherits_original_content_decoding(tmp_path: Path) -> N
         b"/item></channel></rss>"
     )
 
-    def respond(request):
+    def respond(request: httpx.Request) -> httpx.Response:
         requests.append(request)
         return (
             httpx.Response(
@@ -447,6 +462,7 @@ def test_conditional_304_inherits_original_content_decoding(tmp_path: Path) -> N
     first = run_check(service, feed, "first")
     second = run_check(service, feed, "second")
     assert first.items[0].result
+    assert first.items[0].result.paper_id is not None
     assert papers.show(first.items[0].result.paper_id).fields["title"].value == "Café"
     assert second.complete
     assert second.content_decoding == first.content_decoding
