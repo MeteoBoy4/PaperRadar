@@ -154,8 +154,8 @@ def test_nonempty_a704_upgrade_preserves_existing_tables_and_foreign_keys(
             name: connection.execute(f"SELECT * FROM {name}").fetchall()
             for name in names
         }
-    assert upgrade_database(database) == "a1001_fixture_audit"
-    assert upgrade_database(database) == "a1001_fixture_audit"
+    assert upgrade_database(database) == "feed05_composition"
+    assert upgrade_database(database) == "feed05_composition"
     with closing(sqlite3.connect(database)) as connection:
         assert not connection.execute("PRAGMA foreign_key_check").fetchall()
         assert {

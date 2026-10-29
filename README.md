@@ -648,3 +648,9 @@ contact_email=...)` 显式取得并登记论文发现；`view`、`replay`、`res
 JGR 已发现论文可通过 `JGRMetadata.enrich` 显式取得适用注册机构与出版者公开元数据，
 查询最低输入缺项、来源路线和截断标记；`content` 与 `source_bytes` 显式读取规范摘要及
 保留来源原字节。结果不授予 B/Screening 执行资格，详见[元数据生产契约](docs/contracts/feed-metadata.md)。
+
+`FeedPipeline` 将上述 Feed、最低元数据与语言登记串为显式服务：`prepare` 保存取得与
+元数据结果，`trace` 提供安全组合读面，`register_value` 要求当前非 out_of_scope 的
+生产 boundary 前置并拒绝 test 来源。`register_test_value` 仅验证既有 test 任务路径，
+保留全部前置检查；这些接口都不执行模型。详见[组合契约](docs/contracts/feed-pipeline.md)
+与[新增覆盖及证据边界](docs/verification/issue-114-feed-delivery.md)。

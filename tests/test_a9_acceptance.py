@@ -59,7 +59,7 @@ def test_a9_records_read_rules_contract_same_run_execution_and_coverage(
         is result["rpc_verified"]
         is False
     )
-    assert result["migration_revision"] == "a1001_fixture_audit"
+    assert result["migration_revision"] == "feed05_composition"
     assert result["format_versions"] == {
         "read_contract": "v1",
         "evidence_rules": "read-evidence-v1",

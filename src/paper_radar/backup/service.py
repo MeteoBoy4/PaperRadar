@@ -176,6 +176,7 @@ def verify_contents(root: Path, manifest: BackupManifest) -> None:
         blobs, artifacts, snapshot_ids = _registered_contents(database, root)
         # 业务语义只在完整副本上解析,源材料仅供复制与字节完整性检查。
         from paper_radar.feed_ingestion import JGRFeed
+        from paper_radar.feed_pipeline import PipelineError
         from paper_radar.fixture_audit import FixtureAudit, FixtureError
         from paper_radar.papers import PaperError, PaperFacts
         from paper_radar.screening_tasks import ScreeningTasks, TaskError
@@ -186,9 +187,11 @@ def verify_contents(root: Path, manifest: BackupManifest) -> None:
             ScreeningTasks(database, root).validate_all()
             FixtureAudit(database, root).validate_all()
             from paper_radar.feed_metadata import JGRMetadata
+            from paper_radar.feed_pipeline import FeedPipeline, PipelineError
 
             JGRMetadata(database, root).validate_all()
-        except (PaperError, TaskError, FixtureError):
+            FeedPipeline(database, root).validate_all()
+        except (PaperError, TaskError, FixtureError, PipelineError):
             raise BackupError(BackupReason.REGISTRATION_INVALID) from None
         if (
             blobs != manifest.blobs
