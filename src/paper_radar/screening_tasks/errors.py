@@ -8,6 +8,8 @@ REASON_CATALOG_VERSION = 1
 
 
 class TaskReason(StrEnum):
+    LANGUAGE_MISSING = "language_missing"
+    LANGUAGE_AMBIGUOUS = "language_ambiguous"
     TASK_NOT_FOUND = "task_not_found"
     ALREADY_RETRIED = "already_retried"
     NOT_LATEST = "not_latest"
@@ -33,6 +35,8 @@ class TaskReason(StrEnum):
 
 
 GUIDANCE = {
+    TaskReason.LANGUAGE_MISSING: "缺少受支持的 Feed 语言归属，请补齐发现依据。",
+    TaskReason.LANGUAGE_AMBIGUOUS: "Feed 归属的语言依据有歧义，拒绝新预算登记。",
     TaskReason.TASK_NOT_FOUND: "请核对目标任务 ID。",
     TaskReason.ALREADY_RETRIED: "该失败任务已有后继,请查询后继任务。",
     TaskReason.NOT_LATEST: "请针对当前输入的最新任务代际操作。",

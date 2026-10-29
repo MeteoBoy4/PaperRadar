@@ -474,3 +474,29 @@ CLI、NAS、完整阶段 A 与 live。本验收不授予 test 筛选制品生产
 依据：[#76](https://github.com/MeteoBoy4/PaperRadar/issues/76)、[#77](https://github.com/MeteoBoy4/PaperRadar/issues/77)、[#78](https://github.com/MeteoBoy4/PaperRadar/issues/78)、[#79](https://github.com/MeteoBoy4/PaperRadar/issues/79)、[#80](https://github.com/MeteoBoy4/PaperRadar/issues/80)、[#81](https://github.com/MeteoBoy4/PaperRadar/issues/81)、[#82](https://github.com/MeteoBoy4/PaperRadar/issues/82)、[#83](https://github.com/MeteoBoy4/PaperRadar/issues/83)、[#84](https://github.com/MeteoBoy4/PaperRadar/issues/84)、[#85](https://github.com/MeteoBoy4/PaperRadar/issues/85)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
 
 [规格](../../intent/draft.md#85-任务领取与幂等)；[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)；[路线图承接](../roadmap.md#module-b)。
+
+## Feed 原题名语言来源
+
+`ScreeningTasks.register_feed_value(request, policy_version="v1")` 接收 `stage=value`
+的既有登记请求，调用方省略 `original_title_is_zh`。服务由数据库 Feed/发现关系派生严格
+bool，再交由原登记权威冻结预算。boundary 和原 `register` 的载荷与校验保持原契约。
+
+v1 按 ADR-0035 的期刊约定映射：dqkx=true，aies/jgr/qjrms=false，false 仅指非中文。
+四个已裁决端点自动解析期刊；其他已登记 Feed 可通过
+`bind_feed_journal(feed_id, journal)` 显式追加不可修改的归属，该操作不创建或订阅 Feed。
+已知端点不能改绑到其他期刊。同刊多个 Feed 和跨刊同 bool 保存全部发现依据；缺失、
+不支持归属或跨刊 bool 歧义拒绝新预算，分别返回 `language_missing` 或 `language_ambiguous`。
+
+`language_status(paper_id)` 追加保存当前派生观察并返回状态和发现引用；
+`language_observations(paper_id)` 只读回查已保存的派生历史（含歧义及受控状态）；
+`language_basis(receipt_id)` 查询预算冻结的策略、bool、期刊、Feed 与发现引用，默认没有
+原始正文。历史显式 bool 预算返回 `historical_unrecorded`，不补造来源。
+`register_language_policy(version)` 可为已裁决映射登记新的不可变策略身份；该入口不接受
+新映射语义，映射变化仍需新裁决。策略身份和来源审计不进入阶段指纹、boundary 或 Frozen Contract。
+
+派生与新预算/来源引用在同一 `BEGIN IMMEDIATE` 事务内提交。登记前到达的发现参与派生；
+后到发现不回写旧预算。精确 manual 重放先读取原冻结值；已有预算和 retry 沿用原语言值与
+依据。来源提交失败不留下无依据的新生产预算。歧义观察可独立持久保留，拒绝不创建预算。
+
+追加迁移保留旧回执；`validate_all` 和备份闭包核对新引用，恢复后不依赖原根。来源级语言
+约定不构成逐篇语言核实，也不授予模型执行、校准或自动精读资格。

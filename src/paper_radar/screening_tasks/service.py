@@ -3,7 +3,7 @@
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import overload
+from typing import Any, overload
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -150,13 +150,136 @@ class ScreeningTasks:
         # 离开 except 后才结算,迟到结算的受控错误不串联原执行者异常。
         return self._attempts.fail(claim, report, origin=origin)
 
+    def register_feed_value(
+        self, raw_request: object, *, policy_version: str = "v1"
+    ) -> RequestReceipt:
+        """生产登记:派生来源、冻结预算及依据在同一写事务提交。"""
+        return self._register(raw_request, policy_version=policy_version)
+
+    def language_basis(self, receipt_id: str) -> dict[str, Any]:
+        from paper_radar.screening_tasks.language import load
+
+        receipt = self.get_receipt(receipt_id)
+        with (
+            task_database(self.database, write=False) as engine,
+            task_transaction(engine, write=False) as connection,
+        ):
+            return load(connection, receipt.budget_id)
+
+    def language_status(
+        self, paper_id: str, *, policy_version: str = "v1"
+    ) -> dict[str, Any]:
+        from paper_radar.screening_tasks.language import derive, retain
+
+        with task_database(self.database, write=True) as engine:
+            require_current_revision(engine)
+            with task_transaction(engine, write=True) as connection:
+                basis = derive(connection, paper_id, policy_version)
+                retain(connection, basis)
+                return basis
+
+    def language_observations(self, paper_id: str) -> tuple[dict[str, Any], ...]:
+        from paper_radar.screening_tasks.language import observations
+
+        with (
+            task_database(self.database, write=False) as engine,
+            task_transaction(engine, write=False) as connection,
+        ):
+            require_current_revision(engine)
+            return observations(connection, paper_id)
+
+    def register_language_policy(self, version: str) -> None:
+        """登记新策略身份,沿用已裁决的 v1 映射;不允许修改旧身份。"""
+        from paper_radar.screening_tasks.language import POLICIES, encode, policies
+
+        if (
+            type(version) is not str
+            or re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}", version) is None
+        ):
+            raise TaskError(TaskReason.INVALID_REQUEST)
+        with task_database(self.database, write=True) as engine:
+            require_current_revision(engine)
+            with task_transaction(engine, write=True) as connection:
+                old = connection.execute(
+                    select(policies.c.mapping_json).where(
+                        policies.c.policy_version == version
+                    )
+                ).scalar_one_or_none()
+                content = encode(POLICIES["v1"])
+                if old is not None and old != content:
+                    raise TaskError(TaskReason.CORRUPT_REFERENCE)
+                if old is None:
+                    connection.execute(
+                        policies.insert().values(
+                            policy_version=version, mapping_json=content
+                        )
+                    )
+
+    def bind_feed_journal(self, feed_id: str, journal: str) -> None:
+        """显式登记已存在 Feed 的期刊归属;不创建或订阅 Feed。"""
+        from paper_radar.papers.tables import feeds
+        from paper_radar.screening_tasks.language import ENDPOINTS, POLICIES, bindings
+
+        if journal not in POLICIES["v1"]:
+            raise TaskError(TaskReason.INVALID_REQUEST)
+        with task_database(self.database, write=True) as engine:
+            require_current_revision(engine)
+            with task_transaction(engine, write=True) as connection:
+                if (
+                    connection.execute(
+                        select(feeds.c.feed_id).where(feeds.c.feed_id == feed_id)
+                    ).first()
+                    is None
+                ):
+                    raise TaskError(TaskReason.INVALID_REQUEST)
+                endpoint = connection.execute(
+                    select(feeds.c.url).where(feeds.c.feed_id == feed_id)
+                ).scalar_one()
+                if endpoint in ENDPOINTS and ENDPOINTS[endpoint] != journal:
+                    raise TaskError(TaskReason.CONTEXT_CONFLICT)
+                old = connection.execute(
+                    select(bindings.c.journal).where(bindings.c.feed_id == feed_id)
+                ).scalar_one_or_none()
+                if old is not None and old != journal:
+                    raise TaskError(TaskReason.CONTEXT_CONFLICT)
+                if old is None:
+                    connection.execute(
+                        bindings.insert().values(feed_id=feed_id, journal=journal)
+                    )
+
     def register(self, raw_request: object) -> RequestReceipt:
+        return self._register(raw_request)
+
+    def _register(
+        self, raw_request: object, *, policy_version: str | None = None
+    ) -> RequestReceipt:
+        from paper_radar.screening_tasks.language import derive, frozen, retain
+
+        if policy_version is not None:
+            if (
+                type(raw_request) is not dict
+                or raw_request.get("stage") != "value"
+                or "original_title_is_zh" in raw_request
+            ):
+                raise TaskError(TaskReason.INVALID_REQUEST)
+            # 仅供严格请求解析;提交事务内替换为已冻结或派生的值。
+            raw_request = {**raw_request, "original_title_is_zh": False}
         request = parse_request(raw_request)
         with task_database(self.database, write=True) as engine:
             try:
                 require_current_revision(engine)
                 # 精确 manual 重放先于当前映射,保留原回执即使论文已变化或缺项。
                 with task_transaction(engine, write=False, begin=False) as connection:
+                    if policy_version is not None and request.request_id is not None:
+                        old_language = connection.execute(
+                            select(budgets.c.original_title_is_zh)
+                            .select_from(requests.join(tasks).join(budgets))
+                            .where(requests.c.request_id == request.request_id)
+                        ).first()
+                        if old_language is not None:
+                            request = request.model_copy(
+                                update={"original_title_is_zh": old_language[0]}
+                            )
                     replayed = replay_request(connection, request)
                     if replayed is not None:
                         return replayed
@@ -179,6 +302,36 @@ class ScreeningTasks:
                         ) from None
                 with task_transaction(engine, write=True) as connection:
                     # 并发另一登记可能已经完成相同 manual 请求,应重放其原回执。
+                    if policy_version is not None:
+                        assert isinstance(request, ValueRequest)
+                        existing_budget = (
+                            connection.execute(
+                                select(budgets).where(
+                                    budgets.c.paper_id == request.paper_id,
+                                    budgets.c.stage == "value",
+                                    budgets.c.fingerprint == stage_input.fingerprint,
+                                )
+                            )
+                            .mappings()
+                            .first()
+                        )
+                        basis = None
+                        if existing_budget is not None:
+                            language = existing_budget["original_title_is_zh"]
+                        else:
+                            basis = derive(connection, request.paper_id, policy_version)
+                            if basis["status"] != "resolved":
+                                retain(connection, basis)
+                                connection.commit()
+                                raise TaskError(
+                                    TaskReason.LANGUAGE_AMBIGUOUS
+                                    if basis["status"] == "ambiguous"
+                                    else TaskReason.LANGUAGE_MISSING
+                                )
+                            language = basis["original_title_is_zh"]
+                        request = request.model_copy(
+                            update={"original_title_is_zh": language}
+                        )
                     replayed = replay_request(connection, request)
                     if replayed is not None:
                         return replayed
@@ -198,6 +351,13 @@ class ScreeningTasks:
                     result = register_request(
                         connection, request, stage_input, evidence
                     )
+                    if policy_version is not None and basis is not None:
+                        identifier = retain(connection, basis)
+                        connection.execute(
+                            frozen.insert().values(
+                                budget_id=result.budget_id, resolution_id=identifier
+                            )
+                        )
                     return result
             except SQLAlchemyError as error:
                 raise database_error(error) from None
@@ -272,6 +432,9 @@ class ScreeningTasks:
             try:
                 require_current_revision(engine)
                 with task_transaction(engine, write=False) as connection:
+                    from paper_radar.screening_tasks.language import validate
+
+                    validate(connection)
                     validate_registration(self.database, connection)
                     validate_attempts(self.database, connection)
                     from paper_radar.screening_tasks.success_integrity import (
