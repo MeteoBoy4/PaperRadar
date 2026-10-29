@@ -1,6 +1,6 @@
 # Screening 输出验证接口
 
-当前交付研究边界判断、摘要层价值预测、复用可行性升级和筛选原因组合验证，以及
+提供研究边界判断、摘要层价值预测、复用可行性升级和筛选原因组合验证，以及
 四者各自的 `v1` 冻结契约。CLI 可以逐份导出或检查 `boundary`、
 `value-prediction`、`reuse-assessment` 和 `decision-reasons`，也可以在一次命令中
 显式选择多份执行批量导出或只读检查。
@@ -336,3 +336,9 @@ Docling。
 
 
 冻结复用摘录的同源上下文派生见[阶段输入契约](stage-inputs.md#结构化-reuse-格式-1)。
+
+## 相关
+
+依据：[#76](https://github.com/MeteoBoy4/PaperRadar/issues/76)。
+
+[规格](../../intent/draft.md#45-两阶段-screening-agent-与条件式复用升级)；[ADR-0002](../adr/0002-calibrate-before-automatic-fulltext-reading.md)；[路线图承接](../roadmap.md#module-d)。

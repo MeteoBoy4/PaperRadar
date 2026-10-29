@@ -7,7 +7,7 @@
 
 初始候选遵循实测讨论 §5、§7.4 第 1–2 项：pypdfium2、Egret medium、
 TableFormer accurate，并按用户确认和 ADR-0025 默认启用 CodeFormulaV2 局部公式候选。
-这些选择尚需阶段 F 四刊 fixture、重复确定性与资源检查，配置就绪不证明运行就绪。
+这些选择未经四刊 fixture、重复确定性与资源检查；责任见[路线图 F](../roadmap.md#module-f)，配置就绪不证明运行就绪。
 
 ## 顶层字段
 
@@ -36,7 +36,7 @@ parse 是所选 PDF 后端包。pypdfium2 路线不把未消费的 parse 包塞�
 路线同时使用 pypdfium2 的 PDF 渲染/回查能力。版本不能由用户分别自由填写。
 
 这些版本来自已保存的实测环境，仅表示受支持声明组合，不证明生产最小 slim 安装
-兼容或 fixture 已通过。本票不新增解析依赖，当前项目执行环境仍以 `uv.lock` 为准。
+兼容或 fixture 已通过。此配置边界不提供解析依赖，当前项目执行环境仍以 `uv.lock` 为准。
 未来新增工具链须创建新的受控清单身份，保留旧组合。编译将实际消费的
 `backend_id`、`backend_version`、`component_versions` 与完整有效 `backend_config`
 展开随快照保存；load 从 SQLite 原材料重新校验与存档的组合一致，漂移拒绝，
@@ -83,9 +83,9 @@ commit 和文件哈希没有假默认值，不能省略；A2 只验证声明格�
 `enforce_same_font=true`、`include_bitmap_images=false`、`render_pages=true`、
 `render_scale=1.0`。不要求 pypdfium2 填写其不消费的 threaded 参数。
 
-公式增强只产生待核查候选。后续 adapter 必须将 orig、生成 text 和区域定位分开，
+公式增强只产生待核查候选。正文 adapter 必须将 orig、生成 text 和区域定位分开，
 保留源 charspan，支持 PDF 裁切核查；生成字符不冒充逐字符 PDF 事实。未核查公式
-不得支持主要发现、评分和复用建议；无法转写仍提供明确定位占位。本票不实现这些
+不得支持主要发现、评分和复用建议；无法转写仍提供明确定位占位。此配置边界不实现这些
 解析、canonical、evidence 或人工核查功能，也不将配置开关当作门禁通过。
 
 ## 公共语义与历史
@@ -109,7 +109,7 @@ extraction 配置就绪只要求所选材料合法且完整，不依赖 Profile�
 本机模型或 fixture gate。无选择时为 `not_ready` / `extraction_config`；有选择但
 文件或字段缺失时是非法配置，不能保存假就绪。extraction 投影已作为独立校准
 基线分量接入 [单快照重建与 diff](config-projections.md)，不嵌入 reuse/read；
-后续实际摘录或正文变化通过论文侧输入指纹影响消费者。校准门禁仍待后续实现。
+后续实际摘录或正文变化通过论文侧输入指纹影响消费者。此配置边界不提供校准门禁，承接见[路线图 D](../roadmap.md#module-d)。
 V1 `backend_id=docling`，不预建 backend 注册表、自动 fallback、A/B 或论文路由。
 后续 artifact 目录、失败记录、fixture 期望与规范化接缝仍遵循 draft §4.9 的中立契约。
 
@@ -119,9 +119,15 @@ V1 `backend_id=docling`，不预建 backend 注册表、自动 fallback、A/B �
 “V1 不支持 OCR；请将 do_ocr 设为 false 或省略；扫描稿需等待 V2”。非布尔 OCR
 值仍属于类型或选择错误，不能被误报为已启用禁止能力。其他校验继续使用既有脱敏
 原因，错误不回显原始值、Pydantic 异常 message、input 或 context。
-本次类型整理和校验器改名不改变合法材料的规范字节、快照身份或语义哈希；既有
+类型整理和校验器改名不改变合法材料的规范字节、快照身份或语义哈希；既有
 已登记快照继续从 SQLite 原材料回放，无需新增 migration 或重建有效配置。
 
 参见 [运行配置服务](runtime-config.md)、[ADR-0025](../adr/0025-allow-local-formula-candidates-with-source-review.md)
 和 [`settings-extraction.yaml`](../../examples/config/settings-extraction.yaml)。示例是合成
 工程验收材料，哈希不代表真实模型文件，不能用其开展正式校准或 PDF 解析。
+
+## 相关
+
+依据：[#20](https://github.com/MeteoBoy4/PaperRadar/issues/20)。
+
+[规格](../../intent/draft.md#49-docling-正文提取)；[ADR-0025](../adr/0025-allow-local-formula-candidates-with-source-review.md)；[路线图承接](../roadmap.md#module-body)。

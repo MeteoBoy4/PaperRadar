@@ -1,5 +1,7 @@
 # 保留官方锁原字节，以仅补 integrity 的派生锁安装 Pi
 
+状态：决策记录（原文未单列接受状态）；日期：2026-10-18；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0028-derive-integrity-only-staging-lock.md)；补充／部分取代：无另列关系；正文边界继续适用。
+
 2026-10-18，依据 Issue #36 的六项裁决及 #37 的 Pi 1.3.0 机制实测。
 
 官方 lockfile v3 的部分包没有 integrity，直接使用它无法证明 npm 实际消费的

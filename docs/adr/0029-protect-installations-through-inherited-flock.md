@@ -1,5 +1,7 @@
 # 通过继承 flock 描述符保护本机安装使用
 
+状态：决策记录（原文未单列接受状态）；日期：2026-10-18；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0029-protect-installations-through-inherited-flock.md)；补充／部分取代：无另列关系；正文边界继续适用。
+
 2026-10-18，依据 Issue #36 安装保护裁决与 #41。
 
 安装使用保护由本机 Linux 内核的 flock 与 open file description 生命周期承担。

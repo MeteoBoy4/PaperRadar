@@ -331,7 +331,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/pi-rpc.md",
-        "3708e7d327beaacc4e270892f7776be7b943b9d0bada3fbe1de5b0a383863f0e",
+        "13f989a2a359785116ad192d82fb9b549fd92612795ee816eace3a49dabe49bf",
     ),
     (
         "docs/contracts/verification-status.md",
@@ -345,5 +345,5 @@ REQUIRED_FIXTURE_FILES = (
         "docs/verification/a8-requirements.md",
         "bf40f43d19886a3b6c7bcd81891302f2c9a8e1e9b4a3206ad93c5609f19dfce3",
     ),
-    ("README.md", "6812f4dccea0d284ebde035db0da5c166e28923723d529f69f17177c54ed2bb7"),
+    ("README.md", "30150be8fa2e450f99bf6c8079515e719cf2b281023298bdfa9b585a8eea9a6f"),
 )

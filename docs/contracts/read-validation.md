@@ -98,10 +98,10 @@ BOM、坏 UTF-8、孤立代理字符、任意层重复键、NaN/Infinity、非�
 | `ReadContext` | identity、pages、source_blocks、evidence、expected_language、mode、allowed_evidence | 先验证完整集合，再冻结；语言显式 zh/en；single/reduce 与集合方向约束 |
 | `SourceSlice` | identity、evidence_id、provenance、text、kind、unreliable | `replay()` 从 orig 精确切出，保留来源与全部定位 |
 
-缺少 identity 或 expected_language 都是受控上下文错误。#95 允许上下文保留合法
+缺少 identity 或 expected_language 都是受控上下文错误。上下文允许保留合法
 table/formula/unreliable 源事实，是否可支持某个字段由下方矩阵接收规则决定，
 不在上下文构造时一概拒绝。
-#96 已接入 reduce；未知模式仍以 unsupported_mode 拒绝。
+验证器支持 reduce；未知模式仍以 unsupported_mode 拒绝。
 公式候选、图片/公式占位及生成展示内容没有 SourceBlock 类型分支；将其 ID 用作
 provenance 目标会因未知源而构造失败。上下文只解释给定 orig，不生成这些内容。
 
@@ -146,7 +146,7 @@ single 禁止附带允许集合；reduce 必须提供 `AllowedEvidence(identity,
 
 reduce 沿用相同严格 JSON、语言、价值、定位、数值与受限内容入口；程序模式和集合
 不进入模型 Schema。结果保留 mode、三元组和规则身份，冻结 read/v1 字节不变。
-允许集合真实来自本轮 map 的来源链仍未验证，本票不实现 map 契约、分块或任务。
+允许集合真实来自本轮 map 的来源链仍未验证，本验证边界不实现 map 契约、分块或任务。
 
 ## 受限内容矩阵（#95 已交付）
 
@@ -162,7 +162,7 @@ reduce 沿用相同严格 JSON、语言、价值、定位、数值与受限内�
 
 数值在全部引用切片中都未命中时一律降级，不作硬失败。上述窄矩阵是最终 owner
 裁决，替代父票初稿“受限证据违例”的模糊定义。未来阶段 G 的修正重试应提示可改引
-正文、去掉表格精确值或移入关键局限；本票不实现该修正调用。
+正文、去掉表格精确值或移入关键局限；本验证边界不提供该修正调用，责任见[路线图 G](../roadmap.md#module-g)。
 
 “仅在受限切片命中”逐个字面量判定：全部所引可靠切片都不支持它，但至少一条受限
 切片支持它。同条 evidence 含可靠与受限 provenance 时仍保留每条实际来源；可靠
@@ -177,11 +177,11 @@ evidence 的受限标记抹去可靠片段。范围仍必须在一条切片内�
 验证入口一次收集全部受限违例，`ReadOutputError.issues` 先列引用类硬失败、再列
 数值依赖硬失败，同级按字段路径和条目顺序；随后消费其安全 `diagnostics` 查看同次
 数值降级发现。异常不附带警告字符串、字面量或源片段。失败没有分析成功返回值，
-将来生产接收器应把这次真实输出拒绝计入一次 attempt，而本票不创建 attempt。
+将来生产接收器应把这次真实输出拒绝计入一次 attempt，而本验证边界不创建 attempt。
 
 表格切片直接来自 SourceBlock.orig 的字符回放，不重新解析表格，也不把候选 LaTeX
 当作来源。块粒度由未来正文生产者决定；块越大，别处的相同数字越可能落进同一片段，
-本票不设无规格依据的长度上限，不判断科学语义蕴含或人工复核状态。
+本验证边界不设无规格依据的长度上限，不判断科学语义蕴含或人工复核状态。
 
 ## 数值与警告（#94 已交付）
 
@@ -228,7 +228,7 @@ unrecognized_numeric_form，不把内部组件数字当支持。识别器只对�
 负数端点保留符号，`-3--1 km` 不把右端点误当成正数。
 不同数值可各自命中不同引用切片。`3` 不因 `30`、`13`、`3.5` 或 `0.3` 通过。
 不换算单位、不推导、不补数字、不改结论或评分；无法可靠解释的数值形状明确降级。
-块粒度影响区分力：块越大，论文别处的相同数值越可能落在同一支持片段；本票不设
+块粒度影响区分力：块越大，论文别处的相同数值越可能落在同一支持片段；本验证边界不设
 无规格依据的长度上限，也不证明科学语义蕴含。
 
 验证结果保留证据规则和数值规则公共版本身份、正文绑定及模式。规则是对已保存原始
@@ -308,7 +308,7 @@ canonical/evidence-map 之前确定。A5 三元组不包含 document 成员，A9
 
 ## 集成验收与明确未验证
 
-#93–#98 以各自行为子集交付；#99 已接入独立必需 A9、可信终态与完整门禁。
+本边界纳入独立必需 A9、可信终态与完整门禁；历史行为子集范围见[路线图](../roadmap.md#文首记录的状态与出处)。
 六检查计划及 A1 历史四契约保持固定，Read 检查由 A9 writer 内部显式调用现有服务。
 直接前置是同次 A1、完整 A2、A3；A4–A8 仍 required，不把其历史成功当 Read 证明。
 scope 链按真实 DAG 重绑，A9 不哈希绑定 scope 自身，self_reference/cycle 继续拒绝；
@@ -453,12 +453,8 @@ Read StageInput/任务/预算/业务持久化、生产 Pi、校准资格、NAS �
 
 ## B 首个真实 Read 消费者前置（#111）
 
-B 最小 Read 票须交付 Read StageInput、任务/预算/租约/retry、analysis 持久化与恢复，
-决定证据/数值规则身份归属；仅改变后处理警告不应未经分析触发模型重跑。
-parser/canonical/normalize/evidence 及源字符持久身份必须先闭合，Read 仍通过本权威接收。
-超出单次安全输入预算时先拒绝，或前移所需完整分块能力，不截断正文或复用 Screening 会话。
-实验根、逐文档质量与不复用/不提升要求见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；这些是目标责任，
-不重写 #92–#99 的历史任务台账或 not_assessed。F 扩展四刊正文供给，G 扩展通用长文 Read。
+当前没有 Read StageInput、任务/预算/租约/retry、analysis 持久化和真实正文消费验收；历史 #92–#99 台账及 not_assessed 保持。 生产接线目标见[规格补充约束](../../intent/draft.md#b-最小-read-与正文消费)，承接责任见[路线图](../roadmap.md#module-body)。
+
 
 ## 相关
 

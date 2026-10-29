@@ -11,8 +11,8 @@
 | `diff_config_snapshots(database, before_id, after_id)` | 明确数据库路径与两个完整 ID → `ConfigSnapshotDiff` | 沿用 load 的只读历史验证，不读取当前文件或 selector。 |
 
 领域能力在 `config/projections.py`，纯比较在 `config/diff.py`；数据库加载由应用服务
-`config/service.py` 组织，CLI 只渲染受控结果。后续校准、诊断与阶段输入指纹可以直接
-复用单快照能力，无需调用 diff 或读取数据库；本票不新增单快照 CLI。
+`config/service.py` 组织，CLI 只渲染受控结果。校准、诊断与阶段输入指纹消费者可以直接
+复用单快照能力，无需调用 diff 或读取数据库；不提供单快照 CLI。
 
 `ConfigSemantics.projections` 是以六值 `StageName` 为键的只读映射；
 `StageConfigProjection` 为不可变对象，暴露 `stage`、`format_version`、
@@ -143,8 +143,8 @@ calibration_changed。身份变化的 category 为公共受控 `ConfigCategory`�
 paper-radar config diff <before-id> <after-id> --database data/paperradar.sqlite3
 ```
 
-#23 原始接口只接受两个完整 64 位小写十六进制 ID，必填数据库路径。
-#27 新增 `config snapshots list` 和 CLI 的唯一短前缀输入；便捷查询服务先解析为完整 ID，
+公共 diff 接口只接受两个完整 64 位小写十六进制 ID，必填数据库路径。
+CLI 提供 `config snapshots list` 和 CLI 的唯一短前缀输入；便捷查询服务先解析为完整 ID，
 再调用本页既有公共 diff 服务，后者继续只接收完整 ID。JSON 输出未开放。
 发现列表、排序、引用规则与只读保证见 [历史快照发现与引用](config-snapshots.md)。
 ID 格式校验属于加载服务，不耦合进单快照或纯比较领域能力。

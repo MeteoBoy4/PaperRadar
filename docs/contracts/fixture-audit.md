@@ -1,6 +1,6 @@
 # Fixture 注册与摘要审计 Contract v1
 
-本 Contract 落实 #100 评论裁决；权威注册格式为 `paper_radar.fixture_audit.models.FixtureDeclaration`，不加入 `CONTRACT_NAMES` 或五份 Frozen Contract。#101 交付声明登记、只读历史与基本恢复；#102 交付本机 PDF 字节及 backend 期望登记；路线执行、选样、矩阵及独立 A10 验收按 #103–#108 后续交付。当前不代表真实来源、Docling、模型或完整阶段 A 通过。
+权威注册格式为 `paper_radar.fixture_audit.models.FixtureDeclaration`，不加入 `CONTRACT_NAMES` 或五份 Frozen Contract。提供声明登记、只读历史、基本恢复、本机 PDF 字节与 backend 期望登记、路线执行、选样、矩阵及独立 A10 验收边界。工程验收不证明真实来源、Docling、模型或完整阶段 A 通过。
 
 ## 声明与身份
 
@@ -40,9 +40,9 @@ doiRA `https://doi.org/doiRA/{doi}` 是路由，不是元数据提供方：Cross
 
 ## CLI 与持久化
 
-`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 --json；帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计入口最终为 audit run/resume/list/show/replay，未实现的命令不提前注册。
+`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 --json；帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计入口为 audit run/resume/list/show/replay。
 
-未发布的本批唯一 revision 为 `a1001_fixture_audit`，基于 `a704_screening_retry`；本批只追加实际用到的表，种子由显式 register 写入。各票如需调整该未发布 revision，必须从 a704 重建临时库验证，不能声称原地修补中间库；一旦发布或用于真实库，不再改写。现有配置/论文/Screening 身份不变。前七票只声明行为子集通过，最后 #108 完成 scope 重绑与完整门禁。
+该边界的 revision 为 `a1001_fixture_audit`，基于 `a704_screening_retry`；只追加实际用到的表，种子由显式 register 写入。该 revision 在未发布阶段的调整必须从 a704 重建临时库验证，不能声称原地修补中间库；一旦发布或用于真实库，不再改写。现有配置/论文/Screening 身份不变。历史子集与独立 A10 的证明范围见[路线图状态出处](../roadmap.md#文首记录的状态与出处)。
 
 validate_all 只读核验登记原字节哈希、Pydantic 重建、样本身份、完整条目集合与替换关系。备份固定副本调用相同语义检查，恢复不访问声明路径/来源 URL、不运行 live；大型取得字节复用 ArtifactStore 闭包，共享 source_snapshot 的引用今后 GC 必须同时考虑论文与审计。
 
@@ -51,7 +51,7 @@ validate_all 只读核验登记原字节哈希、Pydantic 重建、样本身份�
 
 `FixtureAudit.create_audit_plan(contact_email=..., target_count=5)` 在网络之前提交唯一 N、四刊端点、安装包/Git 身份、parser、HTTP、策略、通道与 UA 版本。显式 `plan_key` 支持同内容重试，异内容须新计划。邮箱缺失或非法时不创建计划；不从环境或配置猜测。合成测试身份明确记录 basis=synthetic，不能冒充真实 clean-code 审计证据。
 
-`acquire_source(plan_id, request_key=..., request=SourceRequest(...), contact_email=...)` 持有非阻塞计划锁，先提交 started，再在事务外调通道执行器、发布有资格保留的完整 source_snapshot，最后在短事务追加结算。请求身份包含规范请求的策略、通道、来源与条件引用；同键异内容拒绝，已完成精确调用只重放旧结果。未结算请求数为未知，不记零；本票没有隐式补跑。`audit_execution` 可由后续整轮驱动持有，同一个 guard 传给各路线，读取不取锁。
+`acquire_source(plan_id, request_key=..., request=SourceRequest(...), contact_email=...)` 持有非阻塞计划锁，先提交 started，再在事务外调通道执行器、发布有资格保留的完整 source_snapshot，最后在短事务追加结算。请求身份包含规范请求的策略、通道、来源与条件引用；同键异内容拒绝，已完成精确调用只重放旧结果。未结算请求数为未知，不记零；服务不隐式补跑。`audit_execution` 由整轮驱动持有，同一个 guard 传给各路线，读取不取锁。
 
 默认注册表只有 SourceHTTPExecutor；测试可显式注入执行器。未注册通道为 channel_not_installed，已注册却未执行可记 not_attempted，均不算失败。事实中的 access_basis=open、credential_class=null，请求头只记类别。无浏览器/凭据实现，不导入 playwright/selenium，不改依赖或 lockfile。外部 Pydantic 输入须重新准入；model_copy 不授予有效性，序列化 warning 不能输出原值。
 
@@ -70,7 +70,7 @@ HTTPFacts 只保存安全 URL、状态、轮次/重定向/重试/实际等待与
 
 条件头可空；带条件时必须引用已有同策略/通道/来源取得核验的 source_snapshot。无旧材料在 HTTP 前拒绝。304 只复用该既有引用，标记 reused_prior，不产生新材料或假取得时间；原始来源事实保留。取得结算的 `content_decoding` 单独记录保留材料的实际解码依据：200 来自实际取得，304 沿匹配原始材料继承，不能用本次无体 HTTP 的默认 UTF-8 代替。`http.charset/decoding` 仍只表示本次 HTTP 响应，不伪填旧头；回放/恢复按 `content_decoding` 重解析并核对原始/复用关系。计划 created_at、路线 started_at 与 settled_at 使用实际生成的 `datetime.isoformat()` UTC（+00:00）规范字符串；非法值、无时区或非规范表示拒绝，保留原始合法字节。墙钟先后不构成新的门禁，请求期限仍使用单调时钟。声明、材料引用、请求身份、计数和内容资格在 validate_all 中只读核对，并接入原有备份固定副本；恢复不联网、不取得执行锁、不自动继续。
 
-初始 #103 CLI 为 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。#105 已接通显式 run 和摘要矩阵（见下文）；resume/replay 由 #106 交付，完整混合恢复与独立 A10 仍由后续票收口。当前未运行真实来源审计。
+只读 CLI 为 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。提供显式 run、摘要矩阵、resume/replay、完整混合恢复与独立 A10 边界，详见下文。当前未运行真实来源审计。
 
 ## PDF 字节事实与 backend 期望（#102）
 
@@ -134,7 +134,7 @@ PDF 及全部旧 backend 期望进入既有 backup/restore 闭包；恢复只依
 制品，不访问原文件、来源 URL 或原声明路径，不下载 PDF、不自动解析。只有远端要求的
 待补齐声明不产生缺失制品。相同字节按既有内容寻址复用。语义核验除字节闭包外重建取得
 身份、样本作用域、替换链、预期/实际 SHA 一致性及 backend 引用；重算外层备份哈希也
-不能绕过这些检查。本批继续使用未发布 a1001 revision，所有测试从 a704 重新升级。
+不能绕过这些检查。a1001 revision 的升级测试从 a704 重新升级。
 
 
 ## 固定选样与暂时受阻继续（#104）
@@ -153,16 +153,16 @@ Feed parser v1 支持 RSS、Atom、RSS 1.0 RDF；拒绝 DOCTYPE/ENTITY、NUL宽�
 | excluded_deterministic | 重复、无稳定身份、明确身份冲突、查完无类别、明确非文章或类别冲突 | 保留独立原因后推进 |
 | blocked_pending | 身份/类别所需路线暂时失败、未核验或结果未知 | 保留原位次，其他刊继续 |
 
-取得在事务外进行，成员/排除/暂停事件在短事务原子追加。选样事件按同刊显式前驱形成历史，不能回写、跳位或改变既有成员。started未结算在显式选样继续中先追加 outcome_unknown 再新建执行，请求数保持未知。本节描述原选样阶段继续；#106 已补全路线 resume/replay、两个真实进程场景和新 parser 追加解释（见下文）。
+取得在事务外进行，成员/排除/暂停事件在短事务原子追加。选样事件按同刊显式前驱形成历史，不能回写、跳位或改变既有成员。started未结算在显式选样继续中先追加 outcome_unknown 再新建执行，请求数保持未知。本节描述原选样阶段继续；路线 resume/replay、两个真实进程场景和新 parser 追加解释的边界见下文。
 
-每个成员引用整份 Feed SHA、原位次、ID/DOI定位、来源取得和明确类别依据，不伪造 A6 单 item 字节；模型不持有摘要成败。validate_all 从冻结 Feed 重建候选，再用事件原路线材料重放同一选择逻辑，核对成员、来源、排除及历史，不以哈希一致代替语义核验。基本备份恢复包含这些引用与原字节，恢复后 list/show 不读仓库声明或原 Feed 路径、不获取执行锁、不自动继续。四刊实测、来源稳定性、摘要矩阵与完整阶段 A 均未由本票证明。
+每个成员引用整份 Feed SHA、原位次、ID/DOI定位、来源取得和明确类别依据，不伪造 A6 单 item 字节；模型不持有摘要成败。validate_all 从冻结 Feed 重建候选，再用事件原路线材料重放同一选择逻辑，核对成员、来源、排除及历史，不以哈希一致代替语义核验。基本备份恢复包含这些引用与原字节，恢复后 list/show 不读仓库声明或原 Feed 路径、不获取执行锁、不自动继续。本节选样证明不覆盖四刊实测、来源稳定性、摘要矩阵或完整阶段 A；摘要矩阵的独立离线边界见下文。
 
 ## 摘要矩阵与显式运行（#105）
 
 `paper-radar audit run --database DB --data-root ROOT --contact-email EMAIL [--count 5] [--json]`
 先验证临时联系邮箱，再原子提交计划，最后在同一计划执行锁中全轮串行选样和执行成员矩阵。
 整个计划唯一 N=5–10；邮箱只用于如实请求标识，不保存。`run_audit` 是相同公共服务入口，
-允许测试在外部 HTTP transport 注入合成响应；本票不执行 live。
+允许测试在外部 HTTP transport 注入合成响应；普通测试不执行 live。
 
 计划新增冻结 `audit-matrix-v1`、`audit-abstract-v1`、`audit-truncation-v1`。
 矩阵身份为 `(member_id, route, acquisition_strategy_version, channel)`，适用性来自冻结策略：
@@ -180,7 +180,7 @@ Feed parser v1 支持 RSS、Atom、RSS 1.0 RDF；拒绝 DOCTYPE/ENTITY、NUL宽�
 source_snapshot、payload SHA 和原 settled_at；矩阵解释不制造新取得时间，不为补分母重抓。
 仅存在 started 的路线显示 outcome_unknown，物理请求数未知；尚未执行的已交付路线显示
 not_attempted。未交付通道显示 channel_not_installed，单列其适用数量，不重试、不计失败，
-摘要覆盖分母为零/不适用；不存在“渲染 0/N 成功率”。#106 已交付显式全路线 resume/replay（见下文）。
+摘要覆盖分母为零/不适用；不存在“渲染 0/N 成功率”。显式全路线 resume/replay 的边界见下文。
 
 主摘要采用正向识别。出版者必须有已核验 DOI 身份，且只有已知主容器贡献题名和摘要：
 AIES/Wiley 为 class/id `abstract`、`article-section__abstract` 或 `abstractSection`；dqkx
@@ -241,7 +241,7 @@ B 按 #111 只消费主摘要，附加区块仍留 C 裁决；B 的 JGR 专门�
 backup/restore 固定副本重读原材料核对解释；重算行 ID/备份 SHA 也不能篡改候选长度或信号，不能将冻结 Feed/选样原取得替换为同路线另一次取得；没有原取得的路线只认确定的 matrix 请求键。
 已保存矩阵解释不能以自报 not_attempted 跳过重解析：该状态须与零请求、无原材料/候选及底层未尝试结算一致。校验从同一只读视图取得真实持久化行集合；来源已取得、解释尚未保存时的待解释投影仍可随部分计划备份恢复。
 
-显式恢复/历史重解释由 #106 交付；完整混合恢复与独立 A10 门禁继续由 #107/#108 收口；本票不宣称全量门禁通过。
+显式恢复/历史重解释、完整混合恢复与独立 A10 门禁均有对应工程边界；能力存在不代表某次全量门禁已通过，范围见下文。
 
 ## 显式恢复、历史回放与追加解释（#106）
 
@@ -345,18 +345,15 @@ validate_all 与备份固定副本核验声明原字节/替换链、全部审计
 
 恢复仅依赖 SQLite 原声明字节及批次内 ArtifactStore，保留 format 1 与自包含布局。源文件不存在时 check 独立报告 source_missing，list/show/replay 正常，不能误报 drift 或恢复损坏。旧 a704 批次仍由匹配程序 verify/restore，之后显式 upgrade 工作副本；当前程序不重写旧批次或直接接收旧 revision。恢复不安装 Pi/parser、不激活、不调用模型、不访问源目录、不探测来源、不自动继续；以后显式继续仍须代码/规则/策略核对。
 
-本票以真实 a704 五类非空历史、活跃 WAL 同库混合历史、原目录禁止访问/禁网、移根与独立进程验证；覆盖映射见 tests/a10-recovery-coverage.md。它不代表四刊 live、长期来源稳定、正文/Docling、渲染运行时或完整阶段 A 通过。#108 负责 scope 重绑和同次完整门禁，本票只记录行为子集。
+隔离恢复证明使用真实 a704 五类非空历史、活跃 WAL 同库混合历史、原目录禁止访问/禁网、移根与独立进程验证；覆盖映射见 tests/a10-recovery-coverage.md。它不代表四刊 live、长期来源稳定、正文/Docling、渲染运行时或完整阶段 A 通过。此处证明仅覆盖所列恢复子集，完整门禁以独立 A10 同次证据为准。
 
 ## #111 的分刊入口与后续责任（目标规格）
 
-审计前即固定 B 的 JGR 判据：首轮冻结选样 selected 至少 5 篇，以 A10 矩阵为分母，
-失败与受阻成员不剔除，每篇至少一条已交付路线取得非 `suspected_truncated` 的主区块摘要。
-任一不满足即不放行并交回用户；其他刊不足/失败不阻断 B，不改写历史，也不算 A 全部通过。
-这些规则未实现在当前审计结论中，complete 仍仅表示终态齐备，不自动授予 B 就绪。
+当前审计结论不实现 B 就绪判定，complete 仅表示终态齐备。入口、生产解析有效性与四刊稳定取得目标见[规格 §11 B](../../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)和[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界)；承接责任见[路线图 Audit/Source/Abstract](../roadmap.md#module-audit)。
 
-生产路径必须复用审计主区块/截断/HTTP 的同一版本化权威，或以 `reinterpret_audit`
-追加生产解析器解释、审查冻结 JGR 材料字段差异后再认为判据对生产有效；B 样本本身仍须
-经生产取得完整主摘要。C 按策略版本记录每周命中率，F 新通道以新策略补跑，不能改写旧失败。
-最迟 D 正式预热冻结与首个批次前逐刊满足稳定取得；四刊阈值及是否要求一律非截断仍待用户
-事先裁决，仍受阻时另裁决降级输入/披露，不能从 C 到达率估算中默认批准。
-B 的正文 fixture 例外不豁免摘要审计，见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。
+
+## 相关
+
+依据：[#100](https://github.com/MeteoBoy4/PaperRadar/issues/100)、[#101](https://github.com/MeteoBoy4/PaperRadar/issues/101)、[#102](https://github.com/MeteoBoy4/PaperRadar/issues/102)、[#103](https://github.com/MeteoBoy4/PaperRadar/issues/103)、[#104](https://github.com/MeteoBoy4/PaperRadar/issues/104)、[#105](https://github.com/MeteoBoy4/PaperRadar/issues/105)、[#106](https://github.com/MeteoBoy4/PaperRadar/issues/106)、[#107](https://github.com/MeteoBoy4/PaperRadar/issues/107)、[#108](https://github.com/MeteoBoy4/PaperRadar/issues/108)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+
+[规格](../../intent/draft.md#131-feed)；[ADR-0034](../adr/0034-separate-fixture-declarations-and-acquisition-audits.md)；[路线图承接](../roadmap.md#module-audit)。

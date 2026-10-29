@@ -329,7 +329,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "9f654b5eac5b48ef55fc2c03da2a63e43bc88eafbb442cfeef6753adddd59f30",
+        "36bf6604fc605241b42610c4d4bb07a86b448dbd8cfd98eaf18a67b9034fba49",
     ),
     (
         "scripts/a9_acceptance.py",
@@ -337,7 +337,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_scope.py",
-        "aebdd35bf65f5f2947454c65e3be487bd0dedb4f0b8fd58559c8ad7501e76101",
+        "1ff2bfa5392f7dcb215df57f1c26fac841bb263f136a4d20c4866a87ed7c9006",
     ),
     (
         "scripts/audit-verification-scope",
@@ -1346,26 +1346,26 @@ REQUIRED_SOURCE_MODULES = (
 )
 REQUIRED_FIXTURE_FILES = (
     ("GLOSSARY.md", "74381b5b1381c25abb69c460605093adc0352ce970c335a21baa84c91d853853"),
-    ("README.md", "6812f4dccea0d284ebde035db0da5c166e28923723d529f69f17177c54ed2bb7"),
+    ("README.md", "30150be8fa2e450f99bf6c8079515e719cf2b281023298bdfa9b585a8eea9a6f"),
     (
         "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
-        "68b1afc3eaa7c15b2c99a88d3638cd94d48cb1a0e405b15940043ba6f2bedb27",
+        "16f271441a41f7e0420f67bfa5bc401e278c4009932952942fd4df94ac5b9e34",
     ),
     (
         "docs/adr/0033-classify-journal-articles-from-explicit-source-types.md",
-        "e91e185690cbb7b9c6370d3497df73aa0f903d137c40d1f7b92229e64a20b796",
+        "5a9cb00568619922967b2d45baa15eaf5e16f1441ddd88994f39b9119b7a6672",
     ),
     (
         "docs/adr/0034-separate-fixture-declarations-and-acquisition-audits.md",
-        "78ebbb23770f7e9d2aed1d84a28e949576ea899cbbfe59bfc2896ba1565b97a3",
+        "2e941e46173afca8ab9a49f3a7ef1dc431ab82bb8e225296116498224191aeb1",
     ),
     (
         "docs/contracts/backup-restore.md",
-        "90e0c2aab31996c5581eeefe720880c6a6fb7569cd22d93f9e90c09867ecb01c",
+        "4617566cff18948f17ea442e8e563e3b64aa61730b1669803adcbaed68346de1",
     ),
     (
         "docs/contracts/fixture-audit.md",
-        "25c77bc9bfb7fba9bb14e2df472776a903b4be08f34919fb3df4f2df4771f483",
+        "4023661493a3f270f1368ac0966b8db0bb25e73c08f39b067ea61b5054692e38",
     ),
     (
         "docs/contracts/verification-status.md",
@@ -1389,7 +1389,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "intent/draft.md",
-        "ffe160c6a1b5268514963a11b7c0414cf671dd6cc201560dab440683bd141c3a",
+        "fe7f472436ab6e7ea1bd7d05fb4f5bff9d3367dd2e5a0a213977cd833a5a5d72",
     ),
     (
         "pyproject.toml",

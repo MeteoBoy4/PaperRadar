@@ -1,3 +1,5 @@
 # 允许在已揭晓的校准标签上重算
 
+状态：决策记录（原文未单列接受状态）；日期：原文未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0019-allow-calibration-recalculation-on-revealed-labels.md)；补充／部分取代：无另列关系；正文边界继续适用。
+
 若初始 32 篇盲评的 80% 精确率或 90% 防漏判门槛失败，PaperRadar 第一版允许根据揭晓结果调整 Screening 配置，并复用同一组人工标签重新产生建议和计算门槛；不强制再收集一组新的 32 篇留出样本。每轮重算必须只追加保存所依据的运行配置快照、校准语义基线、Screening/复用升级制品、指标分子分母和前后关系，并标记 `reused_revealed_labels`；若重算所用的用户可见输入与原批次冻结输入不同，再标记 `human_input_drift`。该结果只能说明系统贴合已参与调优的人工判断，不得称为独立验证；第一版仍允许用户显式据此开门。用新到论文另取 16 篇升级为独立证据的安排留到第二版，不成为 V1 隐性门禁。

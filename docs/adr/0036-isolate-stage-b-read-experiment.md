@@ -1,6 +1,8 @@
 # 将 B 的真实纵向实验隔离在独立数据根
 
-状态：已接受，2026-10-28。依据 [#111 Further Notes 与全部后续确认](https://github.com/MeteoBoy4/PaperRadar/issues/111)：允许固定 JGR 样本在四刊正文 fixture 完成前做受限 Read，选择独立实验数据根，结果不复用、不提升。此举提前验证真实接口，同时保持 A7 的同库预算身份与正式校准边界；代价是 C 必须导入跨库暴露排除清单，生产日后处理同论文要从头执行。
+状态：已接受；日期：2026-10-28；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0036-isolate-stage-b-read-experiment.md)；补充／部分取代：无另列关系；正文边界继续适用。
+
+原状态与裁决依据：已接受，2026-10-28。依据 [#111 Further Notes 与全部后续确认](https://github.com/MeteoBoy4/PaperRadar/issues/111)：允许固定 JGR 样本在四刊正文 fixture 完成前做受限 Read，选择独立实验数据根，结果不复用、不提升。此举提前验证真实接口，同时保持 A7 的同库预算身份与正式校准边界；代价是 C 必须导入跨库暴露排除清单，生产日后处理同论文要从头执行。
 
 ## 例外与隔离
 

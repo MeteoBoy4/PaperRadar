@@ -23,7 +23,7 @@ request_path、install_root；三个其他实际根为必填 keyword 参数。
 请求严格 YAML/JSON：拒绝未知键、重复键、锚点、合并、多文档、非有限数和任意命令/参数；
 整数格式版本严格为 1，布尔不算整数。证据文件相对请求文件所在目录解析，
 拒绝绝对路径、任何 `..` 组件和解析后落在该目录外的链接；合法子目录可用。
-这是本次对请求读取边界的补强；既有冻结证据仍按库内原字节回放，不重新读取源路径。
+这是请求读取边界的约束；既有冻结证据仍按库内原字节回放，不重新读取源路径。
 
 ```json
 {
@@ -207,8 +207,8 @@ supply_material/supply_record 只保留清单中的引用，不递归导出别�
 导出不检查 Pi 部署的 OS/arch/libc，但安全发布需要 Python/文件系统支持目录句柄及 dir_fd、
 O_DIRECTORY/O_NOFOLLOW/O_NONBLOCK、普通文件硬链接不覆盖发布与 fsync；缺少能力受控失败，
 不退回可被路径替换的普通路径写入。list/show 与库内历史读取不需要这些导出写入能力。
-2026-10-18 用户裁决：本次 A4 接受上述必要安全文件能力边界，保持能力不足时的安全拒绝。
-#36 已关闭；[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 已以 NOT_PLANNED 关闭。
+2026-10-18 用户裁决：A4 接受上述必要安全文件能力边界，保持能力不足时的安全拒绝。
+历史关闭状态见[路线图](../roadmap.md#已取消)。
 原生 Windows 安全导出当前无交付计划，未实现/未验证 Windows 后端，能力不足继续安全拒绝。
 这不是跨文件事务：运行中 I/O 故障或强杀可留下部分完整项；保留后重试补齐，不删除用户文件。
 `export_conflict/export_failed` 均给中文原因和下一步；CLI 成功0、失败2、中断130，配额消耗0。
@@ -478,7 +478,7 @@ probe/GC 仍可按登记身份定位树外锁与退役原位/trash，未复制�
 flock 无法识别另一个空闲副本的选择。此限制与同用户恶意文件替换不属于生产 OS 隔离承诺。
 
 CLI 参数或失败返回 2，中断返回 130；失败只输出身份、受控原因与新计划恢复步骤，不包含底层路径、秘密或程序输出。
-帮助完全本地且不创建文件、数据库、锁或计划。所有普通测试只用临时库与目录；本票未验证新的真实 Node/Pi、RPC、网络或用户安装根删除。
+帮助完全本地且不创建文件、数据库、锁或计划。所有普通测试只用临时库与目录；该离线范围未验证新的真实 Node/Pi、RPC、网络或用户安装根删除。
 
 
 ## A4 离线验收边界
@@ -493,9 +493,11 @@ CLI 参数或失败返回 2，中断返回 130；失败只输出身份、受控�
 
 ## B 首次生产供给目标（#111）
 
-B 首次供给目标为 Pi 1.4.0，复用 A8 当前唯一登记的离线协议档案；实际 Node/npm 版本、
-固定供给和安装/RPC 兼容由后续票验证，本票不选择新工具链或安装。A4 1.3.0 固定材料与
-机制 spike、A2 历史配置示例不改写，不能拼成生产兼容或 live/install_check 证明。
-未来升级仍按主方案 §7.8 新建适配器声明版本、供给身份及协议/行为证据并处理语义影响。
-生产启动器的 `/srv/pi-cwd` 和现场隔离要求见 [Pi RPC Contract](pi-rpc.md)，实验用途见
-[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；选择版本不代表这些前置已完成。
+当前固定供给工程不证明 B 首次 Pi 1.4.0 的安装/RPC 兼容、实际 Node/npm 选择或现场隔离通过。A4 1.3.0 固定材料、机制 spike 与 A2 示例保持历史身份，不能拼成生产兼容或 live/install_check 证明。首次供给、后续升级与隔离目标见[规格 §7.8](../../intent/draft.md#78-pi-固定版本供给)及[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界)，责任见[路线图 Live](../roadmap.md#module-live)。
+
+
+## 相关
+
+依据：[#36](https://github.com/MeteoBoy4/PaperRadar/issues/36)、[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+
+[规格](../../intent/draft.md#78-pi-固定版本供给)；[ADR-0029](../adr/0029-protect-installations-through-inherited-flock.md)；[路线图承接](../roadmap.md#module-live)。

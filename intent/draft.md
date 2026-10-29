@@ -113,8 +113,8 @@ Feed 条目只要最终解析为 journal-article 就进入 Screening，不在之
 AIES、JGR 与 QJRMS 为非中文（`false`）。这是来源级约定，不是按题名、字符集或语言检测逐篇判断；`false` 只
 表示非中文，不声称英文。表以首发期刊为键，同刊新增 Feed（如《大气科学》`latest.xml`）只沿用该刊取值，
 是否纳入发现范围仍按本节规则另行裁决。仅经人工入口加入、没有 Feed 归属的论文没有该事实，不得默认
-`false` 或登记 value 任务，直到另行裁决。登记仍要求显式严格 bool，自动派生与策略版本持久化由后续生产
-接线票交付，见 [ADR-0035](../docs/adr/0035-feed-derived-original-title-language-fact.md)。
+`false` 或登记 value 任务，直到另行裁决。登记仍要求显式严格 bool，自动派生与策略版本持久化由生产
+接线实现，见 [ADR-0035](../docs/adr/0035-feed-derived-original-title-language-fact.md)。
 
 在线优先、EarlyView 或优先发表属于正式期刊版本。正式期刊版本出现后优先成为论文的当前版本。
 
@@ -893,7 +893,7 @@ paper-radar review submit --queue [--limit N]
 
 304、限流和失败不创建响应体快照，但 task_attempts 保存状态、时间、查询键和重试资格。获取策略版本、通道、访问依据与凭据类别作为取得事实随每次来源取得保存（§4.8）；它们不改变本表既有实体边界，具体承载方式由实际消费者的实施票在既有审计/任务事实内确定，不另建第二套来源存储。
 
-模型任务与成功制品引用当次固定的适配器语义身份，并保留实际 Pi/adapter 版本与资源哈希、§7.8 已验证供给清单的身份、实际 Node 版本、provider/model、权威输出通道和脱敏完成/用量信息。供给清单及验证结果属于执行审计材料，大文件在文件系统保留，SQLite 保存身份、哈希、引用与验证事实；它们不代替适配器语义材料。Pi session/JSONL 不成为第二个事实源。上述逻辑模型是目标，后续若需调整物理持久化必须通过 migration，本次不修改用户数据库或既有快照格式。
+模型任务与成功制品引用当次固定的适配器语义身份，并保留实际 Pi/adapter 版本与资源哈希、§7.8 已验证供给清单的身份、实际 Node 版本、provider/model、权威输出通道和脱敏完成/用量信息。供给清单及验证结果属于执行审计材料，大文件在文件系统保留，SQLite 保存身份、哈希、引用与验证事实；它们不代替适配器语义材料。Pi session/JSONL 不成为第二个事实源。上述逻辑模型是目标，后续若需调整物理持久化必须通过 migration。
 
 ### 5.3 Screening 与校准
 
@@ -1027,32 +1027,21 @@ logs/
 
 `settings.yaml` 只选择当前 Profile、主题、期刊信誉、models 整份版本化文件、分槽 adapter、复用升级参数、正文提取配置、Read 分块配置、提示词和契约版本；已登记的带版本内容文件不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
 
-A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约；A2-03 增加 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪；A2-04 增加 escalation、reuse 提示词、reuse-assessment 和 decision-reasons 契约，判断 reuse/suggestion 配置就绪，不要求 PDF、正文解析或 value 输出；A2-05 增加 extraction 的受控工具链、按阶段模型文件身份、有效解析策略与 normalization v1，单独判断 extraction 配置完整性，不安装解析器、下载模型或执行 PDF 解析。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
+配置包括 Profile 纵向路径，以及 models、boundary 提示词及 boundary 冻结契约；包括 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪；包括 escalation、reuse 提示词、reuse-assessment 和 decision-reasons 契约，判断 reuse/suggestion 配置就绪，不要求 PDF、正文解析或 value 输出；包括 extraction 的受控工具链、按阶段模型文件身份、有效解析策略与 normalization v1，单独判断 extraction 配置完整性，不安装解析器、下载模型或执行 PDF 解析。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。各配置切片的历史范围见[路线图](../docs/roadmap.md#配置切片与底座验收范围)。
 
-A2-06（#21）新增 `settings.read` 选择 `config/read/<version>.yaml`，只保存
+配置支持（依据 #21） `settings.read` 选择 `config/read/<version>.yaml`，只保存
 必填的声明 `version` 与代码受控 `chunking_version: v1`；独立算法无字节登记。
 `prompts.reading` 绑定 `prompts/reading/<version>.md` 的精确 UTF-8 字节，
 使用封闭 `prompt/reading` 逻辑名，与 Pi 系统 Prompt 分开登记。
 models.reading、Read YAML 与提示词沿用原子版本保护和 SQLite 历史回放。
-该历史切片未选择权威 Read 契约，因此保留 `read_contract` 及模型、提示词、适配器占位与 chunking 缺项。
-#97 已开放显式 `settings.contracts.read: v1`，按既有材料规则检查、登记和回放 #93 的权威
+#21 历史配置切片的快照保持原身份与原有 `read_contract` 及模型、提示词、适配器占位与 chunking 缺项。
+配置支持显式（依据 #97） `settings.contracts.read: v1`，按既有材料规则检查、登记和回放 #93 的权威
 Read 契约；完整材料可配置 ready，未选/null 的旧快照身份与缺项不变。
 不执行分块或模型调用。输出语言和正文制品仍由后续
-阶段输入指纹组合，不进入运行配置快照。#23 已实现单快照六投影与校准基线重建，
+阶段输入指纹组合，不进入运行配置快照。单快照支持六投影与校准基线重建（依据 #23），
 Read 配置变化只影响 read 投影；公共服务与只读比较见 `docs/contracts/config-projections.md`。
 
-A2-07–A2-09 已交付期刊配置冻结、六投影/基线只读比较和配置事务并发中断恢复；
-#26 的 adapter 配置及 #27 的历史快照发现也纳入完整配置验收。#25 在同一次完整
-离线执行中追加独立 A2 结论，与 #12、A1、A2-01 共用 run_id 和证据哈希；迁移
-revision 来自真实临时验收库，格式版本与固定合成材料逐项记录，正文与凭据不进入
-验收摘要。固定覆盖和未验收项见 `docs/verification/offline-evidence.md`。
-此结论只证明配置切片，不代表完整阶段 A、正式校准、阶段 B 或 live 验收通过。
-#29/#35 在同次固定计划中另追加 A3 存储/恢复结论，绑定同次基础证据、A1、完整 A2、
-实际执行回执、运行身份、真实临时库 revision、版本和固定材料哈希；缺失、少执行、
-skip/deselect/collect-only、漂移或中断不能借历史成功通过。#36/#45 同次另追加必需 A4
-供给生命周期结论，绑定 A1、完整 A2、A3、真实格式和固定执行范围。六份主要文件共享 run_id，
-pytest 回执另行绑定；A2-01 仍为可选历史组。A3 不声明论文事实、指纹、任务/可见性、
-报告重建、Pi/Docling、真实来源或 NAS 已验收，stage_a_verified/live_verified 恒 false。
+底座验收的既有范围与绑定规则见[路线图](../docs/roadmap.md#配置切片与底座验收范围)及[离线证据](../docs/verification/offline-evidence.md)。
 
 `tools/pi/` 保存 §7.8 的固定供给材料，清单、官方锁文件、release 元数据和校验依据提交版本控制；`.tools/pi/` 是由它们生成的项目专属安装目录，安装树、staging 和缓存不提交 Git。`supply_id` 是供给清单规范载荷的哈希，包含固定材料哈希、工具链、平台、安装参数、预期安装树校验身份，以及 §7.8 要求的升级行为影响判定与证据引用（D5）；不由目录路径或 Pi 版本号单独确定。项目专属缓存可以作为另一安装位置，但必须保持相同的固定身份与独立生命周期；这些目录不是 settings 的新增配置槽。
 
@@ -1251,7 +1240,7 @@ Screening 与 reuse_assessment 可以由用户显式选择同一模型，但仍�
 
 V1 首次接入使用 `prompt_only`：提示词要求最终纯 JSON 文本，Python 严格解析并权威校验；Pi 外层 RPC JSONL 不代表模型具有原生严格 `json_schema` 能力。专用提交工具是已经验证可行的备用升级，两种能力可以共存于适配器能力层，按阶段版本化配置显式选择；每次运行固定一个权威通道，失败或无效输出不触发通道切换，也不把另一通道的结果当作兜底。工具参数带 Schema 不等于 provider 原生 `json_schema`。
 
-上例是目标选择示意，不授权原地修改已经登记的 `models-v1`；既有协议枚举及当前配置编译契约见 `docs/contracts/runtime-config.md`，它们保留已交付范围。Pi 运行策略的版本化配置、三槽选择与 models 协议一致性检查已由 #26 的配置切片开放，执行映射仍待 RPC 任务；提交工具的显式协议名称及配置 Contract 需在启用该升级前另行定义并同步权威 Schema、文档和必要 migration，不能复用 `json_schema` 或 `json_object` 隐藏其真实通道。V1 默认验收不要求启用提交工具。
+上例是目标选择示意，不授权原地修改已经登记的 `models-v1`；既有协议枚举及当前配置编译契约见 `docs/contracts/runtime-config.md`。Pi 运行策略的版本化配置、三槽选择与 models 协议一致性检查由配置编译提供（依据 #26），执行映射由 RPC 边界实现；提交工具的显式协议名称及配置 Contract 需在启用该升级前另行定义并同步权威 Schema、文档和必要 migration，不能复用 `json_schema` 或 `json_object` 隐藏其真实通道。V1 默认验收不要求启用提交工具。
 
 现有 `temperature`、`top_p` 等模型参数须在接入时明确映射到 Pi/provider 的实际能力；不能静默忽略、改写或用个人默认设置代替。所选参数或协议无法实现时，执行就绪检查给出具体不支持原因，不将已有的配置完整性判断解释为真实调用已就绪。
 
@@ -1275,7 +1264,7 @@ V1 首次接入使用 `prompt_only`：提示词要求最终纯 JSON 文本，Pyt
 接入必须同时满足：
 
 1. 每个阶段、每次 attempt 使用独立临时会话；长驻 RPC 子进程在调用前明确建立新会话或重建进程，不能继承其他论文、阶段或 attempt 的消息。Read map 各块与 reduce 也各自隔离；所需候选与 evidence 由 Python 显式传入。修正重试只接收同一冻结阶段输入与脱敏校验原因。
-2. 固定 provider/model、有效提示词、Contract、Profile、工具声明及运行策略；禁用自动发现的 context、skills、prompts、extensions、MCP 和个人设置对运行的隐式影响。Pi 必需的系统提示词与显式资源属于可审计配置；Pi 1.4.0 强制追加 cwd 段，有效指令为登记声明指令加该段，例外严格限于 §2.4 已裁决常量。A8 只验 system 补丁形状与 preamble；#111 已确认 cwd 白名单为 `/srv/pi-cwd`，生产启动器须显式传入并实测无资源与实际隔离。无法固定、隔离或匹配实际模型时拒绝运行。
+2. 固定 provider/model、有效提示词、Contract、Profile、工具声明及运行策略；禁用自动发现的 context、skills、prompts、extensions、MCP 和个人设置对运行的隐式影响。Pi 必需的系统提示词与显式资源属于可审计配置；Pi 1.4.0 强制追加 cwd 段，有效指令为登记声明指令加该段，例外严格限于 §2.4 已裁决常量。#111 已确认 cwd 白名单为 `/srv/pi-cwd`，生产启动器须显式传入并实测无资源与实际隔离。无法固定、隔离或匹配实际模型时拒绝运行。
 3. 关闭 Pi agent/provider 隐含 retry、自动 compaction/summarization 及额外模型确认回合。Python 按 §8.3 统一领取尝试预算，一次 attempt 最多一次模型调用；工具循环不能隐藏额外调用。Read map/reduce 仍是既定的显式分块流程，各个输入分别受预算限制，不由 Pi 自主拆分。
 4. RPC `prompt` ACK 只表示命令接收；必须消费到 `agent_settled`，检查最终消息 `stopReason`、实际 provider/model、所选通道、超时、取消与子进程异常。正常完成且仅有一个有效权威结果，再通过严格 JSON 解析、Schema 和业务校验，才形成成功；错误、拒绝、截断、缺失/重复提交或无效内容均失败。超时、取消或进程退出不得提交部分输出，异常进程退出后重建隔离环境，不能阻断同批无关论文。
 5. `prompt_only` 只接收最终 assistant 的完整纯 JSON 文本；围栏、截断补全、类型强转或从解释文本中拼接结果都不能修复成成功。提交工具升级只接收唯一显式工具的参数，经 Python 权威校验成功后返回 validated artifact 并终结该 run；失败、未调用或参数无效时按同一预算处理，不能另取最终文本。
@@ -1305,14 +1294,12 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 
 **供给与升级决策（2026-10-18）**：
 
-本次 #36 A4 的平台边界经用户裁决收口：list/show 与库内历史读取、隔离恢复查询不依赖
+#36 A4 的平台边界按用户裁决：list/show 与库内历史读取、隔离恢复查询不依赖
 本机 Pi/Node 或部署平台；export 仍须具备目录句柄、nofollow、不覆盖发布与 fsync 等必要
-安全文件能力，能力不足继续安全拒绝。#36 已关闭；
-[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 已以 NOT_PLANNED 关闭，Windows 安全导出
-当前无交付计划，未实现/未验证 Windows 后端。具体能力边界见
-[Pi 供给 Contract](../docs/contracts/pi-supply.md#固定材料导出)。
+安全文件能力，能力不足继续安全拒绝。Windows 后端的状态见[路线图](../docs/roadmap.md#已取消)，
+具体能力边界见[Pi 供给 Contract](../docs/contracts/pi-supply.md#固定材料导出)。
 
-以下为用户对独立管理 Pi 升级问题的裁决（D1–D5），与本节前文同等有效；与此前任何可被读作相反含义的表述冲突时，以本节为准。这些决策仍是目标规格，不表示供给命令、安装器、RPC 执行器或验收已实现。
+以下为用户对独立管理 Pi 升级问题的裁决（D1–D5），与本节前文同等有效；与此前任何可被读作相反含义的表述冲突时，以本节为准。
 
 1. **D1：每次升级都新建适配器声明版本。** 不允许“仅审计版本升级”复用原语义材料并原地改写 `pi_version`：Pi 版本变化必须创建新的 `adapters/<version>.yaml`，经公共 check/compile 登记并更新三槽 selector；已登记声明同键换字节由版本登记拒绝。语义载荷是否变化仍按实际行为判断，纯传输升级不改变阶段投影与校准基线，但不得据此放宽本条。第二版若引入受控迁移，须另行修订本决策与适配器配置契约。
 2. **D2：不承诺脱网重建执行环境。** V1 不把预存 npm 包与 Node 制品作为交付或验收要求，也不提供“离线安装 Pi”的能力承诺；供给、doctor 与恢复流程统一按“需要联网的显式供给”表述，材料不齐时报告缺项，不隐式联网补齐。历史事实、配置与报告的脱网回放仍不依赖 Pi 安装（§9.2）。
@@ -1524,8 +1511,7 @@ A3 批次副本在 staging 中转为 journal_mode=DELETE 的独立单文件，�
 才哈希；全部验证后同文件系统原子不覆盖发布。完成批次目录名为 UTC 时间加 8 位
 密码学随机 hex，verify 只接受完成批次，拒绝任何清单外条目。配置材料原字节随数据库
 保留；config/ 树、settings.yaml、未登记草稿、contracts/ 导出目录与 reports/logs 不在
-A3 批次内，配置文件本身请用 git 保管。A3 不建 backup_runs，报告重建与任务续跑单列
-未验收；NAS 的更广保管范围按下一节另行实施。详见 docs/contracts/backup-restore.md。
+A3 批次内，配置文件本身请用 git 保管。A3 批次不建 backup_runs；NAS 的更广保管范围按下一节实施。详见 docs/contracts/backup-restore.md。
 
 数据库快照与所引用永久制品作为同一备份批次记录。复制过程中产生的新事实属于下一批，不用伪造跨文件系统事务。
 
@@ -1535,7 +1521,7 @@ A3 批次内，配置文件本身请用 git 保管。A3 不建 backup_runs，报
 目标被并发写成非空时拒绝，失败只尽力清理本次 staging。副本保持原 DELETE 字节，
 原数据与配置不可访问、移动恢复根后仍须可回放旧 ID、原字节、时间、六投影和基线，
 并读取全部制品；要作为工作库另显式 db upgrade 恢复 WAL。恢复不激活配置、不续跑
-任务，不自动改变门禁；报告重建与 NAS 仍单列未验收。
+任务，不自动改变门禁。
 
 恢复验证的既有证据范围见[路线图](../docs/roadmap.md#read-恢复证据范围)。
 
@@ -1658,7 +1644,7 @@ src/paper_radar/
 - 外部适配器不直接更新 papers 当前事实，必须先形成来源观察并经仲裁；
 - sources/ 下各获取通道（普通 HTTP、browser_render、官方 API、仓储）只产生取得事实与来源材料；获取策略版本、通道、访问依据与凭据类别随取得事实记录（ADR-0032）；browser_render 不实现验证码求解、指纹伪造或代理轮换。
 
-SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic、Pi RPC adapter、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx 和 Docling slim；Feed 解析初版采用标准库 XML（拒绝 DOCTYPE/ENTITY）与 html.parser，feedparser 仅按需评估；基础依赖版本在 A 锁定并进入验收证据；Docling extra 的实际 slim/CPU 组合、lockfile、模型取得与 Python `>=3.12,<3.15` 兼容面由 B 前置独立票验证，可与 A 窄收口并行探测。不兼容须显式限定支持范围或提出新工具链版本，不改写旧清单。Pi 是按 §7.8 固定供给、由明确 Node 入口启动的本机子进程，不是 Python 包；不为接入它另建 Node 业务服务，Python 依赖仍统一由 uv 与已提交 lockfile 管理。真实模型调用前 doctor 检查已供给 Pi/Node 的版本与安装身份、固定模型与认证可用性及隔离策略，缺失时报告具体配置或安装原因，不执行自动供给；`--help` 不探测 Pi、模型或凭证。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。受控浏览器渲染同样以可选依赖（如 `paper-radar[render]`，Playwright 及固定浏览器制品）声明，未启用时公开页面只走普通 HTTP 通道。
+SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic、Pi RPC adapter、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx 和 Docling slim；Feed 解析初版采用标准库 XML（拒绝 DOCTYPE/ENTITY）与 html.parser，feedparser 仅按需评估；基础依赖版本在 A 锁定并进入验收证据；Docling extra 的实际 slim/CPU 组合、lockfile、模型取得与 Python `>=3.12,<3.15` 兼容面由 B 前置独立票验证。不兼容须显式限定支持范围或提出新工具链版本，不改写旧清单。Pi 是按 §7.8 固定供给、由明确 Node 入口启动的本机子进程，不是 Python 包；不为接入它另建 Node 业务服务，Python 依赖仍统一由 uv 与已提交 lockfile 管理。真实模型调用前 doctor 检查已供给 Pi/Node 的版本与安装身份、固定模型与认证可用性及隔离策略，缺失时报告具体配置或安装原因，不执行自动供给；`--help` 不探测 Pi、模型或凭证。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。受控浏览器渲染同样以可选依赖（如 `paper-radar[render]`，Playwright 及固定浏览器制品）声明，未启用时公开页面只走普通 HTTP 通道。
 
 ## 十一、九阶段实施与验收
 
@@ -1667,12 +1653,12 @@ B 的显式入口见下文；A 首轮审计不足可移交 C/F 补跑，A 仍未
 
 依赖图、模块状态与当前前沿见[路线图](../docs/roadmap.md#模块图)。
 
-Docling 探测、Pi 离线启动器、A 窄收口可以并行；日志须先于首次真实生产执行，基础 doctor
+日志须先于首次真实生产执行，基础 doctor
 须先于 Pi readiness doctor，eligibility/visibility 纯规则须先于 B 首个消费者。
 联网审计需邮箱、网络和独立审计库/制品根；任何发送 prompt 的 Pi live 探测都需已确认 cwd
 的现场隔离、外发确认、固定 provider/model 与认证。真实 Screening 再要求真实 Profile。
-C 开始长期生产根积累，F 与积累并行；四刊正文/摘录 fixture 和摘要前置齐备后才可进入
-D 正式预热冻结与首个校准批次。E/G 可在 D 工程完成后并行，自动 Read 仍受 D 运行门禁控制。
+C 开始长期生产根积累；四刊正文/摘录 fixture 和摘要前置齐备后才可进入
+D 正式预热冻结与首个校准批次。E/G 须在 D 工程完成后开始，自动 Read 仍受 D 运行门禁控制。
 
 每阶段保留三类证据：
 
@@ -1796,7 +1782,7 @@ DoD：
 
 ### 阶段 C：四刊发现、身份、版本与来源
 
-A6 已由 #69–#75 实现并注册离线论文事实底座，历史语义裁决与 #68 文档同步见 ADR-0030；真实来源、parser/live 与完整阶段 A 仍未验收。首次真实 Feed 导入前必须完成强冲突观察持久化：B 先交付 JGR 所需切片，C 扩展四刊；parser 每次升级前必须固定样本回归并声明关键字段减少。A6 的 Feed 唯一身份权威是数据库规范 URL；未来接入配置需明确与数据库对齐，不得建立第二个身份权威。
+首次真实 Feed 导入前必须完成强冲突观察持久化：B 先交付 JGR 所需切片，C 扩展四刊；parser 每次升级前必须固定样本回归并声明关键字段减少。A6 的 Feed 唯一身份权威是数据库规范 URL；未来接入配置需明确与数据库对齐，不得建立第二个身份权威。
 
 实施：
 
@@ -2314,7 +2300,7 @@ DoD：
 
 ### 13.1 Feed
 
-A10 的声明唯一来源为 `fixtures/a10/`，格式与只读/登记命令见 [fixture 与摘要审计 Contract](../docs/contracts/fixture-audit.md)。历史声明、合成向量和实际取得分开；HTTP 条件头可空，304 必须引用已保留响应。阶段 A 只审计已交付通道；A10 只执行 http，渲染通道待阶段 F 以新策略版本补跑。doiRA、类别依据与主摘要区块采用 §4.3 的裁决，真实预检不能冒充本轮审计。
+A10 的声明唯一来源为 `fixtures/a10/`，格式与只读/登记命令见 [fixture 与摘要审计 Contract](../docs/contracts/fixture-audit.md)。历史声明、合成向量和实际取得分开；HTTP 条件头可空，304 必须引用已保留响应。阶段 A 只审计已交付通道；渲染通道在阶段 F 以新策略版本补跑。doiRA、类别依据与主摘要区块采用 §4.3 的裁决，真实预检不能冒充本轮审计。
 
 - AIES：AMETSOC RSS；
 - JGR: Atmospheres：Wiley/AGU eTOC RSS；
@@ -2338,7 +2324,7 @@ A10 的声明唯一来源为 `fixtures/a10/`，格式与只读/登记命令见 [
 |《大气科学》|`10.3878/j.issn.1006-9895.2604.26034`|出版者完整提供 78 条，Crossref 无记录|
 |《大气科学》|`10.3878/j.issn.1006-9895.2512.24134`|出版者完整提供 32 条，Crossref 无记录|
 
-后续注记（2026-10-25 只读预检）：两篇《大气科学》DOI 的 doiRA 返回 ISTIC，对 V1 注册机构链为 `agency_unsupported`；这不改写上表 2026-09-13 的“Crossref 无记录”历史，也不是本票实测。
+相关只读预检的历史边界见[路线图](../docs/roadmap.md#参考文献预检状态)。
 
 另外，Wiley PDF 的 403 代表访问受阻，不代表论文不是开放获取；TDM 通道下先用固定已知 OA DOI 探测区分 token 失效与单篇无权限（§4.8）。
 
@@ -2430,3 +2416,64 @@ doctor 分别报告：
 若 80% 精确率或 90% 防漏判指标不达标，可以依据已揭晓结果调整模型、提示词、Research Profile、输出契约、升级参数、Screening/reuse 适配器语义或建议规则，并复用原 32 篇人工标签重新计算。每次调整先创建新版本并编译相应运行配置快照与校准语义基线；检测到可能影响校准语义的差异时生成待分级变更，用户附理由分类为 minor 或 major 后，再引用该快照与基线生成新的 Screening/复用升级制品、建议和 calibration evaluation。配置编译本身不分类变更、不恢复门禁；仅重命名普通声明版本或修改 YAML 注释且实际语义不变时，不产生校准相关差异，受控算法/策略语义版本不能按普通声明标签忽略。旧轮次不可覆盖。重算通过后，第一版允许用户据此开启自动精读，但所有状态页、报告和最终验收都必须明确标记：该结果拟合并复用了已经揭晓的标签，不是新论文上的独立验证；若重算使用的用户可见输入与原批次冻结输入不同，还必须额外显示 human_input_drift。
 
 minor 变更继承既有门禁状态，但不能绕过阶段输入指纹；自动重算只覆盖 waiting_review、waiting_calibration 和尚无生效决定的论文，并在分级前显示篇数与按当前配额估算的耗时。已有人工决定继续生效并标记依据旧 Profile，既有正式分析不因 Profile 演进自动过期或重跑。major 变更立即关闭既有门禁，只有同标签重算或新盲评校准通过、并由用户针对新 evaluation 再次显式启用后才能开启；系统不静默恢复旧 enable。任何可能影响校准语义的变化在用户完成分级前只暂停自动精读，不由系统根据差异大小自行归类。
+
+## 生产接线的补充准入约束
+
+
+### Pi 生产启动器准入
+
+生产启动器票必须在任何真实调用前完成以下准入，并逐项按 DERIVED 编号复核：
+
+- 复用相同管道会话和协议内核；启动描述由上层显式构造命令、env、cwd、系统指令，
+  没有默认值、不继承宿主环境；每并发会话独立 PI_CODING_AGENT_DIR 或整体串行化。
+- 启动前在隔离 PI_CODING_AGENT_DIR/settings.json 预写 cacheWarming="off" 与
+  retry.provider.maxRetries=0；两个 RPC 开关会写全局设置，ACK 不证明写入/隔离。
+  没观察到预热不等于关闭预热（其触发另有 cache TTL/节省条件）。
+- --offline --no-session -ne -ns -np -nc -nt，PI_SKIP_VERSION_CHECK=1、PI_TELEMETRY=0；
+  验证禁止自动网络活动（目录刷新、版本检查、遥测、缓存预热、隐含 provider retry）。
+- 通过 --system-prompt 精确传入声明系统指令；防止参数被当成文件路径。确认无默认
+  prompt、个人设置、项目资源、skills/extensions/MCP、AGENTS.md/CLAUDE.md 等注入。
+- #111 已确认本机 cwd 为 `/srv/pi-cwd`，无默认值显式传入、白名单仅此值；该目录无 .pi/、AGENTS.md、CLAUDE.md 或
+  其他项目资源，验证本机路径只在已裁决常量例外内。DERIVED-01/02/03/05/06 必须实测。
+- 在领取任何任务前预检固定供给、模型/凭据可用；验收参数映射、单次模型请求、日期
+  别名政策、模型能力、实际用量/停止与事件（DERIVED-04/07/08/09/10），落实 OS 隔离。
+
+### B 首次 Pi 生产接线
+
+首次生产供给目标为 1.4.0，复用当前唯一登记的离线协议档案，仍须实际安装与 RPC
+兼容验证；DERIVED 假设、参数映射、隔离、隐含调用抑制及完成判据不得假称已 live 验证。
+A4 1.3.0 spike 和 A2 历史配置示例保持原字节；未来升级按主方案 §7.8 新建适配器声明、
+供给身份、协议/行为证据并处理语义变更，不永久锁死 V1。
+
+B 前置交付生产启动器、权限/资源构造、真实执行成功来源、实际用量、恢复与执行前预检，
+复用 A7/A8 权威；不能把真实候选塞入 test 接收器，也不能把真实来源等同于正常消费资格。
+`/srv/pi-cwd` 已确认；缺失/不符/现场隔离未验收时 Pi readiness 阻断，首次发送 prompt
+的 live 探测也受此限。实验根及证据边界见 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md)。
+
+### B 最小 Read 与正文消费
+
+B 最小 Read 票须交付 Read StageInput、任务/预算/租约/retry、analysis 持久化与恢复，
+决定证据/数值规则身份归属；仅改变后处理警告不应未经分析触发模型重跑。
+parser/canonical/normalize/evidence 及源字符持久身份必须先闭合，Read 仍通过 [A9 Read 权威验证器](../docs/contracts/read-validation.md#当前交付与命名)接收。
+超出单次安全输入预算时先拒绝，或前移所需完整分块能力，不截断正文或复用 Screening 会话。
+实验根、逐文档质量与不复用/不提升要求见 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md)；F 扩展四刊正文供给，G 扩展通用长文 Read。
+
+### B Screening 产品接线
+
+任务 Contract 的“不交付 CLI”继续描述 A7 历史范围；B 首张真实任务票须同时交付
+`screening failures/retry`、`paper trace` 组合及中文 help/退出码/恢复验证，不能继续推到 H。
+B 编排首次执行 `out_of_scope` 停止 value，A7 服务层的独立阶段事实不因此改写。
+
+语言事实接线使用数据库 Feed 身份与发现关系确定受支持期刊，再应用 ADR-0035 v1，
+保存来源及策略版本；同刊多个 Feed 一致，不建立第二个 Feed 权威或 first-seen 规则。
+跨刊冲突影响 bool 时保留冲突并拒绝新不确定登记，无归属人工 Paper 仍不得登记 value；
+冻结预算/retry 继承原值，策略不进 A5 指纹，不可借换策略重置预算。
+
+A 先交 eligibility/visibility 纯规则及合成事实测试，B 的最低元数据、人工决定、PDF/Read
+资格和 show/trace/最小日报首次消费；C 接保留器与未揭晓事实。真实执行成功来源、用量、
+恢复及前置预检复用 A7/A8 接收权威，须经 B 生产接线验收。
+
+B 全链置于独立实验数据根，普通生产命令拒绝该根；不改同库预算身份、不添加用途维度。
+实验结果不复用、不提升，生产以后同论文从正常路径使用独立预算；样本暴露清单跨库保留，
+见 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md)。窄命令显式单篇，不扫描自动队列；任何自动领取首次引入即须
+持久每日配额，不能因手动启动 run-due 或尚无 timer 而豁免。

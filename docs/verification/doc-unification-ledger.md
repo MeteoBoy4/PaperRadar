@@ -11,320 +11,316 @@
 
 ## 迁移单元
 
-以下记录已实施单元；其余规格、ADR、Contract、README 迁移仍在进行，不构成全票完成证明。
+以下按源文件与基线位置排序；M 编号保持登记身份，不表示排序。后续整理单元同时保留中间原文，基线删除行由机械检查穷举覆盖。空白新文表示已合并到去处或状态外移；相应条目给出保留依据。
 
-### M001
+### M123
 
-源：`intent/draft.md`，基线行 1729。处置：移动。
+源：`README.md`，基线位置 3。处置：改写。
 
-去处：[docs/roadmap.md#模块图](../../docs/roadmap.md#模块图)。
+去处：[README.md#paperradar](../../README.md#paperradar)。
 
 原文（逐字）：
 
 ````text
-```mermaid
-flowchart TD
-  J[JGR 判据固定] --> Audit[四刊首轮 HTTP 审计]
-  Audit --> Source[JGR 达标或用户新裁决]
-  A[A 窄收口：日志、doctor、纯规则] --> B[B 实验根内纵向闭环]
-  Pi[Pi 离线启动器、权限资源、生产成功来源] --> Live[固定 1.4.0 安装与 RPC 实测]
-  Cwd["/srv/pi-cwd 已确认；现场隔离验收"] --> Live
-  Live --> B
-  Extra[Docling extra 安装与兼容探测] --> Body[正文生产切片、Read 身份与预算]
-  Body --> B
-  Feed[强冲突持久化、JGR 元数据与语言事实] --> B
-  Source --> B
-  B --> C[C 生产根四刊积累、保留器与可见性]
-  C --> F[F 全通道、四刊正文与摘录 fixture]
-  C --> Abstract[四刊摘要稳定证据及判据裁决]
-  F --> Abstract
-  F --> D[D reuse 执行与正式校准]
-  Abstract --> D
-  D --> E[E 参考文献]
-  D --> G[G 长文 Read 与队列]
-  E --> H[H 完整日报与复核]
-  G --> H
-  H --> I[I 最终验收]
-```
+PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库交付了工程入口、
 ````
 
 新文：
 
 ````text
-依赖图、模块状态与当前前沿见[路线图](../docs/roadmap.md#模块图)。
+PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库提供工程入口、
 ````
 
-细节核对：原图 19 节点、21 条边在路线图保留；仅新增状态着色。
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
 
-### M002
+### M124
 
-源：`intent/draft.md`，基线行 1823。处置：状态外移。
+源：`README.md`，基线位置 6。处置：改写。
 
-去处：[docs/roadmap.md#收口安排](../../docs/roadmap.md#收口安排)。
+去处：[README.md#paperradar](../../README.md#paperradar)。
 
 原文（逐字）：
 
 ````text
-[阶段 A 收口清单](../docs/verification/stage-a-closure.md) 保留上述原实施/测试/DoD 的稳定序号、
-历史证据与后续责任。A1–A10 通过不等于完整 A 通过。本 Markdown 是过渡清单；A 真正收口时
-由收口实现票产出机器可读阶段结论，I 聚合。首张 A 收口实现票须确定新增能力 required 组与
-全量 pytest 的验收登记规则，后续沿用；本票不新增组、测试分母或通过字段。
+只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
+现已开放四种单文件制品与完整 extraction 集合的不可变内容寻址存储和完整校验回读。
+已提供四类来源仲裁、人工字段修正、Feed 登记与发现的本地事实服务和只读 `paper show/trace`；
+另已交付 boundary/value 的冻结任务、有限尝试、租约、成功接收、retry 与独立离线验收。
 ````
 
 新文：
 
 ````text
-A 真正收口时由收口实现票产出机器可读阶段结论，I 聚合。收口责任与验收登记安排见
-[路线图](../docs/roadmap.md#收口安排)。
+只读漂移检查；另提供 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
+提供四种单文件制品与完整 extraction 集合的不可变内容寻址存储和完整校验回读。
+提供四类来源仲裁、人工字段修正、Feed 登记与发现的本地事实服务和只读 `paper show/trace`；
+另提供 boundary/value 的冻结任务、有限尝试、租约、成功接收、retry 与独立离线验收。
 ````
 
-细节核对：机器可读结论与 I 聚合要求保留规格；过渡安排移入路线图，将“上述”明确为“规格 §11 A”、“本 Markdown”明确为“该收口清单”、“本票”明确为“#111”，防止迁移改变指代；数字、情态、顺序和全部登记约束不变。
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
 
-### M003
+### M035
 
-源：`docs/contracts/read-validation.md`，基线行 8。处置：改写。
+源：`README.md`，基线位置 12。处置：改写。
 
 去处：[docs/contracts/read-validation.md#当前交付与命名](../../docs/contracts/read-validation.md#当前交付与命名)。
 
 原文（逐字）：
 
 ````text
-#93 已交付 `paper_radar.reading` 的权威 Pydantic 结构及 Read 自有七类价值词汇，
-经现有 contracts 服务生成、导出和只读检查。仅通过 Schema 不表示已通过证据业务接收。
-#94 已交付原始字节与可靠文本上下文的纯验证、数值 v1 和警告三视图。
-#95 已接通表格、公式区域源字符与不可靠字符的字段矩阵；#96 已交付 single/reduce
-模式与同正文 map 证据允许集合检查；#97 已交付显式 Read 配置准入与历史比较。
-#98 已验证历史配置与候选原字节的非空隔离恢复，固定上下文由测试常量重建；
-独立必需 A9、同次可信终态与固定范围由 #99 交付。
-
+#93 已冻结 [Read 权威结构](docs/contracts/read-validation.md)，包含全部 18 个必填字段、
+严格独立评分与 Read 自有价值词汇。#94 已交付原始 bytes 与只读可靠文本上下文的
+公共校验、逐条数值诊断和带来源的警告视图；#95 已按字段接通受限证据矩阵，
+#96 已交付同正文 reduce 允许集合，#97 已交付显式配置准入。
+#98 已验证两份历史配置与四份候选原始字节的非空隔离恢复；固定消费上下文由测试
+常量重建，范围见 [Read 恢复说明](docs/contracts/read-validation.md#恢复范围98)。
+独立 A9 由 #99 推进，离线校验不授予生产 Read 或校准资格。
 ````
 
 新文：
 
 ````text
-`paper_radar.reading` 提供权威 Pydantic 结构及 Read 自有七类价值词汇，
-经现有 contracts 服务生成、导出和只读检查。仅通过 Schema 不表示已通过证据业务接收。
-公共能力包括原始字节与可靠文本上下文的纯验证、数值 v1 和警告三视图，
-表格、公式区域源字符与不可靠字符的字段矩阵，single/reduce
-模式与同正文 map 证据允许集合检查，以及显式 Read 配置准入与历史比较。
-历史配置与候选原字节具有非空隔离恢复验证，固定上下文由测试常量重建；
-独立必需 A9 绑定同次可信终态与固定范围。
-
+[Read 权威结构与校验](docs/contracts/read-validation.md)提供全部 18 个必填字段、
+严格独立评分与 Read 自有价值词汇，接收原始 bytes 与只读可靠文本上下文，
+提供逐条数值诊断、带来源的警告视图、受限证据矩阵及同正文 reduce 允许集合检查，
+支持显式配置准入。历史配置与候选原始字节的隔离恢复范围见
+[Read 恢复说明](docs/contracts/read-validation.md#恢复范围98)。离线校验不授予生产 Read 或校准资格。
 ````
 
-细节核对：能力和边界逐项原位保留，#93–#99 交付出处移入相关依据行；数值 v1、single/reduce、固定上下文及 A9 同次范围未变。
+细节核对：现在时保留全部可用能力；#93–#99 出处已在 Read Contract 相关和路线图文首记录表。两份配置、四份候选、固定测试上下文的证据边界保留于路线图 Read 恢复证据范围及 Contract 恢复范围。
 
-### M004
+### M116
 
-源：`docs/contracts/read-validation.md`，基线行 45。处置：改写。
+源：`README.md`，基线位置 24。处置：改写。
 
-去处：[docs/contracts/read-validation.md#字段闭集](../../docs/contracts/read-validation.md#字段闭集)。
+去处：[README.md#paperradar](../../README.md#paperradar)。
 
 原文（逐字）：
 
 ````text
-逐项检查，不能套用摘要层输入不足短语。结构类型/评分/必填性由 #93 交付；
-有意义文本、重复检测、条件非空及上下文业务规则由 #94 交付。
+A8 已提供 [冻结调用描述与单次 RPC 协议](docs/contracts/pi-rpc.md)：从预算首次历史
+语义与本次回执执行审计构造，仅支持 1.4.0 离线协议档案，系统指令与 user 消息分离。
+boundary/value 完整候选经既有 A1/A7 同源接收，事件、消息副本、模型和用量有离线
+边界证明。生产管道组件只包装已启动的独立进程组；Python 夹具已验证双管道背压、
+超时、取消与整组回收。独立字节向量与合成协议测试不运行真实 Pi/模型；非空恢复与
+独立 A8 验收仍按[逐项台账](docs/verification/a8-requirements.md)继续。Pi 强制追加的常量 cwd 例外
+已由 #111 定为本机 `/srv/pi-cwd`；生产启动器须无默认值显式传入、仅白名单此值，并在任何 prompt live 探测前验证无资源/实际隔离；当前不授予生产执行或校准资格。
 ````
 
 新文：
 
 ````text
-逐项检查，不能套用摘要层输入不足短语。结构校验涵盖类型/评分/必填性；
-业务校验涵盖有意义文本、重复检测、条件非空及上下文业务规则。
+提供 [冻结调用描述与单次 RPC 协议](docs/contracts/pi-rpc.md)：从预算首次历史
+语义与本次回执执行审计构造，仅支持 1.4.0 离线协议档案，系统指令与 user 消息分离。
+boundary/value 完整候选经既有 A1/A7 同源接收，事件、消息副本、模型和用量有离线
+边界证明。生产管道组件只包装已启动的独立进程组；Python 夹具已验证双管道背压、
+超时、取消与整组回收。独立字节向量与合成协议测试不运行真实 Pi/模型；非空恢复与
+独立 A8 的证明范围见[逐项台账](docs/verification/a8-requirements.md)。Pi 强制追加的常量 cwd 例外
+已由 #111 定为本机 `/srv/pi-cwd`；生产启动器须无默认值显式传入、仅白名单此值，并在任何 prompt live 探测前验证无资源/实际隔离；当前不授予生产执行或校准资格。
 ````
 
-细节核对：结构/业务校验职责原位保留；#93/#94 出处移至相关依据行。
+细节核对：所有协议/隔离/test边界保留；不把已交付A8说成待继续。
 
-### M005
+### M150
 
-源：`docs/contracts/read-validation.md`，基线行 79。处置：改写。
+源：`README.md`，基线位置 463。处置：改写。
 
-去处：[docs/contracts/read-validation.md#消费上下文与错误边界源字符与-reduce-已交付](../../docs/contracts/read-validation.md#消费上下文与错误边界源字符与-reduce-已交付)。
+去处：[README.md#pi-固定供给](../../README.md#pi-固定供给)。
 
 原文（逐字）：
 
 ````text
-`output_invalid` 或消耗模型预算。本票不引入预算或接收器。
+2026-10-18 用户裁决：本次 A4 接受导出所需的目录句柄、nofollow、硬链接不覆盖发布与 fsync
+等安全文件能力边界，能力不足继续安全拒绝。#36 已关闭；
+[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 已以 NOT_PLANNED 关闭，
+Windows 安全导出当前无交付计划，未实现/未验证 Windows 后端。
 ````
 
 新文：
 
 ````text
-`output_invalid` 或消耗模型预算。此校验边界不提供预算或接收器。
+导出要求目录句柄、nofollow、硬链接不覆盖发布与 fsync 等安全文件能力，能力不足安全拒绝。
+当前没有实现或验证 Windows 安全导出后端；历史裁决与计划见[路线图](docs/roadmap.md#已取消)。
 ````
 
-细节核对：仅调整位置性措辞；数字、枚举、条件、否定、情态及顺序保留。
+细节核对：最终审阅修正：仅拆分当前能力/未提供事实与计划责任，所有数值、拒绝与证明边界保留；后续要求由所链既有规格/路线图承接。
 
-### M006
+### M151
 
-源：`intent/draft.md`，基线行 800。处置：改写。
+源：`README.md`，基线位置 579。处置：改写。
 
-去处：[intent/draft.md#410-read-agent](../../intent/draft.md#410-read-agent)。
+去处：[README.md#论文事实与-feed-发现的本地查询](../../README.md#论文事实与-feed-发现的本地查询)。
 
 原文（逐字）：
 
 ````text
-以下是 Read 的结构定义；#93 已实现单一权威 Pydantic Schema 并导出 Read v1 Frozen Contract，#94–#96 已交付给定只读证据上下文的纯业务验证器，#97–#99 已接通显式配置、隔离恢复与独立离线验收。可行性研究使用的临时 Read Schema 不取得生产权威资格。单次调用及 map/reduce 的生产目标仍由 Python 编排并通过 §7.7 的隔离 Pi 会话执行；分块、输入证据选择和最终引用检查由 PaperRadar 控制，不新增 Agent evidence 查询或 PDF 工具。
+**首次真实 Feed 导入前必须补齐强冲突观察持久化和 parser 升级固定样本/关键字段损失回归（B 先交付 JGR 切片，C 扩展），
+此前不得将本地拒绝路径直接作为生产写入。**详见[论文事实 Contract](docs/contracts/paper-facts.md)。
 ````
 
 新文：
 
 ````text
-以下是 Read 的结构定义（依据 #93–#99）；应使用单一权威 Pydantic Schema 并导出 Read v1 Frozen Contract，并提供给定只读证据上下文的纯业务验证器，以及显式配置、隔离恢复与独立离线验收。可行性研究使用的临时 Read Schema 不取得生产权威资格。单次调用及 map/reduce 的生产调用由 Python 编排并通过 §7.7 的隔离 Pi 会话执行；分块、输入证据选择和最终引用检查由 PaperRadar 控制，不新增 Agent evidence 查询或 PDF 工具。
+本地拒绝路径不授予生产写入资格；生产前置与承接责任见[路线图 Feed](docs/roadmap.md#module-feed)及[论文事实 Contract](docs/contracts/paper-facts.md)。
 ````
 
-细节核对：只将交付时态改为规格要求，保留各 issue 依据；全部字段、枚举、数字、条件、否定与职责边界原位保留。对应已完成范围见路线图 A2/A9；B 未完成见模块状态。
+细节核对：最终审阅修正：仅拆分当前能力/未提供事实与计划责任，所有数值、拒绝与证明边界保留；后续要求由所链既有规格/路线图承接。
 
-### M007
+### M100
 
-源：`intent/draft.md`，基线行 1202。处置：改写。
+源：`README.md`，基线位置 582。处置：改写。
 
-去处：[intent/draft.md#73-期刊信誉](../../intent/draft.md#73-期刊信誉)。
+去处：[README.md#论文事实与-feed-发现的本地查询](../../README.md#论文事实与-feed-发现的本地查询)。
 
 原文（逐字）：
 
 ````text
-A2-07（#22）已通过公共 check/compile/load 登记该集合，不执行论文匹配或破同。
-刊号接受带或不带连字符的 ASCII 八位写法与末位小写 x，不接受首尾空白；
-编译后统一为带连字符、大写 X 的形式。`issns` 可包含本条 ISSN-L，但其自身列表
-不得重复。完整快照内期刊按规范 `issn_l` 排序，附加 `issns` 也排序；精确原始字节
-仍保留，等价写法改动也须新建版本。#23 的六阶段投影与基线均排除期刊材料；
-期刊配置变化只影响完整快照与登记身份。
+A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/contracts/screening-tasks.md)
+及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。#77 已在原权威验证器
+收紧重复 JSON 键和非有限常量；#78–#79 已交付任务登记、冻结回放、两次预算和租约，
+boundary/value 筛选制品接收与三值适用性由 #80/#81 交付，#82 交付显式 retry、共享版本化查询与父链恢复；#83 补齐新进程隔离完整历史恢复，
+#84 将这些能力注册为独立必需 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；原题名语言事实的
+生产来源已由 [ADR-0035](docs/adr/0035-feed-derived-original-title-language-fact.md) 固定为首发 Feed 归属映射
+（四刊中只有《大气科学》为中文），生产接线仍待 B；B 首张真实任务票同时交付 failures/retry 与 trace 组合，A7 的历史范围不变。
 ````
 
 新文：
 
 ````text
-期刊集合通过公共 check/compile/load 登记（依据 #22），不执行论文匹配或破同。
-刊号接受带或不带连字符的 ASCII 八位写法与末位小写 x，不接受首尾空白；
-编译后统一为带连字符、大写 X 的形式。`issns` 可包含本条 ISSN-L，但其自身列表
-不得重复。完整快照内期刊按规范 `issn_l` 排序，附加 `issns` 也排序；精确原始字节
-仍保留，等价写法改动也须新建版本。六阶段投影与基线均排除期刊材料（依据 #23）；
-期刊配置变化只影响完整快照与登记身份。
+A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/contracts/screening-tasks.md)
+及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。#77 已在原权威验证器
+收紧重复 JSON 键和非有限常量；提供任务登记、冻结回放、两次预算和租约，
+boundary/value 筛选制品接收与三值适用性由公共服务提供，并提供显式 retry、共享版本化查询与父链恢复；支持新进程隔离完整历史恢复，
+这些能力纳入独立必需 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；原题名语言事实的
+生产来源已由 [ADR-0035](docs/adr/0035-feed-derived-original-title-language-fact.md) 固定为首发 Feed 归属映射
+（四刊中只有《大气科学》为中文），生产接线仍待 B；B 首张真实任务票同时交付 failures/retry 与 trace 组合，A7 的历史范围不变。
 ````
 
-细节核对：只将交付时态改为规格要求，保留各 issue 依据；全部字段、枚举、数字、条件、否定与职责边界原位保留。对应已完成范围见路线图 A2/A9；B 未完成见模块状态。
+细节核对：去逐票交付时态，任务/预算/租约/两阶段/retry/恢复/验收能力及未提供边界原位保留；原issue出处见任务Contract相关。
 
-### M008
+### M153
 
-源：`intent/draft.md`，基线行 1325。处置：改写。
+源：`README.md`，基线位置 588。处置：改写。
 
-去处：[intent/draft.md#77-pi-rpc-适配边界](../../intent/draft.md#77-pi-rpc-适配边界)。
+去处：[README.md#论文事实与-feed-发现的本地查询](../../README.md#论文事实与-feed-发现的本地查询)。
 
 原文（逐字）：
 
 ````text
-Issue #26 的配置切片已开放 settings 的 adapters 三槽、Pi YAML 与独立系统 Prompt
-登记/回放，以及具名只读 adapter 语义和消费者依赖。字段、路径和固定 V1 策略见
-[适配器配置契约](../docs/contracts/adapter-config.md)。没有 adapter 的旧快照保持
-原身份和含义；该配置切片不执行 RPC 或安装程序。统一阶段投影、校准基线及 diff
-联动已由 #23 接入单快照重建与只读 diff；不能把 adapter 分量身份冒称为完整基线
-或执行就绪证明。
+（四刊中只有《大气科学》为中文），生产接线仍待 B；B 首张真实任务票同时交付 failures/retry 与 trace 组合，A7 的历史范围不变。
 ````
 
 新文：
 
 ````text
-适配器配置应支持（依据 #26） settings 的 adapters 三槽、Pi YAML 与独立系统 Prompt
-登记/回放，以及具名只读 adapter 语义和消费者依赖。字段、路径和固定 V1 策略见
-[适配器配置契约](../docs/contracts/adapter-config.md)。没有 adapter 的旧快照保持
-原身份和含义；配置编译不执行 RPC 或安装程序。统一阶段投影、校准基线及 diff
-联动应通过单快照重建与只读 diff 提供（依据 #23）；不能把 adapter 分量身份冒称为完整基线
-或执行就绪证明。
+（四刊中只有《大气科学》为中文），当前不提供生产接线；failures/retry 与 trace 组合的责任见[路线图 B](docs/roadmap.md#module-b)，A7 的历史范围不变。
 ````
 
-细节核对：只将交付时态改为规格要求，保留各 issue 依据；全部字段、枚举、数字、条件、否定与职责边界原位保留。对应已完成范围见路线图 A2/A9；B 未完成见模块状态。
+细节核对：最终审阅修正：仅拆分当前能力/未提供事实与计划责任，所有数值、拒绝与证明边界保留；后续要求由所链既有规格/路线图承接。
 
-### M009
+### M125
 
-源：`intent/draft.md`，基线行 1363。处置：改写。
+源：`README.md`，基线位置 610。处置：改写。
 
-去处：[intent/draft.md#78-pi-固定版本供给](../../intent/draft.md#78-pi-固定版本供给)。
+去处：[README.md#screening-任务登记有限尝试与两阶段成功a7-02-至-a7-08](../../README.md#screening-任务登记有限尝试与两阶段成功a7-02-至-a7-08)。
 
 原文（逐字）：
 
 ````text
-Issue #26 只冻结适配器配置事实并接入版本登记和快照；本节的下载、安装、激活、权限隔离和 RPC 验收由后续执行器与供给任务实施，不在配置编译中安装程序或新增无人消费的执行资源字段。普通离线测试使用固定供给清单、临时文件和 fake RPC/进程接口，无 Pi、Node、网络或模型凭据前置；真实安装与 RPC 验收由显式命令另行运行。
+旧回执精确重放不随最新代际改变。独立 A7 结论只证明这些离线任务能力；真实模型执行仍待后续切片。
 ````
 
 新文：
 
 ````text
-适配器配置编译只冻结（依据 #26）适配器配置事实并接入版本登记和快照；本节的下载、安装、激活、权限隔离和 RPC 验收由执行器与供给任务实施，不在配置编译中安装程序或新增无人消费的执行资源字段。普通离线测试使用固定供给清单、临时文件和 fake RPC/进程接口，无 Pi、Node、网络或模型凭据前置；真实安装与 RPC 验收由显式命令另行运行。
+旧回执精确重放不随最新代际改变。独立 A7 结论只证明这些离线任务能力；当前不提供真实模型执行。
 ````
 
-细节核对：只将交付时态改为规格要求，保留各 issue 依据；全部字段、枚举、数字、条件、否定与职责边界原位保留。对应已完成范围见路线图 A2/A9；B 未完成见模块状态。
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
 
-### M010
+### M117
 
-源：`intent/draft.md`，基线行 1830。处置：改写。
+源：`README.md`，基线位置 616。处置：改写。
 
-去处：[intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环](../../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)。
+去处：[README.md#screening-任务登记有限尝试与两阶段成功a7-02-至-a7-08](../../README.md#screening-任务登记有限尝试与两阶段成功a7-02-至-a7-08)。
 
 原文（逐字）：
 
 ````text
-本阶段是 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md) 的受限实验，整条链
-从 Feed 导入到最小日报均运行于显式实验数据根。目标是验证生产接口的真实单篇接线，
-不授予正常生产消费、正式校准或自动 Read 资格；以下均为待实现责任。
+来源取得（#103）：公共服务先冻结计划，再以有界 HTTP/通道接口取得并保存安全执行事实；`paper-radar audit list/show --database ... --json` 只读查询。默认只交付 http，其他通道显示未安装；显式 run 已由 #105 接通，resume/replay 已由 #106 接通；不代表真实来源审计已执行。
 ````
 
 新文：
 
 ````text
-本阶段是 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md) 的受限实验，整条链
-从 Feed 导入到最小日报均运行于显式实验数据根。目标是验证生产接口的真实单篇接线，
-不授予正常生产消费、正式校准或自动 Read 资格。
+来源取得：公共服务先冻结计划，再以有界 HTTP/通道接口取得并保存安全执行事实；`paper-radar audit list/show --database ... --json` 只读查询。默认只提供 http，其他通道显示未安装；提供显式 run 和 resume/replay；不代表真实来源审计已执行。
 ````
 
-细节核对：只将交付时态改为规格要求，保留各 issue 依据；全部字段、枚举、数字、条件、否定与职责边界原位保留。对应已完成范围见路线图 A2/A9；B 未完成见模块状态。
+细节核对：只去逐票叙述，HTTP通道与未执行真实审计保持。
 
-### M011
+### M118
 
-源：`intent/draft.md`，基线行 1599。处置：状态外移。
+源：`README.md`，基线位置 618。处置：改写。
 
-去处：[docs/roadmap.md#read-恢复证据范围](../../docs/roadmap.md#read-恢复证据范围)。
+去处：[README.md#screening-任务登记有限尝试与两阶段成功a7-02-至-a7-08](../../README.md#screening-任务登记有限尝试与两阶段成功a7-02-至-a7-08)。
 
 原文（逐字）：
 
 ````text
-#98 已以两份历史配置和中/英文、single/reduce 四份候选原字节验证上述隔离恢复与
-再次搬迁。消费上下文由固定测试常量重建，不属于恢复产物，也不证明真实 PDF、
-evidence-map 或正文选择；范围见 [Read 恢复说明](../docs/contracts/read-validation.md#恢复范围98)。
+固定选样（#104）：公共服务按四刊原位次冻结前 N 个显式 journal-article 候选，保留未知/冲突/重复/不足和暂停历史；`audit show` 可只读查看成员依据。显式继续保持原 Feed/位次，摘要成败不影响成员。当前仍未执行四刊 live；摘要矩阵由 #105 交付，显式恢复继续由 #106 交付，完整混合历史恢复由后续票收口。
 ````
 
 新文：
 
 ````text
-恢复验证的既有证据范围见[路线图](../docs/roadmap.md#read-恢复证据范围)。
+固定选样：公共服务按四刊原位次冻结前 N 个显式 journal-article 候选，保留未知/冲突/重复/不足和暂停历史；`audit show` 可只读查看成员依据。显式继续保持原 Feed/位次，摘要成败不影响成员。当前仍未执行四刊 live；提供摘要矩阵、显式恢复继续和完整混合历史恢复，范围见[摘要审计 Contract](docs/contracts/fixture-audit.md)。
 ````
 
-细节核对：恢复证据数量、上下文来源与未证明边界保留；相对链接按新位置调整，将“上述隔离恢复”改为“[规格 §9.1](../../intent/draft.md#91-本机一致性快照)所述隔离恢复”，明确原指代。
+细节核对：固定选样/位次/禁止按结果换样与四刊live未验均保留；混合恢复依据Contract现状。
 
-### M012
+### M126
 
-源：`docs/adr/0036-isolate-stage-b-read-experiment.md`，基线行 34。处置：改写。
+源：`README.md`，基线位置 620。处置：改写。
 
-去处：[docs/adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界](../../docs/adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界)。
+去处：[README.md#screening-任务登记有限尝试与两阶段成功a7-02-至-a7-08](../../README.md#screening-任务登记有限尝试与两阶段成功a7-02-至-a7-08)。
 
 原文（逐字）：
 
 ````text
-证明范围只覆盖冻结样本与纵向链，不证明四刊正文质量、通用 Docling、正常生产 Read、校准或完整阶段 A。本次仅记录规范，未实现以上能力；阶段责任与历史证据见 [A 收口清单](../verification/stage-a-closure.md)。
+摘要矩阵（#105）：`paper-radar audit run --database DB --data-root ROOT --contact-email EMAIL --count 5 --json` 显式固定选样并执行适用路线；联系邮箱只用于请求标识，不保存。复用选样响应及原取得时间，题名/摘要分别调用 A6 仲裁；普通 show 只输出哈希、定位、截断信号及真实分母。原摘要通过显式服务 `read_audit_text` 读取。http 与未安装的适用渲染通道分列，official_api/repository 无适用目标；doiRA 不进入摘要命中分母。complete 只表示终态齐备，即使不足样本也不表示长期稳定或生产就绪。本票验证离线子集和基本恢复；完整门禁留 #108，不执行 live。
 ````
 
 新文：
 
 ````text
-证明范围只覆盖冻结样本与纵向链，不证明四刊正文质量、通用 Docling、正常生产 Read、校准或完整阶段 A。阶段责任与历史证据见[路线图](../roadmap.md#module-b)。
+摘要矩阵（#105）：`paper-radar audit run --database DB --data-root ROOT --contact-email EMAIL --count 5 --json` 显式固定选样并执行适用路线；联系邮箱只用于请求标识，不保存。复用选样响应及原取得时间，题名/摘要分别调用 A6 仲裁；普通 show 只输出哈希、定位、截断信号及真实分母。原摘要通过显式服务 `read_audit_text` 读取。http 与未安装的适用渲染通道分列，official_api/repository 无适用目标；doiRA 不进入摘要命中分母。complete 只表示终态齐备，即使不足样本也不表示长期稳定或生产就绪。此工程验证覆盖离线子集和基本恢复；完整门禁范围见[A10 台账](docs/verification/a10-requirements.md)，不证明 live。
 ````
 
-细节核对：证明范围逐字原位保留；仅规范、未实现的状态见路线图 B 未成形及下方 #111 记录。阶段 A 收口证据由路线图继续链接。
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M127
+
+源：`README.md`，基线位置 633。处置：改写。
+
+去处：[README.md#screening-任务登记有限尝试与两阶段成功a7-02-至-a7-08](../../README.md#screening-任务登记有限尝试与两阶段成功a7-02-至-a7-08)。
+
+原文（逐字）：
+
+````text
+PDF/Docling/生产导入/NAS 与完整阶段 A 均待后续。未来合法获取方式按新策略另行交付。
+````
+
+新文：
+
+````text
+PDF/Docling/生产导入/NAS 与完整阶段 A 均未验证；承接见[路线图](docs/roadmap.md#模块承接索引)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
 
 ### M013
 
-源：`README.md`，基线行 637。处置：合并。
+源：`README.md`，基线位置 637。处置：合并。
 
 去处：[docs/roadmap.md#阶段-a-收口与-b-前置111目标规格](../../docs/roadmap.md#阶段-a-收口与-b-前置111目标规格)。
 
@@ -359,9 +355,2217 @@ V1 目标与判据见[规格](intent/draft.md)，当前前沿、阶段状态与�
 
 细节核对：使用说明不变。状态与并行安排在路线图保留，规范内容合并至既有等价正文：规格 §11 B 的入口条件、实验数据根、最低 PDF 路径与本机材料要求，以及 ADR-0036 的“B 整条 Feed→Screening→人工决定→PDF→正文→Read→最小日报都在显式实验数据根内”“旧实验结果只作历史回查，不复用、不提升、不提供提升入口”“JGR 入口判据在审计前固定为 selected 至少 5 篇”“最迟 D 正式预热冻结/首个校准批次前四刊逐刊证明稳定”“普通离线测试仅用合成或脱敏材料”；未来升级保留规格 §7.8。数字、条件、否定与责任无变化，路线图通过链接引用，不复述目标规则。
 
+### M152
+
+源：`README.md`，基线位置 对应原小节的后续整理。处置：改写。
+
+去处：[README.md#论文事实与-feed-发现的本地查询](../../README.md#论文事实与-feed-发现的本地查询)。
+
+原文（逐字）：
+
+````text
+及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。#77 已在原权威验证器
+收紧重复 JSON 键和非有限常量；提供任务登记、冻结回放、两次预算和租约，
+````
+
+新文：
+
+````text
+及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。原权威验证器
+拒绝重复 JSON 键和非有限常量；提供任务登记、冻结回放、两次预算和租约，
+````
+
+细节核对：最终审阅修正：仅拆分当前能力/未提供事实与计划责任，所有数值、拒绝与证明边界保留；后续要求由所链既有规格/路线图承接。
+
+### M119
+
+源：`docs/adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md`，基线位置 9。处置：改写。
+
+去处：[docs/adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md#区分运行配置快照阶段输入指纹和校准语义基线](../../docs/adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md#区分运行配置快照阶段输入指纹和校准语义基线)。
+
+原文（逐字）：
+
+````text
+2026-10-11 补充（[ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md)）：版本化的适配器语义进入相关配置投影，Screening/reuse 所用部分进入校准语义基线；纯 Read 部分只进入 Read 投影，共有行为按实际受影响阶段判断。Pi/adapter 版本与资源哈希保留执行审计依据，进程、临时会话与机器路径不进入语义投影。本次只更新目标规格，不改既有配置编译 Contract、不可变快照或版本材料；配置映射与必要持久化变更留待后续实现票。
+````
+
+新文：
+
+````text
+2026-10-11 补充（[ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md)）：版本化的适配器语义进入相关配置投影，Screening/reuse 所用部分进入校准语义基线；纯 Read 部分只进入 Read 投影，共有行为按实际受影响阶段判断。Pi/adapter 版本与资源哈希保留执行审计依据，进程、临时会话与机器路径不进入语义投影。配置映射与持久化的现状见[配置 Contract](../contracts/config-projections.md)，承接责任见[路线图](../roadmap.md#module-b)。
+````
+
+细节核对：只外移当次未实现状态；同段语义投影、Read隔离、审计身份裁决逐字保留。历史配置实现状态见路线图A2。
+
+### M120
+
+源：`docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md`，基线位置 13。处置：改写。
+
+去处：[docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md#通过有界-rpc-适配器控制-pi保留-paperradar-的接收权威](../../docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md#通过有界-rpc-适配器控制-pi保留-paperradar-的接收权威)。
+
+原文（逐字）：
+
+````text
+本 ADR 记录目标架构，本次只更新文档；现有代码、版本化配置、快照与 Frozen Contract 不被改写。Pi 配置映射、权限约束、生产 Read 权威 Schema/验证器、恢复幂等与 fixtures 仍需在后续实现票中验收。研究临时 Read Schema 和已暴露样本不能冒充生产契约或正式盲评；正式采集时登记样本排除。可行性实测证明了接入方式，不证明生产质量、校准通过或自动精读资格。
+````
+
+新文：
+
+````text
+Pi 配置映射、权限约束、Read 权威 Schema/验证器、恢复幂等与 fixtures 的现状及承接见[路线图](../roadmap.md#模块承接索引)。研究临时 Read Schema 和已暴露样本不能冒充生产契约或正式盲评；正式采集时登记样本排除。可行性实测证明了接入方式，不证明生产质量、校准通过或自动精读资格。
+````
+
+细节核对：保留临时Schema/暴露样本不冒充生产或盲评、正式采集排除和可行性不证明质量等全部原决策；当次只文档状态已在路线图2026-10-11记录。
+
+### M121
+
+源：`docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md`，基线位置 27。处置：改写。
+
+去处：[docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md#通过有界-rpc-适配器控制-pi保留-paperradar-的接收权威](../../docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md#通过有界-rpc-适配器控制-pi保留-paperradar-的接收权威)。
+
+原文（逐字）：
+
+````text
+2026-10-18 补充（供给与升级决策，[主方案 §7.8](../../intent/draft.md)）：用户裁决每次 Pi 升级都必须新建适配器声明版本并重新登记，不允许以“仅审计版本”复用原语义材料原地改写 `pi_version`；V1 不承诺脱网重建执行环境，也不交付预存 npm/Node 制品；`pi_version` 保持严格三段正式版本，不支持预发布或四段版本；保留当前与最近三个旧安装，清理只能由用户先出计划再执行，且不删除当前、在途引用与最近验收通过的版本；每份供给清单必须记录升级的行为影响判定、依据与证据引用，后两者按“可能影响”处理。这些决策不改变“锁定版本不构成兼容性证明”，也不把安装树、`supply_id` 或审计版本提升为阶段语义；供给命令、安装器、清理与验收仍待后续实现。
+````
+
+新文：
+
+````text
+2026-10-18 补充（供给与升级决策，[主方案 §7.8](../../intent/draft.md)）：用户裁决每次 Pi 升级都必须新建适配器声明版本并重新登记，不允许以“仅审计版本”复用原语义材料原地改写 `pi_version`；V1 不承诺脱网重建执行环境，也不交付预存 npm/Node 制品；`pi_version` 保持严格三段正式版本，不支持预发布或四段版本；保留当前与最近三个旧安装，清理只能由用户先出计划再执行，且不删除当前、在途引用与最近验收通过的版本；每份供给清单必须记录升级的行为影响判定、依据与证据引用，后两者按“可能影响”处理。这些决策不改变“锁定版本不构成兼容性证明”，也不把安装树、`supply_id` 或审计版本提升为阶段语义；供给实现范围及未验责任见[路线图](../roadmap.md#module-live)。
+````
+
+细节核对：D1-D5补充裁决原文完整保留，仅移出当时待实现状态；当前供给工程已完成不等于生产兼容已验。
+
+### M105
+
+源：`docs/adr/0030-paper-version-identity-and-source-observations.md`，基线位置 3。处置：改写。
+
+去处：[docs/adr/0030-paper-version-identity-and-source-observations.md#论文版本身份与来源观察仲裁](../../docs/adr/0030-paper-version-identity-and-source-observations.md#论文版本身份与来源观察仲裁)。
+
+原文（逐字）：
+
+````text
+状态：已接受语义；#69–#74 已落地身份、Feed、四源仲裁、版本关系、输入映射及组合隔离恢复，#75 注册独立 A6 验收。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
+````
+
+新文：
+
+````text
+状态：已接受语义；日期：原文未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0030-paper-version-identity-and-source-observations.md)；补充／部分取代：[ADR-0036](0036-isolate-stage-b-read-experiment.md)。
+
+原状态与裁决依据：已接受语义。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
+````
+
+细节核对：统一状态索引；原状态行全部信息原样保留为原状态与裁决依据，不从实现日期推定接受日期。新增基线出处与已存在的补充关系反向指针。 #69–#75状态见路线图A6及文首状态索引。
+
+### M122
+
+源：`docs/adr/0030-paper-version-identity-and-source-observations.md`，基线位置 68。处置：改写。
+
+去处：[docs/adr/0030-paper-version-identity-and-source-observations.md#论文版本身份与来源观察仲裁](../../docs/adr/0030-paper-version-identity-and-source-observations.md#论文版本身份与来源观察仲裁)。
+
+原文（逐字）：
+
+````text
+本票没有真实 Feed 或解析器；阶段 C 强冲突观察持久化与 parser 升级固定样本回归仍是硬门禁。
+````
+
+新文：
+
+````text
+真实 Feed 或解析器的生产接线状态见[路线图](../roadmap.md#module-feed)；阶段 C 强冲突观察持久化与 parser 升级固定样本回归仍是硬门禁。
+````
+
+细节核对：去本票指代，真实来源未验已在路线图，原阶段C门禁及较新#111前移解释都保留，冲突不另裁决。
+
+### M042
+
+源：`docs/adr/0031-screening-budget-and-derived-applicability.md`，基线位置 3。处置：改写。
+
+去处：[docs/adr/0031-screening-budget-and-derived-applicability.md#以-paper-阶段输入承载预算并派生筛选制品当前适用性](../../docs/adr/0031-screening-budget-and-derived-applicability.md#以-paper-阶段输入承载预算并派生筛选制品当前适用性)。
+
+原文（逐字）：
+
+````text
+状态：已接受；依据 [#76 用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)，任务运行能力已由 #78–#83 实现，#84 登记独立离线验收与可信终态。预算与筛选制品的主体固定为同库 `(paper_id, stage, fingerprint)`，不同 Paper 不共享业务结果或次数，日期、版本 ID、请求来源、代际与配置标签都不进入 A5 语义载荷。这样输入回摆会回到既有预算；代价是将来论文合并必须另外决定预算合并，不能直接跨 Paper 复用。
+````
+
+新文：
+
+````text
+状态：已接受；依据 [#76 用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)；日期：原记录未单列；补充：[ADR-0035](0035-feed-derived-original-title-language-fact.md)（2026-10-27 原题名语言生产来源）。
+
+预算与筛选制品的主体固定为同库 `(paper_id, stage, fingerprint)`，不同 Paper 不共享业务结果或次数，日期、版本 ID、请求来源、代际与配置标签都不进入 A5 语义载荷。这样输入回摆会回到既有预算；代价是将来论文合并必须另外决定预算合并，不能直接跨 Paper 复用。
+````
+
+细节核对：原状态、依据链接与预算决策完整保留；未虚构接受日期；#78–#84交付状态已在路线图历史记录中。增加ADR-0035反向指针。
+
+### M106
+
+源：`docs/adr/0031-screening-budget-and-derived-applicability.md`，基线位置 3。处置：改写。
+
+去处：[docs/adr/0031-screening-budget-and-derived-applicability.md#以-paper-阶段输入承载预算并派生筛选制品当前适用性](../../docs/adr/0031-screening-budget-and-derived-applicability.md#以-paper-阶段输入承载预算并派生筛选制品当前适用性)。
+
+原文（逐字）：
+
+````text
+状态：已接受；依据 [#76 用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)；日期：原记录未单列；补充：[ADR-0035](0035-feed-derived-original-title-language-fact.md)（2026-10-27 原题名语言生产来源）。
+````
+
+新文：
+
+````text
+状态：已接受；日期：原记录未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0031-screening-budget-and-derived-applicability.md)；补充／部分取代：[ADR-0035](0035-feed-derived-original-title-language-fact.md)。
+
+原状态与裁决依据：已接受；依据 [#76 用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)；日期：原记录未单列；补充：[ADR-0035](0035-feed-derived-original-title-language-fact.md)（2026-10-27 原题名语言生产来源）。
+````
+
+细节核对：统一状态索引；原状态行全部信息原样保留为原状态与裁决依据，不从实现日期推定接受日期。新增基线出处与已存在的补充关系反向指针。
+
+### M046
+
+源：`docs/adr/0031-screening-budget-and-derived-applicability.md`，基线位置 7。处置：改写。
+
+去处：[docs/adr/0031-screening-budget-and-derived-applicability.md#以-paper-阶段输入承载预算并派生筛选制品当前适用性](../../docs/adr/0031-screening-budget-and-derived-applicability.md#以-paper-阶段输入承载预算并派生筛选制品当前适用性)。
+
+原文（逐字）：
+
+````text
+D1 将原题名语言严格 bool 冻结于预算范围，不进 A5 指纹，retry 继承且不能更正；代价是误标暂无法纠正，真实 value 任务前必须另行裁决生产来源（已于 2026-10-27 裁决为首发 Feed 归属，见 [ADR-0035](0035-feed-derived-original-title-language-fact.md) 与文末补记）。D3 在原权威验证器拒绝任意层重复键及非有限 JSON 常量，保持单一 Schema 和业务接收权威。D4 推迟 CLI 和 paper trace 组合，交付服务层查询/retry，使未来生产调度决定实际产品交互。具体规则与仍未交付的生产边界见[任务 Contract](../contracts/screening-tasks.md)。
+````
+
+新文：
+
+````text
+D1 将原题名语言严格 bool 冻结于预算范围，不进 A5 指纹，retry 继承且不能更正；代价是误标暂无法纠正，真实 value 任务前必须另行裁决生产来源（已于 2026-10-27 裁决为首发 Feed 归属，见 [ADR-0035](0035-feed-derived-original-title-language-fact.md) 及状态行补充关系）。D3 在原权威验证器拒绝任意层重复键及非有限 JSON 常量，保持单一 Schema 和业务接收权威。D4 推迟 CLI 和 paper trace 组合，交付服务层查询/retry，使未来生产调度决定实际产品交互。具体规则与仍未交付的生产边界见[任务 Contract](../contracts/screening-tasks.md)。
+````
+
+细节核对：仅修正文末补记指代；D1/D3/D4原文不变。
+
+### M043
+
+源：`docs/adr/0031-screening-budget-and-derived-applicability.md`，基线位置 9。处置：改写。
+
+去处：[docs/adr/0031-screening-budget-and-derived-applicability.md#补充裁决](../../docs/adr/0031-screening-budget-and-derived-applicability.md#补充裁决)。
+
+原文（逐字）：
+
+````text
+2026-10-23：#80 实现 boundary 成功接收。派生映射复用 PaperFacts 独立只读一致视图，允许相对任务事实读取滞后；登记时命中引用持久化于请求，旧回执不被后续成功改写。成功发布与业务写事务分开，竞争失败允许完整未引用响应，生产消费者必须拒绝 test 来源。
+````
+
+新文：
+
+````text
+## 补充裁决
+
+依据：[#80](https://github.com/MeteoBoy4/PaperRadar/issues/80)，2026-10-23。
+
+派生映射复用 PaperFacts 独立只读一致视图，允许相对任务事实读取滞后；登记时命中引用持久化于请求，旧回执不被后续成功改写。成功发布与业务写事务分开，竞争失败允许完整未引用响应，生产消费者必须拒绝 test 来源。
+````
+
+细节核对：只去掉boundary交付句并将出处移到补充裁决依据；只读一致视图、滞后、旧回执、事务分离、竞争未引用响应及生产拒绝test来源均逐字保留；交付事实在路线图#80记录。
+
+### M044
+
+源：`docs/adr/0031-screening-budget-and-derived-applicability.md`，基线位置 11。处置：改写。
+
+去处：[docs/adr/0031-screening-budget-and-derived-applicability.md#补充裁决](../../docs/adr/0031-screening-budget-and-derived-applicability.md#补充裁决)。
+
+原文（逐字）：
+
+````text
+2026-10-23：#81 将相同成功提交和派生适用性扩展至 value。接收与恢复都从预算首次历史 snapshot 经 A5 严格回放及投影核对、value_prediction_context 到 A1 权威验证，不以当前主题或新请求配置替换。没有新增表、语言检测或两阶段编排；语言误标的限制仍按 D1 保留。
+````
+
+新文：
+
+````text
+依据：[#81](https://github.com/MeteoBoy4/PaperRadar/issues/81)，2026-10-23。
+
+接收与恢复都从预算首次历史 snapshot 经 A5 严格回放及投影核对、value_prediction_context 到 A1 权威验证，不以当前主题或新请求配置替换。没有新增表、语言检测或两阶段编排；语言误标的限制仍按 D1 保留。
+````
+
+细节核对：只将value交付句外移至路线图#81记录；A5回放、投影、value_prediction_context、A1权威、旧配置与D1约束逐字保留。
+
+### M045
+
+源：`docs/adr/0031-screening-budget-and-derived-applicability.md`，基线位置 14。处置：改写。
+
+去处：[docs/adr/0031-screening-budget-and-derived-applicability.md#补充裁决](../../docs/adr/0031-screening-budget-and-derived-applicability.md#补充裁决)。
+
+原文（逐字）：
+
+````text
+2026-10-23：#82/#83 完成唯一 retry 父链、版本化安全查询及非空完整历史隔离恢复；
+#84 以独立必需 A7 组绑定同次 A1、完整 A2、A3、A5、A6，A4 仍决定总门禁。
+结论登记与 `.a7.json` 格式 1 的状态支持同提交交付，以固定源码/材料/分母、真实
+pytest 回执和同次身份防止遗漏或历史成功补位。任务查询/原因格式单独固定，不扩大
+四份 Frozen Contract；scope 不自绑定，最终运行标识保存在工作树外以免自哈希循环。
+离线 test 来源的工程证明不能代替真实 RPC、语言事实的生产接线、完整资格、生产筛选或校准。
+````
+
+新文：
+
+````text
+依据：[#82](https://github.com/MeteoBoy4/PaperRadar/issues/82)、[#83](https://github.com/MeteoBoy4/PaperRadar/issues/83)、[#84](https://github.com/MeteoBoy4/PaperRadar/issues/84)，2026-10-23。
+
+结论登记与 `.a7.json` 格式 1 的状态支持采用同提交绑定，以固定源码/材料/分母、真实
+pytest 回执和同次身份防止遗漏或历史成功补位。任务查询/原因格式单独固定，不扩大
+四份 Frozen Contract；scope 不自绑定，最终运行标识保存在工作树外以免自哈希循环。
+离线 test 来源的工程证明不能代替真实 RPC、语言事实的生产接线、完整资格、生产筛选或校准。
+````
+
+细节核对：独立A7交付及依赖移路线图；固定源码/材料/分母、真实回执、同次身份、Frozen Contract边界、scope不自绑定与非live证明约束保留。仅同提交交付改为同提交绑定。
+
+### M047
+
+源：`docs/adr/0031-screening-budget-and-derived-applicability.md`，基线位置 21。处置：改写。
+
+去处：[docs/adr/0035-feed-derived-original-title-language-fact.md#决策](../../docs/adr/0035-feed-derived-original-title-language-fact.md#决策)。
+
+原文（逐字）：
+
+````text
+2026-10-27：原题名语言事实的生产来源已按用户裁决固定为首发 Feed 归属映射 v1（只有《大气科学》
+为中文），见 [ADR-0035](0035-feed-derived-original-title-language-fact.md)。D1 的冻结、retry 不可更正、
+不进 A5 指纹均不变；仍然未交付的是从 Feed 归属自动派生、策略版本持久化和任务登记集成。
+````
+
+新文：
+
+````text
+生产来源决策及 D1 不变边界见状态行所链 ADR-0035；从 Feed 归属自动派生、策略版本持久化和任务登记集成的承接责任见[路线图 Feed](../roadmap.md#module-feed)。
+````
+
+细节核对：重复决策合并至ADR-0035：原文“D1 留下的「生产来源」缺口，不改变其冻结于预算范围、retry 不可更正、不进入 A5 载荷或阶段指纹的结论。”及“从 Feed 归属自动派生、策略版本持久化与任务登记集成由后续生产接线票交付。”；未交付状态已在路线图2026-10-27记录。
+
+### M107
+
+源：`docs/adr/0035-feed-derived-original-title-language-fact.md`，基线位置 3。处置：改写。
+
+去处：[docs/adr/0035-feed-derived-original-title-language-fact.md#按首发-feed-归属派生原题名语言事实](../../docs/adr/0035-feed-derived-original-title-language-fact.md#按首发-feed-归属派生原题名语言事实)。
+
+原文（逐字）：
+
+````text
+状态：已接受；依据用户 2026-10-27 裁决。本记录补上 [ADR-0031](0031-screening-budget-and-derived-applicability.md)
+D1 留下的「生产来源」缺口，不改变其冻结于预算范围、retry 不可更正、不进入 A5 载荷或阶段指纹的结论。
+````
+
+新文：
+
+````text
+状态：已接受；日期：2026-10-27；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0035-feed-derived-original-title-language-fact.md)；补充／部分取代：无另列关系；正文边界继续适用。
+
+原状态与裁决依据：已接受；依据用户 2026-10-27 裁决。本记录补上 [ADR-0031](0031-screening-budget-and-derived-applicability.md)
+D1 留下的「生产来源」缺口，不改变其冻结于预算范围、retry 不可更正、不进入 A5 载荷或阶段指纹的结论。
+````
+
+细节核对：统一状态索引；原状态行全部信息原样保留为原状态与裁决依据，不从实现日期推定接受日期。新增基线出处与已存在的补充关系反向指针。
+
+### M108
+
+源：`docs/adr/0036-isolate-stage-b-read-experiment.md`，基线位置 3。处置：改写。
+
+去处：[docs/adr/0036-isolate-stage-b-read-experiment.md#将-b-的真实纵向实验隔离在独立数据根](../../docs/adr/0036-isolate-stage-b-read-experiment.md#将-b-的真实纵向实验隔离在独立数据根)。
+
+原文（逐字）：
+
+````text
+状态：已接受，2026-10-28。依据 [#111 Further Notes 与全部后续确认](https://github.com/MeteoBoy4/PaperRadar/issues/111)：允许固定 JGR 样本在四刊正文 fixture 完成前做受限 Read，选择独立实验数据根，结果不复用、不提升。此举提前验证真实接口，同时保持 A7 的同库预算身份与正式校准边界；代价是 C 必须导入跨库暴露排除清单，生产日后处理同论文要从头执行。
+````
+
+新文：
+
+````text
+状态：已接受；日期：2026-10-28；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0036-isolate-stage-b-read-experiment.md)；补充／部分取代：无另列关系；正文边界继续适用。
+
+原状态与裁决依据：已接受，2026-10-28。依据 [#111 Further Notes 与全部后续确认](https://github.com/MeteoBoy4/PaperRadar/issues/111)：允许固定 JGR 样本在四刊正文 fixture 完成前做受限 Read，选择独立实验数据根，结果不复用、不提升。此举提前验证真实接口，同时保持 A7 的同库预算身份与正式校准边界；代价是 C 必须导入跨库暴露排除清单，生产日后处理同论文要从头执行。
+````
+
+细节核对：统一状态索引；原状态行全部信息原样保留为原状态与裁决依据，不从实现日期推定接受日期。新增基线出处与已存在的补充关系反向指针。
+
+### M012
+
+源：`docs/adr/0036-isolate-stage-b-read-experiment.md`，基线位置 34。处置：改写。
+
+去处：[docs/adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界](../../docs/adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界)。
+
+原文（逐字）：
+
+````text
+证明范围只覆盖冻结样本与纵向链，不证明四刊正文质量、通用 Docling、正常生产 Read、校准或完整阶段 A。本次仅记录规范，未实现以上能力；阶段责任与历史证据见 [A 收口清单](../verification/stage-a-closure.md)。
+````
+
+新文：
+
+````text
+证明范围只覆盖冻结样本与纵向链，不证明四刊正文质量、通用 Docling、正常生产 Read、校准或完整阶段 A。阶段责任与历史证据见[路线图](../roadmap.md#module-b)。
+````
+
+细节核对：证明范围逐字原位保留；仅规范、未实现的状态见路线图 B 未成形及下方 #111 记录。阶段 A 收口证据由路线图继续链接。
+
+### M033
+
+源：`docs/contracts/adapter-config.md`，基线位置 4。处置：改写。
+
+去处：[docs/contracts/adapter-config.md#pi-rpc-适配器配置](../../docs/contracts/adapter-config.md#pi-rpc-适配器配置)。
+
+原文（逐字）：
+
+````text
+本票只登记配置事实，不安装 Pi/Node、不执行 RPC、不检查凭据或 provider 参数
+````
+
+新文：
+
+````text
+此配置边界只登记配置事实，不安装 Pi/Node、不执行 RPC、不检查凭据或 provider 参数
+````
+
+细节核对：仅将本票改为此配置边界；否定与能力范围不变。
+
+### M058
+
+源：`docs/contracts/artifact-store.md`，基线位置 4。处置：改写。
+
+去处：[docs/contracts/artifact-store.md#不可变制品存储-contract-v1](../../docs/contracts/artifact-store.md#不可变制品存储-contract-v1)。
+
+原文（逐字）：
+
+````text
+现已完成四种单文件制品与完整 extraction 多文件发布；自包含备份与隔离恢复也已交付，
+````
+
+新文：
+
+````text
+提供四种单文件制品与完整 extraction 多文件发布；也提供自包含备份与隔离恢复，
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M059
+
+源：`docs/contracts/artifact-store.md`，基线位置 32。处置：改写。
+
+去处：[docs/contracts/artifact-store.md#身份字段与固定词表](../../docs/contracts/artifact-store.md#身份字段与固定词表)。
+
+原文（逐字）：
+
+````text
+A7-04 boundary 接收是 model_success_response 的首个业务消费者：唯一 payload 逐字
+````
+
+新文：
+
+````text
+boundary 接收消费 model_success_response：唯一 payload 逐字
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M060
+
+源：`docs/contracts/artifact-store.md`，基线位置 40。处置：改写。
+
+去处：[docs/contracts/artifact-store.md#身份字段与固定词表](../../docs/contracts/artifact-store.md#身份字段与固定词表)。
+
+原文（逐字）：
+
+````text
+强制，不使用需要重建表才能演进的 DB CHECK 枚举。A3 本身不建立论文表、backup_runs 或自由业务 JSON 桶；#69 已实现的独立论文事实表与来源关联见[论文事实 Contract](paper-facts.md)。
+````
+
+新文：
+
+````text
+强制，不使用需要重建表才能演进的 DB CHECK 枚举。A3 本身不建立论文表、backup_runs 或自由业务 JSON 桶；独立论文事实表与来源关联见[论文事实 Contract](paper-facts.md)。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M146
+
+源：`docs/contracts/artifact-store.md`，基线位置 同节（本轮继续整理）。处置：改写。
+
+去处：[docs/contracts/artifact-store.md#相关](../../docs/contracts/artifact-store.md#相关)。
+
+原文（逐字）：
+
+````text
+[规格](../../intent/draft.md#任务阅读导航)；[ADR](../adr/)；[路线图模块与承接责任](../roadmap.md#模块承接索引)。
+````
+
+新文：
+
+````text
+[规格](../../intent/draft.md#六制品与目录契约)；[ADR-0027](../adr/0027-address-artifacts-by-content.md)；[路线图承接](../roadmap.md#module-body)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M143
+
+源：`docs/contracts/backup-restore.md`，基线位置 309。处置：改写。
+
+去处：[docs/contracts/backup-restore.md#a7-03-尝试租约与失败闭包](../../docs/contracts/backup-restore.md#a7-03-尝试租约与失败闭包)。
+
+原文（逐字）：
+
+````text
+完整成功/retry 跨域隔离恢复见 A7-07；真实模型、RPC、NAS 与 live 行为仍待后续验收。
+````
+
+新文：
+
+````text
+完整成功/retry 跨域隔离恢复见 A7-07；真实模型、RPC、NAS 与 live 行为未验收；承接见[路线图](../roadmap.md#模块承接索引)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M154
+
+源：`docs/contracts/backup-restore.md`，基线位置 355。处置：改写。
+
+去处：[docs/contracts/backup-restore.md#a10-fixture-登记闭包](../../docs/contracts/backup-restore.md#a10-fixture-登记闭包)。
+
+原文（逐字）：
+
+````text
+备份固定副本只读调用 FixtureAudit.validate_all，校验不可变声明原字节、解释与显式替换历史；恢复不读原声明或远端 URL。取得字节继续使用 ArtifactStore，当前 #101–#103 已接入声明、PDF 与来源取得闭包，后续票继续扩展成员、矩阵与恢复继续历史。共享 source_snapshot 的清理必须同时纳入论文与审计引用。
+````
+
+新文：
+
+````text
+备份固定副本只读调用 FixtureAudit.validate_all，校验不可变声明原字节、解释与显式替换历史；恢复不读原声明或远端 URL。取得字节继续使用 ArtifactStore，闭包包括声明、PDF、来源取得、成员、矩阵与恢复继续历史。共享 source_snapshot 的清理必须同时纳入论文与审计引用。
+````
+
+细节核对：最终审阅修正：仅拆分当前能力/未提供事实与计划责任，所有数值、拒绝与证明边界保留；后续要求由所链既有规格/路线图承接。
+
+### M061
+
+源：`docs/contracts/config-projections.md`，基线位置 14。处置：改写。
+
+去处：[docs/contracts/config-projections.md#公共边界](../../docs/contracts/config-projections.md#公共边界)。
+
+原文（逐字）：
+
+````text
+`config/service.py` 组织，CLI 只渲染受控结果。后续校准、诊断与阶段输入指纹可以直接
+复用单快照能力，无需调用 diff 或读取数据库；本票不新增单快照 CLI。
+````
+
+新文：
+
+````text
+`config/service.py` 组织，CLI 只渲染受控结果。校准、诊断与阶段输入指纹消费者可以直接
+复用单快照能力，无需调用 diff 或读取数据库；不提供单快照 CLI。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M062
+
+源：`docs/contracts/config-projections.md`，基线位置 146。处置：改写。
+
+去处：[docs/contracts/config-projections.md#diff-结果与-cli](../../docs/contracts/config-projections.md#diff-结果与-cli)。
+
+原文（逐字）：
+
+````text
+#23 原始接口只接受两个完整 64 位小写十六进制 ID，必填数据库路径。
+#27 新增 `config snapshots list` 和 CLI 的唯一短前缀输入；便捷查询服务先解析为完整 ID，
+````
+
+新文：
+
+````text
+公共 diff 接口只接受两个完整 64 位小写十六进制 ID，必填数据库路径。
+CLI 提供 `config snapshots list` 和 CLI 的唯一短前缀输入；便捷查询服务先解析为完整 ID，
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M034
+
+源：`docs/contracts/config-projections.md`，基线位置 159。处置：改写。
+
+去处：[docs/contracts/config-projections.md#diff-结果与-cli](../../docs/contracts/config-projections.md#diff-结果与-cli)。
+
+原文（逐字）：
+
+````text
+保存快照不是启用；完整校准变更审计、minor/major 分级、门禁与自动运行由后续流程接入。
+````
+
+新文：
+
+````text
+保存快照不是启用；本边界不提供完整校准变更审计、minor/major 分级、门禁与自动运行，校准审计、分级与门禁由[路线图 D](../roadmap.md#module-d)承接，自动运行由[路线图 I](../roadmap.md#module-i)承接。
+````
+
+细节核对：快照不等于启用及未提供能力保留；依规格 §11 D/I，校准审计、分级与门禁责任归 D，自动运行责任归 I。
+
+### M032
+
+源：`docs/contracts/config-snapshots.md`，基线位置 5。处置：改写。
+
+去处：[docs/contracts/config-snapshots.md#历史配置快照发现与引用27](../../docs/contracts/config-snapshots.md#历史配置快照发现与引用27)。
+
+原文（逐字）：
+
+````text
+本票仅扩展 #23 的 CLI 输入与快照发现，不表示完整 A2 或阶段 A 已完成。
+````
+
+新文：
+
+````text
+本边界提供 CLI 输入与快照发现，不证明完整 A2 或阶段 A 通过。
+````
+
+细节核对：只改当前边界措辞，#23/#27 出处见相关；不证明范围原位保留。
+
+### M063
+
+源：`docs/contracts/config-snapshots.md`，基线位置 87。处置：改写。
+
+去处：[docs/contracts/config-snapshots.md#中文-cli-与操作示例](../../docs/contracts/config-snapshots.md#中文-cli-与操作示例)。
+
+原文（逐字）：
+
+````text
+#97 另覆盖显式 Read v1 的 `contract_schema.read` / `contract_manifest.read` 摘要及
+````
+
+新文：
+
+````text
+摘要及比较覆盖显式 Read v1 的 `contract_schema.read` / `contract_manifest.read` 摘要及
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M064
+
+源：`docs/contracts/config-snapshots.md`，基线位置 91。处置：改写。
+
+去处：[docs/contracts/config-snapshots.md#中文-cli-与操作示例](../../docs/contracts/config-snapshots.md#中文-cli-与操作示例)。
+
+原文（逐字）：
+
+````text
+#98 另验证含/不含 Read 契约的双历史快照与候选原字节在阻断原根的新进程恢复，
+````
+
+新文：
+
+````text
+隔离恢复验证覆盖含/不含 Read 契约的双历史快照与候选原字节在阻断原根的新进程恢复，
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M065
+
+源：`docs/contracts/extraction-config.md`，基线位置 10。处置：改写。
+
+去处：[docs/contracts/extraction-config.md#正文提取配置a2-05--issue-20](../../docs/contracts/extraction-config.md#正文提取配置a2-05--issue-20)。
+
+原文（逐字）：
+
+````text
+这些选择尚需阶段 F 四刊 fixture、重复确定性与资源检查，配置就绪不证明运行就绪。
+````
+
+新文：
+
+````text
+这些选择未经四刊 fixture、重复确定性与资源检查；责任见[路线图 F](../roadmap.md#module-f)，配置就绪不证明运行就绪。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M066
+
+源：`docs/contracts/extraction-config.md`，基线位置 39。处置：改写。
+
+去处：[docs/contracts/extraction-config.md#受控工具链](../../docs/contracts/extraction-config.md#受控工具链)。
+
+原文（逐字）：
+
+````text
+兼容或 fixture 已通过。本票不新增解析依赖，当前项目执行环境仍以 `uv.lock` 为准。
+````
+
+新文：
+
+````text
+兼容或 fixture 已通过。此配置边界不提供解析依赖，当前项目执行环境仍以 `uv.lock` 为准。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M067
+
+源：`docs/contracts/extraction-config.md`，基线位置 86。处置：改写。
+
+去处：[docs/contracts/extraction-config.md#固定有效-policy](../../docs/contracts/extraction-config.md#固定有效-policy)。
+
+原文（逐字）：
+
+````text
+公式增强只产生待核查候选。后续 adapter 必须将 orig、生成 text 和区域定位分开，
+````
+
+新文：
+
+````text
+公式增强只产生待核查候选。正文 adapter 必须将 orig、生成 text 和区域定位分开，
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M068
+
+源：`docs/contracts/extraction-config.md`，基线位置 88。处置：改写。
+
+去处：[docs/contracts/extraction-config.md#固定有效-policy](../../docs/contracts/extraction-config.md#固定有效-policy)。
+
+原文（逐字）：
+
+````text
+不得支持主要发现、评分和复用建议；无法转写仍提供明确定位占位。本票不实现这些
+````
+
+新文：
+
+````text
+不得支持主要发现、评分和复用建议；无法转写仍提供明确定位占位。此配置边界不实现这些
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M069
+
+源：`docs/contracts/extraction-config.md`，基线位置 112。处置：改写。
+
+去处：[docs/contracts/extraction-config.md#公共语义与历史](../../docs/contracts/extraction-config.md#公共语义与历史)。
+
+原文（逐字）：
+
+````text
+后续实际摘录或正文变化通过论文侧输入指纹影响消费者。校准门禁仍待后续实现。
+````
+
+新文：
+
+````text
+后续实际摘录或正文变化通过论文侧输入指纹影响消费者。此配置边界不提供校准门禁，承接见[路线图 D](../roadmap.md#module-d)。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M070
+
+源：`docs/contracts/extraction-config.md`，基线位置 122。处置：改写。
+
+去处：[docs/contracts/extraction-config.md#校验错误](../../docs/contracts/extraction-config.md#校验错误)。
+
+原文（逐字）：
+
+````text
+本次类型整理和校验器改名不改变合法材料的规范字节、快照身份或语义哈希；既有
+````
+
+新文：
+
+````text
+类型整理和校验器改名不改变合法材料的规范字节、快照身份或语义哈希；既有
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M147
+
+源：`docs/contracts/extraction-config.md`，基线位置 同节（本轮继续整理）。处置：改写。
+
+去处：[docs/contracts/extraction-config.md#相关](../../docs/contracts/extraction-config.md#相关)。
+
+原文（逐字）：
+
+````text
+[规格](../../intent/draft.md#任务阅读导航)；[ADR](../adr/)；[路线图模块与承接责任](../roadmap.md#模块承接索引)。
+````
+
+新文：
+
+````text
+[规格](../../intent/draft.md#49-docling-正文提取)；[ADR-0025](../adr/0025-allow-local-formula-candidates-with-source-review.md)；[路线图承接](../roadmap.md#module-body)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M096
+
+源：`docs/contracts/fixture-audit.md`，基线位置 3。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#fixture-注册与摘要审计-contract-v1](../../docs/contracts/fixture-audit.md#fixture-注册与摘要审计-contract-v1)。
+
+原文（逐字）：
+
+````text
+本 Contract 落实 #100 评论裁决；权威注册格式为 `paper_radar.fixture_audit.models.FixtureDeclaration`，不加入 `CONTRACT_NAMES` 或五份 Frozen Contract。#101 交付声明登记、只读历史与基本恢复；#102 交付本机 PDF 字节及 backend 期望登记；路线执行、选样、矩阵及独立 A10 验收按 #103–#108 后续交付。当前不代表真实来源、Docling、模型或完整阶段 A 通过。
+````
+
+新文：
+
+````text
+权威注册格式为 `paper_radar.fixture_audit.models.FixtureDeclaration`，不加入 `CONTRACT_NAMES` 或五份 Frozen Contract。提供声明登记、只读历史、基本恢复、本机 PDF 字节与 backend 期望登记、路线执行、选样、矩阵及独立 A10 验收边界。工程验收不证明真实来源、Docling、模型或完整阶段 A 通过。
+````
+
+细节核对：仅将#100–#108进度改为当前提供能力；权威身份与全部未证明范围原位保留，issue依据见相关，逐票状态见路线图文首记录。
+
+### M073
+
+源：`docs/contracts/fixture-audit.md`，基线位置 43。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#cli-与持久化](../../docs/contracts/fixture-audit.md#cli-与持久化)。
+
+原文（逐字）：
+
+````text
+`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 --json；帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计入口最终为 audit run/resume/list/show/replay，未实现的命令不提前注册。
+````
+
+新文：
+
+````text
+`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 --json；帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计入口为 audit run/resume/list/show/replay。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M112
+
+源：`docs/contracts/fixture-audit.md`，基线位置 45。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#cli-与持久化](../../docs/contracts/fixture-audit.md#cli-与持久化)。
+
+原文（逐字）：
+
+````text
+未发布的本批唯一 revision 为 `a1001_fixture_audit`，基于 `a704_screening_retry`；本批只追加实际用到的表，种子由显式 register 写入。各票如需调整该未发布 revision，必须从 a704 重建临时库验证，不能声称原地修补中间库；一旦发布或用于真实库，不再改写。现有配置/论文/Screening 身份不变。前七票只声明行为子集通过，最后 #108 完成 scope 重绑与完整门禁。
+````
+
+新文：
+
+````text
+该边界的 revision 为 `a1001_fixture_audit`，基于 `a704_screening_retry`；只追加实际用到的表，种子由显式 register 写入。该 revision 在未发布阶段的调整必须从 a704 重建临时库验证，不能声称原地修补中间库；一旦发布或用于真实库，不再改写。现有配置/论文/Screening 身份不变。历史子集与独立 A10 的证明范围见[路线图状态出处](../roadmap.md#文首记录的状态与出处)。
+````
+
+细节核对：不改revision与a704升级门槛；未发布阶段规则改明确历史条件，不声称当前仍未发布。
+
+### M074
+
+源：`docs/contracts/fixture-audit.md`，基线位置 54。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#103-已交付的取得边界](../../docs/contracts/fixture-audit.md#103-已交付的取得边界)。
+
+原文（逐字）：
+
+````text
+`acquire_source(plan_id, request_key=..., request=SourceRequest(...), contact_email=...)` 持有非阻塞计划锁，先提交 started，再在事务外调通道执行器、发布有资格保留的完整 source_snapshot，最后在短事务追加结算。请求身份包含规范请求的策略、通道、来源与条件引用；同键异内容拒绝，已完成精确调用只重放旧结果。未结算请求数为未知，不记零；本票没有隐式补跑。`audit_execution` 可由后续整轮驱动持有，同一个 guard 传给各路线，读取不取锁。
+````
+
+新文：
+
+````text
+`acquire_source(plan_id, request_key=..., request=SourceRequest(...), contact_email=...)` 持有非阻塞计划锁，先提交 started，再在事务外调通道执行器、发布有资格保留的完整 source_snapshot，最后在短事务追加结算。请求身份包含规范请求的策略、通道、来源与条件引用；同键异内容拒绝，已完成精确调用只重放旧结果。未结算请求数为未知，不记零；服务不隐式补跑。`audit_execution` 由整轮驱动持有，同一个 guard 传给各路线，读取不取锁。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M109
+
+源：`docs/contracts/fixture-audit.md`，基线位置 73。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#103-已交付的取得边界](../../docs/contracts/fixture-audit.md#103-已交付的取得边界)。
+
+原文（逐字）：
+
+````text
+初始 #103 CLI 为 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。#105 已接通显式 run 和摘要矩阵（见下文）；resume/replay 由 #106 交付，完整混合恢复与独立 A10 仍由后续票收口。当前未运行真实来源审计。
+````
+
+新文：
+
+````text
+只读 CLI 为 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。提供显式 run、摘要矩阵、resume/replay、完整混合恢复与独立 A10 边界，详见下文。当前未运行真实来源审计。
+````
+
+细节核对：改为当前能力，CLI参数与无写入保证不变；#103/105/106及混合恢复历史见路线图状态出处和相关依据。
+
+### M135
+
+源：`docs/contracts/fixture-audit.md`，基线位置 137。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#pdf-字节事实与-backend-期望102](../../docs/contracts/fixture-audit.md#pdf-字节事实与-backend-期望102)。
+
+原文（逐字）：
+
+````text
+不能绕过这些检查。本批继续使用未发布 a1001 revision，所有测试从 a704 重新升级。
+````
+
+新文：
+
+````text
+不能绕过这些检查。a1001 revision 的升级测试从 a704 重新升级。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M075
+
+源：`docs/contracts/fixture-audit.md`，基线位置 156。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#固定选样与暂时受阻继续104](../../docs/contracts/fixture-audit.md#固定选样与暂时受阻继续104)。
+
+原文（逐字）：
+
+````text
+取得在事务外进行，成员/排除/暂停事件在短事务原子追加。选样事件按同刊显式前驱形成历史，不能回写、跳位或改变既有成员。started未结算在显式选样继续中先追加 outcome_unknown 再新建执行，请求数保持未知。本节描述原选样阶段继续；#106 已补全路线 resume/replay、两个真实进程场景和新 parser 追加解释（见下文）。
+````
+
+新文：
+
+````text
+取得在事务外进行，成员/排除/暂停事件在短事务原子追加。选样事件按同刊显式前驱形成历史，不能回写、跳位或改变既有成员。started未结算在显式选样继续中先追加 outcome_unknown 再新建执行，请求数保持未知。本节描述原选样阶段继续；路线 resume/replay、两个真实进程场景和新 parser 追加解释的边界见下文。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M136
+
+源：`docs/contracts/fixture-audit.md`，基线位置 158。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#固定选样与暂时受阻继续104](../../docs/contracts/fixture-audit.md#固定选样与暂时受阻继续104)。
+
+原文（逐字）：
+
+````text
+每个成员引用整份 Feed SHA、原位次、ID/DOI定位、来源取得和明确类别依据，不伪造 A6 单 item 字节；模型不持有摘要成败。validate_all 从冻结 Feed 重建候选，再用事件原路线材料重放同一选择逻辑，核对成员、来源、排除及历史，不以哈希一致代替语义核验。基本备份恢复包含这些引用与原字节，恢复后 list/show 不读仓库声明或原 Feed 路径、不获取执行锁、不自动继续。四刊实测、来源稳定性、摘要矩阵与完整阶段 A 均未由本票证明。
+````
+
+新文：
+
+````text
+每个成员引用整份 Feed SHA、原位次、ID/DOI定位、来源取得和明确类别依据，不伪造 A6 单 item 字节；模型不持有摘要成败。validate_all 从冻结 Feed 重建候选，再用事件原路线材料重放同一选择逻辑，核对成员、来源、排除及历史，不以哈希一致代替语义核验。基本备份恢复包含这些引用与原字节，恢复后 list/show 不读仓库声明或原 Feed 路径、不获取执行锁、不自动继续。本节选样证明不覆盖四刊实测、来源稳定性、摘要矩阵或完整阶段 A；摘要矩阵的独立离线边界见下文。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。 保留选样切片不证明摘要矩阵的范围，矩阵另由后文现有能力界定。
+
+### M137
+
+源：`docs/contracts/fixture-audit.md`，基线位置 165。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#摘要矩阵与显式运行105](../../docs/contracts/fixture-audit.md#摘要矩阵与显式运行105)。
+
+原文（逐字）：
+
+````text
+允许测试在外部 HTTP transport 注入合成响应；本票不执行 live。
+````
+
+新文：
+
+````text
+允许测试在外部 HTTP transport 注入合成响应；普通测试不执行 live。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M076
+
+源：`docs/contracts/fixture-audit.md`，基线位置 183。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#摘要矩阵与显式运行105](../../docs/contracts/fixture-audit.md#摘要矩阵与显式运行105)。
+
+原文（逐字）：
+
+````text
+摘要覆盖分母为零/不适用；不存在“渲染 0/N 成功率”。#106 已交付显式全路线 resume/replay（见下文）。
+````
+
+新文：
+
+````text
+摘要覆盖分母为零/不适用；不存在“渲染 0/N 成功率”。显式全路线 resume/replay 的边界见下文。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M110
+
+源：`docs/contracts/fixture-audit.md`，基线位置 244。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#摘要矩阵与显式运行105](../../docs/contracts/fixture-audit.md#摘要矩阵与显式运行105)。
+
+原文（逐字）：
+
+````text
+显式恢复/历史重解释由 #106 交付；完整混合恢复与独立 A10 门禁继续由 #107/#108 收口；本票不宣称全量门禁通过。
+````
+
+新文：
+
+````text
+显式恢复/历史重解释、完整混合恢复与独立 A10 门禁均有对应工程边界；能力存在不代表某次全量门禁已通过，范围见下文。
+````
+
+细节核对：对应#106/#107/#108当前已交付范围，下文逐项契约与独立A10既有证据支撑；单次不借历史通过边界保持。
+
+### M111
+
+源：`docs/contracts/fixture-audit.md`，基线位置 348。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#完成审计引用与完整恢复107](../../docs/contracts/fixture-audit.md#完成审计引用与完整恢复107)。
+
+原文（逐字）：
+
+````text
+本票以真实 a704 五类非空历史、活跃 WAL 同库混合历史、原目录禁止访问/禁网、移根与独立进程验证；覆盖映射见 tests/a10-recovery-coverage.md。它不代表四刊 live、长期来源稳定、正文/Docling、渲染运行时或完整阶段 A 通过。#108 负责 scope 重绑和同次完整门禁，本票只记录行为子集。
+````
+
+新文：
+
+````text
+隔离恢复证明使用真实 a704 五类非空历史、活跃 WAL 同库混合历史、原目录禁止访问/禁网、移根与独立进程验证；覆盖映射见 tests/a10-recovery-coverage.md。它不代表四刊 live、长期来源稳定、正文/Docling、渲染运行时或完整阶段 A 通过。此处证明仅覆盖所列恢复子集，完整门禁以独立 A10 同次证据为准。
+````
+
+细节核对：a704五类/WAL/禁网/移根/进程/全部未证明范围原位保留；未来#108职责改现有证据引用。
+
+### M138
+
+源：`docs/contracts/fixture-audit.md`，基线位置 352。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#111-的分刊入口与后续责任目标规格](../../docs/contracts/fixture-audit.md#111-的分刊入口与后续责任目标规格)。
+
+原文（逐字）：
+
+````text
+审计前即固定 B 的 JGR 判据：首轮冻结选样 selected 至少 5 篇，以 A10 矩阵为分母，
+失败与受阻成员不剔除，每篇至少一条已交付路线取得非 `suspected_truncated` 的主区块摘要。
+任一不满足即不放行并交回用户；其他刊不足/失败不阻断 B，不改写历史，也不算 A 全部通过。
+这些规则未实现在当前审计结论中，complete 仍仅表示终态齐备，不自动授予 B 就绪。
+
+生产路径必须复用审计主区块/截断/HTTP 的同一版本化权威，或以 `reinterpret_audit`
+追加生产解析器解释、审查冻结 JGR 材料字段差异后再认为判据对生产有效；B 样本本身仍须
+经生产取得完整主摘要。C 按策略版本记录每周命中率，F 新通道以新策略补跑，不能改写旧失败。
+最迟 D 正式预热冻结与首个批次前逐刊满足稳定取得；四刊阈值及是否要求一律非截断仍待用户
+事先裁决，仍受阻时另裁决降级输入/披露，不能从 C 到达率估算中默认批准。
+B 的正文 fixture 例外不豁免摘要审计，见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。
+````
+
+新文：
+
+````text
+当前审计结论不实现 B 就绪判定，complete 仅表示终态齐备。入口、生产解析有效性与四刊稳定取得目标见[规格 §11 B](../../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)和[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界)；承接责任见[路线图 Audit/Source/Abstract](../roadmap.md#module-audit)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M139
+
+源：`docs/contracts/fixture-audit.md`，基线位置 同节（本轮继续整理）。处置：改写。
+
+去处：[docs/contracts/fixture-audit.md#相关](../../docs/contracts/fixture-audit.md#相关)。
+
+原文（逐字）：
+
+````text
+[规格](../../intent/draft.md#任务阅读导航)；[ADR](../adr/)；[路线图模块与承接责任](../roadmap.md#模块承接索引)。
+````
+
+新文：
+
+````text
+[规格](../../intent/draft.md#131-feed)；[ADR-0034](../adr/0034-separate-fixture-declarations-and-acquisition-audits.md)；[路线图承接](../roadmap.md#module-audit)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M071
+
+源：`docs/contracts/frozen-contracts.md`，基线位置 17。处置：改写。
+
+去处：[docs/contracts/frozen-contracts.md#冻结契约导出与检查](../../docs/contracts/frozen-contracts.md#冻结契约导出与检查)。
+
+原文（逐字）：
+
+````text
+#97 已开放 `settings.contracts.read: v1`，由配置 check/compile 复用同一权威检查，
+````
+
+新文：
+
+````text
+配置支持 `settings.contracts.read: v1`，由配置 check/compile 复用同一权威检查，
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M072
+
+源：`docs/contracts/frozen-contracts.md`，基线位置 76。处置：改写。
+
+去处：[docs/contracts/frozen-contracts.md#命令与公共入口](../../docs/contracts/frozen-contracts.md#命令与公共入口)。
+
+原文（逐字）：
+
+````text
+完整离线入口的六项计划和 A1 四契约范围不因 Read 新增而改变。#99 已在独立
+````
+
+新文：
+
+````text
+完整离线入口的六项计划和 A1 四契约范围不因 Read 新增而改变。独立
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M148
+
+源：`docs/contracts/frozen-contracts.md`，基线位置 同节（本轮继续整理）。处置：改写。
+
+去处：[docs/contracts/frozen-contracts.md#相关](../../docs/contracts/frozen-contracts.md#相关)。
+
+原文（逐字）：
+
+````text
+[规格](../../intent/draft.md#任务阅读导航)；[ADR](../adr/)；[路线图模块与承接责任](../roadmap.md#模块承接索引)。
+````
+
+新文：
+
+````text
+[规格](../../intent/draft.md#七配置与-agent-契约)；[ADR-0023](../adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md)；[路线图承接](../roadmap.md#module-b)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M099
+
+源：`docs/contracts/paper-facts.md`，基线位置 3。处置：改写。
+
+去处：[docs/contracts/paper-facts.md#论文事实-contracta6](../../docs/contracts/paper-facts.md#论文事实-contracta6)。
+
+原文（逐字）：
+
+````text
+状态：#68 冻结已裁决的目标语义；#69 实现首条出版者 DOI 事实路径，#70 接入 Feed 发现与只读历史，#71 实现四类来源仲裁、人工修正与完整历史读面， #72 实现权威版本关系与正式升级，#73 实现正式阶段输入映射，#74 完成组合隔离恢复，#75 接入必需 A6 同次验收。单次是否通过以对应 run_id 的独立结论及终态为准。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
+````
+
+新文：
+
+````text
+提供出版者 DOI 事实、Feed 发现与只读历史、四类来源仲裁、人工修正、完整历史读面、权威版本关系与正式升级、阶段输入映射及组合隔离恢复，纳入必需 A6 同次验收。单次是否通过以对应 run_id 的独立结论及终态为准。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
+````
+
+细节核对：#68–#75交付顺序移为来源依据，现有能力、单次证明与裁决优先顺序完整保留。
+
+### M113
+
+源：`docs/contracts/paper-facts.md`，基线位置 60。处置：改写。
+
+去处：[docs/contracts/paper-facts.md#12-70-feed-发现切片](../../docs/contracts/paper-facts.md#12-70-feed-发现切片)。
+
+原文（逐字）：
+
+````text
+#70 历史切片只开放同出版者流及 Feed；#71 对来源及人工修正的扩展见下节，权威版本关系和正式映射仍未开放。
+首次真实 Feed 导入前的强冲突持久化与 parser 固定样本回归门禁保持（B 先交付所需切片，C 扩展），第 7/10 节未验证 live 假设不因本票测试通过而转为已验证。
+````
+
+新文：
+
+````text
+a602 历史切片只包含同出版者流及 Feed；当前四源/人工修正、权威版本关系和正式映射分别见 §1.3、§4 与 §8。
+````
+
+细节核对：消除历史未开放被误读为当前限制；a602的历史能力不扩大，完整现状以既有后文章节为依据。
+
+### M156
+
+源：`docs/contracts/paper-facts.md`，基线位置 185。处置：改写。
+
+去处：[docs/contracts/paper-facts.md#6-权威版本关系与当前选择n2](../../docs/contracts/paper-facts.md#6-权威版本关系与当前选择n2)。
+
+原文（逐字）：
+
+````text
+#72 已交付的公共输入为 `ObservationInput.relations: tuple[RelationInput, ...]`；每项封闭字段
+````
+
+新文：
+
+````text
+提供的公共输入为 `ObservationInput.relations: tuple[RelationInput, ...]`；每项封闭字段
+````
+
+细节核对：最终审阅修正：仅拆分当前能力/未提供事实与计划责任，所有数值、拒绝与证明边界保留；后续要求由所链既有规格/路线图承接。
+
+### M157
+
+源：`docs/contracts/paper-facts.md`，基线位置 232。处置：改写。
+
+去处：[docs/contracts/paper-facts.md#8-当前查询历史重建与只读-cli](../../docs/contracts/paper-facts.md#8-当前查询历史重建与只读-cli)。
+
+原文（逐字）：
+
+````text
+公共入口 `PaperFacts(database).map_screening_inputs(*, snapshot_id, paper_id=None, version_id=None, revision_no=None)` 已交付为只读服务。`snapshot_id` 必须是完整小写 SHA-256；明确当前 `paper_id` 与历史 `version_id/revision_no` 互斥，复用同连接 `resolve_revision` 校验。调用方不能提交 `RuntimeConfigSnapshot` 替代登记身份。先在同一个显式 BEGIN 论文读事务中核对 `runtime_config_snapshots` 登记，再经公共 `load_config_snapshot` 的独立只读连接重建不可变配置；不读取当前 selector 或材料文件。
+````
+
+新文：
+
+````text
+公共入口 `PaperFacts(database).map_screening_inputs(*, snapshot_id, paper_id=None, version_id=None, revision_no=None)` 为只读服务。`snapshot_id` 必须是完整小写 SHA-256；明确当前 `paper_id` 与历史 `version_id/revision_no` 互斥，复用同连接 `resolve_revision` 校验。调用方不能提交 `RuntimeConfigSnapshot` 替代登记身份。先在同一个显式 BEGIN 论文读事务中核对 `runtime_config_snapshots` 登记，再经公共 `load_config_snapshot` 的独立只读连接重建不可变配置；不读取当前 selector 或材料文件。
+````
+
+细节核对：最终审阅修正：仅拆分当前能力/未提供事实与计划责任，所有数值、拒绝与证明边界保留；后续要求由所链既有规格/路线图承接。
+
+### M097
+
+源：`docs/contracts/pi-rpc.md`，基线位置 3。处置：改写。
+
+去处：[docs/contracts/pi-rpc.md#pi-单次-rpc-调用-contract](../../docs/contracts/pi-rpc.md#pi-单次-rpc-调用-contract)。
+
+原文（逐字）：
+
+````text
+状态：#86 交付冻结调用描述与 render_format=1；#87 交付显式注入会话的单次协议服务、
+严格解帧/初始化及 boundary 的 A7 test 接线；#88 补全 value 同源权威接收、事件/
+最终消息矩阵及 D2/D3 审计边界。真实管道及取消握手、恢复和独立 A8 验收由 #89–#91
+完成。以下把已裁决目标与目前证明范围分开记录。
+依据为 [#85](https://github.com/MeteoBoy4/PaperRadar/issues/85) 正文及后续 D1–D4/P3。
+本 Contract 不新增 migration、业务 Schema、任务来源或生产命令。
+````
+
+新文：
+
+````text
+提供冻结调用描述与 render_format=1、显式注入会话的单次协议服务、严格解帧/初始化、boundary/value 的 A7 test 同源权威接收、事件/最终消息矩阵及 D2/D3 审计边界；支持真实管道、取消握手和恢复，并有独立 A8 验收边界。
+依据为 [#85](https://github.com/MeteoBoy4/PaperRadar/issues/85) 正文及后续 D1–D4/P3。
+本 Contract 不提供新的 migration、业务 Schema、任务来源或生产命令。
+````
+
+细节核对：#86–#91逐票叙述改能力陈述，render_format、test限定、D2/D3及生产缺口保留，出处见相关。
+
+### M130
+
+源：`docs/contracts/pi-rpc.md`，基线位置 25。处置：改写。
+
+去处：[docs/contracts/pi-rpc.md#调用描述与只读准备](../../docs/contracts/pi-rpc.md#调用描述与只读准备)。
+
+原文（逐字）：
+
+````text
+封闭 `PROTOCOL_PROFILES` 仅含 `1.4.0 → pi-rpc-1.4.0-v1`。这是本票离线协议支持
+````
+
+新文：
+
+````text
+封闭 `PROTOCOL_PROFILES` 仅含 `1.4.0 → pi-rpc-1.4.0-v1`。这是离线协议支持
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M077
+
+源：`docs/contracts/pi-rpc.md`，基线位置 307。处置：改写。
+
+去处：[docs/contracts/pi-rpc.md#d4来源推导与-not_assessed](../../docs/contracts/pi-rpc.md#d4来源推导与-not_assessed)。
+
+原文（逐字）：
+
+````text
+#88 的 DERIVED-11 正例同时使用恰好 256 KiB 请求帧、64 KiB 候选和含 system/user/
+````
+
+新文：
+
+````text
+DERIVED-11 正例同时使用恰好 256 KiB 请求帧、64 KiB 候选和含 system/user/
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M101
+
+源：`docs/contracts/pi-rpc.md`，基线位置 312。处置：移动。
+
+去处：[intent/draft.md#pi-生产启动器准入](../../intent/draft.md#pi-生产启动器准入)。
+
+原文（逐字）：
+
+````text
+生产启动器票必须在任何真实调用前完成以下准入，并逐项按 DERIVED 编号复核：
+
+- 复用相同管道会话和协议内核；启动描述由上层显式构造命令、env、cwd、系统指令，
+  没有默认值、不继承宿主环境；每并发会话独立 PI_CODING_AGENT_DIR 或整体串行化。
+- 启动前在隔离 PI_CODING_AGENT_DIR/settings.json 预写 cacheWarming="off" 与
+  retry.provider.maxRetries=0；两个 RPC 开关会写全局设置，ACK 不证明写入/隔离。
+  没观察到预热不等于关闭预热（其触发另有 cache TTL/节省条件）。
+- --offline --no-session -ne -ns -np -nc -nt，PI_SKIP_VERSION_CHECK=1、PI_TELEMETRY=0；
+  验证禁止自动网络活动（目录刷新、版本检查、遥测、缓存预热、隐含 provider retry）。
+- 通过 --system-prompt 精确传入声明系统指令；防止参数被当成文件路径。确认无默认
+  prompt、个人设置、项目资源、skills/extensions/MCP、AGENTS.md/CLAUDE.md 等注入。
+- #111 已确认本机 cwd 为 `/srv/pi-cwd`，无默认值显式传入、白名单仅此值；该目录无 .pi/、AGENTS.md、CLAUDE.md 或
+  其他项目资源，验证本机路径只在已裁决常量例外内。DERIVED-01/02/03/05/06 必须实测。
+- 在领取任何任务前预检固定供给、模型/凭据可用；验收参数映射、单次模型请求、日期
+  别名政策、模型能力、实际用量/停止与事件（DERIVED-04/07/08/09/10），落实 OS 隔离。
+````
+
+新文：
+
+````text
+当前没有生产启动器准入或真实 Pi 兼容通过证明。 生产接线目标见[规格补充约束](../../intent/draft.md#pi-生产启动器准入)，承接责任见[路线图](../roadmap.md#module-pi)。
+````
+
+细节核对：目标责任与约束移入规格，当前未实现/未验范围留Contract；全文逐字保留，仅相对链接按规格位置重定位，原Contract标题不变。 迁移后“本权威”明确为A9 Read权威验证器；纯历史not_assessed不变说明保留在来源Contract/路线图，不作为新增规格要求。
+
+### M102
+
+源：`docs/contracts/pi-rpc.md`，基线位置 336。处置：移动。
+
+去处：[intent/draft.md#b-首次-pi-生产接线](../../intent/draft.md#b-首次-pi-生产接线)。
+
+原文（逐字）：
+
+````text
+首次生产供给目标为 1.4.0，复用当前唯一登记的离线协议档案，仍须实际安装与 RPC
+兼容验证；DERIVED 假设、参数映射、隔离、隐含调用抑制及完成判据不得假称已 live 验证。
+A4 1.3.0 spike 和 A2 历史配置示例保持原字节；未来升级按主方案 §7.8 新建适配器声明、
+供给身份、协议/行为证据并处理语义变更，不永久锁死 V1。
+
+B 前置交付生产启动器、权限/资源构造、真实执行成功来源、实际用量、恢复与执行前预检，
+复用 A7/A8 权威；不能把真实候选塞入 test 接收器，也不能把真实来源等同于正常消费资格。
+`/srv/pi-cwd` 已确认；缺失/不符/现场隔离未验收时 Pi readiness 阻断，首次发送 prompt
+的 live 探测也受此限。实验根及证据边界见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)，未扩大上述历史 not_assessed 结论。
+````
+
+新文：
+
+````text
+当前提供离线协议档案与管道组件，不提供生产接线通过证明；历史 not_assessed 不变。 生产接线目标见[规格补充约束](../../intent/draft.md#b-首次-pi-生产接线)，承接责任见[路线图](../roadmap.md#module-live)。
+````
+
+细节核对：目标责任与约束移入规格，当前未实现/未验范围留Contract；全文逐字保留，仅相对链接按规格位置重定位，原Contract标题不变。 迁移后“本权威”明确为A9 Read权威验证器；纯历史not_assessed不变说明保留在来源Contract/路线图，不作为新增规格要求。
+
+### M131
+
+源：`docs/contracts/pi-rpc.md`，基线位置 同节（本轮继续整理）。处置：改写。
+
+去处：[docs/contracts/pi-rpc.md#相关](../../docs/contracts/pi-rpc.md#相关)。
+
+原文（逐字）：
+
+````text
+[规格](../../intent/draft.md#任务阅读导航)；[ADR](../adr/)；[路线图模块与承接责任](../roadmap.md#模块承接索引)。
+````
+
+新文：
+
+````text
+[规格](../../intent/draft.md#77-pi-rpc-适配边界)；[ADR-0026](../adr/0026-control-pi-through-a-bounded-rpc-adapter.md)；[路线图承接](../roadmap.md#module-pi)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M158
+
+源：`docs/contracts/pi-supply.md`，基线位置 26。处置：改写。
+
+去处：[docs/contracts/pi-supply.md#显式输入与请求](../../docs/contracts/pi-supply.md#显式输入与请求)。
+
+原文（逐字）：
+
+````text
+这是本次对请求读取边界的补强；既有冻结证据仍按库内原字节回放，不重新读取源路径。
+````
+
+新文：
+
+````text
+这是请求读取边界的约束；既有冻结证据仍按库内原字节回放，不重新读取源路径。
+````
+
+细节核对：最终审阅修正：仅拆分当前能力/未提供事实与计划责任，所有数值、拒绝与证明边界保留；后续要求由所链既有规格/路线图承接。
+
+### M132
+
+源：`docs/contracts/pi-supply.md`，基线位置 210。处置：改写。
+
+去处：[docs/contracts/pi-supply.md#固定材料导出](../../docs/contracts/pi-supply.md#固定材料导出)。
+
+原文（逐字）：
+
+````text
+2026-10-18 用户裁决：本次 A4 接受上述必要安全文件能力边界，保持能力不足时的安全拒绝。
+#36 已关闭；[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 已以 NOT_PLANNED 关闭。
+````
+
+新文：
+
+````text
+2026-10-18 用户裁决：A4 接受上述必要安全文件能力边界，保持能力不足时的安全拒绝。
+历史关闭状态见[路线图](../roadmap.md#已取消)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M133
+
+源：`docs/contracts/pi-supply.md`，基线位置 481。处置：改写。
+
+去处：[docs/contracts/pi-supply.md#安装清理执行与中断恢复](../../docs/contracts/pi-supply.md#安装清理执行与中断恢复)。
+
+原文（逐字）：
+
+````text
+帮助完全本地且不创建文件、数据库、锁或计划。所有普通测试只用临时库与目录；本票未验证新的真实 Node/Pi、RPC、网络或用户安装根删除。
+````
+
+新文：
+
+````text
+帮助完全本地且不创建文件、数据库、锁或计划。所有普通测试只用临时库与目录；该离线范围未验证新的真实 Node/Pi、RPC、网络或用户安装根删除。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M134
+
+源：`docs/contracts/pi-supply.md`，基线位置 496。处置：改写。
+
+去处：[docs/contracts/pi-supply.md#b-首次生产供给目标111](../../docs/contracts/pi-supply.md#b-首次生产供给目标111)。
+
+原文（逐字）：
+
+````text
+B 首次供给目标为 Pi 1.4.0，复用 A8 当前唯一登记的离线协议档案；实际 Node/npm 版本、
+固定供给和安装/RPC 兼容由后续票验证，本票不选择新工具链或安装。A4 1.3.0 固定材料与
+机制 spike、A2 历史配置示例不改写，不能拼成生产兼容或 live/install_check 证明。
+未来升级仍按主方案 §7.8 新建适配器声明版本、供给身份及协议/行为证据并处理语义影响。
+生产启动器的 `/srv/pi-cwd` 和现场隔离要求见 [Pi RPC Contract](pi-rpc.md)，实验用途见
+[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；选择版本不代表这些前置已完成。
+````
+
+新文：
+
+````text
+当前固定供给工程不证明 B 首次 Pi 1.4.0 的安装/RPC 兼容、实际 Node/npm 选择或现场隔离通过。A4 1.3.0 固定材料、机制 spike 与 A2 示例保持历史身份，不能拼成生产兼容或 live/install_check 证明。首次供给、后续升级与隔离目标见[规格 §7.8](../../intent/draft.md#78-pi-固定版本供给)及[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界)，责任见[路线图 Live](../roadmap.md#module-live)。
+
+
+## 相关
+
+依据：[#36](https://github.com/MeteoBoy4/PaperRadar/issues/36)、[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+
+[规格](../../intent/draft.md#78-pi-固定版本供给)；[ADR-0029](../adr/0029-protect-installations-through-inherited-flock.md)；[路线图承接](../roadmap.md#module-live)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M003
+
+源：`docs/contracts/read-validation.md`，基线位置 8。处置：改写。
+
+去处：[docs/contracts/read-validation.md#当前交付与命名](../../docs/contracts/read-validation.md#当前交付与命名)。
+
+原文（逐字）：
+
+````text
+#93 已交付 `paper_radar.reading` 的权威 Pydantic 结构及 Read 自有七类价值词汇，
+经现有 contracts 服务生成、导出和只读检查。仅通过 Schema 不表示已通过证据业务接收。
+#94 已交付原始字节与可靠文本上下文的纯验证、数值 v1 和警告三视图。
+#95 已接通表格、公式区域源字符与不可靠字符的字段矩阵；#96 已交付 single/reduce
+模式与同正文 map 证据允许集合检查；#97 已交付显式 Read 配置准入与历史比较。
+#98 已验证历史配置与候选原字节的非空隔离恢复，固定上下文由测试常量重建；
+独立必需 A9、同次可信终态与固定范围由 #99 交付。
+
+````
+
+新文：
+
+````text
+`paper_radar.reading` 提供权威 Pydantic 结构及 Read 自有七类价值词汇，
+经现有 contracts 服务生成、导出和只读检查。仅通过 Schema 不表示已通过证据业务接收。
+公共能力包括原始字节与可靠文本上下文的纯验证、数值 v1 和警告三视图，
+表格、公式区域源字符与不可靠字符的字段矩阵，single/reduce
+模式与同正文 map 证据允许集合检查，以及显式 Read 配置准入与历史比较。
+历史配置与候选原字节具有非空隔离恢复验证，固定上下文由测试常量重建；
+独立必需 A9 绑定同次可信终态与固定范围。
+
+````
+
+细节核对：能力和边界逐项原位保留，#93–#99 交付出处移入相关依据行；数值 v1、single/reduce、固定上下文及 A9 同次范围未变。
+
+### M004
+
+源：`docs/contracts/read-validation.md`，基线位置 45。处置：改写。
+
+去处：[docs/contracts/read-validation.md#字段闭集](../../docs/contracts/read-validation.md#字段闭集)。
+
+原文（逐字）：
+
+````text
+逐项检查，不能套用摘要层输入不足短语。结构类型/评分/必填性由 #93 交付；
+有意义文本、重复检测、条件非空及上下文业务规则由 #94 交付。
+````
+
+新文：
+
+````text
+逐项检查，不能套用摘要层输入不足短语。结构校验涵盖类型/评分/必填性；
+业务校验涵盖有意义文本、重复检测、条件非空及上下文业务规则。
+````
+
+细节核对：结构/业务校验职责原位保留；#93/#94 出处移至相关依据行。
+
+### M005
+
+源：`docs/contracts/read-validation.md`，基线位置 79。处置：改写。
+
+去处：[docs/contracts/read-validation.md#消费上下文与错误边界源字符与-reduce-已交付](../../docs/contracts/read-validation.md#消费上下文与错误边界源字符与-reduce-已交付)。
+
+原文（逐字）：
+
+````text
+`output_invalid` 或消耗模型预算。本票不引入预算或接收器。
+````
+
+新文：
+
+````text
+`output_invalid` 或消耗模型预算。此校验边界不提供预算或接收器。
+````
+
+细节核对：仅调整位置性措辞；数字、枚举、条件、否定、情态及顺序保留。
+
+### M078
+
+源：`docs/contracts/read-validation.md`，基线位置 101。处置：改写。
+
+去处：[docs/contracts/read-validation.md#消费上下文与错误边界源字符与-reduce-已交付](../../docs/contracts/read-validation.md#消费上下文与错误边界源字符与-reduce-已交付)。
+
+原文（逐字）：
+
+````text
+缺少 identity 或 expected_language 都是受控上下文错误。#95 允许上下文保留合法
+````
+
+新文：
+
+````text
+缺少 identity 或 expected_language 都是受控上下文错误。上下文允许保留合法
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M079
+
+源：`docs/contracts/read-validation.md`，基线位置 104。处置：改写。
+
+去处：[docs/contracts/read-validation.md#消费上下文与错误边界源字符与-reduce-已交付](../../docs/contracts/read-validation.md#消费上下文与错误边界源字符与-reduce-已交付)。
+
+原文（逐字）：
+
+````text
+#96 已接入 reduce；未知模式仍以 unsupported_mode 拒绝。
+````
+
+新文：
+
+````text
+验证器支持 reduce；未知模式仍以 unsupported_mode 拒绝。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M080
+
+源：`docs/contracts/read-validation.md`，基线位置 149。处置：改写。
+
+去处：[docs/contracts/read-validation.md#消费上下文与错误边界源字符与-reduce-已交付](../../docs/contracts/read-validation.md#消费上下文与错误边界源字符与-reduce-已交付)。
+
+原文（逐字）：
+
+````text
+允许集合真实来自本轮 map 的来源链仍未验证，本票不实现 map 契约、分块或任务。
+````
+
+新文：
+
+````text
+允许集合真实来自本轮 map 的来源链仍未验证，本验证边界不实现 map 契约、分块或任务。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M081
+
+源：`docs/contracts/read-validation.md`，基线位置 165。处置：改写。
+
+去处：[docs/contracts/read-validation.md#受限内容矩阵95-已交付](../../docs/contracts/read-validation.md#受限内容矩阵95-已交付)。
+
+原文（逐字）：
+
+````text
+正文、去掉表格精确值或移入关键局限；本票不实现该修正调用。
+````
+
+新文：
+
+````text
+正文、去掉表格精确值或移入关键局限；本验证边界不提供该修正调用，责任见[路线图 G](../roadmap.md#module-g)。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M082
+
+源：`docs/contracts/read-validation.md`，基线位置 180。处置：改写。
+
+去处：[docs/contracts/read-validation.md#受限内容矩阵95-已交付](../../docs/contracts/read-validation.md#受限内容矩阵95-已交付)。
+
+原文（逐字）：
+
+````text
+将来生产接收器应把这次真实输出拒绝计入一次 attempt，而本票不创建 attempt。
+````
+
+新文：
+
+````text
+将来生产接收器应把这次真实输出拒绝计入一次 attempt，而本验证边界不创建 attempt。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M083
+
+源：`docs/contracts/read-validation.md`，基线位置 184。处置：改写。
+
+去处：[docs/contracts/read-validation.md#受限内容矩阵95-已交付](../../docs/contracts/read-validation.md#受限内容矩阵95-已交付)。
+
+原文（逐字）：
+
+````text
+本票不设无规格依据的长度上限，不判断科学语义蕴含或人工复核状态。
+````
+
+新文：
+
+````text
+本验证边界不设无规格依据的长度上限，不判断科学语义蕴含或人工复核状态。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M084
+
+源：`docs/contracts/read-validation.md`，基线位置 231。处置：改写。
+
+去处：[docs/contracts/read-validation.md#数值与警告94-已交付](../../docs/contracts/read-validation.md#数值与警告94-已交付)。
+
+原文（逐字）：
+
+````text
+块粒度影响区分力：块越大，论文别处的相同数值越可能落在同一支持片段；本票不设
+````
+
+新文：
+
+````text
+块粒度影响区分力：块越大，论文别处的相同数值越可能落在同一支持片段；本验证边界不设
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M085
+
+源：`docs/contracts/read-validation.md`，基线位置 311。处置：改写。
+
+去处：[docs/contracts/read-validation.md#集成验收与明确未验证](../../docs/contracts/read-validation.md#集成验收与明确未验证)。
+
+原文（逐字）：
+
+````text
+#93–#98 以各自行为子集交付；#99 已接入独立必需 A9、可信终态与完整门禁。
+````
+
+新文：
+
+````text
+本边界纳入独立必需 A9、可信终态与完整门禁；历史行为子集范围见[路线图](../roadmap.md#文首记录的状态与出处)。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M103
+
+源：`docs/contracts/read-validation.md`，基线位置 456。处置：移动。
+
+去处：[intent/draft.md#b-最小-read-与正文消费](../../intent/draft.md#b-最小-read-与正文消费)。
+
+原文（逐字）：
+
+````text
+B 最小 Read 票须交付 Read StageInput、任务/预算/租约/retry、analysis 持久化与恢复，
+决定证据/数值规则身份归属；仅改变后处理警告不应未经分析触发模型重跑。
+parser/canonical/normalize/evidence 及源字符持久身份必须先闭合，Read 仍通过本权威接收。
+超出单次安全输入预算时先拒绝，或前移所需完整分块能力，不截断正文或复用 Screening 会话。
+实验根、逐文档质量与不复用/不提升要求见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；这些是目标责任，
+不重写 #92–#99 的历史任务台账或 not_assessed。F 扩展四刊正文供给，G 扩展通用长文 Read。
+````
+
+新文：
+
+````text
+当前没有 Read StageInput、任务/预算/租约/retry、analysis 持久化和真实正文消费验收；历史 #92–#99 台账及 not_assessed 保持。 生产接线目标见[规格补充约束](../../intent/draft.md#b-最小-read-与正文消费)，承接责任见[路线图](../roadmap.md#module-body)。
+````
+
+细节核对：目标责任与约束移入规格，当前未实现/未验范围留Contract；全文逐字保留，仅相对链接按规格位置重定位，原Contract标题不变。 迁移后“本权威”明确为A9 Read权威验证器；纯历史not_assessed不变说明保留在来源Contract/路线图，不作为新增规格要求。
+
+### M128
+
+源：`docs/contracts/runtime-config.md`，基线位置 62。处置：改写。
+
+去处：[docs/contracts/runtime-config.md#输入与路径](../../docs/contracts/runtime-config.md#输入与路径)。
+
+原文（逐字）：
+
+````text
+本票仅判断填写状态，不判断资料真实性。只有六段都配置时 Profile 槽为
+````
+
+新文：
+
+````text
+配置边界仅判断填写状态，不判断资料真实性。只有六段都配置时 Profile 槽为
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M129
+
+源：`docs/contracts/runtime-config.md`，基线位置 147。处置：改写。
+
+去处：[docs/contracts/runtime-config.md#期刊身份与信誉](../../docs/contracts/runtime-config.md#期刊身份与信誉)。
+
+原文（逐字）：
+
+````text
+本票不执行论文匹配、评分、排序或来源抓取。期刊变化只影响完整快照与登记身份，
+````
+
+新文：
+
+````text
+配置边界不执行论文匹配、评分、排序或来源抓取。期刊变化只影响完整快照与登记身份，
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M140
+
+源：`docs/contracts/screening-tasks.md`，基线位置 9。处置：改写。
+
+去处：[docs/contracts/screening-tasks.md#a8-调用描述与接线边界85-d1d4p3](../../docs/contracts/screening-tasks.md#a8-调用描述与接线边界85-d1d4p3)。
+
+原文（逐字）：
+
+````text
+后续离线接线仍保留 `executor_kind=test`，唯一成功、两次预算、600 秒租约、修正、
+````
+
+新文：
+
+````text
+离线接线保留 `executor_kind=test`，唯一成功、两次预算、600 秒租约、修正、
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M098
+
+源：`docs/contracts/screening-tasks.md`，基线位置 13。处置：改写。
+
+去处：[docs/contracts/screening-tasks.md#a8-调用描述与接线边界85-d1d4p3](../../docs/contracts/screening-tasks.md#a8-调用描述与接线边界85-d1d4p3)。
+
+原文（逐字）：
+
+````text
+状态：A7-01 已冻结 D1–D4 并收紧权威 JSON 解析；A7-02（#78）已交付公共登记、
+冻结输入回放、请求回执、a701 持久化和备份语义闭包；A7-03（#79）增加 a702 的
+原子领取、两次预算、600 秒租约、失败结算、显式回收和 test 一次尝试驱动。
+A7-04（#80）交付 boundary 权威接收、唯一制品、三值适用性和成功恢复闭包。
+A7-05（#81）在同一接收链扩展 value 与历史同源上下文重建。
+A7-06（#82）交付显式 retry、版本化共享查询和父链恢复闭包；
+A7-07（#83）交付完整历史隔离恢复；A7-08（#84）注册独立必需 A7 组及可信终态。
+本文规定验收范围，具体通过事实以同次原始证据、真实入口退出码和状态查询为准。
+来源为 [#76 正文及全部评论](https://github.com/MeteoBoy4/PaperRadar/issues/76)，
+[用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)
+优先；逐项对照与绑定台账见 [A7 requirements](../verification/a7-requirements.md)。
+````
+
+新文：
+
+````text
+提供 D1–D4 权威 JSON 解析、公共登记、冻结输入回放、请求回执、a701 持久化及备份闭包，以及 a702 的原子领取、两次预算、600 秒租约、失败结算、显式回收和 test 一次尝试驱动。
+提供 boundary/value 同源权威接收、唯一制品、三值适用性、成功恢复闭包与历史上下文重建；提供显式 retry、版本化共享查询、父链及完整历史隔离恢复，并纳入独立必需 A7 组与可信终态。
+本文规定验收范围，具体通过事实以同次原始证据、真实入口退出码和状态查询为准。
+来源为 [#76 正文及全部评论](https://github.com/MeteoBoy4/PaperRadar/issues/76)，
+[用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)
+优先；逐项对照与绑定台账见 [A7 requirements](../verification/a7-requirements.md)。
+````
+
+细节核对：A7-01–08状态改公共能力，a701/a702、两次/600秒/test与真实证据口径全部保留；#77–#84出处见相关及路线图。
+
+### M141
+
+源：`docs/contracts/screening-tasks.md`，基线位置 30。处置：改写。
+
+去处：[docs/contracts/screening-tasks.md#1-服务边界与身份](../../docs/contracts/screening-tasks.md#1-服务边界与身份)。
+
+原文（逐字）：
+
+````text
+默认执行者都不在本批范围。单任务可领取不代表完整生产运行许可。
+````
+
+新文：
+
+````text
+默认执行者均不在此公共边界。单任务可领取不代表完整生产运行许可。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M086
+
+源：`docs/contracts/screening-tasks.md`，基线位置 69。处置：改写。
+
+去处：[docs/contracts/screening-tasks.md#2-冻结输入与语言事实d1](../../docs/contracts/screening-tasks.md#2-冻结输入与语言事实d1)。
+
+原文（逐字）：
+
+````text
+本批不实现自动派生。
+````
+
+新文：
+
+````text
+当前不提供自动派生。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M155
+
+源：`docs/contracts/screening-tasks.md`，基线位置 126。处置：改写。
+
+去处：[docs/contracts/screening-tasks.md#4-候选接收与筛选制品d3boundaryvalue-已交付](../../docs/contracts/screening-tasks.md#4-候选接收与筛选制品d3boundaryvalue-已交付)。
+
+原文（逐字）：
+
+````text
+真实模型、settled、输出通道、Pi 供给/安装和隔离证明由后续 RPC 票承担。
+````
+
+新文：
+
+````text
+此边界不证明真实模型、settled、输出通道、Pi 供给/安装和隔离通过；承接责任见[路线图 Pi/Live](../roadmap.md#module-live)。
+````
+
+细节核对：最终审阅修正：仅拆分当前能力/未提供事实与计划责任，所有数值、拒绝与证明边界保留；后续要求由所链既有规格/路线图承接。
+
+### M087
+
+源：`docs/contracts/screening-tasks.md`，基线位置 167。处置：改写。
+
+去处：[docs/contracts/screening-tasks.md#6-显式-retry共享查询与可见性d4服务已实现](../../docs/contracts/screening-tasks.md#6-显式-retry共享查询与可见性d4服务已实现)。
+
+原文（逐字）：
+
+````text
+本批仅交付服务层 retry 与共享查询，**不交付 screening CLI、paper trace 组合、
+````
+
+新文：
+
+````text
+当前仅提供服务层 retry 与共享查询，**不提供 screening CLI、paper trace 组合、
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M115
+
+源：`docs/contracts/screening-tasks.md`，基线位置 254。处置：改写。
+
+去处：[docs/contracts/screening-tasks.md#8-a7-02-公共登记-api已交付](../../docs/contracts/screening-tasks.md#8-a7-02-公共登记-api已交付)。
+
+原文（逐字）：
+
+````text
+任务状态词表预先固定为 ready、running、lease_expired、retryable、failed、succeeded，
+分别表示待领取、已领取未到期、到期未结算、失败但尚有预算、失败终态、成功；A7-02
+当时只登记 ready；A7-03 实现前五项，A7-04/05 已交付两阶段 succeeded。
+当前六态均为任务派生状态，不构成 Paper 主状态或完整 eligibility。
+````
+
+新文：
+
+````text
+任务状态词表固定为 ready、running、lease_expired、retryable、failed、succeeded，
+分别表示待领取、已领取未到期、到期未结算、失败但尚有预算、失败终态、成功。
+当前六态均为任务派生状态，不构成 Paper 主状态或完整 eligibility。
+````
+
+细节核对：六态和全部定义原位；历史实现顺序与当前能力分开，不构成Paper主状态/eligibility仍保留。
+
+### M088
+
+源：`docs/contracts/screening-tasks.md`，基线位置 425。处置：改写。
+
+去处：[docs/contracts/screening-tasks.md#11-a7-06-显式-retry-与共享查询已交付](../../docs/contracts/screening-tasks.md#11-a7-06-显式-retry-与共享查询已交付)。
+
+原文（逐字）：
+
+````text
+保留父链与预算，不回收或执行。完整组合恢复由 #83 交付；独立 A7 验收由 #84 注册。
+````
+
+新文：
+
+````text
+保留父链与预算，不回收或执行。支持完整组合恢复，并注册独立 A7 验收。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M104
+
+源：`docs/contracts/screening-tasks.md`，基线位置 475。处置：移动。
+
+去处：[intent/draft.md#b-screening-产品接线](../../intent/draft.md#b-screening-产品接线)。
+
+原文（逐字）：
+
+````text
+上文“不交付 CLI”继续描述 A7 历史范围；B 首张真实任务票须同时交付
+`screening failures/retry`、`paper trace` 组合及中文 help/退出码/恢复验证，不能继续推到 H。
+B 编排首次执行 `out_of_scope` 停止 value，A7 服务层的独立阶段事实不因此改写。
+
+语言事实接线使用数据库 Feed 身份与发现关系确定受支持期刊，再应用 ADR-0035 v1，
+保存来源及策略版本；同刊多个 Feed 一致，不建立第二个 Feed 权威或 first-seen 规则。
+跨刊冲突影响 bool 时保留冲突并拒绝新不确定登记，无归属人工 Paper 仍不得登记 value；
+冻结预算/retry 继承原值，策略不进 A5 指纹，不可借换策略重置预算。
+
+A 先交 eligibility/visibility 纯规则及合成事实测试，B 的最低元数据、人工决定、PDF/Read
+资格和 show/trace/最小日报首次消费；C 接保留器与未揭晓事实。真实执行成功来源、用量、
+恢复及前置预检复用 A7/A8 接收权威，仍待 B 生产接线验收。
+
+B 全链置于独立实验数据根，普通生产命令拒绝该根；不改同库预算身份、不添加用途维度。
+实验结果不复用、不提升，生产以后同论文从正常路径使用独立预算；样本暴露清单跨库保留，
+见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。窄命令显式单篇，不扫描自动队列；任何自动领取首次引入即须
+持久每日配额，不能因手动启动 run-due 或尚无 timer 而豁免。历史 A7/A8 not_assessed 不变。
+````
+
+新文：
+
+````text
+当前不提供 screening CLI/paper trace 组合、完整 visibility 或 B 生产接线验收；历史 A7/A8 not_assessed 不变。 生产接线目标见[规格补充约束](../../intent/draft.md#b-screening-产品接线)，承接责任见[路线图](../roadmap.md#module-b)。
+````
+
+细节核对：目标责任与约束移入规格，当前未实现/未验范围留Contract；全文逐字保留，仅相对链接按规格位置重定位，原Contract标题不变。 迁移后“本权威”明确为A9 Read权威验证器；纯历史not_assessed不变说明保留在来源Contract/路线图，不作为新增规格要求。
+
+### M142
+
+源：`docs/contracts/screening-tasks.md`，基线位置 同节（本轮继续整理）。处置：改写。
+
+去处：[docs/contracts/screening-tasks.md#相关](../../docs/contracts/screening-tasks.md#相关)。
+
+原文（逐字）：
+
+````text
+[规格](../../intent/draft.md#任务阅读导航)；[ADR](../adr/)；[路线图模块与承接责任](../roadmap.md#模块承接索引)。
+````
+
+新文：
+
+````text
+[规格](../../intent/draft.md#85-任务领取与幂等)；[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)；[路线图承接](../roadmap.md#module-b)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M089
+
+源：`docs/contracts/screening-validation.md`，基线位置 3。处置：改写。
+
+去处：[docs/contracts/screening-validation.md#screening-输出验证接口](../../docs/contracts/screening-validation.md#screening-输出验证接口)。
+
+原文（逐字）：
+
+````text
+当前交付研究边界判断、摘要层价值预测、复用可行性升级和筛选原因组合验证，以及
+````
+
+新文：
+
+````text
+提供研究边界判断、摘要层价值预测、复用可行性升级和筛选原因组合验证，以及
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M149
+
+源：`docs/contracts/screening-validation.md`，基线位置 同节（本轮继续整理）。处置：改写。
+
+去处：[docs/contracts/screening-validation.md#相关](../../docs/contracts/screening-validation.md#相关)。
+
+原文（逐字）：
+
+````text
+[规格](../../intent/draft.md#任务阅读导航)；[ADR](../adr/)；[路线图模块与承接责任](../roadmap.md#模块承接索引)。
+````
+
+新文：
+
+````text
+[规格](../../intent/draft.md#45-两阶段-screening-agent-与条件式复用升级)；[ADR-0002](../adr/0002-calibrate-before-automatic-fulltext-reading.md)；[路线图承接](../roadmap.md#module-d)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M090
+
+源：`docs/contracts/stage-inputs.md`，基线位置 5。处置：改写。
+
+去处：[docs/contracts/stage-inputs.md#公共边界与交付范围](../../docs/contracts/stage-inputs.md#公共边界与交付范围)。
+
+原文（逐字）：
+
+````text
+公共入口从 `paper_radar.stage_inputs` 导入。当前交付 boundary/value/extraction/reuse
+````
+
+新文：
+
+````text
+公共入口从 `paper_radar.stage_inputs` 导入。提供 boundary/value/extraction/reuse
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M091
+
+源：`docs/contracts/stage-inputs.md`，基线位置 7。处置：改写。
+
+去处：[docs/contracts/stage-inputs.md#公共边界与交付范围](../../docs/contracts/stage-inputs.md#公共边界与交付范围)。
+
+原文（逐字）：
+
+````text
+本票补全预定 reuse 格式 1，不发布另一份过渡生产格式；read/suggestion 不属于本次 A5。
+````
+
+新文：
+
+````text
+reuse 使用格式 1，不提供另一份过渡生产格式；本边界不提供 read/suggestion。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M092
+
+源：`docs/contracts/stage-inputs.md`，基线位置 28。处置：改写。
+
+去处：[docs/contracts/stage-inputs.md#公共边界与交付范围](../../docs/contracts/stage-inputs.md#公共边界与交付范围)。
+
+原文（逐字）：
+
+````text
+程序持久化时应保留规范字节和独立期望指纹；本票不保存输入文件、不增加表、migration、
+````
+
+新文：
+
+````text
+程序持久化时应保留规范字节和独立期望指纹；此边界不保存输入文件、不增加表、migration、
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M093
+
+源：`docs/contracts/stage-inputs.md`，基线位置 36。处置：改写。
+
+去处：[docs/contracts/stage-inputs.md#公共边界与交付范围](../../docs/contracts/stage-inputs.md#公共边界与交付范围)。
+
+原文（逐字）：
+
+````text
+既有配置、Screening 输出与存储各自保持权威；本票不修改已有投影、基线或 Frozen Contract。
+````
+
+新文：
+
+````text
+既有配置、Screening 输出与存储各自保持权威；此边界不修改已有投影、基线或 Frozen Contract。
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M114
+
+源：`docs/contracts/stage-inputs.md`，基线位置 135。处置：改写。
+
+去处：[docs/contracts/stage-inputs.md#比较与受控拒绝](../../docs/contracts/stage-inputs.md#比较与受控拒绝)。
+
+原文（逐字）：
+
+````text
+相同指纹只证明语义输入相同，不证明缓存存在、成功输出、来源合法性、校准通过或当前
+任务资格。changed 不自动调度、刷新预算、判定 minor/major、撤销人工决定或改写历史分析。
+指纹不含 Paper 主体；跨 Paper 是否共享成功缓存由后续资格/缓存票决定。书目字段与
+执行审计字段不能作为额外事实提交；真实“论文事实 → 阶段输入”映射由后续消费者验收，目标见[论文事实 Contract](paper-facts.md)；#69 首条事实路径尚未实现该映射。
+````
+
+新文：
+
+````text
+相同指纹只证明语义输入相同，不证明缓存存在、成功输出、来源合法性、校准通过或当前
+任务资格。changed 不自动调度、刷新预算、判定 minor/major、撤销人工决定或改写历史分析。
+指纹不含 Paper 主体；跨 Paper 是否共享成功缓存由后续资格/缓存票决定。书目字段与
+执行审计字段不能作为额外事实提交；当前“论文事实 → 阶段输入”映射见[论文事实 Contract §8](paper-facts.md#8-当前查询历史重建与只读-cli)；#69 首条历史切片不含该映射。
+````
+
+细节核对：改为当前映射入口，#69历史边界保留；不改变跨Paper缓存待定、资格与语义隔离。
+
+### M094
+
+源：`docs/contracts/stage-inputs.md`，基线位置 229。处置：改写。
+
+去处：[docs/contracts/stage-inputs.md#结构化-reuse-格式-1](../../docs/contracts/stage-inputs.md#结构化-reuse-格式-1)。
+
+原文（逐字）：
+
+````text
+本票不实现选段、触发规则、PDF 取得、模型或任务。正文来源沿同一来源联合接入，
+````
+
+新文：
+
+````text
+此边界不实现选段、触发规则、PDF 取得、模型或任务。正文来源沿同一来源联合接入，
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M144
+
+源：`docs/contracts/stage-inputs.md`，基线位置 366。处置：改写。
+
+去处：[docs/contracts/stage-inputs.md#隔离恢复跨进程与后续消费者义务](../../docs/contracts/stage-inputs.md#隔离恢复跨进程与后续消费者义务)。
+
+原文（逐字）：
+
+````text
+书目与供给身份仅通过封闭输入类型严格拒绝证明隔离，A5 当时没有论文事实模型，不宣称
+“卷期页码更新到任务不重跑”已端到端验收；不为此创建 A4 安装记录。A2 的组件矩阵仍是
+[配置投影契约](config-projections.md)权威，本切片只核对各阶段一个代表传播及 Read、
+期刊 tier、adapter 审计版本和 screening thinking_level 的少量交叉变化。
+#73 的[论文事实映射服务](paper-facts.md#8-当前查询历史重建与只读-cli)已在其独立测试中
+覆盖真实登记、来源仲裁、人工修正和历史 revision/snapshot 的 boundary/value 输入重建。
+该服务只读，规范载荷持久化已由 A7 任务层承担，完整任务资格和校准门禁仍未交付；A5 原固定范围及
+当时的 NOT_ASSESSED 历史结论保持，最终 A6 已由 #75 登记，覆盖范围与单次判据见[离线 A6 结论](../verification/offline-evidence.md#a6-独立结论6775)。
+独立复现命令与验收边界见[离线证据说明](../verification/offline-evidence.md)。
+#53 单独交付时没有登记 A5 验收组；#54 追加独立 A5 结论后的历史 check-offline 输出七份
+主要文件，另有实际 pytest 回执与终态；A6 注册时输出八份主要文件、总十份 JSON。
+当前 A7 输出九份主要文件、总十一份 JSON，见
+[当前离线证据](../verification/offline-evidence.md)。固定范围及规格映射见
+[独立 A5 结论](../verification/offline-evidence.md#a5-独立结论4754)。
+A5 通过仅声明四阶段输入计算、回放、比较和隔离恢复，不代表阶段 A、真实来源、RPC、
+NAS 或自动精读通过。
+````
+
+新文：
+
+````text
+历史 A5/A6/A7 证明范围与文件数量见[路线图](../roadmap.md#阶段输入历史证明范围)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
+### M095
+
+源：`docs/contracts/stage-inputs.md`，基线位置 393。处置：改写。
+
+去处：[docs/contracts/stage-inputs.md#格式版本公开访问](../../docs/contracts/stage-inputs.md#格式版本公开访问)。
+
+原文（逐字）：
+
+````text
+A7-02 已在[任务 Contract](screening-tasks.md#8-a7-02-公共登记-api已交付)落实 boundary/value
+````
+
+新文：
+
+````text
+规范载荷在[任务 Contract](screening-tasks.md#8-a7-02-公共登记-api已交付)落实 boundary/value
+````
+
+细节核对：仅将逐票交付口吻改为现状/职责；技术标识、数值、条件及否定保留。原issue出处见相关依据；嵌入表格原字节不变。
+
+### M145
+
+源：`docs/contracts/stage-inputs.md`，基线位置 同节（本轮继续整理）。处置：改写。
+
+去处：[docs/contracts/stage-inputs.md#相关](../../docs/contracts/stage-inputs.md#相关)。
+
+原文（逐字）：
+
+````text
+[规格](../../intent/draft.md#任务阅读导航)；[ADR](../adr/)；[路线图模块与承接责任](../roadmap.md#模块承接索引)。
+````
+
+新文：
+
+````text
+[规格](../../intent/draft.md#34-阶段输入指纹)；[ADR-0008](../adr/0008-invalidate-artifacts-with-stage-specific-fingerprints.md)；[路线图承接](../roadmap.md#module-body)。
+````
+
+细节核对：现状口吻及责任引用整理；目标重复段合并至所链规格/ADR原规则，历史证据转路线图，数字/条件/否定不变。旧原文完整记录，未改嵌入台账。
+
 ### M014
 
-源：`intent/draft.md`，基线行 6。处置：链接修正。
+源：`intent/draft.md`，基线位置 6。处置：链接修正。
 
 去处：[intent/draft.md#paperradar-第一版方案](../../intent/draft.md#paperradar-第一版方案)。
 
@@ -381,7 +2585,7 @@ V1 目标与判据见[规格](intent/draft.md)，当前前沿、阶段状态与�
 
 ### M015
 
-源：`intent/draft.md`，基线行 7。处置：合并。
+源：`intent/draft.md`，基线位置 7。处置：合并。
 
 去处：[docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md](../../docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。
 
@@ -399,7 +2603,7 @@ V1 目标与判据见[规格](intent/draft.md)，当前前沿、阶段状态与�
 
 细节核对：裁决/规则合并至所链现有正文，原文完整保存在本项；对应状态与日期移至路线图“文首记录的状态与出处”。逐项核对：§5、“我的决策”及有界 RPC；当次仅文档，代码/配置/登记版本/Frozen Contract 不变。
 
-保留处 `docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md` 当前第 3 行：
+保留处 `docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md` 当前第 5 行：
 
 ```text
 2026-10-11：用户接受 [Pi 可行性研究](../../intent/discussions/pi-agent-contract-feasibility.md) §5 及其中“我的决策”，Python 主程序通过 RPC 控制本机 Pi 子进程，作为 V1 的有界 LLM/Agent adapter，取代原 PydanticAI 调用实现选择。Pi 负责固定模型的结构输出调用，PaperRadar 的权威 Pydantic Schema 与业务规则决定能否接收；建议、决定、任务资格、校准、证据构造与持久化继续由确定性程序控制。采用 RPC 是为了让 Python 明确控制隔离、取消、预算与完成边界；代价是需要锁定并管理 Node/Pi 子进程、事件协议和显式运行资源。
@@ -411,7 +2615,7 @@ V1 首次使用 `prompt_only`，严格接收最终 assistant 的纯 JSON 文本�
 
 ### M016
 
-源：`intent/draft.md`，基线行 8。处置：合并。
+源：`intent/draft.md`，基线位置 8。处置：合并。
 
 去处：[intent/draft.md#78-pi-固定版本供给](../../intent/draft.md#78-pi-固定版本供给)。
 
@@ -429,7 +2633,7 @@ V1 首次使用 `prompt_only`，严格接收最终 assistant 的纯 JSON 文本�
 
 细节核对：裁决/规则合并至所链现有正文，原文完整保存在本项；对应状态与日期移至路线图“文首记录的状态与出处”。逐项核对：固定版本供给、执行核对与恢复要求；当次不证明安装/RPC/校准通过。
 
-保留处 `intent/draft.md` 当前第 1290 行：
+保留处 `intent/draft.md` 当前第 1279 行：
 
 ```text
 V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](https://github.com/MeteoBoy4/PaperRadar/issues/26#issuecomment-6116780168)及[补强意见](https://github.com/MeteoBoy4/PaperRadar/issues/26#issuecomment-6116941170)固定程序、依赖与校验依据。默认安装位置为 `.tools/pi/`；安装的生命周期独立于个人交互使用的 Pi，日常 `pi update` 不得改动或清理项目所用版本。不能把 PATH 中的 `pi`、个人安装的可变入口或可能被个人更新清理的 release 路径作为固定供给。
@@ -441,7 +2645,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 
 ### M017
 
-源：`intent/draft.md`，基线行 9。处置：合并。
+源：`intent/draft.md`，基线位置 9。处置：合并。
 
 去处：[intent/draft.md#78-pi-固定版本供给](../../intent/draft.md#78-pi-固定版本供给)。
 
@@ -459,7 +2663,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 
 细节核对：裁决/规则合并至所链现有正文，原文完整保存在本项；对应状态与日期移至路线图“文首记录的状态与出处”。逐项核对：D1–D5：新声明版本、无脱网重建承诺、三段正式版本、当前与最近三个旧安装、行为影响判定必填；当次不证明验收。
 
-保留处 `intent/draft.md` 当前第 1317 行：
+保留处 `intent/draft.md` 当前第 1304 行：
 
 ```text
 1. **D1：每次升级都新建适配器声明版本。** 不允许“仅审计版本升级”复用原语义材料并原地改写 `pi_version`：Pi 版本变化必须创建新的 `adapters/<version>.yaml`，经公共 check/compile 登记并更新三槽 selector；已登记声明同键换字节由版本登记拒绝。语义载荷是否变化仍按实际行为判断，纯传输升级不改变阶段投影与校准基线，但不得据此放宽本条。第二版若引入受控迁移，须另行修订本决策与适配器配置契约。
@@ -467,7 +2671,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 3. **D3：不支持预发布与四段版本号。** `pi_version` 保持严格三段非负整数，不接受前导零、预发布、构建元数据或范围表达；不为跟进预发布版放宽配置校验或新增字段。上游仅有预发布版时，V1 停在已固定的正式版本，不以近似版本或运行时探测代替固定身份。
 ```
 
-保留处 `intent/draft.md` 当前第 1318 行：
+保留处 `intent/draft.md` 当前第 1305 行：
 
 ```text
 2. **D2：不承诺脱网重建执行环境。** V1 不把预存 npm 包与 Node 制品作为交付或验收要求，也不提供“离线安装 Pi”的能力承诺；供给、doctor 与恢复流程统一按“需要联网的显式供给”表述，材料不齐时报告缺项，不隐式联网补齐。历史事实、配置与报告的脱网回放仍不依赖 Pi 安装（§9.2）。
@@ -475,7 +2679,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 4. **D4：保留当前与最近三个旧安装。** 同时保留当前激活版本和最近三次激活的旧版本，最多四棵安装树；清理只能由用户显式发起，先出计划再按计划执行，普通运行、doctor、备份、恢复与升级均不自动删除。永不进入清理：当前激活版本、仍被在途进程或租约引用的版本、最近一次通过验收的版本；与上述上限冲突时保留保护对象并报告超限，不自动突破保护。供给材料、校验依据与验收事实独立于安装树永久保留（§6），清理不改写历史事实、不写 enable 或校准事件、不刷新 attempt 预算。清理入口随供给命令族在后续执行器任务定义，V1 必须提供“计划 + 执行”两步能力。该上限是固定 V1 策略，不开放为配置项。
 ```
 
-保留处 `intent/draft.md` 当前第 1319 行：
+保留处 `intent/draft.md` 当前第 1306 行：
 
 ```text
 3. **D3：不支持预发布与四段版本号。** `pi_version` 保持严格三段非负整数，不接受前导零、预发布、构建元数据或范围表达；不为跟进预发布版放宽配置校验或新增字段。上游仅有预发布版时，V1 停在已固定的正式版本，不以近似版本或运行时探测代替固定身份。
@@ -483,7 +2687,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 5. **D5：行为影响判定是供给清单的必填项。** 每份供给清单必须记录本次升级的行为影响判定（无行为变化 / 可能改变行为 / 无法判定）、判定依据与可回查的证据引用（如固定事件样例对比、验收记录、上游变更说明），由执行升级的用户填写并随清单冻结；后两者一律按“可能影响”处理。该字段进入供给清单规范载荷与 `supply_id`（§6），仍属执行审计身份，不进入适配器语义载荷。系统不得依据版本号、树哈希或 diff 自动判定，也不得用该字段替代语义身份更新与校准分级。
 ```
 
-保留处 `intent/draft.md` 当前第 1320 行：
+保留处 `intent/draft.md` 当前第 1307 行：
 
 ```text
 4. **D4：保留当前与最近三个旧安装。** 同时保留当前激活版本和最近三次激活的旧版本，最多四棵安装树；清理只能由用户显式发起，先出计划再按计划执行，普通运行、doctor、备份、恢复与升级均不自动删除。永不进入清理：当前激活版本、仍被在途进程或租约引用的版本、最近一次通过验收的版本；与上述上限冲突时保留保护对象并报告超限，不自动突破保护。供给材料、校验依据与验收事实独立于安装树永久保留（§6），清理不改写历史事实、不写 enable 或校准事件、不刷新 attempt 预算。清理入口随供给命令族在后续执行器任务定义，V1 必须提供“计划 + 执行”两步能力。该上限是固定 V1 策略，不开放为配置项。
@@ -491,7 +2695,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 
 ```
 
-保留处 `intent/draft.md` 当前第 1321 行：
+保留处 `intent/draft.md` 当前第 1308 行：
 
 ```text
 5. **D5：行为影响判定是供给清单的必填项。** 每份供给清单必须记录本次升级的行为影响判定（无行为变化 / 可能改变行为 / 无法判定）、判定依据与可回查的证据引用（如固定事件样例对比、验收记录、上游变更说明），由执行升级的用户填写并随清单冻结；后两者一律按“可能影响”处理。该字段进入供给清单规范载荷与 `supply_id`（§6），仍属执行审计身份，不进入适配器语义载荷。系统不得依据版本号、树哈希或 diff 自动判定，也不得用该字段替代语义身份更新与校准分级。
@@ -503,7 +2707,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 
 ### M018
 
-源：`intent/draft.md`，基线行 11。处置：合并。
+源：`intent/draft.md`，基线位置 11。处置：合并。
 
 去处：[docs/adr/0030-paper-version-identity-and-source-observations.md](../../docs/adr/0030-paper-version-identity-and-source-observations.md)。
 
@@ -521,19 +2725,19 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 
 细节核对：裁决/规则合并至所链现有正文，原文完整保存在本项；对应状态与日期移至路线图“文首记录的状态与出处”。逐项核对：D1–D4/N1/N2、身份/Feed 回摆/冲突；A6 离线底座已注册，真实来源/parser/live/完整 A 未验。旧固定正文不覆盖后续裁决。
 
-保留处 `docs/adr/0030-paper-version-identity-and-source-observations.md` 当前第 3 行：
+保留处 `docs/adr/0030-paper-version-identity-and-source-observations.md` 当前第 5 行：
 
 ```text
-状态：已接受语义；#69–#74 已落地身份、Feed、四源仲裁、版本关系、输入映射及组合隔离恢复，#75 注册独立 A6 验收。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
+原状态与裁决依据：已接受语义。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
 
-2026-10-28：#111 将首次真实 Feed 导入前置移到 B，B 先交付 JGR 所需的强冲突观察持久化与 parser 固定样本/字段损失回归，C 扩展四刊。以下“阶段 C”保留当时的延期依据，现行最迟点是首次真实导入；实验根同样不得豁免，见 [ADR-0036](0036-isolate-stage-b-read-experiment.md)。历史 A6 证据和未验证来源假设不改写。
+## 补充裁决
 ```
 
 历史状态逐项另见[路线图状态出处表](../roadmap.md#文首记录的状态与出处)。
 
 ### M019
 
-源：`intent/draft.md`，基线行 13。处置：合并。
+源：`intent/draft.md`，基线位置 13。处置：合并。
 
 去处：[docs/contracts/screening-tasks.md](../../docs/contracts/screening-tasks.md)。
 
@@ -551,7 +2755,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 
 细节核对：裁决/规则合并至所链现有正文，原文完整保存在本项；对应状态与日期移至路线图“文首记录的状态与出处”。逐项核对：预算/派生三值适用性及 boundary/value、retry、查询、历史恢复/独立 A7；仅离线 test，screening CLI/paper trace 组合及真实模型/完整 A 未验。语言来源后由 ADR-0035 裁决。
 
-保留处 `docs/contracts/screening-tasks.md` 当前第 34 行：
+保留处 `docs/contracts/screening-tasks.md` 当前第 29 行：
 
 ```text
 | 预算范围 | 同库 `(paper_id, stage, fingerprint)` | 规范输入、首次上下文、至多一个筛选制品 |
@@ -559,7 +2763,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 | 请求 | scheduled 的完整业务依据，或 manual/retry 的显式 request_id | 来源、调度日或 request_id、version/revision/snapshot；多个请求可共用任务 |
 ```
 
-保留处 `docs/contracts/screening-tasks.md` 当前第 65 行：
+保留处 `docs/contracts/screening-tasks.md` 当前第 60 行：
 
 ```text
 只有《大气科学》（`dqkx` current Feed）取 `true`，AIES、JGR 与 QJRMS 取 `false`。它是来源级约定，
@@ -571,7 +2775,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 
 ### M020
 
-源：`intent/draft.md`，基线行 15。处置：合并。
+源：`intent/draft.md`，基线位置 15。处置：合并。
 
 去处：[docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md](../../docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。
 
@@ -591,7 +2795,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 
 细节核对：裁决/规则合并至所链现有正文，原文完整保存在本项；对应状态与日期移至路线图“文首记录的状态与出处”。逐项核对：首次 snapshot 语义/回执 snapshot 审计、A7 最终模型裁决、零 token 未知及 cwd 外发例外；真实 Pi/模型未验。
 
-保留处 `docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md` 当前第 15 行：
+保留处 `docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md` 当前第 19 行：
 
 ```text
 2026-10-24：按 #85 D1–D4/P3 裁决补充：A8 封闭协议档案仅登记 1.4.0，构造期拒绝
@@ -599,7 +2803,7 @@ V1 使用项目管理的独立 Pi 安装，依据 [Issue #26 的供给方案](ht
 两者同阶段投影相等才可组合。完整协议中的最终模型观察交由 A7 判 `model_mismatch`，
 ```
 
-保留处 `docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md` 当前第 19 行：
+保留处 `docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md` 当前第 23 行：
 
 ```text
 token 均未知，否则输入为 input+cacheRead+cacheWrite，输出为 output；这是 Pi 报告的
@@ -611,7 +2815,7 @@ token 均未知，否则输入为 input+cacheRead+cacheWrite，输出为 output�
 
 ### M021
 
-源：`intent/draft.md`，基线行 19。处置：合并。
+源：`intent/draft.md`，基线位置 19。处置：合并。
 
 去处：[docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md](../../docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md)。
 
@@ -635,7 +2839,7 @@ token 均未知，否则输入为 input+cacheRead+cacheWrite，输出为 output�
 
 细节核对：裁决/规则合并至所链现有正文，原文完整保存在本项；对应状态与日期移至路线图“文首记录的状态与出处”。逐项核对：§4.3/§4.8/§11 F/§13/§15；合法自动化与访问规避边界。策略可按真实审计另票调整；当次只改文档与两份 A9 文档哈希，业务代码/配置/Frozen Contract 不变。
 
-保留处 `docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md` 当前第 3 行：
+保留处 `docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md` 当前第 5 行：
 
 ```text
 PaperRadar 第一版把摘要与全文获取的约束从“只走最少几条无会话通道”改为“正常自动化访问允许、访问控制规避禁止”的两分边界。允许如实标识的正常请求头（`User-Agent`、`Referer`、`Accept` 等，可使用工具自身的默认浏览器 `User-Agent`，但不以伪造或轮换 `User-Agent` 通过限制）、受控浏览器渲染（Playwright 等执行 JavaScript 读取公开页面）、出版者官方 API 与合法申请的 token，以及按站点规则、官方配额与 `robots` 或服务条款设置的频率、超时、退避与重试；摘要与全文位置可按需通过 Crossref、DataCite、Unpaywall、OpenAlex 与合法开放仓储补充。本人合法持有的机构账号、登录会话或订阅权限改为“审慎允许”：默认关闭、用户显式启用、凭据只存文件系统凭证区（0600）、单篇按需、遵守出版方条款、访问依据记为 `licensed`、不批量下载且不分发受限全文。破解或自动求解验证码、伪造浏览器或 TLS 指纹、轮换代理 IP 逃避封禁或限流、绕过付费墙及其他明确的访问控制、未授权批量下载受限全文仍然禁止，并且不因引入渲染通道而放宽：出现验证码或明确的挑战页即记 `access_blocked_403`/`rate_limited` 并进入人工 PDF 队列。
@@ -647,7 +2851,7 @@ PaperRadar 第一版把摘要与全文获取的约束从“只走最少几条无
 
 ### M022
 
-源：`intent/draft.md`，基线行 27。处置：合并。
+源：`intent/draft.md`，基线位置 27。处置：合并。
 
 去处：[docs/contracts/fixture-audit.md#103-已交付的取得边界](../../docs/contracts/fixture-audit.md#103-已交付的取得边界)。
 
@@ -668,7 +2872,7 @@ PaperRadar 第一版把摘要与全文获取的约束从“只走最少几条无
 保留处 `docs/contracts/fixture-audit.md` 当前第 54 行：
 
 ```text
-`acquire_source(plan_id, request_key=..., request=SourceRequest(...), contact_email=...)` 持有非阻塞计划锁，先提交 started，再在事务外调通道执行器、发布有资格保留的完整 source_snapshot，最后在短事务追加结算。请求身份包含规范请求的策略、通道、来源与条件引用；同键异内容拒绝，已完成精确调用只重放旧结果。未结算请求数为未知，不记零；本票没有隐式补跑。`audit_execution` 可由后续整轮驱动持有，同一个 guard 传给各路线，读取不取锁。
+`acquire_source(plan_id, request_key=..., request=SourceRequest(...), contact_email=...)` 持有非阻塞计划锁，先提交 started，再在事务外调通道执行器、发布有资格保留的完整 source_snapshot，最后在短事务追加结算。请求身份包含规范请求的策略、通道、来源与条件引用；同键异内容拒绝，已完成精确调用只重放旧结果。未结算请求数为未知，不记零；服务不隐式补跑。`audit_execution` 由整轮驱动持有，同一个 guard 传给各路线，读取不取锁。
 
 默认注册表只有 SourceHTTPExecutor；测试可显式注入执行器。未注册通道为 channel_not_installed，已注册却未执行可记 not_attempted，均不算失败。事实中的 access_basis=open、credential_class=null，请求头只记类别。无浏览器/凭据实现，不导入 playwright/selenium，不改依赖或 lockfile。外部 Pydantic 输入须重新准入；model_copy 不授予有效性，序列化 warning 不能输出原值。
 ```
@@ -677,7 +2881,7 @@ PaperRadar 第一版把摘要与全文获取的约束从“只走最少几条无
 
 ### M023
 
-源：`intent/draft.md`，基线行 29。处置：合并。
+源：`intent/draft.md`，基线位置 29。处置：合并。
 
 去处：[docs/contracts/fixture-audit.md#pdf-字节事实与-backend-期望102](../../docs/contracts/fixture-audit.md#pdf-字节事实与-backend-期望102)。
 
@@ -709,7 +2913,7 @@ PaperRadar 第一版把摘要与全文获取的约束从“只走最少几条无
 
 ### M024
 
-源：`intent/draft.md`，基线行 33。处置：合并。
+源：`intent/draft.md`，基线位置 33。处置：合并。
 
 去处：[docs/contracts/fixture-audit.md](../../docs/contracts/fixture-audit.md)。
 
@@ -730,7 +2934,7 @@ PaperRadar 第一版把摘要与全文获取的约束从“只走最少几条无
 保留处 `docs/contracts/fixture-audit.md` 当前第 3 行：
 
 ```text
-本 Contract 落实 #100 评论裁决；权威注册格式为 `paper_radar.fixture_audit.models.FixtureDeclaration`，不加入 `CONTRACT_NAMES` 或五份 Frozen Contract。#101 交付声明登记、只读历史与基本恢复；#102 交付本机 PDF 字节及 backend 期望登记；路线执行、选样、矩阵及独立 A10 验收按 #103–#108 后续交付。当前不代表真实来源、Docling、模型或完整阶段 A 通过。
+权威注册格式为 `paper_radar.fixture_audit.models.FixtureDeclaration`，不加入 `CONTRACT_NAMES` 或五份 Frozen Contract。提供声明登记、只读历史、基本恢复、本机 PDF 字节与 backend 期望登记、路线执行、选样、矩阵及独立 A10 验收边界。工程验收不证明真实来源、Docling、模型或完整阶段 A 通过。
 
 ## 声明与身份
 ```
@@ -739,7 +2943,7 @@ PaperRadar 第一版把摘要与全文获取的约束从“只走最少几条无
 
 ### M025
 
-源：`intent/draft.md`，基线行 35。处置：合并。
+源：`intent/draft.md`，基线位置 35。处置：合并。
 
 去处：[docs/contracts/fixture-audit.md](../../docs/contracts/fixture-audit.md)。
 
@@ -777,7 +2981,7 @@ Summary、Key Points 及 abstract-en 只保存存在与定位；已知附加 cla
 
 ### M026
 
-源：`intent/draft.md`，基线行 37。处置：合并。
+源：`intent/draft.md`，基线位置 37。处置：合并。
 
 去处：[docs/contracts/fixture-audit.md](../../docs/contracts/fixture-audit.md)。
 
@@ -806,16 +3010,16 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 保留处 `docs/contracts/fixture-audit.md` 当前第 43 行：
 
 ```text
-`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 --json；帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计入口最终为 audit run/resume/list/show/replay，未实现的命令不提前注册。
+`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 --json；帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计入口为 audit run/resume/list/show/replay。
 
-未发布的本批唯一 revision 为 `a1001_fixture_audit`，基于 `a704_screening_retry`；本批只追加实际用到的表，种子由显式 register 写入。各票如需调整该未发布 revision，必须从 a704 重建临时库验证，不能声称原地修补中间库；一旦发布或用于真实库，不再改写。现有配置/论文/Screening 身份不变。前七票只声明行为子集通过，最后 #108 完成 scope 重绑与完整门禁。
+该边界的 revision 为 `a1001_fixture_audit`，基于 `a704_screening_retry`；只追加实际用到的表，种子由显式 register 写入。该 revision 在未发布阶段的调整必须从 a704 重建临时库验证，不能声称原地修补中间库；一旦发布或用于真实库，不再改写。现有配置/论文/Screening 身份不变。历史子集与独立 A10 的证明范围见[路线图状态出处](../roadmap.md#文首记录的状态与出处)。
 ```
 
 历史状态逐项另见[路线图状态出处表](../roadmap.md#文首记录的状态与出处)。
 
 ### M027
 
-源：`intent/draft.md`，基线行 39。处置：合并。
+源：`intent/draft.md`，基线位置 39。处置：合并。
 
 去处：[docs/contracts/fixture-audit.md](../../docs/contracts/fixture-audit.md)。
 
@@ -853,7 +3057,7 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 
 ### M028
 
-源：`intent/draft.md`，基线行 41。处置：合并。
+源：`intent/draft.md`，基线位置 41。处置：合并。
 
 去处：[docs/verification/a10-requirements.md](../../docs/verification/a10-requirements.md)。
 
@@ -887,7 +3091,7 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 
 ### M029
 
-源：`intent/draft.md`，基线行 47。处置：合并。
+源：`intent/draft.md`，基线位置 47。处置：合并。
 
 去处：[docs/adr/0035-feed-derived-original-title-language-fact.md](../../docs/adr/0035-feed-derived-original-title-language-fact.md)。
 
@@ -909,7 +3113,7 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 
 细节核对：裁决/规则合并至所链现有正文，原文完整保存在本项；对应状态与日期移至路线图“文首记录的状态与出处”。逐项核对：首发 Feed 归属 v1，只有《大气科学》中文；不做语言检测、false 仅非中文、无归属不得 value；当次只改文档/scope，自动派生/生产接线未交付。
 
-保留处 `docs/adr/0035-feed-derived-original-title-language-fact.md` 当前第 16 行：
+保留处 `docs/adr/0035-feed-derived-original-title-language-fact.md` 当前第 18 行：
 
 ```text
 该事实是**来源级约定**，不是逐篇文本判定：由 Paper 的首发 Feed 所属期刊按封闭表决定，
@@ -917,7 +3121,7 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 
 ```
 
-保留处 `docs/adr/0035-feed-derived-original-title-language-fact.md` 当前第 22 行：
+保留处 `docs/adr/0035-feed-derived-original-title-language-fact.md` 当前第 24 行：
 
 ```text
 | Artificial Intelligence for the Earth Systems | `aies` | `https://journals.ametsoc.org/journalissuetocrss/journals/aies/aies-overview.xml` | `false` |
@@ -925,7 +3129,7 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 | Quarterly Journal of the Royal Meteorological Society | `qjrms` | `https://rmets.onlinelibrary.wiley.com/feed/1477870x/most-recent` | `false` |
 ```
 
-保留处 `docs/adr/0035-feed-derived-original-title-language-fact.md` 当前第 30 行：
+保留处 `docs/adr/0035-feed-derived-original-title-language-fact.md` 当前第 32 行：
 
 ```text
 - 没有首发 Feed 归属的 Paper（仅经人工 DOI、URL 或 PDF 加入）没有该事实：不得默认
@@ -937,7 +3141,7 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 
 ### M030
 
-源：`intent/draft.md`，基线行 53。处置：合并。
+源：`intent/draft.md`，基线位置 53。处置：合并。
 
 去处：[docs/adr/0036-isolate-stage-b-read-experiment.md](../../docs/adr/0036-isolate-stage-b-read-experiment.md)。
 
@@ -963,7 +3167,7 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 
 细节核对：裁决/规则合并至所链现有正文，原文完整保存在本项；对应状态与日期移至路线图“文首记录的状态与出处”。逐项核对：七项初始确认与后续评论；实验根不复用不提升、JGR入口、Pi1.4.0、/srv/pi-cwd、Docling extra及CLI归属；当次只改目标文档/scope，历史A1–A10证明不变。
 
-保留处 `docs/adr/0036-isolate-stage-b-read-experiment.md` 当前第 8 行：
+保留处 `docs/adr/0036-isolate-stage-b-read-experiment.md` 当前第 10 行：
 
 ```text
 - B 整条 Feed→Screening→人工决定→PDF→正文→Read→最小日报都在显式实验数据根内。根级标记随备份/隔离恢复保留；实验命令显式选择该根，普通生产 run-due、报告及消费查询拒绝它，初始化生产根不接纳实验根。真实执行来源、实验用途与质量资格是三个独立判断，生产执行来源不授予正常消费资格。
@@ -971,7 +3175,7 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 - 旧实验结果只作历史回查，不复用、不提升、不提供提升入口。四刊 fixture 后来通过也不自动开启 Read/reuse 或提升旧结果。长期生产库由 C 初始化；日后同论文从正常入口重新处理、使用独立预算，不能拷贝实验成功/任务来补位。
 ```
 
-保留处 `docs/adr/0036-isolate-stage-b-read-experiment.md` 当前第 10 行：
+保留处 `docs/adr/0036-isolate-stage-b-read-experiment.md` 当前第 12 行：
 
 ```text
 - 旧实验结果只作历史回查，不复用、不提升、不提供提升入口。四刊 fixture 后来通过也不自动开启 Read/reuse 或提升旧结果。长期生产库由 C 初始化；日后同论文从正常入口重新处理、使用独立预算，不能拷贝实验成功/任务来补位。
@@ -979,7 +3183,7 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 - B 保存两阶段 Screening 输出与人工决定，可展示无自动决定权的实验筛选建议；`out_of_scope` 仍停止 value。实验材料不流入普通生产建议/自动决定链；ReadAnalysisOutput 的必填 `next_action` 保留。最小报告使用最终 report run/entry 契约、可重建、标注实验范围且遵守五项/全文三项容量，不进入普通日报候选。
 ```
 
-保留处 `docs/adr/0036-isolate-stage-b-read-experiment.md` 当前第 26 行：
+保留处 `docs/adr/0036-isolate-stage-b-read-experiment.md` 当前第 28 行：
 
 ```text
 四刊首轮摘要审计仍先执行；JGR 入口判据在审计前固定为 selected 至少 5 篇，以 A10 矩阵为分母，失败/受阻不剔除，每篇至少一条已交付路线得到非 `suspected_truncated` 的主区块摘要。任一不满足阻断 B 并交回用户；其他刊不足留 C/F 补跑，不代表 A 完成。生产须复用审计版本化规则，或经 `reinterpret_audit` 追加生产解析器解释并审查差异，B 样本本身也须经生产取得完整摘要。B 只用主区块，附加区块留 C 裁决。最迟 D 正式预热冻结/首个校准批次前四刊逐刊证明稳定，四刊阈值与是否一律非截断仍待用户事先裁决，见 [主方案 §4.3/§11](../../intent/draft.md)。
@@ -991,7 +3195,7 @@ resume 在网络或写入前核对原计划代码声明及 acquisition/channels/
 
 ### M031
 
-源：`intent/draft.md`，基线行 65。处置：合并。
+源：`intent/draft.md`，基线位置 65。处置：合并。
 
 去处：[docs/contracts/read-validation.md](../../docs/contracts/read-validation.md)。
 
@@ -1047,141 +3251,1676 @@ ERA5、CMIP6、PM2.5、CO2、O3、H2O 等拉丁字母直连标识符以及封闭
 
 历史状态逐项另见[路线图状态出处表](../roadmap.md#文首记录的状态与出处)。
 
-### M032
+### M048
 
-源：`docs/contracts/config-snapshots.md`，基线行 5。处置：改写。
+源：`intent/draft.md`，基线位置 171。处置：改写。
 
-去处：[docs/contracts/config-snapshots.md#历史配置快照发现与引用27](../../docs/contracts/config-snapshots.md#历史配置快照发现与引用27)。
+去处：[intent/draft.md#21-首发-feed](../../intent/draft.md#21-首发-feed)。
 
 原文（逐字）：
 
 ````text
-本票仅扩展 #23 的 CLI 输入与快照发现，不表示完整 A2 或阶段 A 已完成。
+原题名语言事实也由 Feed 归属决定：四刊中只有《大气科学》的原始题名为中文（`original_title_is_zh=true`），
+AIES、JGR 与 QJRMS 为非中文（`false`）。这是来源级约定，不是按题名、字符集或语言检测逐篇判断；`false` 只
+表示非中文，不声称英文。表以首发期刊为键，同刊新增 Feed（如《大气科学》`latest.xml`）只沿用该刊取值，
+是否纳入发现范围仍按本节规则另行裁决。仅经人工入口加入、没有 Feed 归属的论文没有该事实，不得默认
+`false` 或登记 value 任务，直到另行裁决。登记仍要求显式严格 bool，自动派生与策略版本持久化由后续生产
+接线票交付，见 [ADR-0035](../docs/adr/0035-feed-derived-original-title-language-fact.md)。
 ````
 
 新文：
 
 ````text
-本边界提供 CLI 输入与快照发现，不证明完整 A2 或阶段 A 通过。
+原题名语言事实也由 Feed 归属决定：四刊中只有《大气科学》的原始题名为中文（`original_title_is_zh=true`），
+AIES、JGR 与 QJRMS 为非中文（`false`）。这是来源级约定，不是按题名、字符集或语言检测逐篇判断；`false` 只
+表示非中文，不声称英文。表以首发期刊为键，同刊新增 Feed（如《大气科学》`latest.xml`）只沿用该刊取值，
+是否纳入发现范围仍按本节规则另行裁决。仅经人工入口加入、没有 Feed 归属的论文没有该事实，不得默认
+`false` 或登记 value 任务，直到另行裁决。登记仍要求显式严格 bool，自动派生与策略版本持久化由生产
+接线实现，见 [ADR-0035](../docs/adr/0035-feed-derived-original-title-language-fact.md)。
 ````
 
-细节核对：只改当前边界措辞，#23/#27 出处见相关；不证明范围原位保留。
+细节核对：只改实施票时态；Feed责任已在路线图Feed与ADR0035，所有语言事实条件原位保留。
 
-### M033
+### M006
 
-源：`docs/contracts/adapter-config.md`，基线行 4。处置：改写。
+源：`intent/draft.md`，基线位置 800。处置：改写。
 
-去处：[docs/contracts/adapter-config.md#pi-rpc-适配器配置](../../docs/contracts/adapter-config.md#pi-rpc-适配器配置)。
+去处：[intent/draft.md#410-read-agent](../../intent/draft.md#410-read-agent)。
 
 原文（逐字）：
 
 ````text
-本票只登记配置事实，不安装 Pi/Node、不执行 RPC、不检查凭据或 provider 参数
+以下是 Read 的结构定义；#93 已实现单一权威 Pydantic Schema 并导出 Read v1 Frozen Contract，#94–#96 已交付给定只读证据上下文的纯业务验证器，#97–#99 已接通显式配置、隔离恢复与独立离线验收。可行性研究使用的临时 Read Schema 不取得生产权威资格。单次调用及 map/reduce 的生产目标仍由 Python 编排并通过 §7.7 的隔离 Pi 会话执行；分块、输入证据选择和最终引用检查由 PaperRadar 控制，不新增 Agent evidence 查询或 PDF 工具。
 ````
 
 新文：
 
 ````text
-此配置边界只登记配置事实，不安装 Pi/Node、不执行 RPC、不检查凭据或 provider 参数
+以下是 Read 的结构定义（依据 #93–#99）；应使用单一权威 Pydantic Schema 并导出 Read v1 Frozen Contract，并提供给定只读证据上下文的纯业务验证器，以及显式配置、隔离恢复与独立离线验收。可行性研究使用的临时 Read Schema 不取得生产权威资格。单次调用及 map/reduce 的生产调用由 Python 编排并通过 §7.7 的隔离 Pi 会话执行；分块、输入证据选择和最终引用检查由 PaperRadar 控制，不新增 Agent evidence 查询或 PDF 工具。
 ````
 
-细节核对：仅将本票改为此配置边界；否定与能力范围不变。
+细节核对：只将交付时态改为规格要求，保留各 issue 依据；全部字段、枚举、数字、条件、否定与职责边界原位保留。对应已完成范围见路线图 A2/A9；B 未完成见模块状态。
 
-### M034
+### M049
 
-源：`docs/contracts/config-projections.md`，基线行 159。处置：改写。
+源：`intent/draft.md`，基线位置 955。处置：改写。
 
-去处：[docs/contracts/config-projections.md#diff-结果与-cli](../../docs/contracts/config-projections.md#diff-结果与-cli)。
+去处：[intent/draft.md#52-来源与执行](../../intent/draft.md#52-来源与执行)。
 
 原文（逐字）：
 
 ````text
-保存快照不是启用；完整校准变更审计、minor/major 分级、门禁与自动运行由后续流程接入。
+模型任务与成功制品引用当次固定的适配器语义身份，并保留实际 Pi/adapter 版本与资源哈希、§7.8 已验证供给清单的身份、实际 Node 版本、provider/model、权威输出通道和脱敏完成/用量信息。供给清单及验证结果属于执行审计材料，大文件在文件系统保留，SQLite 保存身份、哈希、引用与验证事实；它们不代替适配器语义材料。Pi session/JSONL 不成为第二个事实源。上述逻辑模型是目标，后续若需调整物理持久化必须通过 migration，本次不修改用户数据库或既有快照格式。
 ````
 
 新文：
 
 ````text
-保存快照不是启用；本边界不提供完整校准变更审计、minor/major 分级、门禁与自动运行，校准审计、分级与门禁由[路线图 D](../roadmap.md#module-d)承接，自动运行由[路线图 I](../roadmap.md#module-i)承接。
+模型任务与成功制品引用当次固定的适配器语义身份，并保留实际 Pi/adapter 版本与资源哈希、§7.8 已验证供给清单的身份、实际 Node 版本、provider/model、权威输出通道和脱敏完成/用量信息。供给清单及验证结果属于执行审计材料，大文件在文件系统保留，SQLite 保存身份、哈希、引用与验证事实；它们不代替适配器语义材料。Pi session/JSONL 不成为第二个事实源。上述逻辑模型是目标，后续若需调整物理持久化必须通过 migration。
 ````
 
-细节核对：快照不等于启用及未提供能力保留；依规格 §11 D/I，校准审计、分级与门禁责任归 D，自动运行责任归 I。
+细节核对：仅移出文档更新不改库/快照格式的过程声明，由文首只陈述目标约定覆盖；migration要求与所有审计字段原位保留。
 
-### M035
+### M036
 
-源：`README.md`，基线行 12。处置：改写。
+源：`intent/draft.md`，基线位置 1089。处置：改写。
 
-去处：[docs/contracts/read-validation.md#当前交付与命名](../../docs/contracts/read-validation.md#当前交付与命名)。
+去处：[intent/draft.md#六制品与目录契约](../../intent/draft.md#六制品与目录契约)。
 
 原文（逐字）：
 
 ````text
-#93 已冻结 [Read 权威结构](docs/contracts/read-validation.md)，包含全部 18 个必填字段、
-严格独立评分与 Read 自有价值词汇。#94 已交付原始 bytes 与只读可靠文本上下文的
-公共校验、逐条数值诊断和带来源的警告视图；#95 已按字段接通受限证据矩阵，
-#96 已交付同正文 reduce 允许集合，#97 已交付显式配置准入。
-#98 已验证两份历史配置与四份候选原始字节的非空隔离恢复；固定消费上下文由测试
-常量重建，范围见 [Read 恢复说明](docs/contracts/read-validation.md#恢复范围98)。
-独立 A9 由 #99 推进，离线校验不授予生产 Read 或校准资格。
+A2-01 首先开放 Profile 纵向路径；A2-02 增加 models、boundary 提示词及 boundary 冻结契约；A2-03 增加 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪；A2-04 增加 escalation、reuse 提示词、reuse-assessment 和 decision-reasons 契约，判断 reuse/suggestion 配置就绪，不要求 PDF、正文解析或 value 输出；A2-05 增加 extraction 的受控工具链、按阶段模型文件身份、有效解析策略与 normalization v1，单独判断 extraction 配置完整性，不安装解析器、下载模型或执行 PDF 解析。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。以上完整目录是分阶段目标，不表示所有材料已可编译。
 ````
 
 新文：
 
 ````text
-[Read 权威结构与校验](docs/contracts/read-validation.md)提供全部 18 个必填字段、
-严格独立评分与 Read 自有价值词汇，接收原始 bytes 与只读可靠文本上下文，
-提供逐条数值诊断、带来源的警告视图、受限证据矩阵及同正文 reduce 允许集合检查，
-支持显式配置准入。历史配置与候选原始字节的隔离恢复范围见
-[Read 恢复说明](docs/contracts/read-validation.md#恢复范围98)。离线校验不授予生产 Read 或校准资格。
+配置包括 Profile 纵向路径，以及 models、boundary 提示词及 boundary 冻结契约；包括 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪；包括 escalation、reuse 提示词、reuse-assessment 和 decision-reasons 契约，判断 reuse/suggestion 配置就绪，不要求 PDF、正文解析或 value 输出；包括 extraction 的受控工具链、按阶段模型文件身份、有效解析策略与 normalization v1，单独判断 extraction 配置完整性，不安装解析器、下载模型或执行 PDF 解析。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。各配置切片的历史范围见[路线图](../docs/roadmap.md#配置切片与底座验收范围)。
 ````
 
-细节核对：现在时保留全部可用能力；#93–#99 出处已在 Read Contract 相关和路线图文首记录表。两份配置、四份候选、固定测试上下文的证据边界保留于路线图 Read 恢复证据范围及 Contract 恢复范围。
+细节核对：仅移出 A2-01–A2-05 交付顺序，配置名称、就绪判据、未配置规则和路径逐字原位保留；历史顺序在路线图登记。
 
-## 发现
+### M037
 
-| 编号 | 基线位置 | 发现 | 处理 |
-| --- | --- | --- | --- |
-| F01 | README.md:12 与 audit run/resume 使用说明 | “真实网络来源尚未实现”的范围与已有联网审计命令存在歧义 | 待记录并报告，未改变原文 |
-| F02 | docs/contracts/paper-facts.md:248 | 历史“待实现单一枚举”与现状混写，但原因目录及指引被测试读取 | 原字节保留；整理时标明嵌入历史内容 |
-| F03 | docs/contracts/adapter-config.md:57–59 与 ADR-0026/0036 | 具体 cwd 待确认的历史表述与 #111 已确认 `/srv/pi-cwd` 不同步 | 路线图按较新裁决记已确认值，现场隔离仍未验；原 Contract 待整理 |
+源：`intent/draft.md`，基线位置 1091。处置：改写。
+
+去处：[intent/draft.md#六制品与目录契约](../../intent/draft.md#六制品与目录契约)。
+
+原文（逐字）：
+
+````text
+A2-06（#21）新增 `settings.read` 选择 `config/read/<version>.yaml`，只保存
+必填的声明 `version` 与代码受控 `chunking_version: v1`；独立算法无字节登记。
+`prompts.reading` 绑定 `prompts/reading/<version>.md` 的精确 UTF-8 字节，
+使用封闭 `prompt/reading` 逻辑名，与 Pi 系统 Prompt 分开登记。
+models.reading、Read YAML 与提示词沿用原子版本保护和 SQLite 历史回放。
+该历史切片未选择权威 Read 契约，因此保留 `read_contract` 及模型、提示词、适配器占位与 chunking 缺项。
+#97 已开放显式 `settings.contracts.read: v1`，按既有材料规则检查、登记和回放 #93 的权威
+Read 契约；完整材料可配置 ready，未选/null 的旧快照身份与缺项不变。
+不执行分块或模型调用。输出语言和正文制品仍由后续
+阶段输入指纹组合，不进入运行配置快照。#23 已实现单快照六投影与校准基线重建，
+Read 配置变化只影响 read 投影；公共服务与只读比较见 `docs/contracts/config-projections.md`。
+````
+
+新文：
+
+````text
+配置支持（依据 #21） `settings.read` 选择 `config/read/<version>.yaml`，只保存
+必填的声明 `version` 与代码受控 `chunking_version: v1`；独立算法无字节登记。
+`prompts.reading` 绑定 `prompts/reading/<version>.md` 的精确 UTF-8 字节，
+使用封闭 `prompt/reading` 逻辑名，与 Pi 系统 Prompt 分开登记。
+models.reading、Read YAML 与提示词沿用原子版本保护和 SQLite 历史回放。
+#21 历史配置切片的快照保持原身份与原有 `read_contract` 及模型、提示词、适配器占位与 chunking 缺项。
+配置支持显式（依据 #97） `settings.contracts.read: v1`，按既有材料规则检查、登记和回放 #93 的权威
+Read 契约；完整材料可配置 ready，未选/null 的旧快照身份与缺项不变。
+不执行分块或模型调用。输出语言和正文制品仍由后续
+阶段输入指纹组合，不进入运行配置快照。单快照支持六投影与校准基线重建（依据 #23），
+Read 配置变化只影响 read 投影；公共服务与只读比较见 `docs/contracts/config-projections.md`。
+````
+
+细节核对：明确仅指#21历史切片，不能从未选Read契约推出模型等全部缺项；原身份、原有read_contract及缺项保留，未选/null旧快照不变、UTF-8字节、语言/正文不进快照均原位保留。#21/#23/#93/#97出处保留。
+
+### M038
+
+源：`intent/draft.md`，基线位置 1103。处置：状态外移。
+
+去处：[docs/roadmap.md#配置切片与底座验收范围](../../docs/roadmap.md#配置切片与底座验收范围)。
+
+原文（逐字）：
+
+````text
+A2-07–A2-09 已交付期刊配置冻结、六投影/基线只读比较和配置事务并发中断恢复；
+#26 的 adapter 配置及 #27 的历史快照发现也纳入完整配置验收。#25 在同一次完整
+离线执行中追加独立 A2 结论，与 #12、A1、A2-01 共用 run_id 和证据哈希；迁移
+revision 来自真实临时验收库，格式版本与固定合成材料逐项记录，正文与凭据不进入
+验收摘要。固定覆盖和未验收项见 `docs/verification/offline-evidence.md`。
+此结论只证明配置切片，不代表完整阶段 A、正式校准、阶段 B 或 live 验收通过。
+#29/#35 在同次固定计划中另追加 A3 存储/恢复结论，绑定同次基础证据、A1、完整 A2、
+实际执行回执、运行身份、真实临时库 revision、版本和固定材料哈希；缺失、少执行、
+skip/deselect/collect-only、漂移或中断不能借历史成功通过。#36/#45 同次另追加必需 A4
+供给生命周期结论，绑定 A1、完整 A2、A3、真实格式和固定执行范围。六份主要文件共享 run_id，
+pytest 回执另行绑定；A2-01 仍为可选历史组。A3 不声明论文事实、指纹、任务/可见性、
+报告重建、Pi/Docling、真实来源或 NAS 已验收，stage_a_verified/live_verified 恒 false。
+````
+
+新文：
+
+````text
+底座验收的既有范围与绑定规则见[路线图](../docs/roadmap.md#配置切片与底座验收范围)及[离线证据](../docs/verification/offline-evidence.md)。
+````
+
+细节核对：逐字移动历史验收范围，只有反引号内相对路径改为路线图可解析链接；没有扩大验收资格。
+
+### M007
+
+源：`intent/draft.md`，基线位置 1202。处置：改写。
+
+去处：[intent/draft.md#73-期刊信誉](../../intent/draft.md#73-期刊信誉)。
+
+原文（逐字）：
+
+````text
+A2-07（#22）已通过公共 check/compile/load 登记该集合，不执行论文匹配或破同。
+刊号接受带或不带连字符的 ASCII 八位写法与末位小写 x，不接受首尾空白；
+编译后统一为带连字符、大写 X 的形式。`issns` 可包含本条 ISSN-L，但其自身列表
+不得重复。完整快照内期刊按规范 `issn_l` 排序，附加 `issns` 也排序；精确原始字节
+仍保留，等价写法改动也须新建版本。#23 的六阶段投影与基线均排除期刊材料；
+期刊配置变化只影响完整快照与登记身份。
+````
+
+新文：
+
+````text
+期刊集合通过公共 check/compile/load 登记（依据 #22），不执行论文匹配或破同。
+刊号接受带或不带连字符的 ASCII 八位写法与末位小写 x，不接受首尾空白；
+编译后统一为带连字符、大写 X 的形式。`issns` 可包含本条 ISSN-L，但其自身列表
+不得重复。完整快照内期刊按规范 `issn_l` 排序，附加 `issns` 也排序；精确原始字节
+仍保留，等价写法改动也须新建版本。六阶段投影与基线均排除期刊材料（依据 #23）；
+期刊配置变化只影响完整快照与登记身份。
+````
+
+细节核对：只将交付时态改为规格要求，保留各 issue 依据；全部字段、枚举、数字、条件、否定与职责边界原位保留。对应已完成范围见路线图 A2/A9；B 未完成见模块状态。
+
+### M050
+
+源：`intent/draft.md`，基线位置 1313。处置：改写。
+
+去处：[intent/draft.md#76-模型配置](../../intent/draft.md#76-模型配置)。
+
+原文（逐字）：
+
+````text
+上例是目标选择示意，不授权原地修改已经登记的 `models-v1`；既有协议枚举及当前配置编译契约见 `docs/contracts/runtime-config.md`，它们保留已交付范围。Pi 运行策略的版本化配置、三槽选择与 models 协议一致性检查已由 #26 的配置切片开放，执行映射仍待 RPC 任务；提交工具的显式协议名称及配置 Contract 需在启用该升级前另行定义并同步权威 Schema、文档和必要 migration，不能复用 `json_schema` 或 `json_object` 隐藏其真实通道。V1 默认验收不要求启用提交工具。
+````
+
+新文：
+
+````text
+上例是目标选择示意，不授权原地修改已经登记的 `models-v1`；既有协议枚举及当前配置编译契约见 `docs/contracts/runtime-config.md`。Pi 运行策略的版本化配置、三槽选择与 models 协议一致性检查由配置编译提供（依据 #26），执行映射由 RPC 边界实现；提交工具的显式协议名称及配置 Contract 需在启用该升级前另行定义并同步权威 Schema、文档和必要 migration，不能复用 `json_schema` 或 `json_object` 隐藏其真实通道。V1 默认验收不要求启用提交工具。
+````
+
+细节核对：将已交付/待任务改职责；models-v1不可原改、提交工具命名前置、两种协议不可挪用及默认不要求启用逐字保留。
+
+### M008
+
+源：`intent/draft.md`，基线位置 1325。处置：改写。
+
+去处：[intent/draft.md#77-pi-rpc-适配边界](../../intent/draft.md#77-pi-rpc-适配边界)。
+
+原文（逐字）：
+
+````text
+Issue #26 的配置切片已开放 settings 的 adapters 三槽、Pi YAML 与独立系统 Prompt
+登记/回放，以及具名只读 adapter 语义和消费者依赖。字段、路径和固定 V1 策略见
+[适配器配置契约](../docs/contracts/adapter-config.md)。没有 adapter 的旧快照保持
+原身份和含义；该配置切片不执行 RPC 或安装程序。统一阶段投影、校准基线及 diff
+联动已由 #23 接入单快照重建与只读 diff；不能把 adapter 分量身份冒称为完整基线
+或执行就绪证明。
+````
+
+新文：
+
+````text
+适配器配置应支持（依据 #26） settings 的 adapters 三槽、Pi YAML 与独立系统 Prompt
+登记/回放，以及具名只读 adapter 语义和消费者依赖。字段、路径和固定 V1 策略见
+[适配器配置契约](../docs/contracts/adapter-config.md)。没有 adapter 的旧快照保持
+原身份和含义；配置编译不执行 RPC 或安装程序。统一阶段投影、校准基线及 diff
+联动应通过单快照重建与只读 diff 提供（依据 #23）；不能把 adapter 分量身份冒称为完整基线
+或执行就绪证明。
+````
+
+细节核对：只将交付时态改为规格要求，保留各 issue 依据；全部字段、枚举、数字、条件、否定与职责边界原位保留。对应已完成范围见路线图 A2/A9；B 未完成见模块状态。
+
+### M051
+
+源：`intent/draft.md`，基线位置 1337。处置：改写。
+
+去处：[intent/draft.md#77-pi-rpc-适配边界](../../intent/draft.md#77-pi-rpc-适配边界)。
+
+原文（逐字）：
+
+````text
+2. 固定 provider/model、有效提示词、Contract、Profile、工具声明及运行策略；禁用自动发现的 context、skills、prompts、extensions、MCP 和个人设置对运行的隐式影响。Pi 必需的系统提示词与显式资源属于可审计配置；Pi 1.4.0 强制追加 cwd 段，有效指令为登记声明指令加该段，例外严格限于 §2.4 已裁决常量。A8 只验 system 补丁形状与 preamble；#111 已确认 cwd 白名单为 `/srv/pi-cwd`，生产启动器须显式传入并实测无资源与实际隔离。无法固定、隔离或匹配实际模型时拒绝运行。
+3. 关闭 Pi agent/provider 隐含 retry、自动 compaction/summarization 及额外模型确认回合。Python 按 §8.3 统一领取尝试预算，一次 attempt 最多一次模型调用；工具循环不能隐藏额外调用。Read map/reduce 仍是既定的显式分块流程，各个输入分别受预算限制，不由 Pi 自主拆分。
+4. RPC `prompt` ACK 只表示命令接收；必须消费到 `agent_settled`，检查最终消息 `stopReason`、实际 provider/model、所选通道、超时、取消与子进程异常。正常完成且仅有一个有效权威结果，再通过严格 JSON 解析、Schema 和业务校验，才形成成功；错误、拒绝、截断、缺失/重复提交或无效内容均失败。超时、取消或进程退出不得提交部分输出，异常进程退出后重建隔离环境，不能阻断同批无关论文。
+5. `prompt_only` 只接收最终 assistant 的完整纯 JSON 文本；围栏、截断补全、类型强转或从解释文本中拼接结果都不能修复成成功。提交工具升级只接收唯一显式工具的参数，经 Python 权威校验成功后返回 validated artifact 并终结该 run；失败、未调用或参数无效时按同一预算处理，不能另取最终文本。
+6. 提交工具的 TypeBox 参数 Schema 必须从 Pydantic 生成的 JSON Schema 导入，必要的传输变换不能维护第二套领域字段或放松规则；工具端校验不能替代 Python 最终校验。升级不改变业务输出契约、建议规则或 evidence 要求，但其模型行为可能变化，仍须按相应阶段处理指纹与校准变更。
+7. `prompt_only` 的工具 allowlist 为空；升级后仅允许专用提交工具。通用 bash、文件读写、网络访问、数据库写入、全文获取、Docling 和 evidence 查询均不向论文驱动的 Agent 开放；固定模型通信由 adapter 承担。`--tools` 不是 OS sandbox，正式实现必须另外约束子进程、扩展与文件系统权限，使其不能访问业务数据库、无关文件或出版方凭证。
+8. 关闭 Pi 会话持久化，完整 RPC/JSONL 事件流仅在内存消费；按 §8.6–§8.7 提取脱敏执行事实与必要成功制品。RPC ACK、进程退出码、工具参数 Schema 或研究中的临时 Read 校验都不能代替生产验收。可行性实验已暴露的样本在正式采集时按 §4.6 登记排除，不伪造尚未存在的业务登记。
+````
+
+新文：
+
+````text
+2. 固定 provider/model、有效提示词、Contract、Profile、工具声明及运行策略；禁用自动发现的 context、skills、prompts、extensions、MCP 和个人设置对运行的隐式影响。Pi 必需的系统提示词与显式资源属于可审计配置；Pi 1.4.0 强制追加 cwd 段，有效指令为登记声明指令加该段，例外严格限于 §2.4 已裁决常量。#111 已确认 cwd 白名单为 `/srv/pi-cwd`，生产启动器须显式传入并实测无资源与实际隔离。无法固定、隔离或匹配实际模型时拒绝运行。
+3. 关闭 Pi agent/provider 隐含 retry、自动 compaction/summarization 及额外模型确认回合。Python 按 §8.3 统一领取尝试预算，一次 attempt 最多一次模型调用；工具循环不能隐藏额外调用。Read map/reduce 仍是既定的显式分块流程，各个输入分别受预算限制，不由 Pi 自主拆分。
+4. RPC `prompt` ACK 只表示命令接收；必须消费到 `agent_settled`，检查最终消息 `stopReason`、实际 provider/model、所选通道、超时、取消与子进程异常。正常完成且仅有一个有效权威结果，再通过严格 JSON 解析、Schema 和业务校验，才形成成功；错误、拒绝、截断、缺失/重复提交或无效内容均失败。超时、取消或进程退出不得提交部分输出，异常进程退出后重建隔离环境，不能阻断同批无关论文。
+5. `prompt_only` 只接收最终 assistant 的完整纯 JSON 文本；围栏、截断补全、类型强转或从解释文本中拼接结果都不能修复成成功。提交工具升级只接收唯一显式工具的参数，经 Python 权威校验成功后返回 validated artifact 并终结该 run；失败、未调用或参数无效时按同一预算处理，不能另取最终文本。
+6. 提交工具的 TypeBox 参数 Schema 必须从 Pydantic 生成的 JSON Schema 导入，必要的传输变换不能维护第二套领域字段或放松规则；工具端校验不能替代 Python 最终校验。升级不改变业务输出契约、建议规则或 evidence 要求，但其模型行为可能变化，仍须按相应阶段处理指纹与校准变更。
+7. `prompt_only` 的工具 allowlist 为空；升级后仅允许专用提交工具。通用 bash、文件读写、网络访问、数据库写入、全文获取、Docling 和 evidence 查询均不向论文驱动的 Agent 开放；固定模型通信由 adapter 承担。`--tools` 不是 OS sandbox，正式实现必须另外约束子进程、扩展与文件系统权限，使其不能访问业务数据库、无关文件或出版方凭证。
+8. 关闭 Pi 会话持久化，完整 RPC/JSONL 事件流仅在内存消费；按 §8.6–§8.7 提取脱敏执行事实与必要成功制品。RPC ACK、进程退出码、工具参数 Schema 或研究中的临时 Read 校验都不能代替生产验收。可行性实验已暴露的样本在正式采集时按 §4.6 登记排除，不伪造尚未存在的业务登记。
+````
+
+细节核对：A8离线证明范围在路线图文首记录#85与RPC Contract；cwd裁决、权限、模型匹配及失败拒绝要求逐字保留。
+
+### M009
+
+源：`intent/draft.md`，基线位置 1363。处置：改写。
+
+去处：[intent/draft.md#78-pi-固定版本供给](../../intent/draft.md#78-pi-固定版本供给)。
+
+原文（逐字）：
+
+````text
+Issue #26 只冻结适配器配置事实并接入版本登记和快照；本节的下载、安装、激活、权限隔离和 RPC 验收由后续执行器与供给任务实施，不在配置编译中安装程序或新增无人消费的执行资源字段。普通离线测试使用固定供给清单、临时文件和 fake RPC/进程接口，无 Pi、Node、网络或模型凭据前置；真实安装与 RPC 验收由显式命令另行运行。
+````
+
+新文：
+
+````text
+适配器配置编译只冻结（依据 #26）适配器配置事实并接入版本登记和快照；本节的下载、安装、激活、权限隔离和 RPC 验收由执行器与供给任务实施，不在配置编译中安装程序或新增无人消费的执行资源字段。普通离线测试使用固定供给清单、临时文件和 fake RPC/进程接口，无 Pi、Node、网络或模型凭据前置；真实安装与 RPC 验收由显式命令另行运行。
+````
+
+细节核对：只将交付时态改为规格要求，保留各 issue 依据；全部字段、枚举、数字、条件、否定与职责边界原位保留。对应已完成范围见路线图 A2/A9；B 未完成见模块状态。
+
+### M039
+
+源：`intent/draft.md`，基线位置 1367。处置：改写。
+
+去处：[intent/draft.md#78-pi-固定版本供给](../../intent/draft.md#78-pi-固定版本供给)。
+
+原文（逐字）：
+
+````text
+本次 #36 A4 的平台边界经用户裁决收口：list/show 与库内历史读取、隔离恢复查询不依赖
+本机 Pi/Node 或部署平台；export 仍须具备目录句柄、nofollow、不覆盖发布与 fsync 等必要
+安全文件能力，能力不足继续安全拒绝。#36 已关闭；
+[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 已以 NOT_PLANNED 关闭，Windows 安全导出
+当前无交付计划，未实现/未验证 Windows 后端。具体能力边界见
+[Pi 供给 Contract](../docs/contracts/pi-supply.md#固定材料导出)。
+````
+
+新文：
+
+````text
+#36 A4 的平台边界按用户裁决：list/show 与库内历史读取、隔离恢复查询不依赖
+本机 Pi/Node 或部署平台；export 仍须具备目录句柄、nofollow、不覆盖发布与 fsync 等必要
+安全文件能力，能力不足继续安全拒绝。Windows 后端的状态见[路线图](../docs/roadmap.md#已取消)，
+具体能力边界见[Pi 供给 Contract](../docs/contracts/pi-supply.md#固定材料导出)。
+````
+
+细节核对：平台/安全能力要求原位保留；#36/#46关闭与Windows未实现/未验证状态见路线图已取消。
+
+### M040
+
+源：`intent/draft.md`，基线位置 1374。处置：合并。
+
+去处：[intent/draft.md#78-pi-固定版本供给](../../intent/draft.md#78-pi-固定版本供给)。
+
+原文（逐字）：
+
+````text
+以下为用户对独立管理 Pi 升级问题的裁决（D1–D5），与本节前文同等有效；与此前任何可被读作相反含义的表述冲突时，以本节为准。这些决策仍是目标规格，不表示供给命令、安装器、RPC 执行器或验收已实现。
+````
+
+新文：
+
+````text
+以下为用户对独立管理 Pi 升级问题的裁决（D1–D5），与本节前文同等有效；与此前任何可被读作相反含义的表述冲突时，以本节为准。
+````
+
+细节核对：D1–D5及冲突优先规则原位保留；仅删除已由文首约定覆盖的未交付声明，未验范围仍在路线图Pi/Live。
+
+### M052
+
+源：`intent/draft.md`，基线位置 1582。处置：改写。
+
+去处：[intent/draft.md#91-本机一致性快照](../../intent/draft.md#91-本机一致性快照)。
+
+原文（逐字）：
+
+````text
+A3 批次副本在 staging 中转为 journal_mode=DELETE 的独立单文件，关闭并持久化后
+才哈希；全部验证后同文件系统原子不覆盖发布。完成批次目录名为 UTC 时间加 8 位
+密码学随机 hex，verify 只接受完成批次，拒绝任何清单外条目。配置材料原字节随数据库
+保留；config/ 树、settings.yaml、未登记草稿、contracts/ 导出目录与 reports/logs 不在
+A3 批次内，配置文件本身请用 git 保管。A3 不建 backup_runs，报告重建与任务续跑单列
+未验收；NAS 的更广保管范围按下一节另行实施。详见 docs/contracts/backup-restore.md。
+````
+
+新文：
+
+````text
+A3 批次副本在 staging 中转为 journal_mode=DELETE 的独立单文件，关闭并持久化后
+才哈希；全部验证后同文件系统原子不覆盖发布。完成批次目录名为 UTC 时间加 8 位
+密码学随机 hex，verify 只接受完成批次，拒绝任何清单外条目。配置材料原字节随数据库
+保留；config/ 树、settings.yaml、未登记草稿、contracts/ 导出目录与 reports/logs 不在
+A3 批次内，配置文件本身请用 git 保管。A3 批次不建 backup_runs；NAS 的更广保管范围按下一节实施。详见 docs/contracts/backup-restore.md。
+````
+
+细节核对：backup_runs能力边界保留；报告重建/任务续跑未验状态归路线图I/H。全部布局、8位hex、原子性与保管排除项保留。
+
+### M053
+
+源：`intent/draft.md`，基线位置 1591。处置：改写。
+
+去处：[intent/draft.md#91-本机一致性快照](../../intent/draft.md#91-本机一致性快照)。
+
+原文（逐字）：
+
+````text
+`restore verify <backup-batch> --target ...` 会写入完整副本，不是只读校验。目标父目录
+必须预先存在，目标只能不存在或为非符号链接的空目录；拒绝批次内部位置，不探测活动
+源路径。在目标父目录创建唯一隐藏 staging，复用批次完整校验后以 rename 原子发布；
+目标被并发写成非空时拒绝，失败只尽力清理本次 staging。副本保持原 DELETE 字节，
+原数据与配置不可访问、移动恢复根后仍须可回放旧 ID、原字节、时间、六投影和基线，
+并读取全部制品；要作为工作库另显式 db upgrade 恢复 WAL。恢复不激活配置、不续跑
+任务，不自动改变门禁；报告重建与 NAS 仍单列未验收。
+````
+
+新文：
+
+````text
+`restore verify <backup-batch> --target ...` 会写入完整副本，不是只读校验。目标父目录
+必须预先存在，目标只能不存在或为非符号链接的空目录；拒绝批次内部位置，不探测活动
+源路径。在目标父目录创建唯一隐藏 staging，复用批次完整校验后以 rename 原子发布；
+目标被并发写成非空时拒绝，失败只尽力清理本次 staging。副本保持原 DELETE 字节，
+原数据与配置不可访问、移动恢复根后仍须可回放旧 ID、原字节、时间、六投影和基线，
+并读取全部制品；要作为工作库另显式 db upgrade 恢复 WAL。恢复不激活配置、不续跑
+任务，不自动改变门禁。
+````
+
+细节核对：只外移报告重建/NAS未验状态，所有恢复副作用、拒绝、WAL和门禁行为原位不变。
+
+### M011
+
+源：`intent/draft.md`，基线位置 1599。处置：状态外移。
+
+去处：[docs/roadmap.md#read-恢复证据范围](../../docs/roadmap.md#read-恢复证据范围)。
+
+原文（逐字）：
+
+````text
+#98 已以两份历史配置和中/英文、single/reduce 四份候选原字节验证上述隔离恢复与
+再次搬迁。消费上下文由固定测试常量重建，不属于恢复产物，也不证明真实 PDF、
+evidence-map 或正文选择；范围见 [Read 恢复说明](../docs/contracts/read-validation.md#恢复范围98)。
+````
+
+新文：
+
+````text
+恢复验证的既有证据范围见[路线图](../docs/roadmap.md#read-恢复证据范围)。
+````
+
+细节核对：恢复证据数量、上下文来源与未证明边界保留；相对链接按新位置调整，将“上述隔离恢复”改为“[规格 §9.1](../../intent/draft.md#91-本机一致性快照)所述隔离恢复”，明确原指代。
+
+### M054
+
+源：`intent/draft.md`，基线位置 1722。处置：改写。
+
+去处：[intent/draft.md#十代码模块边界](../../intent/draft.md#十代码模块边界)。
+
+原文（逐字）：
+
+````text
+SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic、Pi RPC adapter、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx 和 Docling slim；Feed 解析初版采用标准库 XML（拒绝 DOCTYPE/ENTITY）与 html.parser，feedparser 仅按需评估；基础依赖版本在 A 锁定并进入验收证据；Docling extra 的实际 slim/CPU 组合、lockfile、模型取得与 Python `>=3.12,<3.15` 兼容面由 B 前置独立票验证，可与 A 窄收口并行探测。不兼容须显式限定支持范围或提出新工具链版本，不改写旧清单。Pi 是按 §7.8 固定供给、由明确 Node 入口启动的本机子进程，不是 Python 包；不为接入它另建 Node 业务服务，Python 依赖仍统一由 uv 与已提交 lockfile 管理。真实模型调用前 doctor 检查已供给 Pi/Node 的版本与安装身份、固定模型与认证可用性及隔离策略，缺失时报告具体配置或安装原因，不执行自动供给；`--help` 不探测 Pi、模型或凭证。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。受控浏览器渲染同样以可选依赖（如 `paper-radar[render]`，Playwright 及固定浏览器制品）声明，未启用时公开页面只走普通 HTTP 通道。
+````
+
+新文：
+
+````text
+SQLite 是唯一事实源，文件系统保存大制品。建议使用 Python、uv 锁依赖、Pydantic、Pi RPC adapter、SQLModel/SQLAlchemy 2 风格持久化、Alembic、Typer、httpx 和 Docling slim；Feed 解析初版采用标准库 XML（拒绝 DOCTYPE/ENTITY）与 html.parser，feedparser 仅按需评估；基础依赖版本在 A 锁定并进入验收证据；Docling extra 的实际 slim/CPU 组合、lockfile、模型取得与 Python `>=3.12,<3.15` 兼容面由 B 前置独立票验证。不兼容须显式限定支持范围或提出新工具链版本，不改写旧清单。Pi 是按 §7.8 固定供给、由明确 Node 入口启动的本机子进程，不是 Python 包；不为接入它另建 Node 业务服务，Python 依赖仍统一由 uv 与已提交 lockfile 管理。真实模型调用前 doctor 检查已供给 Pi/Node 的版本与安装身份、固定模型与认证可用性及隔离策略，缺失时报告具体配置或安装原因，不执行自动供给；`--help` 不探测 Pi、模型或凭证。Docling slim 以可选依赖组（如 `paper-radar[docling]`）声明：常规离线测试不安装 Docling 也能运行，解析相关测试由输出预生成 canonical 结构的 fake parser backend 驱动；Docling 未安装或未启用时，doctor 与解析任务给出包含安装方式的可操作错误，不用模糊状态隐藏失败。受控浏览器渲染同样以可选依赖（如 `paper-radar[render]`，Playwright 及固定浏览器制品）声明，未启用时公开页面只走普通 HTTP 通道。
+````
+
+细节核对：只移纯并行许可；Docling extra的兼容范围及验收要求不变，许可见路线图并行安排。
+
+### M001
+
+源：`intent/draft.md`，基线位置 1729。处置：移动。
+
+去处：[docs/roadmap.md#模块图](../../docs/roadmap.md#模块图)。
+
+原文（逐字）：
+
+````text
+```mermaid
+flowchart TD
+  J[JGR 判据固定] --> Audit[四刊首轮 HTTP 审计]
+  Audit --> Source[JGR 达标或用户新裁决]
+  A[A 窄收口：日志、doctor、纯规则] --> B[B 实验根内纵向闭环]
+  Pi[Pi 离线启动器、权限资源、生产成功来源] --> Live[固定 1.4.0 安装与 RPC 实测]
+  Cwd["/srv/pi-cwd 已确认；现场隔离验收"] --> Live
+  Live --> B
+  Extra[Docling extra 安装与兼容探测] --> Body[正文生产切片、Read 身份与预算]
+  Body --> B
+  Feed[强冲突持久化、JGR 元数据与语言事实] --> B
+  Source --> B
+  B --> C[C 生产根四刊积累、保留器与可见性]
+  C --> F[F 全通道、四刊正文与摘录 fixture]
+  C --> Abstract[四刊摘要稳定证据及判据裁决]
+  F --> Abstract
+  F --> D[D reuse 执行与正式校准]
+  Abstract --> D
+  D --> E[E 参考文献]
+  D --> G[G 长文 Read 与队列]
+  E --> H[H 完整日报与复核]
+  G --> H
+  H --> I[I 最终验收]
+```
+````
+
+新文：
+
+````text
+依赖图、模块状态与当前前沿见[路线图](../docs/roadmap.md#模块图)。
+````
+
+细节核对：原图 19 节点、21 条边在路线图保留；仅新增状态着色。
+
+### M055
+
+源：`intent/draft.md`，基线位置 1754。处置：改写。
+
+去处：[intent/draft.md#十一九阶段实施与验收](../../intent/draft.md#十一九阶段实施与验收)。
+
+原文（逐字）：
+
+````text
+Docling 探测、Pi 离线启动器、A 窄收口可以并行；日志须先于首次真实生产执行，基础 doctor
+须先于 Pi readiness doctor，eligibility/visibility 纯规则须先于 B 首个消费者。
+联网审计需邮箱、网络和独立审计库/制品根；任何发送 prompt 的 Pi live 探测都需已确认 cwd
+的现场隔离、外发确认、固定 provider/model 与认证。真实 Screening 再要求真实 Profile。
+C 开始长期生产根积累，F 与积累并行；四刊正文/摘录 fixture 和摘要前置齐备后才可进入
+D 正式预热冻结与首个校准批次。E/G 可在 D 工程完成后并行，自动 Read 仍受 D 运行门禁控制。
+````
+
+新文：
+
+````text
+日志须先于首次真实生产执行，基础 doctor
+须先于 Pi readiness doctor，eligibility/visibility 纯规则须先于 B 首个消费者。
+联网审计需邮箱、网络和独立审计库/制品根；任何发送 prompt 的 Pi live 探测都需已确认 cwd
+的现场隔离、外发确认、固定 provider/model 与认证。真实 Screening 再要求真实 Profile。
+C 开始长期生产根积累；四刊正文/摘录 fixture 和摘要前置齐备后才可进入
+D 正式预热冻结与首个校准批次。E/G 须在 D 工程完成后开始，自动 Read 仍受 D 运行门禁控制。
+````
+
+细节核对：并行许可移路线图；日志/doctor/纯规则最迟点、联网条件、D与E/G先后及自动Read运行门禁保留。
+
+### M002
+
+源：`intent/draft.md`，基线位置 1823。处置：状态外移。
+
+去处：[docs/roadmap.md#收口安排](../../docs/roadmap.md#收口安排)。
+
+原文（逐字）：
+
+````text
+[阶段 A 收口清单](../docs/verification/stage-a-closure.md) 保留上述原实施/测试/DoD 的稳定序号、
+历史证据与后续责任。A1–A10 通过不等于完整 A 通过。本 Markdown 是过渡清单；A 真正收口时
+由收口实现票产出机器可读阶段结论，I 聚合。首张 A 收口实现票须确定新增能力 required 组与
+全量 pytest 的验收登记规则，后续沿用；本票不新增组、测试分母或通过字段。
+````
+
+新文：
+
+````text
+A 真正收口时由收口实现票产出机器可读阶段结论，I 聚合。收口责任与验收登记安排见
+[路线图](../docs/roadmap.md#收口安排)。
+````
+
+细节核对：机器可读结论与 I 聚合要求保留规格；过渡安排移入路线图，将“上述”明确为“规格 §11 A”、“本 Markdown”明确为“该收口清单”、“本票”明确为“#111”，防止迁移改变指代；数字、情态、顺序和全部登记约束不变。
+
+### M010
+
+源：`intent/draft.md`，基线位置 1830。处置：改写。
+
+去处：[intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环](../../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)。
+
+原文（逐字）：
+
+````text
+本阶段是 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md) 的受限实验，整条链
+从 Feed 导入到最小日报均运行于显式实验数据根。目标是验证生产接口的真实单篇接线，
+不授予正常生产消费、正式校准或自动 Read 资格；以下均为待实现责任。
+````
+
+新文：
+
+````text
+本阶段是 [ADR-0036](../docs/adr/0036-isolate-stage-b-read-experiment.md) 的受限实验，整条链
+从 Feed 导入到最小日报均运行于显式实验数据根。目标是验证生产接口的真实单篇接线，
+不授予正常生产消费、正式校准或自动 Read 资格。
+````
+
+细节核对：只将交付时态改为规格要求，保留各 issue 依据；全部字段、枚举、数字、条件、否定与职责边界原位保留。对应已完成范围见路线图 A2/A9；B 未完成见模块状态。
+
+### M041
+
+源：`intent/draft.md`，基线位置 1885。处置：合并。
+
+去处：[intent/draft.md#阶段-c四刊发现身份版本与来源](../../intent/draft.md#阶段-c四刊发现身份版本与来源)。
+
+原文（逐字）：
+
+````text
+A6 已由 #69–#75 实现并注册离线论文事实底座，历史语义裁决与 #68 文档同步见 ADR-0030；真实来源、parser/live 与完整阶段 A 仍未验收。首次真实 Feed 导入前必须完成强冲突观察持久化：B 先交付 JGR 所需切片，C 扩展四刊；parser 每次升级前必须固定样本回归并声明关键字段减少。A6 的 Feed 唯一身份权威是数据库规范 URL；未来接入配置需明确与数据库对齐，不得建立第二个身份权威。
+````
+
+新文：
+
+````text
+首次真实 Feed 导入前必须完成强冲突观察持久化：B 先交付 JGR 所需切片，C 扩展四刊；parser 每次升级前必须固定样本回归并声明关键字段减少。A6 的 Feed 唯一身份权威是数据库规范 URL；未来接入配置需明确与数据库对齐，不得建立第二个身份权威。
+````
+
+细节核对：只移出A6历史交付和未验状态，路线图文首记录表#67/#68/#69–#75已有同一事实；首次导入、强冲突、parser回归和数据库唯一权威逐字保留。
+
+### M056
+
+源：`intent/draft.md`，基线位置 2403。处置：改写。
+
+去处：[intent/draft.md#131-feed](../../intent/draft.md#131-feed)。
+
+原文（逐字）：
+
+````text
+A10 的声明唯一来源为 `fixtures/a10/`，格式与只读/登记命令见 [fixture 与摘要审计 Contract](../docs/contracts/fixture-audit.md)。历史声明、合成向量和实际取得分开；HTTP 条件头可空，304 必须引用已保留响应。阶段 A 只审计已交付通道；A10 只执行 http，渲染通道待阶段 F 以新策略版本补跑。doiRA、类别依据与主摘要区块采用 §4.3 的裁决，真实预检不能冒充本轮审计。
+````
+
+新文：
+
+````text
+A10 的声明唯一来源为 `fixtures/a10/`，格式与只读/登记命令见 [fixture 与摘要审计 Contract](../docs/contracts/fixture-audit.md)。历史声明、合成向量和实际取得分开；HTTP 条件头可空，304 必须引用已保留响应。阶段 A 只审计已交付通道；渲染通道在阶段 F 以新策略版本补跑。doiRA、类别依据与主摘要区块采用 §4.3 的裁决，真实预检不能冒充本轮审计。
+````
+
+细节核对：A10当前只执行http的状态在路线图A10继承缺口及fixture Contract；阶段A只审计已交付通道与F新策略要求保留。
+
+### M057
+
+源：`intent/draft.md`，基线位置 2427。处置：状态外移。
+
+去处：[docs/roadmap.md#参考文献预检状态](../../docs/roadmap.md#参考文献预检状态)。
+
+原文（逐字）：
+
+````text
+后续注记（2026-10-25 只读预检）：两篇《大气科学》DOI 的 doiRA 返回 ISTIC，对 V1 注册机构链为 `agency_unsupported`；这不改写上表 2026-09-13 的“Crossref 无记录”历史，也不是本票实测。
+````
+
+新文：
+
+````text
+相关只读预检的历史边界见[路线图](../docs/roadmap.md#参考文献预检状态)。
+````
+
+细节核对：逐字保存两篇、日期、ISTIC、agency_unsupported及不覆盖旧结论边界；“上表”明确指规格§13.2，“本票”明确指基线记录，不改变样本表。
+
+## 发现与保留例外
+
+| 编号 | 基线冲突或疑点 | 处理与去处 |
+| --- | --- | --- |
+| F01 | README 的“真实网络来源尚未实现”与现有联网 audit 命令有范围歧义 | 原句保留；[路线图 DOC-2](../roadmap.md#整理中待确认的既有冲突)，待确认是否限定生产论文来源 |
+| F02 | paper-facts 原因目录与嵌入验收台账含历史“待实现” | 按票要求原字节保留；增加历史性质说明，当前前沿只看路线图 |
+| F03 | adapter-config 的具体 cwd 待确认与 #111 已确认常量并存 | 不借整理裁决；ADR-0026/0036 的较新值及现场未验边界在路线图明确，旧配置边界文字保留待用户确认同步 |
+| F04 | 规格 §4.10 把 orig 哈希覆盖交 F，而 ADR-0036 要求 B 首个正文生产者前明确 | 按“存疑保留原位”，保留整段 A9 证明边界；[路线图 DOC-1](../roadmap.md#整理中待确认的既有冲突)集中报告。规格并非无例外地去除所有历史字样 |
+| F05 | 原 CONTEXT.md 名称失效 | git c8cf6b1 证明 100% 重命名为 GLOSSARY.md，仅机械修正；旧名映射在文档规范保留 |
+| F06 | stage-inputs 的历史 #69 未映射与后续 #73 已映射、旧主要证据文件数量混写 | 原历史范围移路线图，不用旧切片限制现行服务；固定向量与旧证据字节不变 |
+
+### 未作的新裁决
+
+没有新增模块切分建议，没有调整 GitHub 原生关系，没有实施 #112。路线图模块/状态、待裁决/待探索及以上保留例外仍须用户按 #113 的合并前确认要求核对。
 
 ## 检查结果
 
-本节为进行中记录，不宣称完成验收。
+最终独立审阅完成：两位未参与改写的审阅者分别覆盖 Standards（全部 ADR/19 Contract/README）与 Spec（规格/路线图/承接责任），各轮发现逐项修复并复审到零项未解决的实施发现。范围外的 F01/F03/F04 基线冲突明示保留，仍待用户裁决；路线图初稿仍待合并前确认。审阅过程及结论记录于 [Issue #113 评论](https://github.com/MeteoBoy4/PaperRadar/issues/113)。
 
-- 初稿模块图：独立审阅确认原 19 个节点和 21 条边保全。
-- 初稿承接表：独立审阅确认 45 条 I/T/D 下一责任原文完整；新增模块索引与冻结基线行链接，尚待整体复审。
-- 初始 scope 审计：退出 0，`issues=[]`、`affected_groups=[]`；当前新增规范及路线图不加入绑定。
-- 删除行、细节计数、全部链接、完整语义复审及文档迁移后的仓库一致性检查尚未完成。
-- 指定 pytest 子集：`tests/test_paper_inputs.py`、`tests/test_check_compatibility.py`、`tests/test_a9_integrity.py`、`tests/test_a10_integrity.py`、`tests/test_verification_scope_audit.py`，统一使用 `uv run --offline --locked pytest`：291 passed（43.06s）。
-- 规范部分独立 Standards / Spec 审阅均 0 项；路线图仍缺各模块具体依据/完成判据指针，不能作全票完成结论。
+- 最终相关回归：`uv run --offline --locked pytest tests/test_paper_inputs.py tests/test_check_compatibility.py tests/test_a8_integrity.py tests/test_a9_integrity.py tests/test_a10_integrity.py tests/test_verification_scope_audit.py -q`，427 passed（63.38s）。
+- 最后一处选样证明边界措辞修正仅重绑 A10；`uv run --offline --locked pytest tests/test_a10_integrity.py -q` 补充回归 106 passed（24.96s）。
+- `uv run --offline --locked mypy`：622 个文件，无错误；修改的三个 scope 文件 Ruff 检查通过。
+- 最终 scope 审计退出 0，`issues=[]`、`affected_groups=[]`。
+- 严格结果集合的标记、反引号片段、URL 与规范化相对链接目标均无缺失；本地及冻结证据入链检查零错误。删除非空行覆盖缺失 0。
+
+- 基线始终为 `91e5d02e199f1921ca8afd2b7bdb8f257e6264f3`。
+- 所有被删除的非空基线行逐字进入本台账；目标文件及锚点已机械核对。
+- 规格所有既有标题层级、文字、顺序保持；只增加生产接线补充小节。ADR 文件名集合不变，Contract 既有标题不变。
+- Read US/ID/TD 覆盖行、paper-facts 原因目录/指引和嵌入台账、测试导航生成块及固定向量保持；普通代码/测试/fixture/历史证据没有改动。
+- stage-a-closure 只新增文首冻结说明；原正文与表格原字节保留。45 条责任逐条保留并链接固定基线行。
+- 原依赖图 19 节点、21 边保持；新增着色不修改依赖。
+- 细节检查按语义标识处理：数字/阈值、英文标识符、issue/ADR/章节、反引号原片段和 URL 分别提取；链接路径按目标解析，重定位不误报丢失。结果集合严格限于规格、路线图、ADR、Contract、README、GLOSSARY 与 docs/agents，不含台账或 stage-a-closure。原证据的定位标识在路线图历史证据入口保留，正文证据仍只链接原件。集合无缺失；计数减少见下节。
+- 新增路线图/台账/规范文件不加入 scope。重绑仅覆盖实际改变的绑定文档与 A8→A9→A10 传递 scope，未变分母、历史 JSON 或证明范围。
 - 未运行完整离线门禁；未执行 live。
 
-### 本组迁移复核（M001–M005）
+## 细节计数减少
 
-- 两名未参与改写的审阅者分别审查规格/收口安排与 Read Contract；指代漂移和完整删除行两项发现均修复，复审零未决。该结论仅覆盖本组。
-- 机械检查：本组删除的非空行逐字出现在台账；规格标题序列保持，Read Contract 既有标题保持；83 行 US/ID/TD 覆盖表逐字一致。
-- `stage-a-closure.md` 仅新增文首冻结说明，剩余正文与表格字节和基线完全相同。
-- scope：实际改动 `intent/draft.md`、`docs/contracts/read-validation.md`，重绑 A9 对两者的引用、A10 对规格及 A9 scope 的引用。未变更测试计数、格式或历史证据。最终审计退出 0，`issues=[]`、`affected_groups=[]`。
-- 指定五个 pytest 文件在本组改动后 291 passed（43.52s）；未运行完整离线门禁或 live。
-- 路线图补齐 19 节点的规格/ADR/Contract 与完成判据入口；独立复核通过。
-- 尚待完成：规格文首及正文交付日志、全部 ADR/Contract/README 整理、全量细节计数/链接检查和整票语义审阅。本台账仍为进行中记录。
+下表每行说明字面出现次数的减少；删除单元原文及去处见前述源文件记录。重复交付叙述合并为现状/依据，数字和标识符仍保留于现行规则或状态/证据；出现次数不用于推导要求强度。代码/链接另按完整片段和可解析目标核对，不能用单词计数代替语义审阅。
 
-### 本组迁移复核（M006–M014）
+| 标记 | 基线次数 | 结果次数 | 原因与保留位置 |
+| --- | --- | --- | --- |
+| `#106` | 10 | 7 | 重复来源/交付措辞合并；保留见 [README.md](../../README.md)及对应迁移单元 |
+| `#46` | 10 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `#68` | 7 | 6 | 重复来源/交付措辞合并；保留见 [docs/adr/0030-paper-version-identity-and-source-observations.md](../../docs/adr/0030-paper-version-identity-and-source-observations.md)及对应迁移单元 |
+| `#69` | 16 | 15 | 重复来源/交付措辞合并；保留见 [docs/adr/0030-paper-version-identity-and-source-observations.md](../../docs/adr/0030-paper-version-identity-and-source-observations.md)及对应迁移单元 |
+| `#70` | 7 | 6 | 重复来源/交付措辞合并；保留见 [docs/adr/0030-paper-version-identity-and-source-observations.md](../../docs/adr/0030-paper-version-identity-and-source-observations.md)及对应迁移单元 |
+| `#71` | 9 | 8 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `#72` | 5 | 4 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `#74` | 8 | 7 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `#75` | 10 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `#83` | 9 | 8 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `#84` | 9 | 8 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `#88` | 2 | 1 | 重复来源/交付措辞合并；保留见 [docs/contracts/pi-rpc.md](../../docs/contracts/pi-rpc.md)及对应迁移单元 |
+| `#93` | 32 | 29 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `#94` | 57 | 54 | 重复来源/交付措辞合并；保留见 [docs/contracts/read-validation.md](../../docs/contracts/read-validation.md)及对应迁移单元 |
+| `#95` | 16 | 14 | 重复来源/交付措辞合并；保留见 [docs/contracts/read-validation.md](../../docs/contracts/read-validation.md)及对应迁移单元 |
+| `#96` | 11 | 8 | 重复来源/交付措辞合并；保留见 [docs/contracts/read-validation.md](../../docs/contracts/read-validation.md)及对应迁移单元 |
+| `#97` | 22 | 19 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `#98` | 17 | 15 | 重复来源/交付措辞合并；保留见 [docs/contracts/backup-restore.md](../../docs/contracts/backup-restore.md)及对应迁移单元 |
+| `#99` | 23 | 21 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `02` | 13 | 11 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `03` | 11 | 10 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `04` | 7 | 5 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `05` | 8 | 7 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `07` | 8 | 7 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `1.4.0` | 27 | 23 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `212` | 2 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `403` | 24 | 23 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `46` | 3 | 2 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `5` | 100 | 99 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `A` | 149 | 143 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `A5` | 73 | 72 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `A7` | 109 | 104 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `A8` | 43 | 41 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `ACK` | 18 | 17 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `AIES` | 23 | 22 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `CI` | 5 | 4 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `D4` | 22 | 21 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `DERIVED` | 9 | 8 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `DOI` | 206 | 205 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `DoD` | 13 | 12 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `Docling` | 107 | 102 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `E0` | 4 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `E1` | 14 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `E10` | 16 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `E2` | 8 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `E3` | 9 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `E4` | 8 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `E5` | 9 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `E6` | 14 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `E7` | 16 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `E8` | 7 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `E9` | 5 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `Feed` | 297 | 295 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `Interface` | 11 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `Issue` | 20 | 15 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `JGR` | 52 | 50 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `JSON` | 114 | 110 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `JSONL` | 11 | 10 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `Markdown` | 22 | 21 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `NOT_PLANNED` | 3 | 1 | 重复来源/交付措辞合并；保留见 [docs/roadmap.md](../../docs/roadmap.md)及对应迁移单元 |
+| `Node` | 60 | 58 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `PDF` | 259 | 256 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `Pi` | 246 | 243 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `Profile` | 128 | 127 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `QJRMS` | 19 | 18 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `RPC` | 107 | 99 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `Read` | 312 | 310 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `Schema` | 95 | 93 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `Screening` | 203 | 197 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `URL：https://github.com/MeteoBoy4/PaperRadar/blob/212e312/intent/discussions/阶段A剩余工作.md` | 2 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `URL：https://github.com/MeteoBoy4/PaperRadar/issues/46` | 3 | 2 | 重复来源/交付措辞合并；保留见 [docs/contracts/pi-supply.md](../../docs/contracts/pi-supply.md)及对应迁移单元 |
+| `WAL` | 29 | 27 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `affected_groups` | 3 | 2 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `attempt` | 81 | 77 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `boundary` | 142 | 139 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `chunking` | 18 | 16 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `chunking_version` | 11 | 10 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `citation` | 2 | 1 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `clean` | 3 | 2 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `compaction` | 10 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `discussions` | 5 | 4 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `doctor` | 56 | 47 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `due` | 25 | 23 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `e312` | 2 | 1 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `eligibility` | 21 | 17 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `excerpt` | 10 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `excerpt_selector_version` | 12 | 11 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `extra` | 10 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `fake` | 14 | 10 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `false` | 62 | 61 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `foreign` | 2 | 1 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `http` | 19 | 18 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `key` | 17 | 15 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `lease` | 9 | 7 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `normalization` | 11 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `normalization_version` | 15 | 14 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `not_assessed` | 8 | 7 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `paper_radar` | 37 | 36 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `parser` | 56 | 55 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `passed` | 22 | 20 | 重复来源/交付措辞合并；保留见 [README.md](../../README.md)及对应迁移单元 |
+| `pi_supply` | 8 | 7 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `preamble` | 5 | 4 | 重复来源/交付措辞合并；保留见 [docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md](../../docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)及对应迁移单元 |
+| `prompt_only` | 20 | 19 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `readiness` | 10 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `reasons` | 27 | 25 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `reduce` | 34 | 31 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `reinterpret_audit` | 4 | 3 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `replay` | 23 | 22 | 重复来源/交付措辞合并；保留见 [README.md](../../README.md)及对应迁移单元 |
+| `repository` | 10 | 7 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `required` | 14 | 11 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `resume` | 24 | 23 | 重复来源/交付措辞合并；保留见 [README.md](../../README.md)及对应迁移单元 |
+| `retry` | 90 | 89 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `reuse` | 145 | 143 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `schema` | 36 | 34 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `scope` | 63 | 58 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `selected` | 5 | 4 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `selector` | 47 | 45 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `settled` | 11 | 10 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `slim` | 9 | 8 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `stage_a_verified` | 12 | 11 | 重复来源/交付措辞合并；保留见 [README.md](../../README.md)及对应迁移单元 |
+| `stderr` | 16 | 15 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `stopReason` | 6 | 5 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `store` | 8 | 4 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `succeeded` | 2 | 1 | 重复来源/交付措辞合并；保留见 [docs/contracts/screening-tasks.md](../../docs/contracts/screening-tasks.md)及对应迁移单元 |
+| `supply` | 45 | 43 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `suspected_truncated` | 4 | 3 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `test` | 31 | 28 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `true` | 26 | 25 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `value` | 172 | 169 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `visibility` | 16 | 11 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `waiting_calibration` | 18 | 17 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `§4.5` | 7 | 5 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `§7.7` | 8 | 7 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `§7.8` | 24 | 22 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `§8.5` | 4 | 3 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `§8.7` | 10 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：/srv/pi-cwd` | 11 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：affected_groups` | 3 | 2 | 重复来源/交付措辞合并；保留见 [docs/verification/stage-a-closure.md](../../docs/verification/stage-a-closure.md)及对应迁移单元 |
+| `代码片段：chunking_version` | 7 | 6 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：excerpt_selector_version` | 6 | 5 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：false` | 22 | 20 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：normalization_version` | 13 | 12 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：order` | 2 | 1 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：paper trace` | 5 | 4 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：prompt_only` | 14 | 13 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：reinterpret_audit` | 3 | 2 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：screening/reasons.py` | 3 | 1 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：screening/schema.py` | 5 | 3 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：suspected_truncated` | 4 | 3 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `代码片段：true` | 10 | 9 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `相对目标：docs/contracts/artifact-store.md` | 3 | 2 | 重复来源/交付措辞合并；保留见 [README.md](../../README.md)及对应迁移单元 |
+| `相对目标：docs/contracts/config-snapshots.md` | 5 | 4 | 重复来源/交付措辞合并；保留见 [README.md](../../README.md)及对应迁移单元 |
+| `相对目标：docs/contracts/pi-supply.md` | 4 | 3 | 重复来源/交付措辞合并；保留见 [intent/draft.md](../../intent/draft.md)及对应迁移单元 |
+| `相对目标：docs/verification/stage-a-closure.md` | 4 | 3 | 重复来源/交付措辞合并；保留见 [docs/roadmap.md](../../docs/roadmap.md)及对应迁移单元 |
 
-- 两名未参与改写的审阅者分别检查规格与 README/ADR。Read 恢复指代及 README 目标复述两项发现均已修复，复审零未决；仅适用于本组。
-- 删除非空行逐字覆盖检查通过；规格与 Contract 既有标题、收口表原字节、GLOSSARY 和测试导航均保持。
-- 现行规格/ADR/Contract/README/GLOSSARY/路线图/agents 文档的初步数字、代码、issue/ADR/章节及英文标识符集合检查，仅发现旧名称 CONTEXT；经历史确认后在文档规范保留旧名映射。此检查尚未替代完整 URL/相对目标及逐标记计数检查。
-- A8/A9/A10：只重绑 README、规格和 ADR-0034 的实际字节变化与 scope 传递下游；最终审计退出 0、issues 和 affected_groups 均为空。
-- 指定五文件加受影响的 `tests/test_a8_integrity.py`：427 passed（62.95s）。未运行完整离线门禁或 live。
-- 整票仍待完成：规格文首日志及其余交付叙述、全部存量 ADR/Contract 统一、README 其余状态句、全量标记计数/链接检查、台账按源位置排序及最终独立语义审阅。
+## 原字节保留文件清单
 
-### 本组迁移复核（M015–M035）
+共 841 个基线受保护文件，逐字节对比通过；本机忽略的 verification-runs 不执行写入，也不将其缺失误报为已验证。
 
-- 规格文首 17 条日志原文逐字登记；保留目标用户、核心目标、规范关系，增加规格/状态分离约定。裁决与规则合并至既有正文，每条附保留处行号及逐字引句；历史状态按原记录日期索引于路线图。
-- 三份配置 Contract 与 README Read 入口改为现状描述，完整证明边界保留，issue 出处有相关依据和路线图索引。
-- 两位独立审阅者提出的代码块空行、A7 未交付/未验区分、JGR 判据/达标证据区分、合并引句及 D/I 责任归属均已修复并复审关闭；该结论仅覆盖本组。
-- 当前全部已修改既有文档的删除非空行均在台账逐字可见；本批涉及文档与台账的相对链接/锚点检查零错误。
-- 直接 scope 漂移仅 README、规格、config-projections 与 config-snapshots；按 A8→A9→A10 重绑直接引用和传递 scope，最终审计退出 0、issues=[]、affected_groups=[]。
-- 指定五文件及 A8 integrity 回归：427 passed（63.13s）；未运行完整离线门禁或 live。
-- 尚待完成：规格其余交付叙述、剩余 ADR/Contract/README 状态整理、完整标记集合与计数/冻结文件/链接检查、台账排序及全票独立语义审阅。
+<details>
+<summary>逐文件清单</summary>
+
+```text
+.agents/skills/ask-matt/PHASE-BOUNDARIES.md
+.agents/skills/ask-matt/SKILL.md
+.agents/skills/ask-matt/agents/openai.yaml
+.agents/skills/claude-handoff/SKILL.md
+.agents/skills/claude-handoff/agents/openai.yaml
+.agents/skills/code-review/SKILL.md
+.agents/skills/code-review/agents/openai.yaml
+.agents/skills/codebase-design/DEEPENING.md
+.agents/skills/codebase-design/DESIGN-IT-TWICE.md
+.agents/skills/codebase-design/SKILL.md
+.agents/skills/codebase-design/agents/openai.yaml
+.agents/skills/diagnosing-bugs/SKILL.md
+.agents/skills/diagnosing-bugs/agents/openai.yaml
+.agents/skills/diagnosing-bugs/scripts/hitl-loop.template.sh
+.agents/skills/domain-modeling/ADR-FORMAT.md
+.agents/skills/domain-modeling/GLOSSARY-FORMAT.md
+.agents/skills/domain-modeling/SKILL.md
+.agents/skills/domain-modeling/agents/openai.yaml
+.agents/skills/git-guardrails-claude-code/SKILL.md
+.agents/skills/git-guardrails-claude-code/agents/openai.yaml
+.agents/skills/git-guardrails-claude-code/scripts/block-dangerous-git.sh
+.agents/skills/grill-me/SKILL.md
+.agents/skills/grill-me/agents/openai.yaml
+.agents/skills/grill-with-docs/SKILL.md
+.agents/skills/grill-with-docs/agents/openai.yaml
+.agents/skills/grilling/SKILL.md
+.agents/skills/grilling/agents/openai.yaml
+.agents/skills/handoff/SKILL.md
+.agents/skills/handoff/agents/openai.yaml
+.agents/skills/implement-spec/SKILL.md
+.agents/skills/implement-spec/agents/openai.yaml
+.agents/skills/implement/SKILL.md
+.agents/skills/implement/agents/openai.yaml
+.agents/skills/improve-codebase-architecture/HTML-REPORT.md
+.agents/skills/improve-codebase-architecture/SKILL.md
+.agents/skills/improve-codebase-architecture/agents/openai.yaml
+.agents/skills/loop-me/SKILL.md
+.agents/skills/loop-me/agents/openai.yaml
+.agents/skills/migrate-to-shoehorn/SKILL.md
+.agents/skills/migrate-to-shoehorn/agents/openai.yaml
+.agents/skills/prototype/LOGIC.md
+.agents/skills/prototype/SKILL.md
+.agents/skills/prototype/UI.md
+.agents/skills/prototype/agents/openai.yaml
+.agents/skills/research/SKILL.md
+.agents/skills/research/agents/openai.yaml
+.agents/skills/retro/SKILL.md
+.agents/skills/retro/agents/openai.yaml
+.agents/skills/scaffold-exercises/SKILL.md
+.agents/skills/scaffold-exercises/agents/openai.yaml
+.agents/skills/setup-matt-pocock-skills/SKILL.md
+.agents/skills/setup-matt-pocock-skills/agents/openai.yaml
+.agents/skills/setup-matt-pocock-skills/domain.md
+.agents/skills/setup-matt-pocock-skills/issue-tracker-github.md
+.agents/skills/setup-matt-pocock-skills/issue-tracker-gitlab.md
+.agents/skills/setup-matt-pocock-skills/issue-tracker-local.md
+.agents/skills/setup-matt-pocock-skills/triage-labels.md
+.agents/skills/setup-pre-commit/SKILL.md
+.agents/skills/setup-pre-commit/agents/openai.yaml
+.agents/skills/setup-ts-deep-modules/SKILL.md
+.agents/skills/setup-ts-deep-modules/agents/openai.yaml
+.agents/skills/setup-ts-deep-modules/dependency-cruiser.config.cjs
+.agents/skills/tdd/SKILL.md
+.agents/skills/tdd/agents/openai.yaml
+.agents/skills/tdd/mocking.md
+.agents/skills/tdd/tests.md
+.agents/skills/teach/GLOSSARY-FORMAT.md
+.agents/skills/teach/LEARNING-RECORD-FORMAT.md
+.agents/skills/teach/MISSION-FORMAT.md
+.agents/skills/teach/RESOURCES-FORMAT.md
+.agents/skills/teach/SKILL.md
+.agents/skills/teach/agents/openai.yaml
+.agents/skills/to-questionnaire/SKILL.md
+.agents/skills/to-questionnaire/agents/openai.yaml
+.agents/skills/to-spec/SKILL.md
+.agents/skills/to-spec/agents/openai.yaml
+.agents/skills/to-tickets/SKILL.md
+.agents/skills/to-tickets/agents/openai.yaml
+.agents/skills/triage/AGENT-BRIEF.md
+.agents/skills/triage/OUT-OF-SCOPE.md
+.agents/skills/triage/SKILL.md
+.agents/skills/triage/agents/openai.yaml
+.agents/skills/wait-what/SKILL.md
+.agents/skills/wait-what/agents/openai.yaml
+.agents/skills/wayfinder/SKILL.md
+.agents/skills/wayfinder/agents/openai.yaml
+.agents/skills/wizard/SKILL.md
+.agents/skills/wizard/agents/openai.yaml
+.agents/skills/wizard/template.sh
+.agents/skills/writing-beats/SKILL.md
+.agents/skills/writing-beats/agents/openai.yaml
+.agents/skills/writing-for-agents/SKILL-MECHANICS.md
+.agents/skills/writing-for-agents/SKILL.md
+.agents/skills/writing-for-agents/agents/openai.yaml
+.agents/skills/writing-fragments/SKILL.md
+.agents/skills/writing-fragments/agents/openai.yaml
+.agents/skills/writing-shape/SKILL.md
+.agents/skills/writing-shape/agents/openai.yaml
+docs/verification/a10-requirements.md
+docs/verification/a10-scope-review.md
+docs/verification/a4-requirements.md
+docs/verification/a6-requirements.md
+docs/verification/a7-external-review-disposition.md
+docs/verification/a7-history-ledger.json
+docs/verification/a7-requirements.md
+docs/verification/a8-requirements.md
+docs/verification/a9-scope-review.md
+docs/verification/issue-109-feedback-timings.md
+docs/verification/issue-109-scope-review.md
+docs/verification/offline-evidence.md
+examples/config/adapters/pi-v1.yaml
+examples/config/extraction/extraction-example-v1.yaml
+examples/config/journals/journals-v1.yaml
+examples/config/models/models-pi-v1.yaml
+examples/config/models/models-read-v1.yaml
+examples/config/models/models-reuse-v1.yaml
+examples/config/models/models-v1.yaml
+examples/config/profiles/profile-example-v1.yaml
+examples/config/profiles/profile-v1.yaml
+examples/config/prompts/pi-system-v1.md
+examples/config/read/read-v1.yaml
+examples/config/screening/reuse-escalation-v1.yaml
+examples/config/settings-boundary.yaml
+examples/config/settings-extraction.yaml
+examples/config/settings-journals.yaml
+examples/config/settings-pi.yaml
+examples/config/settings-read-ready.yaml
+examples/config/settings-read.yaml
+examples/config/settings-reuse.yaml
+examples/config/settings-value.yaml
+examples/config/settings.yaml
+examples/config/topics/topics-v1.yaml
+examples/contracts/read/read/v1/manifest.json
+examples/contracts/read/read/v1/schema.json
+examples/contracts/screening/boundary/v1/manifest.json
+examples/contracts/screening/boundary/v1/schema.json
+examples/contracts/screening/decision-reasons/v1/manifest.json
+examples/contracts/screening/decision-reasons/v1/schema.json
+examples/contracts/screening/reuse-assessment/v1/manifest.json
+examples/contracts/screening/reuse-assessment/v1/schema.json
+examples/contracts/screening/value-prediction/v1/manifest.json
+examples/contracts/screening/value-prediction/v1/schema.json
+examples/prompts/reading/v1.md
+examples/prompts/screening/boundary-v1.md
+examples/prompts/screening/reuse-v1.md
+examples/prompts/screening/value-v1.md
+fixtures/a10/historical-v1.json
+intent/archived_discussions/claude-advise-grill.md
+intent/archived_discussions/daily-paper-reader.md
+intent/archived_discussions/grill-history.md
+intent/archived_discussions/kimi-advise-grill.md
+intent/discussions/docling-issue-20-live-probe.md
+intent/discussions/ica-advise-architecture-review-20261016.md
+intent/discussions/ica-advise-errors-module.md
+intent/discussions/ica-advise-export-batch-partial-failure.md
+intent/discussions/ica-advise-implementation-plan-review.md
+intent/discussions/ica-advise-not-attempted-single-state.md
+intent/discussions/ica-advise-outcome-literal-narrowing.md
+intent/discussions/ica-advise-outcome-texts-in-module.md
+intent/discussions/ica-advise-single-entry-composition.md
+intent/discussions/ica-advise-snapshot-verdict-seam.md
+intent/discussions/ica-advise-verdict-takes-target.md
+intent/discussions/ica-advise-verdict-union-return.md
+intent/discussions/pi-agent-contract-feasibility.md
+intent/discussions/research-aihot-v1-lessons.md
+intent/discussions/sqlalchemy-vs-sqlmodel.md
+intent/discussions/v2-body-parser-backend-seam.md
+intent/discussions/value-prediction-term-ambiguity.md
+intent/review/contract-help-version-drift-risk.md
+intent/review/issue-10-batch-contract-export-review.md
+intent/review/issue-100-a10-fixture-audit-review-r1.md
+intent/review/issue-100-a10-fixture-audit-review-r2.md
+intent/review/issue-109-check-compatibility-review-r1.md
+intent/review/issue-11-batch-contract-check-review.md
+intent/review/issue-12-offline-evidence-review.md
+intent/review/issue-13-a1-acceptance-review.md
+intent/review/issue-14-snapshot-verdict-and-batch-export-review.md
+intent/review/issue-16-config-snapshot-review.md
+intent/review/issue-17-boundary-configuration-readiness-review.md
+intent/review/issue-18-compile-topics-value-config-review.md
+intent/review/issue-19-reuse-suggestion-config-review.md
+intent/review/issue-20-extraction-config-review.md
+intent/review/issue-21-read-config-review.md
+intent/review/issue-22-journals-config-review.md
+intent/review/issue-23-config-diff-review.md
+intent/review/issue-24-config-contention-review.md
+intent/review/issue-25-a2-full-acceptance-review.md
+intent/review/issue-26-pi-adapter-config-review.md
+intent/review/issue-27-config-snapshot-list-prefix-review.md
+intent/review/issue-29-a3-full-review-r2.md
+intent/review/issue-29-a3-full-review.md
+intent/review/issue-3-boundary-validation-review.md
+intent/review/issue-36-a4-full-review-r2.md
+intent/review/issue-36-a4-full-review.md
+intent/review/issue-36-a4-review-resolution.md
+intent/review/issue-4-contract-export-review.md
+intent/review/issue-47-a5-stage-inputs-review-r1.md
+intent/review/issue-47-a5-stage-inputs-review-r2.md
+intent/review/issue-5-contract-check-head-independent-review.md
+intent/review/issue-5-contract-check-repair-independent-review.md
+intent/review/issue-5-contract-check-review.md
+intent/review/issue-55-verification-status-review.md
+intent/review/issue-56-dev-environment-review-r1.md
+intent/review/issue-57-config-error-assertion-review.md
+intent/review/issue-6-value-validation-review.md
+intent/review/issue-60-verification-scope-audit-review.md
+intent/review/issue-61-receipt-isolation-process-group-review.md
+intent/review/issue-67-a6-paper-facts-review-r1.md
+intent/review/issue-67-a6-paper-facts-review-r2.md
+intent/review/issue-67-a6-paper-facts-review-resolution.md
+intent/review/issue-7-reuse-validation-review.md
+intent/review/issue-76-a7-screening-tasks-review-r1.md
+intent/review/issue-76-a7-screening-tasks-review-r2.md
+intent/review/issue-8-decision-reason-review.md
+intent/review/issue-85-a8-pi-rpc-kernel-review-r1.md
+intent/review/issue-85-a8-pi-rpc-review-r2.md
+intent/review/issue-85-a8-pi-rpc-review-r3.md
+intent/review/issue-9-four-frozen-contracts-review.md
+intent/review/issue-92-a9-read-contract-review-r1.md
+intent/review/issue-92-a9-read-contract-review-r2.md
+intent/review/kimi-review-issue-2.md
+intent/review/pi-agent-existing-assets-adaptation-review.md
+intent/review/pi-agent-v1-document-consistency-review.md
+src/paper_radar/__init__.py
+src/paper_radar/backup/__init__.py
+src/paper_radar/backup/cli.py
+src/paper_radar/backup/cli_support.py
+src/paper_radar/backup/files.py
+src/paper_radar/backup/manifest.py
+src/paper_radar/backup/restore.py
+src/paper_radar/backup/restore_cli.py
+src/paper_radar/backup/restore_contract.py
+src/paper_radar/backup/service.py
+src/paper_radar/cli.py
+src/paper_radar/config/__init__.py
+src/paper_radar/config/adapter_loading.py
+src/paper_radar/config/adapters.py
+src/paper_radar/config/cli.py
+src/paper_radar/config/compile.py
+src/paper_radar/config/diff.py
+src/paper_radar/config/errors.py
+src/paper_radar/config/escalation.py
+src/paper_radar/config/extraction.py
+src/paper_radar/config/extraction_models.py
+src/paper_radar/config/extraction_policy.py
+src/paper_radar/config/extraction_toolchain.py
+src/paper_radar/config/identity.py
+src/paper_radar/config/journals.py
+src/paper_radar/config/material_assembly.py
+src/paper_radar/config/material_names.py
+src/paper_radar/config/projections.py
+src/paper_radar/config/read.py
+src/paper_radar/config/schema.py
+src/paper_radar/config/service.py
+src/paper_radar/config/snapshot_cli.py
+src/paper_radar/config/snapshot_queries.py
+src/paper_radar/config/snapshot_summary.py
+src/paper_radar/config/topics.py
+src/paper_radar/config/yaml_loader.py
+src/paper_radar/contracts/__init__.py
+src/paper_radar/contracts/check.py
+src/paper_radar/contracts/errors.py
+src/paper_radar/contracts/export.py
+src/paper_radar/contracts/schema.py
+src/paper_radar/contracts/snapshot.py
+src/paper_radar/fixture_audit/__init__.py
+src/paper_radar/fixture_audit/abstract_models.py
+src/paper_radar/fixture_audit/abstract_parser.py
+src/paper_radar/fixture_audit/abstract_records.py
+src/paper_radar/fixture_audit/abstract_rules.py
+src/paper_radar/fixture_audit/abstract_service.py
+src/paper_radar/fixture_audit/abstract_tables.py
+src/paper_radar/fixture_audit/acquisition_identity.py
+src/paper_radar/fixture_audit/acquisition_models.py
+src/paper_radar/fixture_audit/acquisition_policy.py
+src/paper_radar/fixture_audit/acquisition_records.py
+src/paper_radar/fixture_audit/acquisition_service.py
+src/paper_radar/fixture_audit/acquisition_tables.py
+src/paper_radar/fixture_audit/audit_cli.py
+src/paper_radar/fixture_audit/audit_protection.py
+src/paper_radar/fixture_audit/cli.py
+src/paper_radar/fixture_audit/errors.py
+src/paper_radar/fixture_audit/history_rules.py
+src/paper_radar/fixture_audit/interpretation_models.py
+src/paper_radar/fixture_audit/interpretation_service.py
+src/paper_radar/fixture_audit/interpretation_tables.py
+src/paper_radar/fixture_audit/models.py
+src/paper_radar/fixture_audit/pdf_models.py
+src/paper_radar/fixture_audit/pdf_records.py
+src/paper_radar/fixture_audit/pdf_requests.py
+src/paper_radar/fixture_audit/pdf_service.py
+src/paper_radar/fixture_audit/pdf_tables.py
+src/paper_radar/fixture_audit/replay_models.py
+src/paper_radar/fixture_audit/resume_rules.py
+src/paper_radar/fixture_audit/sampling_models.py
+src/paper_radar/fixture_audit/sampling_parser.py
+src/paper_radar/fixture_audit/sampling_records.py
+src/paper_radar/fixture_audit/sampling_rules.py
+src/paper_radar/fixture_audit/sampling_selection.py
+src/paper_radar/fixture_audit/sampling_service.py
+src/paper_radar/fixture_audit/sampling_tables.py
+src/paper_radar/fixture_audit/service.py
+src/paper_radar/fixture_audit/service_reads.py
+src/paper_radar/fixture_audit/source_http.py
+src/paper_radar/fixture_audit/source_validation.py
+src/paper_radar/fixture_audit/summary_records.py
+src/paper_radar/fixture_audit/tables.py
+src/paper_radar/llm/__init__.py
+src/paper_radar/llm/calls.py
+src/paper_radar/llm/models.py
+src/paper_radar/llm/rpc.py
+src/paper_radar/llm/rpc_frames.py
+src/paper_radar/llm/rpc_messages.py
+src/paper_radar/llm/rpc_pipes.py
+src/paper_radar/llm/rpc_types.py
+src/paper_radar/papers/__init__.py
+src/paper_radar/papers/cli.py
+src/paper_radar/papers/doi.py
+src/paper_radar/papers/errors.py
+src/paper_radar/papers/fact_reads.py
+src/paper_radar/papers/feed.py
+src/paper_radar/papers/feed_queries.py
+src/paper_radar/papers/feed_repository.py
+src/paper_radar/papers/manual.py
+src/paper_radar/papers/mapping.py
+src/paper_radar/papers/mapping_models.py
+src/paper_radar/papers/models.py
+src/paper_radar/papers/queries.py
+src/paper_radar/papers/read_checks.py
+src/paper_radar/papers/relation_repository.py
+src/paper_radar/papers/relations.py
+src/paper_radar/papers/repository.py
+src/paper_radar/papers/rules.py
+src/paper_radar/papers/selection_repository.py
+src/paper_radar/papers/service.py
+src/paper_radar/papers/tables.py
+src/paper_radar/papers/text.py
+src/paper_radar/papers/text_rules.py
+src/paper_radar/pi_supply/__init__.py
+src/paper_radar/pi_supply/cleanup.py
+src/paper_radar/pi_supply/cleanup_delete.py
+src/paper_radar/pi_supply/cleanup_execute.py
+src/paper_radar/pi_supply/cleanup_history.py
+src/paper_radar/pi_supply/cleanup_models.py
+src/paper_radar/pi_supply/cli.py
+src/paper_radar/pi_supply/errors.py
+src/paper_radar/pi_supply/execution.py
+src/paper_radar/pi_supply/export.py
+src/paper_radar/pi_supply/filesystem.py
+src/paper_radar/pi_supply/materials.py
+src/paper_radar/pi_supply/models.py
+src/paper_radar/pi_supply/protection.py
+src/paper_radar/pi_supply/repository.py
+src/paper_radar/pi_supply/retention.py
+src/paper_radar/pi_supply/selection.py
+src/paper_radar/pi_supply/service.py
+src/paper_radar/pi_supply/source_policy.py
+src/paper_radar/pi_supply/tables.py
+src/paper_radar/pi_supply/transport.py
+src/paper_radar/reading/__init__.py
+src/paper_radar/reading/context.py
+src/paper_radar/reading/diagnostics.py
+src/paper_radar/reading/errors.py
+src/paper_radar/reading/numbers.py
+src/paper_radar/reading/parsing.py
+src/paper_radar/reading/result.py
+src/paper_radar/reading/schema.py
+src/paper_radar/reading/validation.py
+src/paper_radar/reading/value_types.py
+src/paper_radar/screening/__init__.py
+src/paper_radar/screening/context.py
+src/paper_radar/screening/errors.py
+src/paper_radar/screening/excerpt_kinds.py
+src/paper_radar/screening/kinds.py
+src/paper_radar/screening/reasons.py
+src/paper_radar/screening/schema.py
+src/paper_radar/screening/text.py
+src/paper_radar/screening/validation.py
+src/paper_radar/screening/value_types.py
+src/paper_radar/screening_tasks/__init__.py
+src/paper_radar/screening_tasks/attempt_integrity.py
+src/paper_radar/screening_tasks/attempt_models.py
+src/paper_radar/screening_tasks/attempt_repository.py
+src/paper_radar/screening_tasks/attempt_rules.py
+src/paper_radar/screening_tasks/database_errors.py
+src/paper_radar/screening_tasks/errors.py
+src/paper_radar/screening_tasks/execution.py
+src/paper_radar/screening_tasks/frozen.py
+src/paper_radar/screening_tasks/integrity.py
+src/paper_radar/screening_tasks/models.py
+src/paper_radar/screening_tasks/query.py
+src/paper_radar/screening_tasks/query_models.py
+src/paper_radar/screening_tasks/repository.py
+src/paper_radar/screening_tasks/retry.py
+src/paper_radar/screening_tasks/rules.py
+src/paper_radar/screening_tasks/service.py
+src/paper_radar/screening_tasks/success.py
+src/paper_radar/screening_tasks/success_integrity.py
+src/paper_radar/screening_tasks/success_models.py
+src/paper_radar/screening_tasks/success_rules.py
+src/paper_radar/screening_tasks/tables.py
+src/paper_radar/stage_inputs/__init__.py
+src/paper_radar/stage_inputs/service.py
+src/paper_radar/storage/__init__.py
+src/paper_radar/storage/artifact_contract.py
+src/paper_radar/storage/artifact_repository.py
+src/paper_radar/storage/artifacts.py
+src/paper_radar/storage/blob_store.py
+src/paper_radar/storage/database.py
+src/paper_radar/storage/errors.py
+src/paper_radar/storage/filesystem.py
+src/paper_radar/storage/migrations/env.py
+src/paper_radar/storage/migrations/versions/a1001_fixture_audit.py
+src/paper_radar/storage/migrations/versions/a201_profile_snapshot.py
+src/paper_radar/storage/migrations/versions/a302_artifact_store.py
+src/paper_radar/storage/migrations/versions/a401_pi_supply.py
+src/paper_radar/storage/migrations/versions/a402_pi_rebuild_failures.py
+src/paper_radar/storage/migrations/versions/a403_pi_activation.py
+src/paper_radar/storage/migrations/versions/a404_pi_cleanup_plans.py
+src/paper_radar/storage/migrations/versions/a405_pi_cleanup_execution.py
+src/paper_radar/storage/migrations/versions/a601_paper_facts.py
+src/paper_radar/storage/migrations/versions/a602_feed_discovery.py
+src/paper_radar/storage/migrations/versions/a603_source_arbitration.py
+src/paper_radar/storage/migrations/versions/a604_version_relations.py
+src/paper_radar/storage/migrations/versions/a701_screening_registration.py
+src/paper_radar/storage/migrations/versions/a702_screening_attempts.py
+src/paper_radar/storage/migrations/versions/a703_screening_success.py
+src/paper_radar/storage/migrations/versions/a704_screening_retry.py
+src/paper_radar/storage/records.py
+src/paper_radar/storage/repository.py
+src/paper_radar/storage/schema.py
+src/paper_radar/storage/snapshot_queries.py
+tests/__init__.py
+tests/a10-recovery-coverage.md
+tests/a10_acceptance_support.py
+tests/a10_recovery_reader.py
+tests/a10_recovery_support.py
+tests/a2_full_support.py
+tests/a3_acceptance_support.py
+tests/a3_process_support.py
+tests/a4_acceptance_support.py
+tests/a5_acceptance_support.py
+tests/a6_acceptance_support.py
+tests/a7_acceptance_support.py
+tests/a7_attempts_process/sitecustomize.py
+tests/a7_attempts_worker.py
+tests/a7_recovery_support.py
+tests/a7_registration_process/sitecustomize.py
+tests/a7_registration_support.py
+tests/a7_registration_worker.py
+tests/a7_retry_process/sitecustomize.py
+tests/a7_retry_support.py
+tests/a7_retry_worker.py
+tests/a7_success_process/sitecustomize.py
+tests/a7_success_worker.py
+tests/a7_value_support.py
+tests/a8_acceptance_support.py
+tests/a8_call_support.py
+tests/a8_call_worker.py
+tests/a8_pipe_support.py
+tests/a8_pipe_worker.py
+tests/a8_recovery_support.py
+tests/a8_recovery_worker.py
+tests/a8_rpc_support.py
+tests/a8_rpc_task_support.py
+tests/a9_acceptance_support.py
+tests/artifact_process/sitecustomize.py
+tests/artifact_support.py
+tests/audit_matrix_support.py
+tests/audit_process_support.py
+tests/audit_sampling_support.py
+tests/backup_support.py
+tests/config_adapter_support.py
+tests/config_extraction_support.py
+tests/config_journals_support.py
+tests/config_projection_support.py
+tests/config_read_support.py
+tests/config_reuse_support.py
+tests/config_snapshot_support.py
+tests/config_test_support.py
+tests/config_transaction_process/sitecustomize.py
+tests/config_transaction_support.py
+tests/conftest.py
+tests/contract_snapshot_support.py
+tests/deny_external_io/sitecustomize.py
+tests/deny_network/sitecustomize.py
+tests/extraction_process/publish.py
+tests/extraction_process/sitecustomize.py
+tests/extraction_support.py
+tests/feed_process/sitecustomize.py
+tests/feed_support.py
+tests/fixture_pdf_support.py
+tests/fixture_registry_support.py
+tests/fixtures/a10/sampling-aies.xml
+tests/fixtures/a10/sampling-dqkx.xml
+tests/fixtures/a10/sampling-jgr.xml
+tests/fixtures/a10/sampling-qjrms.xml
+tests/fixtures/a10_coverage.json
+tests/fixtures/a3_storage_recovery.json
+tests/fixtures/a6_capabilities.json
+tests/fixtures/a7_capabilities.json
+tests/fixtures/a8_capabilities.json
+tests/fixtures/a9_coverage.json
+tests/fixtures/config_material_compatibility.json
+tests/fixtures/extraction_artifact_vectors.json
+tests/fixtures/paper_facts_v1.json
+tests/fixtures/pi_rpc/1.4.0/README
+tests/fixtures/pi_rpc/1.4.0/request-vectors.json
+tests/fixtures/pi_supply/1.3.0/package-lock.json
+tests/fixtures/pi_supply/1.3.0/package.json
+tests/fixtures/pi_supply/1.3.0/release.json
+tests/fixtures/pi_supply/manifest-vector.json
+tests/fixtures/stage_inputs/boundary-v1.json
+tests/fixtures/stage_inputs/boundary-v1.sha256
+tests/fixtures/stage_inputs/extraction-v1.json
+tests/fixtures/stage_inputs/extraction-v1.sha256
+tests/fixtures/stage_inputs/recovery-v1.json
+tests/fixtures/stage_inputs/reuse-body-v1.json
+tests/fixtures/stage_inputs/reuse-body-v1.sha256
+tests/fixtures/stage_inputs/reuse-mixed-v1.json
+tests/fixtures/stage_inputs/reuse-mixed-v1.sha256
+tests/fixtures/stage_inputs/reuse-structured-v1.json
+tests/fixtures/stage_inputs/reuse-structured-v1.sha256
+tests/fixtures/stage_inputs/value-v1.json
+tests/fixtures/stage_inputs/value-v1.sha256
+tests/fixtures/verification_transcripts.json
+tests/paper_mapping_process/sitecustomize.py
+tests/paper_process/sitecustomize.py
+tests/paper_recovery_reader.py
+tests/paper_recovery_support.py
+tests/pi_cleanup_process_support.py
+tests/pi_supply_process_support.py
+tests/pi_supply_support.py
+tests/read_config_support.py
+tests/read_recovery_support.py
+tests/read_recovery_worker.py
+tests/read_support.py
+tests/restore_process/query.py
+tests/restore_process/sitecustomize.py
+tests/restore_support.py
+tests/source_process/sitecustomize.py
+tests/stage_input_process.py
+tests/stage_input_recovery_support.py
+tests/test_a10_acceptance.py
+tests/test_a10_behavior_coverage.py
+tests/test_a10_complete_recovery.py
+tests/test_a10_coverage.py
+tests/test_a10_entry.py
+tests/test_a10_integrity.py
+tests/test_a10_isolation.py
+tests/test_a10_reference_recovery.py
+tests/test_a10_scope.py
+tests/test_a10_status.py
+tests/test_a1_acceptance.py
+tests/test_a2_acceptance.py
+tests/test_a2_full_acceptance.py
+tests/test_a2_full_entry.py
+tests/test_a2_full_examples.py
+tests/test_a2_test_receipt.py
+tests/test_a3_acceptance.py
+tests/test_a3_combination.py
+tests/test_a3_entry.py
+tests/test_a3_test_receipt.py
+tests/test_a4_acceptance.py
+tests/test_a4_combination.py
+tests/test_a4_entry.py
+tests/test_a4_test_receipt.py
+tests/test_a5_acceptance.py
+tests/test_a5_entry.py
+tests/test_a5_test_receipt.py
+tests/test_a6_acceptance.py
+tests/test_a6_entry.py
+tests/test_a6_formats.py
+tests/test_a6_integrity.py
+tests/test_a6_review_formats.py
+tests/test_a6_status.py
+tests/test_a6_test_receipt.py
+tests/test_a7_acceptance.py
+tests/test_a7_attempt_backup.py
+tests/test_a7_attempt_inputs.py
+tests/test_a7_attempt_integrity.py
+tests/test_a7_attempt_migrations.py
+tests/test_a7_attempts.py
+tests/test_a7_attempts_process.py
+tests/test_a7_boundary_success.py
+tests/test_a7_complete_recovery.py
+tests/test_a7_driver_preconditions.py
+tests/test_a7_entry.py
+tests/test_a7_formats.py
+tests/test_a7_integrity.py
+tests/test_a7_recovery_integrity.py
+tests/test_a7_registration.py
+tests/test_a7_registration_backup.py
+tests/test_a7_registration_failures.py
+tests/test_a7_registration_imports.py
+tests/test_a7_registration_migrations.py
+tests/test_a7_registration_process.py
+tests/test_a7_retry.py
+tests/test_a7_retry_backup.py
+tests/test_a7_retry_integrity.py
+tests/test_a7_retry_migrations.py
+tests/test_a7_retry_process.py
+tests/test_a7_status.py
+tests/test_a7_success_applicability.py
+tests/test_a7_success_backup.py
+tests/test_a7_success_integrity.py
+tests/test_a7_success_migrations.py
+tests/test_a7_success_process.py
+tests/test_a7_task_query.py
+tests/test_a7_test_receipt.py
+tests/test_a7_text_boundaries.py
+tests/test_a7_value_backup.py
+tests/test_a7_value_context.py
+tests/test_a7_value_integrity.py
+tests/test_a7_value_success.py
+tests/test_a8_acceptance.py
+tests/test_a8_call_description.py
+tests/test_a8_call_rejections.py
+tests/test_a8_entry.py
+tests/test_a8_formats.py
+tests/test_a8_integrity.py
+tests/test_a8_llm_architecture.py
+tests/test_a8_request_vectors.py
+tests/test_a8_rpc_backup.py
+tests/test_a8_rpc_boundary.py
+tests/test_a8_rpc_candidates.py
+tests/test_a8_rpc_history.py
+tests/test_a8_rpc_lifecycle.py
+tests/test_a8_rpc_pipes.py
+tests/test_a8_rpc_preflight.py
+tests/test_a8_rpc_protocol.py
+tests/test_a8_rpc_recovery.py
+tests/test_a8_rpc_value.py
+tests/test_a8_status.py
+tests/test_a8_test_receipt.py
+tests/test_a9_acceptance.py
+tests/test_a9_entry.py
+tests/test_a9_integrity.py
+tests/test_a9_scope.py
+tests/test_a9_status.py
+tests/test_artifact_contract.py
+tests/test_artifact_store.py
+tests/test_audit_acquisition.py
+tests/test_audit_acquisition_recovery.py
+tests/test_audit_cli.py
+tests/test_audit_http.py
+tests/test_audit_matrix.py
+tests/test_audit_matrix_boundaries.py
+tests/test_audit_matrix_cli.py
+tests/test_audit_matrix_recovery.py
+tests/test_audit_processes.py
+tests/test_audit_reinterpret.py
+tests/test_audit_replay.py
+tests/test_audit_resume.py
+tests/test_audit_resume_atomicity.py
+tests/test_audit_resume_cli.py
+tests/test_audit_resume_recovery.py
+tests/test_audit_sampling.py
+tests/test_audit_sampling_boundaries.py
+tests/test_audit_sampling_categories.py
+tests/test_audit_sampling_feed_safety.py
+tests/test_audit_sampling_recovery.py
+tests/test_backup_architecture.py
+tests/test_backup_cli.py
+tests/test_backup_failures.py
+tests/test_backup_integrity.py
+tests/test_backup_service.py
+tests/test_backup_wheel.py
+tests/test_boundary_validation.py
+tests/test_check_compatibility.py
+tests/test_cli_help.py
+tests/test_cli_import_compatibility.py
+tests/test_config_adapter_architecture.py
+tests/test_config_adapter_cli.py
+tests/test_config_adapter_persistence.py
+tests/test_config_adapter_validation.py
+tests/test_config_adapters.py
+tests/test_config_architecture.py
+tests/test_config_boundary.py
+tests/test_config_cli.py
+tests/test_config_diff_cli.py
+tests/test_config_diff_review.py
+tests/test_config_diff_service.py
+tests/test_config_error_assertion_architecture.py
+tests/test_config_escalation.py
+tests/test_config_extraction.py
+tests/test_config_extraction_architecture.py
+tests/test_config_extraction_cli.py
+tests/test_config_extraction_persistence.py
+tests/test_config_extraction_validation.py
+tests/test_config_journals.py
+tests/test_config_journals_architecture.py
+tests/test_config_journals_cli.py
+tests/test_config_journals_persistence.py
+tests/test_config_journals_validation.py
+tests/test_config_material_compatibility.py
+tests/test_config_projection_adapters.py
+tests/test_config_projection_algorithms.py
+tests/test_config_projection_architecture.py
+tests/test_config_projection_formats.py
+tests/test_config_projections.py
+tests/test_config_prompt_identity.py
+tests/test_config_prompt_only.py
+tests/test_config_read.py
+tests/test_config_read_architecture.py
+tests/test_config_read_cli.py
+tests/test_config_read_persistence.py
+tests/test_config_read_validation.py
+tests/test_config_reuse.py
+tests/test_config_reuse_cli.py
+tests/test_config_reuse_persistence.py
+tests/test_config_service.py
+tests/test_config_snapshot_architecture.py
+tests/test_config_snapshot_cli.py
+tests/test_config_snapshot_queries.py
+tests/test_config_transaction_cli.py
+tests/test_config_transactions.py
+tests/test_config_validation.py
+tests/test_config_value.py
+tests/test_config_value_cli.py
+tests/test_contract_check.py
+tests/test_contract_cli.py
+tests/test_contract_export.py
+tests/test_contract_schema.py
+tests/test_decision_reason_validation.py
+tests/test_dev_environment.py
+tests/test_dev_environment_entry.py
+tests/test_dev_environment_probes.py
+tests/test_extraction_artifacts.py
+tests/test_feed_arbitration.py
+tests/test_feed_backup.py
+tests/test_feed_cli.py
+tests/test_feed_discovery.py
+tests/test_feed_identity.py
+tests/test_feed_inputs.py
+tests/test_feed_migrations.py
+tests/test_feed_process.py
+tests/test_feed_registration.py
+tests/test_fixture_audit_references.py
+tests/test_fixture_cli.py
+tests/test_fixture_pdf.py
+tests/test_fixture_pdf_cli.py
+tests/test_fixture_pdf_recovery.py
+tests/test_fixture_recovery.py
+tests/test_fixture_registry.py
+tests/test_manual_corrections.py
+tests/test_offline_evidence.py
+tests/test_paper_acquisitions.py
+tests/test_paper_backup.py
+tests/test_paper_cli.py
+tests/test_paper_identity.py
+tests/test_paper_inputs.py
+tests/test_paper_mapping.py
+tests/test_paper_mapping_failures.py
+tests/test_paper_mapping_process.py
+tests/test_paper_migrations.py
+tests/test_paper_model_validation.py
+tests/test_paper_process.py
+tests/test_paper_recovery_combined.py
+tests/test_paper_recovery_damage.py
+tests/test_paper_recovery_integrity.py
+tests/test_paper_reparse.py
+tests/test_paper_review_boundaries.py
+tests/test_paper_review_reads.py
+tests/test_paper_service.py
+tests/test_pending_relation_roles.py
+tests/test_pi_supply.py
+tests/test_pi_supply_activation.py
+tests/test_pi_supply_activation_cli.py
+tests/test_pi_supply_activation_history.py
+tests/test_pi_supply_boundaries.py
+tests/test_pi_supply_cleanup.py
+tests/test_pi_supply_cleanup_cli.py
+tests/test_pi_supply_cleanup_execute.py
+tests/test_pi_supply_cleanup_execute_history.py
+tests/test_pi_supply_cleanup_history.py
+tests/test_pi_supply_cleanup_unreadable.py
+tests/test_pi_supply_cli.py
+tests/test_pi_supply_export.py
+tests/test_pi_supply_export_history.py
+tests/test_pi_supply_history.py
+tests/test_pi_supply_process.py
+tests/test_pi_supply_protection.py
+tests/test_pi_supply_rebuild.py
+tests/test_pi_supply_rebuild_cli.py
+tests/test_pi_supply_rebuild_history.py
+tests/test_pi_supply_transport.py
+tests/test_pi_supply_tree.py
+tests/test_read_config.py
+tests/test_read_config_cli.py
+tests/test_read_context.py
+tests/test_read_contract.py
+tests/test_read_numbers.py
+tests/test_read_privacy.py
+tests/test_read_recovery.py
+tests/test_read_reduce.py
+tests/test_read_restricted.py
+tests/test_read_validation.py
+tests/test_restore_cli.py
+tests/test_restore_failures.py
+tests/test_restore_service.py
+tests/test_reuse_assessment_validation.py
+tests/test_screening_architecture.py
+tests/test_screening_strict_json.py
+tests/test_source_arbitration.py
+tests/test_source_backup.py
+tests/test_source_cli.py
+tests/test_source_migrations.py
+tests/test_source_process.py
+tests/test_stage_input_architecture.py
+tests/test_stage_input_common_contract.py
+tests/test_stage_input_comparison.py
+tests/test_stage_input_dependencies.py
+tests/test_stage_input_extraction.py
+tests/test_stage_input_extraction_reuse.py
+tests/test_stage_input_recovery.py
+tests/test_stage_input_replay.py
+tests/test_stage_input_reuse.py
+tests/test_stage_input_value.py
+tests/test_stage_inputs.py
+tests/test_storage_migrations.py
+tests/test_tmp_path_cleanup.py
+tests/test_value_prediction_validation.py
+tests/test_verification_checks.py
+tests/test_verification_compatibility.py
+tests/test_verification_integrity.py
+tests/test_verification_publication.py
+tests/test_verification_run.py
+tests/test_verification_scope_audit.py
+tests/test_verification_scope_cli.py
+tests/test_verification_scope_collection.py
+tests/test_verification_scope_registry.py
+tests/test_verification_status.py
+tests/test_version_relation_backup.py
+tests/test_version_relation_cli.py
+tests/test_version_relation_inputs.py
+tests/test_version_relation_materials.py
+tests/test_version_relation_migrations.py
+tests/test_version_relation_process.py
+tests/test_version_relations.py
+tests/version_relation_process/sitecustomize.py
+```
+
+</details>

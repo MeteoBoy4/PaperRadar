@@ -495,7 +495,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "9f654b5eac5b48ef55fc2c03da2a63e43bc88eafbb442cfeef6753adddd59f30",
+        "36bf6604fc605241b42610c4d4bb07a86b448dbd8cfd98eaf18a67b9034fba49",
     ),
 )
 
@@ -564,15 +564,15 @@ REQUIRED_FIXTURE_FILES = (
         "examples/contracts/screening/boundary/v1/manifest.json",
         "5efa0aec0e41329fe8736dcd533706309fd9c3717aeac14ddbf55d05cce0ed0b",
     ),
-    ("README.md", "6812f4dccea0d284ebde035db0da5c166e28923723d529f69f17177c54ed2bb7"),
+    ("README.md", "30150be8fa2e450f99bf6c8079515e719cf2b281023298bdfa9b585a8eea9a6f"),
     ("GLOSSARY.md", "74381b5b1381c25abb69c460605093adc0352ce970c335a21baa84c91d853853"),
     (
         "intent/draft.md",
-        "ffe160c6a1b5268514963a11b7c0414cf671dd6cc201560dab440683bd141c3a",
+        "fe7f472436ab6e7ea1bd7d05fb4f5bff9d3367dd2e5a0a213977cd833a5a5d72",
     ),
     (
         "docs/contracts/read-validation.md",
-        "198bc0a2faaecda891a56cd59ae4beabc70e2c99ae8bf219d8bd35eb1123e6dc",
+        "d31da760c8d919af0f5197d74a2b404976f34baa92e23f1e205ca5d8681811fd",
     ),
     (
         "docs/verification/a9-scope-review.md",
@@ -580,19 +580,19 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/frozen-contracts.md",
-        "a8974bed5a23532e724c4bd1e215670e89950c0020713a47844f460fad1a254a",
+        "cb13553dc6c3d8187384f00df04165e4288d817c89be8a5748006f6678a4d1d2",
     ),
     (
         "docs/contracts/runtime-config.md",
-        "ee0752fb4215d65e4f1debe600234913fcc80f618af2e963f1a0c2340075582c",
+        "df0c5e8fd55960d57ea3457a5b06d63087c609a8ac90a8ad1e012c2013c52edf",
     ),
     (
         "docs/contracts/config-projections.md",
-        "b4792a2ccb7c2ab8337b6cdad8a0342eb1e2ff94df5995bec427d4bb9ed77a89",
+        "de7d3b72dab0ce4f259113a4a22fc33270a2108dfd14c2eae4213c7d62f52a19",
     ),
     (
         "docs/contracts/config-snapshots.md",
-        "c91e24b6a5c17c6c76d1e3c8323f93efd61a371ccd1dde9124b650668579ed4c",
+        "e52c5b88f38de6e89948661ab6f3d781ce5a756af0daa891ad5132c0b4a1b744",
     ),
     (
         "docs/contracts/verification-status.md",
@@ -600,7 +600,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/backup-restore.md",
-        "90e0c2aab31996c5581eeefe720880c6a6fb7569cd22d93f9e90c09867ecb01c",
+        "4617566cff18948f17ea442e8e563e3b64aa61730b1669803adcbaed68346de1",
     ),
     (
         "docs/verification/offline-evidence.md",

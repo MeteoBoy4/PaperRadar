@@ -1,3 +1,5 @@
 # 第一版 Markdown 报告保持只读
 
+状态：决策记录（原文未单列接受状态）；日期：原文未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0018-keep-v1-markdown-reports-read-only.md)；补充／部分取代：无另列关系；正文边界继续适用。
+
 PaperRadar 第一版的日报和单篇 Markdown 是数据库事实的只读投影，不承诺保留用户直接在文件中的修改。反馈、笔记和行为由 CLI 追加写入数据库，报告重建时再渲染；因此不实现自动区块与手写区块合并，也不让 Markdown 成为第二事实源。这个选择降低原子重建、冲突和备份复杂度，代价是第一版不能直接在报告文件中写笔记；可编辑展示内容的前端留到第二版以后。

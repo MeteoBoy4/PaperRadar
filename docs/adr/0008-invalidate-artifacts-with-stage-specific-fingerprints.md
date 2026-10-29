@@ -1,5 +1,9 @@
 # 用阶段输入指纹使旧制品失效
 
+状态：决策记录（原文未单列接受状态）；日期：原文未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0008-invalidate-artifacts-with-stage-specific-fingerprints.md)；补充／部分取代：[ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md)。
+
 PaperRadar 不实现一个主观的“论文是否发生实质变化”判断，而为筛选、复用可行性升级、参考文献处理、正文规范化和全文精读分别保存规范输入指纹。除外部模型与内容外，`normalization_version`、`excerpt_selector_version` 和 `chunking_version` 也进入各自指纹，使项目自己的确定性语义变化可重算、无关重构不误伤缓存。Profile 演进只自动重算尚待决定的论文；已有人工决定继续生效并提示依据已旧，既有正式分析永久保留其当时 Profile 身份，不自动过期。旧系统建议只有在同范围新建议产生后才被替换。这个选择接受历史结果不随兴趣变化全库重跑，以避免一次 Profile 修改制造几十天积压。
+
+## 补充裁决
 
 2026-10-11 补充（[ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md)）：各模型阶段的输出协议、有效系统提示词、工具声明与实现、影响模型行为的运行策略及参数也属于该阶段语义输入。Pi/adapter 的锁定版本与资源哈希保留为执行审计身份；可能影响阶段语义的升级须更新相应语义身份。进程/临时会话 ID、路径、时间、重建进程和纯传输重构不改变指纹，也不刷新尝试预算。仅改 Read 专用策略不使 Screening 失效，共有策略变化按实际受影响阶段处理。

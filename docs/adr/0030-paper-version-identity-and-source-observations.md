@@ -1,6 +1,10 @@
 # 论文版本身份与来源观察仲裁
 
-状态：已接受语义；#69–#74 已落地身份、Feed、四源仲裁、版本关系、输入映射及组合隔离恢复，#75 注册独立 A6 验收。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
+状态：已接受语义；日期：原文未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0030-paper-version-identity-and-source-observations.md)；补充／部分取代：[ADR-0036](0036-isolate-stage-b-read-experiment.md)。
+
+原状态与裁决依据：已接受语义。依 [#67](https://github.com/MeteoBoy4/PaperRadar/issues/67) 用户 D1–D4 与 N1/N2 裁决，DOI 与版本一对一，Feed 回摆仅推进 last_seen，强身份冲突整笔拒绝业务事实，关系冲突保留观察/关系并等待合并。具体目标边界以 [论文事实 Contract](../contracts/paper-facts.md) 为准。
+
+## 补充裁决
 
 2026-10-28：#111 将首次真实 Feed 导入前置移到 B，B 先交付 JGR 所需的强冲突观察持久化与 parser 固定样本/字段损失回归，C 扩展四刊。以下“阶段 C”保留当时的延期依据，现行最迟点是首次真实导入；实验根同样不得豁免，见 [ADR-0036](0036-isolate-stage-b-read-experiment.md)。历史 A6 证据和未验证来源假设不改写。
 
@@ -65,7 +69,7 @@ D3 回摆时仅更新 last_seen，既有原文解释的首次时间保持不变�
 a602 在同一事务暂存并重建 source_kind 约束的完整依赖闭包，保持非空 a601 事实及外键，
 新增 Feed 身份/连续条目/发现/解释引用；不改 a601。取得事实新增 DOI 原书写，历史未知值保持 NULL，
 不伪造历史、不进入规范身份或 StageInput。备份固定副本同时校验 Feed 原文、完整解释和历史归属。
-本票没有真实 Feed 或解析器；阶段 C 强冲突观察持久化与 parser 升级固定样本回归仍是硬门禁。
+真实 Feed 或解析器的生产接线状态见[路线图](../roadmap.md#module-feed)；阶段 C 强冲突观察持久化与 parser 升级固定样本回归仍是硬门禁。
 
 
 ## #71 来源仲裁与人工字段修正实现

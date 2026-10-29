@@ -1,7 +1,7 @@
 # 不可变制品存储 Contract v1
 
 本 Contract 固定内容对象身份、制品清单格式、纯内容布局及公共发布/读取边界。
-现已完成四种单文件制品与完整 extraction 多文件发布；自包含备份与隔离恢复也已交付，
+提供四种单文件制品与完整 extraction 多文件发布；也提供自包含备份与隔离恢复，
 公开边界见[备份与恢复 Contract](backup-restore.md)。
 存储成功表示原字节完整保存，业务接收不在这个边界：不判断来源是否贡献事实、PDF
 是否合法取得或模型输出是否通过权威接收。上游必须先完成相应验证；不提供通用人工导入 CLI。
@@ -29,7 +29,7 @@ extraction 的 manifest 是上游正文材料成员，与这里的制品清单�
 不进入身份：original_pdf 为 application/pdf，reference_tei 为 application/tei+xml，
 extraction/reading 为 text/markdown，其余 extraction 角色为 application/json；
 来源与模型响应默认 application/octet-stream，以保持原始字节语义。
-A7-04 boundary 接收是 model_success_response 的首个业务消费者：唯一 payload 逐字
+boundary 接收消费 model_success_response：唯一 payload 逐字
 保存通过 A1 的原始响应（含合法外围空白）；结构结果与审计属于任务事实，不进入
 ArtifactRecord metadata。事务外发布后的完整未引用响应仍合法且纳入备份。
 
@@ -37,7 +37,7 @@ SQLite 是登记事实源：`content_objects` 记录 blob 身份、长度、布�
 `artifacts` 记录身份、kind、格式与时间；`artifact_members` 记录 artifact/role 到 blob 和
 成员长度。artifact 清单正文既不存磁盘也不存数据库；每次读取从关系重算身份。
 PK、UNIQUE、FK、hex 和非负整数约束在 SQLite 生效；kind/role 枚举由 Python Contract
-强制，不使用需要重建表才能演进的 DB CHECK 枚举。A3 本身不建立论文表、backup_runs 或自由业务 JSON 桶；#69 已实现的独立论文事实表与来源关联见[论文事实 Contract](paper-facts.md)。
+强制，不使用需要重建表才能演进的 DB CHECK 枚举。A3 本身不建立论文表、backup_runs 或自由业务 JSON 桶；独立论文事实表与来源关联见[论文事实 Contract](paper-facts.md)。
 
 ## 独立固定向量
 
@@ -166,3 +166,9 @@ extraction 的 `manifest` 成员是上游正文制品原字节，与进入制品
 缺失、同长度损坏、路径链接或成员行篡改都会拒绝整个集合，不向调用方交出部分结果，
 也不能用重新发布输入补写历史。进程竞争用管道屏障固定到真实发布/SQL 边界，无 sleep
 排序；输入测试用拒绝无界读取的流包装为 bounded 分段生成器。
+
+## 相关
+
+依据：[#69](https://github.com/MeteoBoy4/PaperRadar/issues/69)。
+
+[规格](../../intent/draft.md#六制品与目录契约)；[ADR-0027](../adr/0027-address-artifacts-by-content.md)；[路线图承接](../roadmap.md#module-body)。

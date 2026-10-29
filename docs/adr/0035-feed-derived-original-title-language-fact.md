@@ -1,6 +1,8 @@
 # 按首发 Feed 归属派生原题名语言事实
 
-状态：已接受；依据用户 2026-10-27 裁决。本记录补上 [ADR-0031](0031-screening-budget-and-derived-applicability.md)
+状态：已接受；日期：2026-10-27；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0035-feed-derived-original-title-language-fact.md)；补充／部分取代：无另列关系；正文边界继续适用。
+
+原状态与裁决依据：已接受；依据用户 2026-10-27 裁决。本记录补上 [ADR-0031](0031-screening-budget-and-derived-applicability.md)
 D1 留下的「生产来源」缺口，不改变其冻结于预算范围、retry 不可更正、不进入 A5 载荷或阶段指纹的结论。
 
 ## 背景

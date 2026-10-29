@@ -1,12 +1,12 @@
 # PaperRadar
 
-PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库交付了工程入口、
+PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓库提供工程入口、
 研究边界、摘要层价值预测、复用可行性升级和筛选原因组合的公共验证，以及
 原四种公共契约和 Read 结构契约各自的 `v1` 冻结快照、带全量预检的批量安全导出，以及逐份或整组
-只读漂移检查；另已交付 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
-现已开放四种单文件制品与完整 extraction 集合的不可变内容寻址存储和完整校验回读。
-已提供四类来源仲裁、人工字段修正、Feed 登记与发现的本地事实服务和只读 `paper show/trace`；
-另已交付 boundary/value 的冻结任务、有限尝试、租约、成功接收、retry 与独立离线验收。
+只读漂移检查；另提供 Profile、模型、主题、三阶段提示词/契约、复用升级参数、正文提取和 Read 配置快照的显式迁移、检查、编译与历史加载。
+提供四种单文件制品与完整 extraction 集合的不可变内容寻址存储和完整校验回读。
+提供四类来源仲裁、人工字段修正、Feed 登记与发现的本地事实服务和只读 `paper show/trace`；
+另提供 boundary/value 的冻结任务、有限尝试、租约、成功接收、retry 与独立离线验收。
 真实网络来源、模型执行和完整论文处理流水线尚未实现。
 
 [Read 权威结构与校验](docs/contracts/read-validation.md)提供全部 18 个必填字段、
@@ -19,12 +19,12 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前仓
 另可登记 Pi adapter 的三个独立选择、声明系统指令、资源哈希、推理档位与
 固定调用策略；单快照可重建六阶段配置投影和校准基线，并只读比较已保存快照。
 
-A8 已提供 [冻结调用描述与单次 RPC 协议](docs/contracts/pi-rpc.md)：从预算首次历史
+提供 [冻结调用描述与单次 RPC 协议](docs/contracts/pi-rpc.md)：从预算首次历史
 语义与本次回执执行审计构造，仅支持 1.4.0 离线协议档案，系统指令与 user 消息分离。
 boundary/value 完整候选经既有 A1/A7 同源接收，事件、消息副本、模型和用量有离线
 边界证明。生产管道组件只包装已启动的独立进程组；Python 夹具已验证双管道背压、
 超时、取消与整组回收。独立字节向量与合成协议测试不运行真实 Pi/模型；非空恢复与
-独立 A8 验收仍按[逐项台账](docs/verification/a8-requirements.md)继续。Pi 强制追加的常量 cwd 例外
+独立 A8 的证明范围见[逐项台账](docs/verification/a8-requirements.md)。Pi 强制追加的常量 cwd 例外
 已由 #111 定为本机 `/srv/pi-cwd`；生产启动器须无默认值显式传入、仅白名单此值，并在任何 prompt live 探测前验证无资源/实际隔离；当前不授予生产执行或校准资格。
 
 ## 环境与安装
@@ -458,10 +458,8 @@ A3 或 A7 passed 均不等于完整阶段 A 或阶段 B 通过。
 list 明示实例计数为历史登记、未核验现场；verify、doctor、activate 与使用句柄会核验当前现场。
 `export` 同样只取已核验库材料，向 `tools/pi/<supply_id>/` 输出六个顶层文件与去重 D5 证据，
 整组预检后不覆盖发布，同字节重试无操作；不导出内部派生锁或安装归档。
-2026-10-18 用户裁决：本次 A4 接受导出所需的目录句柄、nofollow、硬链接不覆盖发布与 fsync
-等安全文件能力边界，能力不足继续安全拒绝。#36 已关闭；
-[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 已以 NOT_PLANNED 关闭，
-Windows 安全导出当前无交付计划，未实现/未验证 Windows 后端。
+导出要求目录句柄、nofollow、硬链接不覆盖发布与 fsync 等安全文件能力，能力不足安全拒绝。
+当前没有实现或验证 Windows 安全导出后端；历史裁决与计划见[路线图](docs/roadmap.md#已取消)。
 `tools/pi/` 可提交版本控制，`.tools/pi/` 是被 Git 忽略的安装树，两者分开。
 `verify` 逐实例全树检查并探测 Node/npm/Pi，只追加检查事实；任一失败返回 2。
 `rebuild` 从库内冻结材料重新联网取得固定大包，要求原预期树、工具链与 libc 完全一致，
@@ -574,16 +572,15 @@ trace 展示端点尚未出现、等待合并、已生效三态及真实选择�
 从恢复库候选重建历史 boundary/value 输入。有/无摘要的正式升级、旧预印本及从未获选版本均保留。
 `--verify-source-bytes` 默认关闭，显式开启须同时提供 `--data-root`；遗漏按参数错误退出 2。开启增加只读 blob I/O，包含仅关系材料，失败不输出原响应；缺库、未初始化或旧 revision 保留存储原因与迁移指引。
 A6 独立结论覆盖本地论文事实及隔离历史重建，仍不表示阶段 A、live、RPC、Docling/NAS 或任务续跑已验收。
-**首次真实 Feed 导入前必须补齐强冲突观察持久化和 parser 升级固定样本/关键字段损失回归（B 先交付 JGR 切片，C 扩展），
-此前不得将本地拒绝路径直接作为生产写入。**详见[论文事实 Contract](docs/contracts/paper-facts.md)。
+本地拒绝路径不授予生产写入资格；生产前置与承接责任见[路线图 Feed](docs/roadmap.md#module-feed)及[论文事实 Contract](docs/contracts/paper-facts.md)。
 
 A7 的 D1–D4 裁决和公共任务目标见[Screening 任务 Contract](docs/contracts/screening-tasks.md)
-及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。#77 已在原权威验证器
-收紧重复 JSON 键和非有限常量；#78–#79 已交付任务登记、冻结回放、两次预算和租约，
-boundary/value 筛选制品接收与三值适用性由 #80/#81 交付，#82 交付显式 retry、共享版本化查询与父链恢复；#83 补齐新进程隔离完整历史恢复，
-#84 将这些能力注册为独立必需 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；原题名语言事实的
+及[A7 规格对照与绑定台账](docs/verification/a7-requirements.md)。原权威验证器
+拒绝重复 JSON 键和非有限常量；提供任务登记、冻结回放、两次预算和租约，
+boundary/value 筛选制品接收与三值适用性由公共服务提供，并提供显式 retry、共享版本化查询与父链恢复；支持新进程隔离完整历史恢复，
+这些能力纳入独立必需 A7 验收组。A7 暂不提供 screening CLI 或 paper trace 组合；原题名语言事实的
 生产来源已由 [ADR-0035](docs/adr/0035-feed-derived-original-title-language-fact.md) 固定为首发 Feed 归属映射
-（四刊中只有《大气科学》为中文），生产接线仍待 B；B 首张真实任务票同时交付 failures/retry 与 trace 组合，A7 的历史范围不变。
+（四刊中只有《大气科学》为中文），当前不提供生产接线；failures/retry 与 trace 组合的责任见[路线图 B](docs/roadmap.md#module-b)，A7 的历史范围不变。
 
 ### Screening 任务登记、有限尝试与两阶段成功（A7-02 至 A7-08）
 
@@ -605,17 +602,17 @@ boundary/value 原始成功候选经唯一权威校验，原字节由 A3 保留�
 value 从预算首次冻结的历史 snapshot、A5 严格回放和语言事实重建 A1 上下文，
 当前主题/模型文件变化或原目录不可访问均不替代历史接收依据；两阶段成功互不依赖。
 显式 `retry` 仅追加唯一后继，`query` 返回 task_query_result v1 的安全历史与当前失败集合；
-旧回执精确重放不随最新代际改变。独立 A7 结论只证明这些离线任务能力；真实模型执行仍待后续切片。
+旧回执精确重放不随最新代际改变。独立 A7 结论只证明这些离线任务能力；当前不提供真实模型执行。
 API、隐私与语义闭包见[Screening 任务 Contract](docs/contracts/screening-tasks.md)，
 规格对照与重绑责任见[A7 requirements](docs/verification/a7-requirements.md)。
 
 Fixture 注册：`paper-radar fixture register fixtures/a10/historical-v1.json --database data/paper-radar.sqlite3 --data-root data` 显式登记历史声明；`fixture check/list/show` 只读核查原字节与历史。另支持 `fixture register pdf-request.json --pdf-file sample.pdf` 登记本机字节、`--backend` 单独追加绑定该 PDF 的期望、`fixture check RECORD_ID --pdf --data-root data` 核查证据。替换保留旧字节和期望，新 PDF 不继承旧 backend 结果。只证明声明/字节登记与恢复，不代表真实四刊审计或 Docling 通过。详见 [fixture 与摘要审计 Contract](docs/contracts/fixture-audit.md)。
 
-来源取得（#103）：公共服务先冻结计划，再以有界 HTTP/通道接口取得并保存安全执行事实；`paper-radar audit list/show --database ... --json` 只读查询。默认只交付 http，其他通道显示未安装；显式 run 已由 #105 接通，resume/replay 已由 #106 接通；不代表真实来源审计已执行。
+来源取得：公共服务先冻结计划，再以有界 HTTP/通道接口取得并保存安全执行事实；`paper-radar audit list/show --database ... --json` 只读查询。默认只提供 http，其他通道显示未安装；提供显式 run 和 resume/replay；不代表真实来源审计已执行。
 
-固定选样（#104）：公共服务按四刊原位次冻结前 N 个显式 journal-article 候选，保留未知/冲突/重复/不足和暂停历史；`audit show` 可只读查看成员依据。显式继续保持原 Feed/位次，摘要成败不影响成员。当前仍未执行四刊 live；摘要矩阵由 #105 交付，显式恢复继续由 #106 交付，完整混合历史恢复由后续票收口。
+固定选样：公共服务按四刊原位次冻结前 N 个显式 journal-article 候选，保留未知/冲突/重复/不足和暂停历史；`audit show` 可只读查看成员依据。显式继续保持原 Feed/位次，摘要成败不影响成员。当前仍未执行四刊 live；提供摘要矩阵、显式恢复继续和完整混合历史恢复，范围见[摘要审计 Contract](docs/contracts/fixture-audit.md)。
 
-摘要矩阵（#105）：`paper-radar audit run --database DB --data-root ROOT --contact-email EMAIL --count 5 --json` 显式固定选样并执行适用路线；联系邮箱只用于请求标识，不保存。复用选样响应及原取得时间，题名/摘要分别调用 A6 仲裁；普通 show 只输出哈希、定位、截断信号及真实分母。原摘要通过显式服务 `read_audit_text` 读取。http 与未安装的适用渲染通道分列，official_api/repository 无适用目标；doiRA 不进入摘要命中分母。complete 只表示终态齐备，即使不足样本也不表示长期稳定或生产就绪。本票验证离线子集和基本恢复；完整门禁留 #108，不执行 live。
+摘要矩阵（#105）：`paper-radar audit run --database DB --data-root ROOT --contact-email EMAIL --count 5 --json` 显式固定选样并执行适用路线；联系邮箱只用于请求标识，不保存。复用选样响应及原取得时间，题名/摘要分别调用 A6 仲裁；普通 show 只输出哈希、定位、截断信号及真实分母。原摘要通过显式服务 `read_audit_text` 读取。http 与未安装的适用渲染通道分列，official_api/repository 无适用目标；doiRA 不进入摘要命中分母。complete 只表示终态齐备，即使不足样本也不表示长期稳定或生产就绪。此工程验证覆盖离线子集和基本恢复；完整门禁范围见[A10 台账](docs/verification/a10-requirements.md)，不证明 live。
 
 审计继续与回放（#106）：`paper-radar audit resume PLAN_ID --database DB --data-root ROOT --contact-email EMAIL` 显式联网写入，只继续未结算或受控暂时路线，保留 unknown 和全部执行/矩阵历史；`audit replay PLAN_ID --database DB --data-root ROOT --json` 只读核验冻结 v1，按材料重解析或仅执行事实分级。代码/规则变化需新计划，未安装通道不重试。新 parser 只经服务 API 追加解释和前后字段差异，默认备份只证明其声明/引用/差异闭包；显式匹配运行时才重解析新版本。已验证两类真实进程和离线恢复子集，未执行 live 或完整 A10 门禁。
 
@@ -628,7 +625,7 @@ A10 以 `.a10.json` 格式 1 直接核对同次 A1、完整 A2、A3、A6；其�
 未安装通道与未尝试分列、不计失败；产品不引入浏览器或凭据运行时。A10 仍只证明
 登记范围内的 HTTP 离线工程；四刊各 5–10 篇实际审计与来源稳定性仍待实测，B 判据已由 #111 固定但尚未验收；
 完整摘要优先与额外区块的 Screening 语义、A6 来源假设、AMS 403 后续策略、渲染/授权、
-PDF/Docling/生产导入/NAS 与完整阶段 A 均待后续。未来合法获取方式按新策略另行交付。
+PDF/Docling/生产导入/NAS 与完整阶段 A 均未验证；承接见[路线图](docs/roadmap.md#模块承接索引)。
 `stage_a_verified/live_verified/rpc_verified` 恒 false；历史声明、合成 fixture 与评论预检
 都不是本轮 live 证据；live 产物不进入 `verification-runs/`。
 

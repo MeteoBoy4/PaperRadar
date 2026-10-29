@@ -59,7 +59,7 @@ Profile 文件的 `version` 必须与 selector 完全相同。六段字段为 `b
 `theory_and_cognitive_interests`、`constraints_and_exclusions`。每段为文本或缺失。
 缺失或 `null` 是 `unconfigured`；去掉首尾空白后为空或**精确等于 ASCII `...`**
 是 `placeholder`；其余文本为 `configured`，包括 `…`、`......`、日期文字。
-本票仅判断填写状态，不判断资料真实性。只有六段都配置时 Profile 槽为
+配置边界仅判断填写状态，不判断资料真实性。只有六段都配置时 Profile 槽为
 `configured`；有占位段时为 `placeholder`，否则为 `unconfigured`。
 
 ## 主题集合
@@ -144,7 +144,7 @@ ISSN 只接受七位 ASCII 数字加数字或 `X/x` 校验位，可在第四位�
 须新建声明版本并切换 selector。旧字节和快照永久保留；load 从 SQLite 回放，不读
 当前配置文件，损坏不回退。沿用配置版本表与事务，无新增 journals 业务表或 migration。
 期刊配置只进入完整快照，不进入六个阶段的就绪必需项、阶段语义对象或校准基线；
-本票不执行论文匹配、评分、排序或来源抓取。期刊变化只影响完整快照与登记身份，
+配置边界不执行论文匹配、评分、排序或来源抓取。期刊变化只影响完整快照与登记身份，
 六阶段投影和校准基线保持不变。
 合成示例为 `examples/config/settings-journals.yaml`，不能作为正式校准资料。
 
@@ -456,3 +456,9 @@ A3 的存储迁移 head 为 `a302_artifact_store`，快照格式仍为 1，各�
 已知旧 revision（如 `a201_profile_snapshot`）上的 check/compile/diff/list 均提示先显式运行
 `db upgrade --database`，不会自动创建或迁移。revision 分类及原子升级见
 [制品存储 Contract](artifact-store.md)。
+
+## 相关
+
+依据：[#19](https://github.com/MeteoBoy4/PaperRadar/issues/19)、[#25](https://github.com/MeteoBoy4/PaperRadar/issues/25)、[#27](https://github.com/MeteoBoy4/PaperRadar/issues/27)。
+
+[规格](../../intent/draft.md#七配置与-agent-契约)；[ADR-0023](../adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md)；[路线图承接](../roadmap.md#module-b)。

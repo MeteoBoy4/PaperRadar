@@ -1,6 +1,6 @@
 # 论文事实 Contract（A6）
 
-状态：#68 冻结已裁决的目标语义；#69 实现首条出版者 DOI 事实路径，#70 接入 Feed 发现与只读历史，#71 实现四类来源仲裁、人工修正与完整历史读面， #72 实现权威版本关系与正式升级，#73 实现正式阶段输入映射，#74 完成组合隔离恢复，#75 接入必需 A6 同次验收。单次是否通过以对应 run_id 的独立结论及终态为准。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
+提供出版者 DOI 事实、Feed 发现与只读历史、四类来源仲裁、人工修正、完整历史读面、权威版本关系与正式升级、阶段输入映射及组合隔离恢复，纳入必需 A6 同次验收。单次是否通过以对应 run_id 的独立结论及终态为准。权威顺序是最新用户裁决、不冲突的后续澄清、实施前补充默认、原 #67 正文。[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md) 记录覆盖关系；#67 的固定提交链接保留为历史依据。
 
 ## 1. 范围与格式
 
@@ -20,6 +20,8 @@ boundary/value StageInput 沿用既有格式 1，backup format 沿用 1。A6 只
 论文事实服务承载确定性规则与事务边界。CLI 与未来适配器只调用公共服务；纯 DOI/文本/仲裁/版本规则不依赖 storage 或 SQLAlchemy。config、screening、stage_inputs 不得反向导入论文事实服务；服务不得导入 HTTP/LLM/Docling/外部适配器。后续 AST 检查固定这些依赖。A6 不新增网络端点适配器、Feed 配置或产品写入命令。
 
 ### 1.1 #69 出版者切片与公共边界
+
+本节保留 a601 的历史切片边界；当前完整来源、关系和映射能力分别见 §1.3、§4 与 §8，不以历史拒绝范围限制现行服务。
 
 公共 Python 边界为 `paper_radar.papers.PaperFacts(database, data_root)`：`submit(observation)` 接受严格 `ObservationInput` 或其字段字典，返回 `WriteResult`；`show(paper_id)` 返回当前 `PaperView`，`trace(paper_id, verify_source_bytes=False)` 返回 `PaperTrace`，`validate_all()` 只读校验完整引用与历史修订。所有公开模型 repr/str 隐藏论文内容；服务验证错误只返回受控原因，不透传 Pydantic 输入载荷。原始 `ObservationInput.source_kind`/`RelationInput.kind` 保持字符串，关系项在纯规则层校验，未知值分别返回 `unsupported_source`/`unsupported_relation`；规范事实与仲裁内部使用封闭领域类型，`NormalizedRelation` 另外保留 `raw_*` 原断言。模型 `model_validate*` 将最终校验失败转换为 `PaperError`；直接构造使用脱敏 `ValueError` 参与 Pydantic 联合候选回退，保证合法日期字典可选中 `DateValue`。
 
@@ -57,8 +59,7 @@ acquisition_id 和可空 observation_id（包括全空解释）。完整字段�
 备份只读校验全部 Feed 登记（包括尚无发现的 Feed）、entry 输入域、连续归属、原文 fingerprint/blob、解释、取得、候选和修订闭包；
 发现时间与解释提交时间须为微秒 UTC，首次解释 submitted_at 等于 first_seen，last_seen 不得早于任何已登记解释的 submitted_at。
 
-#70 历史切片只开放同出版者流及 Feed；#71 对来源及人工修正的扩展见下节，权威版本关系和正式映射仍未开放。
-首次真实 Feed 导入前的强冲突持久化与 parser 固定样本回归门禁保持（B 先交付所需切片，C 扩展），第 7/10 节未验证 live 假设不因本票测试通过而转为已验证。
+a602 历史切片只包含同出版者流及 Feed；当前四源/人工修正、权威版本关系和正式映射分别见 §1.3、§4 与 §8。
 
 ### 1.3 #71 四类来源仲裁、人工修正与公共历史读取
 
@@ -182,7 +183,7 @@ Feed 同源排序只用不可变的首次 `observed_at` 和稳定 tie-break。A�
 
 ## 6. 权威版本关系与当前选择（N2）
 
-#72 已交付的公共输入为 `ObservationInput.relations: tuple[RelationInput, ...]`；每项封闭字段
+提供的公共输入为 `ObservationInput.relations: tuple[RelationInput, ...]`；每项封闭字段
 `{kind, source_doi, target_doi, locator}`，kind 只收 `is-preprint-of/has-preprint`。
 前者 source 是预印本，后者 source 是正式版；两者先规范 DOI 并归一为预印本→正式版。
 观察 DOI 必须是其中一端，version_kind 必须匹配该端，双方已有版本的类别也须匹配。
@@ -229,7 +230,7 @@ A6 交付时备份 head 跟随 a604，当前 head 见[备份 Contract](backup-re
 
 服务当前入口是 paper_id（最新选择→版本→最新完整修订），历史入口是 version_id/revision_no，两者互斥；另明确 snapshot_id，从同数据库 `load_config_snapshot(database, snapshot_id)` 加载，不接受外部拼装快照代替登记核对。revision 属于 version，version 属于相应 Paper；业务依据携带 paper_id、version_id、revision_no、适用选择事件、逐字段 provenance、snapshot_id。
 
-公共入口 `PaperFacts(database).map_screening_inputs(*, snapshot_id, paper_id=None, version_id=None, revision_no=None)` 已交付为只读服务。`snapshot_id` 必须是完整小写 SHA-256；明确当前 `paper_id` 与历史 `version_id/revision_no` 互斥，复用同连接 `resolve_revision` 校验。调用方不能提交 `RuntimeConfigSnapshot` 替代登记身份。先在同一个显式 BEGIN 论文读事务中核对 `runtime_config_snapshots` 登记，再经公共 `load_config_snapshot` 的独立只读连接重建不可变配置；不读取当前 selector 或材料文件。
+公共入口 `PaperFacts(database).map_screening_inputs(*, snapshot_id, paper_id=None, version_id=None, revision_no=None)` 为只读服务。`snapshot_id` 必须是完整小写 SHA-256；明确当前 `paper_id` 与历史 `version_id/revision_no` 互斥，复用同连接 `resolve_revision` 校验。调用方不能提交 `RuntimeConfigSnapshot` 替代登记身份。先在同一个显式 BEGIN 论文读事务中核对 `runtime_config_snapshots` 登记，再经公共 `load_config_snapshot` 的独立只读连接重建不可变配置；不读取当前 selector 或材料文件。
 
 `mapping_result` v1 是 `ScreeningMappingResult`，固定字段为 `format_version=1`、`snapshot_id`、`evidence`、`boundary`、`value`。`boundary`/`value` 各为 `StageMappingResult`，固定 `{value, reason, evidence, snapshot_id}`：成功 `value` 为既有 `StageInput`、`reason=null`；失败 `value=null`、`reason` 为第 9 节 `PaperReason`。两个阶段独立调用 A5 builder；共用 ScreeningFacts，缺题名/摘要或未知截断同时阻断两阶段；配置投影分别判断，boundary 未就绪不阻止已就绪 value，反之亦然。
 
@@ -244,6 +245,8 @@ CLI 目标固定为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER
 `paper trace PAPER_ID --verify-source-bytes` 默认关闭，增加只读制品 I/O，只报原因与受控位置，不转储来源正文。开启时必须同时提供 `--data-root`，遗漏在数据库 I/O 前作为参数错误退出 2；直接服务调用缺制品根返回 `invalid_observation`（`data_root`）。读取接口保留 `StorageError` 的缺库、未初始化、旧 revision 等环境原因及中文指引，不将其改成业务引用损坏；写入和映射结果的封闭原因形状保持不变。退出码固定：正常只读查询（含合法等待端点/等待合并）0，受控拒绝/缺失/损坏/忙 1，CLI 参数语法错误 2。requires_merge 若出现在服务写入结果中是 retained 成功，不按拒绝重试。help 用中文、可复制示例，说明只读/零模型配额；空目录 help 无配置、数据库或网络副作用。
 
 ## 9. `reason_catalog` v1
+
+以下历史目录/验收记录按基线原字节保留；其中逐票状态不作为当前实施前沿，当前责任见[路线图](../roadmap.md#模块承接索引)。
 
 本表为待实现单一枚举和中文文案表的权威；后续首张代码票在新包定义一次，不扩展 storage/errors.py。名称或含义改动须升版本。错误、repr、日志和离线证据不带题名摘要、原响应、Profile、Prompt 或凭据；原因可带受控字段路径/ID，但不可插入原始输入。
 
@@ -286,6 +289,8 @@ CLI 目标固定为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER
 以下均未在 A6 验证，B 对首条 JGR 路径、C 对四刊扩展逐项回填已核实/已证伪/仍未验证，并将固定来源材料纳入其验收：JGR/QJRMS guid 裸 DOI 覆盖；Wiley `?af=R` 落地页行为；页码实际为 eLocator；适配器给出的摘要截断标记可靠性；entry ID 跨抓取稳定性；Crossref `is-preprint-of/has-preprint` 真实供给。评论里的 170/170 不替代本组证据。A6 NOT_ASSESSED 必须包括这些来源假设、真实来源、截断检测、merge/undo、arXiv/PMID、metadata_ready/eligibility、任务/预算、完整可见性、RPC、Docling、NAS及完整阶段 A；stage_a_verified/live_verified/rpc_verified=false。
 
 ## 11. 实施与验收约定
+
+以下历史目录/验收记录按基线原字节保留；其中逐票状态不作为当前实施前沿，当前责任见[路线图](../roadmap.md#模块承接索引)。
 
 本组图为 #68→#69→#70→#71→(#72,#73)→#74→#75。与 N8 建议不同，不交付独立空表票：#69 连同最小 migration、首条 DOI 登记、查询和测试纵向落地。首个 revision 为 `a601_paper_facts`；后续扩表追加顺序 migration，不改已合入 revision，最后验收绑定实际末端 head，不能永久以 a601 代替。
 
@@ -345,3 +350,9 @@ A7-02 任务层已持久化 boundary/value 规范输入与请求依据，见[任
 不反向依赖任务服务，不新增语言事实、预算或执行资格。
 
 #111 将首次真实写入责任前移到 B，C 扩展；实验根也是真实写入，不豁免强冲突观察、最终接口或隔离恢复，见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。历史 A6 结论不因此获得 live 证明。
+
+## 相关
+
+依据：[#67](https://github.com/MeteoBoy4/PaperRadar/issues/67)、[#68](https://github.com/MeteoBoy4/PaperRadar/issues/68)、[#69](https://github.com/MeteoBoy4/PaperRadar/issues/69)、[#70](https://github.com/MeteoBoy4/PaperRadar/issues/70)、[#71](https://github.com/MeteoBoy4/PaperRadar/issues/71)、[#72](https://github.com/MeteoBoy4/PaperRadar/issues/72)、[#73](https://github.com/MeteoBoy4/PaperRadar/issues/73)、[#74](https://github.com/MeteoBoy4/PaperRadar/issues/74)、[#75](https://github.com/MeteoBoy4/PaperRadar/issues/75)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+
+[规格 §3](../../intent/draft.md#三领域模型与不变量)；[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md)；[路线图 Feed/C](../roadmap.md#module-feed)。

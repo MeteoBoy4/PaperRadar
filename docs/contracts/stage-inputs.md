@@ -2,9 +2,9 @@
 
 ## 公共边界与交付范围
 
-公共入口从 `paper_radar.stage_inputs` 导入。当前交付 boundary/value/extraction/reuse
+公共入口从 `paper_radar.stage_inputs` 导入。提供 boundary/value/extraction/reuse
 各自独立格式 **1**；reuse 的封闭来源联合包含结构化来源与正文来源，可显式组合。
-本票补全预定 reuse 格式 1，不发布另一份过渡生产格式；read/suggestion 不属于本次 A5。
+reuse 使用格式 1，不提供另一份过渡生产格式；本边界不提供 read/suggestion。
 未领取的阶段、字符串冒充 `StageName` 或未知阶段均受控拒绝，不产生占位指纹。
 
 | 入口 / 类型 | 契约 |
@@ -25,7 +25,7 @@
 `StageInput` 只由 build/replay 创建，禁止直接提交未验证字段构造。只读字段为
 stage、format_version、projection_format_version、projection_id、facts、payload_bytes；
 `fingerprint` 为载荷原始字节完整 SHA-256。没有另一份“载荷 + 指纹”信封格式。
-程序持久化时应保留规范字节和独立期望指纹；本票不保存输入文件、不增加表、migration、
+程序持久化时应保留规范字节和独立期望指纹；此边界不保存输入文件、不增加表、migration、
 artifact kind 或产品 CLI。数据库 revision 保持 `a405_pi_cleanup_execution`。
 
 模块只通过 config 公共面消费快照、StageName、StageReadiness 与 project_config，
@@ -33,7 +33,7 @@ artifact kind 或产品 CLI。数据库 revision 保持 `a405_pi_cleanup_executi
 保持既有输出 Schema 与业务规则。
 编码/哈希、公共头校验、投影核对和比较前置各有一份权威实现；没有公共“投影 + 事实”
 构造入口。模块不读取 YAML、数据库、制品库、文件或网络，不调用 Pi/Docling。
-既有配置、Screening 输出与存储各自保持权威；本票不修改已有投影、基线或 Frozen Contract。
+既有配置、Screening 输出与存储各自保持权威；此边界不修改已有投影、基线或 Frozen Contract。
 
 ## boundary/value 配方与编码
 
@@ -135,7 +135,7 @@ reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列�
 相同指纹只证明语义输入相同，不证明缓存存在、成功输出、来源合法性、校准通过或当前
 任务资格。changed 不自动调度、刷新预算、判定 minor/major、撤销人工决定或改写历史分析。
 指纹不含 Paper 主体；跨 Paper 是否共享成功缓存由后续资格/缓存票决定。书目字段与
-执行审计字段不能作为额外事实提交；真实“论文事实 → 阶段输入”映射由后续消费者验收，目标见[论文事实 Contract](paper-facts.md)；#69 首条事实路径尚未实现该映射。
+执行审计字段不能作为额外事实提交；当前“论文事实 → 阶段输入”映射见[论文事实 Contract §8](paper-facts.md#8-当前查询历史重建与只读-cli)；#69 首条历史切片不含该映射。
 
 ## value 同源验证上下文与扩展义务
 
@@ -226,7 +226,7 @@ reuse 阶段格式 1 指纹为
 
 后续 RPC 渲染只能使用载荷已绑定字段；需要页码、章节等时必须来自已绑定 locator，
 否则需显式演进 reuse 格式。渲染策略本身变化必须有 adapter policy 或阶段格式版本。
-本票不实现选段、触发规则、PDF 取得、模型或任务。正文来源沿同一来源联合接入，
+此边界不实现选段、触发规则、PDF 取得、模型或任务。正文来源沿同一来源联合接入，
 共用摘录集合、ID 去重、同源上下文、reuse 构造/回放与比较，没有 PDF 专用 reuse builder。
 
 ## 正文与混合来源 reuse 格式 1
@@ -363,23 +363,7 @@ fixture 含两个启用主题，实际顺序变化受到断言。摘录/locator 
 由生产者保证；本服务不代替这些检查。输入相同仍不证明成功缓存、跨 Paper 共享、任务
 资格、尝试预算或校准门禁；changed 不撤销人工决定、不改写正式分析或冻结校准事实。
 
-书目与供给身份仅通过封闭输入类型严格拒绝证明隔离，A5 当时没有论文事实模型，不宣称
-“卷期页码更新到任务不重跑”已端到端验收；不为此创建 A4 安装记录。A2 的组件矩阵仍是
-[配置投影契约](config-projections.md)权威，本切片只核对各阶段一个代表传播及 Read、
-期刊 tier、adapter 审计版本和 screening thinking_level 的少量交叉变化。
-#73 的[论文事实映射服务](paper-facts.md#8-当前查询历史重建与只读-cli)已在其独立测试中
-覆盖真实登记、来源仲裁、人工修正和历史 revision/snapshot 的 boundary/value 输入重建。
-该服务只读，规范载荷持久化已由 A7 任务层承担，完整任务资格和校准门禁仍未交付；A5 原固定范围及
-当时的 NOT_ASSESSED 历史结论保持，最终 A6 已由 #75 登记，覆盖范围与单次判据见[离线 A6 结论](../verification/offline-evidence.md#a6-独立结论6775)。
-独立复现命令与验收边界见[离线证据说明](../verification/offline-evidence.md)。
-#53 单独交付时没有登记 A5 验收组；#54 追加独立 A5 结论后的历史 check-offline 输出七份
-主要文件，另有实际 pytest 回执与终态；A6 注册时输出八份主要文件、总十份 JSON。
-当前 A7 输出九份主要文件、总十一份 JSON，见
-[当前离线证据](../verification/offline-evidence.md)。固定范围及规格映射见
-[独立 A5 结论](../verification/offline-evidence.md#a5-独立结论4754)。
-A5 通过仅声明四阶段输入计算、回放、比较和隔离恢复，不代表阶段 A、真实来源、RPC、
-NAS 或自动精读通过。
-
+历史 A5/A6/A7 证明范围与文件数量见[路线图](../roadmap.md#阶段输入历史证明范围)。
 
 ## 格式版本公开访问
 
@@ -390,8 +374,14 @@ boundary/value/reuse/extraction 各自的当前配方版本 1；构造、回放�
 回放是否受支持由本模块的封闭策略决定，核对时还要求明确快照能够重建匹配格式。
 公开版本不改变任何既有载荷字节、指纹向量或配置投影配方。
 
-A7-02 已在[任务 Contract](screening-tasks.md#8-a7-02-公共登记-api已交付)落实 boundary/value
+规范载荷在[任务 Contract](screening-tasks.md#8-a7-02-公共登记-api已交付)落实 boundary/value
 规范载荷持久化；缓存主体是同库 paper/stage/fingerprint，不跨 Paper 共享业务预算。
 A5 的原格式和算法不变，原题名语言只属于任务基线，取值由首发 Feed 归属按 ADR-0035 决定。
 
 #111：B 单样本无法按 C1 达标时先阻断实验，不自行引入未绑定元数据。A5 未实现 Read StageInput；B 最小 Read 票须交付输入身份及相关消费，不能以已有 extraction/reuse 配方替代，见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。
+
+## 相关
+
+依据：[#8](https://github.com/MeteoBoy4/PaperRadar/issues/8)、[#47](https://github.com/MeteoBoy4/PaperRadar/issues/47)、[#48](https://github.com/MeteoBoy4/PaperRadar/issues/48)、[#49](https://github.com/MeteoBoy4/PaperRadar/issues/49)、[#50](https://github.com/MeteoBoy4/PaperRadar/issues/50)、[#51](https://github.com/MeteoBoy4/PaperRadar/issues/51)、[#52](https://github.com/MeteoBoy4/PaperRadar/issues/52)、[#53](https://github.com/MeteoBoy4/PaperRadar/issues/53)、[#54](https://github.com/MeteoBoy4/PaperRadar/issues/54)、[#69](https://github.com/MeteoBoy4/PaperRadar/issues/69)、[#73](https://github.com/MeteoBoy4/PaperRadar/issues/73)、[#75](https://github.com/MeteoBoy4/PaperRadar/issues/75)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+
+[规格](../../intent/draft.md#34-阶段输入指纹)；[ADR-0008](../adr/0008-invalidate-artifacts-with-stage-specific-fingerprints.md)；[路线图承接](../roadmap.md#module-body)。

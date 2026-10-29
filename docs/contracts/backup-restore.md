@@ -306,7 +306,7 @@ artifact kind 与 counts 均保持原值。任务语义钩子继续位于 PaperF
 **两次预算保证仅针对每个档案库各自连续历史。** 从较早批次恢复会丢失备份之后的
 attempt；源库和副本之后各自继续，不能承诺跨回退追回丢失次数或限制全局真实调用数。
 新程序对 a701 批次返回 unsupported_revision，须由匹配旧程序恢复后显式升级活动副本。
-完整成功/retry 跨域隔离恢复见 A7-07；真实模型、RPC、NAS 与 live 行为仍待后续验收。
+完整成功/retry 跨域隔离恢复见 A7-07；真实模型、RPC、NAS 与 live 行为未验收；承接见[路线图](../roadmap.md#模块承接索引)。
 
 
 ## A7-06 retry 链闭包
@@ -352,7 +352,7 @@ A7 将上述登记、尝试、双阶段成功、retry 与完整隔离恢复逐�
 
 ## A10 fixture 登记闭包
 
-备份固定副本只读调用 FixtureAudit.validate_all，校验不可变声明原字节、解释与显式替换历史；恢复不读原声明或远端 URL。取得字节继续使用 ArtifactStore，当前 #101–#103 已接入声明、PDF 与来源取得闭包，后续票继续扩展成员、矩阵与恢复继续历史。共享 source_snapshot 的清理必须同时纳入论文与审计引用。
+备份固定副本只读调用 FixtureAudit.validate_all，校验不可变声明原字节、解释与显式替换历史；恢复不读原声明或远端 URL。取得字节继续使用 ArtifactStore，闭包包括声明、PDF、来源取得、成员、矩阵与恢复继续历史。共享 source_snapshot 的清理必须同时纳入论文与审计引用。
 
 A10 #103 的计划、started/结算与条件材料复用也由 FixtureAudit.validate_all 进入固定副本语义闭包；核对规范请求身份、策略/通道、真实 HTTP 计数及 retained source_snapshot 的种类/字节/身份。失败只保存结构化事实，不要求缺失错误页正文；恢复和只读查询不访问来源或创建审计锁。
 
@@ -391,3 +391,9 @@ parser 才能回放该新解释。恢复无网络、无执行锁、不自动继�
 恢复后的 fixture list/show、audit show/replay 只依赖恢复 SQLite 和制品；check 额外读取工作树时，声明缺失独立为 source_missing，不是 drift 或批次损坏。恢复不刷新登记时间、不注册新记录、不取执行锁、不自动 resume/激活/安装/联网。新 parser 默认只核验声明/引用/差异闭包，不声称已重解析 v2；仅显式提供同版本同实现 SHA 的运行时才重解析。
 
 真实 a704 schema 的非空旧配置/Pi/Paper/Screening 成功失败及 retry 经单一 a1001 升级后保留旧列、ID、时间、原字节及公共投影。旧 a704 批次仍须匹配程序 verify/restore 后显式升级工作副本，不扩大当前 verify 对旧 revision 的保证。WAL 混合演练及独立进程的事实范围见 [A10 引用与恢复覆盖](../../tests/a10-recovery-coverage.md)；仍未验证 live、NAS、正文/渲染/模型和完整阶段 A。
+
+## 相关
+
+依据：[#98](https://github.com/MeteoBoy4/PaperRadar/issues/98)、[#101](https://github.com/MeteoBoy4/PaperRadar/issues/101)、[#103](https://github.com/MeteoBoy4/PaperRadar/issues/103)、[#104](https://github.com/MeteoBoy4/PaperRadar/issues/104)、[#105](https://github.com/MeteoBoy4/PaperRadar/issues/105)、[#106](https://github.com/MeteoBoy4/PaperRadar/issues/106)、[#107](https://github.com/MeteoBoy4/PaperRadar/issues/107)。
+
+[规格](../../intent/draft.md#91-本机一致性快照)；[ADR-0027](../adr/0027-address-artifacts-by-content.md)；[路线图承接](../roadmap.md#module-i)。

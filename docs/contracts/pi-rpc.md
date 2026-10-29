@@ -1,11 +1,8 @@
 # Pi 单次 RPC 调用 Contract
 
-状态：#86 交付冻结调用描述与 render_format=1；#87 交付显式注入会话的单次协议服务、
-严格解帧/初始化及 boundary 的 A7 test 接线；#88 补全 value 同源权威接收、事件/
-最终消息矩阵及 D2/D3 审计边界。真实管道及取消握手、恢复和独立 A8 验收由 #89–#91
-完成。以下把已裁决目标与目前证明范围分开记录。
+提供冻结调用描述与 render_format=1、显式注入会话的单次协议服务、严格解帧/初始化、boundary/value 的 A7 test 同源权威接收、事件/最终消息矩阵及 D2/D3 审计边界；支持真实管道、取消握手和恢复，并有独立 A8 验收边界。
 依据为 [#85](https://github.com/MeteoBoy4/PaperRadar/issues/85) 正文及后续 D1–D4/P3。
-本 Contract 不新增 migration、业务 Schema、任务来源或生产命令。
+本 Contract 不提供新的 migration、业务 Schema、任务来源或生产命令。
 
 ## 调用描述与只读准备
 
@@ -22,7 +19,7 @@ projection_id 相等；只支持 boundary/value。系统指令、业务 Prompt�
 进入模型消息。审计升级可以共享旧预算和原请求字节，不把执行版本变成语义输入。
 描述为不可变值，输入原文、模型名称、请求、系统指令不出现在 repr。
 
-封闭 `PROTOCOL_PROFILES` 仅含 `1.4.0 → pi-rpc-1.4.0-v1`。这是本票离线协议支持
+封闭 `PROTOCOL_PROFILES` 仅含 `1.4.0 → pi-rpc-1.4.0-v1`。这是离线协议支持
 范围，不是生产 rpc_compatibility、固定安装或模型兼容证明。配置可保存其他正式
 版本，但 prepare 必须在 `run_once` 前拒绝未登记版本，不领取、不占次数、不写失败。
 A8 独立测试档案库通过真实 migration 和配置登记使用非占位系统 Prompt、prompt_only、
@@ -304,26 +301,12 @@ DERIVED-01(system补丁)、02(cwd包装)、03(user回显)、04(aggregate副本)�
 都只按源码推导 fail closed，尚未由真实 Pi 运行逐项确认。对应检查只证明与固定源码
 一致，不能把其升级成运行观测或生产隔离结论。
 
-#88 的 DERIVED-11 正例同时使用恰好 256 KiB 请求帧、64 KiB 候选和含 system/user/
+DERIVED-11 正例同时使用恰好 256 KiB 请求帧、64 KiB 候选和含 system/user/
 assistant 的 4 MiB agent_end 帧；完整流约三份合并回显，处于 16 MiB 累计界限内。
 thinking/signature 也计入三份回显。该正例证明固定上限可接收这组合法预算；超候选/
 帧/累计界限不返回半候选，也不保存原始流。
 
-生产启动器票必须在任何真实调用前完成以下准入，并逐项按 DERIVED 编号复核：
-
-- 复用相同管道会话和协议内核；启动描述由上层显式构造命令、env、cwd、系统指令，
-  没有默认值、不继承宿主环境；每并发会话独立 PI_CODING_AGENT_DIR 或整体串行化。
-- 启动前在隔离 PI_CODING_AGENT_DIR/settings.json 预写 cacheWarming="off" 与
-  retry.provider.maxRetries=0；两个 RPC 开关会写全局设置，ACK 不证明写入/隔离。
-  没观察到预热不等于关闭预热（其触发另有 cache TTL/节省条件）。
-- --offline --no-session -ne -ns -np -nc -nt，PI_SKIP_VERSION_CHECK=1、PI_TELEMETRY=0；
-  验证禁止自动网络活动（目录刷新、版本检查、遥测、缓存预热、隐含 provider retry）。
-- 通过 --system-prompt 精确传入声明系统指令；防止参数被当成文件路径。确认无默认
-  prompt、个人设置、项目资源、skills/extensions/MCP、AGENTS.md/CLAUDE.md 等注入。
-- #111 已确认本机 cwd 为 `/srv/pi-cwd`，无默认值显式传入、白名单仅此值；该目录无 .pi/、AGENTS.md、CLAUDE.md 或
-  其他项目资源，验证本机路径只在已裁决常量例外内。DERIVED-01/02/03/05/06 必须实测。
-- 在领取任何任务前预检固定供给、模型/凭据可用；验收参数映射、单次模型请求、日期
-  别名政策、模型能力、实际用量/停止与事件（DERIVED-04/07/08/09/10），落实 OS 隔离。
+当前没有生产启动器准入或真实 Pi 兼容通过证明。 生产接线目标见[规格补充约束](../../intent/draft.md#pi-生产启动器准入)，承接责任见[路线图](../roadmap.md#module-pi)。
 
 rpc_verified、live_verified、stage_a_verified 继续为 false。not_assessed 还包括真实 Pi
 运行与供给激活、凭据、参数效果、OS 文件/进程/网络权限、自动外发抑制、原题名语言
@@ -333,12 +316,11 @@ rpc_verified、live_verified、stage_a_verified 继续为 false。not_assessed �
 
 ## B 首次生产接线责任（#111，目标规格）
 
-首次生产供给目标为 1.4.0，复用当前唯一登记的离线协议档案，仍须实际安装与 RPC
-兼容验证；DERIVED 假设、参数映射、隔离、隐含调用抑制及完成判据不得假称已 live 验证。
-A4 1.3.0 spike 和 A2 历史配置示例保持原字节；未来升级按主方案 §7.8 新建适配器声明、
-供给身份、协议/行为证据并处理语义变更，不永久锁死 V1。
+当前提供离线协议档案与管道组件，不提供生产接线通过证明；历史 not_assessed 不变。 生产接线目标见[规格补充约束](../../intent/draft.md#b-首次-pi-生产接线)，承接责任见[路线图](../roadmap.md#module-live)。
 
-B 前置交付生产启动器、权限/资源构造、真实执行成功来源、实际用量、恢复与执行前预检，
-复用 A7/A8 权威；不能把真实候选塞入 test 接收器，也不能把真实来源等同于正常消费资格。
-`/srv/pi-cwd` 已确认；缺失/不符/现场隔离未验收时 Pi readiness 阻断，首次发送 prompt
-的 live 探测也受此限。实验根及证据边界见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)，未扩大上述历史 not_assessed 结论。
+
+## 相关
+
+依据：[#85](https://github.com/MeteoBoy4/PaperRadar/issues/85)、[#86](https://github.com/MeteoBoy4/PaperRadar/issues/86)、[#87](https://github.com/MeteoBoy4/PaperRadar/issues/87)、[#88](https://github.com/MeteoBoy4/PaperRadar/issues/88)、[#89](https://github.com/MeteoBoy4/PaperRadar/issues/89)、[#91](https://github.com/MeteoBoy4/PaperRadar/issues/91)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+
+[规格](../../intent/draft.md#77-pi-rpc-适配边界)；[ADR-0026](../adr/0026-control-pi-through-a-bounded-rpc-adapter.md)；[路线图承接](../roadmap.md#module-pi)。

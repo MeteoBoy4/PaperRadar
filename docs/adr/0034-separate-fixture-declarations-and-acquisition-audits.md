@@ -1,5 +1,7 @@
 # 分开保管 fixture 声明、取得事实和论文事实
 
+状态：决策记录（原文未单列接受状态）；日期：原文未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0034-separate-fixture-declarations-and-acquisition-audits.md)；补充／部分取代：无另列关系；正文边界继续适用。
+
 依据 #100，版本化声明唯一目录为 `fixtures/a10/`，git 保管声明来源；显式 register 将原字节和解释只追加冻结到 SQLite，数据库保管已登记历史与本机取得事实，查询和恢复不依赖原文件。文件声明键与版本标识原字节，逻辑样本用（用途、期刊、显式 key）定位；初次登记产生当前项，后续只有显式替换关系才能推进，时间、版本排序和文件位置均不参与选择。实际来源只进入既有 ArtifactStore，声明不能自报假哈希冒充取得证据。
 
 审计和论文事实分离：取得不调用 PaperFacts.submit，不创建生产 Feed、Paper、Screening 或校准成员。只保留有效 Feed 或身份已核验且贡献身份/字段的响应；身份已核验但无摘要的响应也保留，其余失败/挑战页仅保留结构化事实（ADR-0009）。doiRA 是固定 DOI 机构路由而不是新提供方；Crossref/DataCite 各走适用机构，其他 RA 为 agency_unsupported，查询失败为 agency_unknown。代价是失败响应无法逐字重解析，但可安全回放执行事实。

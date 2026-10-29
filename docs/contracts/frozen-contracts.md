@@ -14,7 +14,7 @@
 Read 的结构、独立价值词汇和后续证据业务校验边界见
 [Read Contract](read-validation.md)。Schema 通过不等于证据业务接收成功。
 
-#97 已开放 `settings.contracts.read: v1`，由配置 check/compile 复用同一权威检查，
+配置支持 `settings.contracts.read: v1`，由配置 check/compile 复用同一权威检查，
 历史 load 则核对已登记原始材料与引用，不重新生成当前 Schema。配置入口与独立 ready
 示例见[运行配置契约](runtime-config.md#read-配置与分块身份)及 README。
 
@@ -73,7 +73,7 @@ paper-radar contracts export --contract read --version v1 --target contracts
 paper-radar contracts check --contract read --version v1 --target contracts
 ```
 
-完整离线入口的六项计划和 A1 四契约范围不因 Read 新增而改变。#99 已在独立
+完整离线入口的六项计划和 A1 四契约范围不因 Read 新增而改变。独立
 必需 A9 writer 内显式调用 Read check，其结果影响最终退出码。Read 的结构、给定
 证据校验、配置和隔离恢复均有独立 A9 范围；A1 结论仍只证明历史四契约能力。
 
@@ -253,3 +253,9 @@ A1 通过。`<run_id>.json` 仍只表示 #12 局部证据；完整结论见同�
 A9 的独立结论内部另显式调用 `check_frozen_contracts(("read",), "v1", ...)`，记录
 实际 Read schema 哈希并使失败影响完整入口；A1 的四份选择与历史证明范围保持。
 当前可用五份契约，Read 业务接收还须通过[公共证据验证器](read-validation.md)。
+
+## 相关
+
+依据：[#12](https://github.com/MeteoBoy4/PaperRadar/issues/12)、[#97](https://github.com/MeteoBoy4/PaperRadar/issues/97)、[#99](https://github.com/MeteoBoy4/PaperRadar/issues/99)。
+
+[规格](../../intent/draft.md#七配置与-agent-契约)；[ADR-0023](../adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md)；[路线图承接](../roadmap.md#module-b)。

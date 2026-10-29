@@ -6,17 +6,12 @@
 预算首次 snapshot，执行审计取本次回执 snapshot，同阶段投影必须相等。未登记 Pi
 版本、缺 adapter、错误通道和材料冲突须领取前拒绝，不写失败、不占预算；prepare
 不回收租约、不判断状态。拒绝复用既有 TaskReason，映射见 [RPC Contract](pi-rpc.md)。
-后续离线接线仍保留 `executor_kind=test`，唯一成功、两次预算、600 秒租约、修正、
+离线接线保留 `executor_kind=test`，唯一成功、两次预算、600 秒租约、修正、
 原始响应存储及模型不符的 A7 `model_mismatch` 语义不变。协议内核只提供完整候选；
 内层业务 JSON 与模型身份观察仍交现有 A1/A7 权威接收，不新增生产执行来源。
 
-状态：A7-01 已冻结 D1–D4 并收紧权威 JSON 解析；A7-02（#78）已交付公共登记、
-冻结输入回放、请求回执、a701 持久化和备份语义闭包；A7-03（#79）增加 a702 的
-原子领取、两次预算、600 秒租约、失败结算、显式回收和 test 一次尝试驱动。
-A7-04（#80）交付 boundary 权威接收、唯一制品、三值适用性和成功恢复闭包。
-A7-05（#81）在同一接收链扩展 value 与历史同源上下文重建。
-A7-06（#82）交付显式 retry、版本化共享查询和父链恢复闭包；
-A7-07（#83）交付完整历史隔离恢复；A7-08（#84）注册独立必需 A7 组及可信终态。
+提供 D1–D4 权威 JSON 解析、公共登记、冻结输入回放、请求回执、a701 持久化及备份闭包，以及 a702 的原子领取、两次预算、600 秒租约、失败结算、显式回收和 test 一次尝试驱动。
+提供 boundary/value 同源权威接收、唯一制品、三值适用性、成功恢复闭包与历史上下文重建；提供显式 retry、版本化共享查询、父链及完整历史隔离恢复，并纳入独立必需 A7 组与可信终态。
 本文规定验收范围，具体通过事实以同次原始证据、真实入口退出码和状态查询为准。
 来源为 [#76 正文及全部评论](https://github.com/MeteoBoy4/PaperRadar/issues/76)，
 [用户 D1–D4 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/76#issuecomment-6356409213)
@@ -27,7 +22,7 @@ A7-07（#83）交付完整历史隔离恢复；A7-08（#84）注册独立必需 
 公共 Screening 任务服务封闭支持 `boundary`、`value`；二者独立登记、领取和计预算。
 value 不要求 boundary 成功，boundary 的 `out_of_scope` 不取消 value。
 两阶段编排、业务 eligibility、metadata_ready、校准、每日配额、Pi/RPC、真实模型和
-默认执行者都不在本批范围。单任务可领取不代表完整生产运行许可。
+默认执行者均不在此公共边界。单任务可领取不代表完整生产运行许可。
 
 | 概念 | 身份 | 冻结或保留的依据 |
 | --- | --- | --- |
@@ -66,7 +61,7 @@ value 登记必须显式提供严格 `bool` 的 `original_title_is_zh`；通过�
 不由题名文本、字符集或语言检测判断，`false` 只表示非中文。没有首发 Feed 归属的 Paper
 （仅人工 DOI/URL/PDF 加入）没有该事实，不得默认 `false`，也不得为其登记 value 任务，直到另行裁决；
 同刊新增 Feed 沿用该刊取值，但纳入发现范围仍按主方案 §2.1 另行裁决。登记仍要求显式严格 bool，
-本批不实现自动派生。
+当前不提供自动派生。
 
 **已知限制：同预算范围的误标仍无法纠正。** 生产接线（Feed 归属派生、策略版本持久化与登记集成）
 尚未交付；映射变化只能新版本化，不追溯改写已冻结事实或历史任务。主题集合只从匹配冻结输入
@@ -123,7 +118,7 @@ D 固定为 600 秒、不进入配置语义；时钟统一注入严格 aware UTC
 A7 执行来源封闭为 `executor_kind=test`。未来建议/校准消费者必须拒绝 test 制品。
 执行者报告的 provider/model 与冻结配置矛盾即 `model_mismatch`；缺报告则记录未知。
 provider request ID 与 token 未报告为 null，报告 0 保持 0；不预建金额/成本字段。
-真实模型、settled、输出通道、Pi 供给/安装和隔离证明由后续 RPC 票承担。
+此边界不证明真实模型、settled、输出通道、Pi 供给/安装和隔离通过；承接责任见[路线图 Pi/Live](../roadmap.md#module-live)。
 
 value 与 boundary 共用领取、预算、候选提交、发布及唯一成功事务。value 的唯一
 上下文重建顺序是加载预算首次历史 snapshot → A5 严格回放与投影核对 →
@@ -164,7 +159,7 @@ attempt；只读查询不要求先登记。更高 parser 删掉当前摘要时�
 领取凭据。repr/异常/日志同样脱敏。输入映射失败保留 A6 PaperReason，输出失败保留
 A1 类别/安全路径，TaskReason 只承载任务专属原因，不扩 storage/errors。
 
-本批仅交付服务层 retry 与共享查询，**不交付 screening CLI、paper trace 组合、
+当前仅提供服务层 retry 与共享查询，**不提供 screening CLI、paper trace 组合、
 相关 help/退出码验收**。原 #76 故事 23/33 的 CLI 部分、故事 39、决策 20–21 的
 CLI 部分移至首张产生真实任务事实的 RPC/run-due 票。共享 calibration visibility
 也未交付；本服务不能声称完整盲评隔离或产生生效筛选决定。
@@ -251,9 +246,8 @@ request_not_found、facts_changed、corrupt_reference、database_busy，各有�
 反查前调用，受控语义损坏为 registration_invalid。跨进程恢复仅需副本和已登记材料，
 不访问原数据/配置目录。§9–12 的尝试、成功、retry 和恢复校验已纳入此同一闭包。
 
-任务状态词表预先固定为 ready、running、lease_expired、retryable、failed、succeeded，
-分别表示待领取、已领取未到期、到期未结算、失败但尚有预算、失败终态、成功；A7-02
-当时只登记 ready；A7-03 实现前五项，A7-04/05 已交付两阶段 succeeded。
+任务状态词表固定为 ready、running、lease_expired、retryable、failed、succeeded，
+分别表示待领取、已领取未到期、到期未结算、失败但尚有预算、失败终态、成功。
 当前六态均为任务派生状态，不构成 Paper 主状态或完整 eligibility。
 
 ## 9. A7-03 领取、租约与失败 API（已交付）
@@ -422,7 +416,7 @@ attempts.receipt_id→requests 存在真实 FK 环，迁移在单个写事务内
 
 validate_all 重验每预算连续代际、同预算唯一父链、父真实两次失败、每代请求、唯一
 retry 请求及其目标/规范摘要、首次预算依据。备份 format/manifest/counts 不变；恢复
-保留父链与预算，不回收或执行。完整组合恢复由 #83 交付；独立 A7 验收由 #84 注册。
+保留父链与预算，不回收或执行。支持完整组合恢复，并注册独立 A7 验收。
 
 ## 12. A7-07 隔离完整历史恢复（已交付）
 
@@ -472,20 +466,11 @@ CLI、NAS、完整阶段 A 与 live。本验收不授予 test 筛选制品生产
 
 ## B 首张真实任务票的责任（#111，尚未交付）
 
-上文“不交付 CLI”继续描述 A7 历史范围；B 首张真实任务票须同时交付
-`screening failures/retry`、`paper trace` 组合及中文 help/退出码/恢复验证，不能继续推到 H。
-B 编排首次执行 `out_of_scope` 停止 value，A7 服务层的独立阶段事实不因此改写。
+当前不提供 screening CLI/paper trace 组合、完整 visibility 或 B 生产接线验收；历史 A7/A8 not_assessed 不变。 生产接线目标见[规格补充约束](../../intent/draft.md#b-screening-产品接线)，承接责任见[路线图](../roadmap.md#module-b)。
 
-语言事实接线使用数据库 Feed 身份与发现关系确定受支持期刊，再应用 ADR-0035 v1，
-保存来源及策略版本；同刊多个 Feed 一致，不建立第二个 Feed 权威或 first-seen 规则。
-跨刊冲突影响 bool 时保留冲突并拒绝新不确定登记，无归属人工 Paper 仍不得登记 value；
-冻结预算/retry 继承原值，策略不进 A5 指纹，不可借换策略重置预算。
 
-A 先交 eligibility/visibility 纯规则及合成事实测试，B 的最低元数据、人工决定、PDF/Read
-资格和 show/trace/最小日报首次消费；C 接保留器与未揭晓事实。真实执行成功来源、用量、
-恢复及前置预检复用 A7/A8 接收权威，仍待 B 生产接线验收。
+## 相关
 
-B 全链置于独立实验数据根，普通生产命令拒绝该根；不改同库预算身份、不添加用途维度。
-实验结果不复用、不提升，生产以后同论文从正常路径使用独立预算；样本暴露清单跨库保留，
-见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。窄命令显式单篇，不扫描自动队列；任何自动领取首次引入即须
-持久每日配额，不能因手动启动 run-due 或尚无 timer 而豁免。历史 A7/A8 not_assessed 不变。
+依据：[#76](https://github.com/MeteoBoy4/PaperRadar/issues/76)、[#77](https://github.com/MeteoBoy4/PaperRadar/issues/77)、[#78](https://github.com/MeteoBoy4/PaperRadar/issues/78)、[#79](https://github.com/MeteoBoy4/PaperRadar/issues/79)、[#80](https://github.com/MeteoBoy4/PaperRadar/issues/80)、[#81](https://github.com/MeteoBoy4/PaperRadar/issues/81)、[#82](https://github.com/MeteoBoy4/PaperRadar/issues/82)、[#83](https://github.com/MeteoBoy4/PaperRadar/issues/83)、[#84](https://github.com/MeteoBoy4/PaperRadar/issues/84)、[#85](https://github.com/MeteoBoy4/PaperRadar/issues/85)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+
+[规格](../../intent/draft.md#85-任务领取与幂等)；[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)；[路线图承接](../roadmap.md#module-b)。
