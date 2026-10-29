@@ -11,6 +11,7 @@ from paper_radar.feed_metadata.models import MetadataResult
 from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
 from paper_radar.papers import PaperFacts
 from paper_radar.papers.models import AbstractValue
+from paper_radar.sources.feeds import endpoint
 from tests.feed_support import facts, item
 
 DOI = "10.1029/2025jd043927"
@@ -21,12 +22,8 @@ FULL = (
 
 
 def test_jgr_metadata_routes_and_source_priority_are_public(tmp_path: Path) -> None:
-    from paper_radar.feed_metadata import JGRMetadata
-
     papers = facts(tmp_path)
-    feed = papers.register_feed(
-        "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=21698996&type=etoc&feed=rss"
-    )
+    feed = papers.register_feed(endpoint("jgr"))
     saved = papers.submit(item(feed.feed_id, doi=DOI, payload=b"new item with DOI"))
     assert saved.paper_id and papers.data_root
     seen = []
@@ -89,14 +86,10 @@ def setup_metadata(
     fields: dict[str, object] | None = None,
     doi: str | None = DOI,
 ) -> tuple[PaperFacts, str, JGRMetadata]:
-    from paper_radar.feed_metadata import JGRMetadata
-    from paper_radar.fixture_audit.acquisition_policy import FEED_ENDPOINTS
     from tests.test_audit_http import FakeClock
 
     papers = facts(root)
-    feed = papers.register_feed(
-        next(value.url for value in FEED_ENDPOINTS if value.journal == "jgr")
-    )
+    feed = papers.register_feed(endpoint("jgr"))
     request = item(feed.feed_id, doi=doi)
     if fields is not None:
         request["fields"] = fields

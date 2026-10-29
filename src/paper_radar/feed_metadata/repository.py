@@ -5,7 +5,6 @@ import json
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
 
 from sqlalchemy import Connection, select
 
@@ -49,7 +48,7 @@ def transaction(database: Path, *, write: bool = False) -> Iterator[Connection]:
         engine.dispose()
 
 
-def load_run(connection: Connection, key: str) -> tuple[dict[str, Any], int | None]:
+def load_run(connection: Connection, key: str) -> tuple[MetadataBasis, int | None]:
     row = (
         connection.execute(select(runs).where(runs.c.request_key == key))
         .mappings()
@@ -58,10 +57,10 @@ def load_run(connection: Connection, key: str) -> tuple[dict[str, Any], int | No
     if row is None or sha(row["basis_json"]) != row["basis_sha256"]:
         raise corrupt()
     try:
-        basis = MetadataBasis.model_validate_json(row["basis_json"]).model_dump()
+        basis = MetadataBasis.model_validate_json(row["basis_json"])
         if (
-            basis["paper_id"] != row["paper_id"]
-            or basis["request_id"] != row["request_id"]
+            basis.paper_id != row["paper_id"]
+            or basis.request_id != row["request_id"]
             or sha(canonical([row["paper_id"], row["request_id"]])) != key
         ):
             raise ValueError

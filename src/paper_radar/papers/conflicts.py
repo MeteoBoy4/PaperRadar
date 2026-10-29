@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -27,10 +28,17 @@ def sha(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-def request(item: ObservationInput) -> tuple[str, str, str]:
+@dataclass(frozen=True)
+class RequestIdentity:
+    request_sha256: str
+    assertion_json: str
+    payload_sha256: str
+
+
+def request_identity(item: ObservationInput) -> RequestIdentity:
     assertion = canonical(item.model_dump(mode="json", exclude={"payload"}))
     payload_hash = hashlib.sha256(item.payload).hexdigest()
-    return sha(assertion + payload_hash), assertion, payload_hash
+    return RequestIdentity(sha(assertion + payload_hash), assertion, payload_hash)
 
 
 def result(row: dict[str, Any]) -> WriteResult:
@@ -45,7 +53,9 @@ def result(row: dict[str, Any]) -> WriteResult:
 def replay(connection: Connection, item: ObservationInput) -> WriteResult | None:
     row = (
         connection.execute(
-            select(conflicts).where(conflicts.c.request_sha256 == request(item)[0])
+            select(conflicts).where(
+                conflicts.c.request_sha256 == request_identity(item).request_sha256
+            )
         )
         .mappings()
         .first()
@@ -69,7 +79,7 @@ def retain(
         return WriteResult(
             status="rejected", reason=PaperReason.IDENTITY_CONFLICT, conflict=category
         )
-    key, assertion, payload_hash = request(item)
+    identity = request_identity(item)
     previous = replay(connection, item)
     if previous:
         return previous
@@ -102,9 +112,9 @@ def retain(
             ).scalars()
         )
     row = dict(
-        request_sha256=key,
-        assertion_json=assertion,
-        payload_sha256=payload_hash,
+        request_sha256=identity.request_sha256,
+        assertion_json=identity.assertion_json,
+        payload_sha256=identity.payload_sha256,
         artifact_id=artifact_id,
         conflict=category,
         version_ids_json=canonical(sorted(known)),
@@ -126,7 +136,10 @@ def read_all(
     paper_id: str | None = None,
 ) -> tuple[ConflictView, ...]:
     output = []
-    for source in connection.execute(select(conflicts)).mappings():
+    query = select(conflicts)
+    if conflict_id is not None:
+        query = query.where(conflicts.c.conflict_id == conflict_id)
+    for source in connection.execute(query).mappings():
         row = dict(source)
         identity = row.pop("conflict_id")
         try:

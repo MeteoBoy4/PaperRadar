@@ -284,7 +284,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a6_scope.py",
-        "a871a274a326ba069d2f13b2118f3f6b49809ccbce7dae94d3ac6f81712758a8",
+        "a62af88e0528a659c3f7d63ff0f2a4fc0b45c3e52f1004ebe1f992452c341bb1",
     ),
     (
         "scripts/a7_acceptance.py",
@@ -488,7 +488,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/service.py",
-        "4ccaefe1d5815333f7e3ce1b49abf592691be75c7ec21e529a2e8a8aae7341da",
+        "28fc51c52de48d05fc8230fe90db8e9177fdf1eff1cb54622f3eab9031bbbb6c",
     ),
     (
         "src/paper_radar/screening_tasks/success.py",

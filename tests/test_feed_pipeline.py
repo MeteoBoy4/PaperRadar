@@ -13,7 +13,6 @@ from paper_radar.backup.restore import restore_backup
 from paper_radar.config import compile_config
 from paper_radar.feed_pipeline import FeedPipeline, PipelineError
 from paper_radar.feed_pipeline.models import PreparedItem, ValueRegistration
-from paper_radar.fixture_audit.acquisition_policy import FEED_ENDPOINTS
 from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
 from paper_radar.papers import PaperFacts
 from paper_radar.screening_tasks import (
@@ -22,6 +21,7 @@ from paper_radar.screening_tasks import (
     SuccessReceipt,
     TaskError,
 )
+from paper_radar.sources.feeds import endpoint
 from tests.config_test_support import value_inputs
 from tests.feed_support import item as feed_item
 from tests.test_audit_http import FakeClock
@@ -38,9 +38,7 @@ def setup_pipeline(root: Path) -> tuple[FeedPipeline, str, str, list[str]]:
     settings, database = value_inputs(root)
     snapshot = compile_config(settings, database)
     data_root = root / "data"
-    feed = PaperFacts(database, data_root).register_feed(
-        next(value.url for value in FEED_ENDPOINTS if value.journal == "jgr")
-    )
+    feed = PaperFacts(database, data_root).register_feed(endpoint("jgr"))
     calls = []
 
     def respond(request: httpx.Request) -> httpx.Response:
@@ -481,3 +479,31 @@ def test_corrupt_combination_proof_refuses_replay_and_backup(tmp_path: Path) -> 
     with pytest.raises(BackupError) as error:
         create_backup(pipeline.database, pipeline.data_root, tmp_path / "backups")
     assert error.value.reason == "registration_invalid"
+
+
+def test_trace_exposes_candidates_selection_and_discovery_without_text(
+    tmp_path: Path,
+) -> None:
+    pipeline, feed_id, _snapshot_id, _calls = setup_pipeline(tmp_path)
+    prepared = pipeline.prepare(
+        feed_id, request_id="trace", contact_email="contact@example.org"
+    )
+    paper_id = prepared.items[0].paper_id
+    assert paper_id
+    view = pipeline.trace(paper_id)
+    assert view.selection is not None
+    assert view.selection.version_id == view.version_id
+    assert view.fields["title"].source_kind == "publisher"
+    titles = [value for value in view.candidates if value.field_name == "title"]
+    assert {value.source_kind for value in titles} == {"feed", "publisher", "registry"}
+    selected = view.fields["title"].candidate_id
+    assert any(
+        value.candidate_id == selected and value.reason == "selected"
+        for value in view.decisions
+    )
+    assert any(value.reason == "lower_source_priority" for value in view.decisions)
+    assert view.discoveries[0].feed_id == feed_id
+    assert view.acquisitions
+    for text in (FULL, "Feed title", "Registry title", "Publisher title"):
+        assert text not in repr(view)
+    assert all(not hasattr(value, "value") for value in view.candidates)

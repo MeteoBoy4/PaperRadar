@@ -26,3 +26,8 @@ FEED_SUBSCRIPTIONS = (
     ),
     FeedSubscription("dqkx", "https://www.iapjournals.ac.cn/dqkx/rss/current.xml"),
 )
+
+
+def endpoint(journal: Journal) -> str:
+    """已裁决首发端点;不创建数据库身份或批准订阅。"""
+    return next(value.url for value in FEED_SUBSCRIPTIONS if value.journal == journal)

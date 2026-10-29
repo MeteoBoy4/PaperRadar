@@ -4,6 +4,7 @@ import pytest
 
 from paper_radar.papers import PaperFacts
 from paper_radar.screening_tasks import ScreeningTasks, TaskError
+from paper_radar.sources.feeds import Journal, endpoint
 from tests.a7_registration_support import Archive, request_for
 from tests.a7_value_support import value_archive
 from tests.feed_support import item
@@ -39,7 +40,7 @@ def test_missing_language_refuses_without_creating_budget(tmp_path: Path) -> Non
     [("dqkx", True), ("aies", False), ("jgr", False), ("qjrms", False)],
 )
 def test_explicit_database_feed_binding_and_same_journal_multiple_feeds(
-    tmp_path: Path, journal: str, expected: bool
+    tmp_path: Path, journal: Journal, expected: bool
 ) -> None:
     data = value_archive(tmp_path)
     papers = PaperFacts(data.database, data.data_root)
@@ -132,7 +133,7 @@ def test_language_basis_survives_isolated_restore(tmp_path: Path) -> None:
     restored.validate_all()
 
 
-def discovered(data: Archive, journal: str = "dqkx") -> ScreeningTasks:
+def discovered(data: Archive, journal: Journal = "dqkx") -> ScreeningTasks:
     papers = PaperFacts(data.database, data.data_root)
     feed = papers.register_feed(f"https://example.test/{journal}")
     service = ScreeningTasks(data.database, data.data_root)
@@ -351,16 +352,93 @@ def test_deleted_production_language_link_is_corruption_not_legacy(
     [("dqkx", True), ("aies", False), ("jgr", False), ("qjrms", False)],
 )
 def test_shared_default_endpoint_declaration_drives_language(
-    tmp_path: Path, journal: str, expected: bool
+    tmp_path: Path, journal: Journal, expected: bool
 ) -> None:
-    from paper_radar.fixture_audit.acquisition_policy import FEED_ENDPOINTS
-
     data = value_archive(tmp_path)
     papers = PaperFacts(data.database, data.data_root)
-    feed = papers.register_feed(
-        next(value.url for value in FEED_ENDPOINTS if value.journal == journal)
-    )
+    feed = papers.register_feed(endpoint(journal))
     papers.submit(item(feed.feed_id, doi="10.1234/abc"))
     tasks = ScreeningTasks(data.database, data.data_root)
     receipt = tasks.register_feed_value(request_for(data, stage="value"))
     assert tasks.language_basis(receipt.receipt_id)["original_title_is_zh"] is expected
+
+
+def test_new_policy_mapping_only_changes_new_inputs_and_replays_persistent_history(
+    tmp_path: Path,
+) -> None:
+    from datetime import UTC, datetime
+
+    from paper_radar.backup import create_backup
+    from paper_radar.backup.restore import restore_backup
+    from tests.test_paper_mapping import screening_fields
+    from tests.test_paper_service import observation
+
+    data = value_archive(tmp_path)
+    discovered(data)
+    service = ScreeningTasks(
+        data.database, data.data_root, clock=lambda: datetime(2026, 1, 1, tzinfo=UTC)
+    )
+    request = request_for(data, stage="value")
+    original = service.register_feed_value(request)
+    old_basis = service.language_basis(original.receipt_id)
+    mapping = {"dqkx": False, "aies": False, "jgr": False, "qjrms": False}
+    service.register_language_policy("test-policy-v2", mapping=mapping)
+    from paper_radar.screening_tasks import FailureKind, FailureReport
+
+    for _ in range(2):
+        claim = service.claim(original.receipt_id)
+        service.fail(claim, FailureReport(FailureKind.EXECUTOR_ERROR))
+    retry = service.retry(
+        {
+            "parent_task_id": original.task_id,
+            "paper_id": data.paper_id,
+            "stage": "value",
+            "snapshot_id": data.snapshot_id,
+            "request_id": "retry-after-policy",
+            "actor": "user",
+            "reason": "retry",
+        }
+    )
+    assert retry.budget_id == original.budget_id
+    assert service.language_basis(retry.receipt_id) == old_basis
+    assert (
+        service.language_status(data.paper_id, policy_version="test-policy-v2")[
+            "original_title_is_zh"
+        ]
+        is False
+    )
+    assert (
+        service.register_feed_value(request, policy_version="test-policy-v2")
+        == original
+    )
+    fields = screening_fields()
+    fields["title"] = {"value": "New input under explicit policy", "locator": "title"}
+    PaperFacts(data.database, data.data_root).submit(
+        observation(
+            payload=b"policy-new-input",
+            fields=fields,
+            observed_at=datetime(2026, 1, 2, tzinfo=UTC),
+        )
+    )
+    new = service.register_feed_value(
+        request_for(data, stage="value", scheduled_day="2026-01-02"),
+        policy_version="test-policy-v2",
+    )
+    assert new.fingerprint != original.fingerprint
+    assert service.load_input(new.receipt_id).original_title_is_zh is False
+    assert service.language_basis(original.receipt_id) == old_basis
+    with pytest.raises(TaskError, match="context_conflict"):
+        service.register_language_policy("test-policy-v2")
+    with pytest.raises(TaskError, match="context_conflict"):
+        service.register_language_policy("v1", mapping=mapping)
+    service.validate_all()
+    batch = create_backup(data.database, data.data_root, tmp_path / "backups")
+    restored = restore_backup(batch.batch_dir, tmp_path / "restored")
+    copied = ScreeningTasks(
+        restored.target_dir / "database.sqlite3", restored.target_dir
+    )
+    assert copied.language_basis(original.receipt_id) == old_basis
+    new_basis = copied.language_basis(new.receipt_id)
+    assert new_basis["status"] == "frozen"
+    assert new_basis["policy_version"] == "test-policy-v2"
+    copied.validate_all()

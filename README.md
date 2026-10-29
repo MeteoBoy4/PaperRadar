@@ -653,4 +653,4 @@ JGR 已发现论文可通过 `JGRMetadata.enrich` 显式取得适用注册机构
 元数据结果，`trace` 提供安全组合读面，`register_value` 要求当前非 out_of_scope 的
 生产 boundary 前置并拒绝 test 来源。`register_test_value` 仅验证既有 test 任务路径，
 保留全部前置检查；这些接口都不执行模型。详见[组合契约](docs/contracts/feed-pipeline.md)
-与[新增覆盖及证据边界](docs/verification/issue-114-feed-delivery.md)。
+与[后续责任路线图](docs/roadmap.md#module-b)。

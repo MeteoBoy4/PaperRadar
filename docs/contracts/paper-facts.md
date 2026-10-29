@@ -143,7 +143,7 @@ publisher/注册机构来源流为 `(来源类别, 提供方, 查询键, 目标�
 
 完整解释是调用方的必要承诺，服务拒绝缺失声明、明确 partial/economical 声明以及可检测的降版本/同版本异解释；不能仅从字段减少断定违规，也不声称能识别声明撒谎的真实解析器。A6 没有真实解析器，其真实性由第 10 节首次真实解析器回归门禁（B 起、C 扩展）承接。
 
-304、限流、失败在输入类型上不可表达；这些取得执行历史仍由未来 task_attempts 承担。轻量取得只记录有效解析请求，不成为通用请求/HTTP日志框架。
+304、限流、失败在 `ObservationInput` 中不可表达，不产生成功来源观察；JGR 生产取得将这些执行结果保存在独立 Feed 检查历史，见[Feed 取得契约](feed-ingestion.md)。轻量取得只记录有效解析请求，不成为通用请求/HTTP 日志框架。
 
 当前来源 URL 与 URL 形式的查询键/提供方/locator 拒绝 userinfo、query（含空 `?`）和 fragment（含空 `#`），不猜测参数名或 opaque 查询键里的 secret；这是防止认证 URL 进入查询面的严格初版能力边界，不表示 URL 可靠性/eligibility 已核验。原始材料按来源发布规则保留。这条规则不能用于 Feed 端点 URL，第 4 节 Feed query 必须逐字保留。
 
@@ -151,7 +151,7 @@ publisher/注册机构来源流为 `(来源类别, 提供方, 查询键, 目标�
 
 ## 4. Feed 身份、发现与回摆（D3）
 
-Feed 唯一权威是数据库按规范 URL 的唯一登记，只有 UUID 和规范 URL；不建期刊关联、ETag、Last-Modified、健康状态空列、feeds.yaml 或 CLI。未来配置接入必须另定与数据库对齐方案，不得形成第二套身份权威。规范 URL 接受 HTTP(S)，scheme/host ASCII 小写、移除默认端口；path/query 逐字保留（包括大小写、百分号及尾斜杠），拒绝 userinfo/fragment。**Feed URL 必须保留 query；DOI URL 当前拒绝 query，两条规则并列而方向不同。**
+Feed 唯一身份权威是数据库按规范 URL 的唯一登记，`feeds` 保存 UUID 和规范 URL。语言来源在独立不可变关联中登记期刊归属，生产检查独立保存 ETag、Last-Modified 和取得结果；两者引用既有 Feed，不创建第二套身份权威。不提供 feeds.yaml 或真实导入 CLI。规范 URL 接受 HTTP(S)，scheme/host ASCII 小写、移除默认端口；path/query 逐字保留（包括大小写、百分号及尾斜杠），拒绝 userinfo/fragment。**Feed URL 必须保留 query；DOI URL 当前拒绝 query，两条规则并列而方向不同。**
 
 Feed 发现键为 `(feed_id, entry_id, item_fingerprint)`；缺 entry ID 拒绝，不自造 fallback。无 DOI 版本的连续身份仅 `(feed_id, entry_id)`，内容 A→B 不生成新版本。`item_fingerprint` 为提交的单个原始 item 全部字节的 SHA-256 小写十六进制，无域前缀，等于 payload blob 身份；不重序列化、不补 XML 声明。空字节、超限、整份 Feed 文档、两个 item 共用同字节受控拒绝。可实现边界：受控提交须声明单 item，拒绝可识别的整份文档包装，并核对已登记条目与 payload 身份，避免同一 payload 被冒充另一条目；A6 不验证任意 XML 的上游真实性，也不实现生产 XML 解析。跨 Feed 同一 DOI 复用版本但保留独立发现；两个不同 item 可以各有不同字节。
 
@@ -351,13 +351,6 @@ A7-02 任务层已持久化 boundary/value 规范输入与请求依据，见[任
 
 #111 将首次真实写入责任前移到 B，C 扩展；实验根也是真实写入，不豁免强冲突观察、最终接口或隔离恢复，见 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。历史 A6 结论不因此获得 live 证明。
 
-## 相关
-
-依据：[#67](https://github.com/MeteoBoy4/PaperRadar/issues/67)、[#68](https://github.com/MeteoBoy4/PaperRadar/issues/68)、[#69](https://github.com/MeteoBoy4/PaperRadar/issues/69)、[#70](https://github.com/MeteoBoy4/PaperRadar/issues/70)、[#71](https://github.com/MeteoBoy4/PaperRadar/issues/71)、[#72](https://github.com/MeteoBoy4/PaperRadar/issues/72)、[#73](https://github.com/MeteoBoy4/PaperRadar/issues/73)、[#74](https://github.com/MeteoBoy4/PaperRadar/issues/74)、[#75](https://github.com/MeteoBoy4/PaperRadar/issues/75)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
-
-[规格 §3](../../intent/draft.md#三领域模型与不变量)；[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md)；[路线图 Feed/C](../roadmap.md#module-feed)。
-
-
 ## 强身份冲突证据公共服务
 
 `PaperFacts(database, data_root).conflicts(conflict_id=..., feed_id=..., entry_id=...,
@@ -366,7 +359,7 @@ paper_id=...)` 返回不可变冲突摘要；所有参数可省略，组合参�
 摘要包含受控冲突类别、中文说明、原 DOI、来源时间、parser_version、来源制品与
 原字节 SHA-256，以及当时可确定的版本集合；默认不展开题名、摘要或原始材料。
 `conflict_bytes(conflict_id)` 显式取得原字节；`conflict_assertion(conflict_id)`
-显式展开完整原断言（含字段 locator、显式目标及关系）。
+显式展开完整原断言（含字段 locator、显式目标及关系），在同一一致读事务中核验引用与读取断言。
 
 冲突请求按完整解析断言与原字节哈希去重，精确重放返回原冲突回执；材料、时间或解释
 变化保留独立记录。来源制品在业务事务外发布；冲突记录及引用原子提交后才返回
@@ -377,3 +370,9 @@ conflict_id。事务失败可能留下完整未引用制品，不代表冲突已
 保留非空数据库及原取得回执。冲突来源字节及断言完整性纳入 `validate_all()`、
 备份与隔离恢复；损坏引用返回 `corrupt_reference`。恢复不依赖原根目录。
 这是离线工程边界；真实 JGR 来源假设仍由路线图 EXP-1/B 核实。
+
+## 相关
+
+依据：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#115](https://github.com/MeteoBoy4/PaperRadar/issues/115)、[#67](https://github.com/MeteoBoy4/PaperRadar/issues/67)、[#68](https://github.com/MeteoBoy4/PaperRadar/issues/68)、[#69](https://github.com/MeteoBoy4/PaperRadar/issues/69)、[#70](https://github.com/MeteoBoy4/PaperRadar/issues/70)、[#71](https://github.com/MeteoBoy4/PaperRadar/issues/71)、[#72](https://github.com/MeteoBoy4/PaperRadar/issues/72)、[#73](https://github.com/MeteoBoy4/PaperRadar/issues/73)、[#74](https://github.com/MeteoBoy4/PaperRadar/issues/74)、[#75](https://github.com/MeteoBoy4/PaperRadar/issues/75)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+
+[规格 §3](../../intent/draft.md#三领域模型与不变量)；[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md)；[路线图 Feed/C](../roadmap.md#module-feed)。

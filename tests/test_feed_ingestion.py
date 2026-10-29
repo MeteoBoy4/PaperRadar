@@ -12,14 +12,14 @@ from paper_radar.backup import create_backup
 from paper_radar.backup.restore import restore_backup
 from paper_radar.feed_ingestion import JGRFeed
 from paper_radar.feed_ingestion.models import FeedCheck
-from paper_radar.fixture_audit.acquisition_policy import FEED_ENDPOINTS
 from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
 from paper_radar.papers import AbstractValue, PaperFacts
 from paper_radar.papers.errors import PaperError
 from paper_radar.papers.models import FeedFact
+from paper_radar.sources.feeds import endpoint
 from tests.feed_support import facts
 
-URL = next(value.url for value in FEED_ENDPOINTS if value.journal == "jgr")
+URL = endpoint("jgr")
 ITEM = (
     b'<item odd="unchanged"><guid>entry-1</guid><title>Original title</title>'
     b"<description>This is a complete synthetic abstract describing measurements, "

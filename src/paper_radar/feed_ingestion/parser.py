@@ -158,6 +158,7 @@ def parse_items(raw: bytes, decoding: str = "utf-8") -> tuple[ParsedItem, ...]:
                 decoding=decoding,
                 acquisition_id="production-feed-v1",
                 entry_locator=candidate.entry_locator,
+                feed_item=node,
             )
             for value in parsed:
                 text = texts[value.candidate_id]

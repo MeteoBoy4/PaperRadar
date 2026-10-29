@@ -213,3 +213,63 @@ def test_previous_revision_upgrade_preserves_nonempty_receipts(tmp_path: Path) -
     assert service.submit(request) == receipt
     assert service.trace(receipt.paper_id) == trace
     assert service.conflicts() == ()
+
+
+def test_conflict_assertion_uses_one_consistent_read_during_concurrent_damage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from paper_radar.storage.artifacts import ArtifactStore
+
+    service = facts(tmp_path)
+    feed = service.register_feed("https://feeds.example/f")
+    service.submit(item(feed.feed_id, doi="10.1/a"))
+    result = service.submit(item(feed.feed_id, doi="10.1/b", payload=b"conflict"))
+    assert result.conflict_id
+    expected = service.conflict_assertion(result.conflict_id)
+    read = ArtifactStore.read_artifact
+    damaged = False
+
+    def read_and_damage(self: ArtifactStore, artifact_id: str) -> dict[str, bytes]:
+        nonlocal damaged
+        value = read(self, artifact_id)
+        if not damaged:
+            damaged = True
+            with closing(sqlite3.connect(service.database)) as connection:
+                connection.execute(
+                    "UPDATE paper_identity_conflicts SET assertion_json='{}'"
+                )
+                connection.commit()
+        return value
+
+    monkeypatch.setattr(ArtifactStore, "read_artifact", read_and_damage)
+    assert service.conflict_assertion(result.conflict_id) == expected
+    with pytest.raises(PaperError, match="corrupt_reference"):
+        service.conflict_assertion(result.conflict_id)
+
+
+def test_successful_merge_hint_and_not_retained_are_absent_from_conflicts(
+    tmp_path: Path,
+) -> None:
+    from tests.test_paper_acquisitions import request
+    from tests.test_version_relations import relation
+
+    service = facts(tmp_path)
+    service.submit(observation(doi="10.1/pre", version_kind="preprint"))
+    service.submit(observation(doi="10.1/journal"))
+    linked = service.submit(
+        observation(
+            doi="10.1/pre",
+            version_kind="preprint",
+            payload=b"links",
+            relations=relation(),
+        )
+    )
+    assert linked.status == "retained" and linked.reason == "requires_merge"
+    service.submit(request("A", 1, b"A-first"))
+    repeated = service.submit(request("A", 2, b"A-again"))
+    assert repeated.status == "not_retained"
+    assert service.conflicts() == ()
+    assert linked.paper_id
+    assert service.conflicts(paper_id=linked.paper_id) == ()
+    service.validate_all()

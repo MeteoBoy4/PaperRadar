@@ -40,6 +40,9 @@
 `corrupt_reference`。未知路由、缺项与未结算路线在结果中明确呈现。HTTP 安全、联系标识、
 有界频率和退避沿用[fixture 审计契约](fixture-audit.md)，联系邮箱不进入保存的响应正文。
 
+元数据路线、原因、注册机构适用性及缺项使用封闭类型；未知持久值在公共读面以
+`corrupt_reference` 拒绝。SQL/制品错误使用 `metadata` 路径，独立于 Feed 检查路径。
+
 ## 不提供／不证明
 
 合成响应只证明工程接线；EXP-1、Audit/Source/B 的真实来源与 JGR 判据仍未验证。
@@ -52,6 +55,3 @@
 [#117](https://github.com/MeteoBoy4/PaperRadar/issues/117)、
 [主规格 §4.3](../../intent/draft.md#43-元数据与来源仲裁)、
 [论文事实](paper-facts.md)、[fixture 审计](fixture-audit.md)。
-
-元数据路线、原因、注册机构适用性及缺项使用封闭类型；未知持久值在公共读面以
-`corrupt_reference` 拒绝。SQL/制品错误使用 `metadata` 路径，独立于 Feed 检查路径。

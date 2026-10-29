@@ -15,7 +15,6 @@ from paper_radar.fixture_audit.acquisition_models import (
     require_utc_timestamp,
 )
 from paper_radar.fixture_audit.acquisition_policy import (
-    FEED_ENDPOINTS,
     normalize_request,
 )
 from paper_radar.fixture_audit.source_http import safe_condition_header
@@ -27,6 +26,7 @@ from paper_radar.papers.tables import (
     feed_interpretations,
     feeds,
 )
+from paper_radar.sources.feeds import endpoint
 from paper_radar.storage.artifacts import ArtifactStore
 
 
@@ -46,7 +46,7 @@ def require_feed(connection: Connection, feed_id: str) -> str:
     url = connection.execute(
         select(feeds.c.url).where(feeds.c.feed_id == feed_id)
     ).scalar()
-    expected = next(item.url for item in FEED_ENDPOINTS if item.journal == "jgr")
+    expected = endpoint("jgr")
     if url != expected:
         raise PaperError(PaperReason.INVALID_OBSERVATION, path="feed_id")
     return url

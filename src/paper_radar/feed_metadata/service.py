@@ -2,11 +2,11 @@
 
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 from sqlalchemy import select
 
 from paper_radar.feed_metadata.models import (
+    MetadataBasis,
     MetadataContent,
     MetadataMissing,
     MetadataResult,
@@ -47,6 +47,7 @@ from paper_radar.papers import PaperFacts
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.models import AbstractValue, CandidateInput
 from paper_radar.sources.errors import controlled
+from paper_radar.sources.feeds import endpoint
 from paper_radar.storage.artifacts import ArtifactStore
 
 
@@ -77,14 +78,9 @@ class JGRMetadata:
                 # 冻结当前版本;后到发现不重绑已登记请求。
                 trace = PaperFacts(self.database).trace(paper_id)
                 current = trace.current
-                from paper_radar.fixture_audit.acquisition_policy import FEED_ENDPOINTS
-
-                endpoint = next(
-                    value.url for value in FEED_ENDPOINTS if value.journal == "jgr"
-                )
                 if not any(
                     value.version_id == current.version_id
-                    and value.feed_url == endpoint
+                    and value.feed_url == endpoint("jgr")
                     for value in trace.discoveries
                 ):
                     raise PaperError(
@@ -94,7 +90,7 @@ class JGRMetadata:
                     raise PaperError(
                         PaperReason.INVALID_OBSERVATION, path="version_kind"
                     )
-                basis = dict(
+                basis = MetadataBasis(
                     paper_id=paper_id,
                     version_id=current.version_id,
                     doi=current.doi,
@@ -102,7 +98,7 @@ class JGRMetadata:
                     request_id=request_id,
                     observed_at=datetime.now(UTC).isoformat(),
                 )
-                payload = canonical(basis)
+                payload = canonical(basis.model_dump())
                 connection.execute(
                     runs.insert().values(
                         request_key=key,
@@ -121,7 +117,7 @@ class JGRMetadata:
             basis, settled = load_run(connection, request_key)
         if settled is not None:
             return self.replay(request_key)
-        doi = basis["doi"]
+        doi = basis.doi
         if doi is not None:
             routing = self._route(request_key, basis, "doi_ra", contact_email)
             if (
@@ -136,9 +132,9 @@ class JGRMetadata:
                 self._route(request_key, basis, route, contact_email)
             # Attempt publisher even with a complete Feed or registry abstract.
             self._route(request_key, basis, "publisher", contact_email)
-        trace = PaperFacts(self.database).trace(basis["paper_id"])
+        trace = PaperFacts(self.database).trace(basis.paper_id)
         version = next(
-            value for value in trace.versions if value.version_id == basis["version_id"]
+            value for value in trace.versions if value.version_id == basis.version_id
         )
         with transaction(self.database, write=True) as connection:
             connection.execute(
@@ -149,7 +145,7 @@ class JGRMetadata:
         return self.replay(request_key)
 
     def _route(
-        self, key: str, basis: dict[str, Any], route: Route, contact: str
+        self, key: str, basis: MetadataBasis, route: Route, contact: str
     ) -> MetadataRoute:
         with transaction(self.database) as connection:
             old = next(
@@ -162,7 +158,7 @@ class JGRMetadata:
             )
         if old is None:
             request = normalize_request(
-                SourceRequest(journal="jgr", route=route, doi=basis["doi"])
+                SourceRequest(journal="jgr", route=route, doi=basis.doi)
             )
             response = self.http.fetch(request, contact_email=contact)
             reason, agency, artifact_id, payload_hash = (
@@ -229,7 +225,7 @@ class JGRMetadata:
             view = MetadataRoute(
                 route=route,
                 request=request,
-                observed_at=basis["observed_at"],
+                observed_at=basis.observed_at,
                 http=response.facts,
                 reason=reason,
                 agency=agency,
@@ -276,9 +272,9 @@ class JGRMetadata:
             )
             result = PaperFacts(self.database, self.data_root).submit(
                 dict(
-                    target_paper_id=basis["paper_id"],
-                    target_version_id=basis["version_id"],
-                    doi=basis["doi"],
+                    target_paper_id=basis.paper_id,
+                    target_version_id=basis.version_id,
+                    doi=basis.doi,
                     version_kind="journal",
                     source_kind="publisher" if route == "publisher" else "registry",
                     provider=request_url(old.request)
@@ -286,8 +282,8 @@ class JGRMetadata:
                     else route,
                     query_key=request_url(old.request)
                     if route == "publisher"
-                    else basis["doi"],
-                    observed_at=datetime.fromisoformat(basis["observed_at"]),
+                    else basis.doi,
+                    observed_at=datetime.fromisoformat(basis.observed_at),
                     parser_version=1,
                     interpretation="complete",
                     payload=raw,
@@ -314,16 +310,16 @@ class JGRMetadata:
             basis, revision_no = load_run(connection, request_key)
             route_views = load_routes(connection, request_key)
         revision = PaperFacts(self.database).revision(
-            basis["version_id"], revision_no or basis["revision_no"]
+            basis.version_id, revision_no or basis.revision_no
         )
-        if revision.paper_id != basis["paper_id"] or (
-            basis["doi"] is not None and revision.doi != basis["doi"]
+        if revision.paper_id != basis.paper_id or (
+            basis.doi is not None and revision.doi != basis.doi
         ):
             raise corrupt()
         for route in route_views:
             self._verify_route(request_key, basis, route)
             if revision_no is not None and route.acquisition_id is not None:
-                trace = PaperFacts(self.database).trace(basis["paper_id"])
+                trace = PaperFacts(self.database).trace(basis.paper_id)
                 acquisition = next(
                     value
                     for value in trace.acquisitions
@@ -339,7 +335,7 @@ class JGRMetadata:
         )
         applicability: RegistryApplicability = (
             "not_applicable_no_doi"
-            if basis["doi"] is None
+            if basis.doi is None
             else "applicable"
             if routing
             and routing.reason == "acquired"
@@ -348,7 +344,7 @@ class JGRMetadata:
             if routing and routing.reason == "agency_unsupported"
             else "agency_unknown"
         )
-        expected = {"doi_ra", "publisher"} if basis["doi"] else set()
+        expected = {"doi_ra", "publisher"} if basis.doi else set()
         if applicability == "applicable":
             assert routing is not None
             expected.add(
@@ -375,9 +371,9 @@ class JGRMetadata:
             if abstract and isinstance(abstract.value, AbstractValue)
             else None
         )
-        current = PaperFacts(self.database).show(basis["paper_id"])
+        current = PaperFacts(self.database).show(basis.paper_id)
         current_version = (
-            current.version_id == basis["version_id"] and current.doi == basis["doi"]
+            current.version_id == basis.version_id and current.doi == basis.doi
         )
         missing: list[MetadataMissing] = []
         if not current_version:
@@ -398,8 +394,8 @@ class JGRMetadata:
             missing.append("agency_unsupported")
         return MetadataResult(
             request_key=request_key,
-            paper_id=basis["paper_id"],
-            version_id=basis["version_id"],
+            paper_id=basis.paper_id,
+            version_id=basis.version_id,
             revision_no=revision.revision_no,
             title=title.value if title and isinstance(title.value, str) else None,
             abstract_present=abstract_value is not None,
@@ -417,7 +413,7 @@ class JGRMetadata:
         )
 
     def _verify_route(
-        self, key: str, basis: dict[str, Any], route: MetadataRoute
+        self, key: str, basis: MetadataBasis, route: MetadataRoute
     ) -> None:
         if route.route not in {
             "doi_ra",
@@ -427,12 +423,12 @@ class JGRMetadata:
         }:
             raise corrupt()
         if route.request != normalize_request(
-            SourceRequest(journal="jgr", route=route.request.route, doi=basis["doi"])
+            SourceRequest(journal="jgr", route=route.request.route, doi=basis.doi)
         ):
             raise corrupt()
         if (
             route.request.journal != "jgr"
-            or route.request.doi != basis["doi"]
+            or route.request.doi != basis.doi
             or route.route != route.request.route
         ):
             raise corrupt()
@@ -473,7 +469,7 @@ class JGRMetadata:
             ):
                 raise corrupt()
         if route.acquisition_id:
-            trace = PaperFacts(self.database).trace(basis["paper_id"])
+            trace = PaperFacts(self.database).trace(basis.paper_id)
             found = next(
                 (
                     value
@@ -484,7 +480,7 @@ class JGRMetadata:
             )
             if (
                 found is None
-                or found.version_id != basis["version_id"]
+                or found.version_id != basis.version_id
                 or found.payload_sha256 != route.payload_sha256
             ):
                 raise corrupt()
@@ -520,7 +516,7 @@ class JGRMetadata:
         )
 
     @controlled("metadata")
-    def source_bytes(self, request_key: str, route: str) -> bytes:
+    def source_bytes(self, request_key: str, route: Route) -> bytes:
         result = self.replay(request_key)
         item = next((value for value in result.routes if value.route == route), None)
         if item is None or item.artifact_id is None:

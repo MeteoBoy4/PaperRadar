@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import overload
@@ -12,6 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.config import ConfigError, load_config_snapshot
 from paper_radar.papers import PaperError, PaperFacts, resolve_revision
+from paper_radar.papers.tables import feeds
 from paper_radar.screening_tasks.attempt_models import (
     Claim,
     Clock,
@@ -32,9 +34,21 @@ from paper_radar.screening_tasks.feed_gate import find as find_feed_gate
 from paper_radar.screening_tasks.feed_gate import retain as retain_feed_gate
 from paper_radar.screening_tasks.frozen import load_frozen
 from paper_radar.screening_tasks.language import (
+    ENDPOINTS,
+    POLICIES,
     LanguageBasis,
     LanguageObservation,
     LanguageResolution,
+    bindings,
+    checked_mapping,
+    derive,
+    encode,
+    frozen,
+    load,
+    observations,
+    policies,
+    required,
+    retain,
 )
 from paper_radar.screening_tasks.models import FrozenInput, RequestReceipt, ValueRequest
 from paper_radar.screening_tasks.query import QueryService
@@ -59,6 +73,7 @@ from paper_radar.screening_tasks.success_models import (
     SuccessView,
 )
 from paper_radar.screening_tasks.tables import budgets, requests, tasks
+from paper_radar.sources.feeds import Journal
 from paper_radar.stage_inputs import BuildReason, StageInputError
 from paper_radar.storage.database import require_current_revision
 from paper_radar.storage.schema import runtime_config_snapshots
@@ -173,8 +188,6 @@ class ScreeningTasks:
         )
 
     def language_basis(self, receipt_id: str) -> LanguageBasis:
-        from paper_radar.screening_tasks.language import load
-
         receipt = self.get_receipt(receipt_id)
         with (
             task_database(self.database, write=False) as engine,
@@ -182,11 +195,9 @@ class ScreeningTasks:
         ):
             return load(connection, receipt.budget_id)
 
-    def language_status(
+    def record_language_status(
         self, paper_id: str, *, policy_version: str = "v1"
     ) -> LanguageResolution:
-        from paper_radar.screening_tasks.language import derive, retain
-
         with task_database(self.database, write=True) as engine:
             require_current_revision(engine)
             with task_transaction(engine, write=True) as connection:
@@ -194,9 +205,13 @@ class ScreeningTasks:
                 retain(connection, basis)
                 return basis
 
-    def language_observations(self, paper_id: str) -> tuple[LanguageObservation, ...]:
-        from paper_radar.screening_tasks.language import observations
+    def language_status(
+        self, paper_id: str, *, policy_version: str = "v1"
+    ) -> LanguageResolution:
+        """兼容入口;派生并追加保存,与record_language_status相同。"""
+        return self.record_language_status(paper_id, policy_version=policy_version)
 
+    def language_observations(self, paper_id: str) -> tuple[LanguageObservation, ...]:
         with (
             task_database(self.database, write=False) as engine,
             task_transaction(engine, write=False) as connection,
@@ -204,15 +219,25 @@ class ScreeningTasks:
             require_current_revision(engine)
             return observations(connection, paper_id)
 
-    def register_language_policy(self, version: str) -> None:
-        """登记新策略身份,沿用已裁决的 v1 映射;不允许修改旧身份。"""
-        from paper_radar.screening_tasks.language import POLICIES, encode, policies
-
+    def register_language_policy(
+        self, version: str, *, mapping: Mapping[str, bool] | None = None
+    ) -> None:
+        """显式新版本登记封闭映射;真实政策变更仍须新裁决。省略映射沿用v1。"""
         if (
             type(version) is not str
             or re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}", version) is None
         ):
             raise TaskError(TaskReason.INVALID_REQUEST)
+        try:
+            content = encode(
+                checked_mapping(
+                    dict(mapping) if mapping is not None else POLICIES["v1"]
+                )
+            )
+        except (ValueError, TypeError):
+            raise TaskError(TaskReason.INVALID_REQUEST) from None
+        if version == "v1" and content != encode(POLICIES["v1"]):
+            raise TaskError(TaskReason.CONTEXT_CONFLICT)
         with task_database(self.database, write=True) as engine:
             require_current_revision(engine)
             with task_transaction(engine, write=True) as connection:
@@ -221,9 +246,8 @@ class ScreeningTasks:
                         policies.c.policy_version == version
                     )
                 ).scalar_one_or_none()
-                content = encode(POLICIES["v1"])
                 if old is not None and old != content:
-                    raise TaskError(TaskReason.CORRUPT_REFERENCE)
+                    raise TaskError(TaskReason.CONTEXT_CONFLICT)
                 if old is None:
                     connection.execute(
                         policies.insert().values(
@@ -231,11 +255,8 @@ class ScreeningTasks:
                         )
                     )
 
-    def bind_feed_journal(self, feed_id: str, journal: str) -> None:
+    def bind_feed_journal(self, feed_id: str, journal: Journal) -> None:
         """显式登记已存在 Feed 的期刊归属;不创建或订阅 Feed。"""
-        from paper_radar.papers.tables import feeds
-        from paper_radar.screening_tasks.language import ENDPOINTS, POLICIES, bindings
-
         if journal not in POLICIES["v1"]:
             raise TaskError(TaskReason.INVALID_REQUEST)
         with task_database(self.database, write=True) as engine:
@@ -273,13 +294,6 @@ class ScreeningTasks:
         policy_version: str | None = None,
         feed_gate: FeedGate | None = None,
     ) -> RequestReceipt:
-        from paper_radar.screening_tasks.language import (
-            derive,
-            frozen,
-            required,
-            retain,
-        )
-
         if policy_version is not None:
             if (
                 type(raw_request) is not dict

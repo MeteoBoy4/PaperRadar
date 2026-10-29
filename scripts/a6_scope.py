@@ -445,7 +445,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/papers/service.py",
-        "c2ea6bd339bc0ed0c96b410f3421a33f9a440b9b561c3b47f7e81b2f32b123ea",
+        "04473effebe65c5ca44f6765d3d4c5b1d2fc9b7f176ac9e38a6cdfe51b8302f4",
     ),
     (
         "src/paper_radar/papers/tables.py",

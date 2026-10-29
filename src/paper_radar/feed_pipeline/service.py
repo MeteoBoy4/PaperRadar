@@ -8,6 +8,7 @@ from sqlalchemy import select
 from paper_radar.feed_ingestion import JGRFeed
 from paper_radar.feed_metadata import JGRMetadata
 from paper_radar.feed_pipeline.models import (
+    CandidateReference,
     PipelineTrace,
     Preparation,
     PreparedItem,
@@ -99,7 +100,8 @@ class FeedPipeline:
         return Preparation(check.check_id, tuple(output))
 
     def trace(self, paper_id: str) -> PipelineTrace:
-        current = self.papers.show(paper_id)
+        trace = self.papers.trace(paper_id)
+        current = trace.current
         return PipelineTrace(
             paper_id,
             current.version_id,
@@ -111,6 +113,19 @@ class FeedPipeline:
             self.papers.conflicts(paper_id=paper_id),
             dict(observations=self.tasks.language_observations(paper_id)),
             self.tasks.receipts(paper_id),
+            fields={
+                name: CandidateReference.from_fact(current.version_id, name, fact)
+                for name, fact in current.fields.items()
+            },
+            selection=current.selection,
+            candidates=tuple(
+                CandidateReference.from_fact(observation.version_id, name, fact)
+                for observation in trace.observations
+                for name, fact in observation.fields.items()
+            ),
+            decisions=trace.decisions,
+            discoveries=trace.discoveries,
+            acquisitions=trace.acquisitions,
         )
 
     def register_value(

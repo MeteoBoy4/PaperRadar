@@ -1,5 +1,6 @@
 """论文事实公共服务:来源先发布,业务短事务,查询一致视图。"""
 
+import json
 import sqlite3
 from pathlib import Path
 from uuid import uuid4
@@ -183,13 +184,16 @@ class PaperFacts:
 
     def conflict_assertion(self, conflict_id: str) -> dict[str, object]:
         """显式展开原断言;普通冲突查询不展开题名、摘要或原字节。"""
-        import json
-
-        if not self.conflicts(conflict_id=conflict_id):
-            raise PaperError(PaperReason.CORRUPT_REFERENCE, path="conflict_id")
         engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
         try:
+            require_current_revision(engine)
             with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN")
+                records = read_all(
+                    connection, self.database, self.data_root, conflict_id=conflict_id
+                )
+                if not records:
+                    raise PaperError(PaperReason.CORRUPT_REFERENCE, path="conflict_id")
                 value: dict[str, object] = json.loads(
                     connection.execute(
                         select(conflict_table.c.assertion_json).where(
@@ -198,6 +202,10 @@ class PaperFacts:
                     ).scalar_one()
                 )
                 return value
+        except ArtifactError:
+            raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
+        except SQLAlchemyError as error:
+            raise _database_error(error) from None
         finally:
             engine.dispose()
 

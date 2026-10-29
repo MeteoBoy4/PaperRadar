@@ -17,7 +17,6 @@ from paper_radar.fixture_audit.abstract_models import (
 from paper_radar.fixture_audit.acquisition_models import SourceRequest
 from paper_radar.fixture_audit.models import Journal
 from paper_radar.papers.text_rules import normalize_text
-from paper_radar.sources.feed_xml import physical_feed_items
 
 _MARKUP = re.compile(
     r"<!--|<![A-Za-z]|<\?|</?[A-Za-z][A-Za-z0-9:_-]*(?:\s+[^<>]*|\s*/?)>"
@@ -244,6 +243,7 @@ def parse_material(
     decoding: str,
     acquisition_id: str,
     entry_locator: str | None = None,
+    feed_item: ET.Element | None = None,
 ) -> tuple[
     tuple[AbstractCandidate, ...], tuple[ExcludedBlock, ...], dict[str, str], bool
 ]:
@@ -262,9 +262,30 @@ def parse_material(
     decoded = raw.decode(decoding)
     if request.route == "feed":
         root = ET.fromstring(decoded)
-        items = physical_feed_items(root)
-        index = int((entry_locator or "item[1]").split("[")[1].rstrip("]")) - 1
-        item = items[index]
+        # audit-abstract-v1 retains its historical tolerant container semantics.
+        # Production supplies its already validated root-level physical item.
+        if feed_item is None:
+            container = (
+                next(
+                    (
+                        child
+                        for child in root
+                        if child.tag.rsplit("}", 1)[-1] == "channel"
+                    ),
+                    root,
+                )
+                if root.tag.rsplit("}", 1)[-1] == "rss"
+                else root
+            )
+            items = [
+                node
+                for node in container
+                if node.tag.rsplit("}", 1)[-1] in {"item", "entry"}
+            ]
+            index = int((entry_locator or "item[1]").split("[")[1].rstrip("]")) - 1
+            item = items[index]
+        else:
+            item = feed_item
         for child in item:
             name = child.tag.rsplit("}", 1)[-1]
             if name == "title":

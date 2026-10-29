@@ -469,12 +469,6 @@ CLI、NAS、完整阶段 A 与 live。本验收不授予 test 筛选制品生产
 当前不提供 screening CLI/paper trace 组合、完整 visibility 或 B 生产接线验收；历史 A7/A8 not_assessed 不变。 生产接线目标见[规格补充约束](../../intent/draft.md#b-screening-产品接线)，承接责任见[路线图](../roadmap.md#module-b)。
 
 
-## 相关
-
-依据：[#76](https://github.com/MeteoBoy4/PaperRadar/issues/76)、[#77](https://github.com/MeteoBoy4/PaperRadar/issues/77)、[#78](https://github.com/MeteoBoy4/PaperRadar/issues/78)、[#79](https://github.com/MeteoBoy4/PaperRadar/issues/79)、[#80](https://github.com/MeteoBoy4/PaperRadar/issues/80)、[#81](https://github.com/MeteoBoy4/PaperRadar/issues/81)、[#82](https://github.com/MeteoBoy4/PaperRadar/issues/82)、[#83](https://github.com/MeteoBoy4/PaperRadar/issues/83)、[#84](https://github.com/MeteoBoy4/PaperRadar/issues/84)、[#85](https://github.com/MeteoBoy4/PaperRadar/issues/85)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
-
-[规格](../../intent/draft.md#85-任务领取与幂等)；[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)；[路线图承接](../roadmap.md#module-b)。
-
 ## Feed 原题名语言来源
 
 `ScreeningTasks.register_feed_value(request, policy_version="v1")` 接收 `stage=value`
@@ -490,12 +484,12 @@ v1 按 ADR-0035 的期刊约定映射：dqkx=true，aies/jgr/qjrms=false，false
 语言依据及来源使用明确领域类型；派生状态封闭为 `missing`、`ambiguous`、`resolved`，
 预算读面封闭为 `frozen` 或 `historical_unrecorded`。持久 JSON 读取严格验证字段、bool、
 来源映射与状态一致性，损坏返回 `corrupt_reference`；既有序列化字节、哈希及冻结预算语义不变。
-`language_status(paper_id)` 追加保存当前派生观察并返回状态和发现引用；
+`record_language_status(paper_id, policy_version="v1")` 追加保存当前派生观察并返回状态和发现引用；
+`language_status(...)` 保留为同语义兼容入口，亦会追加保存；
 `language_observations(paper_id)` 只读回查已保存的派生历史（含歧义及受控状态）；
 `language_basis(receipt_id)` 查询预算冻结的策略、bool、期刊、Feed 与发现引用，默认没有
 原始正文。历史显式 bool 预算返回 `historical_unrecorded`，不补造来源。
-`register_language_policy(version)` 可为已裁决映射登记新的不可变策略身份；该入口不接受
-新映射语义，映射变化仍需新裁决。策略身份和来源审计不进入阶段指纹、boundary 或 Frozen Contract。
+`register_language_policy(version, mapping=...)` 接受严格 bool 的完整四刊封闭映射，显式登记新不可变版本；省略映射沿用 v1。v1 保持已裁决映射，同版本不同映射返回 `context_conflict`，缺键、额外键或非 bool 返回 `invalid_request`。历史派生与预算按当时持久策略版本核验与回放，策略版本变化只影响新输入的新预算，不更正既有值或重置预算。真实语言政策变更仍须新裁决；此登记能力不批准来源政策或新订阅。策略身份和来源审计不进入阶段指纹、boundary 或 Frozen Contract。
 
 派生与新预算/来源引用在同一 `BEGIN IMMEDIATE` 事务内提交。登记前到达的发现参与派生；
 后到发现不回写旧预算。精确 manual 重放先读取原冻结值；已有预算和 retry 沿用原语言值与
@@ -506,3 +500,9 @@ v1 按 ADR-0035 的期刊约定映射：dqkx=true，aies/jgr/qjrms=false，false
 的历史预算继续如实呈现未记录来源。标识与语言关联缺失任一方均为 `corrupt_reference`，
 不能把新生产关联丢失降级成合法历史。`validate_all` 和备份闭包核对这些引用，恢复后不依赖原根。来源级语言
 约定不构成逐篇语言核实，也不授予模型执行、校准或自动精读资格。
+
+## 相关
+
+依据：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#118](https://github.com/MeteoBoy4/PaperRadar/issues/118)、[#76](https://github.com/MeteoBoy4/PaperRadar/issues/76)、[#77](https://github.com/MeteoBoy4/PaperRadar/issues/77)、[#78](https://github.com/MeteoBoy4/PaperRadar/issues/78)、[#79](https://github.com/MeteoBoy4/PaperRadar/issues/79)、[#80](https://github.com/MeteoBoy4/PaperRadar/issues/80)、[#81](https://github.com/MeteoBoy4/PaperRadar/issues/81)、[#82](https://github.com/MeteoBoy4/PaperRadar/issues/82)、[#83](https://github.com/MeteoBoy4/PaperRadar/issues/83)、[#84](https://github.com/MeteoBoy4/PaperRadar/issues/84)、[#85](https://github.com/MeteoBoy4/PaperRadar/issues/85)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+
+[规格](../../intent/draft.md#85-任务领取与幂等)；[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)；[路线图承接](../roadmap.md#module-b)。

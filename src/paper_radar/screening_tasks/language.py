@@ -2,11 +2,12 @@
 
 import hashlib
 import json
-from typing import Annotated, Literal, TypedDict
+from typing import Annotated, Literal, TypedDict, cast
 
 import sqlalchemy as sa
 from pydantic import AfterValidator, ConfigDict, TypeAdapter, with_config
 from sqlalchemy import Connection, select
+from sqlalchemy.engine import RowMapping
 
 from paper_radar.papers.tables import (
     feed_discoveries,
@@ -17,10 +18,9 @@ from paper_radar.papers.tables import (
 )
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.tables import budgets
-from paper_radar.sources.feeds import FEED_SUBSCRIPTIONS
+from paper_radar.sources.feeds import FEED_SUBSCRIPTIONS, Journal
 from paper_radar.storage.schema import metadata
 
-Journal = Literal["dqkx", "aies", "jgr", "qjrms"]
 ResolutionStatus = Literal["missing", "ambiguous", "resolved"]
 
 
@@ -126,28 +126,84 @@ POLICIES = {"v1": {"dqkx": True, "aies": False, "jgr": False, "qjrms": False}}
 ENDPOINTS = {item.url: item.journal for item in FEED_SUBSCRIPTIONS}
 
 
+def _status(values: set[bool | None]) -> ResolutionStatus:
+    if not values or None in values:
+        return "missing"
+    return "ambiguous" if len(values) > 1 else "resolved"
+
+
+def checked_mapping(value: object) -> dict[Journal, bool]:
+    """封闭期刊集合与严格 bool;不决定真实来源政策。"""
+    if (
+        type(value) is not dict
+        or set(value) != set(POLICIES["v1"])
+        or any(type(flag) is not bool for flag in value.values())
+    ):
+        raise ValueError("invalid language mapping")
+    return cast(dict[Journal, bool], value)
+
+
+def _policy_mapping(connection: Connection, version: str) -> dict[Journal, bool]:
+    payload = connection.execute(
+        select(policies.c.mapping_json).where(policies.c.policy_version == version)
+    ).scalar_one_or_none()
+    if payload is None:
+        raise TaskError(TaskReason.CORRUPT_REFERENCE)
+    try:
+        mapping = checked_mapping(json.loads(payload))
+        if version == "v1" and mapping != POLICIES["v1"]:
+            raise ValueError("immutable v1 mapping")
+        return mapping
+    except (ValueError, TypeError):
+        raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
+
+
+def _require_policy(connection: Connection, basis: LanguageResolution) -> None:
+    mapping = _policy_mapping(connection, basis["policy_version"])
+    if any(
+        source["original_title_is_zh"]
+        is not (mapping[source["journal"]] if source["journal"] is not None else None)
+        for source in basis["sources"]
+    ):
+        raise TaskError(TaskReason.CORRUPT_REFERENCE)
+
+
+def _require_sources(connection: Connection, basis: LanguageResolution) -> None:
+    for source in basis["sources"]:
+        found = connection.execute(
+            select(feed_discoveries.c.discovery_id)
+            .select_from(feed_discoveries.join(feed_entries).join(versions))
+            .where(
+                feed_discoveries.c.discovery_id == source["discovery_id"],
+                feed_discoveries.c.feed_id == source["feed_id"],
+                versions.c.paper_id == basis["paper_id"],
+            )
+        ).first()
+        if found is None:
+            raise TaskError(TaskReason.CORRUPT_REFERENCE)
+
+
+def _read_resolution(connection: Connection, row: RowMapping) -> LanguageResolution:
+    try:
+        basis = _resolution_adapter.validate_json(row["basis_json"])
+        if (
+            hashlib.sha256(encode(basis).encode()).hexdigest() != row["resolution_id"]
+            or basis["paper_id"] != row["paper_id"]
+            or basis["policy_version"] != row["policy_version"]
+        ):
+            raise ValueError
+        _require_policy(connection, basis)
+        _require_sources(connection, basis)
+        return basis
+    except (ValueError, TypeError, KeyError):
+        raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
+
+
 def _consistent_resolution(basis: LanguageResolution) -> LanguageResolution:
     values = {source["original_title_is_zh"] for source in basis["sources"]}
-    expected: ResolutionStatus = (
-        "missing"
-        if not values or None in values
-        else "ambiguous"
-        if len(values) > 1
-        else "resolved"
-    )
-    if (
-        basis["status"] != expected
-        or basis["original_title_is_zh"]
-        is not (next(iter(values)) if expected == "resolved" else None)
-        or any(
-            source["original_title_is_zh"]
-            is not (
-                POLICIES["v1"][source["journal"]]
-                if source["journal"] is not None
-                else None
-            )
-            for source in basis["sources"]
-        )
+    expected = _status(values)
+    if basis["status"] != expected or basis["original_title_is_zh"] is not (
+        next(iter(values)) if expected == "resolved" else None
     ):
         raise ValueError("invalid language resolution")
     return basis
@@ -188,14 +244,7 @@ def derive(
     ).scalar_one_or_none()
     if mapping_json is None:
         raise TaskError(TaskReason.INVALID_REQUEST)
-    try:
-        mapping = json.loads(mapping_json)
-        if mapping != POLICIES["v1"] or any(
-            type(value) is not bool for value in mapping.values()
-        ):
-            raise ValueError
-    except (ValueError, TypeError):
-        raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
+    mapping = _policy_mapping(connection, policy_version)
     sources: list[LanguageSource] = []
     query = (
         select(
@@ -226,13 +275,7 @@ def derive(
             }
         )
     values = {s["original_title_is_zh"] for s in sources}
-    status: ResolutionStatus = (
-        "missing"
-        if not sources or None in values
-        else "ambiguous"
-        if len(values) > 1
-        else "resolved"
-    )
+    status = _status(values)
     return _checked_resolution(
         {
             "paper_id": paper_id,
@@ -248,6 +291,8 @@ def derive(
 
 def retain(connection: Connection, basis: LanguageResolution) -> str:
     basis = _checked_resolution(basis)
+    _require_policy(connection, basis)
+    _require_sources(connection, basis)
     payload = encode(basis)
     identifier = hashlib.sha256(payload.encode()).hexdigest()
     if (
@@ -296,53 +341,21 @@ def load(connection: Connection, budget_id: str) -> LanguageBasis:
             "original_title_is_zh": budget["original_title_is_zh"],
             "sources": [],
         }
-    try:
-        basis = _resolution_adapter.validate_json(row["basis_json"])
-        if (
-            hashlib.sha256(encode(basis).encode()).hexdigest() != row["resolution_id"]
-            or basis["status"] != "resolved"
-            or basis["paper_id"] != budget["paper_id"]
-            or type(basis["original_title_is_zh"]) is not bool
-            or basis["original_title_is_zh"] != budget["original_title_is_zh"]
-            or not basis["sources"]
-            or any(
-                source["journal"] not in POLICIES["v1"]
-                or POLICIES["v1"][source["journal"]] != basis["original_title_is_zh"]
-                for source in basis["sources"]
-            )
-        ):
-            raise ValueError
-        policy = connection.execute(
-            select(policies.c.mapping_json).where(
-                policies.c.policy_version == basis["policy_version"]
-            )
-        ).scalar_one_or_none()
-        if policy is None or json.loads(policy) != POLICIES["v1"]:
-            raise ValueError
-        for source in basis["sources"]:
-            found = connection.execute(
-                select(feed_discoveries.c.discovery_id)
-                .select_from(feed_discoveries.join(feed_entries).join(versions))
-                .where(
-                    feed_discoveries.c.discovery_id == source["discovery_id"],
-                    feed_discoveries.c.feed_id == source["feed_id"],
-                    versions.c.paper_id == budget["paper_id"],
-                )
-            ).first()
-            if found is None:
-                raise ValueError
-        return {**basis, "status": "frozen"}
-    except (ValueError, TypeError, KeyError):
-        raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
+    basis = _read_resolution(connection, row)
+    if (
+        basis["status"] != "resolved"
+        or basis["paper_id"] != budget["paper_id"]
+        or type(basis["original_title_is_zh"]) is not bool
+        or basis["original_title_is_zh"] != budget["original_title_is_zh"]
+        or not basis["sources"]
+    ):
+        raise TaskError(TaskReason.CORRUPT_REFERENCE)
+    return {**basis, "status": "frozen"}
 
 
 def validate(connection: Connection) -> None:
-    for row in connection.execute(select(policies)).mappings():
-        try:
-            if json.loads(row["mapping_json"]) != POLICIES["v1"]:
-                raise ValueError
-        except (ValueError, TypeError):
-            raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
+    for version in connection.execute(select(policies.c.policy_version)).scalars():
+        _policy_mapping(connection, version)
     for identifier in connection.execute(
         select(frozen.c.budget_id).union(select(required.c.budget_id))
     ).scalars():
@@ -351,18 +364,6 @@ def validate(connection: Connection) -> None:
         select(resolutions.c.paper_id).distinct()
     ).scalars():
         observations(connection, paper_id)
-    for row in connection.execute(select(resolutions)).mappings():
-        try:
-            basis = _resolution_adapter.validate_json(row["basis_json"])
-            if (
-                hashlib.sha256(encode(basis).encode()).hexdigest()
-                != row["resolution_id"]
-                or basis["paper_id"] != row["paper_id"]
-                or basis["policy_version"] != row["policy_version"]
-            ):
-                raise ValueError
-        except (ValueError, TypeError, KeyError):
-            raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
 
 
 def observations(
@@ -374,28 +375,6 @@ def observations(
         .where(resolutions.c.paper_id == paper_id)
         .order_by(resolutions.c.resolution_id)
     ).mappings():
-        try:
-            basis = _resolution_adapter.validate_json(row["basis_json"])
-            if (
-                hashlib.sha256(encode(basis).encode()).hexdigest()
-                != row["resolution_id"]
-                or basis["paper_id"] != row["paper_id"]
-                or basis["policy_version"] != row["policy_version"]
-            ):
-                raise ValueError
-            for source in basis["sources"]:
-                found = connection.execute(
-                    select(feed_discoveries.c.discovery_id)
-                    .select_from(feed_discoveries.join(feed_entries).join(versions))
-                    .where(
-                        feed_discoveries.c.discovery_id == source["discovery_id"],
-                        feed_discoveries.c.feed_id == source["feed_id"],
-                        versions.c.paper_id == paper_id,
-                    )
-                ).first()
-                if found is None:
-                    raise ValueError
-            results.append({**basis, "resolution_id": row["resolution_id"]})
-        except (ValueError, TypeError, KeyError):
-            raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
+        basis = _read_resolution(connection, row)
+        results.append({**basis, "resolution_id": row["resolution_id"]})
     return tuple(results)

@@ -97,8 +97,8 @@ flowchart TD
 - Extra：I02；Pi/Cwd/Live：I04、I05、T05、T07、T08、T12。
 - Audit/Source：I14、I15、T01、T26。
 - Feed：I07，以及[强冲突与语言事实](../intent/draft.md#阶段-c四刊发现身份版本与来源)。
-- Body/B：I03–I13、T02–T25、D02、D04 中的 B 消费者；另落实[StageInput C1](contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)、EXP-6、EXP-7。
-- C：I10、I12、I15、T01、T15–T19、T23、T24、T26。
+- Body/B：I03–I13、T02–T25、D02、D04 中的 B 消费者；另落实[StageInput C1](contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)、EXP-6、EXP-7。B 生产 value 登记须先交付真实生产 boundary/RPC 成功来源，保留 test 来源拒绝；在受限实验根核实 JGR 生产解析字段、entry 稳定性、主摘要非截断及语言来源约定，并完成真实材料与审计的字段差异审查、样本冻结和隔离恢复。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[组合契约](contracts/feed-pipeline.md)、[parser 固定回归边界](verification/feed-parser-v1.md)；EXP-1、DEC-1/2/3 不由 Feed 工程完成替代。
+- C：I10、I12、I15、T01、T15–T19、T23、T24、T26；承接四刊生产采集扩展、来源假设与语言约定核实、7 天复查/metadata_unobtainable 生命周期及完整 eligibility，不能从 JGR 合成材料推定四刊就绪。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[元数据契约](contracts/feed-metadata.md)。
 - F/Abstract：I09、I14、I15、T01、T10、T20、T26。
 - D：I03、I06、I09、I12、I15、T04、T07–T10、T14–T17、T19、T20、T23、T24、T26。
 - G：I03、I09、T04、T07–T10、T13、T17–T20、T24。

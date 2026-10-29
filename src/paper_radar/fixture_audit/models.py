@@ -19,9 +19,9 @@ from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
 from paper_radar.fixture_audit.pdf_models import PdfFixtureState
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError
+from paper_radar.sources.feeds import Journal as Journal
 
 DECLARATION_FORMAT_VERSION = 1
-Journal = Literal["aies", "jgr", "qjrms", "dqkx"]
 Purpose = Literal["feed", "abstract_audit", "references", "pdf"]
 Basis = Literal["historical_declaration", "synthetic", "acquired"]
 
