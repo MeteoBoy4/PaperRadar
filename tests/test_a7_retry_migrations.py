@@ -165,8 +165,8 @@ def test_nonempty_success_cycle_upgrade_is_atomic_with_foreign_keys_enabled(
 
     event.listen(Engine, "before_cursor_execute", observe)
     try:
-        assert upgrade_database(target) == "a1001_fixture_audit"
-        assert upgrade_database(target) == "a1001_fixture_audit"
+        assert upgrade_database(target) == "feed05_composition"
+        assert upgrade_database(target) == "feed05_composition"
     finally:
         event.remove(Engine, "before_cursor_execute", observe)
     assert checked and set(checked) == {1}

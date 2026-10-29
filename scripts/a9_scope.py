@@ -5,7 +5,7 @@ ISSUE = 92
 PARENT_ISSUE = 92
 FORMAT_VERSION = 1
 SUFFIX = ".a9.json"
-MIGRATION_REVISION = "a1001_fixture_audit"
+MIGRATION_REVISION = "feed05_composition"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
 FORMAT_VERSIONS = {
@@ -108,11 +108,11 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a9_acceptance.py",
-        "2093600321efca8b9eb4a0088fbac299f88362a0f0c9864dbdf1532730860c71",
+        "2acf9a0877ba2d166b76e093916d986fc767d505b39e36b4961407d523169b6f",
     ),
     (
         "tests/test_a9_integrity.py",
-        "061f76e57ef097e33b5e4318172ea75cb76f2faeaf2d639f7a2115abb4412fda",
+        "67159adb74991a7ca51cab5d4db0c523a5ce8f71be06757c013a7da6801e59c0",
     ),
     (
         "tests/test_a9_entry.py",
@@ -311,7 +311,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/backup/service.py",
-        "077f7c1690885f80f06bb88fb134bd486017ab2a1fd32f977cdf82a179be547c",
+        "02ce72862b11588dcec115d78a8084aafcd3104b12b5ecab246fb64324d77d27",
     ),
     (
         "src/paper_radar/backup/restore.py",
@@ -319,7 +319,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "a56dfe8e3964a31479d342d164fbba1b02ee6a595aec651786d78be3f9d2c35f",
+        "62760b5b37c582dd4a966397406dded75261412327a66ded6cda2ae5143aa1ec",
     ),
     (
         "src/paper_radar/backup/files.py",
@@ -339,11 +339,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "44383d7a39da7e1601a0a0f876c212a68e04b1e5df936bbaf9f573d9cd597f81",
+        "9ee6cbde8b3a02b1840f5a1e9ac5494518ace26bcb4eb36c62a15872292950cc",
     ),
     (
         "scripts/a3_scope.py",
-        "8efe0301841c50ae5e0708d16d4ebba613eee56e988636b66e764e72e5058cb9",
+        "5139c70d6cef54721abc1e4c1e37ac0d410a469d3dc8a19d0be1cceff4b077f9",
     ),
     (
         "scripts/a2_full_acceptance.py",
@@ -475,27 +475,27 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "tests/test_a2_full_acceptance.py",
-        "ff70beead1d601759c8bae3c826b71a470022b9efdce09a92491d39a8806c297",
+        "ddf3169a17ae81c78410f09dcc5df81db8cfce5a73c406e48279c73b7cffea53",
     ),
     (
         "scripts/a4_scope.py",
-        "f88eb0fb9a301a3ed13788600ed740f840645b25c0844f8e74d52f3b537011dd",
+        "eaf2ab47c912cdaf4b73c2ed3522bb2536839dc2b8b88cea68e43ec137b94705",
     ),
     (
         "scripts/a5_scope.py",
-        "a970107ec870a31d88d96642e9fb2cfb5e65a7911811312302f3c04bad1cf2cf",
+        "0f032560129e2c0c23d118696dfffab3a0f71cdcd77ead6d0cfd2c08594b963b",
     ),
     (
         "scripts/a6_scope.py",
-        "48a18ddac4f5e7fffcf093f3c88da4e35995423aae1e65d50766ab1a56cc363e",
+        "ebd755edd07bc5c0836dd8681ce5396230e03a8ef377a1bcc3696c233952eeb4",
     ),
     (
         "scripts/a7_scope.py",
-        "6882dcbe5c4ab617470e877ecc50c6dea8949aa98132622646a4f81a1ffa14df",
+        "ace607e6ba1c43cc9724d230deecb1027b7fd260b7787868836eac77e6f8b160",
     ),
     (
         "scripts/a8_scope.py",
-        "896a65a08bd461fb66dc2535ea47579e1cf87fc71a77889389d716fbb56173c6",
+        "f8360050041c71c169fc8f7d1b50663ca72dce4ce5955b1039388c3aff6709c5",
     ),
 )
 
@@ -564,7 +564,7 @@ REQUIRED_FIXTURE_FILES = (
         "examples/contracts/screening/boundary/v1/manifest.json",
         "5efa0aec0e41329fe8736dcd533706309fd9c3717aeac14ddbf55d05cce0ed0b",
     ),
-    ("README.md", "96610cb0fbf5927f6821912c5da1a01dd37772f1fadccfa35c791c8d4b69a24f"),
+    ("README.md", "a1634d3300037b461593ff7c9b74385017e3a4cd2fe04b898936f0cefdf02922"),
     ("GLOSSARY.md", "74381b5b1381c25abb69c460605093adc0352ce970c335a21baa84c91d853853"),
     (
         "intent/draft.md",

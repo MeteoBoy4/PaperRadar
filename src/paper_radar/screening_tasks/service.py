@@ -1,5 +1,7 @@
 """Screening 任务公共边界;预读不可变输入,短写事务复核论文事实。"""
 
+from __future__ import annotations
+
 import re
 from datetime import datetime
 from pathlib import Path
@@ -25,6 +27,9 @@ from paper_radar.screening_tasks.attempt_rules import is_executor_failure
 from paper_radar.screening_tasks.database_errors import database_error
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.execution import AttemptService
+from paper_radar.screening_tasks.feed_gate import FeedGate
+from paper_radar.screening_tasks.feed_gate import find as find_feed_gate
+from paper_radar.screening_tasks.feed_gate import retain as retain_feed_gate
 from paper_radar.screening_tasks.frozen import load_frozen
 from paper_radar.screening_tasks.models import FrozenInput, RequestReceipt, ValueRequest
 from paper_radar.screening_tasks.query import QueryService
@@ -151,10 +156,16 @@ class ScreeningTasks:
         return self._attempts.fail(claim, report, origin=origin)
 
     def register_feed_value(
-        self, raw_request: object, *, policy_version: str = "v1"
+        self,
+        raw_request: object,
+        *,
+        policy_version: str = "v1",
+        feed_gate: FeedGate | None = None,
     ) -> RequestReceipt:
         """生产登记:派生来源、冻结预算及依据在同一写事务提交。"""
-        return self._register(raw_request, policy_version=policy_version)
+        return self._register(
+            raw_request, policy_version=policy_version, feed_gate=feed_gate
+        )
 
     def language_basis(self, receipt_id: str) -> dict[str, Any]:
         from paper_radar.screening_tasks.language import load
@@ -251,7 +262,11 @@ class ScreeningTasks:
         return self._register(raw_request)
 
     def _register(
-        self, raw_request: object, *, policy_version: str | None = None
+        self,
+        raw_request: object,
+        *,
+        policy_version: str | None = None,
+        feed_gate: FeedGate | None = None,
     ) -> RequestReceipt:
         from paper_radar.screening_tasks.language import derive, frozen, retain
 
@@ -282,6 +297,15 @@ class ScreeningTasks:
                             )
                     replayed = replay_request(connection, request)
                     if replayed is not None:
+                        if feed_gate is not None:
+                            previous_gate = find_feed_gate(
+                                connection, feed_gate.request_key
+                            )
+                            if (
+                                previous_gate is None
+                                or previous_gate["receipt_id"] != replayed.receipt_id
+                            ):
+                                raise TaskError(TaskReason.REQUEST_CONFLICT)
                         return replayed
                 mapping = PaperFacts(self.database).map_screening_inputs(
                     paper_id=request.paper_id, snapshot_id=request.snapshot_id
@@ -334,7 +358,24 @@ class ScreeningTasks:
                         )
                     replayed = replay_request(connection, request)
                     if replayed is not None:
+                        if feed_gate is not None:
+                            previous_gate = find_feed_gate(
+                                connection, feed_gate.request_key
+                            )
+                            if (
+                                previous_gate is None
+                                or previous_gate["receipt_id"] != replayed.receipt_id
+                            ):
+                                raise TaskError(TaskReason.REQUEST_CONFLICT)
                         return replayed
+                    if feed_gate is not None and (
+                        evidence.version_id != feed_gate.version_id
+                        or evidence.revision_no != feed_gate.revision_no
+                        or mapping.boundary.value is None
+                        or mapping.boundary.value.fingerprint
+                        != feed_gate.boundary_fingerprint
+                    ):
+                        raise TaskError(TaskReason.FACTS_CHANGED)
                     current = resolve_revision(connection, paper_id=request.paper_id)
                     if evidence_values(current) != evidence_values(evidence):
                         raise TaskError(TaskReason.FACTS_CHANGED)
@@ -358,6 +399,8 @@ class ScreeningTasks:
                                 budget_id=result.budget_id, resolution_id=identifier
                             )
                         )
+                    if feed_gate is not None:
+                        retain_feed_gate(connection, feed_gate, result.receipt_id)
                     return result
             except SQLAlchemyError as error:
                 raise database_error(error) from None

@@ -235,7 +235,7 @@ def test_unknown_real_migration_head_is_not_registered_automatically(
     migrations = tmp_path / "migrations"
     shutil.copytree(Path(database.__file__).parent / "migrations", migrations)
     (migrations / "versions/unregistered.py").write_text(
-        "revision='unregistered'\ndown_revision='a1001_fixture_audit'\n"
+        "revision='unregistered'\ndown_revision='feed05_composition'\n"
         "def upgrade():pass\ndef downgrade():pass\n"
     )
     monkeypatch.setattr(database, "_MIGRATIONS", migrations)

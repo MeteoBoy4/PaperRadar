@@ -5,7 +5,7 @@ ISSUE = 85
 PARENT_ISSUE = 85
 FORMAT_VERSION = 1
 SUFFIX = ".a8.json"
-MIGRATION_REVISION = "a1001_fixture_audit"
+MIGRATION_REVISION = "feed05_composition"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
 FORMAT_VERSIONS = {
@@ -143,11 +143,11 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a8_acceptance.py",
-        "998f83e2635c3c04e43f2dd6069519f8b7ef335382ee5101781bc9abfc19b4a3",
+        "ae5ccb4523633a6caf1179764f025b0896dc70eb05944090c855deaaf1c4d128",
     ),
     (
         "tests/test_a8_integrity.py",
-        "bc4241a064a463e9819baa14e9d81a7e8931ba294c675c21c6b62e9c57bf71e9",
+        "a35ec4d5726880e572d620709d7c326a8b90875b418fd184c2ebbfd0948e109d",
     ),
     (
         "tests/test_a8_entry.py",
@@ -253,23 +253,23 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "44383d7a39da7e1601a0a0f876c212a68e04b1e5df936bbaf9f573d9cd597f81",
+        "9ee6cbde8b3a02b1840f5a1e9ac5494518ace26bcb4eb36c62a15872292950cc",
     ),
     (
         "scripts/a3_scope.py",
-        "8efe0301841c50ae5e0708d16d4ebba613eee56e988636b66e764e72e5058cb9",
+        "5139c70d6cef54721abc1e4c1e37ac0d410a469d3dc8a19d0be1cceff4b077f9",
     ),
     (
         "scripts/a5_scope.py",
-        "a970107ec870a31d88d96642e9fb2cfb5e65a7911811312302f3c04bad1cf2cf",
+        "0f032560129e2c0c23d118696dfffab3a0f71cdcd77ead6d0cfd2c08594b963b",
     ),
     (
         "scripts/a6_scope.py",
-        "48a18ddac4f5e7fffcf093f3c88da4e35995423aae1e65d50766ab1a56cc363e",
+        "ebd755edd07bc5c0836dd8681ce5396230e03a8ef377a1bcc3696c233952eeb4",
     ),
     (
         "scripts/a7_scope.py",
-        "6882dcbe5c4ab617470e877ecc50c6dea8949aa98132622646a4f81a1ffa14df",
+        "ace607e6ba1c43cc9724d230deecb1027b7fd260b7787868836eac77e6f8b160",
     ),
     (
         "scripts/check-offline",
@@ -345,5 +345,5 @@ REQUIRED_FIXTURE_FILES = (
         "docs/verification/a8-requirements.md",
         "bf40f43d19886a3b6c7bcd81891302f2c9a8e1e9b4a3206ad93c5609f19dfce3",
     ),
-    ("README.md", "96610cb0fbf5927f6821912c5da1a01dd37772f1fadccfa35c791c8d4b69a24f"),
+    ("README.md", "a1634d3300037b461593ff7c9b74385017e3a4cd2fe04b898936f0cefdf02922"),
 )
