@@ -1,7 +1,7 @@
 # Pi RPC 适配器配置
 
 权威 Pydantic 类型为 `config/adapters.py`，沿用公共 check/compile/load 服务。
-本票只登记配置事实，不安装 Pi/Node、不执行 RPC、不检查凭据或 provider 参数
+此配置边界只登记配置事实，不安装 Pi/Node、不执行 RPC、不检查凭据或 provider 参数
 能力、不启用流水线。工程合成示例为 `examples/config/settings-pi.yaml`。
 
 ## 选择、材料与版本
@@ -146,3 +146,9 @@ Pi/adapter 执行审计版本、机器路径、时间和临时身份。完整材
 [阶段配置投影与比较](config-projections.md)。共享材料只切换一槽时不改变其他槽的
 投影；仅变 Pi/adapter 执行审计版本不改变任何投影或基线。
 配置与比较不产生 minor/major、enable 或 calibration evaluation 事件。
+
+## 相关
+
+依据：[#26](https://github.com/MeteoBoy4/PaperRadar/issues/26)、[#85](https://github.com/MeteoBoy4/PaperRadar/issues/85)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+
+[规格](../../intent/draft.md#77-pi-rpc-适配边界)；[ADR-0026](../adr/0026-control-pi-through-a-bounded-rpc-adapter.md)；[路线图承接](../roadmap.md#module-pi)。

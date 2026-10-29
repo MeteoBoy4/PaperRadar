@@ -156,6 +156,12 @@ ID 格式校验属于加载服务，不耦合进单快照或纯比较领域能�
 基线身份；不显示完整 Profile/Prompt、原文 diff、输入错误值、原始异常或 SQL 参数。
 只有前后分量均非 null 时追加“（语义变化）”；配置与未配置之间的变化仅显示受控转移。
 所有 help 在外部 I/O 被拒绝时仍可运行，不读配置或数据库，不创建业务文件。
-保存快照不是启用；完整校准变更审计、minor/major 分级、门禁与自动运行由后续流程接入。
+保存快照不是启用；本边界不提供完整校准变更审计、minor/major 分级、门禁与自动运行，校准审计、分级与门禁由[路线图 D](../roadmap.md#module-d)承接，自动运行由[路线图 I](../roadmap.md#module-i)承接。
 完整 A2 由 #25 的独立结论覆盖本页能力，并保留 A2-01 固定测试与历史 scope；
 格式身份及固定范围见[离线验证证据](../verification/offline-evidence.md#完整-a2-独立结论)。
+
+## 相关
+
+依据：[#23](https://github.com/MeteoBoy4/PaperRadar/issues/23)、[#25](https://github.com/MeteoBoy4/PaperRadar/issues/25)。
+
+[规格](../../intent/draft.md#34-阶段输入指纹)；[ADR-0023](../adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md)；[路线图承接](../roadmap.md#module-d)。

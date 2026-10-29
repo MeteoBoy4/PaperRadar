@@ -495,7 +495,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "c75760b6b29a310d4764147d81719107ad1ac96cf2cc056b2dfb5757b3a1690e",
+        "9f654b5eac5b48ef55fc2c03da2a63e43bc88eafbb442cfeef6753adddd59f30",
     ),
 )
 
@@ -564,11 +564,11 @@ REQUIRED_FIXTURE_FILES = (
         "examples/contracts/screening/boundary/v1/manifest.json",
         "5efa0aec0e41329fe8736dcd533706309fd9c3717aeac14ddbf55d05cce0ed0b",
     ),
-    ("README.md", "c535a557aceccc82583180355e4eabb2202e26980cc7bff8beef8849e0ba499a"),
+    ("README.md", "6812f4dccea0d284ebde035db0da5c166e28923723d529f69f17177c54ed2bb7"),
     ("GLOSSARY.md", "74381b5b1381c25abb69c460605093adc0352ce970c335a21baa84c91d853853"),
     (
         "intent/draft.md",
-        "675263d7f42f6e80271966962131c68c8b65c24ea19ccf280ba3126a142af9f9",
+        "ffe160c6a1b5268514963a11b7c0414cf671dd6cc201560dab440683bd141c3a",
     ),
     (
         "docs/contracts/read-validation.md",
@@ -588,11 +588,11 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/config-projections.md",
-        "854e353a9329971bc5893bcb687d4977a8365a1fbe683725c4b3605d432e9565",
+        "b4792a2ccb7c2ab8337b6cdad8a0342eb1e2ff94df5995bec427d4bb9ed77a89",
     ),
     (
         "docs/contracts/config-snapshots.md",
-        "d7a19be8d2900dde2750f8ddeb3c9c9db5dad77b9e343f1bdd5f34af971a98a0",
+        "c91e24b6a5c17c6c76d1e3c8323f93efd61a371ccd1dde9124b650668579ed4c",
     ),
     (
         "docs/contracts/verification-status.md",

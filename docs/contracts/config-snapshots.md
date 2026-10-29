@@ -2,7 +2,7 @@
 
 数据库选择档案库，快照引用选择其中的历史配置。完整 64 位小写十六进制
 SHA-256 仍是权威身份；便捷引用不参与快照、阶段投影或校准基线身份。
-本票仅扩展 #23 的 CLI 输入与快照发现，不表示完整 A2 或阶段 A 已完成。
+本边界提供 CLI 输入与快照发现，不证明完整 A2 或阶段 A 通过。
 
 ## 公共查询边界
 
@@ -91,3 +91,9 @@ I/O 哨兵；快照发现测试独立于 A1 固定测试和四份历史 v1 契�
 #98 另验证含/不含 Read 契约的双历史快照与候选原字节在阻断原根的新进程恢复，
 完整范围和上下文固定常量的限制见 [Read 恢复说明](read-validation.md#恢复范围98)。
 `RuntimeConfigSnapshot` 默认 repr/str 隐藏 `payload_json`，显式访问与载荷身份不变。
+
+## 相关
+
+依据：[#23](https://github.com/MeteoBoy4/PaperRadar/issues/23)、[#27](https://github.com/MeteoBoy4/PaperRadar/issues/27)。
+
+[规格](../../intent/draft.md#七配置与-agent-契约)；[ADR-0023](../adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md)；[路线图承接](../roadmap.md#module-b)。
