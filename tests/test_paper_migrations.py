@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 from paper_radar.pi_supply import show_supply
 from paper_radar.storage import database as database_module
 from paper_radar.storage.artifacts import ArtifactStore
-from paper_radar.storage.database import upgrade_database
+from paper_radar.storage.database import current_revision, upgrade_database
 from paper_radar.storage.errors import StorageError
 from tests.artifact_support import fail_sql, paused_operation
 from tests.config_test_support import imported_modules
@@ -97,8 +97,8 @@ def test_nonempty_a405_upgrade_preserves_config_artifact_and_pi_history(
                 ).fetchall()
                 == []
             )
-    assert upgrade_database(old) == "a1001_fixture_audit"
-    assert upgrade_database(old) == "a1001_fixture_audit"
+    assert upgrade_database(old) == current_revision()
+    assert upgrade_database(old) == current_revision()
     with closing(sqlite3.connect(old)) as previous:
         assert {
             table: previous.execute(f"SELECT * FROM {table}").fetchall()
