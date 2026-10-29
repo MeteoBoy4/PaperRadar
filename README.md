@@ -630,3 +630,7 @@ PDF/Docling/生产导入/NAS 与完整阶段 A 均未验证；承接见[路线�
 都不是本轮 live 证据；live 产物不进入 `verification-runs/`。
 
 V1 目标与判据见[规格](intent/draft.md)，当前前沿、阶段状态与后续责任见[路线图](docs/roadmap.md)。
+
+Feed 语言生产登记可通过 `ScreeningTasks.register_feed_value` 调用，支持预算语言依据查询、
+歧义拒绝及隔离恢复；请求不发送模型调用。公共接口与来源约定见
+[Screening 任务契约](docs/contracts/screening-tasks.md#feed-原题名语言来源)。
