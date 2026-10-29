@@ -91,7 +91,7 @@ flowchart TD
 
 ### 模块承接索引
 
-原文责任见下表，各模块同时承接其中指向自己的阶段消费者义务。
+条目引用[阶段 A 收口清单](verification/stage-a-closure.md#原实施逐条处置)的 I/T/D 编号，原文措辞与下一责任节点以该冻结表为准（T、D 分别见其「原测试逐条处置」「原DoD逐条处置」）；责任涉及多个下游时全部保留，不以历史通过代替新消费者验收。各模块同时承接其中指向自己的阶段消费者义务。
 
 - A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04。
 - Extra：I02；Pi/Cwd/Live：I04、I05、T05、T07、T08、T12。
@@ -104,58 +104,6 @@ flowchart TD
 - G：I03、I09、T04、T07–T10、T13、T17–T20、T24。
 - H：I06、I12、T15–T17、T23、T24；E 沿用 I07、T02、T03、T11、T24 的共同约束。
 - I：I13、T06、T17、T25、D02、D04；聚合各阶段验收。
-
-### 承接责任
-
-以下 45 条逐条引用冻结收口表的下一责任节点；责任涉及多个下游时全部保留，不以历史通过代替新消费者验收。I/T/D 标识定位原表对应行，原表标题锚点稳定。
-
-| 来源 ID | 下游与承接责任（原文） |
-| --- | --- |
-| [I01](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L37) | A 后续能力沿用工程入口 |
-| [I02](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L38) | B 前置独立票：安装/兼容/lockfile/模型；可并行 A |
-| [I03](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L39) | B/D/G 实际消费与语义变更接线 |
-| [I04](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L40) | B：1.4.0、真实成功来源、权限资源、/srv/pi-cwd 与 live |
-| [I05](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L41) | B 首次固定 1.4.0 安装/RPC；保留 1.3.0 历史 |
-| [I06](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L42) | B/D/H 消费同一权威 |
-| [I07](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L43) | 各消费者逐片追加；不预建空表 |
-| [I08](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L44) | B 真实内容与恢复闭包 |
-| [I09](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L45) | B Read StageInput/预算/持久化，D reuse，F/G 扩展 |
-| [I10](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L46) | A 合成事实/原因接口；B 首消费者，C 保留器 |
-| [I11](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L47) | A 最小日志/doctor，B 前接线；不建遥测平台 |
-| [I12](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L48) | B/C/D/H 随新增命令扩展 |
-| [I13](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L49) | B 真实链恢复；I NAS |
-| [I14](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L50) | A live，F 四刊正文/摘录 |
-| [I15](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L51) | A 四刊首轮，JGR 判据阻断 B；C/F 补跑，D 前四刊收口 |
-| [T01](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L57) | A live；C/F 新策略 |
-| [T02](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L58) | 后续每片迁移/恢复 |
-| [T03](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L59) | 后续保持不变量 |
-| [T04](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L60) | B Read StageInput；D/G 消费 |
-| [T05](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L61) | B 实际 Pi 协议/参数/完成条件 |
-| [T06](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L62) | A doctor；B/I 实际调度 |
-| [T07](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L63) | A 机制收口；B Screening/Read，D reuse，G map/reduce |
-| [T08](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L64) | B live 与 Read；D reuse，G 长文 |
-| [T09](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L65) | B/D/G 消费者 |
-| [T10](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L66) | B Read StageInput，D/F/G 扩展 |
-| [T11](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L67) | 后续版本化材料沿用 |
-| [T12](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L68) | B 生产实例验收，历史材料不改 |
-| [T13](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L69) | B/G 真实 Read 接线 |
-| [T14](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L70) | B/D 两阶段/reuse 编排 |
-| [T15](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L71) | B/C/D/H 随入口逐项验 |
-| [T16](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L72) | A 合成纯规则；B 首接，C/D/H 实际隐藏 |
-| [T17](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L73) | A 合成一致性；B trace，C/D/G/H/I 消费 |
-| [T18](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L74) | B Read 指纹；C/G 版本任务 |
-| [T19](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L75) | B/C/D/G 失效消费 |
-| [T20](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L76) | B 正文/Read；F/D/G 摘录/reuse/长文 |
-| [T21](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L77) | B 新持久化边界故障与恢复 |
-| [T22](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L78) | A 全禁项合成 fixture；B 真实日志 |
-| [T23](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L79) | B 真实日志；C/D/H 未揭晓消费者 |
-| [T24](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L80) | B 及后续新命令随片验 |
-| [T25](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L81) | B 新闭包，I NAS |
-| [T26](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L82) | A 首轮；B JGR 门槛；C/F 补跑，D 前四刊 |
-| [D01](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L88) | A 真正收口时验证完整新增范围 |
-| [D02](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L89) | B 真实链，I 最终恢复 |
-| [D03](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L90) | A 复用既有查询，区分缺失/非法/通过/未验收 |
-| [D04](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/verification/stage-a-closure.md#L91) | B 起复用最终接口；首张 A 收口票定验收登记，A 真收口产机器结果，I 聚合 |
 
 ## 待裁决
 
