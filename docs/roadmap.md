@@ -6,13 +6,13 @@
 
 ## 当前前沿
 
-以下状态依据文档与本次开放票核对；后续发布规格时按维护规则更新。
+前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-A、Pi、Feed 可规格化；J 的判据已裁决，节点已完成仅指判据固定，不指审计通过。其依据均为[收口责任](verification/stage-a-closure.md#收口责任与未决项)与[§11 B 入口](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)。本次只读核对开放 Issues，仅有 #112 与 #113，未见上述生产模块的开放 spec issue；to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。
+to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 
 ## 模块图
 
-节点 ID 和边逐字沿用基线 §11；同名 ID 映射，无重命名。
+节点 ID 和边逐字沿用基线 §11；同名 ID 映射，无重命名。图中着色只标是否完成，模块状态以下表为准。
 
 ```mermaid
 flowchart TD
@@ -39,19 +39,11 @@ flowchart TD
   H --> I[I 最终验收]
   classDef completed fill:#bfdbfe
   class J completed
-  classDef ready fill:#dcfce7
-  classDef explore fill:#fef3c7
-  classDef shape fill:#e5e7eb
-  classDef decision fill:#fee2e2
-  class A,Pi,Feed ready
-  class Audit,Source,Cwd,Live,Extra explore
-  class Body,B,C,F,D,E,G,H,I shape
-  class Abstract decision
 ```
 
 ## 模块
 
-所有模块的规格与完成判据均以[§11](../intent/draft.md#十一九阶段实施与验收)为准；B 及前置同时受[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md)约束。现有边界从[收口证据索引](verification/stage-a-closure.md#证据索引与范围)进入对应 Contract；本次开放票查询未见这些生产模块的 spec issue。
+所有模块的规格与完成判据均以[§11](../intent/draft.md#十一九阶段实施与验收)为准；B 及前置同时受[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md)约束。现有边界从[收口证据索引](verification/stage-a-closure.md#证据索引与范围)进入对应 Contract；同次开放票查询未见这些生产模块的 spec issue。
 
 | ID | 模块 | 状态 | 依赖 | 执行方式 |
 | --- | --- | --- | --- | --- |
