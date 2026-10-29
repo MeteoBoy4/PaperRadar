@@ -181,7 +181,7 @@ def test_new_process_replays_old_facts_after_all_original_roots_and_copies_move(
     assert restored_db.read_bytes()[18:20] == b"\x01\x01"
     upgraded = run_cli(tmp_path, "db", "upgrade", "--database", str(restored_db))
     assert upgraded.returncode == 0, upgraded.stderr
-    assert "feed05_composition" in upgraded.stdout
+    assert "feed06_language_provenance" in upgraded.stdout
     with closing(sqlite3.connect(restored_db)) as connection:
         assert connection.execute("PRAGMA journal_mode").fetchone() == ("wal",)
     assert history_view(restored_db, moved) == expected

@@ -312,3 +312,53 @@ def test_manual_replay_and_retry_inherit_language_after_new_ambiguity(
     assert service.language_basis(retry.receipt_id) == service.language_basis(
         receipt.receipt_id
     )
+
+
+def test_deleted_production_language_link_is_corruption_not_legacy(
+    tmp_path: Path,
+) -> None:
+    import sqlite3
+    from contextlib import closing
+
+    from paper_radar.backup import create_backup
+    from paper_radar.backup.manifest import BackupError
+
+    data = value_archive(tmp_path)
+    papers = PaperFacts(data.database, data.data_root)
+    feed = papers.register_feed("https://www.iapjournals.ac.cn/dqkx/rss/current.xml")
+    papers.submit(item(feed.feed_id, doi="10.1234/abc"))
+    service = ScreeningTasks(data.database, data.data_root)
+    receipt = service.register_feed_value(request_for(data, stage="value"))
+    with closing(sqlite3.connect(data.database)) as connection:
+        connection.execute(
+            "DELETE FROM screening_language_basis WHERE budget_id=?",
+            (receipt.budget_id,),
+        )
+        connection.commit()
+    with pytest.raises(TaskError, match="corrupt_reference"):
+        service.language_basis(receipt.receipt_id)
+    with pytest.raises(TaskError, match="corrupt_reference"):
+        service.validate_all()
+    with pytest.raises(BackupError) as error:
+        create_backup(data.database, data.data_root, tmp_path / "backups")
+    assert error.value.reason == "registration_invalid"
+
+
+@pytest.mark.parametrize(
+    ("journal", "expected"),
+    [("dqkx", True), ("aies", False), ("jgr", False), ("qjrms", False)],
+)
+def test_shared_default_endpoint_declaration_drives_language(
+    tmp_path: Path, journal: str, expected: bool
+) -> None:
+    from paper_radar.fixture_audit.acquisition_policy import FEED_ENDPOINTS
+
+    data = value_archive(tmp_path)
+    papers = PaperFacts(data.database, data.data_root)
+    feed = papers.register_feed(
+        next(value.url for value in FEED_ENDPOINTS if value.journal == journal)
+    )
+    papers.submit(item(feed.feed_id, doi="10.1234/abc"))
+    tasks = ScreeningTasks(data.database, data.data_root)
+    receipt = tasks.register_feed_value(request_for(data, stage="value"))
+    assert tasks.language_basis(receipt.receipt_id)["original_title_is_zh"] is expected

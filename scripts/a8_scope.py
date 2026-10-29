@@ -5,7 +5,7 @@ ISSUE = 85
 PARENT_ISSUE = 85
 FORMAT_VERSION = 1
 SUFFIX = ".a8.json"
-MIGRATION_REVISION = "feed05_composition"
+MIGRATION_REVISION = "feed06_language_provenance"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
 FORMAT_VERSIONS = {
@@ -143,11 +143,11 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a8_acceptance.py",
-        "ae5ccb4523633a6caf1179764f025b0896dc70eb05944090c855deaaf1c4d128",
+        "246d46f5ce30ebfa6797dc7badf31d5ee8ed057c499bced60588c45707803058",
     ),
     (
         "tests/test_a8_integrity.py",
-        "a35ec4d5726880e572d620709d7c326a8b90875b418fd184c2ebbfd0948e109d",
+        "b861f3f9ed0ade251eefce83b87ef82228e173bcbdddae605cac17dd1937dfb3",
     ),
     (
         "tests/test_a8_entry.py",
@@ -253,23 +253,23 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "9ee6cbde8b3a02b1840f5a1e9ac5494518ace26bcb4eb36c62a15872292950cc",
+        "8938685fe17b1e608e1e07483eb9781b373258bae05480b43ca48a24c7945c15",
     ),
     (
         "scripts/a3_scope.py",
-        "5139c70d6cef54721abc1e4c1e37ac0d410a469d3dc8a19d0be1cceff4b077f9",
+        "a9a51c16a7a733e05eb20527951370240839a7de403ac94568a93ab4177eaeb8",
     ),
     (
         "scripts/a5_scope.py",
-        "0f032560129e2c0c23d118696dfffab3a0f71cdcd77ead6d0cfd2c08594b963b",
+        "95171f4c5564af04f38a847c80515c5c564d4f310e9d618c97766d240a8c38a3",
     ),
     (
         "scripts/a6_scope.py",
-        "ebd755edd07bc5c0836dd8681ce5396230e03a8ef377a1bcc3696c233952eeb4",
+        "3e5660ee72ff1856e58ed541c2b6b4123b2a280e3addbf2e5ce341314fd6fb3a",
     ),
     (
         "scripts/a7_scope.py",
-        "ace607e6ba1c43cc9724d230deecb1027b7fd260b7787868836eac77e6f8b160",
+        "04bc5673785b9fbbc5677aa47a8679c59c38cf9b2db2d063c49b9abe69adf808",
     ),
     (
         "scripts/check-offline",

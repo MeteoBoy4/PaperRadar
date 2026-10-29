@@ -4,7 +4,11 @@ from typing import Literal
 
 from pydantic import field_validator
 
-from paper_radar.fixture_audit.acquisition_models import HTTPFacts, SourceRequest
+from paper_radar.fixture_audit.acquisition_models import (
+    HTTPFacts,
+    SourceReason,
+    SourceRequest,
+)
 from paper_radar.fixture_audit.models import FrozenModel
 from paper_radar.fixture_audit.sampling_models import RawCategory
 from paper_radar.papers.errors import PaperReason
@@ -14,12 +18,19 @@ FEED_PARSER_VERSION = 1
 FEED_PARSER_IDENTITY = "jgr-feed-parser-v1"
 
 
+ItemParseReason = Literal[
+    "missing_entry_id", "invalid_doi", "conflicting_dois", "invalid_item"
+]
+FeedItemReason = PaperReason | ItemParseReason
+FeedCheckReason = SourceReason | Literal["invalid_feed"]
+
+
 class FeedItem(FrozenModel):
     position: int
     entry_id: str | None
     doi: str | None
     raw_categories: tuple[RawCategory, ...] = ()
-    reason: str | None = None
+    reason: FeedItemReason | None = None
     result: WriteResult | None = None
 
     @field_validator("result", mode="before")
@@ -40,7 +51,7 @@ class FeedCheck(FrozenModel):
     http: HTTPFacts | None = None
     etag: str | None = None
     last_modified: str | None = None
-    reason: str = "outcome_unknown"
+    reason: FeedCheckReason = "outcome_unknown"
     status_code: int | None = None
     artifact_id: str | None = None
     prior_check_id: str | None = None

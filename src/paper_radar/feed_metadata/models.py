@@ -7,11 +7,27 @@ from pydantic import Field, field_validator
 from paper_radar.fixture_audit.abstract_models import AbstractCandidate, ExcludedBlock
 from paper_radar.fixture_audit.acquisition_models import (
     HTTPFacts,
+    Route,
+    SourceReason,
     SourceRequest,
     require_utc_timestamp,
 )
 from paper_radar.fixture_audit.models import FrozenModel
 from paper_radar.fixture_audit.sampling_models import CategoryBasis
+from paper_radar.papers.models import SourceKind
+
+RegistryApplicability = Literal[
+    "agency_unknown", "agency_unsupported", "applicable", "not_applicable_no_doi"
+]
+MetadataMissing = Literal[
+    "current_version_changed",
+    "no_title",
+    "no_abstract",
+    "no_source_url",
+    "routes_incomplete",
+    "agency_unknown",
+    "agency_unsupported",
+]
 
 
 class MetadataBasis(FrozenModel):
@@ -29,10 +45,10 @@ class MetadataBasis(FrozenModel):
 
 
 class MetadataRoute(FrozenModel):
-    route: str
+    route: Route
     request: SourceRequest
     observed_at: str
-    reason: str = "outcome_unknown"
+    reason: SourceReason = "outcome_unknown"
     http: HTTPFacts | None = None
     agency: str | None = None
     artifact_id: str | None = None
@@ -57,17 +73,17 @@ class MetadataResult(FrozenModel):
     source_url: str | None = None
     routes: tuple[MetadataRoute, ...] = ()
     routes_settled: bool = False
-    registry_applicability: str = "agency_unknown"
+    registry_applicability: RegistryApplicability = "agency_unknown"
     current_version: bool = True
     minimum_complete: bool = False
     nontruncated_complete: bool = False
-    missing: tuple[str, ...] = ()
+    missing: tuple[MetadataMissing, ...] = ()
     scope: str = "仅证明元数据工程路径;真实 JGR 判据、来源假设及 B 入口未验证"
 
 
 class MetadataContent(FrozenModel):
     result: MetadataResult
     abstract: str | None = None
-    abstract_source_kind: str | None = None
+    abstract_source_kind: SourceKind | None = None
     abstract_observed_at: str | None = None
     abstract_locator: str | None = None

@@ -1,14 +1,18 @@
 """JGR显式取得与可恢复逐条目导入;HTTP外不替代事实权威。"""
 
-from collections.abc import Callable
 from datetime import UTC, datetime
-from functools import wraps
 from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from paper_radar.feed_ingestion.models import FeedCheck, FeedItem, FeedView
+from paper_radar.feed_ingestion.models import (
+    FeedCheck,
+    FeedCheckReason,
+    FeedItem,
+    FeedItemReason,
+    FeedView,
+)
 from paper_radar.feed_ingestion.parser import parse_items
 from paper_radar.feed_ingestion.repository import (
     canonical,
@@ -30,6 +34,7 @@ from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
 from paper_radar.fixture_audit.source_validation import inspect_source
 from paper_radar.papers import PaperFacts
 from paper_radar.papers.errors import PaperError, PaperReason
+from paper_radar.sources.errors import controlled
 from paper_radar.storage.artifact_contract import ArtifactError
 from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.database import (
@@ -39,17 +44,6 @@ from paper_radar.storage.database import (
 )
 
 
-def controlled[**P, R](function: Callable[P, R]) -> Callable[P, R]:
-    @wraps(function)
-    def call(*args: P.args, **kwargs: P.kwargs) -> R:
-        try:
-            return function(*args, **kwargs)
-        except (SQLAlchemyError, ArtifactError):
-            raise PaperError(PaperReason.CORRUPT_REFERENCE, path="feed_check") from None
-
-    return call
-
-
 class JGRFeed:
     def __init__(
         self, database: Path, data_root: Path, *, http: SourceHTTPExecutor | None = None
@@ -57,7 +51,7 @@ class JGRFeed:
         self.database, self.data_root = database, data_root
         self.http = http or SourceHTTPExecutor()
 
-    @controlled
+    @controlled("feed_check")
     def replay(self, check_id: str) -> FeedCheck:
         engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
         try:
@@ -79,7 +73,7 @@ class JGRFeed:
         finally:
             engine.dispose()
 
-    @controlled
+    @controlled("feed_check")
     def view(self, feed_id: str) -> FeedView:
         engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
         try:
@@ -110,7 +104,7 @@ class JGRFeed:
         finally:
             engine.dispose()
 
-    @controlled
+    @controlled("feed_check")
     def check(self, feed_id: str, *, request_id: str, contact_email: str) -> FeedCheck:
         validate_contact(contact_email)
         if (
@@ -180,7 +174,7 @@ class JGRFeed:
             engine.dispose()
         return self.resume(check_id, contact_email=contact_email)
 
-    @controlled
+    @controlled("feed_check")
     def resume(self, check_id: str, *, contact_email: str) -> FeedCheck:
         view = self.replay(check_id)
         if view.complete:
@@ -188,7 +182,7 @@ class JGRFeed:
         if view.http is None:
             response = self.http.fetch(view.request, contact_email=contact_email)
             artifact_id = None
-            reason: str | None = response.facts.reason
+            reason: FeedCheckReason = response.facts.reason
             etag, last_modified = response.etag, response.last_modified
             content_decoding = response.facts.decoding
             if reason == "acquired" and response.facts.status_code == 304:
@@ -263,8 +257,8 @@ class JGRFeed:
             if position in done:
                 continue
             result = None
-            reason = value.reason
-            if reason is None:
+            item_reason: FeedItemReason | None = value.reason
+            if item_reason is None:
                 result = papers.submit(
                     dict(
                         source_kind="feed",
@@ -280,7 +274,7 @@ class JGRFeed:
                         fields=value.fields,
                     )
                 )
-                reason = result.reason.value if result.reason else None
+                item_reason = result.reason
                 if result.reason in (
                     PaperReason.DATABASE_BUSY,
                     PaperReason.CORRUPT_REFERENCE,
@@ -291,7 +285,7 @@ class JGRFeed:
                 entry_id=value.candidate.entry_id,
                 doi=value.candidate.doi,
                 raw_categories=value.candidate.raw_categories,
-                reason=reason,
+                reason=item_reason,
                 result=result,
             )
             serialized = outcome.model_dump_json()
@@ -324,7 +318,7 @@ class JGRFeed:
                 engine.dispose()
         return self.replay(check_id)
 
-    @controlled
+    @controlled("feed_check")
     def item_bytes(self, check_id: str, position: int) -> bytes:
         view = self.replay(check_id)
         if view.artifact_id is None or type(position) is not int or position <= 0:
@@ -338,7 +332,7 @@ class JGRFeed:
         value = values[position - 1]
         return raw[value.start : value.end]
 
-    @controlled
+    @controlled("feed_check")
     def validate_all(self) -> None:
         engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
         try:

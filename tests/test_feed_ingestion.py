@@ -454,3 +454,42 @@ def test_conditional_304_inherits_original_content_decoding(tmp_path: Path) -> N
         service.item_bytes(second.check_id, 1)
         == b"<item><guid>entry-1</guid><title>Caf\xe9</title></item>"
     )
+
+
+@pytest.mark.parametrize("container", ["description", "foreign_container"])
+def test_nested_entry_never_supplies_another_physical_items_identity(
+    tmp_path: Path, container: str
+) -> None:
+    injected = b"<entry><link>https://agupubs.onlinelibrary.wiley.com/doi/10.1000/wrong</link></entry>"
+    first = (
+        b"<item><guid>one</guid><title>First title</title><description>"
+        + (injected if container == "description" else b"ordinary")
+        + b"</description></item>"
+    )
+    second = b"<item><guid>two</guid><title>Second title</title><link>https://agupubs.onlinelibrary.wiley.com/doi/10.1000/correct</link></item>"
+    raw = (
+        b"<rss>"
+        + (
+            b"<other>" + injected + b"</other>"
+            if container == "foreign_container"
+            else b""
+        )
+        + b"<channel>"
+        + first
+        + second
+        + b"</channel></rss>"
+    )
+    papers, feed, service = feed_service(
+        tmp_path, lambda request: httpx.Response(200, content=raw)
+    )
+    check = run_check(service, feed)
+    assert check.items[1].entry_id == "two"
+    assert check.items[1].doi == "10.1000/correct"
+    assert service.item_bytes(check.check_id, 2) == second
+    result = check.items[1].result
+    assert result and result.paper_id
+    assert papers.show(result.paper_id).doi == "10.1000/correct"
+    assert (
+        papers.show(result.paper_id).fields["source_url"].value
+        == "https://agupubs.onlinelibrary.wiley.com/doi/10.1000/correct"
+    )

@@ -16,6 +16,7 @@ from paper_radar.papers.tables import (
 )
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.tables import budgets
+from paper_radar.sources.feeds import FEED_SUBSCRIPTIONS
 from paper_radar.storage.schema import metadata
 
 policies = sa.Table(
@@ -59,20 +60,19 @@ frozen = sa.Table(
         nullable=False,
     ),
 )
+required = sa.Table(
+    "screening_language_requirements",
+    metadata,
+    sa.Column(
+        "budget_id",
+        sa.String(36),
+        sa.ForeignKey("screening_budgets.budget_id"),
+        primary_key=True,
+    ),
+)
 POLICIES = {"v1": {"dqkx": True, "aies": False, "jgr": False, "qjrms": False}}
 # Exact registered canonical endpoints; other Feed identities require explicit binding.
-ENDPOINTS = {
-    "https://www.iapjournals.ac.cn/dqkx/rss/current.xml": "dqkx",
-    (
-        "https://journals.ametsoc.org/journalissuetocrss/journals/"
-        "aies/aies-overview.xml"
-    ): "aies",
-    (
-        "https://agupubs.onlinelibrary.wiley.com/action/showFeed?"
-        "jc=21698996&type=etoc&feed=rss"
-    ): "jgr",
-    "https://rmets.onlinelibrary.wiley.com/feed/1477870x/most-recent": "qjrms",
-}
+ENDPOINTS = {item.url: item.journal for item in FEED_SUBSCRIPTIONS}
 
 
 def encode(value: object) -> str:
@@ -187,6 +187,14 @@ def load(connection: Connection, budget_id: str) -> dict[str, Any]:
         .mappings()
         .first()
     )
+    needs_basis = (
+        connection.execute(
+            select(required.c.budget_id).where(required.c.budget_id == budget_id)
+        ).first()
+        is not None
+    )
+    if needs_basis != (row is not None) or (needs_basis and budget["stage"] != "value"):
+        raise TaskError(TaskReason.CORRUPT_REFERENCE)
     if row is None:
         return {
             "status": "historical_unrecorded",
@@ -240,7 +248,9 @@ def validate(connection: Connection) -> None:
                 raise ValueError
         except (ValueError, TypeError):
             raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
-    for identifier in connection.execute(select(frozen.c.budget_id)).scalars():
+    for identifier in connection.execute(
+        select(frozen.c.budget_id).union(select(required.c.budget_id))
+    ).scalars():
         load(connection, identifier)
     for paper_id in connection.execute(
         select(resolutions.c.paper_id).distinct()

@@ -116,7 +116,7 @@ def test_nonempty_a603_upgrade_is_atomic_and_preserves_all_history(
                 for name, (columns, _) in expected.items()
             } == {name: rows for name, (_, rows) in expected.items()}
             assert not connection.execute("PRAGMA foreign_key_check").fetchall()
-    assert upgrade_database(old) == "feed05_composition"
+    assert upgrade_database(old) == "feed06_language_provenance"
     with closing(sqlite3.connect(old)) as connection:
         assert {
             name: connection.execute(

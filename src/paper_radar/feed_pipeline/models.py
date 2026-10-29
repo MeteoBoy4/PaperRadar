@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from paper_radar.feed_ingestion.models import FeedItemReason
 from paper_radar.feed_metadata.models import MetadataResult
 from paper_radar.papers.models import ConflictView
 from paper_radar.screening_tasks.models import RequestReceipt
@@ -15,7 +16,7 @@ class PreparedItem:
     metadata_request_key: str | None = None
     metadata: MetadataResult | None = None
     conflict_id: str | None = None
-    reason: str | None = None
+    reason: FeedItemReason | Literal["metadata_incomplete"] | None = None
 
 
 @dataclass(frozen=True)

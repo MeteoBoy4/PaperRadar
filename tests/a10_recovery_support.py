@@ -188,8 +188,8 @@ def upgraded_legacy(root: Path) -> tuple[Path, Path, dict[str, Any]]:
     assert expected["config_versions"] and expected["pi_supplies"]
     assert expected["paper_observations"] and expected["screening_successes"]
     assert expected["screening_failures"] and len(expected["screening_requests"]) == 3
-    assert upgrade_database(target) == "feed05_composition"
-    assert upgrade_database(target) == "feed05_composition"
+    assert upgrade_database(target) == "feed06_language_provenance"
+    assert upgrade_database(target) == "feed06_language_provenance"
     with closing(sqlite3.connect(target)) as upgraded:
         assert not upgraded.execute("PRAGMA foreign_key_check").fetchall()
         assert {

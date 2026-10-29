@@ -6,11 +6,12 @@ from typing import Any
 
 from sqlalchemy import select
 
-from paper_radar.feed_ingestion.service import controlled
 from paper_radar.feed_metadata.models import (
     MetadataContent,
+    MetadataMissing,
     MetadataResult,
     MetadataRoute,
+    RegistryApplicability,
 )
 from paper_radar.feed_metadata.repository import (
     canonical,
@@ -45,6 +46,7 @@ from paper_radar.fixture_audit.source_validation import inspect_source
 from paper_radar.papers import PaperFacts
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.models import AbstractValue, CandidateInput
+from paper_radar.sources.errors import controlled
 from paper_radar.storage.artifacts import ArtifactStore
 
 
@@ -55,7 +57,7 @@ class JGRMetadata:
         self.database, self.data_root = database, data_root
         self.http = http or SourceHTTPExecutor()
 
-    @controlled
+    @controlled("metadata")
     def enrich(
         self, paper_id: str, *, request_id: str, contact_email: str
     ) -> MetadataResult:
@@ -112,7 +114,7 @@ class JGRMetadata:
                 )
         return self.resume(key, contact_email=contact_email)
 
-    @controlled
+    @controlled("metadata")
     def resume(self, request_key: str, *, contact_email: str) -> MetadataResult:
         validate_contact(contact_email)
         with transaction(self.database) as connection:
@@ -306,7 +308,7 @@ class JGRMetadata:
             old = updated
         return old
 
-    @controlled
+    @controlled("metadata")
     def replay(self, request_key: str) -> MetadataResult:
         with transaction(self.database) as connection:
             basis, revision_no = load_run(connection, request_key)
@@ -335,7 +337,7 @@ class JGRMetadata:
         routing = next(
             (value for value in route_views if value.route == "doi_ra"), None
         )
-        applicability = (
+        applicability: RegistryApplicability = (
             "not_applicable_no_doi"
             if basis["doi"] is None
             else "applicable"
@@ -377,7 +379,7 @@ class JGRMetadata:
         current_version = (
             current.version_id == basis["version_id"] and current.doi == basis["doi"]
         )
-        missing = []
+        missing: list[MetadataMissing] = []
         if not current_version:
             missing.append("current_version_changed")
         if title is None:
@@ -388,8 +390,10 @@ class JGRMetadata:
             missing.append("no_source_url")
         if not routes_settled:
             missing.append("routes_incomplete")
-        if applicability in {"agency_unknown", "agency_unsupported"}:
-            missing.append(applicability)
+        if applicability == "agency_unknown":
+            missing.append("agency_unknown")
+        elif applicability == "agency_unsupported":
+            missing.append("agency_unsupported")
         return MetadataResult(
             request_key=request_key,
             paper_id=basis["paper_id"],
@@ -483,7 +487,7 @@ class JGRMetadata:
             ):
                 raise corrupt()
 
-    @controlled
+    @controlled("metadata")
     def requests(self, paper_id: str) -> tuple[MetadataResult, ...]:
         with transaction(self.database) as connection:
             keys = (
@@ -497,7 +501,7 @@ class JGRMetadata:
             )
         return tuple(self.replay(key) for key in keys)
 
-    @controlled
+    @controlled("metadata")
     def content(self, request_key: str) -> MetadataContent:
         result = self.replay(request_key)
         revision = PaperFacts(self.database).revision(
@@ -513,7 +517,7 @@ class JGRMetadata:
             abstract_locator=abstract.locator if abstract else None,
         )
 
-    @controlled
+    @controlled("metadata")
     def source_bytes(self, request_key: str, route: str) -> bytes:
         result = self.replay(request_key)
         item = next((value for value in result.routes if value.route == route), None)
@@ -523,7 +527,7 @@ class JGRMetadata:
             item.artifact_id
         )["payload"]
 
-    @controlled
+    @controlled("metadata")
     def validate_all(self) -> None:
         with transaction(self.database) as connection:
             keys = connection.execute(select(runs.c.request_key)).scalars().all()

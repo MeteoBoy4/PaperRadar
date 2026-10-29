@@ -40,7 +40,7 @@ def test_a4_records_complete_independent_capabilities_and_live_boundaries(
         "passed",
     )
 
-    assert result["migration_revision"] == "feed05_composition"
+    assert result["migration_revision"] == "feed06_language_provenance"
     assert result["scope"] == "a4_pi_supply_lifecycle"
     assert (result["format_version"], result["parent_issue"], result["issue"]) == (
         1,
@@ -309,7 +309,7 @@ def test_actual_new_migration_head_is_rejected_until_explicitly_registered(
     migrations = tmp_path / "migrations"
     shutil.copytree(Path(database.__file__).parent / "migrations", migrations)
     (migrations / "versions/unregistered.py").write_text(
-        "revision='unregistered'\ndown_revision='feed05_composition'\n"
+        "revision='unregistered'\ndown_revision='feed06_language_provenance'\n"
         "def upgrade():pass\ndef downgrade():pass\n",
         encoding="utf-8",
     )

@@ -158,10 +158,13 @@ def test_conflict_reference_corruption_is_controlled(tmp_path: Path) -> None:
 def test_previous_revision_upgrade_preserves_nonempty_receipts(tmp_path: Path) -> None:
     from alembic import command
     from alembic.config import Config
-    from sqlalchemy import create_engine
 
     from paper_radar.storage import database as database_module
-    from paper_radar.storage.database import upgrade_database
+    from paper_radar.storage.database import (
+        DatabaseMode,
+        open_database,
+        upgrade_database,
+    )
 
     service = facts(tmp_path)
     feed = service.register_feed("https://feeds.example/f")
@@ -173,15 +176,40 @@ def test_previous_revision_upgrade_preserves_nonempty_receipts(tmp_path: Path) -
     config.set_main_option(
         "script_location", str(Path(database_module.__file__).parent / "migrations")
     )
-    engine = create_engine(f"sqlite:///{service.database}")
+    previous = tmp_path / "previous.sqlite"
+    engine = open_database(previous, mode=DatabaseMode.CREATE)
     try:
         with engine.connect() as connection:
             config.attributes["connection"] = connection
-            command.downgrade(config, "a1001_fixture_audit")
+            command.upgrade(config, "a1001_fixture_audit")
             connection.commit()
     finally:
         engine.dispose()
-    upgrade_database(service.database)
+    # Build the previous schema directly; later migrations forbid downgrade.
+    with (
+        closing(sqlite3.connect(service.database)) as source,
+        closing(sqlite3.connect(previous)) as target,
+    ):
+        tables = [
+            row[0]
+            for row in target.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name NOT LIKE 'sqlite_%' AND name!='alembic_version'"
+            )
+        ]
+        for name in tables:
+            columns = [row[1] for row in target.execute(f'PRAGMA table_info("{name}")')]
+            names = ",".join(f'"{column}"' for column in columns)
+            rows = source.execute(f'SELECT {names} FROM "{name}"').fetchall()
+            target.execute(f'DELETE FROM "{name}"')
+            if rows:
+                placeholders = ",".join("?" for _ in columns)
+                target.executemany(
+                    f'INSERT INTO "{name}" ({names}) VALUES ({placeholders})', rows
+                )
+        target.commit()
+    upgrade_database(previous)
+    service = PaperFacts(previous, service.data_root)
     assert service.submit(request) == receipt
     assert service.trace(receipt.paper_id) == trace
     assert service.conflicts() == ()

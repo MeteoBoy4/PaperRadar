@@ -268,7 +268,12 @@ class ScreeningTasks:
         policy_version: str | None = None,
         feed_gate: FeedGate | None = None,
     ) -> RequestReceipt:
-        from paper_radar.screening_tasks.language import derive, frozen, retain
+        from paper_radar.screening_tasks.language import (
+            derive,
+            frozen,
+            required,
+            retain,
+        )
 
         if policy_version is not None:
             if (
@@ -398,6 +403,9 @@ class ScreeningTasks:
                             frozen.insert().values(
                                 budget_id=result.budget_id, resolution_id=identifier
                             )
+                        )
+                        connection.execute(
+                            required.insert().values(budget_id=result.budget_id)
                         )
                     if feed_gate is not None:
                         retain_feed_gate(connection, feed_gate, result.receipt_id)

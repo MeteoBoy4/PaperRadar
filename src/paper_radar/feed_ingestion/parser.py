@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from xml.etree import ElementTree as ET
 from xml.parsers import expat
 
+from paper_radar.feed_ingestion.models import ItemParseReason
 from paper_radar.fixture_audit.abstract_models import (
     ABSTRACT_RULES_VERSION,
     TRUNCATION_RULES_VERSION,
@@ -16,6 +17,7 @@ from paper_radar.fixture_audit.sampling_parser import production_candidates
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError
 from paper_radar.papers.models import AbstractValue, CandidateInput
+from paper_radar.sources.feed_xml import physical_feed_items
 
 
 @dataclass(frozen=True)
@@ -24,24 +26,29 @@ class ParsedItem:
     start: int
     end: int
     fields: dict[str, CandidateInput] = field(repr=False)
-    reason: str | None = None
+    reason: ItemParseReason | None = None
 
 
 def spans(raw: bytes, decoding: str = "utf-8") -> tuple[tuple[int, int], ...]:
     parser = expat.ParserCreate(encoding=decoding, namespace_separator="}")
     depth = 0
-    root_name = ""
     start = None
     output = []
     empty = False
+    stack: list[str] = []
+    captured_depth = 0
 
     def opened(name: str, attrs: dict[str, str]) -> None:
-        nonlocal depth, root_name, start, empty
+        nonlocal depth, start, empty, captured_depth
         depth += 1
         name = name.rsplit("}", 1)[-1]
-        if depth == 1:
-            root_name = name
-        if name in {"item", "entry"} and depth == (3 if root_name == "rss" else 2):
+        stack.append(name)
+        if (
+            stack == ["rss", "channel", "item"]
+            or stack == ["feed", "entry"]
+            or stack == ["RDF", "item"]
+        ):
+            captured_depth = depth
             start = parser.CurrentByteIndex
             quote = None
             index = start
@@ -59,13 +66,14 @@ def spans(raw: bytes, decoding: str = "utf-8") -> tuple[tuple[int, int], ...]:
 
     def closed(name: str) -> None:
         nonlocal depth, start
-        if start is not None and depth == (3 if root_name == "rss" else 2):
+        if start is not None and depth == captured_depth:
             index = parser.CurrentByteIndex
             # Expat points after an empty-element tag, before ordinary end tags.
             end = index if empty else raw.index(b">", index) + 1
             output.append((start, end))
             start = None
         depth -= 1
+        stack.pop()
 
     parser.StartElementHandler = opened
     parser.EndElementHandler = closed
@@ -117,14 +125,12 @@ def parse_items(raw: bytes, decoding: str = "utf-8") -> tuple[ParsedItem, ...]:
         raise FixtureError(FixtureReason.INVALID_FEED, path="feed") from None
     output = []
     tree = ET.fromstring(raw.decode(decoding))
-    physical_items = [
-        node for node in tree.iter() if node.tag.rsplit("}", 1)[-1] in {"item", "entry"}
-    ]
+    physical_items = physical_feed_items(tree)
     request = SourceRequest(journal="jgr", route="feed")
     for candidate in candidates:
         physical = int(candidate.entry_locator.split("[")[1].rstrip("]")) - 1
         start, end = ranges[physical]
-        reason: str | None = (
+        reason: ItemParseReason | None = (
             "missing_entry_id"
             if candidate.entry_id is None
             else candidate.identity_issue
