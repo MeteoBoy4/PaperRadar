@@ -17,6 +17,7 @@ from paper_radar.fixture_audit.abstract_models import (
 from paper_radar.fixture_audit.acquisition_models import SourceRequest
 from paper_radar.fixture_audit.models import Journal
 from paper_radar.papers.text_rules import normalize_text
+from paper_radar.sources.feed_xml import physical_feed_items
 
 _MARKUP = re.compile(
     r"<!--|<![A-Za-z]|<\?|</?[A-Za-z][A-Za-z0-9:_-]*(?:\s+[^<>]*|\s*/?)>"
@@ -261,19 +262,7 @@ def parse_material(
     decoded = raw.decode(decoding)
     if request.route == "feed":
         root = ET.fromstring(decoded)
-        container = (
-            next(
-                (child for child in root if child.tag.rsplit("}", 1)[-1] == "channel"),
-                root,
-            )
-            if root.tag.rsplit("}", 1)[-1] == "rss"
-            else root
-        )
-        items = [
-            node
-            for node in container
-            if node.tag.rsplit("}", 1)[-1] in {"item", "entry"}
-        ]
+        items = physical_feed_items(root)
         index = int((entry_locator or "item[1]").split("[")[1].rstrip("]")) - 1
         item = items[index]
         for child in item:

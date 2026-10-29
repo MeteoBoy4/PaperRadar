@@ -26,9 +26,19 @@ from paper_radar.screening_tasks.feed_gate import (
 )
 from paper_radar.screening_tasks.repository import task_database, task_transaction
 
+PipelineReason = Literal[
+    "invalid_request",
+    "metadata_incomplete",
+    "metadata_stale",
+    "boundary_missing",
+    "out_of_scope",
+    "test_source",
+    "corrupt_reference",
+]
+
 
 class PipelineError(Exception):
-    def __init__(self, reason: str) -> None:
+    def __init__(self, reason: PipelineReason) -> None:
         self.reason = reason
         guidance = {
             "invalid_request": "请提供合法value请求及前置依据。",

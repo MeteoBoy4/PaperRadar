@@ -7,23 +7,10 @@ from typing import TYPE_CHECKING
 
 from paper_radar.fixture_audit.acquisition_models import FeedEndpoint
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
+from paper_radar.sources.feeds import FEED_SUBSCRIPTIONS
 
-FEED_ENDPOINTS = (
-    FeedEndpoint(
-        journal="aies",
-        url="https://journals.ametsoc.org/journalissuetocrss/journals/aies/aies-overview.xml",
-    ),
-    FeedEndpoint(
-        journal="jgr",
-        url="https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=21698996&type=etoc&feed=rss",
-    ),
-    FeedEndpoint(
-        journal="qjrms",
-        url="https://rmets.onlinelibrary.wiley.com/feed/1477870x/most-recent",
-    ),
-    FeedEndpoint(
-        journal="dqkx", url="https://www.iapjournals.ac.cn/dqkx/rss/current.xml"
-    ),
+FEED_ENDPOINTS = tuple(
+    FeedEndpoint(journal=item.journal, url=item.url) for item in FEED_SUBSCRIPTIONS
 )
 
 

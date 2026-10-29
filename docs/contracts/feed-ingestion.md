@@ -10,7 +10,7 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障恢复服�
 
 - Feed URL/UUID 由 `PaperFacts.register_feed` 登记。生产服务接受已有 `feed_id`，
   仅支持与共享获取策略中 JGR eTOC 端点完全对齐的数据库规范 URL；端点 query 保留。
-  服务不自动登记 Feed，不批准其他订阅。
+  服务不自动登记 Feed，不批准其他订阅。端点与语言映射共用下层唯一声明，核心不依赖审计服务。
 - `check(feed_id, request_id=..., contact_email=...)` 保存不可变请求身份和来源时间，
   发布有效整 Feed 后追加 HTTP 结算，再逐 item 调用 `PaperFacts.submit`。
   相同 Feed/request_id 重放原检查；检查已经完成时不再发送 HTTP。
@@ -23,8 +23,9 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障恢复服�
 - 安全 ETag/Last-Modified 作为独立生产事实保存，不扩展旧审计 `HTTPFacts` 序列化身份。
   条件值限 512 ASCII 字符且无控制字符或 `@`。条件请求绑定前次已保留材料；
   304 引用原制品，继承解码依据，只推进检查成功事实，不创建 item 或发现。
-- 原 item 使用 XML 解析器提供的字节位置切片，包含原起止标签、实体、命名空间前缀与
-  排版；不重序列化、不注入根命名空间。`item_bytes(check_id, position)` 显式返回原字节。
+- 原 item 使用 XML 解析器提供的根级条目字节位置切片，包含原起止标签、实体、命名空间前缀与
+  排版；不重序列化、不注入根命名空间。候选、字段提取和物理范围均按同一根级集合定位，
+  description 内嵌 item/entry 与其他容器不能改变后续论文身份。`item_bytes(check_id, position)` 显式返回原字节。
   上游 entry ID 原样沿用；缺失 ID 单列 `missing_entry_id`，不构造替代 ID。
 - 生产完整遍历条目，不沿用审计选样的前 50 条上限。RSS、Atom、RDF 的身份/顺序/类别
   解释复用审计权威。Wiley category/prism:section 原值公开，不按子类型过滤。

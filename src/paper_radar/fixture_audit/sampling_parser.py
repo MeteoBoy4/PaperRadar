@@ -21,6 +21,7 @@ from paper_radar.fixture_audit.sampling_models import (
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError
 from paper_radar.papers.feed import require_entry_id
+from paper_radar.sources.feed_xml import physical_feed_items
 
 DC = "http://purl.org/dc/elements/1.1/"
 RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -66,16 +67,13 @@ def _date_fields(value: str | None) -> tuple[str | None, str]:
 def _ordered_items(root: ET.Element) -> tuple[str, list[tuple[int, ET.Element]]]:
     namespace, name = _name(root.tag)
     if name == "rss":
-        channels = [child for child in root if _name(child.tag)[1] == "channel"]
-        if len(channels) != 1:
-            raise ValueError("feed_shape")
-        items = [child for child in channels[0] if _name(child.tag)[1] == "item"]
+        items = physical_feed_items(root)
         return "channel/item", list(enumerate(items, 1))
     if name == "feed" and namespace in ("", ATOM):
-        items = [child for child in root if _name(child.tag)[1] == "entry"]
+        items = physical_feed_items(root)
         return "feed/entry", list(enumerate(items, 1))
     if name == "RDF" and namespace == RDF:
-        items = [child for child in root if _name(child.tag)[1] == "item"]
+        items = physical_feed_items(root)
         sequence = root.find(f".//{{{RDF}}}Seq")
         if sequence is None:
             return "RDF/item", list(enumerate(items, 1))
