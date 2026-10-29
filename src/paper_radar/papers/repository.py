@@ -8,12 +8,12 @@ from sqlalchemy import Connection, Engine, func, select
 from sqlalchemy.engine import RowMapping
 from sqlalchemy.sql.elements import ColumnElement
 
+from paper_radar.papers.conflicts import replay, retain
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.fact_reads import observation_fields, source_stream
 from paper_radar.papers.models import (
     AbstractValue,
     CandidateInput,
-    ConflictKind,
     DateValue,
     ObservationInput,
     WriteResult,
@@ -50,12 +50,6 @@ from paper_radar.papers.tables import (
 
 def timestamp(item: ObservationInput) -> str:
     return item.observed_at.astimezone(UTC).isoformat(timespec="microseconds")
-
-
-def identity_conflict_result(category: ConflictKind) -> WriteResult:
-    return WriteResult(
-        status="rejected", reason=PaperReason.IDENTITY_CONFLICT, conflict=category
-    )
 
 
 def insert_candidates(
@@ -205,6 +199,9 @@ def save_observation(
     with engine.connect() as connection:
         connection.exec_driver_sql("BEGIN IMMEDIATE")
         try:
+            previous_conflict = replay(connection, item)
+            if previous_conflict:
+                return previous_conflict
             retry = (
                 connection.execute(select(acquisitions).where(*request_key(item, doi)))
                 .mappings()
@@ -239,10 +236,13 @@ def save_observation(
                     .first()
                 )
                 if target is None or target["paper_id"] != item.target_paper_id:
-                    return identity_conflict_result("target_mismatch")
+                    return retain(connection, item, artifact_id, "target_mismatch")
                 if identity is None or identity["version_id"] != item.target_version_id:
-                    return identity_conflict_result(
-                        "doi_owner_conflict" if identity else "target_mismatch"
+                    return retain(
+                        connection,
+                        item,
+                        artifact_id,
+                        "doi_owner_conflict" if identity else "target_mismatch",
                     )
             if identity:
                 paper_id, version_id = identity["paper_id"], identity["version_id"]
@@ -254,7 +254,9 @@ def save_observation(
                     ).scalar_one()
                     != item.version_kind
                 ):
-                    return identity_conflict_result("version_kind_conflict")
+                    return retain(
+                        connection, item, artifact_id, "version_kind_conflict"
+                    )
             else:
                 paper_id = version_id = None
             if retry:

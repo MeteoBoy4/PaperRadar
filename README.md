@@ -634,3 +634,8 @@ V1 目标与判据见[规格](intent/draft.md)，当前前沿、阶段状态与�
 Feed 语言生产登记可通过 `ScreeningTasks.register_feed_value` 调用，支持预算语言依据查询、
 歧义拒绝及隔离恢复；请求不发送模型调用。公共接口与来源约定见
 [Screening 任务契约](docs/contracts/screening-tasks.md#feed-原题名语言来源)。
+
+强身份冲突可通过 `PaperFacts(database, data_root).conflicts(...)` 按 Feed/entry、
+Paper 或冲突 ID 回查受控原因与证据摘要，使用 `conflict_bytes(id)` 显式读取原字节，
+使用 `conflict_assertion(id)` 展开原断言。冲突拒绝成功论文事实写入，证据纳入备份及
+隔离恢复；详见[论文事实 Contract](docs/contracts/paper-facts.md)。

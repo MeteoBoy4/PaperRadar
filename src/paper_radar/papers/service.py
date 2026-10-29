@@ -7,6 +7,8 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
+from paper_radar.papers.conflict_tables import conflicts as conflict_table
+from paper_radar.papers.conflicts import read_all
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.feed import normalize_feed_url
@@ -21,6 +23,7 @@ from paper_radar.papers.manual import (
 from paper_radar.papers.mapping import map_screening_inputs
 from paper_radar.papers.mapping_models import ScreeningMappingResult
 from paper_radar.papers.models import (
+    ConflictView,
     FeedFact,
     PaperTrace,
     PaperView,
@@ -99,9 +102,12 @@ class PaperFacts:
             try:
                 require_current_revision(engine)
                 if item.source_kind == "feed":
-                    return submit_feed(
+                    result = submit_feed(
                         engine, self.database, self.data_root, item, doi, fields
                     )
+                    if result.conflict_id:
+                        self.conflicts(conflict_id=result.conflict_id)
+                    return result
                 if doi is None:
                     raise PaperError(PaperReason.INVALID_OBSERVATION, path="doi")
                 artifact_id = None
@@ -111,7 +117,17 @@ class PaperFacts:
                         .publish_single("source_snapshot", (item.payload,))
                         .artifact_id
                     )
-                return save_observation(engine, item, doi, fields, artifact_id)
+                result = save_observation(engine, item, doi, fields, artifact_id)
+                if result.conflict and not result.conflict_id:
+                    artifact_id = (
+                        ArtifactStore(self.database, self.data_root)
+                        .publish_single("source_snapshot", (item.payload,))
+                        .artifact_id
+                    )
+                    result = save_observation(engine, item, doi, fields, artifact_id)
+                if result.conflict_id:
+                    self.conflicts(conflict_id=result.conflict_id)
+                return result
             finally:
                 engine.dispose()
         except PaperError as error:
@@ -127,6 +143,63 @@ class PaperFacts:
             return WriteResult(status="rejected", reason=PaperReason.CORRUPT_REFERENCE)
         except SQLAlchemyError as error:
             return WriteResult(status="rejected", reason=_database_error(error).reason)
+
+    def conflicts(
+        self,
+        *,
+        conflict_id: str | None = None,
+        feed_id: str | None = None,
+        entry_id: str | None = None,
+        paper_id: str | None = None,
+    ) -> tuple[ConflictView, ...]:
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+        try:
+            require_current_revision(engine)
+            with engine.connect() as connection:
+                connection.exec_driver_sql("BEGIN")
+                return read_all(
+                    connection,
+                    self.database,
+                    self.data_root,
+                    conflict_id=conflict_id,
+                    feed_id=feed_id,
+                    entry_id=entry_id,
+                    paper_id=paper_id,
+                )
+        except ArtifactError:
+            raise PaperError(PaperReason.CORRUPT_REFERENCE) from None
+        except SQLAlchemyError as error:
+            raise _database_error(error) from None
+        finally:
+            engine.dispose()
+
+    def conflict_bytes(self, conflict_id: str) -> bytes:
+        records = self.conflicts(conflict_id=conflict_id)
+        if not records or self.data_root is None:
+            raise PaperError(PaperReason.CORRUPT_REFERENCE, path="conflict_id")
+        return ArtifactStore(self.database, self.data_root).read_artifact(
+            records[0].artifact_id
+        )["payload"]
+
+    def conflict_assertion(self, conflict_id: str) -> dict[str, object]:
+        """显式展开原断言;普通冲突查询不展开题名、摘要或原字节。"""
+        import json
+
+        if not self.conflicts(conflict_id=conflict_id):
+            raise PaperError(PaperReason.CORRUPT_REFERENCE, path="conflict_id")
+        engine = open_database(self.database, mode=DatabaseMode.READ_ONLY)
+        try:
+            with engine.connect() as connection:
+                value: dict[str, object] = json.loads(
+                    connection.execute(
+                        select(conflict_table.c.assertion_json).where(
+                            conflict_table.c.conflict_id == conflict_id
+                        )
+                    ).scalar_one()
+                )
+                return value
+        finally:
+            engine.dispose()
 
     def correct(self, correction: object) -> WriteResult:
         try:
@@ -233,6 +306,7 @@ class PaperFacts:
             require_current_revision(engine)
             with engine.connect() as connection:
                 connection.exec_driver_sql("BEGIN")
+                read_all(connection, self.database, self.data_root)
                 validate_feed_registry(connection)
                 validate_relation_references(connection)
                 validate_unbound_acquisitions(connection)

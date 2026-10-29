@@ -131,7 +131,7 @@ URL path 去单个起始 `/` 后严格进行一次 UTF-8 百分号解码；错�
 
 publisher/注册机构来源流为 `(来源类别, 提供方, 查询键, 目标版本)`。用户后续裁决采用不可变的轻量**取得事实**，覆盖此前“无贡献不写业务行”的默认：每个有效请求记录原始响应 SHA-256、取得时间、parser_version、解释摘要与原结果；相同规范候选集合复用同流历史来源观察及候选引用，不重复保存候选正文，也不发布该次非业务变化响应的大包制品。`response_bytes_retained` 表示该次响应已作为字段或关系来源材料登记保留，内容对象即使去重也为 true；它不表示物理新增 blob，也不表示创建了字段观察。字段材料所属请求与关系材料取得引用分别核验。取得事实明确 `response_bytes_retained=false` 时只保存该响应的哈希，原始来源引用仍指向确实保留的旧材料，不宣称保存了新响应全文。新候选集合才先发布完整原始来源制品，再写入来源观察/候选与取得事实。
 
-精确重试键固定为 `(来源类别, 提供方, 查询键, 规范 DOI, observed_at, payload SHA-256, parser_version)`，不依赖未来创建的 Paper/Version；与仅限已保留观察的旧口径不同，retained、not_retained 和空候选均登记不可变原结果。相同键及解析内容返回原 acquisition_id、身份、当时修订号与状态；同键异解析内容 `invalid_observation`。首次空候选没有版本/来源引用，不创建空 Paper，不发布空贡献响应，即使日后该 DOI 创建不同类别版本，原请求仍回放原结果。强身份冲突与其余拒绝仍不登记取得事实。
+精确重试键固定为 `(来源类别, 提供方, 查询键, 规范 DOI, observed_at, payload SHA-256, parser_version)`，不依赖未来创建的 Paper/Version；与仅限已保留观察的旧口径不同，retained、not_retained 和空候选均登记不可变原结果。相同键及解析内容返回原 acquisition_id、身份、当时修订号与状态；同键异解析内容 `invalid_observation`。首次空候选没有版本/来源引用，不创建空 Paper，不发布空贡献响应，即使日后该 DOI 创建不同类别版本，原请求仍回放原结果。强身份冲突保存独立冲突事实，不登记成功取得事实；其余拒绝不登记取得事实。
 
 `not_retained` 现在表示没有新增来源材料观察或候选正文，**不表示未持久化任何业务事实**。它可以新增轻量取得事实，并在获选取得 provenance 改变时追加引用式修订。A(t1)→A(t3)→B(t2晚到) 与 A(t1)→B(t2)→A(t3) 均获选 t3 的 A；每次取得使用自身不可变 observed_at、响应 SHA-256、parser_version 参与确定性仲裁。候选引用仍指向旧观察，取得时间/解析依据与原始材料的取得时间分开展示，不能把候选原属观察时间改成新时间。只读发布计划可先找同流同集合依据，ArtifactStore 发布仍在业务写事务之外，写事务重新核对；并发最多留下完整未引用制品，无内部忙锁重试循环。Feed 后续仍使用第 4 节首次时间与 D3 回摆规则，不能套用本段 publisher 取得时序。
 
@@ -220,7 +220,7 @@ A6 交付时备份 head 跟随 a604，当前 head 见[备份 Contract](backup-re
 
 ## 7. 写入结果、事务与首次真实 Feed 硬门禁（D4）
 
-强身份冲突 `identity_conflict` 整笔拒绝业务行：不写发现、来源观察、候选、关系、修订或选择，最多保留完整未引用 source_snapshot。细分类别固定为 `doi_owner_conflict`、`target_mismatch`、`version_kind_conflict`、`entry_doi_changed`。关系冲突 `requires_merge` 则观察及关系已保留，是成功结果；`not_retained` 是有效且未新增来源材料/候选正文的独立结果，轻量取得与必要修订已经保存。结果类型须区分 retained/not_retained/rejected，携带 reason_catalog 版本、reason 与可选冲突类别，不用一个失败布尔值混同三者。`requires_merge` 是本次 DOI 涉及既有跨 Paper 关系的成功提示，优先于 `not_retained`，不是 Paper 的主 status，也不声称本次新增了关系或响应材料。普通元数据取得和候选复用均可返回该提示；是否登记材料由独立的 `response_bytes_retained` 表达。精确旧请求永远重放原回执，不按当前关系重算。
+强身份冲突 `identity_conflict` 拒绝成功业务行：不写发现、来源观察、候选、关系、修订或选择；独立保存不可变冲突观察及 `source_snapshot` 引用，回执返回 `conflict_id`。细分类别固定为 `doi_owner_conflict`、`target_mismatch`、`version_kind_conflict`、`entry_doi_changed`。关系冲突 `requires_merge` 则观察及关系已保留，是成功结果；`not_retained` 是有效且未新增来源材料/候选正文的独立结果，轻量取得与必要修订已经保存。结果类型须区分 retained/not_retained/rejected，携带 reason_catalog 版本、reason 与可选冲突类别，不用一个失败布尔值混同三者。`requires_merge` 是本次 DOI 涉及既有跨 Paper 关系的成功提示，优先于 `not_retained`，不是 Paper 的主 status，也不声称本次新增了关系或响应材料。普通元数据取得和候选复用均可返回该提示；是否登记材料由独立的 `response_bytes_retained` 表达。精确旧请求永远重放原回执，不按当前关系重算。
 
 **首次真实 Feed 导入前必须完成强身份冲突观察持久化，B 先交付 JGR 所需切片、C 扩展；此前适配器不得直接复用 A6 拒绝路径为生产写入。** A6 没有真实 Feed，仅数据库身份/幂等入口及离线测试调用方，因此当前丢失窗口为空，这也是推迟持久化唯一成立依据。B/C 接入时必须逐类别验证冲突仍有可查询原始观察，避免正式论文被漏掉；A6 的细分类受控结果为适配器保留扩展点，不能将拒绝混作 not_retained。
 
@@ -356,3 +356,24 @@ A7-02 任务层已持久化 boundary/value 规范输入与请求依据，见[任
 依据：[#67](https://github.com/MeteoBoy4/PaperRadar/issues/67)、[#68](https://github.com/MeteoBoy4/PaperRadar/issues/68)、[#69](https://github.com/MeteoBoy4/PaperRadar/issues/69)、[#70](https://github.com/MeteoBoy4/PaperRadar/issues/70)、[#71](https://github.com/MeteoBoy4/PaperRadar/issues/71)、[#72](https://github.com/MeteoBoy4/PaperRadar/issues/72)、[#73](https://github.com/MeteoBoy4/PaperRadar/issues/73)、[#74](https://github.com/MeteoBoy4/PaperRadar/issues/74)、[#75](https://github.com/MeteoBoy4/PaperRadar/issues/75)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
 
 [规格 §3](../../intent/draft.md#三领域模型与不变量)；[ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md)；[路线图 Feed/C](../roadmap.md#module-feed)。
+
+
+## 强身份冲突证据公共服务
+
+`PaperFacts(database, data_root).conflicts(conflict_id=..., feed_id=..., entry_id=...,
+paper_id=...)` 返回不可变冲突摘要；所有参数可省略，组合参数共同过滤。
+没有安全 Paper 关联时按 Feed/entry 或 conflict_id 查询，不能创建虚构 Paper。
+摘要包含受控冲突类别、中文说明、原 DOI、来源时间、parser_version、来源制品与
+原字节 SHA-256，以及当时可确定的版本集合；默认不展开题名、摘要或原始材料。
+`conflict_bytes(conflict_id)` 显式取得原字节；`conflict_assertion(conflict_id)`
+显式展开完整原断言（含字段 locator、显式目标及关系）。
+
+冲突请求按完整解析断言与原字节哈希去重，精确重放返回原冲突回执；材料、时间或解释
+变化保留独立记录。来源制品在业务事务外发布；冲突记录及引用原子提交后才返回
+conflict_id。事务失败可能留下完整未引用制品，不代表冲突已登记。
+已有无贡献响应的发布规则继续适用，拒绝材料不会成为获选字段。
+
+迁移 `feed01_identity_conflicts` 在 `a1001_fixture_audit` 后追加独立冲突表，
+保留非空数据库及原取得回执。冲突来源字节及断言完整性纳入 `validate_all()`、
+备份与隔离恢复；损坏引用返回 `corrupt_reference`。恢复不依赖原根目录。
+这是离线工程边界；真实 JGR 来源假设仍由路线图 EXP-1/B 核实。

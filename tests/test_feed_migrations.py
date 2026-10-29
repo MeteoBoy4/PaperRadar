@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 
 from paper_radar.papers import PaperFacts
 from paper_radar.storage import database as database_module
-from paper_radar.storage.database import upgrade_database
+from paper_radar.storage.database import current_revision, upgrade_database
 from paper_radar.storage.errors import StorageError
 from tests.artifact_support import fail_sql, paused_operation
 from tests.feed_support import item
@@ -119,8 +119,8 @@ def test_a601_upgrade_preserves_nonempty_history_and_unknown_raw_doi(
                 name: connection.execute(f"SELECT * FROM {name}").fetchall()
                 for name in expected
             } == expected
-    assert upgrade_database(previous) == "a1001_fixture_audit"
-    assert upgrade_database(previous) == "a1001_fixture_audit"
+    assert upgrade_database(previous) == current_revision()
+    assert upgrade_database(previous) == current_revision()
     with closing(sqlite3.connect(previous)) as connection:
         for name, values in expected.items():
             columns = [
