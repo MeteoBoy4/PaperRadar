@@ -269,7 +269,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a7_scope.py",
-        "2f1dda90349ec812ae7be2f4e2a995752a02bfe3f516201d4b0e1b2547e68320",
+        "0fd884c1520d60e89901ea18c3c11810ce0418840d9d7664829f423bb74bd74c",
     ),
     (
         "scripts/check-offline",
@@ -349,5 +349,5 @@ REQUIRED_FIXTURE_FILES = (
         "docs/verification/a8-requirements.md",
         "bf40f43d19886a3b6c7bcd81891302f2c9a8e1e9b4a3206ad93c5609f19dfce3",
     ),
-    ("README.md", "102f400dd0521fbee35907cf80175ad9d1ab5f1ae320bf131a0a2531688069f1"),
+    ("README.md", "182b43f5d62898f8aa0261d20f80d3c1e0068d1b0f8a53c786f7c266f2d9a277"),
 )

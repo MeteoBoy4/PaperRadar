@@ -94,7 +94,9 @@ doctor/help 不建库或日志，不调用网络、模型或 Docling。选择规
 只读查询、doctor、help 不建日志；写入故障不改变业务回执，成功制品仍由原接口回查。
 格式、保留与隐私规则见[运行日志 Contract](docs/contracts/runtime-logging.md)。
 
-`eligibility.evaluate_paper/evaluate_concept` 提供单篇与按概念批量资格投影；
+`eligibility.evaluate_paper/evaluate_concept` 提供单篇与按概念批量资格投影。
+`Concept.READ_PREREQUISITES` 表达无须人工请求的单篇 Read 前置；自动队列仍拒绝实验根，
+人工请求可引用当前合法系统 accepted。前置通过不授予名额、任务领取或预算豁免。
 `calibration.visibility.evaluate_visibility` 判定共享许可：论文事实和任务明细可见，
 隐藏成员的 Agent 内容与普通动作受限。它们是库纯规则，尚不表示真实展示面或调度已接线。
 支持范围与责任见[共享规则 Contract](docs/contracts/eligibility-visibility.md)，

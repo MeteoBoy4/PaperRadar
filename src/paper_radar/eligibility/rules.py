@@ -9,6 +9,7 @@ from paper_radar.calibration.visibility import (
     VisibilityPermission,
 )
 from paper_radar.eligibility.models import (
+    ArtifactFact,
     Concept,
     DecisionFact,
     Eligibility,
@@ -91,11 +92,7 @@ def evaluate_paper(facts: PaperProjection) -> dict[Concept, Eligibility]:
             metadata.add(EligibilityReason.METADATA_STALE)
     screening = canonical | version
     artifact = facts.screening
-    if artifact.presence is not Presence.PRESENT and (
-        artifact.reference is not None
-        or artifact.version_id is not None
-        or artifact.applicability != "undeterminable"
-    ):
+    if _artifact_presence_contradictory(artifact):
         screening.add(EligibilityReason.SCREENING_CONTRADICTORY)
     if artifact.presence is Presence.ABSENT:
         screening.add(EligibilityReason.SCREENING_ABSENT)
@@ -181,10 +178,6 @@ def evaluate_paper(facts: PaperProjection) -> dict[Concept, Eligibility]:
             request.accepted_decision_reference != effective.decision.reference
         ):
             manual.add(EligibilityReason.MANUAL_REQUEST_SUPERSEDED)
-        if effective.decision is not None and not isinstance(
-            build_screening_reason(effective.decision.record), ScreeningDecision
-        ):
-            manual.add(EligibilityReason.MANUAL_DECISION_REQUIRED)
     waiting = set[EligibilityReason]()
     if facts.visibility is None:
         waiting.add(EligibilityReason.VISIBILITY_UNKNOWN)
@@ -204,6 +197,14 @@ def evaluate_paper(facts: PaperProjection) -> dict[Concept, Eligibility]:
         Concept.NEEDS_PDF: _result(needs_pdf),
         Concept.NEEDS_EXTRACTION: _result(needs_extraction),
         Concept.EXTRACTION_FAILED: _result(failed),
+        Concept.READ_PREREQUISITES: replace(
+            _result(
+                read,
+                support=Support.PARTIAL,
+                scope="read_prerequisites_only_no_rank_capacity_claim_or_budget",
+            ),
+            quality_failure=facts.quality.failure,
+        ),
         Concept.ELIGIBLE_FOR_AUTO_READ: replace(
             _result(
                 auto,
@@ -329,14 +330,18 @@ def _decision(
     return replace(_result(reasons), decision=chosen if not reasons else None)
 
 
+def _artifact_presence_contradictory(artifact: ArtifactFact) -> bool:
+    return artifact.presence is not Presence.PRESENT and (
+        artifact.reference is not None
+        or artifact.version_id is not None
+        or artifact.applicability != "undeterminable"
+    )
+
+
 def _pdf(facts: PaperProjection) -> set[EligibilityReason]:
     pdf = facts.pdf
     reasons = set[EligibilityReason]()
-    if pdf.presence is not Presence.PRESENT and (
-        pdf.reference is not None
-        or pdf.version_id is not None
-        or pdf.applicability != "undeterminable"
-    ):
+    if _artifact_presence_contradictory(pdf):
         reasons.add(EligibilityReason.PDF_CONTRADICTORY)
     if pdf.presence is Presence.ABSENT:
         reasons.add(EligibilityReason.PDF_ABSENT)

@@ -30,6 +30,7 @@ from paper_radar.screening.reasons import (
     ScreeningReasonInput,
     build_screening_reason,
 )
+from paper_radar.screening_tasks.success_models import Applicability
 
 
 def test_identity_is_evaluated_without_inventing_a_merge_state() -> None:
@@ -75,7 +76,7 @@ def test_old_human_decision_wins_over_system_and_projection() -> None:
         result: str,
         source: str,
         reason: str,
-        applicability: str,
+        applicability: Applicability,
     ) -> DecisionFact:
         return DecisionFact(
             reference=reference,
@@ -684,9 +685,7 @@ def test_unknown_human_basis_retains_decision_but_does_not_assert_staleness() ->
     assert result[Concept.DECISION_BASIS_STALE].reasons == ("decision_basis_unknown",)
 
 
-def test_read_request_cannot_borrow_a_system_acceptance_or_other_paper_identity() -> (
-    None
-):
+def test_read_request_accepts_system_decision_but_not_other_paper() -> None:
     facts = read_paper()
     wrong_request = replace(
         facts, manual_request=ManualReadRequest("r", "other", "human")
@@ -715,9 +714,7 @@ def test_read_request_cannot_borrow_a_system_acceptance_or_other_paper_identity(
         screening=ArtifactFact(Presence.PRESENT, "s", "v1", "current"),
         manual_request=ManualReadRequest("r", "paper-a", "system"),
     )
-    assert evaluate_paper(facts)[Concept.REQUESTED_MANUAL_READ].reasons == (
-        "manual_decision_required",
-    )
+    assert evaluate_paper(facts)[Concept.REQUESTED_MANUAL_READ].reasons == ()
 
 
 def test_read_quality_cannot_borrow_another_extraction_identity() -> None:

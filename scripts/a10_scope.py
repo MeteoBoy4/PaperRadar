@@ -325,7 +325,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a7_scope.py",
-        "2f1dda90349ec812ae7be2f4e2a995752a02bfe3f516201d4b0e1b2547e68320",
+        "0fd884c1520d60e89901ea18c3c11810ce0418840d9d7664829f423bb74bd74c",
     ),
     (
         "scripts/a8_acceptance.py",
@@ -333,7 +333,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "8cfd6229f8b13a93c4283357716df99d5b8c64efd130bb0af0faf156c1859c9d",
+        "e12ed4ea9ebb450a30dcf000120055851b0a679956ba24e1b4eace5a4af0fbc7",
     ),
     (
         "scripts/a9_acceptance.py",
@@ -341,7 +341,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_scope.py",
-        "475d9750d3ba875d406413413404a4fd635d0dee7e221637659e58e33bb67116",
+        "78c4658383ec2ea776cf4ab7f11ed22c1a2181d1f8a04fd536ea1ac562090eb6",
     ),
     (
         "scripts/audit-verification-scope",
@@ -1053,7 +1053,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/success_models.py",
-        "bae59fc55ef8f81cc46316e3d6d9792ba6af39a26cc7878f3f836ad3cee862f5",
+        "b948822f22c23219548b8dbbd8500b6a6889563bede7be170b94c9afe9ac7faf",
     ),
     (
         "src/paper_radar/screening_tasks/success_rules.py",
@@ -1358,7 +1358,7 @@ REQUIRED_FIXTURE_FILES = (
         "77fdc9ee348bddd16d5c5a694ef52459d2703241efe5e123da8e6742f68ff46e",
     ),
     ("GLOSSARY.md", "8864217fad4e0174398d314230155e145ee9b82185c0af5cf2769e38c88fc4d7"),
-    ("README.md", "102f400dd0521fbee35907cf80175ad9d1ab5f1ae320bf131a0a2531688069f1"),
+    ("README.md", "182b43f5d62898f8aa0261d20f80d3c1e0068d1b0f8a53c786f7c266f2d9a277"),
     (
         "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
         "381ad4f95d5ce321f9abc8baab82c0e1c2e3e146d1968e4d08de84a2173f9aa0",

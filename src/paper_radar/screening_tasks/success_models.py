@@ -8,6 +8,8 @@ from paper_radar.papers import PaperReason
 from paper_radar.screening.schema import BoundaryOutput, ValuePredictionOutput
 from paper_radar.screening_tasks.models import Stage
 
+Applicability = Literal["current", "historical", "undeterminable"]
+
 
 @dataclass(frozen=True, slots=True)
 class SuccessCandidate:
@@ -43,5 +45,5 @@ class SuccessContent:
 @dataclass(frozen=True, slots=True)
 class SuccessView:
     receipt: SuccessReceipt
-    applicability: Literal["current", "historical", "undeterminable"]
+    applicability: Applicability
     paper_reason: PaperReason | None = None
