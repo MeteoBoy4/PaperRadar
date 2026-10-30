@@ -21,6 +21,7 @@ from paper_radar.fixture_audit.acquisition_models import (
     RouteExecution,
     SourceRequest,
 )
+from paper_radar.fixture_audit.acquisition_policy import validate_contact
 from paper_radar.fixture_audit.acquisition_records import load_audits
 from paper_radar.fixture_audit.acquisition_service import AcquisitionService
 from paper_radar.fixture_audit.audit_protection import AuditProtection
@@ -59,6 +60,8 @@ from paper_radar.fixture_audit.summary_records import (
 )
 from paper_radar.fixture_audit.tables import fixture_declarations, fixture_records
 from paper_radar.papers.doi import normalize_doi
+from paper_radar.runtime_logging import RuntimeLog, Sink
+from paper_radar.runtime_logging.events import Clock, MonotonicClock
 from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.database import (
     DatabaseMode,
@@ -265,10 +268,16 @@ class FixtureAudit:
         data_root: Path | None = None,
         *,
         source_executors: Mapping[Channel, SourceExecutor] | None = None,
+        sink: Sink | None = None,
+        clock: Clock | None = None,
+        monotonic: MonotonicClock | None = None,
     ) -> None:
         self.database = database
         self.data_root = data_root
-        self.acquisitions = AcquisitionService(database, data_root, source_executors)
+        self.log = RuntimeLog(sink, clock=clock, monotonic=monotonic)
+        self.acquisitions = AcquisitionService(
+            database, data_root, source_executors, log=self.log
+        )
         self.sampling = SamplingService(database, data_root, self.acquisitions)
         self.abstracts = AbstractService(
             database, data_root, self.acquisitions, self.sampling
@@ -608,12 +617,14 @@ class FixtureAudit:
         plan_key: str | None = None,
         code_identity: CodeIdentity | None = None,
     ) -> AbstractAuditView:
-        return self.abstracts.run(
-            contact_email=contact_email,
-            target_count=target_count,
-            plan_key=plan_key,
-            code_identity=code_identity,
-        )
+        validate_contact(contact_email)
+        with self.log.execution("audit", controlled=(FixtureError,)):
+            return self.abstracts.run(
+                contact_email=contact_email,
+                target_count=target_count,
+                plan_key=plan_key,
+                code_identity=code_identity,
+            )
 
     def reinterpret_audit(
         self, plan_id: str, *, parser: AuditMaterialParser, request_key: str
@@ -681,9 +692,11 @@ class FixtureAudit:
         contact_email: str | None,
         code_identity: CodeIdentity | None = None,
     ) -> AbstractAuditView:
-        return self.abstracts.resume(
-            plan_id, contact_email=contact_email, code_identity=code_identity
-        )
+        validate_contact(contact_email)
+        with self.log.execution("audit", controlled=(FixtureError,), plan_id=plan_id):
+            return self.abstracts.resume(
+                plan_id, contact_email=contact_email, code_identity=code_identity
+            )
 
     def read_audit_text(self, plan_id: str, candidate_id: str) -> str:
         return self.abstracts.read_text(plan_id, candidate_id)

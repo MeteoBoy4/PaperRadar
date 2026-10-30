@@ -198,6 +198,7 @@ class AbstractService:
             plan_key=plan_key,
             code_identity=code_identity,
         )
+        self.acquisitions.log.bind(plan_id=plan.plan_id)
         with self.acquisitions.audit_execution(plan.plan_id) as guard:
             view = self.sampling.advance(
                 plan.plan_id,
