@@ -153,6 +153,7 @@ Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各�
 | A8 | [#85](https://github.com/MeteoBoy4/PaperRadar/issues/85) | [验收证据](verification/a8-requirements.md)、[范围索引 E8](verification/stage-a-closure.md#证据索引与范围) |
 | A9 | [#92](https://github.com/MeteoBoy4/PaperRadar/issues/92) | [验收证据](verification/offline-evidence.md)、[范围索引 E9](verification/stage-a-closure.md#证据索引与范围) |
 | A10 | [#100](https://github.com/MeteoBoy4/PaperRadar/issues/100) | [验收证据](verification/a10-requirements.md)、[范围索引 E10](verification/stage-a-closure.md#证据索引与范围) |
+| Feed | [#114](https://github.com/MeteoBoy4/PaperRadar/issues/114) | [离线工程证据](verification/issue-114-feed-delivery.md) |
 
 ## 已取消
 
