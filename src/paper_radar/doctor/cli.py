@@ -24,32 +24,32 @@ SUCCESS_NOTICE = (
 
 # §14 的九类。不查询审计库或推导未来 live 结论。
 CAPABILITIES = (
-    ("feed", "Feed readiness", "Audit/Source", "完成四刊审计并由 Source 判定 JGR。"),
+    ("feed", "Feed 就绪检查", "Audit/Source", "完成四刊审计并由 Source 判定 JGR。"),
     (
         "pi_adapter",
-        "Pi adapter readiness",
+        "Pi 适配器就绪检查",
         "Pi/Cwd/Live",
         "启动器未交付；cwd 白名单与现场隔离未验。另用 doctor --scope pi-supply "
         "--database <库> --snapshot <引用> 诊断供给。",
     ),
-    ("calibration", "校准 readiness", "D", "配置 Profile/模型并完成正式校准。"),
-    ("auto_read", "自动精读 gate", "D/G", "核实校准门禁与自动名额。"),
+    ("calibration", "校准就绪检查", "D", "配置 Profile/模型并完成正式校准。"),
+    ("auto_read", "自动精读门禁", "D/G", "核实校准门禁与自动名额。"),
     (
         "fulltext_credentials",
-        "全文凭证 gate",
+        "全文凭证门禁",
         "F",
         "通过运行时凭据边界验收；本命令不读取凭据。",
     ),
     (
         "docling_fixture",
-        "Docling fixture gate",
+        "Docling 样本门禁",
         "Extra/Body/F",
         "安装兼容探测并验收四刊 fixture 与内存。",
     ),
-    ("backup_restore", "backup/restore gate", "I", "完成备份恢复与 NAS 演练。"),
+    ("backup_restore", "备份恢复门禁", "I", "完成备份恢复与 NAS 演练。"),
     (
         "unattended",
-        "unattended automation gate",
+        "无人值守自动化门禁",
         "H/I",
         "确认时间、时区、容量及无人值守验收。",
     ),
@@ -114,7 +114,7 @@ def diagnose(
     typer.echo(f"scope={scope} result={'passed' if passed else 'failed'}")
     category_result = failure.result.value if failure else "passed"
     typer.echo(
-        f"category=basic 基础工程 readiness result={category_result} "
+        f"category=basic 基础工程就绪检查 result={category_result} "
         f"reason={failure.reason if failure else 'required_checks_passed'}"
     )
     for check in checks:

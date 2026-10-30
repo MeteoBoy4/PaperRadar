@@ -14,6 +14,10 @@
 一篇矛盾论文不污染其他论文。两者只消费已加载事实，不解引用、不查库、不读取当前时间或
 环境、不领取任务，也不替代提交事务内的 FeedPipeline/A7 复核。
 
+术语权威在 GLOSSARY：资格判定、资格原因、资格支持范围、正文质量依据见
+[Processing](../../GLOSSARY.md#processing)，校准可见性、隐藏条件、专用校准路径见
+[Evaluation](../../GLOSSARY.md#evaluation)；它们属于这里的共享规则词簇。
+
 ## 规则
 
 **校准可见性**是基于某次已装配隐藏事实的展示与动作许可，不是制品删除、脱敏或状态迁移。
@@ -75,8 +79,10 @@ waiting_calibration 或其他身份链成员上的隐藏事实。
   `current/historical/undeterminable`；ArtifactFact、ExtractionFact、DecisionFact 的
   applicability 字段复用 A7 的封闭 `Applicability` 类型。外部值仍由调用方解析和校验，
   本规则不重新算 fingerprint。version_id 由关联领取依据
-  装配，不由 A 猜测。未知不能当缺失，历史成功不能当当前成功；声称 current 却引用其他
-  版本或 PDF、声称 absent/unknown 却携带成功引用，返回矛盾原因。
+  装配，不由 A 猜测。未知不能当缺失，历史成功不能当当前成功；Screening 的 current
+  完全消费 A7 指纹适用性，同指纹跨版本仍适用（ADR-0031），不额外要求制品版本等于当前版本。
+  制品缺引用或版本、声称 absent/unknown 却携带成功引用，返回矛盾原因；
+  PDF 仍须绑定当前版本，提取仍须引用同一 PDF。
 - 决定：每个 DecisionFact 有 reference、paper_id、显式审计 sequence、权威
   ScreeningReasonInput、依据 applicability；系统建议另绑定 screening_reference。
   `build_screening_reason` 与 `DECISION_REASON_DEFINITIONS` 是结果/来源/原因合法性及
@@ -104,7 +110,9 @@ accepted/pending/denied；后续全文需求另要求 accepted。它不是普通
 
 support=`partial` 必须连同 scope 保存和展示：最低元数据为 `minimum_metadata_only`，
 通用 Read 前置与自动 Read 为 `read_prerequisites_only_no_rank_capacity_claim_or_budget`，waiting_calibration
-为 `supplied_visibility_fact_only`。support=`deferred` 时 eligible=None、owner 明确，
+为 `supplied_visibility_fact_only`。requested_manual_read 的 scope 为
+`explicit_read_prerequisites_no_claim_or_budget`，表示请求的 Read 前置资格；请求存在性
+仍单独输入，不表示任务已领取或预算已核验。support=`deferred` 时 eligible=None、owner 明确，
 scope=`downstream_responsibility`；不能转换成 false、unknown 或 ready_to_claim。
 重复 paper_id 的批量条目仅该身份返回 duplicate_paper，清除选择性 evidence；不受排列影响，
 deferred 概念仍保留 None。普通单篇 deferred 结果不制造原因。

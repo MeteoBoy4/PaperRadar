@@ -13,6 +13,7 @@ from paper_radar.eligibility import (
     ExtractionState,
     GateState,
     ManualReadRequest,
+    MetadataFacts,
     PaperProjection,
     Presence,
     QualityBasis,
@@ -62,6 +63,57 @@ def test_current_system_accepted_only_needs_a_request() -> None:
     assert result[Concept.REQUESTED_MANUAL_READ].reasons == ()
     assert result[Concept.REQUESTED_MANUAL_READ].eligible is True
     assert requested.decisions == facts.decisions
+
+
+def test_same_fingerprint_screening_remains_current_across_versions() -> None:
+    facts = replace(
+        system_accepted_paper(),
+        version_id="v2",
+        current_version_id="v2",
+        metadata=MetadataFacts("paper-a", "v2", 1, True, True, True, ()),
+        pdf=ArtifactFact(Presence.PRESENT, "pdf-1", "v2", "current"),
+        manual_request=ManualReadRequest("request", "paper-a", "system"),
+    )
+    results = evaluate_paper(facts)
+    for concept in (
+        Concept.CURRENT_SCREENING_ARTIFACT,
+        Concept.EFFECTIVE_SCREENING_DECISION,
+        Concept.READ_PREREQUISITES,
+        Concept.ELIGIBLE_FOR_AUTO_READ,
+        Concept.REQUESTED_MANUAL_READ,
+    ):
+        assert results[concept].eligible is True
+        assert results[concept].reasons == ()
+        assert evaluate_concept(concept, (facts,)) == {"paper-a": results[concept]}
+    assert results[Concept.EFFECTIVE_SCREENING_DECISION].decision == facts.decisions[0]
+
+
+def test_current_pdf_still_requires_the_current_version() -> None:
+    facts = replace(read_paper(), version_id="v2", current_version_id="v2")
+    assert evaluate_paper(facts)[Concept.READ_PREREQUISITES].reasons == (
+        "metadata_stale",
+        "pdf_contradictory",
+    )
+
+
+def test_empty_screening_origin_version_is_contradictory() -> None:
+    original = system_accepted_paper()
+    facts = replace(
+        original,
+        screening=replace(original.screening, version_id=""),
+        manual_request=ManualReadRequest("request", "paper-a", "system"),
+    )
+    results = evaluate_paper(facts)
+    for concept in (
+        Concept.CURRENT_SCREENING_ARTIFACT,
+        Concept.EFFECTIVE_SCREENING_DECISION,
+        Concept.READ_PREREQUISITES,
+        Concept.ELIGIBLE_FOR_AUTO_READ,
+        Concept.REQUESTED_MANUAL_READ,
+    ):
+        assert results[concept].eligible is False
+        assert results[concept].reasons == ("screening_contradictory",)
+        assert evaluate_concept(concept, (facts,)) == {"paper-a": results[concept]}
 
 
 def test_experiment_single_read_prerequisites_do_not_require_a_request() -> None:
@@ -377,8 +429,16 @@ def test_single_experiment_read_keeps_body_quality_and_metadata_preconditions() 
             ("decision_contradictory",),
         ),
         (
-            ArtifactFact(Presence.PRESENT, "screening-1", "other-version", "current"),
+            ArtifactFact(Presence.PRESENT, "screening-1", "v1", "undeterminable"),
+            ("screening_unknown",),
+        ),
+        (
+            ArtifactFact(Presence.PRESENT, "screening-1", None, "current"),
             ("screening_contradictory",),
+        ),
+        (
+            ArtifactFact(Presence.PRESENT, "", "v1", "current"),
+            ("decision_contradictory", "screening_contradictory"),
         ),
     ],
 )

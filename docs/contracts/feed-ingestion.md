@@ -2,11 +2,13 @@
 
 ## 用途与范围
 
-`paper_radar.feed_ingestion.JGRFeed(database, data_root, http=...)` 提供显式调用的
+`paper_radar.feed_ingestion.JGRFeed(database, data_root, *, http=None, sink=None, clock=None, monotonic=None)` 提供显式调用的
 JGR Feed 取得、逐条目论文事实登记、失败回查和故障继续服务。`database`、`data_root`
 为 `Path`；数据库须已显式升级到随包当前 head，数据根须含其引用的制品。
 服务不创建或迁移数据库。`http` 默认是共享 `SourceHTTPExecutor`，测试替换其 HTTP transport；
 本服务不创建审计计划或审计成员。
+
+`sink/clock/monotonic` 是可选运行日志注入；默认 `NullSink`，行为见[运行日志](runtime-logging.md)。
 
 ## 规则
 

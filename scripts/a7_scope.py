@@ -488,7 +488,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/service.py",
-        "b33c2f5111a86c85222411e9b400659222877cef9d403aca7b19d726b33e8684",
+        "9313f4f895804662168517c1cfcb9bf5c9593354dbec53b855230513eeb75965",
     ),
     (
         "src/paper_radar/screening_tasks/success.py",

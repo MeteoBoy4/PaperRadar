@@ -2,7 +2,7 @@
 
 ## 用途与范围
 
-`paper_radar.feed_pipeline.FeedPipeline(database, data_root, http=...)` 组合
+`paper_radar.feed_pipeline.FeedPipeline(database, data_root, *, http=None, sink=None, clock=None, monotonic=None)` 组合
 JGR Feed 取得、当前版本最低元数据结果、语言依据及 value 任务登记。网络执行复用
 `SourceHTTPExecutor`；身份、制品、元数据、语言及任务仍由各公共服务负责。
 调用方提供已初始化并显式升级到当前 revision 的数据库与制品数据根；`prepare` 还要求

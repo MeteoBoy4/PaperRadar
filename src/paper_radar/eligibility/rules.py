@@ -99,14 +99,7 @@ def evaluate_paper(facts: PaperProjection) -> dict[Concept, Eligibility]:
     elif artifact.presence is Presence.UNKNOWN:
         screening.add(EligibilityReason.SCREENING_UNKNOWN)
     else:
-        if (
-            not artifact.reference
-            or artifact.version_id is None
-            or (
-                artifact.version_id != facts.version_id
-                and artifact.applicability == "current"
-            )
-        ):
+        if not artifact.reference or not artifact.version_id:
             screening.add(EligibilityReason.SCREENING_CONTRADICTORY)
         if artifact.applicability == "historical":
             screening.add(EligibilityReason.SCREENING_HISTORICAL)

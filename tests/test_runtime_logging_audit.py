@@ -17,6 +17,7 @@ def test_audit_execution_emits_correlated_events_after_settlement(
 ) -> None:
     original = sampling_service(tmp_path, MatrixSources())
     assert original.data_root is not None
+    original.data_root.mkdir(exist_ok=True)
     sink = FileSink(original.data_root)
     service = FixtureAudit(
         original.database,
@@ -42,6 +43,7 @@ def test_audit_execution_emits_correlated_events_after_settlement(
 def test_audit_resume_has_its_own_execution_envelope(tmp_path: Path) -> None:
     original = sampling_service(tmp_path, MatrixSources())
     assert original.data_root is not None
+    original.data_root.mkdir(exist_ok=True)
     service = FixtureAudit(
         original.database,
         original.data_root,
@@ -83,6 +85,7 @@ def test_audit_source_failure_keeps_unsettled_route_and_safe_events(
 
     original = sampling_service(tmp_path, MatrixSources())
     assert original.data_root is not None
+    original.data_root.mkdir(exist_ok=True)
     service = FixtureAudit(
         original.database,
         original.data_root,
@@ -141,6 +144,7 @@ def test_resume_logs_unknown_settlement_before_replacement_route(
 
     original = sampling_service(tmp_path, InterruptedSources())
     assert original.data_root is not None
+    original.data_root.mkdir(exist_ok=True)
     service = FixtureAudit(
         original.database,
         original.data_root,

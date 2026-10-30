@@ -5,18 +5,10 @@ from pathlib import Path
 
 import pytest
 
+from tests.pure_dependency_support import pure_dependency_violations
+
 
 def _violations(source: str) -> list[str]:
-    tree = ast.parse(source)
-    type_only = {
-        id(child)
-        for node in ast.walk(tree)
-        if isinstance(node, ast.If)
-        and isinstance(node.test, ast.Name)
-        and node.test.id == "TYPE_CHECKING"
-        for statement in node.body
-        for child in ast.walk(statement)
-    }
     allowed = {
         "__future__",
         "dataclasses",
@@ -32,36 +24,9 @@ def _violations(source: str) -> list[str]:
         "paper_radar.feed_metadata.models",
         "paper_radar.screening_tasks.success_models",
     }
-    forbidden_calls = {
-        "__import__",
-        "compile",
-        "eval",
-        "exec",
-        "getattr",
-        "globals",
-        "locals",
-        "open",
-        "vars",
-    }
-    violations: list[str] = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            violations.extend(
-                item.name for item in node.names if item.name not in allowed
-            )
-        elif isinstance(node, ast.ImportFrom):
-            if node.level or (
-                node.module not in allowed
-                and not (id(node) in type_only and node.module in allowed_type_only)
-            ):
-                violations.append("." * node.level + (node.module or ""))
-        elif (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id in forbidden_calls
-        ):
-            violations.append(node.func.id)
-    return violations
+    return pure_dependency_violations(
+        source, allowed_imports=allowed, type_only_imports=allowed_type_only
+    )
 
 
 @pytest.mark.parametrize(

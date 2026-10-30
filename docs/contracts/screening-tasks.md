@@ -197,12 +197,14 @@ model_success_response 都有任务引用，不重哈希已由 A3 验证的 blob
 
 ## 8. 公共登记 API
 
-`paper_radar.screening_tasks.ScreeningTasks(database, data_root=None, *, clock=None)` 是唯一任务服务。
+`paper_radar.screening_tasks.ScreeningTasks(database, data_root=None, *, clock=None, sink=None, monotonic=None)` 是唯一任务服务。
 登记与输入回放不使用 `data_root`，不读来源文件或配置目录；boundary/value 成功的发布和显式读取使用该根，见 §10。
 显式语言登记使用 `register(request)`，Feed 派生入口见[语言来源](#feed-原题名语言来源)；
 请求 Pydantic 模型属于内部实现，不是第二个公共校验入口。没有默认执行者；
 首次登记只创建第 0 代，已有预算的新请求跟随最新代际，登记均不占 attempt。
 时间相关方法要求注入时钟；纯登记、回执、回放与 `validate_all()` 不依赖时钟。
+`sink/monotonic` 用于[运行日志](runtime-logging.md)，与业务时钟 `clock` 一同注入；
+省略 sink 时为 `NullSink`，不写持久日志。
 
 | 方法 | 结果与范围 |
 | --- | --- |

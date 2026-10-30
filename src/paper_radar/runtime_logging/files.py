@@ -48,7 +48,6 @@ class FileSink:
         )
         if len(payload) > self.max_bytes:
             raise ValueError("log_event_too_large")
-        self.root.mkdir(parents=True, exist_ok=True)
         root = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         try:
             with suppress(FileExistsError):

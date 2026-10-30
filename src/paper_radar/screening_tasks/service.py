@@ -186,7 +186,7 @@ class ScreeningTasks:
             stage=receipt.stage,
             fingerprint=receipt.fingerprint,
         ):
-            return self._run_once(receipt_id, executor)
+            return self._run_once(receipt, executor)
 
     def _task_event(self, event: str, claim: Claim, **fields: object) -> None:
         if isinstance(self.log.sink, NullSink):
@@ -207,12 +207,9 @@ class ScreeningTasks:
             warn_once()
 
     def _run_once(
-        self, receipt_id: str, executor: TestExecutor
+        self, receipt: RequestReceipt, executor: TestExecutor
     ) -> FailureReceipt | SuccessReceipt:
-        if not callable(executor):
-            raise TaskError(TaskReason.INVALID_REQUEST)
-        receipt = self.get_receipt(receipt_id)
-        frozen = self.load_input(receipt_id)
+        frozen = self.load_input(receipt.receipt_id)
         # 先拒绝已有修正依据损坏;领取可能回收过期尝试,提交后需重读实际修正。
         self._attempts.correction(receipt)
         self._success.store().prepare_publish()

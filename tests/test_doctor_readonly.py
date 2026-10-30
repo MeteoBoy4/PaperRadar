@@ -18,7 +18,10 @@ def test_basic_current_database_passes_readonly(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "scope=basic result=passed" in result.output
     assert "check=database result=passed reason=current_revision" in result.output
-    assert "0 不代表任何阶段可运行。" in result.output
+    assert result.output.splitlines()[-1] == (
+        "result=passed 仅表示本范围必要检查通过；screening/reuse/read 的 readiness "
+        "与未验收能力见下，0 不代表任何阶段可运行。"
+    )
     assert database.read_bytes() == before
 
 
@@ -61,7 +64,7 @@ def test_missing_database_category_uses_controlled_state(tmp_path: Path) -> None
     )
     assert result.exit_code == 2
     assert (
-        "category=basic 基础工程 readiness result=missing reason=database_missing"
+        "category=basic 基础工程就绪检查 result=missing reason=database_missing"
         in result.output
     )
     assert "check=database result=missing reason=database_missing" in result.output
@@ -100,7 +103,7 @@ def test_invalid_selection_keeps_basic_passed(tmp_path: Path) -> None:
     assert result.exit_code == 2
     assert "scope=config result=failed" in result.stdout
     assert (
-        "category=basic 基础工程 readiness result=passed reason=required_checks_passed"
+        "category=basic 基础工程就绪检查 result=passed reason=required_checks_passed"
         in result.stdout
     )
     assert (

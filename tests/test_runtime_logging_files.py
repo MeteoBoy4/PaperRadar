@@ -20,6 +20,45 @@ def records(root: Path) -> list[dict[str, object]]:
     ]
 
 
+@pytest.mark.parametrize("missing_parent", [False, True])
+def test_missing_selected_root_does_not_create_its_parent_chain(
+    tmp_path: Path, missing_parent: bool
+) -> None:
+    root = (tmp_path / "missing-parent" if missing_parent else tmp_path) / "selected"
+    code = """
+import sys
+from pathlib import Path
+from paper_radar.runtime_logging import FileSink, RuntimeLog
+root = Path(sys.argv[1])
+log = RuntimeLog(FileSink(root))
+parent_existed = root.parent.exists()
+assert not root.exists()
+for _ in range(2):
+    log.emit("claimed", component="screening", task_id="a" * 64)
+assert not root.exists()
+assert root.parent.exists() == parent_existed
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code, str(root)], capture_output=True, timeout=15
+    )
+    assert result.returncode == 0, result.stderr.decode()
+    assert result.stdout == b""
+    assert result.stderr.decode() == "运行日志写入失败，业务继续。\n"
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_existing_selected_root_only_creates_logs_on_first_event(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "selected"
+    root.mkdir()
+    log = RuntimeLog(FileSink(root))
+    assert list(root.iterdir()) == []
+    log.emit("claimed", component="screening", task_id="a" * 64)
+    assert [path.name for path in root.iterdir()] == ["logs"]
+    assert [record["task_id"] for record in records(root)] == ["a" * 64]
+
+
 def test_two_processes_rotate_without_lost_or_torn_events(tmp_path: Path) -> None:
     code = """
 import sys

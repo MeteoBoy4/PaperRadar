@@ -269,7 +269,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a7_scope.py",
-        "0fd884c1520d60e89901ea18c3c11810ce0418840d9d7664829f423bb74bd74c",
+        "159e2feaae01cdd2caafc2b76d374c075aea8a2d42dbe96f67a9b6993ed49030",
     ),
     (
         "scripts/check-offline",

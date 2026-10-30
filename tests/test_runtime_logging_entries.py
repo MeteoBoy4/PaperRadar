@@ -22,6 +22,7 @@ def test_real_audit_entry_constructs_sink_for_selected_root(
 
     original = sampling_service(tmp_path, MatrixSources())
     assert original.data_root is not None
+    original.data_root.mkdir(exist_ok=True)
     plan = original.create_audit_plan(
         contact_email="audit@example.org", code_identity=CODE
     )

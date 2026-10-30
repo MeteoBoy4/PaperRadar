@@ -69,9 +69,10 @@ Feed/元数据/任务；日志目录拒写仍保留成功回执、一次 attempt
 字段与 A7 共享闭集；制品存在性矛盾在 Screening/PDF 两路保持各自原因。
 这些断言不验证动作服务事务、真实正文、排名、预算余额或资源领取。
 
-既有行为的新增回归用隔离副本受控回归检验敏感性；新增 root doctor help 经红→绿。
-开发实测与 scope 重绑前后报告保留在 `/tmp/paperradar-issue-120/` 的交接材料，
-不复用 A1–A10 历史结果。三份当前公共边界：
+开发期检查与 scope 重绑的实施摘要见
+[#125 评论](https://github.com/MeteoBoy4/PaperRadar/issues/125#issuecomment-6522908570)，
+审阅过程见 `intent/review/`；这些过程记录不构成正式冻结证据，评论也不保证保存临时运行原始字节。
+本台账不复用 A1–A10 历史结果。三份当前公共边界：
 [doctor](../contracts/doctor.md)、[运行日志](../contracts/runtime-logging.md)、
 [资格／可见性](../contracts/eligibility-visibility.md)。
 

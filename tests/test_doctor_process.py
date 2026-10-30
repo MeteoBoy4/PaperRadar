@@ -14,6 +14,12 @@ from paper_radar.config import compile_config
 from paper_radar.storage.database import upgrade_database
 from tests.config_test_support import boundary_inputs
 
+# #120 用户裁决 D3 的独立字面量,不从生产 SUCCESS_NOTICE 派生。
+D3_SUCCESS_LINE = (
+    "result=passed 仅表示本范围必要检查通过；screening/reuse/read 的 readiness "
+    "与未验收能力见下，0 不代表任何阶段可运行。"
+)
+
 
 def invoke(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
@@ -77,10 +83,21 @@ def test_selected_config_is_readonly_and_discloses_only_selected_models(
     assert "stage=boundary result=passed reason=configured" in result.stdout
     assert "stage=value result=missing reason=" in result.stdout
     assert 'provider="provider-a" model="real-model"' in result.stdout
-    assert "category=feed Feed readiness result=not_assessed" in result.stdout
+    for category, label in (
+        ("basic", "基础工程就绪检查"),
+        ("feed", "Feed 就绪检查"),
+        ("pi_adapter", "Pi 适配器就绪检查"),
+        ("calibration", "校准就绪检查"),
+        ("auto_read", "自动精读门禁"),
+        ("fulltext_credentials", "全文凭证门禁"),
+        ("docling_fixture", "Docling 样本门禁"),
+        ("backup_restore", "备份恢复门禁"),
+        ("unattended", "无人值守自动化门禁"),
+    ):
+        assert f"category={category} {label} result=" in result.stdout
     assert "owner=Audit/Source" in result.stdout
     assert "doctor --scope pi-supply" in result.stdout
-    assert "0 不代表任何阶段可运行。" in result.stdout
+    assert result.stdout.splitlines()[-1] == D3_SUCCESS_LINE
     assert inventory(tmp_path) == before_tree
     assert logical(database) == before_db
 
@@ -164,6 +181,8 @@ def test_database_failures_are_controlled_and_readonly(
     result = invoke(tmp_path, "--scope", "basic", "--database", str(database))
     assert result.returncode == 2, result.stdout + result.stderr
     assert f"check=database result={state} reason={reason}" in result.stdout
+    assert f"category=basic 基础工程就绪检查 result={state}" in result.stdout
+    assert "category=feed Feed 就绪检查 result=not_assessed" in result.stdout
     assert "SECRET" not in result.stdout + result.stderr
     assert inventory(tmp_path) == before
 
@@ -370,4 +389,4 @@ def test_placeholder_or_unconfigured_slots_only_change_stage_readiness(
     assert f"stage=boundary result={expected}" in result.stdout
     assert "stage=reuse result=missing" in result.stdout
     assert "stage=read result=missing" in result.stdout
-    assert "0 不代表任何阶段可运行。" in result.stdout
+    assert result.stdout.splitlines()[-1] == D3_SUCCESS_LINE

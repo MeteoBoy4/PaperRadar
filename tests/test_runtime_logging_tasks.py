@@ -3,11 +3,13 @@
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from paper_radar.runtime_logging import FileSink
 from paper_radar.screening_tasks import FailureKind, FailureReport, ScreeningTasks
+from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.stage_inputs import StageInput
 from tests.a7_registration_support import archive, request_for
 
@@ -17,6 +19,52 @@ def read_events(root: Path) -> list[dict[str, object]]:
         json.loads(line)
         for line in (root / "logs/runtime.jsonl").read_text().splitlines()
     ]
+
+
+def test_missing_log_root_preserves_task_success_and_attempts(tmp_path: Path) -> None:
+    from paper_radar.screening_tasks import SuccessCandidate, SuccessReceipt
+
+    data = archive(tmp_path)
+    missing_root = tmp_path / "missing-parent" / "selected"
+    service = ScreeningTasks(
+        data.database,
+        data.data_root,
+        clock=lambda: datetime(2026, 1, 1, tzinfo=UTC),
+        sink=FileSink(missing_root),
+    )
+    receipt = service.register(request_for(data))
+    raw = b'{"boundary":"in_scope","reason_zh":"Atmospheric observations."}'
+    success = service.run_once(receipt.receipt_id, lambda *_: SuccessCandidate(raw))
+    assert isinstance(success, SuccessReceipt)
+    assert service.status(receipt.receipt_id).state == "succeeded"
+    assert service.status(receipt.receipt_id).used_attempts == 1
+    assert service.load_success(success.success_id).raw_response == raw
+    assert not missing_root.parent.exists()
+
+
+@pytest.mark.parametrize("receipt_id", ["malformed", "f" * 64])
+@pytest.mark.parametrize("invalid_executor", [False, True])
+def test_invalid_run_once_inputs_do_not_claim_or_emit(
+    tmp_path: Path, receipt_id: str, invalid_executor: bool
+) -> None:
+    data = archive(tmp_path)
+    service = ScreeningTasks(
+        data.database,
+        data.data_root,
+        clock=lambda: datetime(2026, 1, 1, tzinfo=UTC),
+        sink=FileSink(data.data_root),
+    )
+    receipt = service.register(request_for(data))
+    executor: Any = (
+        None if invalid_executor else lambda *_: FailureReport(FailureKind.TIMEOUT)
+    )
+    with pytest.raises(TaskError) as rejected:
+        service.run_once(receipt_id, executor)
+    assert rejected.value.reason == (
+        TaskReason.INVALID_REQUEST if invalid_executor else TaskReason.REQUEST_NOT_FOUND
+    )
+    assert service.status(receipt.receipt_id).used_attempts == 0
+    assert not (data.data_root / "logs").exists()
 
 
 def test_executor_exception_remains_controlled_failure_and_is_not_logged(

@@ -2,9 +2,11 @@
 
 ## 用途与范围
 
-`paper_radar.feed_metadata.JGRMetadata(database, data_root, http=...)` 为已有 JGR Feed
+`paper_radar.feed_metadata.JGRMetadata(database, data_root, *, http=None, sink=None, clock=None, monotonic=None)` 为已有 JGR Feed
 当前正式版本显式补充公开元数据。网络适配器为共享 `SourceHTTPExecutor`；该服务不提供
 导入 CLI、自动调度或模型调用。数据库须已显式升级到当前程序的唯一 head；服务不创建或迁移数据库。
+
+`sink/clock/monotonic` 是可选运行日志注入；默认 `NullSink`，行为见[运行日志](runtime-logging.md)。
 
 ## 规则
 

@@ -1,41 +1,16 @@
 """纯规则边界守卫;不计入任何历史固定测试分母。"""
 
-import ast
 from pathlib import Path
 
 import pytest
 
+from tests.pure_dependency_support import pure_dependency_violations
+
 _ALLOWED_IMPORTS = {"__future__", "dataclasses", "enum", "typing"}
-_FORBIDDEN_CALLS = {
-    "__import__",
-    "compile",
-    "eval",
-    "exec",
-    "getattr",
-    "globals",
-    "locals",
-    "open",
-    "vars",
-}
 
 
 def _violations(source: str) -> list[str]:
-    violations: list[str] = []
-    for node in ast.walk(ast.parse(source)):
-        if isinstance(node, ast.Import):
-            violations.extend(
-                alias.name for alias in node.names if alias.name not in _ALLOWED_IMPORTS
-            )
-        elif isinstance(node, ast.ImportFrom):
-            if node.level or node.module not in _ALLOWED_IMPORTS:
-                violations.append("." * node.level + (node.module or ""))
-        elif (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id in _FORBIDDEN_CALLS
-        ):
-            violations.append(node.func.id)
-    return violations
+    return pure_dependency_violations(source, allowed_imports=_ALLOWED_IMPORTS)
 
 
 @pytest.mark.parametrize(
@@ -53,6 +28,11 @@ def _violations(source: str) -> list[str]:
         ("from ..eligibility import evaluate", ["..eligibility"]),
         ("__import__('os')", ["__import__"]),
         ("open('paper.sqlite')", ["open"]),
+        (
+            "from typing import TYPE_CHECKING\nif TYPE_CHECKING:\n"
+            "    from paper_radar.feed_metadata.models import MetadataResult",
+            ["paper_radar.feed_metadata.models"],
+        ),
     ],
 )
 def test_purity_guard_detects_io_implicit_inputs_and_upward_dependencies(

@@ -176,6 +176,8 @@ Feed parser v1 支持 RSS、Atom、RSS 1.0 RDF；拒绝 DOCTYPE/ENTITY、NUL宽�
 先验证临时联系邮箱，再原子提交计划，最后在同一计划执行锁中全轮串行选样和执行成员矩阵。
 整个计划唯一 N=5–10；邮箱只用于如实请求标识，不保存。`run_audit` 是相同公共服务入口，
 允许测试在外部 HTTP transport 注入合成响应；普通测试不执行 live。
+CLI 向显式所选根注入文件汇，记录运行与路线结算的安全诊断摘要；服务默认 `NullSink`。
+根准备、日志写失败降级及只读不写事件的规则见[运行日志](runtime-logging.md)。
 
 计划冻结 `audit-matrix-v1`、`audit-abstract-v1`、`audit-truncation-v1`。
 矩阵身份为 `(member_id, route, acquisition_strategy_version, channel)`，适用性来自冻结策略：
@@ -259,7 +261,7 @@ metadata_ready、metadata_unobtainable、人工队列、Screening 或门禁事�
 
 | 操作 | 输入与副作用 | 证明范围 |
 | --- | --- | --- |
-| `audit resume PLAN_ID --database DB --data-root ROOT --contact-email EMAIL [--json]` / `resume_audit` | 同一计划，显式联网写入；每次重新提供邮箱 | 继续未结算或允许的暂时路线；不改旧事实 |
+| `audit resume PLAN_ID --database DB --data-root ROOT --contact-email EMAIL [--json]` / `resume_audit` | 同一计划，显式联网写入；每次重新提供邮箱；CLI 向所选根注入文件汇，记录运行与路线结算摘要，服务默认 NullSink；详见[运行日志](runtime-logging.md) | 继续未结算或允许的暂时路线；不改旧事实 |
 | `audit replay PLAN_ID --database DB --data-root ROOT [--json]` / `replay_audit` | 历史版本，只读、无网络、无执行锁 | 冻结 v1 的成员、候选、截断、仲裁与汇总重建 |
 | `reinterpret_audit(plan_id, parser=..., request_key=...)` | 仅服务 API，显式注入新解析器，短事务追加 | 新解释和相对前驱的字段增减；不换成员、不改 v1 汇总 |
 | `replay_audit_interpretation(..., parser=...)` | 只读，显式匹配该解释声明的运行时 | 可取得材料按该注入解析器重解析；失败仍只有执行事实 |

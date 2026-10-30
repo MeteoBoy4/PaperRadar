@@ -17,19 +17,11 @@
 只将 activation/supply/install 动态身份替换为模板，测试从公开 API 回执填入本轮身份后逐 UTF-8 字节比较 stdout/stderr。
 未改既有有效调用的其他文本、行序、空格或退出码。
 
-公开行为的红绿切片覆盖 basic 可用、config 选择与阶段缺失、基础类四态、basic 未选配置提示、
-选择非法但基础通过、外发数据边界、非文件数据库，以及真实不可读文件被参数层提前拒绝的问题。
-T07 原实现已有这些能力，新测试补回归证据；在临时包副本注入 boundary 带 topics、载荷多余键、
-修正说明跨 attempt、unsupported stage 错误类别四种回归，分别检出 2/2/1/2 个失败，恢复后 6 项通过。
-产品 `build_call` 源码与支持范围保持。
-
-验证以本票本地相关 pytest、`check-compatibility cli`、Ruff 和 mypy 为准；原始运行记录及 scope 漂移
-摘要交接到共享 `/tmp/paperradar-issue-120/handoff-124.md`。这些开发检查不发布正式阶段结论。
-
-本次相关 pytest 386 项通过（其中新增独立 doctor 42 项、T07 6 项）；CLI compatibility 59 项通过。
-Ruff lint、14 个触及文件的 format 检查、mypy 670 个文件与 `git diff --check` 均通过。
-已有 schema/metadata 比较用例产生一条 SQLAlchemy 循环外键排序 warning，没有失败。
-未运行完整离线门禁。T06 这里只证明诊断不改变库/配置事实；任务恢复与 NAS 仍由 #125/I 承接。
+开发期检查与敏感性验证的实施摘要见
+[#124 评论](https://github.com/MeteoBoy4/PaperRadar/issues/124#issuecomment-6520923473)，
+审阅过程见 `intent/review/`；这些过程记录不构成正式冻结证据，评论也不保证保存临时运行原始字节。
+本页只固定公共边界与测试节点映射，不发布完整离线门禁结论。
+T06 这里只证明诊断不改变库/配置事实；任务恢复与 NAS 仍由 #125/I 承接。
 
 未验项：真实 Pi/Node/npm 生产启动器与 RPC、cwd 资源/权限隔离、外部模型/认证、四刊来源审计与 JGR 判据、
 Docling 依赖/模型/四刊正文 fixture 与内存、正式校准、reuse/Read 消费者与 map/reduce、NAS、无人值守。

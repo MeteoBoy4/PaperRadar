@@ -325,7 +325,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a7_scope.py",
-        "0fd884c1520d60e89901ea18c3c11810ce0418840d9d7664829f423bb74bd74c",
+        "159e2feaae01cdd2caafc2b76d374c075aea8a2d42dbe96f67a9b6993ed49030",
     ),
     (
         "scripts/a8_acceptance.py",
@@ -333,7 +333,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "e12ed4ea9ebb450a30dcf000120055851b0a679956ba24e1b4eace5a4af0fbc7",
+        "c36f4d5c5215e51bacfb3be913b540d379ed8309350aa9f0a468ea45f55822c9",
     ),
     (
         "scripts/a9_acceptance.py",
@@ -341,7 +341,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_scope.py",
-        "78c4658383ec2ea776cf4ab7f11ed22c1a2181d1f8a04fd536ea1ac562090eb6",
+        "79c2fbd0d82abad1e322b8915a1882ba07856595a6bba2454059653d5ea2cb4d",
     ),
     (
         "scripts/audit-verification-scope",
@@ -1041,7 +1041,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/service.py",
-        "b33c2f5111a86c85222411e9b400659222877cef9d403aca7b19d726b33e8684",
+        "9313f4f895804662168517c1cfcb9bf5c9593354dbec53b855230513eeb75965",
     ),
     (
         "src/paper_radar/screening_tasks/success.py",
@@ -1377,7 +1377,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/fixture-audit.md",
-        "497941b22ec0af0369fd87af95f0fd39d66bc34c68928e934fca472ed9b7fb14",
+        "535e23b9f1e83ce86cb1f58150cf86fd7c291e8983518b2e3deb82fcfaa48138",
     ),
     (
         "docs/contracts/verification-status.md",
