@@ -93,17 +93,18 @@ flowchart TD
 
 条目引用[阶段 A 收口清单](verification/stage-a-closure.md#原实施逐条处置)的 I/T/D 编号，原文措辞与下一责任节点以该冻结表为准（T、D 分别见其「原测试逐条处置」「原DoD逐条处置」）；责任涉及多个下游时全部保留，不以历史通过代替新消费者验收。各模块同时承接其中指向自己的阶段消费者义务。
 
-- A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04。
-- Extra：I02；Pi/Cwd/Live：I04、I05、T05、T07、T08、T12。
+- A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04；A 先交付纯规则，由 B 首次消费。
+- Extra：I02；Pi/Cwd/Live：I04、I05、T05、T07、T08、T12；Pi 另承接[生产启动器准入](../intent/draft.md#pi-生产启动器准入)，Live 另承接[首次 Pi 生产接线](../intent/draft.md#b-首次-pi-生产接线)（首次实际供给/RPC 与预检），依据 [pi-rpc](contracts/pi-rpc.md)。
 - Audit/Source：I14、I15、T01、T26。
 - Feed：I07，以及[强冲突与语言事实](../intent/draft.md#阶段-c四刊发现身份版本与来源)。
-- Body/B：I03–I13、T02–T25、D02、D04 中的 B 消费者；另落实[StageInput C1](contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)、EXP-6、EXP-7。B 生产 value 登记须先交付真实生产 boundary/RPC 成功来源，保留 test 来源拒绝；在受限实验根核实 JGR 生产解析字段、entry 稳定性、主摘要非截断及语言来源约定，并完成真实材料与审计的字段差异审查、样本冻结和隔离恢复。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[组合契约](contracts/feed-pipeline.md)、[parser 固定回归边界](verification/feed-parser-v1.md)；EXP-1、DEC-1/2/3 不由 Feed 工程完成替代。
-- C：I10、I12、I15、T01、T15–T19、T23、T24、T26；承接四刊生产采集扩展、来源假设与语言约定核实、7 天复查/metadata_unobtainable 生命周期及完整 eligibility，不能从 JGR 合成材料推定四刊就绪。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[元数据契约](contracts/feed-metadata.md)。
+- Body/B：I03–I13、T02–T25、D02、D04 中的 B 消费者；另落实[StageInput C1](contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)、EXP-6、EXP-7。B 生产 value 登记须先交付真实生产 boundary/RPC 成功来源，保留 test 来源拒绝；在受限实验根核实 JGR 生产解析字段、entry 稳定性、主摘要非截断及语言来源约定，并完成真实材料与审计的字段差异审查、样本冻结和隔离恢复。Body 最小 Read 票另承接输入身份、任务/预算/租约/retry、analysis 持久化与证据规则身份（[规格补充准入](../intent/draft.md#b-最小-read-与正文消费)、[read-validation](contracts/read-validation.md)）；B 首张真实任务票另承接 Screening 产品接线，含 failures/retry、trace 组合及中文 help/退出码/恢复验证，不能后推到 H（[规格补充准入](../intent/draft.md#b-screening-产品接线)、[screening-tasks](contracts/screening-tasks.md)）。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[组合契约](contracts/feed-pipeline.md)、[parser 固定回归边界](verification/feed-parser-v1.md)；EXP-1、DEC-1/2/3 不由 Feed 工程完成替代。
+- C：I10、I12、I15、T01、T15–T19、T23、T24、T26；承接四刊生产采集扩展、保留器与未揭晓事实扩展、来源假设与语言约定核实、7 天复查/metadata_unobtainable 生命周期及完整 eligibility，不能从 JGR 合成材料推定四刊就绪。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[元数据契约](contracts/feed-metadata.md)。
 - F/Abstract：I09、I14、I15、T01、T10、T20、T26。
 - D：I03、I06、I09、I12、I15、T04、T07–T10、T14–T17、T19、T20、T23、T24、T26。
 - G：I03、I09、T04、T07–T10、T13、T17–T20、T24。
-- H：I06、I12、T15–T17、T23、T24；E 沿用 I07、T02、T03、T11、T24 的共同约束。
-- I：I13、T06、T17、T25、D02、D04；聚合各阶段验收。
+- H：I06、I12、T15–T17、T23、T24；另承接 A3 历史证明未含的报告重建（[规格 §9.1](../intent/draft.md#91-本机一致性快照)）；E 沿用 I07、T02、T03、T11、T24 的共同约束。
+- I：I13、T06、T17、T25、D02、D04；聚合各阶段验收，另承接 A3 历史证明未含的任务续跑、NAS 及最终恢复。
+- A10 遗留：AMS403 策略接 Audit/Source，四刊摘要稳定及附加区块语义接 C/F/Abstract，正文/PDF/Docling 接 Body/F，生产导入接 Feed/C，NAS 接 I；具体未验范围见[A10 继承缺口](verification/doc-unification-history.md#a10-继承缺口)。
 
 ## 待裁决
 
@@ -166,62 +167,23 @@ Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各�
 由收口实现票产出机器可读阶段结论，I 聚合。首张 A 收口实现票须确定新增能力 required 组与
 全量 pytest 的验收登记规则，后续沿用；#111 未新增组、测试分母或通过字段。
 
-## Read 恢复证据范围
-
-历史证明范围仅见[迁入证据索引](verification/doc-unification-history.md#read-恢复证据范围)；本节不维护证据副本。
-
-## 阶段 A 收口与 B 前置（#111，目标规格）
-
-历史证明范围仅见[迁入证据索引](verification/doc-unification-history.md#阶段-a-收口与-b-前置111目标规格)；本节不维护证据副本。
-
-## 文首记录的状态与出处
-
-历史证明范围仅见[迁入证据索引](verification/doc-unification-history.md#文首记录的状态与出处)；本节不维护证据副本。
-
-## 配置切片与底座验收范围
-
-历史证明范围仅见[迁入证据索引](verification/doc-unification-history.md#配置切片与底座验收范围)；本节不维护证据副本。
-
-## 并行安排与未验责任
+## 并行安排
 
 依据[规格 §10/§11](../intent/draft.md#十一九阶段实施与验收)：Docling 探测、Pi 离线启动器与 A 窄收口可以并行；C 长期生产根积累与 F 可以并行，E/G 可在 D 工程完成后并行。所有最迟入口、先后约束和运行门禁以规格为准。
 
-[规格 §9.1](../intent/draft.md#91-本机一致性快照)的 A3 历史证明不包含报告重建、任务续跑与 NAS；H 承接报告，I 承接续跑/NAS及最终恢复。
+## 已移出板块索引
 
-## 参考文献预检状态
+以下历史板块已整体移出本路线图：历史证明与裁决记录并入[迁入证据索引](verification/doc-unification-history.md)，参考文献预检结论移入规格；本节仅保留原锚点与去向，不维护内容副本。
 
-后续注记（2026-10-25 只读预检）：两篇《大气科学》DOI 的 doiRA 返回 ISTIC，对 V1 注册机构链为 `agency_unsupported`；这不改写[规格 §13.2 表](../intent/draft.md#132-参考文献样本) 2026-09-13 的“Crossref 无记录”历史，也不是基线记录对应票的实测。
-
-## 生产接线承接补充
-
-Pi 承接启动器准入；Live 承接首次实际供给/RPC与预检；Body/B 最小 Read 票承接输入身份、任务/预算/租约/retry、analysis 持久化和证据规则身份；B 首张真实任务票同时承接 failures/retry、trace 组合及中文 help/退出码/恢复验证，不能后推到 H。A 先交纯规则，B 首次消费，C 扩展保留器与未揭晓事实。依据为下列主题规格及原 Contract 的既有责任段。
-
-- Pi 生产启动器准入：由 pi 承接，依据[规格补充准入](../intent/draft.md#pi-生产启动器准入)及[pi-rpc](contracts/pi-rpc.md)。
-- B 首次 Pi 生产接线：由 live 承接，依据[规格补充准入](../intent/draft.md#b-首次-pi-生产接线)及[pi-rpc](contracts/pi-rpc.md)。
-- B 最小 Read 与正文消费：由 body 承接，依据[规格补充准入](../intent/draft.md#b-最小-read-与正文消费)及[read-validation](contracts/read-validation.md)。
-- B Screening 产品接线：由 b 承接，依据[规格补充准入](../intent/draft.md#b-screening-产品接线)及[screening-tasks](contracts/screening-tasks.md)。
-
-### 历史决策更新的证明边界
-
-ADR-0023/0026 的原文更新只改目标文档，未改当时的配置编译 Contract、不可变快照、版本材料、代码及 Frozen Contract；该历史过程不证明配置映射、供给或执行验收。实际现状由 A2/A4/A8/A9 证据与对应 Contract 界定。
-
-## 阶段输入历史证明范围
-
-历史证明范围仅见[迁入证据索引](verification/doc-unification-history.md#阶段输入历史证明范围)；本节不维护证据副本。
-
-<a id="整理中待确认的既有冲突"></a>
-
-## 整理中既有冲突的裁决结果
-
-| 编号 | 冲突 | 影响与最迟闸门 | 出处及处理 |
-| --- | --- | --- | --- |
-| DOC-1 | orig 哈希覆盖原交 F 裁决，较新 B 前置要求首个正文生产者前明确 | Body/B，首个正文生产者前 | [规格 §4.10](../intent/draft.md#410-read-agent)与[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md#样本与质量)；用户已裁决前移 Body/B 首个真实正文生产者票决定并落实，B 首个正文生产者前确定，F 不再承担；恢复后逐字节回查、真实恢复闭包及实验制品不可复用/不可提升均保留 |
-| DOC-2 | README“真实网络来源尚未实现”与联网审计命令范围措辞不一致 | 文档现状说明，无新增生产资格 | [README](../README.md)；用户已确认限定为生产论文来源；联网审计能力不受影响 |
-| DOC-3 | adapter-config 旧 cwd 待确认文字 | Pi/Live，首次发送 prompt 的 live 探测前 | 用户已确认同步 `/srv/pi-cwd`，无默认值显式提供、白名单仅此常量，现场无资源与权限隔离仍须实测 |
-
-## 历史证据定位与审计入口
-
-历史证明范围仅见[迁入证据索引](verification/doc-unification-history.md#历史证据定位与审计入口)；本节不维护证据副本。
+- <a id="read-恢复证据范围"></a>Read 恢复证据范围 → [迁入证据索引](verification/doc-unification-history.md#read-恢复证据范围)。
+- <a id="阶段-a-收口与-b-前置111目标规格"></a>阶段 A 收口与 B 前置（#111，目标规格）→ [迁入证据索引](verification/doc-unification-history.md#阶段-a-收口与-b-前置111目标规格)。
+- <a id="文首记录的状态与出处"></a>文首记录的状态与出处 → [迁入证据索引](verification/doc-unification-history.md#文首记录的状态与出处)。
+- <a id="配置切片与底座验收范围"></a>配置切片与底座验收范围 → [迁入证据索引](verification/doc-unification-history.md#配置切片与底座验收范围)。
+- <a id="历史决策更新的证明边界"></a>历史决策更新的证明边界 → [迁入证据索引](verification/doc-unification-history.md#历史决策更新的证明边界)。
+- <a id="阶段输入历史证明范围"></a>阶段输入历史证明范围 → [迁入证据索引](verification/doc-unification-history.md#阶段输入历史证明范围)。
+- <a id="整理中待确认的既有冲突"></a><a id="整理中既有冲突的裁决结果"></a>整理中既有冲突的裁决结果 → [迁入证据索引](verification/doc-unification-history.md#整理中既有冲突的裁决结果)。
+- <a id="历史证据定位与审计入口"></a>历史证据定位与审计入口 → [迁入证据索引](verification/doc-unification-history.md#历史证据定位与审计入口)。
+- <a id="参考文献预检状态"></a>参考文献预检状态（2026-10-25 只读预检，非基线记录对应票实测）→ [规格 §13.2](../intent/draft.md#132-参考文献样本)。
 
 
 ## 证据定位标签
@@ -233,4 +195,4 @@ ADR-0023/0026 的原文更新只改目标文档，未改当时的配置编译 Co
 - [审计收集选项 `--collect --json`](verification/stage-a-closure.md#本票验证口径)；[A1](../scripts/a1_scope.py)、[完整 A2](../scripts/a2_full_scope.py)、[A3](../scripts/a3_scope.py)、[A5](../scripts/a5_scope.py)、[A9](../scripts/a9_scope.py) scope；[A6 独立结论 67/75](verification/offline-evidence.md#a6-独立结论6775)。
 - [#111 固定背景材料](https://github.com/MeteoBoy4/PaperRadar/blob/212e312/intent/discussions/阶段A剩余工作.md)（非规范来源）。
 
-A10 遗留的 AMS403 策略、四刊摘要稳定及附加区块语义由 Audit/Source、C/F/Abstract 承接；正文/PDF/Docling 接 Body/F，生产导入接 Feed/C，NAS 接 I。具体未验范围见[A10 继承缺口](verification/doc-unification-history.md#a10-继承缺口)。
+历史证据定位与审计入口的完整标签见[已移出板块索引](#已移出板块索引)与[迁入证据索引](verification/doc-unification-history.md#历史证据定位与审计入口)；A10 遗留承接见[模块承接索引](#模块承接索引)。

@@ -309,7 +309,7 @@ uv run --offline --locked paper-radar pi supply gc --execute <plan_id> \
 有界单次协议组件；管道组件接管已启动的进程，不提供默认生产启动器。
 接口与支持范围见[RPC 契约](docs/contracts/pi-rpc.md)，架构决策见
 [ADR-0026](docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。
-真实执行与隔离接线的承接入口见[路线图](docs/roadmap.md#生产接线承接补充)。
+真实执行与隔离接线的承接入口见[路线图承接索引](docs/roadmap.md#模块承接索引)。
 
 ## 论文事实与 Feed 发现的本地查询
 
