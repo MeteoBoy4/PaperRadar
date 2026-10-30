@@ -164,10 +164,12 @@ Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各�
 
 ## 收口安排
 
+A 窄收口新增能力沿用 #114 先例：独立新测试模块作为工程证据，登记到 [A 窄收口覆盖台账](verification/a-narrow-delivery.md)，不计入历史固定分母、不新增既有 required 集合、不改 verification_status 后缀白名单及「十四份 JSON」承诺。最终集成树须在同一次完整门禁中由可信 terminal 证明全部 required 通过；新增能力不得复用 A1–A10 历史结论，`stage_a_verified=false` 保持。机器可读新增组与完整 A 结论留到 A 真正收口票（或 #112 之后）建立；B 沿用此规则，子票无需为新增组重绑（[#120 D1](https://github.com/MeteoBoy4/PaperRadar/issues/120#issuecomment-6520223100)）。
+
 [阶段 A 收口清单](verification/stage-a-closure.md) 保留规格 §11 A 原实施/测试/DoD 的稳定序号、
 历史证据与后续责任。A1–A10 通过不等于完整 A 通过。该收口清单是过渡清单；A 真正收口时
-由收口实现票产出机器可读阶段结论，I 聚合。首张 A 收口实现票须确定新增能力 required 组与
-全量 pytest 的验收登记规则，后续沿用；#111 未新增组、测试分母或通过字段。
+由收口实现票产出机器可读阶段结论，I 聚合。新增能力按上面的 D1 登记规则收口；
+#111 未新增组、测试分母或通过字段。
 
 ## 并行安排
 
