@@ -253,23 +253,23 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "c445710c87437b7a903cc00d54aff67d45445f882dfc97fafecc490d6b44cf1f",
+        "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
     ),
     (
         "scripts/a3_scope.py",
-        "bf90615dc11d28d29afdb01b0aa134a91a6850e64ce8ff8704a622868acc50f3",
+        "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
     ),
     (
         "scripts/a5_scope.py",
-        "83e623fa606abf13435753e04d1b3fe647baf7697b1b15381159cffbc3eb2968",
+        "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
     ),
     (
         "scripts/a6_scope.py",
-        "a62af88e0528a659c3f7d63ff0f2a4fc0b45c3e52f1004ebe1f992452c341bb1",
+        "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265",
     ),
     (
         "scripts/a7_scope.py",
-        "39a9f4e6a8d139017ff9ee058a4442bb16803824f3f203de4ebae7e630613ec1",
+        "2f1dda90349ec812ae7be2f4e2a995752a02bfe3f516201d4b0e1b2547e68320",
     ),
     (
         "scripts/check-offline",
@@ -349,5 +349,5 @@ REQUIRED_FIXTURE_FILES = (
         "docs/verification/a8-requirements.md",
         "bf40f43d19886a3b6c7bcd81891302f2c9a8e1e9b4a3206ad93c5609f19dfce3",
     ),
-    ("README.md", "402e71fe88dba15b2ca41ef53c96763efb026b6d81715311e402dec450fe1fce"),
+    ("README.md", "102f400dd0521fbee35907cf80175ad9d1ab5f1ae320bf131a0a2531688069f1"),
 )

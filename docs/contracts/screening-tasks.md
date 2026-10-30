@@ -166,7 +166,8 @@ A1 类别/安全路径，TaskReason 只承载任务专属原因，不扩 storage
 本任务服务提供服务层 retry 与共享查询，不提供 screening CLI 或对应 help/退出码。
 [FeedPipeline.trace](feed-pipeline.md) 提供只读跨组件服务组合；已有
 [`paper trace` CLI](paper-facts.md#8-当前查询历史重建与只读-cli)仅覆盖论文事实，不展示这些任务组合。
-本服务不提供共享 calibration visibility、完整盲评隔离或生效筛选决定；
+共享资格与 calibration visibility 的纯规则见[共享 Contract](eligibility-visibility.md)。
+本服务尚未消费该规则实现完整盲评隔离或生效筛选决定；
 CLI/真实产品接线由[路线图 B](../roadmap.md#module-b)承接，正式校准由
 [路线图 D](../roadmap.md#module-d)承接。
 
@@ -430,6 +431,10 @@ retry 请求及其目标/规范摘要、首次预算依据。恢复保留父链�
 <a id="b-首张真实任务票的责任111尚未交付"></a>
 
 ## 不提供／不证明
+
+本服务接受显式 `sink`，默认 `NullSink`；安全事件、提交后记录与只读不写规则见
+[运行日志](runtime-logging.md)。[B](../roadmap.md#module-b) 的真实执行入口负责构造所选根
+的文件汇，并在真实 trace、展示及普通动作中消费共享资格／可见性。
 
 本服务不提供 screening CLI、含任务组合的 `paper trace` CLI、完整 eligibility/visibility、每日自动配额、
 两阶段生产编排、建议/决定、校准、reuse/extraction/Read 任务或真实模型默认执行者。

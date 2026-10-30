@@ -244,6 +244,10 @@ REQUIRED_TEST_MODULES = (
 )
 REQUIRED_SOURCE_MODULES = (
     (
+        "src/paper_radar/config/readiness.py",
+        "5b948021ef13dcc628d56f1e6b9736292b0b121a7f07df7833a5e6f00a098b37",
+    ),
+    (
         "src/paper_radar/fixture_audit/service_reads.py",
         "16c46f30d0a3b10e4f07c0ff0f48efde79b34076cbb806d9a4c1ed1fb75764da",
     ),
@@ -277,7 +281,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "c445710c87437b7a903cc00d54aff67d45445f882dfc97fafecc490d6b44cf1f",
+        "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
     ),
     (
         "scripts/a2_test_receipt.py",
@@ -289,7 +293,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a3_scope.py",
-        "bf90615dc11d28d29afdb01b0aa134a91a6850e64ce8ff8704a622868acc50f3",
+        "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
     ),
     (
         "scripts/a4_acceptance.py",
@@ -297,7 +301,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a4_scope.py",
-        "04a7ee9015fa2864ab508d30b1a6d0b31787a247b1e85d3086e1a41d0506cf5f",
+        "14fff7afafefb2dbacd6505e4f9cabd6745ef60cb5ba49f2c588ac73c9b203a7",
     ),
     (
         "scripts/a5_acceptance.py",
@@ -305,7 +309,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a5_scope.py",
-        "83e623fa606abf13435753e04d1b3fe647baf7697b1b15381159cffbc3eb2968",
+        "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
     ),
     (
         "scripts/a6_acceptance.py",
@@ -313,7 +317,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a6_scope.py",
-        "a62af88e0528a659c3f7d63ff0f2a4fc0b45c3e52f1004ebe1f992452c341bb1",
+        "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265",
     ),
     (
         "scripts/a7_acceptance.py",
@@ -321,7 +325,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a7_scope.py",
-        "39a9f4e6a8d139017ff9ee058a4442bb16803824f3f203de4ebae7e630613ec1",
+        "2f1dda90349ec812ae7be2f4e2a995752a02bfe3f516201d4b0e1b2547e68320",
     ),
     (
         "scripts/a8_acceptance.py",
@@ -329,7 +333,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "18476bd58a6f0ebe79aa611b643fde2533ecf480ec3334eb1fc4cd22459e2e80",
+        "8cfd6229f8b13a93c4283357716df99d5b8c64efd130bb0af0faf156c1859c9d",
     ),
     (
         "scripts/a9_acceptance.py",
@@ -337,7 +341,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_scope.py",
-        "db62c0e1bc7b52730a843422798d75bd9ce67aa2ad6961de4478e25df9d697ed",
+        "475d9750d3ba875d406413413404a4fd635d0dee7e221637659e58e33bb67116",
     ),
     (
         "scripts/audit-verification-scope",
@@ -421,7 +425,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/cli.py",
-        "47eff2ad8955e2e42f2f76033031334e61d1be4f6535f9d103c44e755887aa3a",
+        "ee2e1dc3ac969aa30c74989bb0b19bf7ad30c5b404a894bc5e73b4dca8d23689",
     ),
     (
         "src/paper_radar/config/__init__.py",
@@ -429,7 +433,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/config/adapter_loading.py",
-        "ca79d39630e78e81fea0ce8940be91e71ee809f8b5b73aafc14986283f8c94a7",
+        "473a830cef0b15e4c63c387c7e5d386cc167ca1b18e27a5f203ce8eabdd80072",
     ),
     (
         "src/paper_radar/config/adapters.py",
@@ -449,7 +453,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/config/errors.py",
-        "3c5bed81535d7d80ff63e4dc1bdf5ea7c1a51795da1db1a7696ab63ecd5a3503",
+        "b758636b6e568235bbbc26e1b8c2b7e288a2ba30384b9572d43d4c7a387a5928",
     ),
     (
         "src/paper_radar/config/escalation.py",
@@ -501,7 +505,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/config/service.py",
-        "3f9732e076fe69e3e247d50bf682c519c4f9f6ccd5deb4398908d33a952ac103",
+        "4701cf2b828347671ed6ee939ee1f41743860989d3041331ed9ab37a78424aa9",
     ),
     (
         "src/paper_radar/config/snapshot_cli.py",
@@ -521,7 +525,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/config/yaml_loader.py",
-        "5c5c88473481ba27a71dd4512565e04965fc46a14e23947b953b71a7bdaee1b8",
+        "6af6ec978e54f7e1d375017bf829eb17f850b492cc1802e1855bc096a9a1f815",
     ),
     (
         "src/paper_radar/contracts/__init__.py",
@@ -569,7 +573,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/abstract_service.py",
-        "33d75521f2aa14b05108052cf0985897334a710f13b115eded926305712eadac",
+        "72c268729143f96f8c40c9f21078da28b6f92626ba020b1424f400dd66e2db24",
     ),
     (
         "src/paper_radar/fixture_audit/abstract_tables.py",
@@ -593,7 +597,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/acquisition_service.py",
-        "d135c2ef91b3d9f4f22faa0e2ee4adc39abc0963ecee21e5da4684fbd336d178",
+        "9e65fb0551074a2b6f944700d1afa78cf3623da4dc34386a575ef3b27996cd34",
     ),
     (
         "src/paper_radar/fixture_audit/acquisition_tables.py",
@@ -601,7 +605,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/audit_cli.py",
-        "4761fd807de62465ff51a2a0e906e91b469a88004a302c1561813a5aa2e110ce",
+        "d0b023a25f378cc00e44fb4533695a1709bd8f2960c0e7374f7e9f10001b4034",
     ),
     (
         "src/paper_radar/fixture_audit/audit_protection.py",
@@ -693,7 +697,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/fixture_audit/service.py",
-        "1f243b1d93b256d7f3b50a0d8a3aa879bd7820e4de1c1429bb2863298c312dfe",
+        "feb7e6e7ef5d8fb0f749622856d132f989973f1962325a046ea50390936b9591",
     ),
     (
         "src/paper_radar/fixture_audit/source_http.py",
@@ -833,7 +837,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/pi_supply/cli.py",
-        "40e012d487187a2b6828632df0f043dc69a9be84ab66a57744e1f851129cd246",
+        "78a2d6b98fce25658f8905212b3b7f9ee50406964fa1fff560bde2d677077046",
     ),
     (
         "src/paper_radar/pi_supply/errors.py",
@@ -841,7 +845,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/pi_supply/execution.py",
-        "17906a691ababa7127074bc3c05ea87a12713965975a18d51c51da92a362214d",
+        "d3e4c2e1733d1304879b46c0431c64a0a2612505f626946cea8738d40b01b4fb",
     ),
     (
         "src/paper_radar/pi_supply/export.py",
@@ -1001,7 +1005,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/execution.py",
-        "09c09d0de839fdd429c909bfd358ae40893a835aa611a4308f04a7c4e9c4ea30",
+        "44e11de268e684ae49e6c794ca18d047297aec21a4d1f5b4ec78a449d075532f",
     ),
     (
         "src/paper_radar/screening_tasks/frozen.py",
@@ -1037,7 +1041,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/service.py",
-        "28fc51c52de48d05fc8230fe90db8e9177fdf1eff1cb54622f3eab9031bbbb6c",
+        "b33c2f5111a86c85222411e9b400659222877cef9d403aca7b19d726b33e8684",
     ),
     (
         "src/paper_radar/screening_tasks/success.py",
@@ -1353,8 +1357,8 @@ REQUIRED_FIXTURE_FILES = (
         "docs/verification/contracts-backup-restore-history.md",
         "77fdc9ee348bddd16d5c5a694ef52459d2703241efe5e123da8e6742f68ff46e",
     ),
-    ("GLOSSARY.md", "4ce38c9df937063b0ff1d0b68e5d63641f3ac1abcab5a63d52c8220480573a90"),
-    ("README.md", "402e71fe88dba15b2ca41ef53c96763efb026b6d81715311e402dec450fe1fce"),
+    ("GLOSSARY.md", "8864217fad4e0174398d314230155e145ee9b82185c0af5cf2769e38c88fc4d7"),
+    ("README.md", "102f400dd0521fbee35907cf80175ad9d1ab5f1ae320bf131a0a2531688069f1"),
     (
         "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
         "381ad4f95d5ce321f9abc8baab82c0e1c2e3e146d1968e4d08de84a2173f9aa0",
@@ -1397,7 +1401,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "intent/draft.md",
-        "701ed695096a584f42e86bb52127603bb4bd356e47e041672b8bbb31182286a8",
+        "1c6afa02e0bb16cb29263db3ea10d06255489aeea224eb6150bcf4c983f99f9d",
     ),
     (
         "pyproject.toml",

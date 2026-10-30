@@ -12,6 +12,12 @@ JGR Feed 取得、当前版本最低元数据结果、语言依据及 value 任�
 
 ## 规则
 
+组合服务接受显式 `sink`、`clock`、`monotonic`，原样传给 Feed、元数据与任务服务；
+默认不写持久日志。事件与只读边界见[运行日志](runtime-logging.md)。
+共享资格与可见性由[纯规则 Contract](eligibility-visibility.md)定义；本服务保留自身
+元数据／boundary／来源守卫，尚未把 trace 或登记包装成完整资格或展示隔离。
+真实消费者与新执行入口的注入责任见[路线图 B](../roadmap.md#module-b)。
+
 - `prepare(feed_id, request_id=..., contact_email=...) -> Preparation` 保留 Feed 检查，
   并为每个已关联 Paper 的 item 执行显式元数据补充。返回 `check_id` 和按原位次排列的
   `items`；每项包含 Paper、冲突或元数据请求引用，以及元数据完整性、缺项或条目原因。

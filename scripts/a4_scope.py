@@ -203,6 +203,10 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 )
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
+        "src/paper_radar/config/readiness.py",
+        "5b948021ef13dcc628d56f1e6b9736292b0b121a7f07df7833a5e6f00a098b37",
+    ),
+    (
         "src/paper_radar/pi_supply/__init__.py",
         "ca7a0dd3ba82152124eaec045fd228d84bc79dad5b6634059ec2d4ec19036ca9",
     ),
@@ -228,7 +232,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/pi_supply/cli.py",
-        "40e012d487187a2b6828632df0f043dc69a9be84ab66a57744e1f851129cd246",
+        "78a2d6b98fce25658f8905212b3b7f9ee50406964fa1fff560bde2d677077046",
     ),
     (
         "src/paper_radar/pi_supply/errors.py",
@@ -236,7 +240,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/pi_supply/execution.py",
-        "17906a691ababa7127074bc3c05ea87a12713965975a18d51c51da92a362214d",
+        "d3e4c2e1733d1304879b46c0431c64a0a2612505f626946cea8738d40b01b4fb",
     ),
     (
         "src/paper_radar/pi_supply/export.py",
@@ -328,7 +332,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/cli.py",
-        "47eff2ad8955e2e42f2f76033031334e61d1be4f6535f9d103c44e755887aa3a",
+        "ee2e1dc3ac969aa30c74989bb0b19bf7ad30c5b404a894bc5e73b4dca8d23689",
     ),
     (
         "scripts/a4_acceptance.py",
@@ -336,11 +340,11 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a3_scope.py",
-        "bf90615dc11d28d29afdb01b0aa134a91a6850e64ce8ff8704a622868acc50f3",
+        "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
     ),
     (
         "scripts/a2_full_scope.py",
-        "c445710c87437b7a903cc00d54aff67d45445f882dfc97fafecc490d6b44cf1f",
+        "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
     ),
     (
         "scripts/a1_scope.py",

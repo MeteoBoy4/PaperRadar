@@ -306,7 +306,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "c445710c87437b7a903cc00d54aff67d45445f882dfc97fafecc490d6b44cf1f",
+        "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
     ),
     (
         "scripts/check-offline",
@@ -330,7 +330,7 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "src/paper_radar/cli.py",
-        "47eff2ad8955e2e42f2f76033031334e61d1be4f6535f9d103c44e755887aa3a",
+        "ee2e1dc3ac969aa30c74989bb0b19bf7ad30c5b404a894bc5e73b4dca8d23689",
     ),
     (
         "tests/a3_acceptance_support.py",

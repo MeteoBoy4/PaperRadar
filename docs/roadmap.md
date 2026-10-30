@@ -8,7 +8,7 @@
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-当前包括 [A 窄收口](#module-a)与 [Pi 离线启动器](#module-pi)；状态及规格链接仅在模块表维护。
+当前包括 [Pi 离线启动器](#module-pi)；状态及规格链接仅在模块表维护。
 
 to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 
@@ -40,7 +40,7 @@ flowchart TD
   G --> H
   H --> I[I 最终验收]
   classDef completed fill:#bfdbfe
-  class J,Feed completed
+  class J,A,Feed completed
 ```
 
 ## 模块
@@ -52,7 +52,7 @@ flowchart TD
 | <a id="module-j"></a>J | JGR 判据固定 | 已完成 | 无 | HITL |
 | <a id="module-audit"></a>Audit | 四刊首轮 HTTP 审计 | 待探索 | J | HITL |
 | <a id="module-source"></a>Source | JGR 达标或用户新裁决 | 待探索 | Audit | HITL |
-| <a id="module-a"></a>A | A 窄收口：日志、doctor、纯规则 | 已规格化（[#120](https://github.com/MeteoBoy4/PaperRadar/issues/120)） | 无 | AFK |
+| <a id="module-a"></a>A | A 窄收口：日志、doctor、纯规则 | 已完成（[#120](https://github.com/MeteoBoy4/PaperRadar/issues/120)；[窄范围证据](verification/a-narrow-delivery.md)） | 无 | AFK |
 | <a id="module-pi"></a>Pi | Pi 离线启动器、权限资源、生产成功来源 | 可规格化 | 无 | AFK |
 | <a id="module-cwd"></a>Cwd | /srv/pi-cwd 现场隔离验收 | 待探索 | 无 | HITL |
 | <a id="module-live"></a>Live | 固定 1.4.0 安装与 RPC 实测 | 待探索 | Pi、Cwd | HITL |
@@ -76,7 +76,7 @@ flowchart TD
 | 模块 | 规格与完成判据 | 决策 | 当前公共边界 |
 | --- | --- | --- | --- |
 | J/Audit/Source | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0036](adr/0036-isolate-stage-b-read-experiment.md) | [fixture-audit](contracts/fixture-audit.md) |
-| A | [§11 A](../intent/draft.md#阶段-a契约与可恢复数据底座) | [ADR-0006](adr/0006-model-processing-as-independent-facts.md) | [verification-status](contracts/verification-status.md) |
+| A | [§11 A](../intent/draft.md#阶段-a契约与可恢复数据底座) | [ADR-0006](adr/0006-model-processing-as-independent-facts.md)、[ADR-0037](adr/0037-allow-task-details-during-blind-calibration.md) | [doctor](contracts/doctor.md)、[运行日志](contracts/runtime-logging.md)、[共享规则](contracts/eligibility-visibility.md) |
 | Pi/Cwd/Live | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0026](adr/0026-control-pi-through-a-bounded-rpc-adapter.md) | [pi-rpc](contracts/pi-rpc.md) |
 | Extra | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0010](adr/0010-use-docling-as-the-only-body-parser.md) | [stage-inputs](contracts/stage-inputs.md) |
 | Body | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0036](adr/0036-isolate-stage-b-read-experiment.md) | [read-validation](contracts/read-validation.md) |
@@ -95,18 +95,28 @@ flowchart TD
 
 条目引用[阶段 A 收口清单](verification/stage-a-closure.md#原实施逐条处置)的 I/T/D 编号，原文措辞与下一责任节点以该冻结表为准（T、D 分别见其「原测试逐条处置」「原DoD逐条处置」）；责任涉及多个下游时全部保留，不以历史通过代替新消费者验收。各模块同时承接其中指向自己的阶段消费者义务。
 
-- A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04；A 先交付纯规则，由 B 首次消费。
+- A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04 的窄范围处置见[覆盖台账](verification/a-narrow-delivery.md)；完整阶段 A 结论与下游消费仍受收口安排约束。
 - Extra：I02；Pi/Cwd/Live：I04、I05、T05、T07、T08、T12；Pi 另承接[生产启动器准入](../intent/draft.md#pi-生产启动器准入)，Live 另承接[首次 Pi 生产接线](../intent/draft.md#b-首次-pi-生产接线)（首次实际供给/RPC 与预检），依据 [pi-rpc](contracts/pi-rpc.md)。
 - Audit/Source：I14、I15、T01、T26。
 - Feed：I07，以及[强冲突与语言事实](../intent/draft.md#阶段-c四刊发现身份版本与来源)。
 - Body/B：I03–I13、T02–T25、D02、D04 中的 B 消费者；另落实[StageInput C1](contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)、EXP-6、EXP-7。B 生产 value 登记须先交付真实生产 boundary/RPC 成功来源，保留 test 来源拒绝；在受限实验根核实 JGR 生产解析字段、entry 稳定性、主摘要非截断及语言来源约定，并完成真实材料与审计的字段差异审查、样本冻结和隔离恢复。Body 最小 Read 票另承接输入身份、任务/预算/租约/retry、analysis 持久化与证据规则身份（[规格补充准入](../intent/draft.md#b-最小-read-与正文消费)、[read-validation](contracts/read-validation.md)）；B 首张真实任务票另承接 Screening 产品接线，含 failures/retry、trace 组合及中文 help/退出码/恢复验证，不能后推到 H（[规格补充准入](../intent/draft.md#b-screening-产品接线)、[screening-tasks](contracts/screening-tasks.md)）。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[组合契约](contracts/feed-pipeline.md)、[parser 固定回归边界](verification/feed-parser-v1.md)；EXP-1、DEC-1/2/3 不由 Feed 工程完成替代。
-- C：I10、I12、I15、T01、T15–T19、T23、T24、T26；承接四刊生产采集扩展、保留器与未揭晓事实扩展、来源假设与语言约定核实、7 天复查/metadata_unobtainable 生命周期及完整 eligibility，不能从 JGR 合成材料推定四刊就绪。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[元数据契约](contracts/feed-metadata.md)。
+- C：I10、I12、I15、T01、T15–T19、T23、T24、T26；承接四刊生产采集扩展、保留器与未揭晓事实扩展、来源假设与语言约定核实、7 天复查/metadata_unobtainable 生命周期及完整 eligibility，不能从 JGR 合成材料推定四刊就绪。保留器装配 waiting_calibration 与身份/合并链全部仍成立的隐藏条件，存活论文继承事实，再调用共享 visibility；实际隐藏须做消费者组合验证。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[元数据契约](contracts/feed-metadata.md)、[共享规则](contracts/eligibility-visibility.md)。
 - F/Abstract：I09、I14、I15、T01、T10、T20、T26。
 - D：I03、I06、I09、I12、I15、T04、T07–T10、T14–T17、T19、T20、T23、T24、T26。
 - G：I03、I09、T04、T07–T10、T13、T17–T20、T24。
 - H：I06、I12、T15–T17、T23、T24；另承接 A3 历史证明未含的报告重建（[规格 §9.1](../intent/draft.md#91-本机一致性快照)）；E 沿用 I07、T02、T03、T11、T24 的共同约束。
 - I：I13、T06、T17、T25、D02、D04；聚合各阶段验收，另承接 A3 历史证明未含的任务续跑、NAS 及最终恢复。
 - A10 遗留：AMS403 策略接 Audit/Source，四刊摘要稳定及附加区块语义接 C/F/Abstract，正文/PDF/Docling 接 Body/F，生产导入接 Feed/C，NAS 接 I；具体未验范围见[A10 继承缺口](verification/doc-unification-history.md#a10-继承缺口)。
+
+B 的 Screening 执行、Feed 导入、实验及 run-due 新入口须给所选根显式注入文件日志汇，
+逐个加入已有执行入口守卫；实验根自带日志，库服务继续默认 NullSink。B 首次让
+show/trace/最小日报调用 visibility（隐藏集合为空也调用），普通动作在事务写入前守卫；
+trace 消费 eligibility，并组合最低元数据、人工 accepted、PDF/Read 前置与当前性，
+通过前置不等于获得名额。Pi/Cwd/Live 在 doctor 九类骨架填真实 readiness 证据；
+Audit 首轮 live 沿用已有日志接线。D 负责未揭晓/揭晓、review/evaluation、新展示面；
+H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 deferred 概念与真实组合验收。
+依据：[运行日志](contracts/runtime-logging.md)、[共享规则](contracts/eligibility-visibility.md)、
+[doctor](contracts/doctor.md)、[#120](https://github.com/MeteoBoy4/PaperRadar/issues/120)。
 
 ## 待裁决
 
@@ -157,6 +167,7 @@ Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各�
 | A9 | [#92](https://github.com/MeteoBoy4/PaperRadar/issues/92) | [验收证据](verification/offline-evidence.md)、[范围索引 E9](verification/stage-a-closure.md#证据索引与范围) |
 | A10 | [#100](https://github.com/MeteoBoy4/PaperRadar/issues/100) | [验收证据](verification/a10-requirements.md)、[范围索引 E10](verification/stage-a-closure.md#证据索引与范围) |
 | Feed | [#114](https://github.com/MeteoBoy4/PaperRadar/issues/114) | [离线工程证据](verification/issue-114-feed-delivery.md) |
+| A 窄收口 | [#120](https://github.com/MeteoBoy4/PaperRadar/issues/120) | [独立工程覆盖与同次门禁判据](verification/a-narrow-delivery.md)；不等于完整阶段 A |
 
 ## 已取消
 

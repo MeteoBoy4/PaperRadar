@@ -2,7 +2,8 @@
 
 PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提供配置快照、不可变制品、
 备份恢复、论文事实、Screening 任务与输出验证、Read 证据校验、Pi 固定供给与有界 RPC
-组件，以及 JGR Feed／元数据取得服务和四刊摘要审计工具。
+组件，以及 JGR Feed／元数据取得服务、四刊摘要审计工具、只读 doctor、
+安全运行日志与共享资格／校准可见性纯规则。
 
 这些工程入口不等于完整论文处理流水线或生产运行许可。目标与判据见
 [V1 规格](intent/draft.md)，当前前沿、未验范围与后续责任见[路线图](docs/roadmap.md)，
@@ -17,6 +18,8 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 | 保存、校验或恢复档案库 | [备份批次与校验](#备份批次与校验)、[隔离恢复](#隔离恢复) |
 | 保存和读取原始材料 | [不可变制品存储](#不可变制品存储) |
 | 检查、保存和比较配置 | [运行配置快照](#运行配置快照) |
+| 只读诊断基础工程、显式配置与供给 | [只读诊断](#只读诊断) |
+| 接入安全日志和共享纯规则 | [运行日志与共享规则](#运行日志与共享规则) |
 | 构造阶段输入、验证模型输出 | [阶段输入](#阶段输入)、[Screening 输出验证](#screening-输出验证)、[Read 输出与证据校验](#read-输出与证据校验) |
 | 导出或检查冻结 Schema | [冻结契约导出与检查](#冻结契约导出与检查) |
 | 运行开发检查、查询离线验证结果 | [完整离线验证](#完整离线验证) |
@@ -61,6 +64,41 @@ uv run --offline --locked paper-radar audit run --help
 帮助只输出文本，不读取配置或凭据、不访问网络或数据库、不创建业务目录。
 下列示例中的尖括号表示须替换的参数；请求 JSON、PDF 和联系邮箱也须使用实际材料。
 Python 服务与 CLI 的边界分别见各节所链 Contract，不将服务 API 视为已有业务命令。
+
+## 只读诊断
+
+数据库先按[数据库升级](#数据库升级)显式准备，再选择诊断范围：
+
+```bash
+uv run --offline --locked paper-radar doctor --scope basic --database data/paperradar.sqlite3
+uv run --offline --locked paper-radar doctor --scope config \
+  --database data/paperradar.sqlite3 --settings examples/config/settings.yaml
+# examples 是合成配置。退出 0 可以和 stage=... result=missing 并存。
+uv run --offline --locked paper-radar doctor --scope config \
+  --database data/paperradar.sqlite3 --snapshot <snapshot引用>
+uv run --offline --locked paper-radar doctor --scope config \
+  --database data/paperradar.sqlite3 --settings absent-settings.yaml
+# 显式文件不可读：check=selection result=invalid reason=selected_file_unreadable，退出 2。
+uv run --offline --locked paper-radar doctor --scope pi-supply \
+  --database data/paperradar.sqlite3 --snapshot <snapshot引用>
+```
+
+四态结论区分缺失、非法、所检范围通过与未检查；退出 0 不代表任何阶段可运行。
+doctor/help 不建库或日志，不调用网络、模型或 Docling。选择规则、六阶段 readiness、
+外发说明和证明边界见 [doctor Contract](docs/contracts/doctor.md)。
+
+## 运行日志与共享规则
+
+`audit run/resume` 向显式 `--data-root` 下的 `logs/` 写有限轮转安全事件。
+库服务默认 `NullSink`；执行组合可以显式传入 `sink=FileSink(root)`。
+只读查询、doctor、help 不建日志；写入故障不改变业务回执，成功制品仍由原接口回查。
+格式、保留与隐私规则见[运行日志 Contract](docs/contracts/runtime-logging.md)。
+
+`eligibility.evaluate_paper/evaluate_concept` 提供单篇与按概念批量资格投影；
+`calibration.visibility.evaluate_visibility` 判定共享许可：论文事实和任务明细可见，
+隐藏成员的 Agent 内容与普通动作受限。它们是库纯规则，尚不表示真实展示面或调度已接线。
+支持范围与责任见[共享规则 Contract](docs/contracts/eligibility-visibility.md)，
+独立工程覆盖见 [A 窄收口台账](docs/verification/a-narrow-delivery.md)，消费者见[路线图](docs/roadmap.md#模块承接索引)。
 
 ## 数据库升级
 

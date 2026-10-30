@@ -82,4 +82,5 @@ Docling fixture/内存、NAS 或无人值守就绪；上述承接见[路线图](
 依据：#124、#120 最终 D1–D7；规格 §2.4、§14，ADR-0023、ADR-0026、ADR-0031。
 
 - [运行配置](runtime-config.md)、[历史快照](config-snapshots.md)、[Pi 供给](pi-supply.md)
+- [运行日志](runtime-logging.md)、[共享资格／可见性](eligibility-visibility.md)、[组合覆盖台账](../verification/a-narrow-delivery.md)
 - [独立 doctor 证据](../verification/doctor-readonly.md)、[独立 T07 映射](../verification/t07-call-isolation.md)
