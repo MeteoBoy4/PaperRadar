@@ -78,7 +78,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a8_rpc_history.py": 6,
     "tests/test_a8_rpc_backup.py": 1,
     "tests/test_a8_acceptance.py": 2,
-    "tests/test_a8_integrity.py": 136,
+    "tests/test_a8_integrity.py": 137,
     "tests/test_a8_entry.py": 9,
     "tests/test_a8_status.py": 10,
     "tests/test_a8_test_receipt.py": 6,
@@ -147,7 +147,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a8_integrity.py",
-        "b861f3f9ed0ade251eefce83b87ef82228e173bcbdddae605cac17dd1937dfb3",
+        "92aba8745d851129c287b4d1e06655ccd6c7a25b55f88feafcfacb7f4f1521e3",
     ),
     (
         "tests/test_a8_entry.py",
@@ -331,11 +331,15 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/pi-rpc.md",
-        "13f989a2a359785116ad192d82fb9b549fd92612795ee816eace3a49dabe49bf",
+        "033caa2e6cc3884076747dc63df46ef675d96d1c5c5ea3ac76f21936000cc2c6",
+    ),
+    (
+        "docs/verification/contracts-pi-rpc-history.md",
+        "340df677cd790e33f63a42ef631037f9d6ce1629840bfd2b23a2ee3519e0fc5a",
     ),
     (
         "docs/contracts/verification-status.md",
-        "2678cca8a20454cdf01b0758bea5a904140a0ab065e573f14e9e527863d3705d",
+        "f485b6b6ebad3cf7791f69834fa0a00617b108a35ead4e74894100e7f0b826e8",
     ),
     (
         "docs/verification/offline-evidence.md",
@@ -345,5 +349,5 @@ REQUIRED_FIXTURE_FILES = (
         "docs/verification/a8-requirements.md",
         "bf40f43d19886a3b6c7bcd81891302f2c9a8e1e9b4a3206ad93c5609f19dfce3",
     ),
-    ("README.md", "73aed08f1e6ea8c08b6af2792bf93945570c64e612b1f8c3b8ad15ecf41adcbe"),
+    ("README.md", "38500f30e21472da178c7bfc2d37d2f0c32ed0ee8351ac66157638dfd37612cb"),
 )

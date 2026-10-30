@@ -1,18 +1,22 @@
 # Fixture 注册与摘要审计 Contract v1
 
-权威注册格式为 `paper_radar.fixture_audit.models.FixtureDeclaration`，不加入 `CONTRACT_NAMES` 或五份 Frozen Contract。提供声明登记、只读历史、基本恢复、本机 PDF 字节与 backend 期望登记、路线执行、选样、矩阵及独立 A10 验收边界。工程验收不证明真实来源、Docling、模型或完整阶段 A 通过。
+公共服务为 `paper_radar.fixture_audit.FixtureAudit(database, data_root=None, source_executors=...)`；构造不打开数据库或创建目录。权威声明格式为 `paper_radar.fixture_audit.models.FixtureDeclaration`，不属于 `CONTRACT_NAMES` 或五份 Frozen Contract。
+
+本契约定义声明历史、本机 PDF 字节与 backend 期望、来源取得、固定选样、主摘要矩阵、显式继续和历史回放。审计事实独立于生产论文事实，不创建 Paper、Screening 或校准成员；生产取得与登记分别见[JGR Feed](feed-ingestion.md)、[元数据](feed-metadata.md)和[组合契约](feed-pipeline.md)。
 
 ## 声明与身份
 
-声明唯一目录是仓库 `fixtures/a10/`，历史种子唯一文件 `historical-v1.json`。JSON 原字节先校验，再以 `(declaration_key, declared_version)` 不可变登记；同键同字节幂等，空白/键序/换行变化同样属于同键异字节。修正必须新版本，数据库保留原字节和独立 SHA-256。未知字段/格式/版本拒绝，安全错误仅给字段路径、原因和补救，不回显原输入。
+仓库声明来源目录为 `fixtures/a10/`，历史种子为 [`historical-v1.json`](../../fixtures/a10/historical-v1.json)；服务读取显式给定的文件，不用文件位置确定身份。格式为 `format_version=1`，`entries` 至少一项且逻辑样本键不重复；`declaration_key` 和条目 `key` 匹配 `[a-z0-9][a-z0-9._-]{0,127}`，`declared_version` 匹配 `[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}`。JSON 未知或重复字段拒绝。JSON 原字节先校验，再以 `(declaration_key, declared_version)` 不可变登记；同键同字节幂等，空白/键序/换行变化同样属于同键异字节。修正必须新版本，数据库保留原字节和独立 SHA-256。未知字段/格式/版本拒绝，安全错误仅给字段路径、原因和补救，不回显原输入。
 
 逻辑样本身份为 `(purpose, journal, key)`，其中 `abstract_audit` 固定 `journal=null` 表示整计划，其余用途必须给出四刊之一，key 必须显式给定，DOI/handle/数组下标/路径不能代替。四用途 `feed/abstract_audit/references/pdf`，三种依据 `historical_declaration/synthetic/acquired` 分开。引用及声明原字节在短事务内原子登记。初次登记选择当前项，后续只按显式 `replaces` 及非空原因替换同逻辑样本；禁止悬空、跨用途/期刊/key、分叉与循环。时间和版本字符串排序不参与选择。list 默认当前项，show 可查任何旧记录，history 投影保留完整历史。check 只对源文件与登记字节比较，分别报告 source_missing / unregistered / drift / byte_verified，不切换选择。
 
 参考文献期望保留出版者/Crossref 计数与历史风险；PDF 声明保留 DOI/handle、候选、版式与已知失败，不填假哈希、假许可或 parser 结果。历史说明与 2026-10-25 只读预检注记分开。acquired 证据只能由实际取得入口核验；文件声明自报哈希或尚未完成审计引用不能升级成真实证据。feed/abstract_audit 的 acquired 注册只引用完成计划、汇总哈希与 Feed 快照，不复制审计权威事实。
 
-## 共同裁决与后续取得边界
+<a id="共同裁决与后续取得边界"></a>
 
-类别依据闭集（ADR-0033）：Crossref `message.type=journal-article`；DataCite `types.resourceTypeGeneral=JournalArticle`；《大气科学》Feed `dc:type=article` 与文章页 `dc.type=论文`。机构其他明确类型为非 journal-article，平台表外值/缺字段为未知，明确判定矛盾为冲突，分别计数。Wiley `category/prism:section` 原值仅保存；题名、DOI 前缀、URL、Feed 位置与 og:type 不作类别依据。
+## 来源路线与取得安全
+
+类别依据闭集：Crossref `message.type=journal-article`；DataCite `data.attributes.types.resourceTypeGeneral=JournalArticle`；《大气科学》Feed `dc:type=article` 与文章页 `dc.type=论文`。机构其他明确类型为非 journal-article，平台表外值/缺字段为未知，明确判定矛盾为冲突，分别计数。Wiley `category/prism:section` 原值仅保存；题名、DOI 前缀、URL、Feed 位置与 og:type 不作类别依据。
 
 doiRA `https://doi.org/doiRA/{doi}` 是路由，不是元数据提供方：Crossref/DataCite 只走对应机构，其他 RA 为 agency_unsupported，失败/404 为 agency_unknown。Feed 和出版者均只取主 Abstract/摘要；dqkx 取 abstract-cn，abstract-en/Significance/PLS/Key Points 只记录存在与定位。Wiley Abstract 前置段及 dqkx p 外引文尾行不拼入摘要。切分、实体解码、去标记、连接规则统一版本化。
 
@@ -25,35 +29,37 @@ doiRA `https://doi.org/doiRA/{doi}` 是路由，不是元数据提供方：Cross
 | QJRMS Feed | `https://rmets.onlinelibrary.wiley.com/feed/1477870x/most-recent` | rmets.onlinelibrary.wiley.com 上该精确路径 |
 | dqkx Feed | `https://www.iapjournals.ac.cn/dqkx/rss/current.xml` | www.iapjournals.ac.cn 上该精确路径，不允许 latest.xml |
 | AIES 出版者 | Feed link，去 query/fragment 后核查 | journals.ametsoc.org 的 `/view/journals/aies/` 下 `.xml`，不从路径推断 DOI |
-| JGR 出版者 | DOI 模板 `https://agupubs.onlinelibrary.wiley.com/doi/{doi}` | 该主机 `/doi/10.1029/`，无 query/fragment |
-| QJRMS 出版者 | DOI 模板 `https://rmets.onlinelibrary.wiley.com/doi/{doi}` | 该主机 `/doi/10.1002/`，无 query/fragment |
-| dqkx 出版者 | DOI 模板 `https://www.iapjournals.ac.cn/dqkx/article/doi/{doi}` | 该主机 `/dqkx/article/doi/10.3878/`，无 query/fragment |
+| JGR 出版者 | DOI 模板 `https://agupubs.onlinelibrary.wiley.com/doi/{doi}` | 该主机 `/doi/{doi}` 精确路径，无 query/fragment |
+| QJRMS 出版者 | DOI 模板 `https://rmets.onlinelibrary.wiley.com/doi/{doi}` | 该主机 `/doi/{doi}` 精确路径，无 query/fragment |
+| dqkx 出版者 | DOI 模板 `https://www.iapjournals.ac.cn/dqkx/article/doi/{doi}` | 该主机 `/dqkx/article/doi/{doi}` 精确路径，无 query/fragment |
 | DOI 路由 | `https://doi.org/doiRA/{doi}` | doi.org `/doiRA/` |
 | Crossref | `https://api.crossref.org/works/{doi}` | api.crossref.org `/works/` |
 | DataCite | `https://api.datacite.org/dois/{doi}` | api.datacite.org `/dois/` |
 
-只接受 HTTPS、无 userinfo 和隐含凭据；http 不静默升级，逐跳检查白名单，登录/SSO/挑战页主机为受阻。只用 httpx，关闭环境继承，不发送/复用 Cookie，代理显式提供；按主机至少间隔 1 秒，8 MiB 解压后流式上限，连接 10 秒。每路线执行最多两轮（首次加一次重试）；仅连接错误、429、5xx 触发重试。每轮连接/重定向/流式读取共用单调时钟 30 秒总期限，重定向不占重试额度且最多五跳，所有物理 HTTP 请求逐次计数；Retry-After 超过 5 秒为 deferred_retry_after，等待显式 resume。原字节是 Content-Encoding 解压后、charset 解码前的字节，Content-Type/charset/实际解码另存。HTTP 条件头 `if_none_match/if_modified_since` 可空，304 必须引用已保留响应，不作新字节成功。
+表中 `{doi}` 使用规范 DOI 经 URL 编码后的精确目标，不另设期刊 DOI 前缀白名单；DOI 规范化见[论文事实](paper-facts.md#21-doi-规则-v1d2)。只接受 HTTPS、无 userinfo、fragment 和隐含凭据，端口限默认或 443；拒绝解码后的 `.`/`..` 路径段及二重百分号包装。http 不静默升级，逐跳检查白名单；登录/SSO 等表外目标为 disallowed_destination，已知挑战表单为 access_blocked_403。只用 httpx，关闭环境继承，不发送/复用 Cookie，代理显式提供；按主机至少间隔 1 秒，8 MiB 解压后流式上限，连接 10 秒。每路线执行最多两轮（首次加一次重试）；仅连接错误、429、5xx 触发重试。每轮连接/重定向/流式读取共用单调时钟 30 秒总期限，重定向不占重试额度且最多五跳，所有物理 HTTP 请求逐次计数；Retry-After 超过 5 秒为 deferred_retry_after，等待显式 resume。原字节是 Content-Encoding 解压后、charset 解码前的字节，Content-Type/charset/实际解码另存。HTTP 条件头 `if_none_match/if_modified_since` 可空，304 必须引用已保留响应，不作新字节成功。
 
-审计锁固定在 `resolved_database.parent.parent/.paper-radar-audit-locks/{database_path_sha256}/{plan_id}.lock`，命名空间取解析后的数据库绝对路径，避免同库不同拼法产生另一把锁；执行前确认锁目录在解析后的制品根之外，否则受控拒绝。常见 `database=data/db`、`data_root=data` 的锁位于 data 外；锁不进入备份或代码身份。非阻塞 flock，不 unlink、不写 PID，不在数据库写事务中等待。读取不取锁。联系邮箱每次 live 显式提供，仅当次 UA 使用；来源内容按实际有效解码检查配置邮箱（不区分大小写），无法安全解码或回显邮箱时受控拒绝，不改写合法响应原字节。不持久化邮箱，不读取个人环境或猜测；缺失/非法时连计划也不建立。不联网的帮助/查询不能要求邮箱。
+审计锁固定在 `resolved_database.parent.parent/.paper-radar-audit-locks/{database_path_sha256}/{plan_id}.lock`，命名空间取解析后的数据库绝对路径，避免同库不同拼法产生另一把锁；执行前确认锁目录在解析后的制品根之外，否则受控拒绝。常见 `database=data/db`、`data_root=data` 的锁位于 data 外；锁不进入备份或代码身份。非阻塞 flock，不 unlink、不写 PID，不在数据库写事务中等待。读取不取锁。联系邮箱每次 live 显式提供，仅当次 UA 使用；来源内容按实际有效解码检查本次邮箱（不区分大小写），无法安全解码或回显邮箱时受控拒绝，不改写合法响应原字节。不持久化邮箱，不读取个人环境或猜测；缺失/非法时连计划也不建立。不联网的帮助/查询不能要求邮箱。
 
-原因沿用 §8.4，审计补充：not_applicable_no_doi、agency_unknown、agency_unsupported、identity_mismatch、unrecognized_page_shape、record_without_abstract、outcome_unknown、deferred_retry_after、not_attempted、disallowed_destination、disallowed_scheme、channel_not_installed。只有有效 Feed 或身份已核验且贡献身份/字段的响应进入 source_snapshot，身份正确但无摘要的页面也保留；失败/限流/挑战/身份未核验 200 仅保留结构化事实。
+路线原因沿用[规格 §8.4](../../intent/draft.md#84-http-与外部来源失败)的适用来源分类，审计补充：not_applicable_no_doi、agency_unknown、agency_unsupported、identity_mismatch、unrecognized_page_shape、record_without_abstract、outcome_unknown、deferred_retry_after、not_attempted、disallowed_destination、disallowed_scheme、channel_not_installed。只有有效 Feed 或身份已核验且贡献身份/字段的响应进入 source_snapshot，身份正确但无摘要的页面也保留；失败/限流/挑战/身份未核验 200 仅保留结构化事实。
 
 ## CLI 与持久化
 
-`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 --json；帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计入口为 audit run/resume/list/show/replay；未实现的命令不提前注册。
+`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 `--json`（默认关闭）；list 默认 `--history=false`，check 默认声明模式，register 默认无 `--pdf-file` 且 `--backend=false`。可选制品根及 PDF 模式见下节。帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计子命令集合为 run/resume/list/show/replay，没有其他命令入口。
 
-该边界的 revision 为 `a1001_fixture_audit`，基于 `a704_screening_retry`；只追加实际用到的表，种子由显式 register 写入。该 revision 在未发布阶段的调整必须从 a704 重建临时库验证，不能声称原地修补中间库；一旦发布或用于真实库，不再改写。现有配置/论文/Screening 身份不变。历史子集与独立 A10 的证明范围见[路线图状态出处](../roadmap.md#文首记录的状态与出处)。
+fixture 与审计表由 `a1001_fixture_audit`（前驱 `a704_screening_retry`）引入，种子只由显式 register 写入。命令要求既有数据库处于程序当前 revision，不把 a1001 当作当前 head；当前数据库版本与迁移入口见[备份与恢复](backup-restore.md)。既有配置、论文和 Screening 身份不因登记审计而改变。
 
-validate_all 只读核验登记原字节哈希、Pydantic 重建、样本身份、完整条目集合与替换关系。备份固定副本调用相同语义检查，恢复不访问声明路径/来源 URL、不运行 live；大型取得字节复用 ArtifactStore 闭包，共享 source_snapshot 的引用今后 GC 必须同时考虑论文与审计。
+validate_all 只读核验登记原字节哈希、Pydantic 重建、样本身份、完整条目集合与替换关系。备份固定副本调用相同语义检查，恢复不访问声明路径/来源 URL、不运行 live；大型取得字节复用 [ArtifactStore](artifact-store.md) 闭包；本服务不清理共享 source_snapshot，清理能力由[路线图 C](../roadmap.md#module-c)承接。
 
 
-## #103 已交付的取得边界
+<a id="103-已交付的取得边界"></a>
+
+## 审计计划与路线执行
 
 `FixtureAudit.create_audit_plan(contact_email=..., target_count=5)` 在网络之前提交唯一 N、四刊端点、安装包/Git 身份、parser、HTTP、策略、通道与 UA 版本。显式 `plan_key` 支持同内容重试，异内容须新计划。邮箱缺失或非法时不创建计划；不从环境或配置猜测。合成测试身份明确记录 basis=synthetic，不能冒充真实 clean-code 审计证据。
 
 `acquire_source(plan_id, request_key=..., request=SourceRequest(...), contact_email=...)` 持有非阻塞计划锁，先提交 started，再在事务外调通道执行器、发布有资格保留的完整 source_snapshot，最后在短事务追加结算。请求身份包含规范请求的策略、通道、来源与条件引用；同键异内容拒绝，已完成精确调用只重放旧结果。未结算请求数为未知，不记零；服务不隐式补跑。`audit_execution` 由整轮驱动持有，同一个 guard 传给各路线，读取不取锁。
 
-默认注册表只有 SourceHTTPExecutor；测试可显式注入执行器。未注册通道为 channel_not_installed，已注册却未执行可记 not_attempted，均不算失败。事实中的 access_basis=open、credential_class=null，请求头只记类别。无浏览器/凭据实现，不导入 playwright/selenium，不改依赖或 lockfile。外部 Pydantic 输入须重新准入；model_copy 不授予有效性，序列化 warning 不能输出原值。
+默认注册表只有 SourceHTTPExecutor；测试可显式注入执行器。未注册通道为 channel_not_installed，已注册却未执行可记 not_attempted，均不算失败。事实中的 access_basis=open、credential_class=null，请求头只记类别。没有浏览器或凭据运行时；通道补齐责任见[路线图 F](../roadmap.md#module-f)。外部 Pydantic 输入须重新准入；model_copy 不授予有效性，序列化 warning 不能输出原值。
 
 | 计数 | 定义 | 本轮上限 |
 | --- | --- | --- |
@@ -64,20 +70,23 @@ validate_all 只读核验登记原字节哈希、Pydantic 重建、样本身份�
 | 物理请求 | 实际交给 HTTP transport 的 GET，含重试与每一跳 | 每轮最多 6 次 |
 | 等待 | 按主机最少 1 秒间隔及轮次间退避，保存实际等待总量 | 退避至多 5 秒 |
 
-`Retry-After` 支持 delta-seconds/HTTP-date；过去日期为零，无效值使用 1 秒短退避。超过 5 秒为 deferred_retry_after，不睡到下一轮；退避在两轮之间，30 秒是每轮期限。超时、403/404、304、解析与身份错误不获得额外重试。真实异步 socket I/O 用整轮取消期限，确定性测试同时注入单调时钟和等待；gzip/deflate 在累计 8 MiB 限额内解压，先检查再扩张；gzip 的所有拼接 member 共用此上限，完整消费并保留全部解压字节，未完成 member 或无效尾部拒绝。关闭环境继承，代理只能显式提供，每跳清空 cookie；不存 Set-Cookie、认证头、邮箱或原始异常。URL 仅固定路由，Feed 身份复用 A6 的完整 query 规则。
+`Retry-After` 支持 delta-seconds/HTTP-date；过去日期为零，无效值使用 1 秒短退避。超过 5 秒为 deferred_retry_after，不睡到下一轮；退避在两轮之间，30 秒是每轮期限。超时、403/404、304、解析与身份错误不获得额外重试。异步 socket I/O 使用整轮取消期限；gzip/deflate 在累计 8 MiB 限额内解压，先检查再扩张；gzip 的所有拼接 member 共用此上限，完整消费并保留全部解压字节，未完成 member 或无效尾部拒绝。关闭环境继承，代理只能显式提供，每跳清空 cookie；不存 Set-Cookie、认证头、邮箱或原始异常。URL 仅固定路由，Feed 身份复用[论文事实的 URL 规则](paper-facts.md#4-feed-身份发现与回摆d3)，完整保留端点 query。
 
 HTTPFacts 只保存安全 URL、状态、轮次/重定向/重试/实际等待与 Content-Type/charset/实际解码方式。响应正文只在瞬时 SourceResponse 中且 repr 隐藏。Feed XML 在原字节和有效解码文本两层拒绝 DOCTYPE/ENTITY，此规则仅用于 Feed。有效 XML Feed 或显式 DOI 身份核验通过的贡献页面可保留；doiRA 只保存结构化机构事实。失败、挑战页、身份冲突与非 Feed 200 不存正文。此处只判断保留资格，不伪造已选成员、摘要命中或完整轮次。
 
 条件头可空；带条件时必须引用已有同策略/通道/来源取得核验的 source_snapshot。无旧材料在 HTTP 前拒绝。304 只复用该既有引用，标记 reused_prior，不产生新材料或假取得时间；原始来源事实保留。取得结算的 `content_decoding` 单独记录保留材料的实际解码依据：200 来自实际取得，304 沿匹配原始材料继承，不能用本次无体 HTTP 的默认 UTF-8 代替。`http.charset/decoding` 仍只表示本次 HTTP 响应，不伪填旧头；回放/恢复按 `content_decoding` 重解析并核对原始/复用关系。计划 created_at、路线 started_at 与 settled_at 使用实际生成的 `datetime.isoformat()` UTC（+00:00）规范字符串；非法值、无时区或非规范表示拒绝，保留原始合法字节。墙钟先后不构成新的门禁，请求期限仍使用单调时钟。声明、材料引用、请求身份、计数和内容资格在 validate_all 中只读核对，并接入原有备份固定副本；恢复不联网、不取得执行锁、不自动继续。
 
-只读 CLI 为 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。提供显式 run、摘要矩阵、resume/replay、完整混合恢复与独立 A10 边界，详见下文。当前未运行真实来源审计。
+只读 CLI 为 `audit list --database DB [--json]`、`audit show PLAN_ID --database DB [--json]`；普通输出只含安全身份、计数与材料哈希。帮助、list/show 不创建目录或锁。run、矩阵、resume/replay 与完成审计引用的行为见下文。
 
-## PDF 字节事实与 backend 期望（#102）
+<a id="pdf-字节事实与-backend-期望102"></a>
+
+## PDF 字节事实与 backend 期望
 
 `FixtureAudit.register_pdf(record_id, source, ...)` 读取本机给定文件，由既有 ArtifactStore
 按真实字节登记 `original_pdf`，核验长度及 SHA-256。`record_id` 必须指向已登记的 PDF
 逻辑样本，handle 仍只是来源定位。取得请求包含 `request_key`、`sample_record_id`、
-公开 `source_url`（无 userinfo/query/fragment）、`access_basis`、`license_basis` 与
+公开 HTTP(S) `source_url`（无 userinfo/query/fragment、空白或控制字符）、
+`access_basis=open|licensed|manual`、非空 `license_basis` 与
 真实合法的 `observed_date`；可提供 `expected_sha256`，它必须匹配实际字节，不能代替读取。
 取得请求和结果仅在 SQLite 中保存，原声明文件不回写，源 PDF 路径不保存。许可/访问依据
 是调用方提供的取得记录，不表示许可已被判定或获准在公开仓库再分发。
@@ -94,8 +103,8 @@ HTTPFacts 只保存安全 URL、状态、轮次/重定向/重试/实际等待与
 完整未引用制品，不能补出成功取得事实。
 
 `register_pdf_backend(PdfBackendRegistration | Path)` 另行追加期望，必须绑定准确的
-`pdf_id/pdf_sha256`。字段为 `request_key`、`backend_component/backend_version`、显式
-模型版本集合 `model_versions`、`extraction_fingerprint`、`reading_sha256`，以及各自独立的
+`pdf_id/pdf_sha256`。字段为 `request_key`、`backend_component/backend_version`、
+模型版本集合 `model_versions`（默认空集合）、`extraction_fingerprint`、`reading_sha256`，以及各自独立的
 `methods_data`、`availability_open_research`。组件/模型版本非空，哈希为64位小写hex，
 模型名称不得重复，具名模型集合的输入顺序不进入 backend 身份；历史请求顺序仍原样保留。
 同一 PDF、backend 组件/版本、模型版本集合与 extraction fingerprint
@@ -113,7 +122,7 @@ HTTPFacts 只保存安全 URL、状态、轮次/重定向/重试/实际等待与
 未检查或缺材料不能填写 confirmed_absent。期望登记只核对检查依据存在及字段形状，
 不自行判定原文是否存在对应章节。
 
-CLI 保持四个子命令，新增显式模式：
+PDF/backend 使用同一 fixture 命令组的显式模式：
 
 ```bash
 paper-radar fixture register pdf-request.json --pdf-file sample.pdf --database DB --data-root ROOT
@@ -134,16 +143,18 @@ PDF 及全部旧 backend 期望进入既有 backup/restore 闭包；恢复只依
 制品，不访问原文件、来源 URL 或原声明路径，不下载 PDF、不自动解析。只有远端要求的
 待补齐声明不产生缺失制品。相同字节按既有内容寻址复用。语义核验除字节闭包外重建取得
 身份、样本作用域、替换链、预期/实际 SHA 一致性及 backend 引用；重算外层备份哈希也
-不能绕过这些检查。a1001 revision 的升级测试从 a704 重新升级。
+不能绕过这些检查。
 
 
-## 固定选样与暂时受阻继续（#104）
+<a id="固定选样与暂时受阻继续104"></a>
+
+## 固定选样与暂时受阻继续
 
 公共服务 `select_audit_samples(plan_id, contact_email=..., code_identity=...)` 依次推进四刊，在 `audit show/list` 的 sampling 投影中返回冻结 Feed、成员、排除、暂停位置及完整历史。`continue_audit_sampling` 是显式联网写入继续，只重试尚未冻结的 Feed 与当前受阻候选所需路线；已完成路线复用原取得，不重抓已冻结 Feed。继续前核对代码、parser、策略、选样/类别规则身份，变化须新计划。N 是计划唯一 5–10 值，四刊共享该目标但各自选样和去重。
 
 Feed parser v1 支持 RSS、Atom、RSS 1.0 RDF；拒绝 DOCTYPE/ENTITY、NUL宽字符XML及不支持的形状，不让 XML 工具联网。XML 与最小 Feed 形状通过后才冻结唯一整份 source_snapshot 引用；失败仍可显式重取。RDF 存在 Seq 时按其资源序列排列，同时保存物理 item 定位。每刊考察前 50 原位次，重复项消耗位次。DOI 复用 A6 规范化；无 DOI 仅认原样 guid/id/rdf:about，不用题名、DOI前缀或链接推断身份。跨刊同 DOI 不互相排除；日期和精度只披露，不排序。
 
-类别依据仅 ADR-0033 闭集。类型路径中的 null、数组或标量容器以及非字符串类型值均不提供明确类别依据，按未知结算；原材料与逐来源事实保留，其他刊继续推进。Wiley category/prism:section 原值保留但不产生判定；Crossref/DataCite 其他明确类型为非 journal-article，dqkx 平台表外值/缺字段为未知，明确正负判定矛盾为冲突。Feed 位置、题名、og:type、citation_doi 均不是类别依据。citation_doi 只用于 AIES 无 DOI/guid 时，经受控 Feed link 取得显式身份，再查 doiRA/适用机构；链接本身不成为稳定标识。
+类别依据使用本契约的同一闭集。类型路径中的 null、数组或标量容器以及非字符串类型值均不提供明确类别依据，按未知结算；原材料与逐来源事实保留，其他刊继续推进。Wiley category/prism:section 原值保留但不产生判定；Crossref/DataCite 其他明确类型为非 journal-article，dqkx 平台表外值/缺字段为未知，明确正负判定矛盾为冲突。Feed 位置、题名、og:type、citation_doi 均不是类别依据。citation_doi 只用于 AIES 缺 DOI 时，经受控 Feed link 取得显式身份，再查 doiRA/适用机构；链接本身不成为稳定标识。
 
 选样期只执行身份/类别需要的路线：已有 DOI 则查 doiRA 与其适用 registry；dqkx 还核对出版者显式类型；AIES 缺 DOI 时先取出版者 citation_doi。doiRA 其他机构只关闭 registry，查询失败/404 保留 agency_unknown 与原始 HTTP 状态；单一机构404不表示全球 DOI 不存在。有效身份但无摘要的来源仍可贡献；选样不消费摘要成败，不因先有摘要而换样。
 
@@ -153,18 +164,20 @@ Feed parser v1 支持 RSS、Atom、RSS 1.0 RDF；拒绝 DOCTYPE/ENTITY、NUL宽�
 | excluded_deterministic | 重复、无稳定身份、明确身份冲突、查完无类别、明确非文章或类别冲突 | 保留独立原因后推进 |
 | blocked_pending | 身份/类别所需路线暂时失败、未核验或结果未知 | 保留原位次，其他刊继续 |
 
-取得在事务外进行，成员/排除/暂停事件在短事务原子追加。选样事件按同刊显式前驱形成历史，不能回写、跳位或改变既有成员。started未结算在显式选样继续中先追加 outcome_unknown 再新建执行，请求数保持未知。本节描述原选样阶段继续；路线 resume/replay、两个真实进程场景和新 parser 追加解释的边界见下文。
+取得在事务外进行，成员/排除/暂停事件在短事务原子追加。选样事件按同刊显式前驱形成历史，不能回写、跳位或改变既有成员。started未结算在显式选样继续中先追加 outcome_unknown 再新建执行，请求数保持未知。全轮路线 resume/replay 和新 parser 追加解释的边界见下文。
 
-每个成员引用整份 Feed SHA、原位次、ID/DOI定位、来源取得和明确类别依据，不伪造 A6 单 item 字节；模型不持有摘要成败。validate_all 从冻结 Feed 重建候选，再用事件原路线材料重放同一选择逻辑，核对成员、来源、排除及历史，不以哈希一致代替语义核验。基本备份恢复包含这些引用与原字节，恢复后 list/show 不读仓库声明或原 Feed 路径、不获取执行锁、不自动继续。本节选样证明不覆盖四刊实测、来源稳定性、摘要矩阵或完整阶段 A；摘要矩阵的独立离线边界见下文。
+每个成员引用整份 Feed SHA、原位次、ID/DOI定位、来源取得和明确类别依据，不伪造 A6 单 item 字节；选样规则不消费摘要成败。validate_all 从冻结 Feed 重建候选，再用事件原路线材料重放同一选择逻辑，核对成员、来源、排除及历史，不以哈希一致代替语义核验。基本备份恢复包含这些引用与原字节，恢复后 list/show 不读仓库声明或原 Feed 路径、不获取执行锁、不自动继续。
 
-## 摘要矩阵与显式运行（#105）
+<a id="摘要矩阵与显式运行105"></a>
+
+## 摘要矩阵与显式运行
 
 `paper-radar audit run --database DB --data-root ROOT --contact-email EMAIL [--count 5] [--json]`
 先验证临时联系邮箱，再原子提交计划，最后在同一计划执行锁中全轮串行选样和执行成员矩阵。
 整个计划唯一 N=5–10；邮箱只用于如实请求标识，不保存。`run_audit` 是相同公共服务入口，
 允许测试在外部 HTTP transport 注入合成响应；普通测试不执行 live。
 
-计划新增冻结 `audit-matrix-v1`、`audit-abstract-v1`、`audit-truncation-v1`。
+计划冻结 `audit-matrix-v1`、`audit-abstract-v1`、`audit-truncation-v1`。
 矩阵身份为 `(member_id, route, acquisition_strategy_version, channel)`，适用性来自冻结策略：
 
 | 条件 | 适用路线/通道 |
@@ -207,7 +220,7 @@ HTML 实体解码一次、去标记与段落连接整体属于 abstract v1；相
 | --- | --- |
 | short_under_100 | 最终规范文本不足 100 Unicode code point，100 不命中 |
 | trailing_ellipsis | 去尾随闭引号/括号后以 `...` 或 `…` 结束 |
-| read_more | 尾部 Read more（忽略大小写）或阅读更多，可后接空白/句末标点 |
+| read_more | 尾部 `read\s+more`（忽略大小写）或阅读更多，可后接空白或 `. ! 。 ！ …` |
 | markup_residue | 实体解码后的文本仍有真实标记残留，数学 `x < y` 不命中 |
 | missing_terminal_punctuation | 不以 `.?!。？！` 结束（允许相邻尾随闭引号/括号）；省略号不算终止标点 |
 
@@ -219,8 +232,8 @@ v1 尾随闭字符集合为 ASCII 单/双引号、`”’»）)]}】》」』`�
 成员全部适用路线结算后，构造 A6 RankedObservation 并调用原 choose_fields：
 `observed_at=原取得 settled_at`，`payload_sha256=原响应体 SHA`，`parser_version=1` 对应
 abstract v1，`stream=(plan_id, member_id:route:strategy_version:channel)`；字段引用为
-`(candidate_id, acquisition_id)`。保留 A6 同流同 payload 的最高 parser、publisher > registry >
-feed、实际取得时间、payload SHA、parser、stream 的稳定降序排序。题名/摘要分别获选，
+`(candidate_id, acquisition_id)`。排序复用[论文事实字段仲裁](paper-facts.md#52-字段与优先级)的纯规则，不另建优先级。
+题名/摘要分别获选，
 final_abstract_source 只描述摘要；不按长度或截断改写优先级。候选与每字段获选/低优先级/
 较早观察或稳定 tie-break 依据可重建；高优先级获选片段与低优先级未命中截断的冲突按刊计数。
 尚未全部结算的成员 `routes_settled=false`，最终字段为空，分布单列 pending。
@@ -233,17 +246,16 @@ doiRA 只是机构路由，不是摘要提供方，摘要分母恒为零；适�
 
 complete 仅表示四刊选样已结算且固定成员应有路线均有终态；不足样本、全无摘要、受阻与
 来源稳定性各自披露。暂时受阻的选样或未结算成员使状态为 partial。不会生成 Paper、
-metadata_ready、metadata_unobtainable、人工队列、Screening 或门禁事件。完整候选优先、
-B 按 #111 只消费主摘要，附加区块仍留 C 裁决；B 的 JGR 专门入口判据见下节，不改通用 Screening 的截断允许规则。
+metadata_ready、metadata_unobtainable、人工队列、Screening 或门禁事件。本服务不判定 B 入口或通用 Screening 资格，目标与责任见「不提供／不证明」。
 
 每条路线的取得引用、候选安全解释与区块定位在短事务原子追加；汇总从事实派生。
-新增 audit_abstract_rows 随唯一未发布 a1001 revision 从 a704 建立，validate_all 和既有
-backup/restore 固定副本重读原材料核对解释；重算行 ID/备份 SHA 也不能篡改候选长度或信号，不能将冻结 Feed/选样原取得替换为同路线另一次取得；没有原取得的路线只认确定的 matrix 请求键。
+矩阵解释保存于 `audit_abstract_rows`；validate_all 和既有 backup/restore 固定副本
+重读原材料核对解释；重算行 ID/备份 SHA 也不能篡改候选长度或信号，不能将冻结 Feed/选样原取得替换为同路线另一次取得；没有原取得的路线只认确定的 matrix 请求键。
 已保存矩阵解释不能以自报 not_attempted 跳过重解析：该状态须与零请求、无原材料/候选及底层未尝试结算一致。校验从同一只读视图取得真实持久化行集合；来源已取得、解释尚未保存时的待解释投影仍可随部分计划备份恢复。
 
-显式恢复/历史重解释、完整混合恢复与独立 A10 门禁均有对应工程边界；能力存在不代表某次全量门禁已通过，范围见下文。
+<a id="显式恢复历史回放与追加解释106"></a>
 
-## 显式恢复、历史回放与追加解释（#106）
+## 显式恢复、历史回放与追加解释
 
 | 操作 | 输入与副作用 | 证明范围 |
 | --- | --- | --- |
@@ -268,7 +280,7 @@ provider_incomplete、access_blocked_403、not_attempted；这不是单次 HTTP 
 跨请求、跨计划、分叉或循环均拒绝。started 无回执时，先追加 outcome_unknown、请求数保持
 未知，再开始后继；内容寻址制品即使已经发布，也不能凭其存在追认旧取得成功。
 
-矩阵行改为带 generation/previous_row_id 的只追加解释链，根仍绑定选样原取得或确定矩阵
+矩阵行使用带 generation/previous_row_id 的只追加解释链，根仍绑定选样原取得或确定矩阵
 请求键；后继绑定旧行与取得前驱，只有受控暂时原因才能推进。当前矩阵按成员/路线/策略/
 通道取一个结论，matrix_history 保留全部旧解释；成员分母不会因重试次数增加。物理 HTTP
 次数/重定向/重试、未知执行另列。取得成功但解释未提交时复用该原取得完成解释，不再请求。
@@ -276,12 +288,11 @@ provider_incomplete、access_blocked_403、not_attempted；这不是单次 HTTP 
 该成员没有最终字段，整轮为 partial。投影不冒充持久化解释；完整性仍按数据库 stored_ids
 核验全部历史解释，不能因行自报状态而跳过。
 
-整轮持计划 flock，SQLite 写事务中不等待锁；文件不写 PID/TTL、不 unlink，进程退出即释放。
-同计划竞争返回 execution_busy，show/replay 在执行中依然只读可用。两个必要真实进程用管道
-握手确认锁内或 HTTP transport 已进入（因此 started 已提交），再释放/kill，不用长 sleep。
-恢复中保留单次内部 HTTP 上限与每次显式继续的独立执行账目，不使用 A7 lease/attempt。
+整轮持计划 flock，SQLite 写事务中不等待锁；文件不写 PID/TTL、不 unlink，最后一个持锁文件描述符关闭时释放。
+同计划竞争返回 execution_busy，show/replay 在执行中依然只读可用。
+恢复中保留单次内部 HTTP 上限与每次显式继续的独立执行账目，不使用 Screening 任务租约或 attempt。
 
-产品历史注册表目前只包含已发布完整 v1 实现；回放按计划保存的版本选择，不以当前默认
+产品历史注册表只包含完整 v1 实现；回放按计划保存的版本选择，不以当前默认
 常量替代。保存身份/原字节被篡改为 corrupt_reference；合法身份引用无法加载的历史版本
 为 unsupported_history。AuditReplay 返回安全视图、semantic_sha256 及逐执行证明等级：
 material_reparsed 仅用于真实保留的来源材料，execution_facts_only 用于 doiRA 结构化事实、
@@ -289,8 +300,10 @@ material_reparsed 仅用于真实保留的来源材料，execution_facts_only �
 
 新 parser 实现 `AuditMaterialParser`：`version`、`implementation_sha256` 与
 `parse(request, raw, *, decoding, entry_locator)`；返回 title/abstract/identity_doi/category
-的显式值或 None。身份/类别变动只形成新解释与差异，不重新选样。产品不发布测试 v2、
-不提供 reinterpret CLI。解析器版本绑定唯一实现 SHA 声明，不能同版本换实现；声明与解释
+的显式值或 None；字段可省略，空白视为缺项，未知字段或非字符串值拒绝。category 仅接受
+journal_article/non_journal_article/unknown/conflict，identity_doi 使用 DOI 规范化规则。
+追加解释要求计划 complete，持计划执行锁，不联网。身份/类别变动只形成新解释与差异，
+不重新选样。没有内置 v2 或 reinterpret CLI。解析器版本绑定唯一实现 SHA 声明，不能同版本换实现；声明与解释
 同一短事务提交。正文只在瞬时回调输入中，输出持久化仅保存规范字段哈希、code point 长度
 和截断信号，不把新摘要放入普通查询、repr、日志、SQLite 或备份。
 
@@ -306,8 +319,8 @@ material_reparsed 仅用于真实保留的来源材料，execution_facts_only �
 available_material_reparsed。恢复不需要原声明/配置路径、不联网、不自动继续或安装 parser。
 
 代码身份边界：commit + dirty=true 不能区分同一提交后不同工作树内容；resume 的声明相等
-只证明声明未变。测试可使用明确 synthetic 身份，真实验收仍要求 clean tree，不能把测试
-身份或脏树声明升级为 live 证据。完整混合历史隔离恢复与 scope/必需门禁仍由 #107/#108 收口。
+只证明声明未变。服务记录 installed 或显式 synthetic 身份，不因 dirty=true 自动拒绝计划，
+也不把测试身份或脏树声明认定为真实 clean-code 审计或 live 证据。
 
 公开取得入口也执行同一准入：精确同键/同请求/同前驱先幂等返回；换新键不能给 complete
 计划或已冻结的成员路线新增取得，受控返回 route_already_settled，并指导新计划或显式 resume。
@@ -317,9 +330,11 @@ available_material_reparsed。恢复不需要原声明/配置路径、不联网�
 通过 interpretation_pending=true 与真实 reason=acquired 同时披露，不再把真实已请求误称未尝试。
 
 
-## 完成审计引用与完整恢复（#107）
+<a id="完成审计引用与完整恢复107"></a>
 
-`fixture register` 对 acquired 的 feed/abstract_audit 声明只登记引用，其他用途仍须各自的实际取得入口，不能自报取得成功。两种引用都要求完整计划；单刊 Feed 已冻结但整轮尚未完成时拒绝。完整只表示终态齐备，不足、失败、unsupported agency、未安装通道或缺摘要不妨碍登记，也不转化为来源通过。
+## 完成审计引用与恢复闭包
+
+`fixture register` 只对 acquired 的 feed/abstract_audit 声明登记审计引用；acquired 的 references/pdf 声明没有该入口所需证据，以 evidence_required 拒绝，不能自报取得成功。本机 PDF 字节通过 register_pdf 单独追加，原声明 basis 保持不变。两种审计引用都要求完整计划；单刊 Feed 已冻结但整轮尚未完成时拒绝。完整只表示终态齐备，不足、失败、unsupported agency、未安装通道或缺摘要不妨碍登记，也不转化为来源通过。
 
 | 用途 | 作用域 | audit_reference 必填 | 禁止混用 |
 | --- | --- | --- | --- |
@@ -333,27 +348,59 @@ available_material_reparsed。恢复不需要原声明/配置路径、不联网�
 `fixture register/check/list/show` 带 --data-root 时返回相同 `audit_verification=frozen_v1_material_and_execution_facts_verified`，核验 v1 保留材料及执行事实。未提供制品根的只读查询明确为 declaration_and_reference_verified，byte_verified 仅指声明原字节；失败/未安装/未知执行没有保留正文，仍只能回放结构化事实。check 的 entries 同样暴露引用与该核验程度。v2 默认只校验声明/引用/结构闭包，必须显式注入匹配 parser 才能称 available_material_reparsed。
 
 ```bash
-paper-radar fixture register fixtures/a10/completed-audit-v1.json --database DB --data-root ROOT --json
-paper-radar fixture check fixtures/a10/completed-audit-v1.json --database DB --data-root ROOT --json
+paper-radar fixture register COMPLETED_DECLARATION.json --database DB --data-root ROOT --json
+paper-radar fixture check COMPLETED_DECLARATION.json --database DB --data-root ROOT --json
 paper-radar fixture list --database DB --data-root ROOT --history --json
 paper-radar audit replay PLAN_ID --summary-sha256 SUMMARY_SHA --database DB --data-root ROOT --json
 ```
 
-上述 completed-audit-v1.json 是用户在真实审计完成后编写的声明示例路径，仓库没有预填真实审计或假哈希。`replay_audit(plan_id, summary_sha256=...)` / `audit replay --summary-sha256` 只读选择已登记完整边界；省略则回放当前事实，不补写 checkpoint、不联网、不执行 resume、不创建审计锁。
+上述 `COMPLETED_DECLARATION.json` 表示调用方在审计完成后编写的声明文件，不是仓库内置材料；仓库没有预填真实审计或假哈希。`replay_audit(plan_id, summary_sha256=...)` / `audit replay --summary-sha256` 只读选择已登记完整边界；省略则回放当前事实，不补写 checkpoint、不联网、不执行 resume、不创建审计锁。
 
-validate_all 与备份固定副本核验声明原字节/替换链、全部审计引用和边界、来源种类/哈希、成员与排除台账、started/结算、规则/策略/通道、矩阵解释和新 parser 引用。完整未引用 source_snapshot/original_pdf 仍合法保留；它们不能补出业务成功。未本地取得的 PDF 是未知，不能当作缺失备份制品。共享 source_snapshot 允许论文与审计去重，未来 GC 必须检查两类引用。
+validate_all 与备份固定副本核验声明原字节/替换链、全部审计引用和边界、来源种类/哈希、成员与排除台账、started/结算、规则/策略/通道、矩阵解释和新 parser 引用。完整未引用 source_snapshot/original_pdf 仍合法保留；它们不能补出业务成功。未本地取得的 PDF 是未知，不能当作缺失备份制品。共享 source_snapshot 允许论文与审计去重；没有仅按审计引用删除共享制品的入口。
 
-恢复仅依赖 SQLite 原声明字节及批次内 ArtifactStore，保留 format 1 与自包含布局。源文件不存在时 check 独立报告 source_missing，list/show/replay 正常，不能误报 drift 或恢复损坏。旧 a704 批次仍由匹配程序 verify/restore，之后显式 upgrade 工作副本；当前程序不重写旧批次或直接接收旧 revision。恢复不安装 Pi/parser、不激活、不调用模型、不访问源目录、不探测来源、不自动继续；以后显式继续仍须代码/规则/策略核对。
+恢复仅依赖 SQLite 原声明字节及批次内 ArtifactStore，保留 format 1 与自包含布局。源文件不存在时 check 独立报告 source_missing，list/show/replay 正常，不能误报 drift 或恢复损坏。旧 a704 批次仍由匹配程序 verify/restore，之后显式 upgrade 工作副本；当前程序不重写旧批次或直接接收旧 revision。恢复不安装 Pi/parser、不激活、不调用模型、不访问源目录、不探测来源、不自动继续；恢复后的显式继续仍核对代码、规则和策略。
 
-隔离恢复证明使用真实 a704 五类非空历史、活跃 WAL 同库混合历史、原目录禁止访问/禁网、移根与独立进程验证；覆盖映射见 tests/a10-recovery-coverage.md。它不代表四刊 live、长期来源稳定、正文/Docling、渲染运行时或完整阶段 A 通过。此处证明仅覆盖所列恢复子集，完整门禁以独立 A10 同次证据为准。
+备份批次格式、固定副本与目标发布的组合保证由[备份与恢复契约](backup-restore.md)定义；本节只定义 fixture/审计的语义引用闭包。
 
-## #111 的分刊入口与后续责任（目标规格）
+## 错误与拒绝
 
-当前审计结论不实现 B 就绪判定，complete 仅表示终态齐备。入口、生产解析有效性与四刊稳定取得目标见[规格 §11 B](../../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)和[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界)；承接责任见[路线图 Audit/Source/Abstract](../roadmap.md#module-audit)。
+命令成功返回 0；参数解析错误返回 2；受控 FixtureError/StorageError 输出中文原因和下一步至 stderr，返回 1，不回显原始输入或异常。`fixture check` 在正常输出 source_missing、unregistered、drift 或 PDF not_registered 后也返回 1。`audit run/resume` 的 partial、complete 及其中路线受阻/失败都是结果事实，不因其存在而自动返回非零；退出 0 不代表来源达标。结果写 stdout，`--json` 输出结构化 JSON，默认使用中文说明及安全投影。
+
+服务错误类别与恢复方式：
+
+| 类别 | 原因与下一步 |
+| --- | --- |
+| invalid_declaration、unsupported_format | 声明/PDF/backend 字段或格式非法；按权威模型修正，声明格式只接受整数 1 |
+| declaration_conflict | 同键不同原字节或 PDF/backend 请求身份冲突；保留旧记录，以新版本或合法新身份登记 |
+| source_unavailable、record_not_found | 源文件不可读或 ID 不存在；核对路径/权限或先显式 register |
+| invalid_reference、evidence_required | 替换/材料/完整审计引用无效或缺少实际证据/制品根；补齐准确引用，不以自报哈希替代 |
+| corrupt_reference | 登记字节、引用、计数或语义历史损坏；核查完整备份，不覆盖历史 |
+| database_busy、execution_busy | 数据库写入或计划锁竞争；等待持有者结束后显式重试 |
+| invalid_contact、invalid_plan、plan_conflict | 邮箱、N/计划字段非法或计划键已绑定其他内容；显式提供合法邮箱、N=5–10，异内容使用新计划 |
+| invalid_request、request_conflict、result_conflict | 来源请求、parser 输出或请求键/版本声明/结算冲突；核对受控路线和冻结身份，不覆盖旧事实 |
+| invalid_feed | Feed 编码、XML 安全或形状不支持；核对材料，不能伪造冻结 Feed |
+| execution_incomplete | started 无合法结算或计划尚不完整；保留未知执行，显式 resume；未完成计划不能追加解释 |
+| route_already_settled | complete 计划或已冻结路线的新取得被拒绝；复查使用新计划，暂时路线使用合法 resume 前驱 |
+| plan_identity_mismatch、unsupported_history | 当前执行身份不匹配或历史运行时不可用；前者新建计划，后者使用匹配程序/解析器回放 |
+
+路线 SourceReason 与上述服务拒绝分开；`RouteExecution.is_failure` 仅对 not_found、rate_limited、transient_error、invalid_response、provider_incomplete、access_blocked_403、identity_mismatch、unrecognized_page_shape、disallowed_destination、disallowed_scheme 为 true。outcome_unknown 不宣称已知请求数，未安装/未尝试不算失败；deferred_retry_after 单列等待显式继续。
+
+<a id="111-的分刊入口与后续责任目标规格"></a>
+
+## 不提供／不证明
+
+- complete 仅表示终态齐备，不实现 B 就绪判定，不证明真实来源稳定、Docling 质量、模型或完整阶段 A 通过。首轮实测与 JGR 来源闸门由[Audit](../roadmap.md#module-audit)/[Source](../roadmap.md#module-source)承接；四刊稳定证据与判据由[Abstract](../roadmap.md#module-abstract)承接。
+- 不提供浏览器、官方 API、仓储或授权运行时，不下载或解析 PDF；正文与全通道责任见[F](../roadmap.md#module-f)，B 单篇正文与接线见[Body](../roadmap.md#module-body)/[B](../roadmap.md#module-b)。本机 PDF 登记不授予许可、身份或质量资格。
+- 不消费附加区块生成生产 Screening，不实现生产人工队列、metadata_ready 或 metadata_unobtainable 生命周期；相关责任见[C](../roadmap.md#module-c)。不提供参考文献 acquired 取得入口，参考文献处理责任见[E](../roadmap.md#module-e)。
+- 不以本机恢复或历史离线工程证据推定 NAS、无人值守或 live 就绪；恢复扩展责任见[I](../roadmap.md#module-i)。原有过程与恢复证明范围见[历史摘录](../verification/contracts-fixture-audit-history.md)，独立 A10 验收边界见[验证状态契约](verification-status.md#a10-结论支持)。
 
 
 ## 相关
 
 依据：[#100](https://github.com/MeteoBoy4/PaperRadar/issues/100)、[#101](https://github.com/MeteoBoy4/PaperRadar/issues/101)、[#102](https://github.com/MeteoBoy4/PaperRadar/issues/102)、[#103](https://github.com/MeteoBoy4/PaperRadar/issues/103)、[#104](https://github.com/MeteoBoy4/PaperRadar/issues/104)、[#105](https://github.com/MeteoBoy4/PaperRadar/issues/105)、[#106](https://github.com/MeteoBoy4/PaperRadar/issues/106)、[#107](https://github.com/MeteoBoy4/PaperRadar/issues/107)、[#108](https://github.com/MeteoBoy4/PaperRadar/issues/108)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
 
-[规格](../../intent/draft.md#131-feed)；[ADR-0034](../adr/0034-separate-fixture-declarations-and-acquisition-audits.md)；[路线图承接](../roadmap.md#module-audit)。
+- 目标：[规格 §4.3](../../intent/draft.md#43-元数据与来源仲裁)、[§11 B](../../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)、[§13](../../intent/draft.md#十三真实来源与冻结样本)。
+- 决策：[ADR-0032](../adr/0032-relax-paper-acquisition-without-evading-access-controls.md)、[ADR-0033](../adr/0033-classify-journal-articles-from-explicit-source-types.md)、[ADR-0034](../adr/0034-separate-fixture-declarations-and-acquisition-audits.md)、[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。
+- 组件：[论文事实](paper-facts.md)、[制品存储](artifact-store.md)、[备份恢复](backup-restore.md)、[验证状态](verification-status.md)。
+- 历史证据：[既有过程与证明范围摘录](../verification/contracts-fixture-audit-history.md)、[A10 规格覆盖](../verification/a10-requirements.md)、[恢复覆盖映射](../../tests/a10-recovery-coverage.md)。
+- 后续责任：[路线图 Audit](../roadmap.md#module-audit)、[Source](../roadmap.md#module-source)、[F](../roadmap.md#module-f)、[Abstract](../roadmap.md#module-abstract)。

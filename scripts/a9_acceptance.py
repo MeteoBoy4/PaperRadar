@@ -148,6 +148,9 @@ def _fixed_json(root: Path, relative: str) -> dict[str, Any] | None:
     return value if isinstance(value, dict) else None
 
 
+_COVERAGE_DOCUMENT = "docs/verification/contracts-read-validation-history.md"
+
+
 def _coverage(root: Path) -> dict[str, Any] | None:
     value = _fixed_json(root, "tests/fixtures/a9_coverage.json")
     if value is None or set(value) != {
@@ -219,13 +222,13 @@ def _coverage(root: Path) -> dict[str, Any] | None:
         type(item) is not int for item in value["comments"]
     ):
         return None
-    document = root / "docs/contracts/read-validation.md"
     try:
-        raw = document.read_bytes()
-        if hashlib.sha256(raw).hexdigest() != dict(REQUIRED_FIXTURE_FILES).get(
-            "docs/contracts/read-validation.md"
-        ):
-            return None
+        for relative in ("docs/contracts/read-validation.md", _COVERAGE_DOCUMENT):
+            raw = (root / relative).read_bytes()
+            if hashlib.sha256(raw).hexdigest() != dict(REQUIRED_FIXTURE_FILES).get(
+                relative
+            ):
+                return None
         text = raw.decode("utf-8")
     except (OSError, ValueError):
         return None
@@ -475,7 +478,7 @@ def write_a9_conclusion(
         else:
             result["capability_evidence"] = coverage["capabilities"]
             result["story_coverage"] = dict(
-                document="docs/contracts/read-validation.md",
+                document=_COVERAGE_DOCUMENT,
                 count=42,
                 stories=coverage["stories"],
             )

@@ -1,8 +1,17 @@
 # Pi 单次 RPC 调用 Contract
 
-提供冻结调用描述与 render_format=1、显式注入会话的单次协议服务、严格解帧/初始化、boundary/value 的 A7 test 同源权威接收、事件/最终消息矩阵及 D2/D3 审计边界；支持真实管道、取消握手和恢复，并有独立 A8 验收边界。
-依据为 [#85](https://github.com/MeteoBoy4/PaperRadar/issues/85) 正文及后续 D1–D4/P3。
-本 Contract 不提供新的 migration、业务 Schema、任务来源或生产命令。
+## 用途与范围
+
+`paper_radar.llm` 提供冻结调用描述与 `render_format=1` 渲染；
+`paper_radar.llm.rpc.run_call` 提供显式注入会话的有界单次协议服务。
+管道组件接管已启动的独立进程组，处理字节通信、取消与回收。
+本 Contract 定义调用描述、协议、候选及执行观察；boundary/value 的任务组合只使用
+现有 test 接收边界，不提供生产启动器或模型调用 CLI。
+
+阶段输入、配置、业务输出、任务预算及恢复的详细规则分别见
+[StageInput](stage-inputs.md)、[适配器配置](adapter-config.md)、
+[Screening 校验](screening-validation.md)、[Screening 任务](screening-tasks.md)及
+[备份恢复](backup-restore.md)。RPC 不另建业务 Schema、持久化格式或任务来源。
 
 ## 调用描述与只读准备
 
@@ -22,8 +31,6 @@ projection_id 相等；只支持 boundary/value。系统指令、业务 Prompt�
 封闭 `PROTOCOL_PROFILES` 仅含 `1.4.0 → pi-rpc-1.4.0-v1`。这是离线协议支持
 范围，不是生产 rpc_compatibility、固定安装或模型兼容证明。配置可保存其他正式
 版本，但 prepare 必须在 `run_once` 前拒绝未登记版本，不领取、不占次数、不写失败。
-A8 独立测试档案库通过真实 migration 和配置登记使用非占位系统 Prompt、prompt_only、
-1.4.0；不消费或改写 examples 的 1.1.0 与 A4 的 1.3.0 供给材料。
 
 | 描述拒绝 | DescriptionReason | prepare 的既有 TaskReason |
 | --- | --- | --- |
@@ -32,16 +39,19 @@ A8 独立测试档案库通过真实 migration 和配置登记使用非占位系
 | 无法回放、对象与载荷不符、材料损坏、其他不可归类错误 | corrupt_reference | CORRUPT_REFERENCE |
 | 请求回执不存在 | 沿用 A7 查询错误 | REQUEST_NOT_FOUND |
 
-P3 不新增 TaskReason、GUIDANCE、TaskError 字段或 A7 原因词汇；描述错误不伪造语言
-校验的 build_reason/field。异常只有封闭原因，不携原文或外部异常。prepare 不检查
+描述拒绝复用现有任务错误，不新增 TaskReason、GUIDANCE 或 TaskError 字段；不伪造
+语言校验的 build_reason/field。异常只有封闭原因，不携原文或外部异常。prepare 不检查
 running/lease_expired，不回收、不续租，不作为第二份预算或资格权威。接线顺序为
 prepare→run_once；executor 内才准备描述会错误消耗预算，禁止这样接线。
 
 ## bounded-rpc-v1 的首次渲染
 
+`paper_radar.llm.render_request(description, correction=None)` 返回 UTF-8 bytes。
 `RENDER_FORMAT=1`、固定头部精确为 UTF-8 `PaperRadar bounded-rpc-v1\n`，随后恰好一
 个规范 JSON 对象；不加尾换行。JSON 固定 ensure_ascii=false、sort_keys=true、
-separators=(",", ":")、allow_nan=false。作为 RPC `prompt.message` 再整体编码后，
+separators=(",", ":")、allow_nan=false。渲染结果最多 256 KiB，超限为
+CallDescriptionError(invalid_context)；错误描述类型或非字符串 correction 也为
+invalid_context，损坏载荷为 corrupt_reference。作为 RPC `prompt.message` 再整体编码后，
 只有外层完整对象的末尾 LF 是命令分隔；摘要内斜杠/换行不会生成命令。
 
 对象含 stage、prompt、profile、contract、paper、correction；value 另有 topics。
@@ -67,20 +77,29 @@ prepare 只可核验 correction=None 的首次字节；executor 用实际 correc
 ## 公共单次协议与字节会话
 
 `paper_radar.llm.rpc.run_call(description, user_message, factory, *, clock,
-cancelled, limits)` 返回 `RpcCandidate | RpcFailure`。user_message 是已渲染 UTF-8
-bytes，描述与渲染层之外的协议内核不依赖配置、阶段输入、任务、论文或存储。
+cancelled, limits)` 返回 `RpcCandidate | RpcFailure`。clock 默认 `time.monotonic`，
+cancelled 默认始终为 false，limits 默认 `DEFAULT_LIMITS`。user_message 是已渲染
+UTF-8 bytes；调用方负责使用相应描述渲染，内核不重验其业务载荷或渲染身份。
+描述与渲染层之外的协议内核不依赖配置、阶段输入、任务、论文或存储。
+创建会话前要求精确的 CallDescription/RpcLimits 类型、已登记的版本/协议档案配对、
+prompt_only、合法档位、非空 UTF-8 system_prompt bytes 及非空 provider/model 字符串；
+描述不符为 invalid_description。
 必须显式提供 SessionFactory，没有默认 Pi 启动器、命令/env API、PATH 或凭据读取。
-factory 每次只创建一个专属会话，接收完整描述及独立的 system_prompt；构造必须有界，
+factory 每次只创建一个专属会话，以唯一参数接收完整描述；独立的系统指令 bytes
+位于 `description.system_prompt`，由工厂作为启动输入消费。构造必须有界，
 其时间计入初始化/总期限。模型和采样参数在测试工厂可见，不证明生产映射生效。
 
 `ByteSession.pump(pending_bytes, timeout)` 在有限等待内同时推进部分 stdin 写入与
 stdout/stderr 消费，返回 SessionEvent：written、stdout、stderr_bytes、stdout_eof、
-stderr_eof、exit_code。stderr 原文在会话内丢弃，只传计数。空 pending 仅表示没有待写
+stderr_eof、exit_code。SessionEvent 必须为精确类型；written 是不超过待写长度的
+非负整数，stdout 是 bytes，stderr_bytes 是非负整数，两个 EOF 是严格 bool，
+exit_code 是整数或 None；整数均不接受 bool。stderr 原文在会话内丢弃，只传计数。
+空 pending 仅表示没有待写
 数据；关闭输入必须显式 close_stdin()。EOF 与暂无数据、退出未知与退出 0 分开表达；
 leader 退出不能替代两条管道 EOF。terminate(timeout) 有界回收整组，包括 leader
 已退出的子孙，并关闭 selector 和所有 pipes；正常成功也必须完成这一步。
 
-`rpc_pipes.PipeSession(process, *, clock)` 是 Linux 管道包装器，仅接管已启动的 binary
+`rpc_pipes.PipeSession(process, *, clock=time.monotonic)` 是 Linux 管道包装器，仅接管已启动的 binary
 Popen 句柄；核对 `os.getpgid(process.pid)==process.pid` 及三条完整管道，不启动或重建
 进程，不接收 command/env/cwd。上层须移交尚未做缓冲读写的干净句柄；验证拒绝之前的
 所有权仍归启动方，产品不能向未验证的共享组发信号。接管后使用 raw 非阻塞 I/O，
@@ -96,16 +115,19 @@ wait(timeout)，没有后台线程、communicate 或无界 wait。
 不降级成只等待 leader 或声称跨 POSIX 平台支持。
 这是回收机制，不是 OS 沙箱。构造拒绝、超时或收尾失败均不能形成成功候选。
 
-validate_request(user_message) 在不开会话时核对实际 prompt JSON 帧上限，返回安全
-失败或 None。tests/a8_rpc_task_support.py 的 run_attempt 先 prepare、渲染并做这项
+`validate_request(user_message)` 在不开会话时核对 bytes 类型、UTF-8 与实际 prompt
+JSON 帧上限，返回 RpcFailure 或 None；类型/编码错误为 invalid_description，帧超限
+为 request_limit。tests/a8_rpc_task_support.py 的 run_attempt 先 prepare、渲染并做这项
 检查，再调用原有 run_once。双重 JSON 转义可能使合法 user 字节膨胀超限，也在领取前
 拒绝。预算首次与本次审计 snapshot 任一损坏都映射既有 CORRUPT_REFERENCE，不泄漏
 ConfigError。executor 只核对 StageInput 的 stage/fingerprint/payload，不读取 claim
 或猜 attempt，不向对端传续租能力。
 
-正常结果是未验证的 RpcCandidate，原始文本及 provider/model 隐于 repr；只在接线层
-转换为精确的 SuccessCandidate(executor_kind=test)。失败是封闭原因的 RpcFailure，
+正常结果是未验证的 RpcCandidate，含 raw_response、provider、model、input_tokens、
+output_tokens；原始文本及 provider/model 隐于 repr。只在离线接线层转换为精确的
+SuccessCandidate(executor_kind=test)。失败是只含封闭 reason 的 RpcFailure，
 其 category 由内核唯一映射，接线层只一对一换成既有 FailureReport。没有生产执行来源。
+本 API 不返回 CLI 退出码；子进程退出码仅是协议观察，成功必须观察到退出 0。
 
 ## 固定协议与生命周期
 
@@ -114,24 +136,28 @@ stdin 为完整 JSON 对象+LF；stdout 只按 LF 分帧，可剥 LF 前一个 C
 UTF-8 多字节、U+2028/U+2029 和同包多帧保持正确；坏 UTF-8/JSON、重复键、非对象、
 非有限数、超限与 EOF 尾帧受控拒绝，不搜索局部 JSON。stderr 并发计数后丢弃。
 
-固定上限：实际请求帧（含 LF）256 KiB、候选 64 KiB、单帧 4 MiB、累计 stdout 16 MiB、
-stderr 1 MiB；rpc_types.py 登记初始化 30 s、总期限 300 s、关闭宽限 10 s、
+固定上限：实际请求帧（含 LF）256 KiB、候选 UTF-8 字节 64 KiB、单帧未剥 CR 的
+LF 前字节 4 MiB、累计 stdout 16 MiB、stderr 1 MiB；恰好达到上限不因大小拒绝。
+`rpc_types.py` 登记默认初始化 30 s、总期限 300 s、关闭宽限 10 s、
 强杀等待 10 s，单次 pump 至多轮询 50 ms。RpcLimits 允许保持默认值或缩短前四项期限
-及 poll 轮询上限；任一项放大均在创建会话前以 invalid_description 拒绝。
+及 poll 轮询上限；五项均须为非 bool 的有限正 int/float。任一项放大或非法均在创建会话前
+以 invalid_description 拒绝。
 总期限从工厂构造前开始，包含初始化和正常排空；关闭还受独立 10 s 宽限约束，
 整组回收另有最多 10 s。取消握手在观察取消之后使用独立 close 宽限，即使主期限
 已经到达也不延长为成功；最坏 total+close+terminate=320 s。保守再叠加已包含的
 initialization，initialization+total+close+terminate=350 s，小于
-600 s 租约并留余量，不续租。单帧须容纳 prompt+system+候选+thinking，累计
-须容纳三份回显。初始化+运行+关闭+强杀等待总界限严格小于 A7 600 秒租约并留余量。
-时间使用可注入单调时钟，独立于 A7 UTC 事实时钟；心跳不延长总期限。
-离线测试用注入时钟与握手/屏障推进，不用 sleep 同步；既有 AST 守卫覆盖 A8 测试与
-支撑。单例约 5 s、组总约 60 s 是规模观察目标，实际耗时在验收台账披露；不以紧墙钟
-阈值在慢机器上判定协议失败，语义门禁仍核对注入期限和清理终局。
+600 s 租约并留余量，不续租。上限计入 system/user/assistant 的重复回显和
+thinking/signature；它不是对任意长度系统指令的可接收保证。
+时间使用可注入单调时钟，独立于任务 UTC 事实时钟；心跳不延长总期限。
+工厂、ByteSession 及注入回调须遵守有界调用约定；协议内核不抢占一个不返回的工厂
+或回调，以上期限不是任意注入实现的 OS 级硬超时。
 
 控制命令必须严格一问一答，顺序为 new_session → set_auto_retry(false) →
 set_auto_compaction(false) → set_model → get_available_thinking_levels →
-set_thinking_level → get_commands → get_state → prompt。响应 id/command 逐一匹配，
+set_thinking_level → get_commands → get_state → prompt。响应须为 response，
+id/command 逐一匹配且 success 为严格 bool；成功 data 缺省为对象 {}，存在时须为对象。
+new_session 的 data.cancelled 必须为 false。档位封闭为 off/minimal/low/medium/high/
+xhigh/max；get_available_thinking_levels 须返回非空合法档位列表并包含请求档位。
 初始化只容忍已知 thinking_level_changed 通知。set_model 可能重置档位，故档位设置
 必须后置；设置后出现不同档位通知也拒绝。发送每条命令前非阻塞消费已到达记录，
 无主/重复/预发未来 ACK 不能通过“随后发送对应命令”变成合法。get_commands 必须空；
@@ -142,22 +168,26 @@ sessionFile 缺失或 null。state 无 retry 查询字段，不臆造；开关 A
 
 运行允许一组 agent_start/turn_start；system、user、assistant 各一对 start/end；
 text_*/thinking_* message_update；空 toolResults 的 turn_end；agent_end；agent_settled。
-system content=""、sections 只能有 preamble/cwd、preamble 精确等于描述中的系统
-指令，不能有 toolsAdded/toolsRemoved；user 一项 text 必须逐字等于发送消息。
+system content=""、sections 必须恰含 preamble/cwd，preamble 精确等于描述中的系统
+指令，cwd 只校验为字符串，不核对路径值、包装格式或白名单；不能有
+toolsAdded/toolsRemoved。user 一项 text 必须逐字等于发送消息。
 最终 assistant 在 message_end/turn_end/agent_end 中的副本一致；agent_end.messages
-为 [system,user,assistant]。partial assistant_start 不要求等于最终消息。
+为 [system,user,assistant] 且 willRetry=false。各消息 timestamp 须为非 bool 的有限非负
+数值；assistant 的 api/provider/model 须为非空字符串，content、usage 均必需。
+partial assistant_start 不要求等于最终消息，但同样校验这些字段及 usage，且
+stopReason 必须为 pending；最终消息才要求 stop。
 
 副本一致指完整解码值递归相等且类型一致：对象键顺序无关，数组顺序固定，所有已知
 和未知附加字段都参与比较；bool 与整数、整数与浮点不互相替代。system/user 的
 start/end 与 aggregate 也使用同一规则。矛盾副本为 message_mismatch，不重新提取
 另一候选；其他结束副本不能弥补 message_end 的必需字段。textSignature/
-thinkingSignature 存在时须为字符串，redacted 存在时须为严格布尔；合法空 thinking、
+thinkingSignature 存在时须为字符串，thinking 块的 redacted 存在时须为严格布尔；合法空 thinking、
 签名、diagnostics/endTurn 和未知附加字段可以保留在内存核对，随事件丢弃。
 
 ACK 不是完成；等待唯一 started ACK、唯一完整最终消息、agent_end、未 aborted 的
-agent_settled 和正常进程关闭。防御性合成覆盖完成早于 ACK；此时 settled 立即关闭
+agent_settled 和正常进程关闭。完成早于 ACK 时，settled 立即关闭
 stdin，只允许尚欠的唯一匹配 prompt ACK 补齐条件，其他后续记录仍拒绝。仅 stop 合法；length、
-error、aborted、pending、toolUse、deferred 不合法。额外 turn、工具、queue、retry、
+error、aborted、pending、toolUse、deferred 作为最终 stopReason 不合法。额外 turn、工具、queue、retry、
 compaction、summarization、extension UI/错误、未知事件/角色/内容块/停止枚举均拒绝。
 已知记录的未知附加字段可容忍，必需字段类型严格。发送第一条命令前、settled 后
 有额外记录均失败；settled 后立即关 stdin 并排空等待退出，不能此刻提前返回成功。
@@ -173,7 +203,7 @@ compaction、summarization、extension UI/错误、未知事件/角色/内容块
 | queue_update（含空 steering/followUp）、entry_appended、session_info_changed、运行期 thinking_level_changed、extension_error、extension_ui_request、bash_execution_update | event_not_allowed |
 | toolResult/custom/bashExecution/branchSummary/compactionSummary/未知 role | message_shape |
 | image/toolCall/未知内容块 type | channel |
-| pending/length/toolUse/error/aborted/deferred/未知 stopReason | stop_reason；deferred 不轮询 |
+| 最终消息的 pending/length/toolUse/error/aborted/deferred/未知 stopReason | stop_reason；deferred 不轮询 |
 | 未知记录 type、assistantMessageEvent.type | event_not_allowed；对象/数组等错误枚举类型也保持 protocol 类 |
 
 这里只证明可观察违例不会被接收；事件到达前真实 provider 是否已经执行额外请求，
@@ -184,7 +214,7 @@ compaction、summarization、extension UI/错误、未知事件/角色/内容块
 存在空/纯空白 text 则返回候选，由 A1 判 invalid_json。内层围栏、重复键、非有限数、
 评分、主题、中文显示题名等均由 A1/A7 原权威路径拒绝，RPC 不清洗业务输出。
 
-注入取消先锁定 cancelled；在已知完整帧边界且尚未 settled/EOF/退出时，先 clear_queue
+注入取消先锁定 cancelled；在没有未完成的 stdin 帧写入且尚未 settled/EOF/退出时，先 clear_queue
 再 abort，各用新关联 ID，逐条核对 id/command/success 与响应形状。允许丢弃仍在途的
 原命令匹配 ACK 和迟到事件，不再生成候选。clear_queue 成功响应的 data 必须包含
 steering、followUp 两个字符串数组，允许空数组；缺字段、非数组或非字符串元素均
@@ -230,8 +260,9 @@ set_model 失败单独为 model_rejected/environment；其他失败控制 ACK �
 command_rejected/protocol。EOF 前未终止的尾帧是 partial_frame/protocol；正常帧之后
 缺少必要完成条件则是 eof/environment 或期限失败。关闭异常不得返回候选。
 
-受控失败返回精确 FailureReport，不抛普通异常、不包装 SuccessCandidate。内层输出
-无效由接收器产生 output_invalid；最终模型不符由接收器产生 model_mismatch。一次
+离线任务接线把受控 RpcFailure 转为精确 FailureReport，不抛普通异常、不包装
+SuccessCandidate。内层输出无效由接收器产生 output_invalid；最终模型不符由接收器
+产生 model_mismatch。一次
 run_once 至多一次 RPC，不改变两次预算、retry 代际父链、租约或保守结算。其他论文
 失败隔离。A7 续租句柄、数据库能力不传对端。
 
@@ -248,79 +279,83 @@ prepare 仅验证描述可构造，不领取、不回收、不按状态推断执
 | 权威接收失败 | 完整协议候选交 A7/A1；模型不符为 model_mismatch，业务校验不通过为 output_invalid，仅保留安全 issues | 同样消耗一次，失败原文不发布 |
 | 未结算中断 | KeyboardInterrupt/SystemExit 原样上抛，finally 回收会话；该 attempt 暂无成功/失败结算，租约到期后由既有 claim/reclaim 结算 outcome_unknown/origin=recovery | 中断不退款，回收也不重置预算 |
 
-同代最多两次；耗尽、已成功或有效租约在途时，`run_once` 拒绝且不开会话、不发 prompt。
-第二次请求仅含同一冻结描述和 A7 在领取后实际传入的修正：output_invalid 只带安全
-字段路径/类别，timeout 与 outcome_unknown 只带固定说明。correction 非空不代表
-attempt 编号，编号只由外层 status/回执观察；旧响应、claim 和续租凭据均不传对端。
-租约过期本身不使未结算凭据失权；回收后旧凭据不可提交，适配器不另立所有权规则。
+`run_once` 不能领取时不开会话、不发 prompt；任务接收权、两次预算、显式 retry、
+租约与安全修正内容由 [Screening 任务](screening-tasks.md)唯一规定。
+后续请求只含同一冻结描述及领取后实际传入的修正；correction 非空不代表 attempt
+编号，编号只由外层 status/回执观察；旧响应、claim 和续租凭据均不传对端。
 
-D1 的首次语义 snapshot 可以声明未登记的 1.3.0；只要新回执自己的 1.4.0 snapshot
-与其投影相同，就可按原语义和预算执行。回摆 1.3.0 回执仍因协议未登记在 prepare
-拒绝，不刷新次数。普通声明版本、纯执行审计、日期、会话或进程重建均不改变预算；
-输入 A→B→A 回到原预算，同指纹跨论文版本继续适用。每次执行描述的审计取其自己
+预算首次语义 snapshot 可以声明未登记的 Pi 版本；协议支持检查只取本次回执的审计
+snapshot，只要同阶段投影相等且本次版本已登记，就可组合原语义执行。
+回摆未登记版本的回执仍在 prepare 拒绝，不刷新次数。每次执行描述的审计取其自己
 回执，包括回摆与 retry，不能把首次语义版本冒写为本次执行版本。
+纯执行审计、日期、会话或进程重建均不另给预算。
 
-RPC fixture 形成的成功、失败、retry 父链和未结算历史由既有 backup/restore 原样
-处理；不新增 Schema、manifest、任务失败字段或词汇。非空 WAL 离线组合用例在阻断
-原数据/配置目录的新进程中核对两阶段原始成功字节、权威结构、历史输入和预算；
-恢复/查询保持只读且不导入 RPC 执行入口。仅一个用例显式继续，回收未知结果后只
-消费剩余一次。成功仍为 test，完整事件/失败全文/thinking/自由错误不进入备份。
-这不扩大既有恢复 revision 范围，也不承诺回退备份后的全局调用预算。
+组合产生的 test 成功、失败、retry 父链和未结算历史由既有
+[备份恢复](backup-restore.md)闭包处理；恢复不导入或调用 RPC 执行入口。
+显式继续仍经任务领取和剩余预算，不加载旧会话；完整事件、失败全文、thinking 和
+自由错误不进入备份。RPC 不扩大恢复 revision 范围，不保证追回备份回退后丢失的预算。
 
-## D2/D3：执行观察与 A7 权威接收
+<a id="d2d3执行观察与-a7-权威接收"></a>
+
+## 执行观察与权威接收
 
 最终消息必需 provider/model；协议完整时内核不比较最终模型身份，只返回 provider
 及存在的 responseModel（否则 model）。provider/model 主要是 Pi 请求回显，不是
 供应商证明；responseModel 是可选供应商侧模型信息。接线填 reported_provider/model，
 由既有 A7 model_matches 严格比较，不符 model_mismatch 且原文不落盘。初始化模型
 回读不符仍属协议失败；thinkingLevel 存在时必须等于请求档位，providerThinkingLevel
-是另一命名空间。严格 responseModel 会拒绝某些日期快照别名，A8 不增别名表。
+是另一命名空间。可选 responseModel、responseId、providerThinkingLevel 存在时均须
+为非空字符串。严格 responseModel 会拒绝某些日期快照别名，不维护别名表。
 
 Pi 报告 totalTokens==0 时 input_tokens/output_tokens 都为 null；否则 input_tokens=
 input+cacheRead+cacheWrite、output_tokens=output。reasoning 已包含在 output，
 不得再加。口径为 Pi 报告的总提示量（含缓存读），不是独立测量、计费输入或成本。
 1.4.0 全零初始化无法区别未报告和真实零；缓存拆分、成本不保存，不新增字段。
 四项及 totalTokens 必须为严格非负整数，并满足 totalTokens 等于四项之和（DERIVED-08）；
-可选 reasoning/cacheWrite1h 同样须为严格非负整数，前者已含在 output，后者为
-cacheWrite 子集，均不再相加。usage.cost 的 input/output/cacheRead/cacheWrite/total
-须为非负有限数且不接受 bool；任何形状或和关系不符均为 usage_shape。
+可选 reasoning/cacheWrite1h 同样须为严格非负整数；按来源口径前者已含在 output，
+后者为 cacheWrite 子集，均不再相加。内核不另校验这两个可选项与其所属项的大小关系。
+usage.cost 的 input/output/cacheRead/cacheWrite/total 须为非负有限数且不接受 bool；
+成本只做形状检查、不校验分项与 total 的和，也不导出或保存。
+上述形状或 totalTokens 四项和不符均为 usage_shape。
 RPC command ID 与可选 responseId 都不假称 provider_request_id，该字段保持未知。
-完整事件、prompt、profile、摘要、thinking、stderr、错误自由文本不得进入 repr、日志、
-异常、数据库、制品或验收结果；只保留受控原因、标识摘要、计数和必要成功文本。
+完整事件、prompt、profile、摘要、thinking、stderr、错误自由文本不进入本组件结果的
+repr、异常或任务接线的日志、数据库、制品及验收结果；只保留受控原因、标识摘要、
+计数和必要成功文本。描述中的敏感输入与候选原文仅供显式消费，不能自行转储到日志。
 
-## D4、来源推导与 not_assessed
+<a id="d4来源推导与-not_assessed"></a>
 
-Pi 1.4.0 强制追加 cwd，section 实际是 `<cwd>\n<归一化路径>\n</cwd>`；preamble 不
-包装。有效指令=登记声明指令+Pi cwd 段的已知缺口。所有者仅许可不含个人信息、每次
-相同、内容无意义的常量执行 cwd；A8 不选常量、不把合成路径用于生产白名单。
+## 不提供／不证明
 
-来源摘要与三态登记见 [固定材料 README](../../tests/fixtures/pi_rpc/1.4.0/README)。
-DERIVED-01(system补丁)、02(cwd包装)、03(user回显)、04(aggregate副本)、05(临时状态)、
-06(空commands)、07(ACK/档位顺序)、08(token总和)、09(settled后收尾)、10(请求回显)、
-11(三份回显预算)
-都只按源码推导 fail closed，尚未由真实 Pi 运行逐项确认。对应检查只证明与固定源码
-一致，不能把其升级成运行观测或生产隔离结论。
+本组件不提供默认生产启动器、命令/env/cwd 构造或凭据读取，不提供生产成功来源。
+系统补丁形状、空 commands 和 state 回读只核对可观察记录，不证明 cwd 无项目资源、
+未加载个人设置、关闭持久化、自动外发抑制或 OS 文件/进程/网络权限隔离。
+常量 cwd、资源/权限与生产启动器由[路线图 Pi](../roadmap.md#module-pi)及
+[Cwd](../roadmap.md#module-cwd)承接；固定安装/激活另见 [Pi 供给](pi-supply.md)。
 
-DERIVED-11 正例同时使用恰好 256 KiB 请求帧、64 KiB 候选和含 system/user/
-assistant 的 4 MiB agent_end 帧；完整流约三份合并回显，处于 16 MiB 累计界限内。
-thinking/signature 也计入三份回显。该正例证明固定上限可接收这组合法预算；超候选/
-帧/累计界限不返回半候选，也不保存原始流。
+源码推导与合成字节流不是实际 Pi、供应商、参数生效、用量或模型兼容性观测。
+三态来源及 DERIVED-01…11 的固定依据由
+[来源摘要](../../tests/fixtures/pi_rpc/1.4.0/README)登记；历史覆盖、规模观察目标、
+近界预算与 not_assessed 原文见[历史证明边界](../verification/contracts-pi-rpc-history.md)。
+这些离线证据不授予生产模型、校准或自动 Read 资格。
 
-当前没有生产启动器准入或真实 Pi 兼容通过证明。 生产接线目标见[规格补充约束](../../intent/draft.md#pi-生产启动器准入)，承接责任见[路线图](../roadmap.md#module-pi)。
+reuse/Read 任务与编排、业务资格/每日配额、校准可见性/门禁、真实来源、Docling、
+NAS 及无人值守不属于本 RPC 边界；承接见[路线图模块索引](../roadmap.md#模块承接索引)。
+原题名语言的 Feed 派生与登记属于 [Feed 组合](feed-pipeline.md)，不由 RPC 推断或发送。
 
-rpc_verified、live_verified、stage_a_verified 继续为 false。not_assessed 还包括真实 Pi
-运行与供给激活、凭据、参数效果、OS 文件/进程/网络权限、自动外发抑制、原题名语言
-事实的生产接线（来源规则见 [ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md)）、reuse/Read等其他阶段任务、业务资格/编排/每日配额、
-校准可见性/门禁、CLI、
-真实论文来源/Docling/NAS/无人值守。A8 只有离线协议与 test 任务接线证明范围。
+<a id="b-首次生产接线责任111目标规格"></a>
 
-## B 首次生产接线责任（#111，目标规格）
+## 生产接线边界
 
-当前提供离线协议档案与管道组件，不提供生产接线通过证明；历史 not_assessed 不变。 生产接线目标见[规格补充约束](../../intent/draft.md#b-首次-pi-生产接线)，承接责任见[路线图](../roadmap.md#module-live)。
-
+不提供真实 Pi 兼容或生产接线通过证明；固定安装与 RPC 实测由
+[路线图 Live](../roadmap.md#module-live)承接，首次真实任务消费由
+[B](../roadmap.md#module-b)承接。API 的正常候选、子进程退出 0、离线协议支持版本及
+历史 test 成功均不能代替这些验收。
 
 ## 相关
 
 依据：[#85](https://github.com/MeteoBoy4/PaperRadar/issues/85)、[#86](https://github.com/MeteoBoy4/PaperRadar/issues/86)、[#87](https://github.com/MeteoBoy4/PaperRadar/issues/87)、[#88](https://github.com/MeteoBoy4/PaperRadar/issues/88)、[#89](https://github.com/MeteoBoy4/PaperRadar/issues/89)、[#91](https://github.com/MeteoBoy4/PaperRadar/issues/91)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
 
-[规格](../../intent/draft.md#77-pi-rpc-适配边界)；[ADR-0026](../adr/0026-control-pi-through-a-bounded-rpc-adapter.md)；[路线图承接](../roadmap.md#module-pi)。
+- [规格 §2.4](../../intent/draft.md#24-外部-llm-数据边界)、[§7.7](../../intent/draft.md#77-pi-rpc-适配边界)、[生产启动器准入](../../intent/draft.md#pi-生产启动器准入)、[首次生产接线](../../intent/draft.md#b-首次-pi-生产接线)。
+- [ADR-0026](../adr/0026-control-pi-through-a-bounded-rpc-adapter.md)、[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)。
+- [A8 固定验收台账](../verification/a8-requirements.md)、[迁入历史原文](../verification/contracts-pi-rpc-history.md)；不代表本次或 live 验收。
+- 实现：[`calls.py`](../../src/paper_radar/llm/calls.py)、[`rpc.py`](../../src/paper_radar/llm/rpc.py)、[`rpc_types.py`](../../src/paper_radar/llm/rpc_types.py)、[`rpc_messages.py`](../../src/paper_radar/llm/rpc_messages.py)、[`rpc_pipes.py`](../../src/paper_radar/llm/rpc_pipes.py)。

@@ -243,7 +243,7 @@ def test_actual_production_versions_cannot_drift_or_disguise_types(
 
 
 @pytest.mark.parametrize(
-    "case", ["source", "fixture", "support", "baseline", "lockfile"]
+    "case", ["source", "fixture", "support", "history", "baseline", "lockfile"]
 )
 def test_fixed_material_and_identity_drift_rejects_previous_success(
     tmp_path: Path, case: str
@@ -263,6 +263,7 @@ def test_fixed_material_and_identity_drift_rejects_previous_success(
                 "source": "src/paper_radar/llm/rpc.py",
                 "fixture": "tests/fixtures/a8_capabilities.json",
                 "support": "tests/a8_rpc_support.py",
+                "history": "docs/verification/contracts-pi-rpc-history.md",
                 "lockfile": "uv.lock",
             }[case]
         )

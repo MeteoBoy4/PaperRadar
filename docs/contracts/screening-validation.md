@@ -1,5 +1,7 @@
 # Screening 输出验证接口
 
+## 用途与范围
+
 提供研究边界判断、摘要层价值预测、复用可行性升级和筛选原因组合验证，以及
 四者各自的 `v1` 冻结契约。CLI 可以逐份导出或检查 `boundary`、
 `value-prediction`、`reuse-assessment` 和 `decision-reasons`，也可以在一次命令中
@@ -112,25 +114,29 @@ assert isinstance(reason_result, ScreeningFailureProjection)
 - `validate_screening_reason`：严格验证原因三元组的公共入口；
 - `screening_reason_json_schema`：从同一组合权威生成 JSON Schema，不写磁盘。
 
-`validate_output(kind, payload, context=None)` 接受原始 JSON 字符串/字节或结构
-数据。当前注册的 kind 是 `boundary`、`value_prediction` 和
-`reuse_assessment`。成功返回意味着结构与该 kind 的全部适用业务规则都已通过；
-验证器不修复输入、不改写文本，也不调用模型判断科学语义。
+`validate_output(kind, payload, context=None)` 接受原始 JSON `str`、`bytes`、
+`bytearray` 或结构数据（如 mapping）。`kind` 接受 `OutputKind` 或对应字符串：
+`boundary`、`value_prediction`、`reuse_assessment`；这里的下划线名称不同于冻结
+契约 CLI 的连字符名称。`context` 默认 `None`，各 kind 的要求见下文。
+成功返回意味着结构与该 kind 的全部适用业务规则都已通过；验证器不修复输入、
+不改写文本，也不调用模型判断科学语义。直接构造输出 Pydantic 类型只完成其模型
+校验，不能代替公共入口的上下文与业务校验。
 
 ### 原始 JSON 的单一解析语义
 
 `validate_output` 和 `validate_screening_reason` 共用同一权威内部解析入口。
+`validate_output` 先检查 kind，再检查该 kind 的 context，之后才解析载荷；因此
+未知 kind 或不合法 context 不会被载荷的 JSON 错误覆盖。
 原始 `str`、`bytes`、`bytearray` 只接受完整 UTF-8 JSON：任意层重复对象键（包括
 转义后同名键）、`NaN`、`Infinity`、`-Infinity`、BOM、非 UTF-8、语法错误与截断
 均为根 `$` 的 `invalid_json`，优先于载荷字段/业务错误；不回显键、原文或解析异常。
 原始字符串和解码后任意层的键/值均须可编码为 UTF-8，未配对 surrogate 拒绝，合法
 surrogate pair 仍按其 Unicode 字符接收。
 合法 JSON 前后空白仍接受且文本不改写；解析后仍执行相同严格 Schema 与业务规则。
-Mapping 输入保持原验证路径，不由解析器转换类型，也没有第二套输出 Schema。
-
-这是 #76 D3(a) 的受控收紧：重复键由旧的后值覆盖改为拒绝；NaN/Infinity 原先可能
-按字段 `invalid_type` 拒绝，现在统一归为 JSON 层 `invalid_json`。四份冻结 JSON
-Schema、登记版本和 A5 阶段输入格式不变；新回归位于独立测试模块，既有固定分母不变。
+JSON 根值还须通过对应模型的对象结构校验；合法 JSON 的非对象根值报
+`invalid_type`，不是 `invalid_json`。Markdown 围栏或解释文本包裹的 JSON 不接受。
+Mapping 输入不走 JSON 解析器，不做 JSON 编码层检查或类型强转，仍使用相同的
+权威模型和业务规则，没有第二套输出 Schema。
 
 ### 研究边界
 
@@ -169,8 +175,8 @@ mapping 合法，且验证器不会修改它。显式非空 context 或其他 co
 价值预测必须同时提供以下只读业务事实：
 
 - `enabled_topic_ids: frozenset[str]`：本次可用的已启用主题 ID 集合；
-- `original_title_is_zh: bool`：上游按首发 Feed 归属提供的原题名是否中文事实；四刊映射见
-  [ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md)。
+- `original_title_is_zh: bool`：上游按首发 Feed 归属提供的原题名是否中文事实，无默认值。
+  Feed 事实与 value 登记的组合边界见[生产组合契约](feed-pipeline.md)。
 
 推荐调用方显式构造冻结的 `ValuePredictionContext`。公共入口也接受字段完全匹配的
 mapping，并先将其验证为该受控类型；不会把自由键值直接传给业务规则。缺少上下文
@@ -183,7 +189,7 @@ boundary 仍只接受 `None` 或空 mapping，上述价值预测上下文不能�
 
 绑定阶段输入时，应通过[阶段输入服务](stage-inputs.md#value-同源验证上下文与扩展义务)
 从匹配 value 投影的明确历史快照派生 `ValuePredictionContext`；原题名语言仍由上游按
-ADR-0035 的 Feed 归属映射提供。
+Feed 归属映射提供，不由本验证器查询数据库或派生。
 
 ### 价值类型 vocabulary
 
@@ -202,9 +208,9 @@ ADR-0035 的 Feed 归属映射提供。
 
 ### 题名、文本与可判断性
 
-原题名为中文时，省略 `display_title_zh` 与显式 `null` 等价且合法，任何非 null
-值报 `context_mismatch`。原题名非中文时，该字段仍可省略或为 null；提供值时必须
-是非空、非占位文本。
+原题名为中文时，省略 `display_title_zh` 与显式 `null` 等价且合法，任何通过
+结构校验的非 null 字符串均报 `context_mismatch`（非字符串先报 `invalid_type`）。
+原题名非中文时，该字段仍可省略或为 null；提供值时必须是非空、非占位文本。
 
 四个必填文本字段
 `research_value_reason_zh`、`reuse_feasibility_reason_zh`、
@@ -225,29 +231,33 @@ ADR-0035 的 Feed 归属映射提供。
 ERA5 preprocessing pipeline”虽是有效文本，但没有说明输入不足，不能配合
 `inferable=false`。该约定只做可审计的机械检查，不证明评分或理由在科学上正确。
 
-验证成功返回冻结的权威 Pydantic 类型。失败抛出 `OutputValidationError`；其
-`issues` 仅包含 `location`、`category` 和中文 `guidance_zh`。错误文本不包含输入值、
-完整 Pydantic 异常或 traceback。纯验证包不访问 CLI、数据库、网络、LLM 或
-Docling。
+验证成功返回设置 `frozen=True` 的权威 Pydantic 类型；字段不能重新赋值，但
+value/reuse 输出内的 list 不因此深度冻结，调用方不能把修改后的对象视为仍已通过
+验证。失败抛出 `OutputValidationError`；其非空 `issues` 元组的每个问题仅包含
+`location`、`category` 和中文 `guidance_zh`。错误文本不包含输入值、完整 Pydantic
+异常或 traceback，也不保留原始校验异常链。纯验证包不访问 CLI、数据库、网络、
+LLM 或 Docling。
 
 ### 复用可行性升级
 
-`ReuseAssessmentOutput` 严格包含原方案 §7.4 的五个必填字段：
+`ReuseAssessmentOutput` 严格包含五个必填字段：
 
 - `reuse_feasibility`：1–5 的严格整数；
 - `reuse_feasibility_reason_zh`：非空、非占位的中文理由；
-- `required_adaptations`：所需改造文本列表，可以为空，重复项也合法；
+- `required_adaptations`：严格字符串 list；每项须非空、非占位，列表可以为空，重复项也合法；
 - `excerpt_kind`：`availability`、`methods` 或 `both`；
-- `excerpt_ids`：实际支持判断的摘录 ID，必须非空且不得重复。
+- `excerpt_ids`：严格字符串 list，记录实际支持判断的摘录 ID，列表必须非空且不得重复。
 
 该输出没有 `reuse_feasibility_inferable` 字段，不套用摘要层“输入不足理由”规则。
 额外字段一律失败，因此它不能携带筛选决定、provenance、正文质量结论或其他阶段
 事实。验证成功只返回独立的 `ReuseAssessmentOutput`，不会覆盖摘要层价值预测，也
 不会产生 `accepted`、`pending` 或 `denied`。
 
-验证时必须提供 `ReuseAssessmentContext(excerpt_kinds=...)`。映射的键是当次确定性
-选择器实际提供的非空摘录 ID，值只允许 `availability` 或 `methods`；验证后该映射
-不可原地修改。选择器级的 `data` 摘录应由调用方在构造上下文时归入 `methods`；
+验证时必须提供 `ReuseAssessmentContext(excerpt_kinds=...)`，或仅含 `excerpt_kinds`
+键的 mapping；公共入口先将 mapping 验证为该受控类型。摘录映射的键是当次确定性
+选择器实际提供的非空白字符串 ID，值只允许 `availability` 或 `methods`；验证后该
+映射不可原地修改。ID 原样保留，不去除首尾空白；空映射是合法上下文，但无法支持
+任何非空 `excerpt_ids`。选择器级的 `data` 摘录应由调用方在构造上下文时归入 `methods`；
 上下文不新增 `data` 值，输出枚举也不新增 `data`。缺少上下文或必需键报
 `missing_context`，空白 ID、错误类型、额外键或未归一化的 `data` 报
 `context_mismatch`。
@@ -261,12 +271,12 @@ Docling。
 ## 筛选结果、来源与原因
 
 `validate_screening_reason(payload)` 接受只含 `result`、`source`、`reason` 的 JSON
-或 mapping。三个字段都必填，不接受额外字段、未知值或类型转换。成功值是以下三种
-身份之一：
+（`str`、`bytes`、`bytearray`）或 mapping，无 context 参数。三个字段都必填，
+不接受额外字段、未知值或类型转换。成功值是以下三种身份之一：
 
 - `ScreeningSuggestion`：来源固定为 `suggestion_rule`；
 - `ScreeningDecision`：来源是盲评、普通复核、直接人工决定、元数据人工放弃或人工
-  精读请求之一，可作为以后追加决定事件的输入；
+  精读请求之一，保留人工决定身份；验证本身不追加决定事件；
 - `ScreeningFailureProjection`：固定校准成员或失败队列中的 `model_failure` 只读
   pending 投影，不是建议或决定事件。
 
@@ -299,12 +309,12 @@ Docling。
 `screening_reason_json_schema()` 从相同 Pydantic 组合类型生成 34 个精确对象分支；每个
 分支把三个字段表示为固定值并禁止额外字段。因此 Schema 表达合法组合，而不是三个
 互不相关的枚举。它以 `decision-reasons/v1` 注册到
-`contracts export/check`，已提交的 Schema 和清单位于
-`contracts/screening/decision-reasons/v1/`；批量检查仍复用同一单份判据。
+`contracts export/check`；磁盘路径、格式、参数、退出码及只读/不可覆盖规则统一见
+[冻结契约导出](frozen-contracts.md)。
 
 ## 受控错误类别
 
-以下序列化值是共享词汇；后续输出种类复用这些类别，不另建同义类别：
+以下序列化值是公共验证入口共享的受控错误类别：
 
 | 类别 | 含义 |
 | --- | --- |
@@ -319,8 +329,16 @@ Docling。
 | `context_mismatch` | 上下文类型或适用范围与输出不匹配 |
 | `business_rule` | 结构合法但违反该输出的确定性业务规则 |
 
-字段位置以 `$` 为根，例如 `$.boundary`。额外字段的调用方字段名可能包含敏感
-内容，因此统一显示为 `$.<额外字段>`。
+字段位置以 `$` 为根，例如 `$.boundary`；列表位置带下标（如 `$.topic_ids[0]`），
+上下文位置以 `$.context` 为根。额外字段或非契约键名可能包含敏感内容，因此相应
+路径段统一显示为 `<额外字段>`，例如 `$.<额外字段>`、
+`$.context.<额外字段>`，不暴露非契约键名。
+
+评分为整数但超出 1–5 范围报 `business_rule`；错误评分类型报 `invalid_type`。
+原因三元组的字段合法但组合不合法时，`business_rule` 定位到 `$.result` 和/或
+`$.source`，并给出选择对应结果或允许来源的中文指引。
+调用方按 `issues` 修正载荷或上下文后可重新验证；验证器不执行自动修正、重试、
+缓存或任务结算。任务接收、失败、预算及恢复由[任务契约](screening-tasks.md)定义。
 
 ## 明确占位文本
 
@@ -334,11 +352,27 @@ Docling。
 的影响。”是合法理由，并会逐字保留。机械规则只判断文本是否明显缺失，不判断
 科学结论是否正确。
 
-
 冻结复用摘录的同源上下文派生见[阶段输入契约](stage-inputs.md#结构化-reuse-格式-1)。
+
+## 不提供／不证明
+
+- 验证通过不表示评分、理由或中文语言质量在科学或语言意义上正确；验证器只执行
+  本页列出的机械规则，不做语言识别、翻译或科学语义复核。
+- 原因组合合法不证明建议规则已执行、人工操作已发生或失败事实存在；验证器不
+  从分数计算建议、不写入生效决定，也不控制阶段调用顺序。
+- 本接口不提供模型执行、摘录取得或选择、生产调度、校准门禁或自动精读许可。
+  组合接线与正式校准责任分别见[模块 B](../roadmap.md#module-b)和
+  [模块 D](../roadmap.md#module-d)；离线验证通过不证明 live 就绪。
 
 ## 相关
 
-依据：[#76](https://github.com/MeteoBoy4/PaperRadar/issues/76)。
+依据：[#76](https://github.com/MeteoBoy4/PaperRadar/issues/76)、
+[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)、
+[ADR-0035](../adr/0035-feed-derived-original-title-language-fact.md)。
 
-[规格](../../intent/draft.md#45-两阶段-screening-agent-与条件式复用升级)；[ADR-0002](../adr/0002-calibrate-before-automatic-fulltext-reading.md)；[路线图承接](../roadmap.md#module-d)。
+- [规格 §4.5](../../intent/draft.md#45-两阶段-screening-agent-与条件式复用升级)、
+  [§7.4](../../intent/draft.md#74-screening-输出)、[§7.5](../../intent/draft.md#75-决定与处理原因)。
+- [ADR-0002](../adr/0002-calibrate-before-automatic-fulltext-reading.md)、
+  [ADR-0022](../adr/0022-conditionally-upgrade-reuse-feasibility-from-fulltext-excerpts.md)。
+- [严格解析调整的历史说明](../verification/contracts-screening-validation-history.md)。
+- [路线图承接](../roadmap.md#module-d)。

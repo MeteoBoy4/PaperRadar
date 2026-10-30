@@ -59,7 +59,7 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_a10_complete_recovery.py": 2,
     "tests/test_a10_coverage.py": 21,
     "tests/test_a10_entry.py": 10,
-    "tests/test_a10_integrity.py": 106,
+    "tests/test_a10_integrity.py": 108,
     "tests/test_a10_isolation.py": 9,
     "tests/test_a10_reference_recovery.py": 9,
     "tests/test_a10_scope.py": 4,
@@ -115,7 +115,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a10_integrity.py",
-        "9639d387f946e453a4a1633a02ef072e78a452c964d46ec21f7c40e5f8616343",
+        "f76ec801ccd2423a3b27c69ee2784d5109d09b9b2426d5bcbd3905fb6b6006f5",
     ),
     (
         "tests/test_a10_isolation.py",
@@ -329,15 +329,15 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "16eb02e49a8cfa06b1127113d9cf522c1944dc34b20e7b2928c62b3f2a7db7b1",
+        "e70d976a71fbb8e50f7996c67ace83d7e7601694f46eb426ea9ccb3d096b1131",
     ),
     (
         "scripts/a9_acceptance.py",
-        "e6dab1dca576534c936bd7563ad973e8bbd8fcda402d9ba8d935a66210679191",
+        "e1a5cd2d8f352de377f4a59d69cb9c5df0e8356c088f31274b3961d22895ce34",
     ),
     (
         "scripts/a9_scope.py",
-        "7e664e80927c389eebae184841f2fd3e2e31f3bfcd005ba7e5fd464e315aa02b",
+        "6920baa52464ded597ef15f6719c3d28c6cedfcf5753b04001c4f0574f224a3d",
     ),
     (
         "scripts/audit-verification-scope",
@@ -1345,8 +1345,16 @@ REQUIRED_SOURCE_MODULES = (
     ),
 )
 REQUIRED_FIXTURE_FILES = (
+    (
+        "docs/verification/contracts-fixture-audit-history.md",
+        "995e9308143ba53befb1cd3d3160f3fcfbeaf90db19fd75b3c1d678555fbe4cc",
+    ),
+    (
+        "docs/verification/contracts-backup-restore-history.md",
+        "77fdc9ee348bddd16d5c5a694ef52459d2703241efe5e123da8e6742f68ff46e",
+    ),
     ("GLOSSARY.md", "4ce38c9df937063b0ff1d0b68e5d63641f3ac1abcab5a63d52c8220480573a90"),
-    ("README.md", "73aed08f1e6ea8c08b6af2792bf93945570c64e612b1f8c3b8ad15ecf41adcbe"),
+    ("README.md", "38500f30e21472da178c7bfc2d37d2f0c32ed0ee8351ac66157638dfd37612cb"),
     (
         "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
         "381ad4f95d5ce321f9abc8baab82c0e1c2e3e146d1968e4d08de84a2173f9aa0",
@@ -1361,15 +1369,15 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/backup-restore.md",
-        "4617566cff18948f17ea442e8e563e3b64aa61730b1669803adcbaed68346de1",
+        "accd5a6e259eac637dcb834b34288e1efe4914915ba66c7ef88d5aaf486dcc6a",
     ),
     (
         "docs/contracts/fixture-audit.md",
-        "68ef4a0d8eb774db20fd31e97de7813a3932cfda9d76b92ceddea426fc93c72b",
+        "497941b22ec0af0369fd87af95f0fd39d66bc34c68928e934fca472ed9b7fb14",
     ),
     (
         "docs/contracts/verification-status.md",
-        "2678cca8a20454cdf01b0758bea5a904140a0ab065e573f14e9e527863d3705d",
+        "f485b6b6ebad3cf7791f69834fa0a00617b108a35ead4e74894100e7f0b826e8",
     ),
     (
         "docs/verification/a10-requirements.md",

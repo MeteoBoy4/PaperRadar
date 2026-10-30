@@ -195,6 +195,7 @@ def test_six_actual_checks_cannot_be_omitted_reordered_or_reused(
         "tests/test_screening_architecture.py",
         "tests/fixtures/a9_coverage.json",
         "docs/contracts/read-validation.md",
+        "docs/verification/contracts-read-validation-history.md",
         "scripts/a9_acceptance.py",
     ],
 )

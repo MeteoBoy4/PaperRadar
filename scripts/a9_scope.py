@@ -58,8 +58,8 @@ REQUIRED_TEST_CASE_COUNTS = {
     "tests/test_read_config.py": 29,
     "tests/test_read_config_cli.py": 5,
     "tests/test_read_recovery.py": 11,
-    "tests/test_a9_acceptance.py": 4,
-    "tests/test_a9_integrity.py": 91,
+    "tests/test_a9_acceptance.py": 7,
+    "tests/test_a9_integrity.py": 92,
     "tests/test_a9_entry.py": 10,
     "tests/test_a9_status.py": 11,
     "tests/test_a9_scope.py": 4,
@@ -108,11 +108,11 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a9_acceptance.py",
-        "ff07327a4d8f49ccbb4648121291c9f9e00e3788af3c11d20e6a504c0cd1dd99",
+        "2cbd937ba93b0cf1de2ef1fe3c5ef2ffd023c22bf5d983d22668368bef3a96cf",
     ),
     (
         "tests/test_a9_integrity.py",
-        "dc4fab0394eb85ce8c494e10f6e9ef9919c638531f68089ef93ff387aea8156a",
+        "bf7b9fe0c7856a3d652bcaa72474d93cf427e30930275cf0918072b0af53c853",
     ),
     (
         "tests/test_a9_entry.py",
@@ -124,7 +124,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a9_scope.py",
-        "0ececb6965d767888c5f4934685521483cafc560c7b07b2a7aa4ba6826761b62",
+        "843067698f290387b867b3dd42e81a52bcc1cc2eaed36f8f2a47ceedd2673ff7",
     ),
 )
 
@@ -331,7 +331,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_acceptance.py",
-        "e6dab1dca576534c936bd7563ad973e8bbd8fcda402d9ba8d935a66210679191",
+        "e1a5cd2d8f352de377f4a59d69cb9c5df0e8356c088f31274b3961d22895ce34",
     ),
     (
         "scripts/a1_scope.py",
@@ -495,11 +495,27 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "16eb02e49a8cfa06b1127113d9cf522c1944dc34b20e7b2928c62b3f2a7db7b1",
+        "e70d976a71fbb8e50f7996c67ace83d7e7601694f46eb426ea9ccb3d096b1131",
     ),
 )
 
 REQUIRED_FIXTURE_FILES = (
+    (
+        "docs/verification/contracts-read-validation-history.md",
+        "649e7cd781d7ca4a55c9baeb4df8cb280a184e19ca6e8884dd74e52c5e7e9cfb",
+    ),
+    (
+        "docs/verification/contracts-backup-restore-history.md",
+        "77fdc9ee348bddd16d5c5a694ef52459d2703241efe5e123da8e6742f68ff46e",
+    ),
+    (
+        "docs/verification/contracts-config-snapshots-history.md",
+        "4d3d3e37b659dd060bf8ee0889c3dcedb14e1159cd7148df2fb849c6d2cfa2fa",
+    ),
+    (
+        "docs/verification/contracts-runtime-config-history.md",
+        "6d2f5b069cf12fc5895c5bca5a6074c5f3af3b2d7e7c1d6de5f317be122662c8",
+    ),
     (
         "contracts/read/read/v1/schema.json",
         "1ac06948024aab610c6b2c1098d0a53596632c940704d32fae860a03ed5d6111",
@@ -564,7 +580,7 @@ REQUIRED_FIXTURE_FILES = (
         "examples/contracts/screening/boundary/v1/manifest.json",
         "5efa0aec0e41329fe8736dcd533706309fd9c3717aeac14ddbf55d05cce0ed0b",
     ),
-    ("README.md", "73aed08f1e6ea8c08b6af2792bf93945570c64e612b1f8c3b8ad15ecf41adcbe"),
+    ("README.md", "38500f30e21472da178c7bfc2d37d2f0c32ed0ee8351ac66157638dfd37612cb"),
     ("GLOSSARY.md", "4ce38c9df937063b0ff1d0b68e5d63641f3ac1abcab5a63d52c8220480573a90"),
     (
         "intent/draft.md",
@@ -572,7 +588,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/read-validation.md",
-        "bfe3058fcd67325b9d579d5cf76ca0ec885341c3510f2f87a2387fccb957a974",
+        "7410da94bcf956f8624ae9d40b931b8fd6002d254e47fb62530391c015b7d458",
     ),
     (
         "docs/verification/a9-scope-review.md",
@@ -580,27 +596,27 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/contracts/frozen-contracts.md",
-        "cb13553dc6c3d8187384f00df04165e4288d817c89be8a5748006f6678a4d1d2",
+        "1bd49925125e5abc7c6ef1958a81900693b5095eda1ac6b33b317108fdaf3b00",
     ),
     (
         "docs/contracts/runtime-config.md",
-        "df0c5e8fd55960d57ea3457a5b06d63087c609a8ac90a8ad1e012c2013c52edf",
+        "9ba9c6321680611cf4bd7dd7d9c88b3ea504f2047615d5371e85ee25498089dc",
     ),
     (
         "docs/contracts/config-projections.md",
-        "de7d3b72dab0ce4f259113a4a22fc33270a2108dfd14c2eae4213c7d62f52a19",
+        "056d061d8ebf73f999ce2f5615d6032f9f8855b2b2ddcc7ed4f8bc04dd9d0f85",
     ),
     (
         "docs/contracts/config-snapshots.md",
-        "6fafd442fe189b0c25ded1c0dac9e4a9d71a065b1361e26daaf80d45f28d77aa",
+        "2fc1940a9ad110f97447cad369dd49354b4940417d558543035213e8e8201402",
     ),
     (
         "docs/contracts/verification-status.md",
-        "2678cca8a20454cdf01b0758bea5a904140a0ab065e573f14e9e527863d3705d",
+        "f485b6b6ebad3cf7791f69834fa0a00617b108a35ead4e74894100e7f0b826e8",
     ),
     (
         "docs/contracts/backup-restore.md",
-        "4617566cff18948f17ea442e8e563e3b64aa61730b1669803adcbaed68346de1",
+        "accd5a6e259eac637dcb834b34288e1efe4914915ba66c7ef88d5aaf486dcc6a",
     ),
     (
         "docs/verification/offline-evidence.md",

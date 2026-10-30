@@ -1,6 +1,9 @@
 """独立 A9 只证明给定上下文的 Read 离线能力。"""
 
+import hashlib
 from pathlib import Path
+
+import pytest
 
 from scripts.a2_full_acceptance import acceptance_groups
 
@@ -79,6 +82,9 @@ def test_a9_records_read_rules_contract_same_run_execution_and_coverage(
         }
     ]
     assert result["direct_dependencies"] == ["A1", "完整 A2", "A3"]
+    assert result["story_coverage"]["document"] == (
+        "docs/verification/contracts-read-validation-history.md"
+    )
     assert result["story_coverage"]["count"] == 42
     assert [story["number"] for story in result["story_coverage"]["stories"]] == list(
         range(1, 43)
@@ -97,6 +103,46 @@ def test_a9_records_read_rules_contract_same_run_execution_and_coverage(
         "stage_a",
         "live",
     } <= set(result["not_assessed"])
+
+
+@pytest.mark.parametrize("prefix", ["US", "ID", "TD"])
+def test_a9_coverage_reads_history_and_rejects_missing_ids_after_rebinding(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, prefix: str
+) -> None:
+    from scripts import a9_acceptance
+    from scripts.a9_scope import REQUIRED_FIXTURE_FILES
+    from tests.a9_acceptance_support import ROOT
+
+    paths = (
+        "tests/fixtures/a9_coverage.json",
+        "docs/contracts/read-validation.md",
+        "docs/verification/contracts-read-validation-history.md",
+    )
+    for relative in paths:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((ROOT / relative).read_bytes())
+
+    def bind_documents() -> None:
+        registered = dict(REQUIRED_FIXTURE_FILES)
+        registered.update(
+            (relative, hashlib.sha256((tmp_path / relative).read_bytes()).hexdigest())
+            for relative in paths
+        )
+        monkeypatch.setattr(
+            a9_acceptance, "REQUIRED_FIXTURE_FILES", tuple(registered.items())
+        )
+
+    bind_documents()
+    assert a9_acceptance._coverage(tmp_path) is not None
+    history = tmp_path / paths[-1]
+    text = history.read_text(encoding="utf-8")
+    assert f"| {prefix}01：" in text
+    history.write_text(
+        text.replace(f"| {prefix}01：", f"| {prefix}00："), encoding="utf-8"
+    )
+    bind_documents()
+    assert a9_acceptance._coverage(tmp_path) is None
 
 
 def test_failed_read_check_still_records_actual_schema_digest(tmp_path: Path) -> None:

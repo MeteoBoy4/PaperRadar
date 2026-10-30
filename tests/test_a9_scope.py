@@ -41,6 +41,8 @@ def test_a9_scope_covers_actual_rules_support_and_omits_self_hash() -> None:
         "tests/test_screening_architecture.py",
         "tests/read_recovery_worker.py",
         "tests/fixtures/a9_coverage.json",
+        "docs/contracts/read-validation.md",
+        "docs/verification/contracts-read-validation-history.md",
         "contracts/read/read/v1/schema.json",
     } <= fixed
 

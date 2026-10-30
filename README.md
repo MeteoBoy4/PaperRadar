@@ -412,7 +412,7 @@ uv run --offline --locked paper-radar audit replay PLAN_ID \
   [论文事实](docs/verification/a6-requirements.md)、
   [Screening 任务](docs/verification/a7-requirements.md)、
   [RPC](docs/verification/a8-requirements.md)、
-  [Read](docs/contracts/read-validation.md#92-覆盖台账)、
+  [Read](docs/verification/contracts-read-validation-history.md#92-覆盖台账)、
   [Fixture／摘要审计](docs/verification/a10-requirements.md)。
 - Feed 工程与解析边界：[交付证据](docs/verification/issue-114-feed-delivery.md)、
   [parser 固定回归](docs/verification/feed-parser-v1.md)。

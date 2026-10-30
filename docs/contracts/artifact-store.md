@@ -1,8 +1,8 @@
 # 不可变制品存储 Contract v1
 
 本 Contract 固定内容对象身份、制品清单格式、纯内容布局及公共发布/读取边界。
-提供四种单文件制品与完整 extraction 多文件发布；也提供自包含备份与隔离恢复，
-公开边界见[备份与恢复 Contract](backup-restore.md)。
+提供四种单文件制品与完整 extraction 多文件发布；自包含备份与隔离恢复组合此服务，
+其公开边界见[备份与恢复 Contract](backup-restore.md)。
 存储成功表示原字节完整保存，业务接收不在这个边界：不判断来源是否贡献事实、PDF
 是否合法取得或模型输出是否通过权威接收。上游必须先完成相应验证；不提供通用人工导入 CLI。
 
@@ -16,28 +16,30 @@ artifact 身份是规范清单 UTF-8 字节的 SHA-256，不包含时间、路�
 其他域或格式版本拒绝。成员按 role 的 Unicode 码点升序，JSON 键排序、紧凑分隔符
 `,`/`:`，非 ASCII 直接编码 UTF-8，无 BOM、末尾换行或无意义空格。
 
-| kind | 恰有的角色 | 当前发布状态 |
-| --- | --- | --- |
-| source_snapshot | payload | 已开放 |
-| original_pdf | payload | 已开放 |
-| model_success_response | payload | 已开放 |
-| reference_tei | payload | 已开放 |
-| extraction | document、evidence_map、manifest、reading | 已开放完整集合 |
+| kind | 恰有的角色 |
+| --- | --- |
+| source_snapshot | payload |
+| original_pdf | payload |
+| model_success_response | payload |
+| reference_tei | payload |
+| extraction | document、evidence_map、manifest、reading |
 
-extraction 的 manifest 是上游正文材料成员，与这里的制品清单不同，不能循环包含自身哈希。
+extraction 的 manifest 成员与制品清单的区别见[集合规则](#多文件集合原子性与失败恢复)。
 同一 artifact 内不同角色允许引用同一个 blob。媒体类型由 kind/role 推导，不由调用方传入，
 不进入身份：original_pdf 为 application/pdf，reference_tei 为 application/tei+xml，
 extraction/reading 为 text/markdown，其余 extraction 角色为 application/json；
 来源与模型响应默认 application/octet-stream，以保持原始字节语义。
-boundary 接收消费 model_success_response：唯一 payload 逐字
-保存通过 A1 的原始响应（含合法外围空白）；结构结果与审计属于任务事实，不进入
-ArtifactRecord metadata。事务外发布后的完整未引用响应仍合法且纳入备份。
+Screening 接收使用 model_success_response 保存原始成功响应；权威校验、响应格式、
+结构结果与审计归属见[Screening 任务契约](screening-tasks.md)。存储保留 payload
+原字节，不附加业务 metadata；文件发布与任务事务分离，已完整登记但未被任务引用的
+响应仍是合法制品，纳入备份。
 
 SQLite 是登记事实源：`content_objects` 记录 blob 身份、长度、布局版本、相对位置和时间；
 `artifacts` 记录身份、kind、格式与时间；`artifact_members` 记录 artifact/role 到 blob 和
 成员长度。artifact 清单正文既不存磁盘也不存数据库；每次读取从关系重算身份。
 PK、UNIQUE、FK、hex 和非负整数约束在 SQLite 生效；kind/role 枚举由 Python Contract
-强制，不使用需要重建表才能演进的 DB CHECK 枚举。A3 本身不建立论文表、backup_runs 或自由业务 JSON 桶；独立论文事实表与来源关联见[论文事实 Contract](paper-facts.md)。
+强制，不使用需要重建表才能演进的 DB CHECK 枚举。制品登记不承载论文事实、
+backup_runs 或自由业务 JSON 桶；论文事实表与来源关联见[论文事实 Contract](paper-facts.md)。
 
 ## 独立固定向量
 
@@ -58,7 +60,7 @@ artifact ID：`accf50f8375b85b3f2105c3904cf05db0d56922a0bffe9cafb0f1e8bf6e57afa`
 
 artifact ID：`b461c859afffb63c837b556746fd0ab9cfe892bcd1a58a912da46799b1738d87`。
 这个向量冻结共享 blob 和角色排序。成员字节或角色分配变化的六组完整规范清单与身份
-另外固定在 `tests/fixtures/extraction_artifact_vectors.json`；期望不从被测服务生成。
+另外固定在[独立向量文件](../../tests/fixtures/extraction_artifact_vectors.json)。
 
 ## 路径、权限与发布
 
@@ -67,7 +69,8 @@ artifact ID：`b461c859afffb63c837b556746fd0ab9cfe892bcd1a58a912da46799b1738d87`
 根内每个组件（含 tmp、前缀目录和文件）一律拒绝符号链接。数据库可以位于数据根以外。
 这是误配置、损坏与路径穿越的防护，不扩展至同机恶意替换的 TOCTOU/openat 威胁模型。
 
-存储与备份共用 `storage/filesystem.py` 的逐组件路径约束与目录 fsync；各自入口
+存储与备份共用 [`storage/filesystem.py`](../../src/paper_radar/storage/filesystem.py)
+的逐组件路径约束与目录 fsync；各自入口
 保留领域错误映射，根解析与目录创建策略仍由调用者负责。
 
 分段写入本根 `tmp/` 的进程独有临时文件，同时计算实际哈希和长度；若给定预期哈希必须一致。
@@ -84,36 +87,55 @@ artifact ID：`b461c859afffb63c837b556746fd0ab9cfe892bcd1a58a912da46799b1738d87`
 ## 公共服务
 
 `paper_radar.storage.artifacts.ArtifactStore(database: Path, data_root: Path)` 的构造不建库、不
-创建目录；仅解析根。公共发布入口 `publish_single(kind, chunks, expected_sha256=None)` 与
-`publish_artifact(kind, members, expected_sha256=None)` 分别接收单文件 kind 与全部五种已开放 kind。
-chunks 为 bytes 分段 iterable；members 为角色到分段 iterable 的映射。
+创建目录；仅解析根。公共发布入口 `publish_single(kind, chunks, *, expected_sha256=None)` 与
+`publish_artifact(kind, members, *, expected_sha256=None)` 分别接收单文件 kind 与上述全部五种 kind。
+`expected_sha256` 均为仅限关键字参数：单文件入口接收一个预期 blob 哈希，集合入口
+接收角色到预期 blob 哈希的映射，可只提供部分角色，但拒绝未知角色；它不是 artifact ID。
+chunks 为 bytes 分段 iterable，非 bytes 分段拒绝；members 为角色到分段 iterable 的映射。
 `publish_single` 只接受单 payload 集合；`publish_artifact` 对 extraction 恰要求四角色，
-拒绝缺项、未知/额外角色或重复枚举的角色。成员枚举顺序不改变身份。
+拒绝缺项、未知/额外角色或重复枚举的角色。成员枚举顺序不改变身份。调用方负责将
+文件流转换为有界 bytes 分段；服务不对调用方单个分段大小设上限。
 
-返回不可变 `ArtifactRecord(artifact_id, kind, format_version, members, created_at)`，其中
-members 是 `ArtifactMember(role, sha256, size_bytes)` 集合。
-`get_artifact(id)` / `artifact_blobs(id)` 校验完整登记身份、角色闭包与派生位置，后者也返回
-`BlobRecord(sha256,size_bytes,relative_path,layout_version)`。`list_artifacts()` 在同一
-数据库读取视图中校验全部登记闭包，拒绝孤立对象/引用，不扫描文件系统猜测事实。
+`prepare_publish()` 不打开数据库、不登记或发布制品；它创建所需目录并实际探测临时
+文件写入、只读化、fsync 和 hard-link 能力。探测覆盖 SHA-256 命名空间与已存在的
+两位十六进制 shard（仅检查固定 256 个槽位，不遍历内容或创建空 shard），正常退出
+清理探针；不修复既有内容，也不保证后续发布 I/O 成功。
+
+两个发布入口返回不可变 `ArtifactRecord(artifact_id, kind, format_version, members, created_at)`，
+其中 members 是按 role 升序的 `tuple[ArtifactMember, ...]`，成员字段为 `role, sha256, size_bytes`。
+`get_artifact(id)` / `artifact_blobs(id)` 校验完整登记身份、角色闭包与派生位置，后者返回
+`(ArtifactRecord, tuple[BlobRecord, ...])`，blob 顺序与 members 的 role 升序一致；
+`BlobRecord` 字段为 `sha256,size_bytes,relative_path,layout_version`。
+`list_artifacts()` 返回按 artifact_id 升序的 `tuple[ArtifactRecord, ...]`，在同一数据库
+读取视图中校验全部登记闭包，拒绝孤立内容对象登记/成员引用。这些查询不读取或
+核验内容文件，不扫描文件系统猜测事实。
 
 `read_artifact(id)` 返回角色到 bytes 的映射；在全部成员登记身份、位置、长度、哈希完整
-验证前不向调用方交出内容。本轮不提供流式读取 API。
+验证前不向调用方交出内容；文件必须为无写权限的普通文件。没有流式读取 API。
 阶段输入消费者从 `get_artifact` 的明确成员取 payload/reading/evidence_map 哈希，
 而非把 artifact_id 当阶段输入身份；隔离恢复后必须从恢复库重新取得成员。
 四阶段配方、正文来源消费闭包与生产者义务见[阶段输入契约](stage-inputs.md)。
 `verified_blob_path(blob)` 完整校验文件后返回受控推导路径，供备份自行分段复制并再次
 核验哈希；这是完整性检查边界，不是将未校验字节交给业务的流式读取入口。
 
-文件先发布、登记后提交，且 A3 无删除：固定备份数据库已引用的内容文件在其提交前就存在，
-之后不会被删除；备份复制期间新增 blob 不在固定清单中。因此备份按副本登记复制无需锁
-存储根。未来引入 GC/删除前必须重新建立并发安全论证。
+文件先发布、登记后提交，且存储服务没有删除入口：在文件未被外部破坏的前提下，
+固定备份副本已登记的内容文件在登记提交前就存在，存储服务也不会删除它们；副本固定后
+新增 blob 不进入该批清单。因此备份按副本登记复制无需锁存储根；并发前置与复制校验
+见[备份契约](backup-restore.md#一致性与发布)。
 
 ## Revision 与原因码
 
-head 固定为 `a302_artifact_store`，祖先 `a201_profile_snapshot`。只追加 CREATE TABLE/INDEX，
-旧 migration 字节不变，不 batch 重建三张配置表。显式升级在一个 SQLite 事务内完成全部
-DDL 和 version stamp；仅迁移连接关闭 legacy 事务模式并显式 BEGIN IMMEDIATE，普通配置
-save_snapshot 的事务语义不变。空库初始化和重复升级可用；升级结束启用 WAL。
+所有制品发布和登记查询均要求数据库处于随包迁移图的唯一 head，当前为
+`feed06_language_provenance`；不会隐式建库或升级。制品三表由
+[`a302_artifact_store`](../../src/paper_radar/storage/migrations/versions/a302_artifact_store.py)
+从 `a201_profile_snapshot` 追加 CREATE TABLE/INDEX，不重建既有配置三表；
+`a302_artifact_store` 是历史迁移节点，不是当前可用库的 head。
+
+`paper-radar db upgrade --database <path>` 是显式创建/升级入口。在一个 SQLite 事务内
+完成迁移 DDL 和 version stamp；仅迁移连接关闭 legacy 事务模式并显式
+`BEGIN IMMEDIATE`，普通配置 save_snapshot 的事务语义不变。空库初始化和重复升级
+可用；迁移提交后另行启用 WAL。因此 WAL 启用失败不表示已提交的迁移回滚，应检查
+介质并重新执行显式升级。
 
 `StorageError.reason` 的数据库分类如下；reason 不包含路径、revision 原文或配置正文。
 
@@ -126,7 +148,7 @@ save_snapshot 的事务语义不变。空库初始化和重复升级可用；升
 | package_migrations_invalid | 安装包迁移脚本多 head、无 head 或不可读；检查安装 |
 | database_revision_corrupt | 库内 version 行为空或多行；检查数据库 |
 | database_unreadable | 库不可读；检查路径/权限 |
-| upgrade_failed | DDL/stamp 失败已回滚；排除故障后重试 |
+| upgrade_failed | 升级执行失败；DDL/stamp 事务内失败整体回滚，提交后故障不撤销迁移；检查状态后重试 |
 | wal_unavailable | 无法启用 WAL；检查存储介质 |
 | storage_failed | 其他既有存储失败；按中文指引检查 |
 
@@ -141,7 +163,7 @@ save_snapshot 的事务语义不变。空库初始化和重复升级可用；升
 | invalid_hash | 非完整小写 SHA-256；检查输入身份 |
 | unsafe_path | 根内链接或受控位置异常；检查数据根 |
 | blob_missing | 已登记文件缺失；检查数据根或保护副本 |
-| blob_corrupt | 长度/哈希损坏或不可读；检查保护副本，不自动修复 |
+| blob_corrupt | 长度/哈希损坏、不可读、可写或非普通文件；检查保护副本，不自动修复 |
 | hash_mismatch | 实际字节与预期哈希不同；检查上游输入 |
 | publication_failed | 文件持久化或 hard-link 失败；检查权限与文件系统 |
 | artifact_missing | 制品身份未登记；检查完整身份 |
@@ -162,13 +184,32 @@ extraction 的 `manifest` 成员是上游正文制品原字节，与进入制品
 
 临时写入、部分成员已发布、全部文件已发布但登记前、成员行写入中途和 commit 前的
 异常或强杀，都不产生可查询的半集合，旧制品保持可读。未登记的已发布文件允许保留，
-重试逐个验证后复用；本轮不做 GC。读取先验证登记身份并完整读取全部成员，任一成员
+重试逐个验证后复用。读取先验证登记身份并完整读取全部成员，任一成员
 缺失、同长度损坏、路径链接或成员行篡改都会拒绝整个集合，不向调用方交出部分结果，
-也不能用重新发布输入补写历史。进程竞争用管道屏障固定到真实发布/SQL 边界，无 sleep
-排序；输入测试用拒绝无界读取的流包装为 bounded 分段生成器。
+也不能用重新发布输入补写历史。
+
+## 不提供／不证明
+
+- 不执行来源业务验证、PDF 解析、正文质量或模型输出接收；存储成功不授予业务消费资格。
+  正文生产与消费补齐责任见[Body](../roadmap.md#module-body)，取得通道扩展见
+  [F](../roadmap.md#module-f)。
+- 不提供制品 GC、删除或自动修复，也不扫描回收孤立文件；保留与恢复安全承接见
+  [I](../roadmap.md#module-i)。备份无需根锁的论证仅适用于当前无删除边界，不能直接
+  作为引入 GC 后的并发安全依据。
+- 本 Contract 不证明真实来源、Docling、模型、NAS 或无人值守运行就绪；最终恢复责任
+  见[I](../roadmap.md#module-i)。
 
 ## 相关
 
-依据：[#69](https://github.com/MeteoBoy4/PaperRadar/issues/69)。
+依据：[规格 §6](../../intent/draft.md#六制品与目录契约)、[§9](../../intent/draft.md#九备份恢复与清理)、
+[ADR-0027](../adr/0027-address-artifacts-by-content.md)、
+[#69](https://github.com/MeteoBoy4/PaperRadar/issues/69)。
 
-[规格](../../intent/draft.md#六制品与目录契约)；[ADR-0027](../adr/0027-address-artifacts-by-content.md)；[路线图承接](../roadmap.md#module-body)。
+实现：[`artifact_contract.py`](../../src/paper_radar/storage/artifact_contract.py)、
+[`artifacts.py`](../../src/paper_radar/storage/artifacts.py)、
+[`artifact_repository.py`](../../src/paper_radar/storage/artifact_repository.py)、
+[`blob_store.py`](../../src/paper_radar/storage/blob_store.py)、
+[`database.py`](../../src/paper_radar/storage/database.py)。
+回归定位：[身份向量](../../tests/test_artifact_contract.py)、
+[存储边界](../../tests/test_artifact_store.py)、[多文件集合](../../tests/test_extraction_artifacts.py)、
+[迁移](../../tests/test_storage_migrations.py)；这些链接不代表本轮或 live 验收结论。

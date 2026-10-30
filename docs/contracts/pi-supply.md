@@ -1,10 +1,18 @@
 # Pi 固定供给 Contract v1
 
-当前交付 `pi supply prepare/verify/rebuild/activate/list/show/export`、`doctor --scope pi-supply` 和公共 Python 服务
-`paper_radar.pi_supply.prepare_supply/verify_supply/rebuild_supply/list_supplies/show_supply`，
-以及 `activate_supply/activation_history/doctor_supply/export_supply` 和只读 `available_installs(database, supply_id)`。
-准备不激活，无需真实 Profile、模型配置或凭据，也不证明 RPC、模型语义或校准。
-`SupplyRequest`、`SupplyManifest` 为 `pi_supply/models.py` 的权威 Pydantic 类型。
+## 用途与范围
+
+本 Contract 定义项目独立 Pi 固定供给的准备、核验、重建、显式激活、使用保护、清理与材料导出。
+CLI 提供 `pi supply prepare/verify/rebuild/activate/list/show/export/gc/show-plan` 和
+`doctor --scope pi-supply`；公共 Python 服务由
+[`paper_radar.pi_supply`](../../src/paper_radar/pi_supply/__init__.py) 导出。
+准备和重建不激活，无需真实 Profile、模型配置或凭据，也不证明 RPC、模型语义或校准。
+`SupplyRequest`、`SupplyManifest` 为
+[`pi_supply/models.py`](../../src/paper_radar/pi_supply/models.py) 的权威 Pydantic 类型。
+适配器声明、快照加载和模型协议分别见[适配器配置](adapter-config.md)、
+[配置快照](config-snapshots.md)与[Pi RPC](pi-rpc.md)；本 Contract 不另定义其组件规则。
+
+<a id="显式输入与请求"></a>
 
 ## 显式输入与请求
 
@@ -17,10 +25,24 @@ uv run --offline --locked paper-radar pi supply list --database data/paperradar.
 uv run --offline --locked paper-radar pi supply show <完整supply_id> --database data/paperradar.sqlite3
 ```
 
-公共 prepare 的前五个位置参数依次是 database、snapshot_reference、adapter_slot、
-request_path、install_root；三个其他实际根为必填 keyword 参数。
-可注入 downloader/runner 仅替换网络和外部程序。真实实现为 HttpDownloader/ProcessRunner。
-请求严格 YAML/JSON：拒绝未知键、重复键、锚点、合并、多文档、非有限数和任意命令/参数；
+所有命令的 `--database` 均为显式既有库，不自动建库或迁移；库须达到随包迁移的唯一 head，
+否则按 `upgrade_required/database_unavailable` 拒绝。先用 `paper-radar db upgrade --database <db>`
+显式升级；版本检查以 [`storage/database.py`](../../src/paper_radar/storage/database.py) 为准。
+`supply_id`、`plan_id` 只接受完整 64 位小写十六进制，不支持短引用；
+`install_id/root_id/run_id` 为 32 位小写十六进制。
+快照引用支持完整 ID 或唯一的 8–63 位前缀，无隐式最新选择。
+
+公共 `prepare_supply` 的前五个位置参数依次是 database、snapshot_reference、adapter_slot、
+request_path、install_root；data_root、config_root、material_root 为必填 keyword 参数。
+CLI 对应选项全部必填，`--adapter-slot` 仅接受 `screening/reuse_assessment/reading`。
+`proxy/downloader/runner` 的 Python 默认值均为 `None`；CLI `--proxy` 默认不使用代理。
+可注入 downloader/runner 仅替换网络和外部程序，默认真实实现为 HttpDownloader/ProcessRunner。
+prepare/rebuild 返回不可变 `PrepareResult(supply_id, install_id, reused_concurrent=False, residuals=False)`；
+`reused_concurrent` 标明并发 prepare 复用结果，`residuals` 标明已提交重建的管理文件清理残留。
+`list_supplies` 返回 `SupplyRecord` 元组，`show_supply` 返回指定完整 ID 的记录；材料保留原字节，
+实例、逐实例检查和供给级重建失败分别回查，不以最近失败覆盖成功历史。
+
+请求为不超过 4 MiB 的 UTF-8 严格 YAML/JSON：拒绝未知键、重复键、锚点、合并、多文档、非有限数和任意命令/参数；
 整数格式版本严格为 1，布尔不算整数。证据文件相对请求文件所在目录解析，
 拒绝绝对路径、任何 `..` 组件和解析后落在该目录外的链接；合法子目录可用。
 这是请求读取边界的约束；既有冻结证据仍按库内原字节回放，不重新读取源路径。
@@ -42,7 +64,8 @@ request_path、install_root；三个其他实际根为必填 keyword 参数。
 ```
 
 示例工具链不成为默认值。Pi 版本只取经公共快照加载验证的所选 adapter 材料；
-三个程序版本复用 `config.adapters.exact_program_version` 的三段正式版本规则。
+三个程序版本复用[适配器配置的精确版本规则](adapter-config.md)：三段非负整数，
+拒绝前导零、预发布、构建元数据、四段版本或范围表达式。
 允许混合 Pi 版本的快照准备所选槽；准备输出不宣称可激活。
 运行时须是 Linux x86_64，`os.confstr("CS_GNU_LIBC_VERSION")` 须给出非空 glibc 版本，
 实际值与请求平台匹配并进入清单。engines 仅接受精确版本或单一 `>=X.Y.Z`。
@@ -68,20 +91,22 @@ Pi 固定来源为 `https://pi.dev/api/installer/releases/<精确Pi版本>`，
 以及该端点的 `/package.json`、`/package-lock.json`；Node 地址仅由精确版本推导：
 `https://nodejs.org/dist/v<版本>/node-v<版本>-linux-x64.tar.xz`，同目录 SHASUMS256.txt。
 请求摘要须在 SHASUMS 中以精确文件名唯一匹配，随后核验归档原字节再安全解包。
-HTTPS 官方来源与 SHASUMS 是本轮信任边界，不另交付 GPG。
+HTTPS 官方来源与 SHASUMS 是下载信任边界，不提供 GPG 验签。
 
 HTTP 白名单固定 pi.dev 的 release 子路径、registry.npmjs.org、nodejs.org/dist/；
-拒绝 userinfo、其他端口、query/fragment。httpx 不继承环境代理，不自动跟随跳转，
+仅允许 HTTPS 与默认端口或 443；拒绝 userinfo、query/fragment、空白、反斜杠及解码后的 `.`/`..` 路径组件。
+httpx 不继承环境代理，不自动跟随跳转，
 每跳重新验证；最多 5 次跳转，连接 10 秒、读写 30 秒；小材料 4 MiB、归档 128 MiB。
-显式 --proxy 仅接受无 userinfo 的 http/https URL，不入库、不进入身份；
+显式 `--proxy` 仅接受有主机且无 userinfo 的 http/https URL，路径只能为空或 `/`，
+无 query/fragment、空白，端口不能为 0；不入库、不进入身份；
 npm 经本次私有 npmrc 显式使用相同代理，不读取个人 npmrc/cache。
 
 官方三材料配对检查版本、包名、根依赖、engines 和 override，不重新解析依赖。
-保留官方锁原字节；只补 integrity 的 `derived-lock-v1` 见 [ADR-0028](../adr/0028-derive-integrity-only-staging-lock.md)。
+保留官方锁原字节；`derived-lock-v1` 只对 lockfile v3 的 registry 包补充缺失 integrity，
+按 name/version/resolved 精确匹配同 release 的 sha512；已有值冲突、缺依据、重复匹配、
+链接包或不支持的锁格式均拒绝，不改版本、resolved、依赖图或 override。
 补充清单 `integrity-supplements.json` 格式 1，记录所补 path/name/version/resolved/integrity；
 派生锁和补充清单均用共享规范 JSON（UTF-8、键排序、紧凑分隔、无结尾换行）。
-真实 Pi 1.3.0 fixture 的派生锁 SHA-256 固定为
-`a342ed1baea205543bdcaf82ec4aed2bfc771a5c2c47b2bacb8238d06513e7c6`。
 
 npm 只使用本次 Node 自带版本，由明确 Node + npm JS 入口执行：
 `ci --ignore-scripts --omit=dev --include=optional --no-fund --no-audit --update-notifier=false`。
@@ -90,9 +115,13 @@ npm 只使用本次 Node 自带版本，由明确 Node + npm JS 入口执行：
 Node 解包逐条 tarfile data filter 和额外路径/链接/设备约束，上限 100000 条与 1 GiB 展开字节。
 
 受控完整环境只含本次 HOME/tmp/cache/agent/session/XDG、独立 Node PATH、固定 locale，
-固定 umask=022，进程 240 秒和合计 stdout/stderr 1 MiB 上限。失败、取消或超限终止进程组；
-原始输出和 npm debug 日志不永久保存、不回显。Pi 禁用自动更新、遥测、资源发现及会话持久化，
+固定 umask=022，每个外部进程 240 秒和每进程合计 stdout/stderr 1 MiB 上限。
+失败、取消或超限终止进程组；原始输出不回显、不登记为永久日志。
+npm debug 日志位于本次私有 work/cache，正常清理随 staging 删除；清理失败的残留须人工检查。
+Pi 无模型检查使用禁用自动更新、遥测、资源发现及会话持久化的显式参数与环境，
 仅运行明确 Node + 包内 bin 解析出的 Pi JS 入口，分别做无模型 --version/--help。
+两次 Pi 探测均附固定参数 `--offline --no-session --no-extensions --no-mcp --no-skills
+--no-prompt-templates --no-themes --no-context-files --no-tools`，不接受自定义命令或参数。
 help 的私有空 auth/models 文件允许写在树外；session 写入或运行树改变拒绝。
 这是有界启动策略，不声称生产 OS sandbox 或模型运行无网络。
 
@@ -109,7 +138,7 @@ expected_tree、安装后解析的 pi_entry；保留其余字段及官方/补充
 独立清单编码向量见 `tests/fixtures/pi_supply/manifest-vector.json`：用独立 jq -cS
 去掉末尾换行后，SHA-256 为
 `a68a0964d1913cabfd75b49034162096e24c9a0ee5dc428e69760c3d053f2ea7`。
-它仅测试规范编码与身份算法，材料摘要为合成占位，不可登记为已验证安装。
+向量中的材料摘要为合成占位，不可登记为已验证安装。
 
 公开纯函数 `paper_radar.pi_supply.filesystem.tree_hash(root)` 实现 tree-v1：
 完整 `node/`、`app/`（含派生锁与 npm 元数据）全部计入，无文件排除；cache/HOME/tmp/log 位于树外。
@@ -123,11 +152,12 @@ executable 为任一 x 位的布尔值，目录也计；链接目标保留原文
 
 独立向量：根与 `bin/` 可执行，`bin/run` 内容为 `hi\n` 且可执行，`run` 为 `bin/run` 的相对链接，
 树摘要为 `3ba7d3e8a26699a27360c5f3575eee704abe8cb77f572e0a21f768a798b96573`。
-测试使用固定字面量并验证不同 staging/umask/mtime，以及内容与执行位变化。
+位置、umask 与 mtime 不参与身份；内容或执行位变化参与身份。
 
 ## 安装实例、发布与恢复
 
-安装根须与显式 data/config/materials 根两两互不包含，且不能含数据库；路径组件拒绝符号链接。
+安装根须与显式 data/config/materials 根两两互不包含，四根均不能为 `/`，
+安装根不能含数据库；路径组件拒绝符号链接。
 仅支持本地 ext2/3/4、xfs、btrfs、zfs、tmpfs、overlay，按 Linux 实际挂载点识别；不支持 NFS/CIFS。
 mountinfo 路径完整解码三位八进制转义；最长挂载点有多个不同文件系统类型时保守拒绝，不按字串挑选。
 512 MiB 可用空间预检只前移空间不足，不能取代后续校验或保证真实安装空间足够。
@@ -160,16 +190,16 @@ Linux 移动目录时顶层短暂保留写位，发布后撤去并 fsync，之�
 list/show/export 只回查历史，不检查现场，不要求 Node/Pi、网络或受支持的 Pi 部署平台；
 export 另需下述安全文件能力。list 明示计数为历史登记、未核验现场，
 show 同样披露未核验现场；不能把历史 passed 当作当前可用。声称当前可用的 doctor、
-activate 与使用句柄必须现场核验。此区分落实父票后续对历史查询和隔离恢复的要求。
+activate 与使用句柄必须现场核验。
 检查 scope 当前唯一为 install_check；不导入任意用户声明成功记录。
 
-数据库 head 为 a405_pi_cleanup_execution；既有 migration 原字节保持，
-a404 追加不可变 `pi_cleanup_plans` 及其消费者所需的 `pi_install_retirements` 识别事实；
-a405 追加 `pi_cleanup_executions` 与 `pi_cleanup_progress`，执行复用 a404 退役事实；
-a403 激活事件与唯一选择、a402 重建失败事实保持不变。
-供给小型材料与 D5 证据随数据库备份，backup format 仍为 1，语义回放同时校验供给闭包。
-恢复不安装、不下载、不激活。a302 旧批次须先用匹配 A3 程序恢复，再切新程序 db upgrade；
-不放宽 head gate。恢复副本共用原根时，旧副本退役前不得 gc execute；flock 仅保护在途进程，
+SQLite 永久保留供给材料/清单、根与实例、检查、重建失败、激活历史及唯一选择，
+以及不可变 `pi_cleanup_plans`、`pi_install_retirements`、`pi_cleanup_executions` 和
+`pi_cleanup_progress`。清理只退役本机实例，不删除这些历史。
+供给小型材料与 D5 证据随数据库备份，语义回放同时校验供给闭包；
+恢复不安装、不下载、不追加激活。备份格式、revision gate 与旧批次的匹配程序恢复/显式升级规则
+见[备份与恢复](backup-restore.md)，不以供给表的引入 revision 代替当前 head。
+恢复副本共用原根时，旧副本退役前不得 gc execute；flock 仅保护在途进程，
 不能区分两个空闲活动副本。
 
 导出固定集合为 package.json、package-lock.json、release.json、supply-manifest.json、
@@ -177,6 +207,8 @@ integrity-supplements.json、SHASUMS256.txt 与 d5-evidence/<SHA前16位>.bin；
 derived-lock.json 是内部保存的确定性派生材料，不增加到已批准导出集合。
 版本控制目标 tools/pi/<supply_id>/，安装树 .tools/pi/<supply_id>/<install_id>/ 被 Git 忽略。
 rebuild 重新联网下载固定摘要的 Node/tarball，不承诺脱网重建。
+
+<a id="固定材料导出"></a>
 
 ## 固定材料导出
 
@@ -207,9 +239,8 @@ supply_material/supply_record 只保留清单中的引用，不递归导出别�
 导出不检查 Pi 部署的 OS/arch/libc，但安全发布需要 Python/文件系统支持目录句柄及 dir_fd、
 O_DIRECTORY/O_NOFOLLOW/O_NONBLOCK、普通文件硬链接不覆盖发布与 fsync；缺少能力受控失败，
 不退回可被路径替换的普通路径写入。list/show 与库内历史读取不需要这些导出写入能力。
-2026-10-18 用户裁决：A4 接受上述必要安全文件能力边界，保持能力不足时的安全拒绝。
-历史关闭状态见[路线图](../roadmap.md#已取消)。
-原生 Windows 安全导出当前无交付计划，未实现/未验证 Windows 后端，能力不足继续安全拒绝。
+原生 Windows 安全导出后端未实现/未验证，能力不足继续安全拒绝；
+计划状态见[路线图](../roadmap.md#已取消)。
 这不是跨文件事务：运行中 I/O 故障或强杀可留下部分完整项；保留后重试补齐，不删除用户文件。
 `export_conflict/export_failed` 均给中文原因和下一步；CLI 成功0、失败2、中断130，配额消耗0。
 导出是数据库的版本控制投影，不作为恢复、导入或修复数据库的权威。
@@ -254,14 +285,11 @@ CLI 明示残留需人工检查；它不会把已登记成功改报为构建失�
 若失败审计自身不可写，返回 `failure_record_failed` 并保留受控 execution_reason，不声称已保存。
 备份/隔离恢复保留全部多实例、逐实例检查和供给级失败；回放拒绝孤儿引用、无时区时间或非受控原因。
 
-`available_installs` 不运行程序、不写检查，依次排除归属/路径/现场全树不符的实例，
+`available_installs(database, supply_id)` 返回 `InstallInstance` 元组，不运行程序、不写检查；
+逐实例经 `acquire_install` 临时共享保护，排除已退役、平台/归属/路径/现场全树不符或保护不可取得的实例，
 剩余按每实例最近通过检查的 `(created_at实际时刻, check_id)` 降序返回。
 check_id 全库单调且唯一，时间相同仍确定性破同；最近失败只供审计，不覆盖较早通过。
 查询返回空元组表示没有可用实例；这只是选择时事实，不是未来执行的并发保护。
-
-受控错误完整词表及中文下一步由 `pi_supply/errors.py::SupplyReason/GUIDANCE` 定义；
-常见组为 request/snapshot/adapter、来源/完整性/工具链、平台/根/树、进程配额、发布/并发和事实损坏。
-未知参数、URL/代理、底层异常、子进程输出不直接拼入错误文本。
 
 
 ## 原子激活与只读诊断
@@ -290,9 +318,10 @@ uv run --offline --locked paper-radar doctor --scope pi-supply \
 中断和并发下只会读到完整旧或新选择；没有另一个 symlink 权威。
 上述身份都是执行审计，不进入供给身份、六投影、校准基线、预算或 enable。
 `activation_history(database)` 回查完整追加历史；当前选择必须指向最新完整事件。
-后续执行器必须使用自己持有的快照再次匹配全部已选槽，不能只信过去激活成功。
+使用方通过 `use_install` 以自己持有的快照再次匹配全部已选槽，不能只信过去激活成功。
 
-`doctor_supply(database, snapshot_reference)` 和 CLI 均只读，CLI 必须显式 `--scope pi-supply`，
+`doctor_supply(database, snapshot_reference)` 返回不可变 `DoctorReport`；它和 CLI 均只读，
+CLI 必须显式 `--scope pi-supply`，
 裸命令、未知 scope 或参数错误返回 2。它完整回放全部库内材料、D5、实例与激活引用闭包，
 随后只做现场全树哈希，不执行程序、不联网、不写检查、使用记录或激活事件。
 诊断区分三个面：
@@ -301,8 +330,9 @@ uv run --offline --locked paper-radar doctor --scope pi-supply \
   当前实例的安装保护可确认，库内全量事实闭包可信，实际已登记安装树占用不超过四棵；
   缺项、损坏、当前保护 unknown 或超限返回 2。
 - 业务配置：Profile、模型、Prompt、Read 契约等现有缺项独立列出；这些缺项不阻止供给安装，
-  也不让尚未实施的 Read 契约将窄供给范围永久判失败。RPC、真实 provider/model、凭据、
-  参数映射、生产隔离、正式校准与自动精读独立标注未实施/未验证，不授予任何资格。
+  `read_contract` 等配置缺项也不使窄供给 scope 失败。Read 权威契约见[Read 校验](read-validation.md)。
+  RPC、真实 provider/model、凭据、参数映射、生产隔离、正式校准与自动精读
+  独立标注未验证，不授予任何资格。
 - 历史现场与保留：逐实例披露健康、缺失、坏树和无法确认，历史坏树或失去原根不自动否决
   已显式激活的新根当前匹配；它们仍保留审计，实际存在的坏树仍计入四棵占用。
   无法访问的历史现场计数不可确认，不伪造为健康。库内历史事实损坏始终拒绝，不属于此例外。
@@ -314,16 +344,16 @@ D5 decision 与 basis 原文只读显示，不推断 minor/major 或校准兼容
 当前仅有 install_check，RPC 如实未验证；在途保护由下述真实共享锁观察，不伪造成功记录。
 未激活但现场存在的已登记完整树也计入实际占用，首次部署不要求补齐三个旧实例。
 `retention.protection_reasons(records, history, observations)` 是 doctor 与清理计划共用的纯规则；
-`execution.retention_protection(records, history)` 仍提供保留/逐 scope 最近通过对象摘要，
+`execution.retention_protection(records, history)` 提供保留/逐 scope 最近通过对象摘要，
 二者共用同一保留窗口与逐 scope 查询；
-`selection.match_snapshot` 与 `execution.inspect_instance` 分别提供全部槽匹配和现场核验边界。
+`selection.match_snapshot` 与 `protection.inspect_instance` 分别提供全部槽匹配和现场核验边界。
 
 当前坏实例的修复路径是 `rebuild` 新实例后显式 `activate`，旧坏实例和历史保留。
 回退同样须显式选择匹配供给与快照，不自动 fallback。
 恢复库保留激活历史和根的位置；同机原实例完整且现场核验通过可继续使用，无恢复标记。
 原根/实例不存在则明确指向 rebuild 后再 activate；重建尚未激活时当前选择保持旧值。
 新根激活后旧根可永久缺失，历史诊断仍披露缺项。
-恢复活动副本若共用原根，旧副本退役前不得执行后续 gc execute；
+恢复活动副本若共用原根，旧副本退役前不得 gc execute；
 共享锁只保护在途进程，不能识别另一个空闲副本的 current。
 
 ## 安装使用保护与回收互斥
@@ -341,8 +371,7 @@ D5 decision 与 basis 原文只读显示，不推断 minor/major 或校准兼容
 否则仍持旧 fd 的子进程无法与新锁互斥。缺锁 unknown，必须 rebuild 新实例。共享持有期间的每次真实程序检查都传递
 `Runner.run(..., pass_fds=(fd,))`，`ProcessRunner` 将它原样交给 `Popen`。
 只 close，不显式 LOCK_UN；父正常退出或 SIGKILL 后子仍持 fd 就仍受保护。
-最后持有者退出才释放，不使用 PID/TTL 或业务 lease。详见
-[ADR-0029](../adr/0029-protect-installations-through-inherited-flock.md)。
+最后持有者退出才释放，不使用 PID/TTL 或业务 lease。
 
 `probe_install(database, supply_id, install_id)` 只读返回
 `ProtectionObservation(state, reason)`：`in_flight` 表示真实排他竞争，`idle` 只代表
@@ -363,6 +392,8 @@ install_check 保护独立叠加；当前实例 unknown 阻断所选供给 scope
 只支持契约既定本地文件系统；恢复活动副本共用原根时旧副本退役前不得 gc execute。
 锁身份不进入清单、六投影、校准基线、预算或门禁，也不声称生产 OS 隔离。
 
+<a id="不可变安装清理计划"></a>
+
 ## 不可变安装清理计划
 
 ```bash
@@ -379,7 +410,9 @@ uv run --offline --locked paper-radar pi supply show-plan <完整plan_id> \
 只写不可变计划，不删除树、不改变安装可用性、执行选择、配置、预算或门禁。
 `show_cleanup_plan(database, plan_id)` 和 `list_cleanup_plans(database)` 完整回放计划历史；
 查询不检查现场、不联网、不运行程序。CLI 生成计划必须显式 `--dry-run`；执行仅接受 `--execute <完整plan_id>`，拒绝路径/glob/force。
-`show-plan --canonical` 输出保存的规范 JSON 字节再附终端换行；摘要不包含此终端换行。
+`--dry-run` 默认 false，`--execute` 默认 None，必须显式选择且互斥；
+`--canonical` 默认 false，只显示汇总。`show-plan --canonical` 输出保存的规范 JSON 字节
+再附终端换行；摘要不包含此终端换行。
 
 权威类型为 `pi_supply/cleanup_models.py::CleanupPlan`：严格格式版本 1、未知键拒绝，
 共享 UTF-8/排序键/紧凑分隔/无结尾换行规范 JSON；`plan_id=SHA-256(canonical_bytes)`。
@@ -406,8 +439,8 @@ uv run --offline --locked paper-radar pi supply show-plan <完整plan_id> \
 窗口按最新激活事件逆序对 install_id 去重，保护当前和最近三个不同旧实例，**全库跨供给竞争四个位置**；
 同供给多实例分别计数，反复切换同一实例不多占位置。未激活实例也单独说明并纳入候选/占用。
 叠加各适用 scope 最近通过保护（按带时区时间/check_id）、真实在途保护和保护未知。
-`install_check` 不覆盖/冒充 `rpc_compatibility`；未来范围只在纯规则合成输入中测试，
-生产数据库仍仅接受既有 install_check 记录。doctor 与计划使用同一逐实例保留理由。
+`install_check` 不覆盖/冒充 `rpc_compatibility`；纯保留规则支持合成 `rpc_compatibility` 输入，
+生产数据库仅接受 install_check 记录，不提供生产 RPC 成功导入入口。doctor 与计划使用同一逐实例保留理由。
 超过四棵只报告，不绕过保护；prepare、doctor、计划和恢复均不自动清理。
 
 每个根重查整组 safe_roots、普通 marker 归属与本地文件系统；父路径拒绝符号链接。
@@ -430,6 +463,8 @@ reflink/压缩/文件系统元数据及并发占用不可精确归因，所以�
 恢复活动副本若仍共用原根，旧副本退役前不得执行清理；本机制不提供生产 OS 隔离。
 
 
+<a id="安装清理执行与中断恢复"></a>
+
 ## 安装清理执行与中断恢复
 
 `execute_cleanup_plan(database, plan_id) -> CleanupExecution` 只接受已保存、完整且可回放的计划 ID。
@@ -442,7 +477,7 @@ CLI `gc --execute <plan-id> --database <db>` 不接受另外的根路径；与 `
 单项核验失败只归因于实际失败候选。库级前置未通过时，同一短事务为所有尚未启动候选
 追加 `not_run` 阻断事件，reason 限定为 `cleanup_facts_changed/database_unavailable/operation_interrupted/cleanup_failed`；
 CLI 明示库级阻断、候选未运行。此终止批次必须整组同原因，不接受部分追加或后续继续运行。
-该语义使用既有 a405 表与受控字段，不改变 plan 格式/原字节或旧事件；旧历史照常回放。
+回放接受这种库级阻断批次，也保留既有逐项事件与原计划字节。
 退役提交之后中断按库内实际最后进展记录失败，不回退为 not_run；已 completed/failed 不再追加失败。
 强杀可能仅留 `not_run/retired/moved`，如实表示未完成，不能报告成功。
 `CleanupExecution.events` 保留全部事件；`items` 投影每个候选最新状态，`passed` 只表示本计划全部候选完成，
@@ -451,7 +486,9 @@ CLI 明示库级阻断、候选未运行。此终止批次必须整组同原因�
 先完整回放原计划与材料闭包，比对全部数据库安全事实，再取得所有候选的非阻塞 EX。
 持 EX 后重复核验根归属、整组危险路径、本地文件系统、当前位置与计划实际 tree-v1。
 安全事实保持原样才进入短 `BEGIN IMMEDIATE`：一次追加全部候选永久退役与 retired 进展。
-事务不等待 flock，不执行昂贵哈希。此事务后新共享取得、verify、activate 与 available_installs 都排除退役实例；
+事务不等待 flock，不执行昂贵哈希。此事务后新共享取得、activate 与 available_installs
+不再接受退役实例为可用安装；verify 通过库级平台门槛后仍遍历其历史登记，
+对退役实例追加 `install_unavailable` 失败检查而不运行程序。
 probe/GC 仍可按登记身份定位树外锁与退役原位/trash，未复制另一套保护协议。
 
 执行仅允许自己刚提交的精确退役增量；其他激活、检查、根、实例或退役变化均拒绝旧计划。
@@ -473,31 +510,70 @@ probe/GC 仍可按登记身份定位树外锁与退役原位/trash，未复制�
 旧计划字节、期望、供给/实例/检查/激活历史均不改写，不重复登记供给或安装事实。
 
 当前备份语义回放验证 plan/run/候选/退役引用、带时区时间、受控 phase/reason 与事件顺序；
-非空 a404 升级与包含完整/中断清理历史的 backup/restore 均保留原字节，回查无需原安装根。
+包含完整/中断清理历史的 backup/restore 保留原计划字节与执行历史，回查无需原安装根。
 恢复不会复制安装树或恢复已退役实例可用性。共用原根的恢复活动副本在旧活动副本退役前不得清理；
 flock 无法识别另一个空闲副本的选择。此限制与同用户恶意文件替换不属于生产 OS 隔离承诺。
 
 CLI 参数或失败返回 2，中断返回 130；失败只输出身份、受控原因与新计划恢复步骤，不包含底层路径、秘密或程序输出。
-帮助完全本地且不创建文件、数据库、锁或计划。所有普通测试只用临时库与目录；该离线范围未验证新的真实 Node/Pi、RPC、网络或用户安装根删除。
+帮助完全本地且不创建文件、数据库、锁或计划。
 
 
-## A4 离线验收边界
+## 错误与拒绝
 
-唯一 `./scripts/check-offline` 追加必需 `.a4.json`，与基础证据、A1、A2-01、完整 A2、A3
-组成六份主要文件，pytest 回执另存第七份。A4 独立绑定本次三份必需前置、执行回执、
-固定材料/源码/测试、真实迁移与生产格式、环境及代码身份。十项生命周期 capabilities
-全部通过才完整通过，不从机制 spike 或退出零推断覆盖。live_install/RPC/完整阶段 A、
-真实来源/NAS/自动精读恒未验收；真实 install_check 仍只能查询用户库本次 prepare 记录。
-细则见 [离线证据](../verification/offline-evidence.md)；
-正文、各轮裁决和补充的责任见 [逐条归属](../verification/a4-requirements.md)。
+Python 服务抛出 `SupplyError`，`reason` 为受控原因；失败审计不可写时另带
+`execution_reason`，不把未保存的事实报为已保存。完整词表与中文下一步由
+[`pi_supply/errors.py::SupplyReason/GUIDANCE`](../../src/paper_radar/pi_supply/errors.py) 定义。
 
-## B 首次生产供给目标（#111）
+| 类别 | 代表原因与恢复边界 |
+| --- | --- |
+| 请求、快照、adapter、引用 | `request_invalid`、`snapshot_invalid`、`adapter_missing`、`supply_reference_invalid`、`supply_not_found`；修正显式输入或从 list 复制完整 ID |
+| 数据库与历史闭包 | `upgrade_required`、`database_unavailable`、`supply_corrupt`、`evidence_unresolved`；显式升级，或保留库检查原字节、身份与引用，不靠改摘要修复 |
+| 来源、材料与工具链 | `source_forbidden`、`proxy_invalid`、`download_failed/download_limit/redirect_limit`、`material_*`、`integrity_*`、`engines_*`、`node_checksum_mismatch`、`node_version_mismatch/npm_version_mismatch/pi_version_mismatch`；核对固定来源与材料，不改用镜像、个人安装或自动 fallback |
+| 平台、根、归档与树 | `platform_mismatch`、`unsafe_path/unsafe_root`、`root_foreign/root_unowned_nonempty`、`filesystem_unsupported`、`space_insufficient`、`archive_*`、`tree_*`、`entry_invalid`；保留现场，选择安全根或 rebuild 新实例 |
+| 进程与发布 | `process_failed/process_timeout/process_output_limit`、`startup_side_effect`、`installed_material_changed`、`publication_*`、`concurrent_*`、`prepare_failed/verify_failed/rebuild_failed`；终止异常进程组，保留旧实例和未知残留；可靠意图才可重入 |
+| 固定输入重复 | `already_prepared_use_rebuild`；不能改 D5 重冻，须按原清单 rebuild 新实例 |
+| 执行选择与保护 | `selection_missing/selection_changed/selection_version_mismatch`、`adapter_versions_mixed`、`install_unavailable/install_busy`、`protection_unknown`、`retention_exceeded`；重新明确领取，或 rebuild 后显式 activate；缺锁不补建，超限不绕保护 |
+| 导出 | `export_conflict/export_evidence_collision/export_failed`；不覆盖用户文件，能力不足安全拒绝；I/O 中断后重试补齐完整项 |
+| 清理与审计 | `cleanup_plan_missing/cleanup_plan_invalid`、`cleanup_execution_missing/cleanup_history_invalid`、`cleanup_facts_changed/cleanup_tree_changed/cleanup_failed`、`operation_interrupted`、`failure_record_failed`；历史损坏先检查，现场漂移或退役残留须新计划，退役不撤销 |
 
-当前固定供给工程不证明 B 首次 Pi 1.4.0 的安装/RPC 兼容、实际 Node/npm 选择或现场隔离通过。A4 1.3.0 固定材料、机制 spike 与 A2 示例保持历史身份，不能拼成生产兼容或 live/install_check 证明。首次供给、后续升级与隔离目标见[规格 §7.8](../../intent/draft.md#78-pi-固定版本供给)及[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界)，责任见[路线图 Live](../roadmap.md#module-live)。
+CLI 成功返回 0，参数或受控失败返回 2；prepare/verify/rebuild/activate/doctor/export/gc
+捕获中断返回 130。verify 任一实例失败返回 2，doctor 仅按所选供给 scope 判定，
+gc 执行结果 incomplete 返回 2。所有供给操作消耗 0 次模型自动配额，不调用模型。
+未知参数、URL/代理、底层异常、子进程输出不直接拼入错误文本；D5 basis/note
+是用户提供的审计材料，必须由用户保证不含秘密，show/doctor 可显示原文。
 
+## 不提供／不证明
+
+- 安装检查只证明明确实例、范围和检查时刻；历史通过不保证当前现场完整，
+  版本匹配、激活、导出或纯规则通过不等于 RPC、真实 provider/model、模型质量、
+  正式校准、自动精读或全项目就绪。
+- 固定供给不承诺脱网重建或远端大包永久可得，不导出安装树、Node/npm 大包、认证或完整会话。
+  历史事实与小型材料回放不依赖安装树。
+- 有界无模型启动和安装 flock 不构成生产 OS 隔离，也不识别共用原根的另一个空闲活动库副本。
+  生产启动器与权限资源责任见[Pi](../roadmap.md#module-pi)，现场隔离责任见[Cwd](../roadmap.md#module-cwd)。
+
+<a id="b-首次生产供给目标111"></a>
+
+- 当前固定供给工程不证明 Pi 1.4.0 实际安装/RPC 兼容、实际 Node/npm 选择或现场隔离通过。
+  1.3.0 固定材料、机制 spike 与历史配置示例不能拼成生产兼容或 live/install_check 证明。
+  实际安装与 RPC 验收责任见[Live](../roadmap.md#module-live)。
+
+<a id="a4-离线验收边界"></a>
+
+既有 A4 覆盖与验收叙述仅见[历史原文及证明限制](../verification/contracts-pi-supply-history.md)，
+不在本 Contract 维护产物数量或验收台账。验收证据入口见下节，不从历史通过推断当前或 live 就绪。
 
 ## 相关
 
-依据：[#36](https://github.com/MeteoBoy4/PaperRadar/issues/36)、[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+依据：[#36](https://github.com/MeteoBoy4/PaperRadar/issues/36)、[#46](https://github.com/MeteoBoy4/PaperRadar/issues/46)
+（2026-10-18 安全导出能力边界裁决）、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)；
+[规格 §7.8](../../intent/draft.md#78-pi-固定版本供给)、
+[ADR-0026](../adr/0026-control-pi-through-a-bounded-rpc-adapter.md)、
+[ADR-0028](../adr/0028-derive-integrity-only-staging-lock.md)、
+[ADR-0029](../adr/0029-protect-installations-through-inherited-flock.md)、
+[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界)。
 
-[规格](../../intent/draft.md#78-pi-固定版本供给)；[ADR-0029](../adr/0029-protect-installations-through-inherited-flock.md)；[路线图承接](../roadmap.md#module-live)。
+组件：[适配器配置](adapter-config.md)、[Pi RPC](pi-rpc.md)、[Read 校验](read-validation.md)、
+[备份与恢复](backup-restore.md)。
+证据：[离线证据](../verification/offline-evidence.md)、[A4 逐条归属](../verification/a4-requirements.md)、
+[迁出的历史原文](../verification/contracts-pi-supply-history.md)。

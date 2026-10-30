@@ -1,4 +1,6 @@
-# 阶段配置投影、校准基线与只读比较（#23）
+<a id="阶段配置投影校准基线与只读比较23"></a>
+
+# 阶段配置投影、校准基线与只读比较
 
 ## 公共边界
 
@@ -10,9 +12,9 @@
 | `compare_config_snapshots(before, after)` | 两个已验证快照 → `ConfigSnapshotDiff` | 分别调用单快照重建，再纯比较。 |
 | `diff_config_snapshots(database, before_id, after_id)` | 明确数据库路径与两个完整 ID → `ConfigSnapshotDiff` | 沿用 load 的只读历史验证，不读取当前文件或 selector。 |
 
-领域能力在 `config/projections.py`，纯比较在 `config/diff.py`；数据库加载由应用服务
-`config/service.py` 组织，CLI 只渲染受控结果。校准、诊断与阶段输入指纹消费者可以直接
-复用单快照能力，无需调用 diff 或读取数据库；不提供单快照 CLI。
+单快照重建和纯比较不访问外部材料，也不验证调用方自行构造或修改的快照；已验证快照
+是调用前置，不以“配置 ready”为前置。数据库服务先完整加载并验证两个历史快照，再比较，
+不读取当前配置。阶段输入等程序消费者直接复用单快照能力，无需调用 diff。
 
 `ConfigSemantics.projections` 是以六值 `StageName` 为键的只读映射；
 `StageConfigProjection` 为不可变对象，暴露 `stage`、`format_version`、
@@ -28,8 +30,9 @@
 投影和 diff 通过这些访问器消费已验证材料，隐藏快照包络字段布局；访问器不校验
 原数据库记录，历史 load 仍独立核对原字节、哈希、引用与重建身份后才返回快照。
 
-完整依赖矩阵以 [运行配置契约](runtime-config.md#当前就绪范围) 为权威。
-六投影名称固定为 boundary/value/reuse/extraction/read/suggestion：
+配置槽的完整性、占位与拒绝规则见[运行配置契约](runtime-config.md#当前就绪范围)；
+投影描述实际消费的配置语义，不代替这些判断。
+六投影名称及遍历顺序固定为 boundary/value/reuse/extraction/read/suggestion：
 
 | 投影 | components（缺失时明确为 null） |
 | --- | --- |
@@ -45,6 +48,8 @@
 有效 temperature/top_p 等参数保留；完整文件版本与原始哈希不进入投影。
 adapter 分量直接引用对应槽已有的 `AdapterSemantics.semantics_id`，其载荷自带独立
 格式版本；不复制 adapter 序列化，也不把 Pi/adapter 执行审计版本当作语义。
+分量内容与执行审计边界见[适配器语义契约](adapter-config.md#语义与消费者依赖)；
+extraction 分量取[正文提取配置的公共语义](extraction-config.md#公共语义与历史)，不验证本机模型文件。
 
 ## 规范内容与缺项
 
@@ -52,13 +57,14 @@ adapter 分量直接引用对应槽已有的 `AdapterSemantics.semantics_id`，�
 进入投影或基线。Profile 只取六段登记精确文本；Prompt 取精确 UTF-8 文本，保留换行
 与空白，不进行 strip 或折叠。空串与 ASCII `...` 仍是语义内容；占位变真实文本会
 改变投影，就绪判定仍独立进行。已存在 Profile 的缺失段落保留 null；未选择 Profile
-时整个 profile 分量为 null。Profile 新版必须同步改变内部 version 并通过一致性验证，
-不能用不匹配的旧字节冒充另一声明版本。
+时整个 profile 分量为 null。材料的声明版本一致性与不可换字节登记规则见
+[配置登记与回放](runtime-config.md#身份登记与回放)。
 
 主题只取 enabled 项的 ID/name/description，按 ID 排序；空集合与全部停用都是 `[]`，
-缺少 topics 选择为 null。触发研究价值按去重升序集合表示（生产编译仍拒绝重复），
-`[2,3]` 与 `[3,2]` 同语义。excerpt_priority 是有序列表，保留次序；生产 V1 仍只接受
-`[availability, methods]`。解析模型按 stage 排序，文件集合按仓库相对路径排序；
+缺少 topics 选择为 null。触发研究价值按去重升序集合表示（配置编译仍拒绝重复），
+`[2,3]` 与 `[3,2]` 同语义。excerpt_priority 是有序列表，保留次序；合法值与算法版本的
+拒绝规则见[复用升级配置](runtime-config.md#复用升级参数与算法身份)。
+解析模型按 stage 排序，文件集合按模型仓库相对路径排序；
 相对文件路径是模型制品身份，机器安装路径不进入投影。
 
 契约分量组合已登记 schema 与 manifest 的规范 JSON 内容，两份内容内嵌的
@@ -66,9 +72,9 @@ adapter 分量直接引用对应槽已有的 `AdapterSemantics.semantics_id`，�
 只读历史加载不会重新导出契约，也不要求旧保存内容追随当前权威 Schema 更新。
 
 normalization_version、excerpt_selector_version、chunking_version、suggestion_rule_version
-及 adapter policy.version 都是算法或策略语义身份，必须保留。未知生产算法仍拒绝；
-测试中的未来版本与顺序反例只存在于纯投影 fixture，不注册假 v2 或改变 V1 就绪。
-同算法版本下的代码语义漂移仍靠评审与版本冻结纪律约束，A2 无法自动检测。
+及 adapter policy.version 都是算法或策略语义身份，不按普通声明标签剔除。
+配置编译仍拒绝未知算法版本；纯投影不另做材料校验，也不能自动检测同算法版本下
+的代码语义漂移。
 
 全部投影无论文题名、摘要、PDF、摘录、输出语言、时间、完整快照 ID、机器路径、
 凭据、执行计划或产物。reuse 与 read 不嵌套 extraction；阶段输入消费者再组合
@@ -90,9 +96,9 @@ normalization_version、excerpt_selector_version、chunking_version、suggestion
 其 SHA-256 固定为
 `aab555b7f9a72aa0defc46e26c2acff8e2c049aa0a1963269f58939b5890edef`。
 kind、stage 和格式版本共同分离身份域，各分量的 null 均显式编码。
-序列化复用配置独立的 canonical_json：UTF-8、排序键、紧凑分隔符、非 ASCII 原样、
-列表次序保留、拒绝 NaN/Infinity、浮点采用 Python JSON 的浮点表示；不依赖 A1
-文件缩进或私有排版函数。projection_id 为完整规范载荷 UTF-8 字节的 SHA-256。
+序列化使用 [`config/identity.py`](../../src/paper_radar/config/identity.py) 的 canonical_json：UTF-8、排序键、紧凑分隔符、
+非 ASCII 原样、列表次序保留、拒绝 NaN/Infinity、浮点采用 Python JSON 的浮点表示；
+不依赖冻结契约文件的缩进。projection_id 为完整规范载荷 UTF-8 字节的 SHA-256。
 
 基线载荷只组合五个投影身份：
 
@@ -105,17 +111,20 @@ baseline_id 同样是该规范载荷的 SHA-256。不重新序列化第二份语
 期刊信誉与普通声明版本不进入基线；`calibration_changed` 唯一判据是前后 baseline_id
 不同，不能另维护一套类别清单去推断校准影响。
 
-投影载荷字段、语义提取或规范化规则改变时提升相应投影格式；基线组合规则改变时
-提升基线格式。相关投影格式变化会经其身份传导到基线；read 独立格式变化不影响
-基线。adapter 独立格式变化经 semantics_id 传导，无需只为此提升投影格式。
-这些身份变化在后续校准工作流中按可能相关变化处理，仍由用户分级。
+同一投影格式版本固定载荷字段、语义提取与规范化规则，同一基线格式版本固定组合规则；
+规则变化不能沿用对应格式身份。
+相关投影的格式身份参与基线计算，read 的独立格式身份不进入基线；adapter 的独立
+格式身份经 semantics_id 传导，不复制到投影格式字段。
 
-运行快照包络仍为格式 1；A3 的存储迁移 head 为 `a302_artifact_store`，不写入新增投影字段。
+运行快照包络为格式 1，不含新增投影或基线持久字段。数据库服务要求库匹配随包迁移图
+的唯一 head，不隐式升级；持久化及加载边界见[配置登记与回放](runtime-config.md#身份登记与回放)。
 无 adapter/Read 等材料的旧有效快照按明确 null 重建，原 payload 与快照 ID 保持不变。
-load 必须先核对原字节/哈希、引用、编译值、格式及重建身份；未知或损坏材料拒绝，
-不按当前文件或新默认静默修复。未来程序提升投影格式后，重导出得到新格式身份，
-不会修改历史快照；未来消费者若持久化旧投影/基线引用，须记录格式并保留匹配版本
-的重建能力或提供显式迁移，不能把当前版本重导出的新身份冒充历史评价依据。
+load 先核对原字节/哈希、引用、编译值、格式及重建身份；未知或损坏材料拒绝，
+不按当前文件或新默认静默修复。
+
+重建使用当前程序的投影与基线格式；本接口不提供旧格式选择、旧投影/基线引用的
+持久化或迁移，不证明其他程序版本导出的身份就是历史评价依据。历史评价消费者的
+格式记录、匹配重建或显式迁移责任见[路线图 D](../roadmap.md#module-d)；新身份不能冒充旧评价依据。
 
 ## diff 结果与 CLI
 
@@ -128,40 +137,60 @@ calibration_changed。身份变化的 category 为公共受控 `ConfigCategory`�
   `escalation.escalation`、`extraction.extraction`、`read.read`；
 - `prompt.boundary/value/reuse/reading` 四个类别；
 - `contract_schema` 与 `contract_manifest` 各自的 boundary/value-prediction/
-  reuse-assessment/decision-reasons 四个类别；
+  reuse-assessment/decision-reasons/read 五个类别；
 - `adapters.screening/reuse_assessment/reading` 三个按槽类别。
 
-新增材料消费者须同步扩展枚举，不生成自由类别。身份变化另含前后 `ConfigIdentity` 元组，每个
+比较不生成自由类别。身份变化另含前后 `ConfigIdentity` 元组，每个
 身份有 kind/name/version/raw_sha256；adapter 按选定槽报告，连同它的系统 Prompt
 资源，因而交换两个已登记 adapter 选择时即使材料集合相同也可见。
 
-投影变化为固定阶段顺序的 `StageProjectionChange`，含 stage、前后投影与
-`ComponentChange` 元组。分量变化只暴露名字与 before_configured/after_configured
-布尔（分量是否非 null），不携带正文；它不是阶段 ready，也不评估 Profile 内容真实性。
+身份变化按 category 升序排列。投影变化为固定阶段顺序的 `StageProjectionChange`，
+含 stage、前后投影与按分量名升序排列的 `ComponentChange` 元组。
+`ComponentChange` 只暴露名字与 before_configured/after_configured 布尔（分量是否非 null），
+不携带正文；它不是阶段 ready，也不评估 Profile 内容真实性。
+前后投影对象仍显式提供 payload_json，程序调用方须按敏感配置处理。
 
 ```bash
 paper-radar config diff <before-id> <after-id> --database data/paperradar.sqlite3
 ```
 
-公共 diff 接口只接受两个完整 64 位小写十六进制 ID，必填数据库路径。
-CLI 提供 `config snapshots list` 和 CLI 的唯一短前缀输入；便捷查询服务先解析为完整 ID，
-再调用本页既有公共 diff 服务，后者继续只接收完整 ID。JSON 输出未开放。
-发现列表、排序、引用规则与只读保证见 [历史快照发现与引用](config-snapshots.md)。
+公共 diff 服务只接受两个完整 64 位小写十六进制 ID，必填数据库路径。
+CLI 接受完整 ID 或指定数据库内唯一的 8–63 位小写十六进制前缀；两个引用均解析为
+完整 ID 后才调用公共 diff 服务。JSON 输出未开放。
+发现列表、排序、引用拒绝及只读保证见[历史快照发现与引用](config-snapshots.md)。
 ID 格式校验属于加载服务，不耦合进单快照或纯比较领域能力。
-存在性与损坏验证先于相同 ID 短路；两者相同且有效输出“无差异”并返回 0。
-存在差异或涉及校准也返回 0；ID 错误/不存在、缺库、未迁移、未知格式或损坏返回 2。
+相同 ID 也完成存在性与完整性验证；两者相同且有效输出“无差异”并返回 0。
+存在差异或涉及校准也返回 0。服务的加载与引用错误为脱敏 `ConfigError`；CLI 的参数
+解析错误与服务错误均返回 2，包括引用错误/不存在/歧义、缺少参数、缺库、未初始化、
+已知旧 revision、未知或较新 revision、
+未知快照格式、材料或引用损坏、加载失败；相应指引要求补充引用、显式 `db upgrade`
+或使用匹配程序/检查数据库，不自动纠错或修复。
 缺库不创建，重复比较输出一致，只读打开数据库，不写登记、缓存、分级、启用或激活事实。
 
 中文人读输出包含类别、版本/哈希、受影响投影、分量“未配置 → 已配置”等转移和前后
 基线身份；不显示完整 Profile/Prompt、原文 diff、输入错误值、原始异常或 SQL 参数。
 只有前后分量均非 null 时追加“（语义变化）”；配置与未配置之间的变化仅显示受控转移。
 所有 help 在外部 I/O 被拒绝时仍可运行，不读配置或数据库，不创建业务文件。
-保存快照不是启用；本边界不提供完整校准变更审计、minor/major 分级、门禁与自动运行，校准审计、分级与门禁由[路线图 D](../roadmap.md#module-d)承接，自动运行由[路线图 I](../roadmap.md#module-i)承接。
-完整 A2 由 #25 的独立结论覆盖本页能力，并保留 A2-01 固定测试与历史 scope；
-格式身份及固定范围见[离线验证证据](../verification/offline-evidence.md#完整-a2-独立结论)。
+
+## 不提供／不证明
+
+- 不提供单快照 CLI；程序入口是 `project_config`。
+- 保存快照不是启用；得到投影、基线或 `calibration_changed` 不证明模型执行就绪、
+  真实样本质量、fixture gate、校准通过或自动精读资格。
+- 本边界不提供完整校准变更审计、minor/major 分级、门禁或自动运行。
+  校准审计、分级与门禁由[路线图 D](../roadmap.md#module-d)承接，
+  自动运行由[路线图 I](../roadmap.md#module-i)承接。
 
 ## 相关
 
-依据：[#23](https://github.com/MeteoBoy4/PaperRadar/issues/23)、[#25](https://github.com/MeteoBoy4/PaperRadar/issues/25)。
+依据：[#23](https://github.com/MeteoBoy4/PaperRadar/issues/23)、[#25](https://github.com/MeteoBoy4/PaperRadar/issues/25)、[#27](https://github.com/MeteoBoy4/PaperRadar/issues/27)、[#97](https://github.com/MeteoBoy4/PaperRadar/issues/97)。
 
-[规格](../../intent/draft.md#34-阶段输入指纹)；[ADR-0023](../adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md)；[路线图承接](../roadmap.md#module-d)。
+实现：[`projections.py`](../../src/paper_radar/config/projections.py)、
+[`diff.py`](../../src/paper_radar/config/diff.py)、[`service.py`](../../src/paper_radar/config/service.py)、
+[`cli.py`](../../src/paper_radar/config/cli.py)。
+历史工程结论与证明范围见[离线验证证据](../verification/offline-evidence.md#完整-a2-独立结论)，不代替当前验证或 live 验收。
+
+[规格 §3.4](../../intent/draft.md#34-阶段输入指纹)；
+[ADR-0023](../adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md)；
+[ADR-0026](../adr/0026-control-pi-through-a-bounded-rpc-adapter.md)；
+[路线图承接](../roadmap.md#module-d)。
