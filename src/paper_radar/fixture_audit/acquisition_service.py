@@ -622,6 +622,14 @@ class AcquisitionService:
                     )
                 )
                 connection.commit()
+            self.log.emit(
+                "route_settled",
+                component="audit",
+                plan_id=protection.plan_id,
+                execution_id=execution_id,
+                route=previous.request.route,
+                category="outcome_unknown",
+            )
             return previous.model_copy(update={"settlement": settlement})
         except SQLAlchemyError:
             raise FixtureError(

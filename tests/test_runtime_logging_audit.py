@@ -119,3 +119,50 @@ def test_audit_source_failure_keeps_unsettled_route_and_safe_events(
         "unexpected_error" if isinstance(failure, Exception) else "interrupted"
     ]
     assert "SECRET" not in (original.data_root / "logs/runtime.jsonl").read_text()
+
+
+def test_resume_logs_unknown_settlement_before_replacement_route(
+    tmp_path: Path,
+) -> None:
+    import httpx
+
+    class InterruptedSources(MatrixSources):
+        armed = True
+
+        def __call__(self, request: httpx.Request) -> httpx.Response:
+            if (
+                self.armed
+                and request.url.host == "agupubs.onlinelibrary.wiley.com"
+                and "/doi/" in request.url.path
+            ):
+                self.armed = False
+                raise KeyboardInterrupt
+            return super().__call__(request)
+
+    original = sampling_service(tmp_path, InterruptedSources())
+    assert original.data_root is not None
+    service = FixtureAudit(
+        original.database,
+        original.data_root,
+        source_executors=original.acquisitions.executors,
+        sink=FileSink(original.data_root),
+    )
+    with pytest.raises(KeyboardInterrupt):
+        service.run_audit(contact_email="audit@example.org", code_identity=CODE)
+    before = service.list_audits()[0]
+    started = next(value for value in before.executions if value.settlement is None)
+    result = service.resume_audit(
+        before.plan.plan_id, contact_email="audit@example.org", code_identity=CODE
+    )
+    events = [
+        json.loads(line)
+        for line in (original.data_root / "logs/runtime.jsonl").read_text().splitlines()
+    ]
+    routes = [value for value in events if value["event"] == "route_settled"]
+    recovered = [
+        value for value in routes if value["execution_id"] == started.execution_id
+    ]
+    assert len(recovered) == 1
+    assert recovered[0]["category"] == "outcome_unknown"
+    assert len(routes) == len(result.executions)
+    assert events[-1]["event"] == "run_finished"
