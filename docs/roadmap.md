@@ -8,6 +8,8 @@
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
+当前包括 [A 窄收口](#module-a)与 [Pi 离线启动器](#module-pi)；状态及规格链接仅在模块表维护。
+
 to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 
 ## 模块图
@@ -50,7 +52,7 @@ flowchart TD
 | <a id="module-j"></a>J | JGR 判据固定 | 已完成 | 无 | HITL |
 | <a id="module-audit"></a>Audit | 四刊首轮 HTTP 审计 | 待探索 | J | HITL |
 | <a id="module-source"></a>Source | JGR 达标或用户新裁决 | 待探索 | Audit | HITL |
-| <a id="module-a"></a>A | A 窄收口：日志、doctor、纯规则 | 可规格化 | 无 | AFK |
+| <a id="module-a"></a>A | A 窄收口：日志、doctor、纯规则 | 已规格化（[#120](https://github.com/MeteoBoy4/PaperRadar/issues/120)） | 无 | AFK |
 | <a id="module-pi"></a>Pi | Pi 离线启动器、权限资源、生产成功来源 | 可规格化 | 无 | AFK |
 | <a id="module-cwd"></a>Cwd | /srv/pi-cwd 现场隔离验收 | 待探索 | 无 | HITL |
 | <a id="module-live"></a>Live | 固定 1.4.0 安装与 RPC 实测 | 待探索 | Pi、Cwd | HITL |
