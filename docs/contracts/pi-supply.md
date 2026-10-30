@@ -11,6 +11,8 @@ CLI 提供 `pi supply prepare/verify/rebuild/activate/list/show/export/gc/show-p
 [`pi_supply/models.py`](../../src/paper_radar/pi_supply/models.py) 的权威 Pydantic 类型。
 适配器声明、快照加载和模型协议分别见[适配器配置](adapter-config.md)、
 [配置快照](config-snapshots.md)与[Pi RPC](pi-rpc.md)；本 Contract 不另定义其组件规则。
+doctor 的 `basic/config` 显式选择与配置 readiness 见[只读 doctor](doctor.md)；
+`pi-supply` 继续要求所选快照，不从 settings、最新配置或安装现场推断选择。
 
 <a id="显式输入与请求"></a>
 

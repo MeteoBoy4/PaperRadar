@@ -248,3 +248,5 @@ JGRMetadata missing 与既有组合拒绝的对应关系只用于解释，不替
 [Feed 元数据](feed-metadata.md)、[FeedPipeline](feed-pipeline.md)、
 [Screening 原因](screening-validation.md)、[A7 applicability](screening-tasks.md)。
 独立工程覆盖与未验边界见 [A 窄收口台账](../verification/a-narrow-delivery.md)。
+阶段任务明细的运行日志规则见[运行日志](runtime-logging.md)，配置必要检查与运行资格的
+区别见[只读 doctor](doctor.md)；两者均不把纯规则通过解释为真实消费者已接线。

@@ -207,7 +207,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/config/service.py",
-        "3f9732e076fe69e3e247d50bf682c519c4f9f6ccd5deb4398908d33a952ac103",
+        "4701cf2b828347671ed6ee939ee1f41743860989d3041331ed9ab37a78424aa9",
     ),
     (
         "src/paper_radar/config/compile.py",
@@ -247,7 +247,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/config/adapter_loading.py",
-        "ca79d39630e78e81fea0ce8940be91e71ee809f8b5b73aafc14986283f8c94a7",
+        "473a830cef0b15e4c63c387c7e5d386cc167ca1b18e27a5f203ce8eabdd80072",
     ),
     (
         "src/paper_radar/config/adapters.py",
@@ -255,11 +255,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/config/yaml_loader.py",
-        "5c5c88473481ba27a71dd4512565e04965fc46a14e23947b953b71a7bdaee1b8",
+        "6af6ec978e54f7e1d375017bf829eb17f850b492cc1802e1855bc096a9a1f815",
     ),
     (
         "src/paper_radar/cli.py",
-        "47eff2ad8955e2e42f2f76033031334e61d1be4f6535f9d103c44e755887aa3a",
+        "ee2e1dc3ac969aa30c74989bb0b19bf7ad30c5b404a894bc5e73b4dca8d23689",
     ),
     (
         "src/paper_radar/config/cli.py",
@@ -339,11 +339,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_scope.py",
-        "c445710c87437b7a903cc00d54aff67d45445f882dfc97fafecc490d6b44cf1f",
+        "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
     ),
     (
         "scripts/a3_scope.py",
-        "bf90615dc11d28d29afdb01b0aa134a91a6850e64ce8ff8704a622868acc50f3",
+        "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
     ),
     (
         "scripts/a2_full_acceptance.py",
@@ -479,23 +479,23 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a4_scope.py",
-        "04a7ee9015fa2864ab508d30b1a6d0b31787a247b1e85d3086e1a41d0506cf5f",
+        "14fff7afafefb2dbacd6505e4f9cabd6745ef60cb5ba49f2c588ac73c9b203a7",
     ),
     (
         "scripts/a5_scope.py",
-        "83e623fa606abf13435753e04d1b3fe647baf7697b1b15381159cffbc3eb2968",
+        "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
     ),
     (
         "scripts/a6_scope.py",
-        "a62af88e0528a659c3f7d63ff0f2a4fc0b45c3e52f1004ebe1f992452c341bb1",
+        "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265",
     ),
     (
         "scripts/a7_scope.py",
-        "39a9f4e6a8d139017ff9ee058a4442bb16803824f3f203de4ebae7e630613ec1",
+        "2f1dda90349ec812ae7be2f4e2a995752a02bfe3f516201d4b0e1b2547e68320",
     ),
     (
         "scripts/a8_scope.py",
-        "18476bd58a6f0ebe79aa611b643fde2533ecf480ec3334eb1fc4cd22459e2e80",
+        "8cfd6229f8b13a93c4283357716df99d5b8c64efd130bb0af0faf156c1859c9d",
     ),
 )
 
@@ -580,11 +580,11 @@ REQUIRED_FIXTURE_FILES = (
         "examples/contracts/screening/boundary/v1/manifest.json",
         "5efa0aec0e41329fe8736dcd533706309fd9c3717aeac14ddbf55d05cce0ed0b",
     ),
-    ("README.md", "402e71fe88dba15b2ca41ef53c96763efb026b6d81715311e402dec450fe1fce"),
-    ("GLOSSARY.md", "4ce38c9df937063b0ff1d0b68e5d63641f3ac1abcab5a63d52c8220480573a90"),
+    ("README.md", "102f400dd0521fbee35907cf80175ad9d1ab5f1ae320bf131a0a2531688069f1"),
+    ("GLOSSARY.md", "8864217fad4e0174398d314230155e145ee9b82185c0af5cf2769e38c88fc4d7"),
     (
         "intent/draft.md",
-        "701ed695096a584f42e86bb52127603bb4bd356e47e041672b8bbb31182286a8",
+        "1c6afa02e0bb16cb29263db3ea10d06255489aeea224eb6150bcf4c983f99f9d",
     ),
     (
         "docs/contracts/read-validation.md",

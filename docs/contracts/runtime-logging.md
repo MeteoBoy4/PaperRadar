@@ -142,4 +142,5 @@ Feed／元数据 replay/view/content/requests/validate_all、`paper show/trace`�
 依据：[#120 最终裁决 D2/D5/D7](https://github.com/MeteoBoy4/PaperRadar/issues/120#issuecomment-6520223100)、
 [#123](https://github.com/MeteoBoy4/PaperRadar/issues/123)、[规格 §6/§8.7](../../intent/draft.md#87-日志与隐私)。
 相关边界：[任务](screening-tasks.md)、[审计](fixture-audit.md)、
+[只读 doctor](doctor.md)、[共享资格／可见性](eligibility-visibility.md)、[组合覆盖台账](../verification/a-narrow-delivery.md)、
 [Feed 组合](feed-pipeline.md)、[元数据](feed-metadata.md)、[本机锁先例](../adr/0029-protect-installations-through-inherited-flock.md)。

@@ -58,7 +58,13 @@ paper show/trace 只读查看论文事实与来源。
 当前用途：管理冻结契约；显式迁移配置数据库，检查、编译、只读列出或比较配置快照。
 创建并只读校验包含已登记配置材料和制品的备份批次，向空隔离目标验证性恢复完整副本。
 pi supply 可准备、核验、重建并显式激活独立 Pi；
-gc --dry-run 保存清理计划但不删除；doctor --scope pi-supply 只读解释供给。
+gc --dry-run 保存清理计划但不删除。
+doctor --scope basic 只读检查基础工程。
+
+doctor --scope config 检查显式配置。
+
+doctor --scope pi-supply 只读解释所选快照的供给。
+doctor 不建日志；退出 0 不代表任何阶段可运行，详细规则见 docs/contracts/doctor.md。
 准备与重建不激活，所有供给命令均不调用模型。
 未实现的模型与流程配置会明确显示未就绪。
 
