@@ -1,0 +1,46 @@
+"""已加载事实上的共享资格公共入口;不领取任务。"""
+
+from paper_radar.eligibility.models import (
+    ArtifactFact,
+    Concept,
+    DecisionFact,
+    Eligibility,
+    EligibilityReason,
+    ExecutionSource,
+    ExtractionFact,
+    ExtractionState,
+    GateState,
+    ManualReadRequest,
+    MetadataFacts,
+    PaperProjection,
+    Presence,
+    QualityBasis,
+    QualityFact,
+    QualityFailure,
+    RootPurpose,
+    Support,
+)
+from paper_radar.eligibility.rules import evaluate_concept, evaluate_paper
+
+__all__ = [
+    "ArtifactFact",
+    "Concept",
+    "DecisionFact",
+    "Eligibility",
+    "EligibilityReason",
+    "ExecutionSource",
+    "ExtractionFact",
+    "ExtractionState",
+    "GateState",
+    "ManualReadRequest",
+    "MetadataFacts",
+    "PaperProjection",
+    "Presence",
+    "QualityBasis",
+    "QualityFact",
+    "QualityFailure",
+    "RootPurpose",
+    "Support",
+    "evaluate_concept",
+    "evaluate_paper",
+]
