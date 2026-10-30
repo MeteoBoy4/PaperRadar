@@ -26,16 +26,16 @@
 | US12 | 日志落点与保留（#123） | 待归并 | 生产现场 |
 | US13 | 日志失败与业务隔离（#123） | 待归并 | 生产故障 |
 | US14 | 业务制品与日志分离（#123） | 待归并 | B/C/D/H 真实回查 |
-| US15 | eligibility 同事实一致原因（#122） | 待归并 | B/C/D/G/H/I 组合 |
-| US16 | eligibility 人工与系统资格（#122） | 待归并 | 正式校准、真实 Read |
-| US17 | eligibility 独立需求（#122） | 待归并 | Docling、Read 消费者 |
-| US18 | eligibility 当前与历史依据（#122） | 待归并 | B/C/D/G 失效消费 |
+| US15 | evaluate_paper / evaluate_concept：同事实资格与全部原因一致 | test_eligibility.py：全概念两入口、排列不变、矛盾论文隔离、多原因及重复身份已验证 | B/C/D/G/H/I 真实装配与组合 |
+| US16 | 人工优先、projection 不生效、系统当前制品/门禁；Read 质量×根用途×执行来源 | test_eligibility.py：五种人工来源、enabled 正例、paused/disabled/unknown 拒绝、D4 十组合及显式请求已验证 | 正式校准、来源真实性、真实 Read、排名/名额/预算 |
+| US17 | accepted 的 PDF/提取/Read 独立于参考文献失败 | test_eligibility.py：reference_harvest_failed 合成组合、历史触发新需求、当前失败须 retry 已验证 | E 参考文献生命周期、Body/Docling、真实 Read |
+| US18 | A7 applicability、旧人工依据标记、当前 PDF/提取引用链 | test_eligibility.py：历史成功、未知、引用矛盾、后续人工 denied 保留历史且阻止旧请求已验证 | B/C/D/G 当前性装配与真实失效消费 |
 | US19 | evaluate_visibility：waiting_calibration/unrevealed OR、部分解除和全部解除 | test_calibration_visibility.py；规则已验证 | C 保留器、D 未揭晓/揭晓、身份/合并链装配 |
 | US20 | Visibility.permission：论文事实/任务明细可见，Agent 内容受限 | test_calibration_visibility.py；双向合成材料投影已验证 | B show/trace/最小日报，C/D/H 真实字段裁剪 |
 | US21 | 普通 set_decision/reading_request 拒绝；review 为 dedicated_path | test_calibration_visibility.py；合成写入前守卫和受控回执已验证 | B/C/D 普通动作事务前守卫与专用 review 实现 |
 | US22 | 会话隔离（#125） | 待归并 | Pi/Live/Cwd，reuse/Read 生产执行器 |
 | US23 | D1 独立新测试 + 本台账 + 最终集成同次门禁 | 两个 visibility 独立模块已验证；完整门禁待 #125 | 同次可信 terminal、scope 审计/必要重绑，完整 A 结论未建立 |
-| US24 | 纯规则边界与消费者承接（eligibility 部分待 #122） | test_calibration_visibility.py、test_calibration_visibility_architecture.py；visibility 契约已验证 | B 首接，C/D/H 隐藏、合并链装配，不能推定产品面已交付 |
+| US24 | eligibility / visibility 纯规则边界、支持程度与范围限定 | test_eligibility.py、test_eligibility_architecture.py、两个 visibility 模块；类型投影、AST 纯度/依赖方向、deferred 及 partial 已验证 | B 首接，C/D/H 隐藏、合并链装配，不能推定产品面已交付 |
 
 ## I/T/D → 公共接口 → 独立测试 → 未验项
 
@@ -44,16 +44,16 @@
 | 编号 | 本轮公共接口／责任 | 独立测试／本次结论 | 未验项／承接 |
 | --- | --- | --- | --- |
 | I01 | 工程基础与门禁（#125） | 待归并 | 最终集成树完整门禁 |
-| I10 | visibility 已交付；eligibility 待 #122 | 两个 visibility 独立模块已验证；非完整 I10 结论 | B 首消费者、C 保留器与合并链事实装配 |
+| I10 | evaluate_visibility、evaluate_paper、evaluate_concept | 四个独立模块已验证；完整 §5.7 仍含下游 deferred，非完整 I10 结论 | B 首消费者、C 保留器与合并链装配，D/E/G/H 后续概念 |
 | I11 | 日志与 doctor（#123/#124） | 待归并 | B 真实执行与 Pi readiness |
 | T06 | 恢复不变量回归（#125） | 待归并 | 任务续跑与 NAS |
 | T07 | 会话机制及映射（#125） | 待归并 | Pi/Live/Cwd，B/D/G 实际消费者 |
 | T16 | visibility 许可矩阵及合成内容/动作消费者 | test_calibration_visibility.py；纯规则已验证 | B show/trace/最小日报首接，C/D/H 实际隐藏；不表示全部展示面已隔离 |
-| T17 | eligibility 资格/原因一致（#122） | 待归并 | B/C/D/G/H/I 调度与积压组合 |
+| T17 | 单篇/按概念批量求值复用同一判定 | test_eligibility.py：全部概念、多原因、输入顺序与矛盾隔离已验证 | B/C/D/G/H/I 调度与积压真实组合；前置通过不等于获名额 |
 | T22 | §8.7 三个输出去向隐私（#123） | 待归并 | B 真实日志；本票不测试日志字段省略 |
 | D01 | 最终集成树同次 required 通过（#125） | 待归并；本票未运行完整门禁 | 完整门禁与可信 terminal |
 | D03 | doctor 基础与配置缺项区分（#124） | 待归并 | 正式校准、真实模型配置 |
-| D04 | D1 已登记；visibility 复用纯规则边界 | 两个 visibility 独立模块及 Contract；登记完成，持续约束不算全部通过 | #125 收口；B 起消费者复用与组合验证，I 聚合 |
+| D04 | D1 已登记；eligibility / visibility 复用纯规则边界 | 四个独立模块及共享 Contract；登记完成，持续约束不算全部通过 | #125 收口；B 起消费者复用与组合验证，I 聚合 |
 
 ## 本票验证记录
 
@@ -67,6 +67,18 @@ CLI compatibility 组合 59 passed；本票四个新增 Python 文件的 Ruff ch
 
 D5 的 ADR 门槛评估：任务信息披露不可撤回；无背景会令人意外；全面隐藏与排障可观测性
 经过用户权衡，三个门槛均达到，决策见 [ADR-0037](../adr/0037-allow-task-details-during-blind-calibration.md)。
+
+#122 的资格切片从缺少公共入口、最低元数据投影、人工优先、当前制品、PDF/提取、Read
+请求、批量/deferred、多缺项、引用矛盾和空身份等红灯逐项转绿。两个新独立模块共 65 项，
+覆盖 24 个概念与 59 个资格原因的 Contract。合入最新 integration（含 #124）后，
+连同 visibility、Screening 架构、元数据、FeedPipeline、A7 applicability 和
+权威原因组合的相关子集 **184 passed in 26.60s**；本票五个 Python 文件的 Ruff check、
+format check 与严格 mypy 全通过。Contract 的概念/原因覆盖及两文档的本地链接检查通过。
+CLI compatibility 组合 **59 passed in 65.98s**，入口退出 0（总耗时 66.45s）。
+本票没有新增 CLI 命令、数据库表、迁移或依赖，未运行完整门禁、live、Pi 或 Docling。
+scope 审计退出 1、`issues=[]`：22 项 hash_drift 均来自已合入 #121 的规格与 #124 的
+配置/Pi 文件；本票新增资格模块、Contract 和台账没有新增历史哈希漂移，不逐票重绑。
+本条不替代 #125 的最终集成审计、真实消费者组合或同次完整门禁。
 
 ## 最终集成收口
 
