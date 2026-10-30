@@ -33,7 +33,9 @@ def selected_adapter_materials(
                 config_dir / "adapters" / f"{version}.yaml", PiAdapter, "adapter"
             )
         except ConfigError as error:
-            raise ConfigError(f"adapters.{slot}：{error}") from None
+            raise ConfigError(
+                f"adapters.{slot}：{error}", reason=error.reason
+            ) from None
         if config.version != version:
             raise ConfigError(
                 f"adapter.version：与 settings.adapters.{slot} 不一致；"

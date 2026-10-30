@@ -322,7 +322,11 @@ uv run --offline --locked paper-radar doctor --scope pi-supply \
 
 `doctor_supply(database, snapshot_reference)` 返回不可变 `DoctorReport`；它和 CLI 均只读，
 CLI 必须显式 `--scope pi-supply`，
-裸命令、未知 scope 或参数错误返回 2。它完整回放全部库内材料、D5、实例与激活引用闭包，
+并显式提供 `--database` 与 `--snapshot`，不接受 `--settings`。
+裸命令、未知 scope 或参数错误返回 2；基础/配置检查另选
+[`--scope basic/config`](doctor.md)，不读取供给现场或自动选择历史快照。
+已有有效 pi-supply 调用的终端字节与退出语义保持。
+它完整回放全部库内材料、D5、实例与激活引用闭包，
 随后只做现场全树哈希，不执行程序、不联网、不写检查、使用记录或激活事件。
 诊断区分三个面：
 
