@@ -13,7 +13,7 @@ from pydantic import BaseModel, ValidationError
 from yaml.events import AliasEvent
 from yaml.nodes import MappingNode, ScalarNode
 
-from paper_radar.config.errors import VALIDATION_GUIDANCE, ConfigError
+from paper_radar.config.errors import VALIDATION_GUIDANCE, ConfigError, ConfigReason
 
 _FIELD_NAME = re.compile(r"^[a-z_][a-z0-9_]{0,63}$")
 
@@ -133,7 +133,10 @@ def read_yaml[T: BaseModel](path: Path, model: type[T], label: str) -> tuple[byt
     try:
         raw = path.read_bytes()
     except OSError:
-        raise ConfigError(f"{label}：无法读取文件；请检查路径和权限") from None
+        raise ConfigError(
+            f"{label}：无法读取文件；请检查路径和权限",
+            reason=ConfigReason.SELECTED_FILE_UNREADABLE,
+        ) from None
     return raw, validate_yaml_bytes(raw, model, label)
 
 
@@ -142,7 +145,12 @@ def read_prompt(path: Path, name: str) -> bytes:
         raw = path.read_bytes()
         raw.decode("utf-8")
         return raw
-    except (OSError, UnicodeDecodeError):
+    except OSError:
+        raise ConfigError(
+            f"prompts.{name}：无法读取 UTF-8 提示词；请检查路径和编码",
+            reason=ConfigReason.SELECTED_FILE_UNREADABLE,
+        ) from None
+    except UnicodeDecodeError:
         raise ConfigError(
             f"prompts.{name}：无法读取 UTF-8 提示词；请检查路径和编码"
         ) from None

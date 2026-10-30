@@ -24,7 +24,7 @@ from paper_radar.config.compile import (
     compile_snapshot,
 )
 from paper_radar.config.diff import ConfigSnapshotDiff, compare_config_snapshots
-from paper_radar.config.errors import ConfigError
+from paper_radar.config.errors import ConfigError, ConfigReason
 from paper_radar.config.identity import canonical_json, sha256
 from paper_radar.config.material_assembly import MaterialAssembly, selected_yaml_paths
 from paper_radar.config.material_names import MATERIAL_NAMES
@@ -111,7 +111,16 @@ def _contract_materials(
     except ContractCheckError as error:
         raise ConfigError(
             f"contracts.{selector}：{error.category.value}；"
-            f"{_CONTRACT_CHECK_GUIDANCE[error.category]}"
+            f"{_CONTRACT_CHECK_GUIDANCE[error.category]}",
+            reason=(
+                ConfigReason.SELECTED_FILE_UNREADABLE
+                if error.category
+                in {
+                    ContractCheckErrorCategory.MISSING_SNAPSHOT,
+                    ContractCheckErrorCategory.UNREADABLE_SNAPSHOT,
+                }
+                else ConfigReason.CONTENT_INVALID
+            ),
         ) from None
     try:
         folder = root / "contracts" / Path(*contract.snapshot_parts)
@@ -119,7 +128,8 @@ def _contract_materials(
         manifest_raw = (folder / contract.manifest_filename).read_bytes()
     except OSError:
         raise ConfigError(
-            f"contracts.{selector}：检查后无法读取冻结契约；请检查路径和权限并重试"
+            f"contracts.{selector}：检查后无法读取冻结契约；请检查路径和权限并重试",
+            reason=ConfigReason.SELECTED_FILE_UNREADABLE,
         ) from None
     if schema_raw != contract.schema_bytes or manifest_raw != contract.manifest_bytes:
         raise ConfigError(f"contracts.{selector}：冻结契约检查后内容变化；请重试")
@@ -144,7 +154,10 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
         try:
             raw = (settings_path.parent / relative).read_bytes()
         except OSError:
-            raise ConfigError(f"{kind.value}：无法读取文件；请检查路径和权限") from None
+            raise ConfigError(
+                f"{kind.value}：无法读取文件；请检查路径和权限",
+                reason=ConfigReason.SELECTED_FILE_UNREADABLE,
+            ) from None
         assembly.add_selected(Material(kind, kind.value, version, raw))
     additional: list[CompiledMaterial] = []
     for name in _PROMPT_NAMES:

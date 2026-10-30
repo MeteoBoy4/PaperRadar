@@ -56,5 +56,16 @@ VALIDATION_GUIDANCE = MappingProxyType(
 )
 
 
+class ConfigReason(StrEnum):
+    SELECTED_FILE_UNREADABLE = "selected_file_unreadable"
+    CONTENT_INVALID = "content_invalid"
+
+
 class ConfigError(Exception):
     """仅包含字段路径和可操作的中文原因。输入内容不出现在错误中。"""
+
+    def __init__(
+        self, message: str, *, reason: ConfigReason = ConfigReason.CONTENT_INVALID
+    ) -> None:
+        self.reason = reason
+        super().__init__(message)

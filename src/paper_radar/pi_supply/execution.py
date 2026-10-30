@@ -5,6 +5,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from typing import Literal
 
+from paper_radar.config.readiness import configuration_missing
 from paper_radar.pi_supply.errors import SupplyError, SupplyReason
 from paper_radar.pi_supply.filesystem import (
     no_symlink_components,
@@ -148,21 +149,11 @@ def doctor_supply(database: Path, snapshot_reference: str) -> DoctorReport:
     present_count = sum(item.present is True for item in diagnoses)
     if present_count > 4:
         blockers.append("retention_exceeded")
-    missing = {
-        reason.value for stage in snapshot.stages.values() for reason in stage.missing
-    }
-    if snapshot.profile_status.value != "configured":
-        missing.add("profile")
-    missing.update(
-        "model:" + slot
-        for slot, state in snapshot.model_slots.items()
-        if state.value != "configured"
-    )
     return DoctorReport(
         not blockers,
         current,
         tuple(dict.fromkeys(blockers)),
-        tuple(sorted(missing)),
+        configuration_missing(snapshot),
         tuple(
             slot
             for slot in ("screening", "reuse_assessment", "reading")
