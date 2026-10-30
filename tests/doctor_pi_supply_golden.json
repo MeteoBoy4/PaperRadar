@@ -1,0 +1,14 @@
+[
+  {
+    "activated": false,
+    "exit_code": 2,
+    "stdout": "scope=pi-supply result=failed\n[selection_missing] 尚无当前执行选择；请显式 activate 匹配供给与快照。\nadapter未配置槽：无\n业务配置缺项（独立披露）：chunking_version, decision_reasons_contract, escalation_parameters, excerpt_selector, extraction_config, model:reading, model:reuse_assessment, read_contract, read_model, read_prompt, reuse_contract, reuse_model, reuse_prompt, suggestion_rule\n保留：当前及最近三旧=0，已有验收保护=0，现场树数=0，上限=4\nRPC、真实模型/凭据、参数映射、生产隔离、校准与自动精读未验证：rpc_compatibility, provider_model, credentials, parameter_mapping, production_isolation, calibration, automatic_read\n0仅表示所选供给scope通过；不代表全项目就绪，不刷新预算或启用门禁。\n",
+    "stderr": ""
+  },
+  {
+    "activated": true,
+    "exit_code": 0,
+    "stdout": "scope=pi-supply result=passed\n当前选择 activation_id=<activation> supply_id=<supply> install_id=<install>\nadapter未配置槽：无\n业务配置缺项（独立披露）：chunking_version, decision_reasons_contract, escalation_parameters, excerpt_selector, extraction_config, model:reading, model:reuse_assessment, read_contract, read_model, read_prompt, reuse_contract, reuse_model, reuse_prompt, suggestion_rule\nD5原文 decision=unknown basis=First supply, no baseline\nD5：需要后续相关语义评估；安装检查不代表校准兼容，不自动判定 minor/major。\n保留：当前及最近三旧=1，已有验收保护=1，现场树数=1，上限=4\n历史现场 install_id=<install> reason=passed present=True protection=current,latest_install_check protection_state=idle protection_reason=无\nRPC、真实模型/凭据、参数映射、生产隔离、校准与自动精读未验证：rpc_compatibility, provider_model, credentials, parameter_mapping, production_isolation, calibration, automatic_read\n0仅表示所选供给scope通过；不代表全项目就绪，不刷新预算或启用门禁。\n",
+    "stderr": ""
+  }
+]

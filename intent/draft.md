@@ -530,7 +530,7 @@ paper-radar calibration review <batch-id>
 
 CLI 默认只显示编号和短题名，并把问题表述为“如果系统自动运行，你希望它花全文精读名额读这篇吗？”：是、不是、说不准分别写入 accepted、denied、pending；输入 `?` 时重显与 Agent 完全相同的冻结输入。选择 denied 后必须从 `out_of_scope`、`low_value`、`low_reuse_feasibility` 中选择原因；选择 pending 也必须从 `unclear_from_available_input`、`defer_judgment`、`outside_current_focus` 中选择原因。提示文字明确说明：若隐藏的系统建议是 accepted，人工 pending 会进入精确率分母但不进入分子；它也不进入防漏判门槛的人工 accepted 分母。最后一项提交后才生成揭晓报告，展示人工决定、系统比较结果、阶段二预测、可选升级预测及差异；模型失败成员显示 `pending(reason=model_failure)` 和失败类别，不伪造预测分。
 
-盲评隔离是跨所有展示面的不变量：阶段 C 必须先实现不读取 Agent 结果的机械样本保留器，按 §4.6 的元数据就绪顺序、总计 32 和每刊最低 4 篇规则把成员保留到 `waiting_calibration`；其他论文不受禁运。waiting_calibration 或未揭晓批次论文不得把 Screening/升级制品发布到普通日报，也不得由 `paper show`、`paper trace`、运行摘要明细或日志泄漏；论文事实仍可查询。普通 `screening set-decision` 和 `reading request` 对这些论文拒绝执行，只能通过 `calibration review` 提交判断；揭晓后才恢复普通入口。实现必须通过一个共享的校准可见性 Interface 执行，不能由各展示面各自复制判断。
+盲评隔离是跨所有展示面的不变量：阶段 C 必须先实现不读取 Agent 结果的机械样本保留器，按 §4.6 的元数据就绪顺序、总计 32 和每刊最低 4 篇规则把成员保留到 `waiting_calibration`；其他论文不受禁运。waiting_calibration 或未揭晓批次论文不得把 Screening/升级制品发布到普通日报，也不得由 `paper show`、`paper trace`、运行摘要明细或日志泄漏；论文事实仍可查询。任务存在性、stage、attempt、失败类别与失败队列归属不构成盲评泄漏，可以出现在 trace、failures 列表与日志中；禁运范围限于 Agent 制品的预测、分数、建议、理由与完整制品，任务关联载荷及秘密仍受 §8.7 约束。用户明确知悉并接受任务明细可能暗示边界与预测的推论（[ADR-0037](../docs/adr/0037-allow-task-details-during-blind-calibration.md)；[#120 D5](https://github.com/MeteoBoy4/PaperRadar/issues/120#issuecomment-6520223100)）。普通 `screening set-decision` 和 `reading request` 对这些论文拒绝执行，只能通过 `calibration review` 提交判断；waiting_calibration 与未揭晓条件按 OR 合并，全部隐藏条件解除后才恢复普通入口，揭晓不能覆盖仍成立的其他隐藏条件。实现必须通过一个共享的校准可见性 Interface 执行，不能由各展示面各自复制判断；调用方沿身份/合并链汇总隐藏事实，存活论文继承被合并论文的隐藏条件，解除条件不改写历史 Screening/reuse 制品。
 
 四项启用门槛：
 
@@ -1881,7 +1881,7 @@ DoD：
 - 相同 metadata-ready 序列产生相同 waiting_calibration 保留；修改隐藏模型输出不改变成员，阶段 B/预热/已暴露论文被机械排除；
 - metadata deny 追加人工 denied(reason=insufficient_metadata)，不删除来源或缺失事实；
 - 新版本、新权威摘要来源或显式 metadata retry 重新获得元数据任务资格。
-- waiting_calibration 期间 paper show/trace 和普通日报只允许论文事实，不泄漏 Agent 字段；普通 set-decision/read request 也被拒绝；
+- waiting_calibration 期间 paper show/trace 和普通日报允许论文事实及 §4.6 允许的阶段任务明细，不泄漏 Agent 字段；普通 set-decision/read request 也被拒绝；
 
 真实验收：
 
@@ -2298,7 +2298,7 @@ DoD：
 |校准成员的升级 PDF 尚未取得|创建批次不阻塞；冻结为 unavailable，后来取得也不回写该批输入|
 |校准批次未完成|不能揭晓、不能创建下一批|
 |盲评选择 pending 或 denied|必须继续选择各自受控原因，决定和原因一起写入|
-|waiting_calibration 或未揭晓成员被普通查询/日报读取|统一可见性 Interface 只允许论文事实，屏蔽 Agent 制品|
+|waiting_calibration 或未揭晓成员被普通查询/日报读取|统一可见性 Interface 允许论文事实及 §4.6 允许的阶段任务明细，屏蔽 Agent 制品|
 |大量 pending|触发反弃权不确定，不启用自动精读|
 |系统 accepted 恰好 5、其中人工 accepted 4|精确率项为 4/5=80%，可通过但显示 small_sample|
 |人工 accepted 少于 5|防漏判分母不足，校准不确定并继续扩样|
