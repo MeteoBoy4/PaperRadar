@@ -21,6 +21,7 @@ list 接受 --database；show 另需 PLAN_ID；--json 输出结构化事实。
 自动配额：0 次模型调用；run 全轮串行、按主机限速；run 先验证邮箱和提交计划再联网。
 邮箱仅用于如实请求标识，不保存；run 不启动模型、浏览器或生产论文流程。
 输出去向：计划、执行状态和材料哈希写标准输出；受控错误写标准错误，失败退出 1。
+run/resume 的安全诊断事件写入显式 --data-root 下的 logs/；首次事件才建目录，有限轮转。
 未结算的 started 路线请求数是未知；未安装与未执行分列，不证明来源稳定或阶段 A 通过。
 常见失败：数据库缺失时先显式 db upgrade；不能以查询替代真实来源审计。
 示例：paper-radar audit run --database DB --data-root ROOT
@@ -138,9 +139,10 @@ def run_command(
     ] = False,
 ) -> None:
     from paper_radar.fixture_audit import FixtureAudit
+    from paper_radar.runtime_logging import FileSink
 
     _query(
-        lambda: FixtureAudit(database, data_root).run_audit(
+        lambda: FixtureAudit(database, data_root, sink=FileSink(data_root)).run_audit(
             contact_email=contact_email, target_count=target_count
         ),
         json_output,
@@ -160,11 +162,12 @@ def resume_command(
     json_output: Annotated[bool, typer.Option("--json", help="输出安全 JSON")] = False,
 ) -> None:
     from paper_radar.fixture_audit import FixtureAudit
+    from paper_radar.runtime_logging import FileSink
 
     _query(
-        lambda: FixtureAudit(database, data_root).resume_audit(
-            plan_id, contact_email=contact_email
-        ),
+        lambda: FixtureAudit(
+            database, data_root, sink=FileSink(data_root)
+        ).resume_audit(plan_id, contact_email=contact_email),
         json_output,
     )
 

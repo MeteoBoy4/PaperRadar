@@ -36,6 +36,7 @@ from paper_radar.fixture_audit.acquisition_policy import (
     request_url,
     validate_contact,
 )
+from paper_radar.fixture_audit.errors import FixtureError
 from paper_radar.fixture_audit.sampling_models import CategoryBasis, FeedCandidate
 from paper_radar.fixture_audit.sampling_rules import category_bases
 from paper_radar.fixture_audit.source_http import (
@@ -46,6 +47,8 @@ from paper_radar.fixture_audit.source_validation import inspect_source
 from paper_radar.papers import PaperFacts
 from paper_radar.papers.errors import PaperError, PaperReason
 from paper_radar.papers.models import AbstractValue, CandidateInput
+from paper_radar.runtime_logging import RuntimeLog, Sink
+from paper_radar.runtime_logging.events import Clock, MonotonicClock
 from paper_radar.sources.errors import controlled
 from paper_radar.sources.feeds import endpoint
 from paper_radar.storage.artifacts import ArtifactStore
@@ -53,13 +56,32 @@ from paper_radar.storage.artifacts import ArtifactStore
 
 class JGRMetadata:
     def __init__(
-        self, database: Path, data_root: Path, *, http: SourceHTTPExecutor | None = None
+        self,
+        database: Path,
+        data_root: Path,
+        *,
+        http: SourceHTTPExecutor | None = None,
+        sink: Sink | None = None,
+        clock: Clock | None = None,
+        monotonic: MonotonicClock | None = None,
     ) -> None:
         self.database, self.data_root = database, data_root
         self.http = http or SourceHTTPExecutor()
+        self.log = RuntimeLog(sink, clock=clock, monotonic=monotonic)
 
     @controlled("metadata")
     def enrich(
+        self, paper_id: str, *, request_id: str, contact_email: str
+    ) -> MetadataResult:
+        with self.log.execution(
+            "metadata", controlled=(PaperError, FixtureError), paper_id=paper_id
+        ):
+            return self._enrich(
+                paper_id, request_id=request_id, contact_email=contact_email
+            )
+
+    @controlled("metadata")
+    def _enrich(
         self, paper_id: str, *, request_id: str, contact_email: str
     ) -> MetadataResult:
         validate_contact(contact_email)
@@ -108,13 +130,21 @@ class JGRMetadata:
                         basis_sha256=sha(payload),
                     )
                 )
-        return self.resume(key, contact_email=contact_email)
+        return self._resume(key, contact_email=contact_email)
 
     @controlled("metadata")
     def resume(self, request_key: str, *, contact_email: str) -> MetadataResult:
+        with self.log.execution(
+            "metadata", controlled=(PaperError, FixtureError), execution_id=request_key
+        ):
+            return self._resume(request_key, contact_email=contact_email)
+
+    @controlled("metadata")
+    def _resume(self, request_key: str, *, contact_email: str) -> MetadataResult:
         validate_contact(contact_email)
         with transaction(self.database) as connection:
             basis, settled = load_run(connection, request_key)
+        self.log.bind(execution_id=request_key, paper_id=basis.paper_id)
         if settled is not None:
             return self.replay(request_key)
         doi = basis.doi
@@ -156,6 +186,7 @@ class JGRMetadata:
                 ),
                 None,
             )
+        settling = old is None or not old.committed
         if old is None:
             request = normalize_request(
                 SourceRequest(journal="jgr", route=route, doi=basis.doi)
@@ -302,6 +333,8 @@ class JGRMetadata:
                 # Another worker may already have committed this exact immutable source.
                 put_route(connection, key, updated, replace=True)
             old = updated
+        if settling:
+            self.log.emit("route_settled", route=route, category=old.reason)
         return old
 
     @controlled("metadata")

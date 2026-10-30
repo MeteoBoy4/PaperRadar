@@ -34,6 +34,8 @@ from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
 from paper_radar.fixture_audit.source_validation import inspect_source
 from paper_radar.papers import PaperFacts
 from paper_radar.papers.errors import PaperError, PaperReason
+from paper_radar.runtime_logging import RuntimeLog, Sink
+from paper_radar.runtime_logging.events import Clock, MonotonicClock
 from paper_radar.sources.errors import controlled
 from paper_radar.storage.artifact_contract import ArtifactError
 from paper_radar.storage.artifacts import ArtifactStore
@@ -46,10 +48,18 @@ from paper_radar.storage.database import (
 
 class JGRFeed:
     def __init__(
-        self, database: Path, data_root: Path, *, http: SourceHTTPExecutor | None = None
+        self,
+        database: Path,
+        data_root: Path,
+        *,
+        http: SourceHTTPExecutor | None = None,
+        sink: Sink | None = None,
+        clock: Clock | None = None,
+        monotonic: MonotonicClock | None = None,
     ) -> None:
         self.database, self.data_root = database, data_root
         self.http = http or SourceHTTPExecutor()
+        self.log = RuntimeLog(sink, clock=clock, monotonic=monotonic)
 
     @controlled("feed_check")
     def replay(self, check_id: str) -> FeedCheck:
@@ -106,6 +116,13 @@ class JGRFeed:
 
     @controlled("feed_check")
     def check(self, feed_id: str, *, request_id: str, contact_email: str) -> FeedCheck:
+        with self.log.execution("feed", controlled=(PaperError, FixtureError)):
+            return self._check(
+                feed_id, request_id=request_id, contact_email=contact_email
+            )
+
+    @controlled("feed_check")
+    def _check(self, feed_id: str, *, request_id: str, contact_email: str) -> FeedCheck:
         validate_contact(contact_email)
         if (
             not isinstance(request_id, str)
@@ -172,10 +189,18 @@ class JGRFeed:
                     connection.commit()
         finally:
             engine.dispose()
-        return self.resume(check_id, contact_email=contact_email)
+        return self._resume(check_id, contact_email=contact_email)
 
     @controlled("feed_check")
     def resume(self, check_id: str, *, contact_email: str) -> FeedCheck:
+        with self.log.execution(
+            "feed", controlled=(PaperError, FixtureError), execution_id=check_id
+        ):
+            return self._resume(check_id, contact_email=contact_email)
+
+    @controlled("feed_check")
+    def _resume(self, check_id: str, *, contact_email: str) -> FeedCheck:
+        self.log.bind(execution_id=check_id)
         view = self.replay(check_id)
         if view.complete:
             return view
@@ -243,6 +268,7 @@ class JGRFeed:
                     connection.commit()
             finally:
                 engine.dispose()
+            self.log.emit("route_settled", route="feed", category=reason)
             view = self.replay(check_id)
         if view.complete:
             return view

@@ -16,6 +16,8 @@ from paper_radar.feed_pipeline.models import (
 )
 from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
 from paper_radar.papers import PaperFacts
+from paper_radar.runtime_logging import Sink
+from paper_radar.runtime_logging.events import Clock, MonotonicClock
 from paper_radar.screening.schema import BoundaryOutput
 from paper_radar.screening_tasks import ScreeningTasks
 from paper_radar.screening_tasks.feed_gate import (
@@ -55,14 +57,37 @@ class PipelineError(Exception):
 
 class FeedPipeline:
     def __init__(
-        self, database: Path, data_root: Path, *, http: SourceHTTPExecutor | None = None
+        self,
+        database: Path,
+        data_root: Path,
+        *,
+        http: SourceHTTPExecutor | None = None,
+        sink: Sink | None = None,
+        clock: Clock | None = None,
+        monotonic: MonotonicClock | None = None,
     ) -> None:
         self.database, self.data_root = database, data_root
         executor = http or SourceHTTPExecutor()
-        self.feed = JGRFeed(database, data_root, http=executor)
-        self.metadata = JGRMetadata(database, data_root, http=executor)
+        self.feed = JGRFeed(
+            database,
+            data_root,
+            http=executor,
+            sink=sink,
+            clock=clock,
+            monotonic=monotonic,
+        )
+        self.metadata = JGRMetadata(
+            database,
+            data_root,
+            http=executor,
+            sink=sink,
+            clock=clock,
+            monotonic=monotonic,
+        )
         self.papers = PaperFacts(database, data_root)
-        self.tasks = ScreeningTasks(database, data_root)
+        self.tasks = ScreeningTasks(
+            database, data_root, sink=sink, clock=clock, monotonic=monotonic
+        )
 
     def prepare(
         self, feed_id: str, *, request_id: str, contact_email: str

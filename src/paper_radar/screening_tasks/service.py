@@ -14,6 +14,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from paper_radar.config import ConfigError, load_config_snapshot
 from paper_radar.papers import PaperError, PaperFacts, resolve_revision
 from paper_radar.papers.tables import feeds
+from paper_radar.runtime_logging import NullSink, RuntimeLog, Sink
+from paper_radar.runtime_logging.events import MonotonicClock, warn_once
 from paper_radar.screening_tasks.attempt_models import (
     Claim,
     Clock,
@@ -86,10 +88,13 @@ class ScreeningTasks:
         data_root: Path | None = None,
         *,
         clock: Clock | None = None,
+        sink: Sink | None = None,
+        monotonic: MonotonicClock | None = None,
     ) -> None:
         self.database = database
         self.data_root = data_root
-        self._attempts = AttemptService(database, clock)
+        self.log = RuntimeLog(sink, clock=clock, monotonic=monotonic)
+        self._attempts = AttemptService(database, clock, self.log)
         self._success = SuccessService(self._attempts, data_root)
 
     def query(self, *, paper_id: str, stage: str, snapshot_id: str) -> TaskQueryResult:
@@ -101,9 +106,10 @@ class ScreeningTasks:
         return RetryService(self._attempts).register(raw_request)
 
     def claim(self, receipt_id: str) -> Claim:
-        return self._attempts.claim(
-            self.get_receipt(receipt_id), self.load_input(receipt_id)
-        )
+        receipt = self.get_receipt(receipt_id)
+        result = self._attempts.claim(receipt, self.load_input(receipt_id))
+        self._task_event("claimed", result)
+        return result
 
     def status(self, receipt_id: str) -> TaskStatus:
         return self._attempts.status(self.get_receipt(receipt_id))
@@ -112,7 +118,9 @@ class ScreeningTasks:
         return self._attempts.renew(handle)
 
     def fail(self, claim: Claim, report: FailureReport) -> FailureReceipt:
-        return self._attempts.fail(claim, report)
+        result = self._attempts.fail(claim, report)
+        self._task_event("failed", claim, kind=result.kind.value)
+        return result
 
     def reclaim(self, receipt_id: str) -> TaskStatus:
         return self._attempts.reclaim(self.get_receipt(receipt_id))
@@ -120,7 +128,29 @@ class ScreeningTasks:
     def submit(
         self, claim: Claim, candidate: SuccessCandidate
     ) -> SuccessReceipt | FailureReceipt:
-        return self._success.submit(claim, candidate)
+        try:
+            result = self._success.submit(claim, candidate)
+        except TaskError as error:
+            self._task_event("submit_rejected", claim, reason=error.reason.value)
+            raise
+        except Exception:
+            if not self.log.active:
+                self._task_event("unexpected_error", claim)
+            raise
+        except BaseException:
+            if not self.log.active:
+                self._task_event("interrupted", claim, category="outcome_unknown")
+            raise
+        self._task_event(
+            "succeeded" if isinstance(result, SuccessReceipt) else "failed",
+            claim,
+            **(
+                {"kind": result.kind.value}
+                if isinstance(result, FailureReceipt)
+                else {}
+            ),
+        )
+        return result
 
     def load_success(self, success_id: str) -> SuccessContent:
         return self._success.load(success_id)
@@ -148,11 +178,47 @@ class ScreeningTasks:
         if not callable(executor):
             raise TaskError(TaskReason.INVALID_REQUEST)
         receipt = self.get_receipt(receipt_id)
+        with self.log.operation(
+            "screening",
+            controlled=(TaskError,),
+            task_id=receipt.task_id,
+            paper_id=receipt.paper_id,
+            stage=receipt.stage,
+            fingerprint=receipt.fingerprint,
+        ):
+            return self._run_once(receipt_id, executor)
+
+    def _task_event(self, event: str, claim: Claim, **fields: object) -> None:
+        if isinstance(self.log.sink, NullSink):
+            return
+        try:
+            receipt = self.get_receipt(claim.receipt_id)
+            self.log.emit(
+                event,
+                component="screening",
+                task_id=claim.task_id,
+                paper_id=receipt.paper_id,
+                stage=receipt.stage,
+                fingerprint=receipt.fingerprint,
+                attempt=claim.attempt_no,
+                **fields,
+            )
+        except Exception:
+            warn_once()
+
+    def _run_once(
+        self, receipt_id: str, executor: TestExecutor
+    ) -> FailureReceipt | SuccessReceipt:
+        if not callable(executor):
+            raise TaskError(TaskReason.INVALID_REQUEST)
+        receipt = self.get_receipt(receipt_id)
         frozen = self.load_input(receipt_id)
         # 先拒绝已有修正依据损坏;领取可能回收过期尝试,提交后需重读实际修正。
         self._attempts.correction(receipt)
         self._success.store().prepare_publish()
         claim = self._attempts.claim(receipt, frozen)
+        self._task_event("claimed", claim)
+        self.log.bind(attempt=claim.attempt_no)
         stage_input = frozen.stage_input
         correction = self._attempts.correction(receipt)
         # claim 已提交;进程随后中断或执行者抛异常都不退还预算。
@@ -160,6 +226,7 @@ class ScreeningTasks:
         try:
             report = executor(stage_input, correction, claim.renewal_handle)
         except Exception:
+            self._task_event("unexpected_error", claim)
             report = FailureReport(FailureKind.EXECUTOR_ERROR)
             origin = "exception"
         if type(report) is SuccessCandidate:
@@ -173,7 +240,9 @@ class ScreeningTasks:
             # 未支持的返回只记录协议失败。
             report = FailureReport(FailureKind.PROTOCOL_ERROR)
         # 离开 except 后才结算,迟到结算的受控错误不串联原执行者异常。
-        return self._attempts.fail(claim, report, origin=origin)
+        result = self._attempts.fail(claim, report, origin=origin)
+        self._task_event("failed", claim, kind=result.kind.value)
+        return result
 
     def register_feed_value(
         self,

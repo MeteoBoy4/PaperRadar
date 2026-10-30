@@ -10,6 +10,7 @@ from sqlalchemy import Connection, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.papers import PaperFacts, resolve_revision
+from paper_radar.runtime_logging import RuntimeLog
 from paper_radar.screening_tasks.attempt_models import (
     ATTEMPTS_PER_GENERATION,
     Claim,
@@ -54,9 +55,12 @@ from paper_radar.storage.database import require_current_revision
 
 
 class AttemptService:
-    def __init__(self, database: Path, clock: Clock | None) -> None:
+    def __init__(
+        self, database: Path, clock: Clock | None, log: RuntimeLog | None = None
+    ) -> None:
         self.database = database
         self.clock = clock
+        self.log = log if log is not None else RuntimeLog()
 
     @contextmanager
     def connection(self, *, write: bool) -> Iterator[Connection]:
@@ -82,6 +86,7 @@ class AttemptService:
         basis = evidence_values(evidence)
         credential, renewal = token_hex(32), token_hex(32)
         expires = lease_expiry(now)
+        recovered: int | None = None
         with self.connection(write=True) as connection:
             row = receipt_row(connection, receipt.receipt_id)
             if row is None or row["task_id"] != receipt.task_id:
@@ -105,6 +110,7 @@ class AttemptService:
                 if now < read_timestamp(existing[-1]["expires_at"]):
                     raise TaskError(TaskReason.TASK_RUNNING)
                 recover_attempt(connection, existing[-1], now)
+                recovered = existing[-1]["attempt_no"]
             number = len(existing) + 1
             if number <= ATTEMPTS_PER_GENERATION:
                 if existing and now < read_timestamp(
@@ -129,6 +135,8 @@ class AttemptService:
                         expires_at=timestamp(expires),
                     )
                 )
+        if recovered is not None:
+            self._reclaimed(receipt, recovered)
         # 回收第二次过期尝试必须先提交,再返回预算耗尽。
         if number > ATTEMPTS_PER_GENERATION:
             raise TaskError(TaskReason.BUDGET_EXHAUSTED)
@@ -236,7 +244,20 @@ class AttemptService:
                 claim.task_id, claim.attempt_no, report.kind, origin, now
             )
 
+    def _reclaimed(self, receipt: RequestReceipt, attempt: int) -> None:
+        self.log.emit(
+            "reclaimed",
+            component="screening",
+            task_id=receipt.task_id,
+            paper_id=receipt.paper_id,
+            stage=receipt.stage,
+            fingerprint=receipt.fingerprint,
+            attempt=attempt,
+            kind="outcome_unknown",
+        )
+
     def reclaim(self, receipt: RequestReceipt) -> TaskStatus:
+        recovered: int | None = None
         with self.connection(write=True) as connection:
             now = utc_now(self.clock)
             rows = read_attempts(connection, receipt.task_id)
@@ -247,5 +268,9 @@ class AttemptService:
                 and now >= read_timestamp(rows[-1]["expires_at"])
             ):
                 recover_attempt(connection, rows[-1], now)
+                recovered = rows[-1]["attempt_no"]
                 rows = read_attempts(connection, receipt.task_id)
-            return derive_status(receipt.task_id, rows, now)
+            result = derive_status(receipt.task_id, rows, now)
+        if recovered is not None:
+            self._reclaimed(receipt, recovered)
+        return result

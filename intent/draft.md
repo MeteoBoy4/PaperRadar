@@ -1054,6 +1054,9 @@ reports/
 logs/
 ~~~
 
+`logs/` 由执行入口显式注入日志汇，在所选根的首次事件时创建；只读路径不写事件、不建目录（D2）。
+运行日志不随备份恢复，也不是 trace 的事实源；trace 仍以数据库任务、审计事实和成功制品为依据（D2）。
+
 `settings.yaml` 只选择当前 Profile、主题、期刊信誉、models 整份版本化文件、分槽 adapter、复用升级参数、正文提取配置、Read 分块配置、提示词和契约版本；已登记的带版本内容文件不可原地改写。models 文件内具名保存 screening、reuse_assessment、reading 三个独立槽，settings 不内联这些槽。`contracts/` 是代码中权威 Pydantic Schema 导出的冻结快照，用于回放和差异检查，不是第二份手写定义。
 
 配置包括 Profile 纵向路径，以及 models、boundary 提示词及 boundary 冻结契约；包括 topics、value 提示词与 value-prediction 冻结契约，分别判断 boundary/value 配置就绪；包括 escalation、reuse 提示词、reuse-assessment 和 decision-reasons 契约，判断 reuse/suggestion 配置就绪，不要求 PDF、正文解析或 value 输出；包括 extraction 的受控工具链、按阶段模型文件身份、有效解析策略与 normalization v1，单独判断 extraction 配置完整性，不安装解析器、下载模型或执行 PDF 解析。`settings.yaml` 所在目录视为 `config/`，其父目录是配置根；`profile: profile-v1` 选择相邻 `profiles/profile-v1.yaml`。缺失或 `null` 允许保存明确未就绪的快照，尚未开放的配置种类非空选择仍拒绝。详细 selector、严格 YAML、快照身份和 CLI 契约见 `docs/contracts/runtime-config.md`。各配置切片的历史范围见[路线图](../docs/roadmap.md#配置切片与底座验收范围)。

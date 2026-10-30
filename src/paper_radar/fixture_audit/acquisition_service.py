@@ -50,6 +50,7 @@ from paper_radar.fixture_audit.source_http import (
     body_is_contact_free,
 )
 from paper_radar.fixture_audit.source_validation import inspect_source
+from paper_radar.runtime_logging import RuntimeLog
 from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.database import (
     DatabaseMode,
@@ -68,8 +69,11 @@ class AcquisitionService:
         database: Path,
         data_root: Path | None,
         source_executors: Mapping[Channel, SourceExecutor] | None = None,
+        *,
+        log: RuntimeLog | None = None,
     ) -> None:
         self.database, self.data_root = database, data_root
+        self.log = log if log is not None else RuntimeLog()
         self.executors: dict[Channel, SourceExecutor] = (
             dict(source_executors)
             if source_executors is not None
@@ -304,6 +308,13 @@ class AcquisitionService:
                         raise ValueError("executor_body")
                     response = SourceResponse(facts, response.body)
                 except Exception:
+                    self.log.emit(
+                        "unexpected_error",
+                        component="audit",
+                        plan_id=plan_id,
+                        execution_id=execution_id,
+                        route=request.route,
+                    )
                     # A broken injected executor cannot reveal arbitrary exception
                     # text or claim a known request count after losing its result.
                     raise FixtureError(
@@ -331,6 +342,14 @@ class AcquisitionService:
                     )
                 )
                 connection.commit()
+            self.log.emit(
+                "route_settled",
+                component="audit",
+                plan_id=plan_id,
+                execution_id=execution_id,
+                route=request.route,
+                category=settlement.reason,
+            )
             return value.model_copy(update={"settlement": settlement})
         except SQLAlchemyError:
             raise FixtureError(FixtureReason.CORRUPT_REFERENCE, path="audit") from None
@@ -351,29 +370,30 @@ class AcquisitionService:
         protection: AuditProtection | None = None,
         previous_execution_id: str | None = None,
     ) -> RouteExecution:
-        validate_contact(contact_email)
-        if protection is not None:
-            if (
-                protection.fd is None
-                or protection.plan_id != plan_id
-                or protection.database.resolve() != self.database.resolve()
-            ):
-                raise FixtureError(FixtureReason.EXECUTION_BUSY, path="plan_id")
-            return self._acquire_source(
-                plan_id,
-                request_key=request_key,
-                request=request,
-                contact_email=contact_email,
-                previous_execution_id=previous_execution_id,
-            )
-        with self.audit_execution(plan_id):
-            return self._acquire_source(
-                plan_id,
-                request_key=request_key,
-                request=request,
-                contact_email=contact_email,
-                previous_execution_id=previous_execution_id,
-            )
+        with self.log.operation("audit", controlled=(FixtureError,), plan_id=plan_id):
+            validate_contact(contact_email)
+            if protection is not None:
+                if (
+                    protection.fd is None
+                    or protection.plan_id != plan_id
+                    or protection.database.resolve() != self.database.resolve()
+                ):
+                    raise FixtureError(FixtureReason.EXECUTION_BUSY, path="plan_id")
+                return self._acquire_source(
+                    plan_id,
+                    request_key=request_key,
+                    request=request,
+                    contact_email=contact_email,
+                    previous_execution_id=previous_execution_id,
+                )
+            with self.audit_execution(plan_id):
+                return self._acquire_source(
+                    plan_id,
+                    request_key=request_key,
+                    request=request,
+                    contact_email=contact_email,
+                    previous_execution_id=previous_execution_id,
+                )
 
     def _response_settlement(
         self, request: SourceRequest, response: SourceResponse
