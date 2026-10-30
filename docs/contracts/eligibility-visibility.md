@@ -72,7 +72,9 @@ waiting_calibration 或其他身份链成员上的隐藏事实。
   却最低不完整或论文不一致是矛盾；旧版本/修订是 stale。
 - 制品：presence=`present/absent/unknown`，reference、version_id、applicability。
   `ArtifactFact.from_success(SuccessView, version_id=...)` 原样保留 A7 的
-  `current/historical/undeterminable`，不重新算 fingerprint。version_id 由关联领取依据
+  `current/historical/undeterminable`；ArtifactFact、ExtractionFact、DecisionFact 的
+  applicability 字段复用 A7 的封闭 `Applicability` 类型。外部值仍由调用方解析和校验，
+  本规则不重新算 fingerprint。version_id 由关联领取依据
   装配，不由 A 猜测。未知不能当缺失，历史成功不能当当前成功；声称 current 却引用其他
   版本或 PDF、声称 absent/unknown 却携带成功引用，返回矛盾原因。
 - 决定：每个 DecisionFact 有 reference、paper_id、显式审计 sequence、权威
@@ -101,7 +103,7 @@ accepted/pending/denied；后续全文需求另要求 accepted。它不是普通
 按 visibility 裁剪字段，不能直接序列化整个 PaperProjection 或历史候选。
 
 support=`partial` 必须连同 scope 保存和展示：最低元数据为 `minimum_metadata_only`，
-自动 Read 为 `read_prerequisites_only_no_rank_capacity_claim_or_budget`，waiting_calibration
+通用 Read 前置与自动 Read 为 `read_prerequisites_only_no_rank_capacity_claim_or_budget`，waiting_calibration
 为 `supplied_visibility_fact_only`。support=`deferred` 时 eligible=None、owner 明确，
 scope=`downstream_responsibility`；不能转换成 false、unknown 或 ready_to_claim。
 重复 paper_id 的批量条目仅该身份返回 duplicate_paper，清除选择性 evidence；不受排列影响，
@@ -123,17 +125,33 @@ deferred 概念仍保留 None。普通单篇 deferred 结果不制造原因。
 
 执行来源独立为 `production/test/unknown`；test 或 unknown 即使实验用途、质量通过也拒绝
 Read。production 只是执行来源，不授予生产消费资格，不提升实验制品，不重置预算。
-质量和其他前置满足的 experiment + production 来源 + document gate 有显式请求正例；
+质量和其他前置满足的 experiment + production 来源 + document gate 可满足通用 Read 前置，
+显式单篇执行不以人工请求存在为条件；
 实验路径不扫描自动队列，eligible_for_auto_read 固定附 experiment_no_auto_queue。
 正常消费与实验结果隔离仍由 B/Body 的根装配和消费者验证。
 
-Read 前置要求 canonical/current、最低元数据、有效 accepted、当前 PDF/成功提取、
-质量、用途、执行来源与动作许可。人工 accepted 可在系统门禁关闭时获得这些前置资格，
-不代表有排名名额；自动领取仍消耗每日名额。requested_manual_read 表示**显式请求的
-Read 前置资格**，要求请求引用同一论文的生效人工 accepted，不接受系统 accepted 代替，
-并同样检查正文/质量等前置；请求已存在但正文未齐时本结果仍为 false，请求事实本身不删除。
-请求不创建决定、不修改预算、不授予租约或执行资源，显式请求不占自动名额的执行纪律归 B/G。
-后续新的人工事件使旧请求依据 superseded；后续 denied 阻止未开始的 Read，历史仍保留。
+`read_prerequisites` 表达通用 Read 前置，要求 canonical/current、最低元数据、有效
+accepted、当前 PDF/成功提取、质量、用途、执行来源与动作许可。显式单篇执行可直接消费
+此概念；不要求也不制造人工请求。它只检查已装配前置，不代表无当前成功分析、重跑许可、
+排名、名额、预算余额或任务可领取；这些执行约束仍由消费者在事务内核验。
+人工 accepted 在系统门禁 paused/disabled/unknown 时仍可满足 Read 前置；系统 accepted
+只有在其当前制品、依据和 enabled 等生效条件全部满足时才可供 Read 使用。
+
+`eligible_for_auto_read` 复用通用 Read 前置，另要求生产根；实验根始终返回
+experiment_no_auto_queue，不能扫描自动队列。人工 accepted 后的自动领取仍消耗每日名额。
+
+`requested_manual_read` 表示**显式请求的 Read 前置资格**，在通用 Read 前置上要求
+请求引用同一论文的当前生效 accepted。既有 accepted 可来自人工或合法系统建议，
+只新增请求，无须追加人工 accepted。pending/denied 仍不满足前置；调用方必须在同一事务中
+先追加 accepted(source=manual_read_request, reason=manual_read_request) 再创建请求，任一步
+失败则都不提交。纯规则不创建决定或请求，也不证明调用方已实现事务原子性。
+
+请求存在性通过输入 `manual_request` 单独表达；请求存在但正文等前置未齐时，
+requested_manual_read 仍为 false，请求事实本身不删除。请求为空、引用或论文身份矛盾、
+不再引用当前生效决定均返回受控原因，但不改变通用 Read 前置。后来新的决定可使旧请求
+依据 superseded；后来 denied 阻止未开始的 Read，历史请求和决定仍保留。
+显式人工请求不占自动名额，仍受正文质量、执行来源、预算与串行资源约束；通用 Read
+前置通过或显式单篇启动本身均不授予名额豁免、租约或执行资源，也不重置预算。
 
 ### §5.7 概念矩阵
 
@@ -156,10 +174,11 @@ Read 前置资格**，要求请求引用同一论文的生效人工 accepted，�
 | extraction_failed | 身份、当前 PDF、当前提取失败 | supported | extraction_not_failed、未知/矛盾/历史 | B/Body |
 | needs_reuse_assessment | reuse 规则及任务 | deferred | 不制造资格 | D |
 | reuse_escalation_unavailable | reuse 失败与回退 | deferred | 不制造资格 | D |
+| read_prerequisites | Read 全部前置；不依赖请求存在 | partial：无成功分析/重跑、排名、容量、领取、预算判断 | Read 原因；系统 enable | B/Body/G |
 | eligible_for_auto_read | Read 全部前置、生产根 | partial：无排名、容量、领取、预算 | Read 原因；系统 enable；experiment_no_auto_queue | B 首接；D/G/H |
 | manual_accepted_channel | 人工通道排名/名额 | deferred | 人工 accepted 不等于获名额 | G/H |
 | accepted_read_backlog | 队列及既有分析 | deferred | 不计算积压 | G/H |
-| requested_manual_read | 显式请求、人工 accepted、Read 全部前置 | supported：请求的前置资格，不领取 | manual_request_*、manual_decision_required、Read 原因 | B/G |
+| requested_manual_read | 显式请求、生效 accepted、Read 全部前置 | supported：请求的前置资格，不领取 | manual_request_*、Read 原因 | B/G |
 | model_failure_queue | 真实任务失败队列 | deferred | A7 current_failures 不冒充完整列表 | B |
 | waiting_calibration | Visibility.hidden_conditions | partial：仅已给定输入 | visibility_unknown、not_waiting_calibration | C 保留器，D/H |
 | waiting_review | 复核成员/规则 | deferred | 不制造资格 | B/H |
@@ -200,8 +219,7 @@ Read 前置资格**，要求请求引用同一论文的生效人工 accepted，�
 | root_unknown、experiment_no_auto_queue | 根用途未知／实验根不进入自动队列 |
 | execution_source_unknown、test_execution_source | 执行来源未知／test 来源不能供给 Read |
 | visibility_unknown、visibility_denied | 未给共享许可／共享许可拒绝 |
-| manual_request_absent、manual_request_contradictory、manual_request_superseded | 无请求／请求身份或引用缺失矛盾／后续人工事件使旧请求依据失效 |
-| manual_decision_required | 显式请求不能借用系统 accepted |
+| manual_request_absent、manual_request_contradictory、manual_request_superseded | 无请求／请求身份或引用缺失矛盾／不再引用当前生效决定 |
 | not_waiting_calibration | 已给定隐藏事实中不存在等待保留事实 |
 | duplicate_paper | 批量输入同一身份重复，装配矛盾 |
 

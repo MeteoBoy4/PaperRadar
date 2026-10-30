@@ -25,10 +25,10 @@
 | US12 | FileSink、audit run/resume | passed：test_runtime_logging_files.py::test_two_processes_rotate_without_lost_or_torn_events、test_capacity_evicts_only_oldest_owned_files；test_runtime_logging_entries.py | not_assessed：生产文件系统、NFS/CIFS |
 | US13 | 日志故障与业务隔离 | passed：test_runtime_logging_files.py 的符号链接/部分写故障；test_a_narrow_composition.py 的 unwritable 组合保留业务成功与原字节 | not_assessed：生产磁盘/权限故障 |
 | US14 | 成功提交、load_success、只读回查 | passed：test_runtime_logging_tasks.py::test_succeeded_is_observable_from_a_new_connection_before_event、test_commit_failure_cannot_emit_succeeded；test_runtime_logging_readonly.py | deferred：B/C/D/H 真实消费者；日志缺事件不等于业务失败 |
-| US15 | evaluate_paper/evaluate_concept | passed：test_eligibility.py::test_batch_matches_trace_in_any_order_and_isolates_bad_paper；test_a_narrow_composition.py 全概念一致 | deferred：B/C/D/G/H/I 真实装配 |
-| US16 | 人工优先、系统当前性、gate；质量×根用途×执行来源 | passed：test_eligibility.py::test_old_human_decision_wins_over_system_and_projection、test_system_decision_requires_current_artifact_basis_and_explicit_gate_enable、test_read_quality_and_root_purpose_matrix | not_assessed：正式校准/真实来源；deferred：G 排名/名额/预算 |
+| US15 | evaluate_paper/evaluate_concept | passed：test_eligibility.py::test_batch_matches_trace_in_any_order_and_isolates_bad_paper；test_a_narrow_composition.py 全概念一致；test_eligibility_review.py 的通用 Read 前置与批量一致 | deferred：B/C/D/G/H/I 真实装配 |
+| US16 | 人工优先、系统当前性、gate；质量×根用途×执行来源 | passed：test_eligibility.py::test_old_human_decision_wins_over_system_and_projection、test_system_decision_requires_current_artifact_basis_and_explicit_gate_enable、test_read_quality_and_root_purpose_matrix；test_eligibility_review.py 的系统 accepted 请求、人工优先/门禁及无请求实验单篇 | not_assessed：正式校准/真实来源；deferred：G 排名/名额/预算 |
 | US17 | accepted 的 PDF/提取/Read 独立前置 | passed：test_eligibility.py::test_reference_harvest_failure_cannot_block_accepted_fulltext_or_read、test_accepted_pdf_and_extraction_demands_are_independent | deferred：E 生命周期、Body/F 正文、B/G Read |
-| US18 | A7 applicability、旧人工依据、当前 PDF/提取引用 | passed：test_eligibility.py::test_old_fulltext_triggers_new_demand_and_cannot_supply_current_read、test_later_human_denial_blocks_old_request_without_removing_history、test_a7_success_projection_preserves_undeterminable_applicability | deferred：B/C/D/G 当前性装配 |
+| US18 | A7 applicability、旧人工依据、当前 PDF/提取引用 | passed：test_eligibility.py::test_old_fulltext_triggers_new_demand_and_cannot_supply_current_read、test_later_human_denial_blocks_old_request_without_removing_history、test_a7_success_projection_preserves_undeterminable_applicability；test_eligibility_review.py 的 A7 封闭类型及制品引用矛盾 | deferred：B/C/D/G 当前性装配 |
 | US19 | evaluate_visibility：隐藏条件 OR/解除 | passed：test_calibration_visibility.py::test_each_hidden_condition_independently_restricts_ordinary_capabilities、test_partial_release_including_reveal_keeps_other_conditions_and_history | deferred：C 保留器/合并链、D 揭晓 |
 | US20 | Visibility.permission：事实/任务可见，Agent 内容受限 | passed：test_calibration_visibility.py::test_synthetic_material_consumer_projects_only_permitted_content；test_a_narrow_composition.py 隐藏任务仍记 paper_id/stage | deferred：B show/trace/最小日报、C/D/H 实际字段裁剪 |
 | US21 | 普通决定/精读请求与专用 review 许可 | passed：test_calibration_visibility.py::test_synthetic_actions_reject_before_write_with_controlled_receipts；test_eligibility.py::test_read_consumes_visibility_and_does_not_reimplement_hidden_action_rules | deferred：B/C/D 真实事务前守卫/review |
@@ -48,7 +48,7 @@
 | T06 | doctor 无隐式供给/调用/写入 | passed：test_doctor_process.py 冷进程禁 I/O 与文件树/逻辑库比较；本组合只读查询 | deferred：B/I 真实 run-due 无隐式安装；NAS/恢复仍属 I 独立未验项，本行不证明完整恢复 |
 | T07 | 当前 boundary/value 调用隔离及 unsupported stage 拒绝 | passed：test_t07_call_isolation.py；[逐子项映射](t07-call-isolation.md) | not_assessed：Pi/Live/Cwd；deferred：B/D/G 实际消费者，Read 无合法 builder |
 | T16 | 共享可见性许可及合成消费 | passed：test_calibration_visibility.py；本组合隐藏任务明细仍记日志、Agent 原文不落盘 | deferred：B/C/D/H 实际隐藏，合成消费者不代表产品面 |
-| T17 | 单篇与按概念批量资格 | passed：test_eligibility.py 的多原因/排列/坏论文隔离；本组合全概念一致 | deferred：B/C/D/G/H/I 真调度、名额、积压 |
+| T17 | 单篇与按概念批量资格 | passed：test_eligibility.py 的多原因/排列/坏论文隔离；本组合全概念一致；test_eligibility_review.py 的 read_prerequisites 与请求/队列分离 | deferred：B/C/D/G/H/I 真调度、名额、积压 |
 | T22 | §8.7 三输出去向 | passed：test_runtime_logging_tasks.py、test_runtime_logging_files.py、test_doctor_process.py；本组合安全事件 | not_assessed：真实来源/Pi；阶段任务字段不按隐藏许可省略 |
 | T23 | 共同回归：隐私、成功原制品与提交窗口 | passed：test_runtime_logging_tasks.py、test_runtime_logging_readonly.py；本组合只读回查与日志故障原字节 | 仅适用于本轮日志/可见性改动；deferred：B/C/D/H 消费者 |
 | T24 | 共同回归：公共 CLI/只读组合与材料绑定 | passed：test_doctor_process.py、test_runtime_logging_entries.py、test_a_narrow_composition.py；compatibility all | 不冒充每模块新功能或 live 验收；deferred：后续真实入口 |
@@ -62,6 +62,12 @@
 Feed/元数据/任务；日志目录拒写仍保留成功回执、一次 attempt 与原成功字节；真实公共结果
 装配资格并核对单篇/批量一致；隐藏成员仍允许阶段任务明细，安全事件不含 Agent 原文。
 这些用例没有让现有 trace 自动消费 visibility，也没有实现未来产品展示或动作服务。
+
+`test_eligibility_review.py` 独立覆盖当前合法系统 accepted 只增请求、pending/denied 须
+先有调用方追加的人工 accepted、旧/未知系统依据拒绝、人工依据与系统门禁独立、无请求的
+实验单篇前置通过且自动队列拒绝、质量/根用途/执行来源及请求引用一致性。三个 applicability
+字段与 A7 共享闭集；制品存在性矛盾在 Screening/PDF 两路保持各自原因。
+这些断言不验证动作服务事务、真实正文、排名、预算余额或资源领取。
 
 既有行为的新增回归用隔离副本受控回归检验敏感性；新增 root doctor help 经红→绿。
 开发实测与 scope 重绑前后报告保留在 `/tmp/paperradar-issue-120/` 的交接材料，

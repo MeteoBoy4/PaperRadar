@@ -500,7 +500,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening_tasks/success_models.py",
-        "bae59fc55ef8f81cc46316e3d6d9792ba6af39a26cc7878f3f836ad3cee862f5",
+        "b948822f22c23219548b8dbbd8500b6a6889563bede7be170b94c9afe9ac7faf",
     ),
     (
         "src/paper_radar/screening_tasks/success_rules.py",

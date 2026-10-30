@@ -11,7 +11,7 @@ from paper_radar.screening.reasons import ScreeningReasonInput
 
 if TYPE_CHECKING:
     from paper_radar.feed_metadata.models import MetadataMissing, MetadataResult
-    from paper_radar.screening_tasks.success_models import SuccessView
+    from paper_radar.screening_tasks.success_models import Applicability, SuccessView
 
 
 class Concept(StrEnum):
@@ -24,6 +24,7 @@ class Concept(StrEnum):
     NEEDS_PDF = "needs_pdf"
     NEEDS_EXTRACTION = "needs_extraction"
     EXTRACTION_FAILED = "extraction_failed"
+    READ_PREREQUISITES = "read_prerequisites"
     ELIGIBLE_FOR_AUTO_READ = "eligible_for_auto_read"
     REQUESTED_MANUAL_READ = "requested_manual_read"
     WAITING_CALIBRATION = "waiting_calibration"
@@ -98,7 +99,6 @@ class EligibilityReason(StrEnum):
     MANUAL_REQUEST_ABSENT = "manual_request_absent"
     MANUAL_REQUEST_CONTRADICTORY = "manual_request_contradictory"
     MANUAL_REQUEST_SUPERSEDED = "manual_request_superseded"
-    MANUAL_DECISION_REQUIRED = "manual_decision_required"
     NOT_WAITING_CALIBRATION = "not_waiting_calibration"
     DUPLICATE_PAPER = "duplicate_paper"
 
@@ -127,7 +127,7 @@ class ArtifactFact:
     presence: Presence = Presence.UNKNOWN
     reference: str | None = None
     version_id: str | None = None
-    applicability: str = "undeterminable"
+    applicability: Applicability = "undeterminable"
 
     @classmethod
     def from_success(cls, view: SuccessView, *, version_id: str) -> ArtifactFact:
@@ -148,7 +148,7 @@ class ExtractionFact:
     state: ExtractionState = ExtractionState.UNKNOWN
     reference: str | None = None
     pdf_reference: str | None = None
-    applicability: str = "undeterminable"
+    applicability: Applicability = "undeterminable"
 
 
 class QualityBasis(StrEnum):
@@ -201,7 +201,7 @@ class DecisionFact:
     paper_id: str
     sequence: int
     record: ScreeningReasonInput
-    applicability: str
+    applicability: Applicability
     screening_reference: str | None = None
 
 
