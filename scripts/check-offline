@@ -5,9 +5,19 @@ repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"
 
 if [[ "${1:-}" == "--help" && "$#" -eq 1 ]]; then
-  help_python="${UV_PROJECT_ENVIRONMENT:-$repository_root/.venv}/bin/python"
+  project_environment="${UV_PROJECT_ENVIRONMENT-.venv}"
+  if [[ "$project_environment" != /* ]]; then
+    project_environment="$repository_root/$project_environment"
+  fi
+  help_python="$project_environment/bin/python"
   if [[ ! -x "$help_python" ]]; then
-    help_python=python3
+    help_python="$(command -v python3 || true)"
+  fi
+  if [[ -z "$help_python" ]] || ! "$help_python" -I -S -B -c \
+    'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)' \
+    >/dev/null 2>&1; then
+    echo '无法显示帮助：需要可运行的 Python >=3.12；请检查项目环境或宿主 python3，并用 uv run --offline --locked 准备环境。' >&2
+    exit 1
   fi
   exec "$help_python" -B -c 'from scripts.verification_groups import help_text; print(help_text())'
 fi

@@ -5,7 +5,7 @@ from __future__ import annotations
 import ast
 import inspect
 import re
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from pathlib import Path, PurePosixPath
@@ -506,6 +506,30 @@ def _writer_scope(
         return Scope(group, writer, {}, errors=(error.reason,))
 
 
+@dataclass(frozen=True)
+class WriterPath:
+    group: str
+    path: str | None
+    error: ValueError | None = None
+
+
+def discover_writer_paths(implementation_root: Path) -> Iterator[WriterPath]:
+    """从当前执行的 registry 发现 writer;调用者决定缺失/树外路径的处置。"""
+    from scripts.a2_full_acceptance import acceptance_groups
+
+    for group in acceptance_groups():
+        source = inspect.getsourcefile(group.write)
+        if source is None:
+            yield WriterPath(group.name, None)
+            continue
+        try:
+            path = Path(source).resolve().relative_to(implementation_root.resolve())
+        except ValueError as error:
+            yield WriterPath(group.name, None, error)
+        else:
+            yield WriterPath(group.name, path.as_posix())
+
+
 def load_scopes(
     root: Path,
     *,
@@ -520,26 +544,20 @@ def load_scopes(
             for group, writer in (writers or (("registry", CENTRAL_PATH),))
         )
     if writers is None:
-        from scripts.a2_full_acceptance import acceptance_groups
-
         writers_list = []
-        for group in acceptance_groups():
-            source = inspect.getsourcefile(group.write)
-            if source is None:
+        for writer in discover_writer_paths(root):
+            if writer.error is not None:
+                raise writer.error
+            if writer.path is None:
                 return (
                     Scope(
-                        group.name,
+                        writer.group,
                         "scripts",
                         {},
                         errors=(AuditReason.WRITER_UNAVAILABLE,),
                     ),
                 )
-            writers_list.append(
-                (
-                    group.name,
-                    Path(source).resolve().relative_to(root.resolve()).as_posix(),
-                )
-            )
+            writers_list.append((writer.group, writer.path))
         writers = tuple(writers_list)
     scopes = tuple(
         _writer_scope(root, group, writer, shared) for group, writer in writers

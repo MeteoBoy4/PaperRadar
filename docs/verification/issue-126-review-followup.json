@@ -1,0 +1,501 @@
+{
+  "format_version": 1,
+  "issue": 126,
+  "artifact_kind": "review_followup_coverage",
+  "base_commit": "bfc71177d38eb0355a7760f22a3554ba31834e42",
+  "proof_boundary": "开发验证；不发布完整离线或live结论；本轮不复制、迁移或改写正式JSON/旧冻结台账。",
+  "review_originals": [
+    {
+      "path": "intent/review/issue-126-scope-registry-review-r1.md",
+      "original_prefix_bytes": 3075,
+      "original_prefix_sha256": "c66450cf94ca8ac247f147209da3d1ebed009468973d6813f091466928c51fc2"
+    },
+    {
+      "path": "intent/review/issue-126-scope-registry-review-r2.md",
+      "original_prefix_bytes": 3075,
+      "original_prefix_sha256": "c66450cf94ca8ac247f147209da3d1ebed009468973d6813f091466928c51fc2"
+    },
+    {
+      "path": "intent/review/issue-126-scope-registry-review-r4.md",
+      "original_prefix_bytes": 12227,
+      "original_prefix_sha256": "d66bf0057e5687594d8ca23a75938237ed1341c708dc2a37253b34e8fe03c5c5"
+    }
+  ],
+  "rebindings": [
+    {
+      "path": "scripts/a8_acceptance.py",
+      "registration_path": "scripts/verification_scope_materials.py",
+      "old_sha256": "15904ffeb73edebf34a99e56925840cf849a557064674bccd8de836f67f807a8",
+      "new_sha256": "94fd03d97abbe0a92bdd6778c0091264d1dcabede137f7949748c797fee56a0c",
+      "groups": [
+        "A10",
+        "A8"
+      ],
+      "kind": "source",
+      "reason": "r1/r2共享writer发现；R4 S5保持scope_drift码并补受控item定位。",
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "registrations": [
+        {
+          "group": "A8",
+          "scope_path": "scripts/a8_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A10",
+          "scope_path": "scripts/a10_scope.py",
+          "kind": "source",
+          "role": "support"
+        }
+      ],
+      "registration_line": 67,
+      "old_entry_sha256": "2aba71058e2a8347a4bb55b6b623f1f72139f691e11292d9998c2897f810db83",
+      "new_entry_sha256": "284ebc17f92bfafb12f60788f25aef38e67e94edd26fd88c13bba24a86513c40",
+      "origin": "current_change",
+      "category": "source_support",
+      "sensitivity": "mechanical"
+    },
+    {
+      "path": "scripts/verification_scope_baseline.py",
+      "registration_path": "scripts/verification_scope_materials.py",
+      "old_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
+      "new_sha256": "8bff210448f4a702b2f8119dcbd47e0fdf80b4a27392ca5e41f8d61fa78a1c4a",
+      "groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "kind": "source",
+      "reason": "r1/r2预采I/O事实与只读纯比较；R4 S3精确legacy有序声明敏感摘要。",
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "registrations": [
+        {
+          "group": "A8",
+          "scope_path": "scripts/a8_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A9",
+          "scope_path": "scripts/a9_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A10",
+          "scope_path": "scripts/a10_scope.py",
+          "kind": "source",
+          "role": "support"
+        }
+      ],
+      "registration_line": 97,
+      "old_entry_sha256": "8025352fb41ea4f57c717f155726e0673fa2777b7bc6fca8c492095fb8decc64",
+      "new_entry_sha256": "d0e2a2495f1530e36487c76a4194ee4b349febc03767604c0cb8fa6099215838",
+      "origin": "current_change",
+      "category": "source_support",
+      "sensitivity": "mechanical"
+    },
+    {
+      "path": "scripts/verification_scope_registry.py",
+      "registration_path": "scripts/verification_scope_materials.py",
+      "old_sha256": "1768d91569a3ecbc4331a2852a19485e73e3d70238223bf9fb411f2eceb12b7b",
+      "new_sha256": "4888eac445d23230783e4f062ae41a2684921b0450c05d19990993802187f83d",
+      "groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "kind": "source",
+      "reason": "r1/r2共享当前registry writer发现，显式implementation root，保留两caller策略。",
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "registrations": [
+        {
+          "group": "A8",
+          "scope_path": "scripts/a8_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A9",
+          "scope_path": "scripts/a9_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A10",
+          "scope_path": "scripts/a10_scope.py",
+          "kind": "source",
+          "role": "support"
+        }
+      ],
+      "registration_line": 103,
+      "old_entry_sha256": "4e14ec6e25bdb214a4c93cddb7eb64a7cd2658789e1904965e8ab58b7b3cbece",
+      "new_entry_sha256": "c5cb41f2ba0e3963cb42260f3e2d3a5f24647b17e7cc06480597b17413372ccf",
+      "origin": "current_change",
+      "category": "source_support",
+      "sensitivity": "mechanical"
+    },
+    {
+      "path": "scripts/check-offline",
+      "registration_path": "scripts/verification_scope_materials.py",
+      "old_sha256": "7c4eb8c6c93895b84e7833c63f2f8873f4e5170414010f27e94f979ce5e2a300",
+      "new_sha256": "63aae23251385e656b7c55d493de87204a44973f40ccefbc4d2fde78650c3d89",
+      "kind": "source",
+      "reason": "R4 S2帮助优先项目环境及宿主fallback，缺失/低版本/无法运行受控中文退出。",
+      "groups": [
+        "A10",
+        "A2-01",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "affected_groups": [
+        "A10",
+        "A2-01",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "registrations": [
+        {
+          "group": "A2-01",
+          "scope_path": "scripts/a2_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "完整 A2",
+          "scope_path": "scripts/a2_full_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A3",
+          "scope_path": "scripts/a3_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A4",
+          "scope_path": "scripts/a4_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A5",
+          "scope_path": "scripts/a5_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A6",
+          "scope_path": "scripts/a6_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A7",
+          "scope_path": "scripts/a7_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A8",
+          "scope_path": "scripts/a8_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A9",
+          "scope_path": "scripts/a9_scope.py",
+          "kind": "source",
+          "role": "support"
+        },
+        {
+          "group": "A10",
+          "scope_path": "scripts/a10_scope.py",
+          "kind": "source",
+          "role": "support"
+        }
+      ],
+      "registration_line": 73,
+      "old_entry_sha256": "7dcd5ad96b6d39560a3072d9467395a8994992854166384fb426b2f7d16a86b3",
+      "new_entry_sha256": "ac150ca469d9bacf7afe250cb02eaf03ac1678155a05920d2760adc87c6291d5",
+      "origin": "current_change",
+      "category": "source_support",
+      "sensitivity": "mechanical"
+    }
+  ],
+  "physical_sha_updates": 4,
+  "unfolded_changed_bindings": 18,
+  "added_consumption_closure": [],
+  "closure_explanation": "共享发现留在既有verification_scope_registry；比较事实与敏感声明解释留在既有verification_scope_baseline；A8与help仍使用已有已登记实现。无新增生产模块/成员/引用、无模块循环；独立测试仅由本轮开发pytest消费，不进旧回执。",
+  "unchanged_registration_shape": {
+    "groups": 11,
+    "required": 10,
+    "optional": [
+      "A2-01"
+    ],
+    "files": 1203,
+    "unique_paths": 695,
+    "shared_materials": 255,
+    "count_records": 289,
+    "fixed_modules": 285,
+    "fixed_cases": 5281,
+    "scope_hash_edges": 0,
+    "explicit_scope_references": 41,
+    "preparation_cases": 78
+  },
+  "frozen_scope_tests": [
+    {
+      "path": "tests/test_a10_scope.py",
+      "sha256": "b0cecfa82d8f96d40724bfbdadd0ed2e03024e3a150de3c18fa8508b76239665"
+    },
+    {
+      "path": "tests/test_a9_scope.py",
+      "sha256": "1b889334ba376d5b622071c8aee6f15ce9b250448fc2a8ee830201f42321b5b3"
+    },
+    {
+      "path": "tests/test_verification_scope_audit.py",
+      "sha256": "97e9a200d739a40fe248943d1d1e02260c9851e1eecefbe3757478d341493eb8"
+    },
+    {
+      "path": "tests/test_verification_scope_cli.py",
+      "sha256": "39a218b01cb1fd7b80f5695f878215596e9f632a40606c18e8a10d444b1bc75b"
+    },
+    {
+      "path": "tests/test_verification_scope_collection.py",
+      "sha256": "7ffd0534b15dc0eed8ddb46fc0debfcd2451c20a4f99643e174c44396ea48bf9"
+    },
+    {
+      "path": "tests/test_verification_scope_registry.py",
+      "sha256": "16376df3cf4fe746c50ed54db173e2d68671283abbc047009bf1169c7de9d491"
+    }
+  ],
+  "unchanged_scope_preparation_and_reader_files": [
+    {
+      "path": "tests/test_a2_full_entry.py",
+      "sha256": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53"
+    },
+    {
+      "path": "tests/test_a4_entry.py",
+      "sha256": "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c"
+    },
+    {
+      "path": "tests/test_a5_entry.py",
+      "sha256": "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89"
+    },
+    {
+      "path": "tests/test_a6_entry.py",
+      "sha256": "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6"
+    },
+    {
+      "path": "tests/test_a7_entry.py",
+      "sha256": "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e"
+    },
+    {
+      "path": "tests/test_a8_entry.py",
+      "sha256": "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095"
+    },
+    {
+      "path": "tests/test_a9_entry.py",
+      "sha256": "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003"
+    },
+    {
+      "path": "tests/test_a10_entry.py",
+      "sha256": "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68"
+    },
+    {
+      "path": "tests/test_verification_run.py",
+      "sha256": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed"
+    },
+    {
+      "path": "tests/test_verification_compatibility.py",
+      "sha256": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf"
+    },
+    {
+      "path": "scripts/a1_scope.py",
+      "sha256": "6e7c2a0be80c9090f63c018c63932ab4595bab1874c4253ac79f160f88996d56"
+    },
+    {
+      "path": "scripts/a2_scope.py",
+      "sha256": "3d7d9b818696928410daf65f5a1177ab65ca2eaa24e379daa7ec64e2cb825547"
+    },
+    {
+      "path": "scripts/a2_full_scope.py",
+      "sha256": "74e20a95d0fa012b19cae6b28f553c23f3e670bef661488509a66fbd003e667b"
+    },
+    {
+      "path": "scripts/a3_scope.py",
+      "sha256": "8ca121566239189de1c3eb86df998b4b0ecf8e4ee1827aa9ec212848ff71177c"
+    },
+    {
+      "path": "scripts/a4_scope.py",
+      "sha256": "63880c279bf0ea4f257afebe6cebcbbda59ae755aa678619ff223b71310b2531"
+    },
+    {
+      "path": "scripts/a5_scope.py",
+      "sha256": "b435705a1bf1e4b2e4ac222f60b4be503247a22938f2d4d6cdd589f93073b87f"
+    },
+    {
+      "path": "scripts/a6_scope.py",
+      "sha256": "1588625af965e0147d95583201103d357746ed0da6d12aebe39cad827cb6e2a8"
+    },
+    {
+      "path": "scripts/a7_scope.py",
+      "sha256": "8d92799b5195a6b52d12848e60cf2e19f6b0eada532082d27db34ac2b5f9b74b"
+    },
+    {
+      "path": "scripts/a8_scope.py",
+      "sha256": "8a1378c4bb185138ab822e1d9db5d531f65be2e0afc4a0dcf12b12387897dba2"
+    },
+    {
+      "path": "scripts/a9_scope.py",
+      "sha256": "607a2a02d5509bb0ceccc62c9e97f7cba1f1601798d51e925818037321984b4a"
+    },
+    {
+      "path": "scripts/a10_scope.py",
+      "sha256": "aedddb451e3e0d89990b455ed8e084760bfdb8f2e025d0c24bd6761d29be25c5"
+    },
+    {
+      "path": "scripts/verification_status.py",
+      "sha256": "081a13f82706ebc16aee21138c40bcf6620ad8daeb8efa6338a1512f07edd1c5"
+    },
+    {
+      "path": "scripts/verification_groups.py",
+      "sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f"
+    },
+    {
+      "path": "scripts/a2_test_receipt.py",
+      "sha256": "d37ba26de2373d8e3b186cf90b3f4216e4f8cf13b8ebd848e949c69f351caa64"
+    },
+    {
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8"
+    },
+    {
+      "path": "tests/verification_expectations.py",
+      "sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78"
+    }
+  ],
+  "unbound_support_rename": {
+    "path": "tests/extensible_acceptance_support.py",
+    "old_sha256": "9f7b9c997f880ce20a8e2b8278b7007524e019179e3933ef7af04f9a77503dbe",
+    "new_sha256": "b2ffe4d44fa08e7aec2a49e3b2f1dcc2c999b6cc48fda69081f6baa2279667e8",
+    "reason": "frozen_bytes及唯一caller准确改名frozen_sha256；原返回值与冻结断言不变。"
+  },
+  "historical_unbound_compatibility_change": {
+    "path": "tests/test_tmp_path_cleanup.py",
+    "old_commit": "622d3abdb677d98814f0cb1e0235b5e33e661772",
+    "new_commit": "bfc71177d38eb0355a7760f22a3554ba31834e42",
+    "old_sha256": "65aea68a7ec369c044d4a230799189137fb7b0a32b2a39e91d8a6c612653e40c",
+    "new_sha256": "f9ab3485dc7e6c34bea7075fbc2e66c41573ffe25a65e8c74c04f11aa1d04529",
+    "current_unchanged": true,
+    "cases": 8,
+    "reason": "补充旧gate-failure-repair散文定位：四次子pytest调用显式all，以继续检验成功会话保留上限3；保留权限与软链断言。该历史测试及旧台账本轮不改。"
+  },
+  "independent_unbound_coverage": [
+    {
+      "path": "tests/test_scope_writer_discovery.py",
+      "cases": 5,
+      "required": false,
+      "sha256": "61fafd78bb2d67aed3ffc836444cc3cbbf3d7ec66248d62d7df509ce604684bc",
+      "coverage": "显式implementation root、CLI缺source/树外受控错误、A8 skip两种不可定位writer。"
+    },
+    {
+      "path": "tests/test_scope_review_r4.py",
+      "cases": 15,
+      "required": false,
+      "sha256": "3a2068633ccee7badad788192e686bf7e39a6ec776bdec7b9d3c87b6b737f6df",
+      "coverage": "帮助错误及fallback/相对环境5；legacy一致性1、精确两路径四字段敏感摘要8；A8受控item1。"
+    }
+  ],
+  "terminology_clarifications": {
+    "cli_change": {
+      "central_sha_lines": 1,
+      "direct_groups": 7,
+      "additional_downstream_groups": 3,
+      "affected_groups": 10
+    },
+    "scope_hash_edges": {
+      "actual_old": 41,
+      "new": 0,
+      "old_description": 42,
+      "interpretation": "42为旧描述口径，已有台账披露，无第42条实际边。"
+    }
+  },
+  "test_maintenance_boundary": {
+    "independent_expectation": "tests/fixtures/verification_group_expectations.json及tests/verification_expectations.py独立核对帮助、组后缀和全部产物集合；不从生产登记/实际输出机械生成；数据及支撑中央固定。",
+    "simulated_execution": "旧entry单测的fake executor只消费独立fixture模块清单，不能作为真实执行证据；新组扩展回归独立启动真实pytest取得计数。"
+  },
+  "validation": {
+    "r4_red": {
+      "failed": 12,
+      "passed": 3,
+      "diagnostic_log": "/tmp/paperradar-126-review-followup/r4-red-corrected.log"
+    },
+    "r4_green": {
+      "passed": 15,
+      "seconds": 4.0
+    },
+    "full_offline_gate": "not_run",
+    "live": "not_run",
+    "related_pytest": {
+      "passed": 237,
+      "seconds": 206.59
+    },
+    "compatibility_all": {
+      "passed": 176,
+      "pytest_seconds": 325.79,
+      "entry_seconds": 326.39,
+      "exit_code": 0
+    },
+    "r4_final_strengthened": {
+      "passed": 15,
+      "seconds": 3.96
+    },
+    "low_python_mutation": "模拟3.11实际执行探测；公开CLI回归拒绝树外>=3.10门槛变异。",
+    "ruff_check": "passed",
+    "ruff_format": {
+      "passed": true,
+      "files": 988
+    },
+    "mypy": {
+      "passed": true,
+      "source_files": 710
+    },
+    "scope_audit": {
+      "default_collect_exit_code": 0,
+      "explicit_collect_exit_code": 0,
+      "baseline_issues": [],
+      "changes": 4,
+      "all_current_changes": "mechanical source_support",
+      "modules": 285,
+      "cases": 5281,
+      "skipped": 0,
+      "deselected": 0
+    }
+  }
+}

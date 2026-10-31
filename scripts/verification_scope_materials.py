@@ -65,13 +65,13 @@ SHARED_MATERIALS = {
         "2752e1d75cb0ee64efdfe1cf27a1e30c08fb054db20ec25c810e36f791b8a565"
     ),
     "scripts/a8_acceptance.py": (
-        "15904ffeb73edebf34a99e56925840cf849a557064674bccd8de836f67f807a8"
+        "94fd03d97abbe0a92bdd6778c0091264d1dcabede137f7949748c797fee56a0c"
     ),
     "scripts/a9_acceptance.py": (
         "9b566dd59ea82caa62ccaffdf32203627db73af4d7734e8e2ddfbbe8320d8899"
     ),
     "scripts/check-offline": (
-        "7c4eb8c6c93895b84e7833c63f2f8873f4e5170414010f27e94f979ce5e2a300"
+        "63aae23251385e656b7c55d493de87204a44973f40ccefbc4d2fde78650c3d89"
     ),
     "scripts/offline_evidence.py": (
         "3c53fd4e272ee346da23b72cd977180b78aeaa55a027064a97f5540ea24d9a28"
@@ -95,13 +95,13 @@ SHARED_MATERIALS = {
         "599fa750491e60f8482524266d7a5f771d3007811e120d91968071943db13c9f"
     ),
     "scripts/verification_scope_baseline.py": (
-        "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d"
+        "8bff210448f4a702b2f8119dcbd47e0fdf80b4a27392ca5e41f8d61fa78a1c4a"
     ),
     "scripts/verification_scope_collection.py": (
         "83f038a2d15c10058bd53bcb2a05808453718bdcf9812cd51a5997b20477b3ad"
     ),
     "scripts/verification_scope_registry.py": (
-        "1768d91569a3ecbc4331a2852a19485e73e3d70238223bf9fb411f2eceb12b7b"
+        "4888eac445d23230783e4f062ae41a2684921b0450c05d19990993802187f83d"
     ),
     "scripts/verification_status.py": (
         "081a13f82706ebc16aee21138c40bcf6620ad8daeb8efa6338a1512f07edd1c5"

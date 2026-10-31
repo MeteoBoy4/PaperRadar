@@ -84,7 +84,7 @@ def write_group(run, interrupted):
 """
 
 
-def frozen_bytes(root: Path) -> dict[str, str]:
+def frozen_sha256(root: Path) -> dict[str, str]:
     paths = [
         *root.glob("scripts/a[0-9]*_scope.py"),
         *(root / p for p in REVIEWED if p.startswith("tests/test_")),
@@ -177,7 +177,7 @@ def synthetic_run(
         reviewed=REVIEWED,
         verified_groups=frozenset({"A8", "A9", "A10"}),
     )
-    before = frozen_bytes(root)
+    before = frozen_sha256(root)
     register_synthetic(root, update_expectation=expectation, reader=reader)
     assert {
         p: hashlib.sha256((root / p).read_bytes()).hexdigest() for p in before

@@ -11,8 +11,10 @@ import stat
 import subprocess
 import sys
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
 from scripts.verification_scope_registry import (
@@ -29,6 +31,51 @@ from scripts.verification_scope_registry import (
 )
 
 GROUP_REGISTRATION_PATH = "scripts/verification_groups.py"
+LEGACY_GROUP_DECLARATIONS = {
+    "scripts/a1_acceptance.py": "A1_GROUP",
+    "scripts/a2_acceptance.py": "A2_01_GROUP",
+}
+
+
+@dataclass(frozen=True)
+class _TreeView:
+    """单树的只读比较事实;不持有可用于再次读取文件的根路径。"""
+
+    files: tuple[Mapping[str, Any], ...]
+    counts: tuple[Mapping[str, Any], ...]
+    downstream: Mapping[str, tuple[str, ...]]
+    paths: Mapping[str, str]
+    references_json: Mapping[str, str]
+    digests: Mapping[str, str | None]
+    sensitive_constants: Mapping[str, Mapping[str, str]]
+
+
+def _capture_view(
+    root: Path,
+    report: AuditReport,
+    paths: dict[str, str],
+    references: dict[str, object],
+    categories: Mapping[str, BaselineCategory | None],
+) -> _TreeView:
+    return _TreeView(
+        files=tuple(MappingProxyType(dict(f)) for f in report["files"]),
+        counts=tuple(MappingProxyType(dict(c)) for c in report["counts"]),
+        downstream=MappingProxyType(
+            {p: tuple(groups) for p, groups in report["downstream"].items()}
+        ),
+        paths=MappingProxyType(dict(paths)),
+        references_json=MappingProxyType(
+            {group: json.dumps(refs) for group, refs in references.items()}
+        ),
+        digests=MappingProxyType({p: _sha(root, p) for p in categories}),
+        sensitive_constants=MappingProxyType(
+            {
+                p: MappingProxyType(_sensitive_constants(root, p))
+                for p, category in categories.items()
+                if category is None
+            }
+        ),
+    )
 
 
 class BaselineError(ValueError):
@@ -179,6 +226,23 @@ def _sha(root: Path, path: str) -> str | None:
         return None
 
 
+def _ordered_declarations(tree: ast.Module, name: str) -> str:
+    declarations = []
+    for declaration in tree.body:
+        if not isinstance(declaration, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            continue
+        targets = (
+            declaration.targets
+            if isinstance(declaration, ast.Assign)
+            else [declaration.target]
+        )
+        if any(
+            isinstance(target, ast.Name) and target.id == name for target in targets
+        ):
+            declarations.append(ast.dump(declaration, include_attributes=False))
+    return json.dumps(declarations)
+
+
 def _sensitive_constants(root: Path, path: str) -> dict[str, str]:
     try:
         tree = ast.parse((root / path).read_bytes())
@@ -203,22 +267,11 @@ def _sensitive_constants(root: Path, path: str) -> dict[str, str]:
     )
     result = {}
     if path == GROUP_REGISTRATION_PATH:
-        declarations = []
-        for declaration in tree.body:
-            if not isinstance(declaration, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
-                continue
-            targets = (
-                declaration.targets
-                if isinstance(declaration, ast.Assign)
-                else [declaration.target]
-            )
-            if any(
-                isinstance(target, ast.Name) and target.id == "GROUPS"
-                for target in targets
-            ):
-                # 保存完整有序声明,不能让后续追加覆盖最初的计划语义。
-                declarations.append(ast.dump(declaration, include_attributes=False))
-        result["GROUPS"] = json.dumps(declarations)
+        # 保存完整有序声明,不能让后续追加覆盖最初的计划语义。
+        result["GROUPS"] = _ordered_declarations(tree, "GROUPS")
+    if path in LEGACY_GROUP_DECLARATIONS:
+        name = LEGACY_GROUP_DECLARATIONS[path]
+        result[name] = _ordered_declarations(tree, name)
     for node in ast.walk(tree):
         if (
             path == GROUP_REGISTRATION_PATH
@@ -245,17 +298,14 @@ def _sensitive_constants(root: Path, path: str) -> dict[str, str]:
     return result
 
 
-def _category(
-    old: Path, root: Path, path: str, kinds: set[str], scope_paths: set[str]
-) -> BaselineCategory:
+def _path_category(
+    path: str, kinds: set[str], scope_paths: set[str]
+) -> BaselineCategory | None:
+    """按原优先级分类;仅返回 None 的材料需要比较 AST 敏感常量。"""
     if path == CLASSIFICATION_PATH:
         return "classification"
     if path in scope_paths:
-        return (
-            "registration"
-            if _sensitive_constants(old, path) != _sensitive_constants(root, path)
-            else "source_support"
-        )
+        return None
     if "test" in kinds or path.startswith("tests/test_"):
         return "test"
     if "fixture" in kinds or path.startswith("fixtures/"):
@@ -269,18 +319,31 @@ def _category(
         )
     ):
         return "evidence"
-    if path.endswith(".py") and _sensitive_constants(old, path) != _sensitive_constants(
-        root, path
+    return None if path.endswith(".py") else "source_support"
+
+
+def _category(
+    old: _TreeView,
+    current: _TreeView,
+    path: str,
+    kinds: set[str],
+    scope_paths: set[str],
+) -> BaselineCategory:
+    category = _path_category(path, kinds, scope_paths)
+    if category is not None:
+        return category
+    if old.sensitive_constants.get(path, {}) != current.sensitive_constants.get(
+        path, {}
     ):
-        return "format_or_criteria"
+        return "registration" if path in scope_paths else "format_or_criteria"
     return "source_support"
 
 
-def _affected(report: AuditReport, paths: dict[str, str], groups: set[str]) -> set[str]:
-    affected_paths = {paths[g] for g in groups if g in paths}
+def _affected(view: _TreeView, groups: set[str]) -> set[str]:
+    affected_paths = {view.paths[g] for g in groups if g in view.paths}
     for path in tuple(affected_paths):
-        affected_paths.update(report["downstream"].get(path, []))
-    return groups | {g for g, path in paths.items() if path in affected_paths}
+        affected_paths.update(view.downstream.get(path, ()))
+    return groups | {g for g, path in view.paths.items() if path in affected_paths}
 
 
 def analyze_baseline(
@@ -323,16 +386,27 @@ def analyze_baseline(
             old = Path(temporary)
             _extract_tree(root, actual_base, old)
             baseline, old_paths, old_references = _report(old, writers)
-            result = _changes(
-                old,
-                root,
-                baseline,
-                report,
-                old_paths,
-                paths,
-                old_references,
-                references,
+            material_paths = (
+                {f["path"] for view in (baseline, report) for f in view["files"]}
+                | set(old_paths.values())
+                | set(paths.values())
+                | {CLASSIFICATION_PATH}
             )
+            scope_paths = set(old_paths.values()) | set(paths.values())
+            files = (*baseline["files"], *report["files"])
+            categories = {
+                path: _path_category(
+                    path,
+                    {str(f["kind"]) for f in files if f["path"] == path},
+                    scope_paths,
+                )
+                for path in material_paths
+            }
+            old_view = _capture_view(
+                old, baseline, old_paths, old_references, categories
+            )
+            current_view = _capture_view(root, report, paths, references, categories)
+            result = _changes(old_view, current_view)
         report["baseline"] = BaselineResult(
             base=actual_base,
             head=head,
@@ -376,17 +450,15 @@ def analyze_baseline(
 
 
 def _entry_identity(
-    report: AuditReport,
-    paths: dict[str, str],
+    view: _TreeView,
     path: str,
-    references: dict[str, object],
 ) -> str:
-    owners = {group for group, scope in paths.items() if scope == path}
+    owners = {group for group, scope in view.paths.items() if scope == path}
     if not owners:
         # 中央引用展开后保留逐路径登记身份;仅中央 SHA 变化也必须可见。
         registrations = sorted(
             (f["group"], str(f["kind"]), f["expected_sha256"])
-            for f in report["files"]
+            for f in view.files
             if f["path"] == path
         )
         return hashlib.sha256(json.dumps(registrations).encode()).hexdigest()
@@ -398,78 +470,64 @@ def _entry_identity(
             f["path"],
             f["expected_sha256"] if f["kind"] != "source" else "",
         )
-        for f in report["files"]
+        for f in view.files
         if f["group"] in owners
     )
     counts = sorted(
         (c["group"], c["path"], c["expected_cases"])
-        for c in report["counts"]
+        for c in view.counts
         if c["group"] in owners
     )
-    refs = sorted((group, references.get(group, [])) for group in owners)
+    refs = sorted(
+        (group, json.loads(view.references_json.get(group, "[]"))) for group in owners
+    )
     encoded = json.dumps(
         [sorted(owners), entries, counts, refs], sort_keys=True
     ).encode()
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _changes(
-    old: Path,
-    root: Path,
-    baseline: AuditReport,
-    report: AuditReport,
-    old_paths: dict[str, str],
-    paths: dict[str, str],
-    old_references: dict[str, object],
-    references: dict[str, object],
-) -> list[BaselineChange]:
-    files = [*baseline["files"], *report["files"]]
-    all_paths = (
-        {f["path"] for f in files} | set(paths.values()) | set(old_paths.values())
-    )
-    # 分类规范即使未被 scope 绑定,也控制每组的固定材料边界。
-    all_paths.add(CLASSIFICATION_PATH)
+def _changes(old: _TreeView, current: _TreeView) -> list[BaselineChange]:
+    files = (*old.files, *current.files)
+    scope_paths = set(old.paths.values()) | set(current.paths.values())
+    all_paths = {f["path"] for f in files} | scope_paths | {CLASSIFICATION_PATH}
     changes: list[BaselineChange] = []
     for path in sorted(all_paths):
         groups = {f["group"] for f in files if f["path"] == path}
         groups.update(
-            g for mapping in (old_paths, paths) for g, p in mapping.items() if p == path
+            g
+            for mapping in (old.paths, current.paths)
+            for g, p in mapping.items()
+            if p == path
         )
         if path in (CLASSIFICATION_PATH, GROUP_REGISTRATION_PATH):
             # 生产声明控制整个计划的 required、产物、依赖、writer 和回执范围。
-            groups.update([*paths, *old_paths])
+            groups.update([*current.paths, *old.paths])
         kinds = {str(f["kind"]) for f in files if f["path"] == path}
-        category = _category(
-            old, root, path, kinds, set(paths.values()) | set(old_paths.values())
-        )
-        old_entry = _entry_identity(baseline, old_paths, path, old_references)
-        new_entry = _entry_identity(report, paths, path, references)
+        category = _category(old, current, path, kinds, scope_paths)
+        old_entry = _entry_identity(old, path)
+        new_entry = _entry_identity(current, path)
         memberships = [
-            {(f["group"], f["kind"]) for f in view["files"] if f["path"] == path}
-            for view in (baseline, report)
+            {(f["group"], f["kind"]) for f in view.files if f["path"] == path}
+            for view in (old, current)
         ]
         if old_entry != new_entry and (
-            path in set(paths.values()) | set(old_paths.values())
-            or memberships[0] != memberships[1]
+            path in scope_paths or memberships[0] != memberships[1]
         ):
             category = "registration"
-        old_sha, new_sha = _sha(old, path), _sha(root, path)
+        old_sha, new_sha = old.digests[path], current.digests[path]
         drift = [
-            f
-            for f in baseline["files"]
-            if f["path"] == path and f["reason"] != AuditReason.OK
+            f for f in old.files if f["path"] == path and f["reason"] != AuditReason.OK
         ]
-        affected = _affected(baseline, old_paths, groups) | _affected(
-            report, paths, groups
-        )
+        affected = _affected(old, groups) | _affected(current, groups)
         origins: list[BaselineOrigin] = []
         if drift:
             origins.append("baseline_drift")
         registration_changed = old_entry != new_entry and (
-            path in set(paths.values()) | set(old_paths.values())
+            path in scope_paths
             or memberships[0] == memberships[1]
-            or {f["expected_sha256"] for f in baseline["files"] if f["path"] == path}
-            != {f["expected_sha256"] for f in report["files"] if f["path"] == path}
+            or {f["expected_sha256"] for f in old.files if f["path"] == path}
+            != {f["expected_sha256"] for f in current.files if f["path"] == path}
         )
         if old_sha != new_sha or registration_changed:
             origins.append("current_change")
@@ -496,15 +554,12 @@ def _changes(
                         BaselineRegistration(
                             tree="base" if tree == "base" else "current",
                             group=f["group"],
-                            scope_path=mapping[f["group"]],
+                            scope_path=view.paths[f["group"]],
                             kind=f["kind"],
                             expected_sha256=f["expected_sha256"],
                         )
-                        for tree, source, mapping in (
-                            ("base", baseline, old_paths),
-                            ("current", report, paths),
-                        )
-                        for f in source["files"]
+                        for tree, view in (("base", old), ("current", current))
+                        for f in view.files
                         if f["path"] == path
                     ],
                 )
