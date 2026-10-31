@@ -110,7 +110,7 @@ writer/scope 时，不必另维护审计组列表；改变导入命名约定或�
 固定清单表达式也支持负整数字面量，但非正计数仍被接收校验拒绝。允许的元数据
 属性以[登记解释器的 `METADATA`](../../scripts/verification_scope_registry.py)为准。
 
-生产 `scripts/verification_groups.py::GROUPS` 的声明语义（名称、后缀、required、依赖、writer、回执 scope）纳入敏感摘要，改变时须逐全部影响组确认；仅普通 helper 实现变化继续按 source/support 机械变化处理。更新中央 SHA 不能解除语义确认要求。
+生产 `scripts/verification_groups.py::GROUPS` 的全部模块级 `Assign`、`AnnAssign`、`AugAssign` 声明按原序进入敏感摘要，保留早先声明及后续增量。声明语义（名称、后缀、required、依赖、writer、回执 scope）改变时须逐全部影响组确认；仅普通 helper 实现变化继续按 source/support 机械变化处理。更新中央 SHA 不能解除语义确认要求。
 
 ### 共享材料中央引用
 

@@ -202,6 +202,23 @@ def _sensitive_constants(root: Path, path: str) -> dict[str, str]:
         "ISSUE",
     )
     result = {}
+    if path == GROUP_REGISTRATION_PATH:
+        declarations = []
+        for declaration in tree.body:
+            if not isinstance(declaration, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+                continue
+            targets = (
+                declaration.targets
+                if isinstance(declaration, ast.Assign)
+                else [declaration.target]
+            )
+            if any(
+                isinstance(target, ast.Name) and target.id == "GROUPS"
+                for target in targets
+            ):
+                # 保存完整有序声明,不能让后续追加覆盖最初的计划语义。
+                declarations.append(ast.dump(declaration, include_attributes=False))
+        result["GROUPS"] = json.dumps(declarations)
     for node in ast.walk(tree):
         if (
             path == GROUP_REGISTRATION_PATH
@@ -221,9 +238,8 @@ def _sensitive_constants(root: Path, path: str) -> dict[str, str]:
         if isinstance(node, (ast.Assign, ast.AnnAssign)):
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
             for target in targets:
-                if isinstance(target, ast.Name) and (
-                    any(word in target.id for word in words)
-                    or (path == GROUP_REGISTRATION_PATH and target.id == "GROUPS")
+                if isinstance(target, ast.Name) and any(
+                    word in target.id for word in words
                 ):
                     result[target.id] = ast.dump(node, include_attributes=False)
     return result
