@@ -289,6 +289,8 @@ uv run --offline --locked pytest tests/test_feed_pipeline.py
 
 ```bash
 ./scripts/audit-verification-scope --json
+# 比较稳定本地 main 与当前工作树；显式列出候选、来源、敏感变化及逐组确认缺口
+./scripts/audit-verification-scope --base main --integration-target main --json
 ```
 
 需要核对固定用例数时添加 `--collect`；收集不执行测试体，也不发布验收结论。

@@ -12,6 +12,7 @@ from scripts.verification_scope_audit import (
     AuditReport,
     CollectionResult,
     Scope,
+    audit_baseline,
     audit_scopes,
     collection_targets,
     merge_collection,
@@ -57,6 +58,22 @@ def _print_report(report: AuditReport) -> None:
             )
     for issue in report["issues"]:
         print(f"{issue['group']} {issue['path']}: {issue['reason']}")
+    if "baseline" in report:
+        baseline = report["baseline"]
+        print(f"基线：{baseline['base']}；HEAD：{baseline['head']}")
+        print(
+            f"本地集成目标：{baseline['integration_target']} = "
+            f"{baseline['target_commit']}"
+        )
+        print(f"工作树身份：{baseline['worktree_sha256']}；dirty：{baseline['dirty']}")
+        for change in baseline["changes"]:
+            print(
+                f"{change['path']}: {change['origin']} / "
+                f"{change['sensitivity']} / {change['category']}"
+            )
+            print(f"  旧：{change['old_sha256']} 新候选：{change['new_sha256']}")
+            print("  受影响组：" + "、".join(change["affected_groups"]))
+            print("  已确认组：" + ("、".join(change["confirmed_groups"]) or "无"))
     for count in report["counts"]:
         print(f"{count['group']} {count['path']}: 固定用例 {count['expected_cases']}")
     print("受影响组：" + ("、".join(report["affected_groups"]) or "无"))
@@ -86,12 +103,43 @@ def main() -> int:
         action="store_true",
         help="独立进程核对固定模块收集数量，不执行测试",
     )
+    parser.add_argument("--base", help="显式 Git 基线提交，须为 HEAD 祖先")
+    parser.add_argument(
+        "--integration-target", help="声明本地集成分支，其当前提交必须等于 base"
+    )
+    parser.add_argument(
+        "--confirmations", type=Path, help="工作树外的逐变化审阅 JSON 文件"
+    )
     arguments = parser.parse_args()
+    if bool(arguments.base) != bool(arguments.integration_target):
+        parser.error("argument --base: requires --integration-target")
+    if arguments.confirmations and not arguments.base:
+        parser.error("argument --confirmations: requires --base")
     root = Path(__file__).resolve().parents[1]
+    confirmations: object = ()
+    if arguments.confirmations:
+        try:
+            confirmation_path = arguments.confirmations.resolve()
+            if confirmation_path.is_relative_to(root):
+                parser.error("argument --confirmations: external file required")
+            confirmations = json.loads(confirmation_path.read_bytes())
+            if not isinstance(confirmations, list):
+                parser.error("argument --confirmations: list required")
+        except (OSError, ValueError, RecursionError):
+            parser.error("argument --confirmations: invalid file")
     scopes: tuple[Scope, ...] = ()
     try:
         scopes = load_scopes(root)
-        report = audit_scopes(root, scopes)
+        report = (
+            audit_baseline(
+                root,
+                base=arguments.base,
+                integration_target=arguments.integration_target,
+                confirmations=confirmations,
+            )
+            if arguments.base
+            else audit_scopes(root, scopes)
+        )
     except Exception:
         # registry 导入失败也不得回显源码、参数或异常文本。
         report = audit_scopes(root, ())
