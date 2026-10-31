@@ -7,7 +7,16 @@ import inspect
 from pathlib import Path
 from typing import Any
 
-from scripts.verification_scope_audit import AuditReason, FileKind, Scope
+from scripts.verification_scope_audit import (
+    CENTRAL_REGISTRATION_PATH,
+    AuditReason,
+    FileKind,
+    Scope,
+    parse_file_bindings,
+)
+
+CENTRAL_PATH = CENTRAL_REGISTRATION_PATH
+CENTRAL_NAME = "SHARED_MATERIALS"
 
 # writer 与 scope 的显式维护契约。新常量/导入形式需人工审查此契约。
 BINDINGS = {
@@ -49,9 +58,26 @@ def _read_tree(root: Path, path: str) -> ast.Module:
 
 
 class _Constants:
-    def __init__(self, tree: ast.Module) -> None:
+    def __init__(self, tree: ast.Module, shared: dict[str, str] | None = None) -> None:
+        self.shared = shared
+        self.central_import = False
         self.nodes: dict[str, ast.expr] = {}
         for node in tree.body:
+            if (
+                isinstance(node, ast.ImportFrom)
+                and node.module == "scripts.verification_scope_materials"
+            ):
+                if (
+                    self.central_import
+                    or node.level
+                    or len(node.names) != 1
+                    or node.names[0].name != CENTRAL_NAME
+                    or node.names[0].asname is not None
+                    or shared is None
+                ):
+                    raise RegistrationError(AuditReason.INVALID_REGISTRATION)
+                self.central_import = True
+                continue
             targets: list[ast.expr]
             if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
                 targets = [node.target]
@@ -70,6 +96,8 @@ class _Constants:
                     raise RegistrationError(AuditReason.UNSUPPORTED_REGISTRATION)
                 if target.id in self.nodes:
                     raise RegistrationError(AuditReason.DUPLICATE_REGISTRATION)
+                if shared is not None and target.id == CENTRAL_NAME:
+                    raise RegistrationError(AuditReason.DUPLICATE_REGISTRATION)
                 self.nodes[target.id] = node.value
         self.active: set[str] = set()
 
@@ -83,6 +111,17 @@ class _Constants:
             self.active.remove(name)
 
     def _value(self, node: ast.expr) -> Any:
+        if (
+            isinstance(node, ast.Subscript)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == CENTRAL_NAME
+            and self.central_import
+            and self.shared is not None
+        ):
+            key = self._value(node.slice)
+            if not isinstance(key, str) or key not in self.shared:
+                raise RegistrationError(AuditReason.INVALID_REGISTRATION)
+            return self.shared[key]
         if isinstance(node, ast.Constant):
             return node.value
         if isinstance(node, ast.Name):
@@ -121,7 +160,33 @@ class _Constants:
         raise RegistrationError(AuditReason.UNSUPPORTED_REGISTRATION)
 
 
-def _writer_scope(root: Path, group: str, writer: str) -> Scope:
+def _shared_materials(root: Path) -> dict[str, str] | None:
+    file = root / CENTRAL_PATH
+    if not file.exists() and not file.is_symlink():
+        return None
+    if not file.resolve().is_relative_to(root.resolve()):
+        raise RegistrationError(AuditReason.INVALID_REGISTRATION)
+    tree = _read_tree(root, CENTRAL_PATH)
+    if any(isinstance(node, (ast.Import, ast.ImportFrom)) for node in tree.body):
+        raise RegistrationError(AuditReason.UNSUPPORTED_REGISTRATION)
+    constants = _Constants(tree)
+    if constants.nodes.keys() != {CENTRAL_NAME}:
+        raise RegistrationError(AuditReason.INVALID_REGISTRATION)
+    raw = constants.get(CENTRAL_NAME)
+    if (
+        not isinstance(raw, dict)
+        or not raw
+        or parse_file_bindings(tuple(raw.items())) is None
+    ):
+        raise RegistrationError(AuditReason.INVALID_REGISTRATION)
+    if CENTRAL_PATH in raw:
+        raise RegistrationError(AuditReason.SELF_REFERENCE)
+    return raw
+
+
+def _writer_scope(
+    root: Path, group: str, writer: str, shared: dict[str, str] | None
+) -> Scope:
     imports: dict[str, list[ast.alias]] = {}
     try:
         tree = _read_tree(root, writer)
@@ -182,7 +247,7 @@ def _writer_scope(root: Path, group: str, writer: str) -> Scope:
         tests: list[tuple[str, str]] = []
         counts: object = None
         for imported_path, aliases in imports.items():
-            constants = _Constants(_read_tree(root, imported_path))
+            constants = _Constants(_read_tree(root, imported_path), shared)
             names = {a.name for a in aliases}
             if names - (BINDINGS.keys() | METADATA | {COUNTS}):
                 raise RegistrationError(AuditReason.UNSUPPORTED_SCOPE_CONSTANT)
@@ -197,6 +262,13 @@ def _writer_scope(root: Path, group: str, writer: str) -> Scope:
                             AuditReason.UNSUPPORTED_SECONDARY_BINDING
                         )
                     raw = constants.get(alias.name)
+                    entries = parse_file_bindings(raw)
+                    if entries is not None and any(
+                        p == CENTRAL_PATH
+                        or (shared and p in shared and shared[p] != sha)
+                        for p, sha in entries
+                    ):
+                        raise RegistrationError(AuditReason.INVALID_REGISTRATION)
                     if imported_path == path:
                         bindings[BINDINGS[alias.name]] = raw
                     if alias.name == "REQUIRED_TEST_MODULES":
@@ -224,6 +296,13 @@ def load_scopes(
     writers: tuple[tuple[str, str], ...] | None = None,
 ) -> tuple[Scope, ...]:
     """正常导入生产 registry; 随后按 writer 导入解析清单 AST, 不 eval 清单。"""
+    try:
+        shared = _shared_materials(root)
+    except RegistrationError as error:
+        return tuple(
+            Scope(group, writer, {}, errors=(error.reason,))
+            for group, writer in (writers or (("registry", CENTRAL_PATH),))
+        )
     if writers is None:
         from scripts.a2_full_acceptance import acceptance_groups
 
@@ -246,4 +325,6 @@ def load_scopes(
                 )
             )
         writers = tuple(writers_list)
-    return tuple(_writer_scope(root, group, writer) for group, writer in writers)
+    return tuple(
+        _writer_scope(root, group, writer, shared) for group, writer in writers
+    )

@@ -34,6 +34,14 @@ def replacement(match):
         return match[0]
     digest = hashlib.sha256((root / relative).read_bytes()).hexdigest()
     return match[1] + digest + match[4]
+# 只重绑调用方已逐项审阅的中央材料;中央文件自身不进入组哈希闭包。
+central = root / 'scripts/verification_scope_materials.py'
+if central.exists():
+    central_pattern = re.compile(
+        r'(["\']([^"\']+)["\']:\s*(?:\(\s*)?["\'])'
+        r'([0-9a-f]{64})(["\'])'
+    )
+    central.write_text(central_pattern.sub(replacement, central.read_text()))
 for relative in report['order']:
     path = root / relative
     path.write_text(pattern.sub(replacement, path.read_text()))

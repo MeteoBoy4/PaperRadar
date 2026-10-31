@@ -11,6 +11,8 @@ from enum import StrEnum
 from pathlib import Path, PurePosixPath
 from typing import Literal, NotRequired, TypedDict, TypeGuard
 
+CENTRAL_REGISTRATION_PATH = "scripts/verification_scope_materials.py"
+
 
 class AuditReason(StrEnum):
     OK = "ok"
@@ -335,6 +337,8 @@ def _audit(
             if not bindings:
                 issue(scope, AuditReason.EMPTY_BINDING)
             for path, expected in bindings:
+                if path == CENTRAL_REGISTRATION_PATH:
+                    issue(scope, AuditReason.INVALID_BINDING)
                 if path in seen:
                     issue(scope, AuditReason.DUPLICATE_PATH)
                 seen.add(path)

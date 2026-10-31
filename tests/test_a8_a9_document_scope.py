@@ -39,7 +39,13 @@ def test_a8_a9_migration_records_every_inventory_removal() -> None:
         for row in inventory["bindings"]
         if row["group"] in {"A8", "A9"} and row not in removed
     }
-    assert fixed == expected
+    # 第二步新增的审计闭包独立维护,不追溯改写第一步inventory。
+    additions = {
+        ("A8", "source", "scripts/verification_scope_baseline.py"),
+        ("A9", "source", "scripts/verification_scope_baseline.py"),
+        ("A9", "source", "scripts/verification_scope_collection.py"),
+    }
+    assert fixed == expected | additions
     for row in removed:
         for material in row["replacement"]["materials"]:
             assert any(

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from scripts.verification_scope_materials import SHARED_MATERIALS
+
 SCOPE = "a2_01_profile_runtime_config_snapshots"
 ISSUE = 16
 SNAPSHOT_FORMAT_VERSION = 1
@@ -38,15 +40,15 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "scripts/verification_identity.py",
-        "27ebdd057098256f0419c34cb9dbc410e0c6f0c7a8c3c931f62cc6942ca8d7b5",
+        SHARED_MATERIALS["scripts/verification_identity.py"],
     ),
     (
         "scripts/verification_publication.py",
-        "337c9efb7ee906486e9de9bb5ec4d60bd9bde7fe358f60098036862e1ac77072",
+        SHARED_MATERIALS["scripts/verification_publication.py"],
     ),
     (
         "scripts/verification_run.py",
-        "a4d08449eb65ac7e2c39d2fe972cccf28ec8af13dcf5d34795ac1c088212ae0a",
+        SHARED_MATERIALS["scripts/verification_run.py"],
     ),
     (
         "src/paper_radar/cli.py",
@@ -138,7 +140,7 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/check-offline",
-        "41a205087015281e5a8a921f20815f0828ef8457c57445d40f95be2bdb6d99d8",
+        SHARED_MATERIALS["scripts/check-offline"],
     ),
     (
         "scripts/a2_acceptance.py",

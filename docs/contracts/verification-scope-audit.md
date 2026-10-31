@@ -39,7 +39,10 @@ hash_drift、missing_file、unreadable_file、live_document_binding。非法路�
 现行登记已移除规格、README、GLOSSARY 与现状 Contract 的 19 条整文件绑定。
 冻结依据继续由 history、需求/覆盖台账、最小冻结摘录、ADR、Schema 及代码/测试/fixture/依赖身份承担；
 [迁移台账](../verification/scope-document-migration.md)记录旧 SHA、替代依据及固定分母。
-共享材料仍在各组重复登记，42 条 scope 引用边仍按旧规则传播；当前共享登记尚未中央化；显式基线分析遵循下节规则。
+首批共享验收基础设施采用中央哈希，各组仍维护显式成员与固定计数；其余材料保留旧字面量。
+当前 41 条 scope 哈希边仍按旧规则传播，取消级联由后续切片承接。
+41 的精确定义与旧描述 42 的差异见[第二步台账](../verification/scope-central-registration-delivery.md)。
+显式基线分析遵循下节规则。
 
 审计从仓库的
 [`scope-material-inventory.json`](../verification/scope-material-inventory.json)
@@ -102,6 +105,25 @@ writer/scope 时，不必另维护审计组列表；改变导入命名约定或�
 固定清单表达式也支持负整数字面量，但非正计数仍被接收校验拒绝。允许的元数据
 属性以[登记解释器的 `METADATA`](../../scripts/verification_scope_registry.py)为准。
 
+### 共享材料中央引用
+
+[`scripts/verification_scope_materials.py`](../../scripts/verification_scope_materials.py)
+只声明非空 `SHARED_MATERIALS` 字典：规范材料相对路径映射到 64 位小写 SHA。
+它只包含文档字符串与这一项固定赋值，不导入其他模块、不调用函数。
+scope 使用唯一、未改名的 `from scripts.verification_scope_materials import SHARED_MATERIALS`，
+并在显式成员位置使用 `("scripts/check-offline", SHARED_MATERIALS["scripts/check-offline"])`。
+旧字面量与中央引用可以在同一个 tuple 中共存，scope 运行时导出及静态解释结果均为原有 `(path, sha)` tuple。
+
+全部中央条目先作结构校验；缺失、非法路径/SHA、重复 key、循环别名、动态表达式、
+未知引用、改名导入及与中央条目冲突的旧字面量均拒绝。同组重复成员不按同 SHA 去重。
+`Scope.bindings` 继续接收原始 object，非法结构和 replace 注入负例仍由审计报告。
+中央文件自身禁止加入各组整文件哈希，字节仍进入完整工作树身份；审计与 writer
+核对展开后的真实材料字节，中央声明本身不能证明材料匹配。
+
+当前迁移范围为验收入口、身份/发布/运行/检查/状态、A2 完整入口与回执、离线证据脚本与说明，
+以及共享审计解释器和新增审计支撑。各路径实际消费组与新增成员详见第二步台账。
+业务源码、测试和其余重复材料的迁移由后续切片承接。
+
 ### 显式基线与分级确认
 
 `--base COMMIT` 与 `--integration-target BRANCH` 必须同时提供。base 解析为明确提交，
@@ -133,6 +155,11 @@ CLI 不提供覆盖入口。默认无 base 的 `audit_scopes`、报告键与原�
 
 scope 的测试/fixture 完整绑定、source 成员与固定计数另有 `old_entry_sha256`、
 `new_entry_sha256`，防止仅看文件字节遗漏注册组/成员变化；source 哈希不进入该语义摘要。
+对普通材料路径，entry 摘要保存展开后的逐组 kind/SHA，中央 SHA 单独变化也会产生
+材料路径的变化记录与旧新 registrations。source/support SHA 仍为机械；同一路径在任一组
+具有 test/fixture 或证据用途时，按敏感变化对全部受影响组确认。中央文件整体变化不扩张
+到无关组，各树读取自身中央条目，不借用当前树声明。
+
 scope 格式等元数据、Python 常量中 FORMAT/COUNT/REQUIRED_TEST/FIXTURE/NEGATIVE/
 REQUIREMENT/COVERAGE/CAPABILIT/NOT_ASSESSED/NOT_IMPLEMENTED/REQUIRED_CHECK/
 DEPENDENC/MIGRATION/SCOPE/ISSUE 名称的赋值变化均保守列为敏感。
