@@ -1,0 +1,68 @@
+{
+  "format_version": 1,
+  "artifact_kind": "a10_frozen_documentation_excerpts",
+  "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+  "scope": "仅保留基线文档的存在与所列内容；不证明文档先于实现、不证明本轮执行或当前文档相同。",
+  "excerpts": [
+    {
+      "path": "intent/draft.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "§4.3 类别/doiRA/主摘要",
+      "line_start": 416,
+      "line_end": 420,
+      "source_sha256": "1c6afa02e0bb16cb29263db3ea10d06255489aeea224eb6150bcf4c983f99f9d",
+      "original_text": "### 4.3 元数据与来源仲裁\n\nA10 裁决（#100）：类别依据只采用 Crossref `message.type=journal-article`、DataCite `types.resourceTypeGeneral=JournalArticle`、《大气科学》current Feed `dc:type=article` 与出版者 `dc.type=论文`。注册机构其他明确类型为非 journal-article，平台表外值/缺字段为未知，不同明确判定矛盾为冲突，分别计数；Wiley `category`/`prism:section` 只保存原值，不用子类型预过滤。doiRA `https://doi.org/doiRA/{doi}` 只用于机构路由，Crossref/DataCite 各走适用机构，其他 RA 为 `agency_unsupported`，查询失败或 404 为 `agency_unknown`，单机构 404 不证明 DOI 不存在（ADR-0033/0034）。\n\n主摘要边界同时用于 Feed 和出版者：只取 Abstract/摘要 主区块；《大气科学》取中文 abstract-cn，英文 abstract-en、Significance Statement、Plain Language Summary、Key Points 只保留存在与定位。Wiley Feed 的 Abstract 前置段与《大气科学》`<p>` 外引文尾行均不并入摘要，不拼接另一语种或来源。区块切分、实体解码、去标记和段落连接整体版本化；B 首次 Screening 只消费主区块并记录这一选择；是否消费这些额外区块留待 C 裁决，不受 B 结果约束。\n",
+      "sha256": "2ad0a96f492d53a704f9eee4c61c2de10437f3b084a865e7e60360a0dcb9b948",
+      "requirement_ids": [
+        "A10-101-AC-001",
+        "A10-101-AC-002"
+      ],
+      "reason": "两项明确的产品文档义务：ADR/history未完整保留主摘要、doiRA及术语/规格文档内容，故保留基线所见的最小内容摘录；不是当前活规范或未来规则。"
+    },
+    {
+      "path": "intent/draft.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "§13.1 声明权威与通道",
+      "line_start": 2362,
+      "line_end": 2364,
+      "source_sha256": "1c6afa02e0bb16cb29263db3ea10d06255489aeea224eb6150bcf4c983f99f9d",
+      "original_text": "### 13.1 Feed\n\nA10 的声明唯一来源为 `fixtures/a10/`，格式与只读/登记命令见 [fixture 与摘要审计 Contract](../docs/contracts/fixture-audit.md)。历史声明、合成向量和实际取得分开；HTTP 条件头可空，304 必须引用已保留响应。阶段 A 只审计已交付通道；A10 只执行 http，渲染通道在阶段 F 以新策略版本补跑。doiRA、类别依据与主摘要区块采用 §4.3 的裁决，真实预检不能冒充本轮审计。\n",
+      "sha256": "ee03294270fd006057385cb688072310cc5b1e1f622c957dcdb749a84605fc16",
+      "requirement_ids": [
+        "A10-101-AC-001",
+        "A10-101-AC-002"
+      ],
+      "reason": "两项明确的产品文档义务：ADR/history未完整保留主摘要、doiRA及术语/规格文档内容，故保留基线所见的最小内容摘录；不是当前活规范或未来规则。"
+    },
+    {
+      "path": "GLOSSARY.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "Fixture Audit",
+      "line_start": 655,
+      "line_end": 714,
+      "source_sha256": "8864217fad4e0174398d314230155e145ee9b82185c0af5cf2769e38c88fc4d7",
+      "original_text": "## Fixture Audit\n\n**样本声明**：\n对特定用途及单刊或整计划作用域下的逻辑样本所作的版本化陈述，分为 historical_declaration、synthetic 与 acquired 三种依据性质。历史陈述与合成材料不能代替本机取得证据。\n_Avoid_: 实测结果、已验证来源\n\n**完整审计汇总边界**：\n固定某次完整审计汇总所依据的成员、来源执行及解释历史，使之后显式继续也不改变原汇总依据。完整只表示本轮终态齐备，不授予来源通过或执行就绪。\n_Avoid_: 当前汇总、来源稳定证明、复制一轮审计\n\n**样本当前选择**：\n首次登记的样本及随后显式替换关系确定的当前依据，旧依据与原字节始终保留。\n_Avoid_: 最新文件、最大版本、登记时间优先\n\n**PDF 字节核验**：\n服务实际读取本机给定文件，核对真实长度和内容哈希并保留完整字节的事实。它不证明论文身份、许可或解析质量；缺少字节仍是待补齐，不能以声明代替。\n_Avoid_: PDF 质量通过、身份已核实、许可已判定\n\n**backend 期望**：\n针对一份明确 PDF 内容与解析组件/模型身份登记的阅读内容哈希及章节定位期望。它与样本选择分开保留，更换 PDF 不继承旧期望；未检查、已经定位和确认不存在各有明确含义。\n_Avoid_: Docling 已验收、提取语义通过、自动继承期望\n\n**类别依据**：\n来源显式类型字段按封闭表产生的 journal-article 或非 journal-article 判定；缺字段和表外平台值为未知，明确判定矛盾为冲突。\n_Avoid_: Feed 位置、子类型预过滤、题名推断\n\n**未交付通道**（channel_not_installed）：\n策略已登记但运行时执行器尚未交付的取得通道终态，与可执行而本轮未执行的 not_attempted 分列；两者均不构成来源失败。\n_Avoid_: 网络故障、0% 命中、已执行\n\n**审计路线原因**：\n摘要审计沿用来源失败词表，并区分 not_applicable_no_doi、agency_unknown、agency_unsupported、identity_mismatch、unrecognized_page_shape、record_without_abstract、outcome_unknown、deferred_retry_after、not_attempted、disallowed_destination、disallowed_scheme 与 channel_not_installed。\n_Avoid_: 全部失败、未知即不适用\n\n\n**固定选样**：\n对同一轮冻结 Feed，按原位次和显式身份、类别依据确定审计成员；摘要有无、长度或截断不参与成员选择。每刊独立保留目标、考察上限及不足数量，不以成功率换样。\n_Avoid_: 挑选可取得摘要的论文、按日期重排、成功样本补齐\n\n**选样台账**：\n原始候选的入样、确定排除或暂时受阻依据及其继续历史。确定结论推进位次，暂时受阻保留当前位置；旧失败和排除始终可查，不能改写成未发生。\n_Avoid_: 未知即排除、失败即跳过、成员主状态\n\n\n**摘要矩阵**：\n固定审计成员在冻结策略下各条适用来源路线和通道的独立结算；不因先取得摘要而省略其他适用路线，完成只表示终态齐备。\n_Avoid_: 全通道笛卡尔积、来源稳定通过、生产就绪\n\n**摘要候选**：\n来源主摘要区块产生的原语言文本及其来源、定位与截断信号；题名和摘要分别仲裁，附加说明区块不拼接成候选。\n_Avoid_: 最长摘要、页面全文、附加区块合并摘要\n\n\n**审计继续**：\n对同一冻结计划显式继续未结算或允许的暂时路线，保留旧执行和未知结果；成功及确定性成员终态不重新取得。\n_Avoid_: 覆盖上次结果、后台自动重试、重新选样\n\n**追加解释**：\n显式新解析器对保留材料产生的新解释及相对前驱的字段差异；原成员与旧结论保持，声明和引用核验不等于已重解析新版本。\n_Avoid_: 修复旧历史、自动更新摘要、用新解析器替换历史实现\n",
+      "sha256": "8ae6c8900f513f3a13ac5909e6303acdda8725e99305ba0c1d38c555628cbcaa",
+      "requirement_ids": [
+        "A10-101-AC-001",
+        "A10-101-AC-002"
+      ],
+      "reason": "两项明确的产品文档义务：ADR/history未完整保留主摘要、doiRA及术语/规格文档内容，故保留基线所见的最小内容摘录；不是当前活规范或未来规则。"
+    },
+    {
+      "path": "docs/contracts/fixture-audit.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "声明与身份、来源路线与取得安全",
+      "line_start": 7,
+      "line_end": 25,
+      "source_sha256": "535e23b9f1e83ce86cb1f58150cf86fd7c291e8983518b2e3deb82fcfaa48138",
+      "original_text": "## 声明与身份\n\n仓库声明来源目录为 `fixtures/a10/`，历史种子为 [`historical-v1.json`](../../fixtures/a10/historical-v1.json)；服务读取显式给定的文件，不用文件位置确定身份。格式为 `format_version=1`，`entries` 至少一项且逻辑样本键不重复；`declaration_key` 和条目 `key` 匹配 `[a-z0-9][a-z0-9._-]{0,127}`，`declared_version` 匹配 `[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}`。JSON 未知或重复字段拒绝。JSON 原字节先校验，再以 `(declaration_key, declared_version)` 不可变登记；同键同字节幂等，空白/键序/换行变化同样属于同键异字节。修正必须新版本，数据库保留原字节和独立 SHA-256。未知字段/格式/版本拒绝，安全错误仅给字段路径、原因和补救，不回显原输入。\n\n逻辑样本身份为 `(purpose, journal, key)`，其中 `abstract_audit` 固定 `journal=null` 表示整计划，其余用途必须给出四刊之一，key 必须显式给定，DOI/handle/数组下标/路径不能代替。四用途 `feed/abstract_audit/references/pdf`，三种依据 `historical_declaration/synthetic/acquired` 分开。引用及声明原字节在短事务内原子登记。初次登记选择当前项，后续只按显式 `replaces` 及非空原因替换同逻辑样本；禁止悬空、跨用途/期刊/key、分叉与循环。时间和版本字符串排序不参与选择。list 默认当前项，show 可查任何旧记录，history 投影保留完整历史。check 只对源文件与登记字节比较，分别报告 source_missing / unregistered / drift / byte_verified，不切换选择。\n\n参考文献期望保留出版者/Crossref 计数与历史风险；PDF 声明保留 DOI/handle、候选、版式与已知失败，不填假哈希、假许可或 parser 结果。历史说明与 2026-10-25 只读预检注记分开。acquired 证据只能由实际取得入口核验；文件声明自报哈希或尚未完成审计引用不能升级成真实证据。feed/abstract_audit 的 acquired 注册只引用完成计划、汇总哈希与 Feed 快照，不复制审计权威事实。\n\n<a id=\"共同裁决与后续取得边界\"></a>\n\n## 来源路线与取得安全\n\n类别依据闭集：Crossref `message.type=journal-article`；DataCite `data.attributes.types.resourceTypeGeneral=JournalArticle`；《大气科学》Feed `dc:type=article` 与文章页 `dc.type=论文`。机构其他明确类型为非 journal-article，平台表外值/缺字段为未知，明确判定矛盾为冲突，分别计数。Wiley `category/prism:section` 原值仅保存；题名、DOI 前缀、URL、Feed 位置与 og:type 不作类别依据。\n\ndoiRA `https://doi.org/doiRA/{doi}` 是路由，不是元数据提供方：Crossref/DataCite 只走对应机构，其他 RA 为 agency_unsupported，失败/404 为 agency_unknown。Feed 和出版者均只取主 Abstract/摘要；dqkx 取 abstract-cn，abstract-en/Significance/PLS/Key Points 只记录存在与定位。Wiley Abstract 前置段及 dqkx p 外引文尾行不拼入摘要。切分、实体解码、去标记、连接规则统一版本化。\n\n策略 v1、通道枚举 v1 冻结进计划与请求身份，汇总按 `(member, route, acquisition_strategy_version, channel)` 分开。通道为 http/browser_render/official_api/repository；A10 只注册 http，credential_class 恒空。未注册为 channel_not_installed 终态，与可执行未执行的 not_attempted 分列，均不算失败。策略变化必须新计划，resume 拒绝不同代码/规则/策略版本；产品代码不依赖验收脚本。\n\n| 来源 | 固定端点或出版者 URL 规则 | 允许主机与路径 |\n",
+      "sha256": "12d81d496a706a3f982376f65e1085b60bc2d341c2a45d6f0a1d814e0d332e73",
+      "requirement_ids": [
+        "A10-101-AC-001",
+        "A10-101-AC-002"
+      ],
+      "reason": "两项明确的产品文档义务：ADR/history未完整保留主摘要、doiRA及术语/规格文档内容，故保留基线所见的最小内容摘录；不是当前活规范或未来规则。"
+    }
+  ]
+}

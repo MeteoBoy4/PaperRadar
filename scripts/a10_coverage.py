@@ -21,6 +21,16 @@ def validate_coverage(
         type(value.get("format_version")) is not int
         or value.get("format_version") != 1
         or value.get("artifact_kind") != "a10_requirements_coverage"
+        or type(value.get("ledger_revision")) is not int
+        or value.get("ledger_revision") != 2
+        or not isinstance(value.get("methodology"), dict)
+        or value["methodology"].get("scope")
+        != {
+            "revision": 2,
+            "covered_evidence": "fixed_behavior_tests_and_frozen_documentation",
+            "live_documents": "context_only",
+            "operational_records": "not_product_coverage",
+        }
         or value.get("review_state") != "reviewed"
         or value.get("open_items") != []
         or value.get("owner_conflicts") != []
@@ -152,6 +162,56 @@ def validate_coverage(
             row.get("specific_test_pointers"), test=True
         ) and pointers_valid(row.get("scope_materials"))
 
+    catalog = value.get("behavior_catalog")
+    if not isinstance(catalog, list) or not catalog:
+        return False
+    operations = value.get("operational_evidence")
+    if not isinstance(operations, list):
+        return False
+    operational_sources = {
+        record["source_id"]
+        for record in operations
+        if isinstance(record, dict)
+        and isinstance(record.get("source_id"), str)
+        and record["source_id"] in documents
+        and record.get("status") == "operational"
+        and record.get("original_text")
+        == documents[record["source_id"]]["original_text"]
+    }
+    covered_behaviors: set[str] = set()
+    for behavior in catalog:
+        if (
+            not isinstance(behavior, dict)
+            or not isinstance(behavior.get("behavior_id"), str)
+            or behavior.get("status") not in ("covered", "operational")
+            or not behavior_valid(behavior)
+            or not pointers_valid(behavior.get("public_behavior_pointers"))
+            or (
+                behavior.get("documentation_pointers") != []
+                and not pointers_valid(behavior.get("documentation_pointers"))
+            )
+        ):
+            return False
+        if behavior["status"] == "covered":
+            if (
+                behavior.get("evidence_kind")
+                == "frozen_historical_operation_and_documentation"
+            ):
+                return False
+            covered_behaviors.add(behavior["behavior_id"])
+        elif (
+            not behavior.get("mapping_note")
+            or behavior.get("evidence_kind")
+            != "frozen_historical_operation_and_documentation"
+            or not isinstance(behavior.get("operational_source_ids"), list)
+            or not behavior["operational_source_ids"]
+            or any(
+                not isinstance(item, str) or item not in operational_sources
+                for item in behavior["operational_source_ids"]
+            )
+        ):
+            return False
+
     seen: set[str] = set()
     not_assessed = value.get("not_assessed")
     if not isinstance(not_assessed, dict) or not not_assessed:
@@ -181,6 +241,13 @@ def validate_coverage(
         ):
             return False
         if row["status"] == "covered":
+            mapped = row.get("mapped_behavior_ids")
+            if (
+                not isinstance(mapped, list)
+                or not all(isinstance(item, str) for item in mapped)
+                or not covered_behaviors.intersection(mapped)
+            ):
+                return False
             if not behavior_valid(row) or not pointers_valid(
                 row.get("public_behavior_pointers")
             ):
