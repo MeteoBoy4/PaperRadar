@@ -6,8 +6,8 @@
   "identity_rule": "本台账不进入scope；由包含它的最终提交及完整工作树身份覆盖。最终run_id仅在外部报告。",
   "authorities": {
     "docs/verification/scope-material-inventory.json": "6f742d2bd203cff104d36891035a08d9d13946b7bb0e9aa6950d26712ef9e5bd",
-    "docs/verification/a10-scope-document-migration.json": "d2808ca763be33f5ffd0c595613d38e971975891869ac58b99ed4bc25359b7fa",
-    "docs/verification/a10-documentation-excerpts.json": "fbed7f8a685db9a9a7259cbb80527b1633022ca46f8685f5e6af3490eb816189",
+    "docs/verification/a10-scope-document-migration.json": "dccdfb66aa3ef9406dde64be52ecafda46a7451d22dd003757f052a3003adc88",
+    "docs/verification/a10-documentation-excerpts.json": "eae92ce6c217991acc055b40fc907075b64b9cf079fef282086f9f3423687936",
     "docs/verification/a8-a9-document-migration.json": "6d657293a53edbbc07835804645e0ff3f2ffaa649df53c833c609b89119bf460"
   },
   "classification_mother_set": {
@@ -472,8 +472,8 @@
   ],
   "added_bindings": [
     {
-      "actual_sha256": "fbed7f8a685db9a9a7259cbb80527b1633022ca46f8685f5e6af3490eb816189",
-      "expected_sha256": "fbed7f8a685db9a9a7259cbb80527b1633022ca46f8685f5e6af3490eb816189",
+      "actual_sha256": "eae92ce6c217991acc055b40fc907075b64b9cf079fef282086f9f3423687936",
+      "expected_sha256": "eae92ce6c217991acc055b40fc907075b64b9cf079fef282086f9f3423687936",
       "group": "A10",
       "kind": "fixture",
       "path": "docs/verification/a10-documentation-excerpts.json",
@@ -520,7 +520,7 @@
     "requirement_sources_preserved": true,
     "source_documents_preserved": true,
     "baseline_ledger_sha256": "77e537af3dd3e2adc9aaa5f4fb253ebb8dc46b86c2e1cbad5f5a2b50e8b6ce05",
-    "stage1_ledger_sha256": "8a504905e7eb1836616f7797a24718b543cd4ad3f747cefe2e67e822047c038b",
+    "stage1_ledger_sha256": "8c5a1af640e63ccd1a2215836a5ac12b1bb69c29b132aa5397379a0bb7589d9d",
     "ledger_revision": 2,
     "disposition_counts": {
       "before": {
@@ -530,13 +530,18 @@
         "superseded": 7
       },
       "after": {
-        "covered": 547,
         "operational": 111,
-        "not_assessed": 28,
+        "covered": 546,
+        "not_assessed": 29,
         "superseded": 7
       }
     },
     "requirement_disposition_changes": [
+      {
+        "requirement_id": "A10-100-C6405695568-CLAUSE-037",
+        "before": "covered",
+        "after": "not_assessed"
+      },
       {
         "requirement_id": "A10-104-BODY-001",
         "before": "covered",
@@ -567,6 +572,7 @@
           "A10-100-STORY-044",
           "A10-100-DECISION-002",
           "A10-100-DECISION-014",
+          "A10-100-DECISION-017",
           "A10-100-DECISION-020",
           "A10-100-TEST-POLICY-006",
           "A10-100-EXCLUSION-001",
@@ -581,10 +587,13 @@
           "A10-100-C6395756759-CLAUSE-009",
           "A10-100-C6395756759-CLAUSE-010",
           "A10-100-C6395756759-CLAUSE-011",
+          "A10-100-C6395756759-CLAUSE-038",
+          "A10-100-C6395756759-CLAUSE-071",
           "A10-100-C6395756759-CLAUSE-110",
           "A10-100-C6395756759-CLAUSE-111",
           "A10-100-C6395756759-CLAUSE-112",
           "A10-100-C6395756759-CLAUSE-113",
+          "A10-100-C6395756759-CLAUSE-115",
           "A10-100-C6395756759-CLAUSE-158",
           "A10-100-C6395756759-CLAUSE-191",
           "A10-100-C6395756759-CLAUSE-192",
@@ -646,6 +655,8 @@
           "A10-100-C6395889326-CLAUSE-050",
           "A10-100-C6395889326-CLAUSE-051",
           "A10-100-C6395889326-CLAUSE-052",
+          "A10-100-C6395889326-CLAUSE-061",
+          "A10-100-C6395889326-CLAUSE-083",
           "A10-100-C6395889326-CLAUSE-084",
           "A10-100-C6395889326-CLAUSE-087",
           "A10-100-C6395889326-CLAUSE-088",
@@ -665,12 +676,15 @@
           "A10-100-C6405494900-CLAUSE-013",
           "A10-100-C6405494900-CLAUSE-014",
           "A10-100-C6405494900-CLAUSE-015",
+          "A10-100-C6405695568-CLAUSE-037",
           "A10-100-C6405695568-CLAUSE-038",
           "A10-100-C6405695568-CLAUSE-039",
           "A10-100-C6405695568-CLAUSE-040",
           "A10-100-C6405695568-CLAUSE-041",
           "A10-100-C6405695568-CLAUSE-042",
           "A10-100-C6405695568-CLAUSE-043",
+          "A10-100-C6405695568-CLAUSE-045",
+          "A10-100-C6405695568-CLAUSE-049",
           "A10-100-C6405695568-CLAUSE-054",
           "A10-100-C6405695568-CLAUSE-055",
           "A10-100-C6405709782-CLAUSE-001",
@@ -712,8 +726,14 @@
           "A10-103-BODY-001",
           "A10-103-AC-013",
           "A10-104-AC-013",
+          "A10-105-AC-010",
+          "A10-105-AC-013",
           "A10-105-AC-014",
+          "A10-105-C6411118599-CLAUSE-004",
+          "A10-106-AC-010",
           "A10-106-AC-011",
+          "A10-106-C6411119180-CLAUSE-001",
+          "A10-106-C6411119180-CLAUSE-005",
           "A10-107-BODY-001",
           "A10-107-AC-008",
           "A10-107-AC-011",
@@ -721,6 +741,7 @@
           "A10-107-AC-013",
           "A10-107-C6411119693-CLAUSE-001",
           "A10-108-BODY-001",
+          "A10-108-AC-004",
           "A10-108-AC-009",
           "A10-108-AC-010",
           "A10-108-AC-012",
@@ -743,7 +764,7 @@
           "docs/adr/0033-classify-journal-articles-from-explicit-source-types.md",
           "docs/adr/0034-separate-fixture-declarations-and-acquisition-audits.md"
         ],
-        "reason": "保留历史文档的实际内容证明，使用冻结摘录与ADR，范围明确限定基线。"
+        "reason": "逐需求保留独立交付文档内容；真实缺口单列not_assessed，操作回帖不替代文档。"
       },
       {
         "behavior_id": "sampling_operational_docs",
@@ -780,7 +801,7 @@
           "docs/verification/contracts-fixture-audit-history.md",
           "docs/verification/contracts-backup-restore-history.md"
         ],
-        "reason": "原来covered混合了操作与文档事实；修订2明确为operational，关联产品行为仍由各自代码/测试证明。",
+        "reason": "只保留完成/补修操作事实；文档交付内容和缺口在独立冻结摘录及逐需求处置中审查。",
         "source_ids": [
           "issue-105-comment-6414675754",
           "issue-105-comment-6415020905",
@@ -798,6 +819,15 @@
         "live_documents": "context_only",
         "operational_records": "not_product_coverage"
       }
+    },
+    "semantic_review": "a10-scope-document-migration.json#semantic_review",
+    "semantic_review_summary": {
+      "owners": 302,
+      "occurrences": 635,
+      "documentation_obligations": 16,
+      "added_excerpt_count": 11,
+      "total_excerpt_count": 15,
+      "missing_obligation": "A10-100-C6405695568-CLAUSE-037"
     }
   },
   "rebindings": [
@@ -870,8 +900,8 @@
       "kind": "fixture",
       "path": "tests/fixtures/a10_coverage.json",
       "old_sha256": "77e537af3dd3e2adc9aaa5f4fb253ebb8dc46b86c2e1cbad5f5a2b50e8b6ce05",
-      "new_sha256": "8a504905e7eb1836616f7797a24718b543cd4ad3f747cefe2e67e822047c038b",
-      "reason": "#129：ledger_revision=2；上下文指针迁移与三项处置差"
+      "new_sha256": "8c5a1af640e63ccd1a2215836a5ac12b1bb69c29b132aa5397379a0bb7589d9d",
+      "reason": "#129：ledger_revision=2；上下文指针迁移与三项处置差；独立review后补齐文档义务及真实处置。"
     },
     {
       "group": "A10",
@@ -3064,6 +3094,11 @@
       "issue": 130,
       "path": "tests/test_live_document_links.py",
       "cases": 4
+    },
+    {
+      "issue": 131,
+      "path": "tests/test_a10_document_obligations.py",
+      "cases": 17
     }
   ],
   "proof_boundary": "候选审计及开发期回归；未运行完整门禁，待独立审阅、最终提交门禁与main收口。",
@@ -3534,5 +3569,34 @@
         "parameter_cases_after": 9
       }
     ]
+  },
+  "review_rebindings": [
+    {
+      "group": "A10",
+      "scope_path": "scripts/a10_scope.py",
+      "kind": "fixture",
+      "path": "docs/verification/a10-documentation-excerpts.json",
+      "old_sha256": "fbed7f8a685db9a9a7259cbb80527b1633022ca46f8685f5e6af3490eb816189",
+      "new_sha256": "eae92ce6c217991acc055b40fc907075b64b9cf079fef282086f9f3423687936",
+      "reason": "review修复：补齐独立文档交付的最小基线摘录，保留真实§8.4缺口。"
+    },
+    {
+      "group": "A10",
+      "scope_path": "scripts/a10_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/a10_coverage.json",
+      "old_sha256": "8a504905e7eb1836616f7797a24718b543cd4ad3f747cefe2e67e822047c038b",
+      "new_sha256": "8c5a1af640e63ccd1a2215836a5ac12b1bb69c29b132aa5397379a0bb7589d9d",
+      "reason": "review修复：16项文档义务明确映射，1项covered→not_assessed，693 ID/37来源不变。"
+    }
+  ],
+  "new_test_support": [
+    "tests/scope_document_support.py"
+  ],
+  "review_fixes": {
+    "reviewed_candidate_commit": "7e4b732e89400fb78139c8b1f9a049bb390d2ab9",
+    "semantic_proof": "16项实际文档义务独立承载；§8.4缺失covered→not_assessed；先前候选结果不代表修复后树。",
+    "shared_support": "副本拓扑重绑与writer冷进程协议共享；两个调用模块独立保留审阅白名单、组与权威预期。",
+    "compatibility": "仅fixture/独立测试/新文档记录与受控scope哈希；未改变writer、发布/回执/终态接线、CLI或导入链，不新增compatibility触发。"
   }
 }

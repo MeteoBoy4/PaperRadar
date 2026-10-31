@@ -10,6 +10,8 @@ from typing import Any
 import pytest
 
 from scripts.verification_scope_audit import Scope, audit_scopes, collection_targets
+from tests.scope_document_support import prepared_repository as prepare_copy
+from tests.scope_document_support import writer_conclusion
 
 EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
@@ -28,49 +30,25 @@ def test_audit_rejects_rebinding_a_classified_live_document(tmp_path: Path) -> N
     assert collection_targets(report) is None
 
 
-def prepared_repository(target: Path) -> Path:
-    """仅在隔离副本按已审阅路径准备候选, 生产 scope 保留预计漂移。"""
-    from tests.a2_full_support import repository_copy
+# 本模块独立维护其审阅集合和组范围,不与 A8/A9 断言合并。
+REVIEWED = frozenset(
+    {
+        "scripts/a9_acceptance.py",
+        "scripts/a10_coverage.py",
+        "scripts/verification_scope_audit.py",
+        "tests/fixtures/a9_coverage.json",
+        "tests/fixtures/a10_coverage.json",
+        "tests/test_a9_scope.py",
+        "tests/test_a9_integrity.py",
+        "tests/test_a10_integrity.py",
+    }
+)
 
-    root = repository_copy(target)
-    program = r"""
-import hashlib
-import re
-from pathlib import Path
-from scripts.verification_scope_audit import audit_scopes
-from scripts.verification_scope_registry import load_scopes
-root = Path.cwd()
-report = audit_scopes(root, load_scopes(root))
-assert not report['issues'], report['issues']
-reviewed = {
-    'scripts/a9_acceptance.py',
-    'scripts/a10_coverage.py',
-    'scripts/verification_scope_audit.py',
-    'tests/fixtures/a9_coverage.json',
-    'tests/fixtures/a10_coverage.json',
-    'tests/test_a9_scope.py',
-    'tests/test_a9_integrity.py',
-    'tests/test_a10_integrity.py',
-    *report['order'],
-}
-unexpected = [row for row in report['files']
-              if row['reason'] != 'ok' and row['path'] not in reviewed]
-assert not unexpected, unexpected
-pattern = re.compile(r'(\(\s*"([^"]+)",\s*")([0-9a-f]{64})(")')
-def replacement(match):
-    relative = match[2]
-    if relative not in reviewed:
-        return match[0]
-    digest = hashlib.sha256((root / relative).read_bytes()).hexdigest()
-    return match[1] + digest + match[4]
-for relative in report['order']:
-    path = root / relative
-    path.write_text(pattern.sub(replacement, path.read_text()))
-report = audit_scopes(root, load_scopes(root))
-assert report['exit_code'] == 0, report
-"""
-    subprocess.run((sys.executable, "-B", "-c", program), cwd=root, check=True)
-    return root
+
+def prepared_repository(target: Path) -> Path:
+    return prepare_copy(
+        target, reviewed=REVIEWED, verified_groups=frozenset({"A8", "A9", "A10"})
+    )
 
 
 def audit_repository(root: Path) -> dict[str, Any]:
@@ -83,27 +61,6 @@ def audit_repository(root: Path) -> dict[str, Any]:
     report: dict[str, Any] = json.loads(result.stdout)
     assert result.returncode == report["exit_code"]
     return report
-
-
-def writer_conclusion(root: Path, output: Path, group: int) -> dict[str, Any]:
-    output.mkdir()
-    program = f"""
-import json
-from pathlib import Path
-from tests.a{group}_acceptance_support import conclude, same_a{group}_run
-root = Path.cwd()
-output = Path({str(output)!r})
-_, result = conclude(output, same_a{group}_run(output, root=root), root=root)
-print(json.dumps(result))
-"""
-    result = subprocess.run(
-        (sys.executable, "-B", "-c", program),
-        cwd=root,
-        capture_output=True,
-        check=True,
-    )
-    value: dict[str, Any] = json.loads(result.stdout)
-    return value
 
 
 @pytest.mark.parametrize(

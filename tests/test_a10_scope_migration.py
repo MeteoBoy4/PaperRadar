@@ -87,11 +87,12 @@ def test_migration_preserves_sources_and_accounts_for_every_disposition() -> Non
         "A10-104-BODY-001",
         "A10-105-BODY-001",
         "A10-106-BODY-001",
+        "A10-100-C6405695568-CLAUSE-037",
     }
     assert Counter(row["status"] for row in current["requirements"]) == {
-        "covered": 547,
+        "covered": 546,
         "operational": 111,
-        "not_assessed": 28,
+        "not_assessed": 29,
         "superseded": 7,
     }
 
@@ -243,9 +244,9 @@ def test_writer_accepts_changes_to_all_six_unbound_documents(
     _, result = conclude(tmp_path, inputs, root=root)
     assert result["status"] == "passed", result["reasons"]
     assert result["requirements_coverage"]["dispositions"] == {
-        "covered": 547,
+        "covered": 546,
         "superseded": 7,
-        "not_assessed": 28,
+        "not_assessed": 29,
         "operational": 111,
     }
 
