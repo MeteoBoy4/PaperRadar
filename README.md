@@ -49,7 +49,7 @@ uv sync --locked
 ```
 
 解释器、临时目录和容量检查的使用说明见 `./scripts/dev-environment --help`，
-worktree 与离线依赖准备见[测试约定](docs/agents/testing.md#开发环境)。
+worktree、离线依赖准备与 pytest 临时材料保留规则见[测试约定](docs/agents/testing.md#开发环境)。
 
 ## 命令行帮助
 

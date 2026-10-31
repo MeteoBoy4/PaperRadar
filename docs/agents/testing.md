@@ -86,6 +86,8 @@ pytest 插件自动加载、pytest 缓存和字节码。测试仍会使用临时
 - 新 worktree 直接执行 `uv run --offline --locked …`，环境自动按锁文件同步，解释器由 `.python-version`（3.14）决定。
 - 若 uv 报离线缓存缺包，须先取得用户联网授权，再用 `UV_PROJECT_ENVIRONMENT=$(mktemp -d)/venv uv sync --locked` 一次性补齐缓存，完成后删除这个临时环境；不复制 `.venv`。
 - 临时根默认 `/tmp`，不能位于任何 Git 工作树内；worktree 与 `.venv` 放在磁盘上，不放在 `/tmp`。
+- 项目 pytest 默认 `tmp_path_retention_policy=failed`：通过用例在 teardown 后释放 `tmp_path`，失败用例保留诊断，避免单次 suite 持续累积通过用例的文件。只读 Pi 目录由 `tests/conftest.py` 在 teardown 恢复目录 owner 写权限，文件权限和软链目标不变。需要查看通过用例材料时，可单独重跑相关子集并显式加 `-o tmp_path_retention_policy=all`；这种调试会增加临时空间占用。直接由 `tmp_path_factory` 创建的目录仍由 pytest 会话清理规则处理。
 - 长时间门禁前运行 `./scripts/dev-environment check`（可加 `--json`）。命令只读，不触发 uv 同步；入口优先使用项目环境的 Python（支持 `UV_PROJECT_ENVIRONMENT`，相对路径以仓库为准），缺失时以宿主 `python3` 启动，启动前验证 Python >=3.12。项目解释器实际版本单独通过 `bin/python -I -S -B` 查询，缺失或执行失败时报未知，不会把宿主版本当作项目版本。
 - 容量须严格大于 5 GiB；配额读取失败显示“配额未知”并返回非零。配额采用非零软/硬上限中的较小者，保守忽略宽限期。inode 数与 pytest 残留仅报告和提示；不设 inode 数量门禁，残留统计不完整也不导致失败，部分体积附 `size_complete=false` 和不可读条目数。清理命令只可在没有 pytest 运行时手动执行。
+- 容量预检描述运行前余量，不保证单个用例、失败保留或并发进程的峰值；发生空间失败时先保留失败诊断并核对已结束的通过用例残留，再按实际目录清理。
 - 为保持不写文件，临时根按 `tempfile` 的候选顺序通过目录权限选择，再解析符号链接；不调用会创建探测文件的 `tempfile.gettempdir()`。JSON 与文本均标记 `temporary_probe=access_only`；只读权限检查不能验证实际写入能否成功。未知系统调用 ABI（如 MIPS、x32）仍按“配额未知”处理，不盲用编号 443。

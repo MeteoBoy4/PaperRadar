@@ -34,6 +34,7 @@ packages = ["src/paper_radar"]
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers"
 testpaths = ["tests"]
+tmp_path_retention_policy = "failed"
 
 [tool.ruff]
 target-version = "py312"

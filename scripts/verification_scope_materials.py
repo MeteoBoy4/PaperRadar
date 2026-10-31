@@ -35,7 +35,7 @@ SHARED_MATERIALS = {
         "7d116290291efcff745119919e6d5f827e2fbc38e20d0f93ac974b7530a33d1c"
     ),
     "pyproject.toml": (
-        "bf36f1fcade0fcbfcf68164e042d826c369d68e0b5da2f5dfa287d05d12fc5b4"
+        "282f74be3e1da65a4819f03c441274f9b47442737243f9e9a80f3d18cb7f89f7"
     ),
     "scripts/a1_acceptance.py": (
         "6d823619d4a139c5df7d19be39f7c5ec409af2a7d7d1864d757dcc7fa697b4df"
@@ -668,7 +668,7 @@ SHARED_MATERIALS = {
         "0ab9a716354d3c7481596a59e2ea20aac453de1602bc88712f119f1bab726736"
     ),
     "tests/test_a1_acceptance.py": (
-        "67907487c29bce8872f3855e15ed47bd9cc781257ba8c534e52dd8f8f35c6759"
+        "e2bada5b0eb60926426009400ec44dcb9d85a09152f22880f8c3dc8ac0fd966a"
     ),
     "tests/test_a2_acceptance.py": (
         "a74bab43404c6b38aaed45bbb9cbb4e0f6d47ab2ae96270563f92c0a86ef1fec"

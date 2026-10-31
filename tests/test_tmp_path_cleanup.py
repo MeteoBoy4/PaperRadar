@@ -37,6 +37,8 @@ def test_readonly_pi_install_trees_allow_pytest_session_retention(
         run_pytest(
             root,
             temp_root,
+            "-o",
+            "tmp_path_retention_policy=all",
             "tests/test_pi_supply.py::"
             "test_prepare_freezes_materials_and_queries_without_network",
         )
