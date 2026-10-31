@@ -18,7 +18,7 @@
 
 1. 先记录实际 HEAD、dirty 状态和本地目标分支；以目标当前 commit 作为显式 `--base`，声明 `--integration-target`。base 必须等于本地目标且为 HEAD 祖先；目标移动、旧 merge-base 或非祖先均先重新集成再分析，不隐式 fetch。分阶段实施可声明稳定本地 main 为 base/target，但 integration 中的子票漂移仍交收口处理。
 2. 运行只读 `./scripts/audit-verification-scope --json`；显式基线分析加上 `--base COMMIT --integration-target BRANCH`，需要核对固定分母时加 `--collect`。分别审阅 current_change、baseline_drift 与机械/敏感分类；基线既有漂移必须单独解释和处理，本轮确认不能清掉它。
-3. 审阅每条候选的实际字节、登记用途、旧新成员/计数/格式和全部直接及下游组。source/support 机械哈希变化不逐组确认；测试成员与计数、fixture/冻结负例、需求/覆盖台账与格式、仍绑定契约/证据，以及分类控制数据新增或改类，按 S3 逐具体变化、逐全部受影响组确认。
+3. 审阅每条候选的实际字节、登记用途、旧新成员/计数/格式和全部直接及下游组。source/support 的普通实现哈希变化不逐组确认；生产组登记的验收标准、测试成员与计数、fixture/冻结负例、需求/覆盖台账与格式、仍绑定契约/证据，以及分类控制数据新增或改类，按 S3 逐具体变化、逐全部受影响组确认。
 4. 确认精确绑定 base、HEAD、本地 target ref/commit、完整 dirty 树摘要、group、path、origin/category、旧新文件及 entry 摘要，并记录非空审阅理由；字段定义见审计契约。确认输入放在被审计树外。HEAD、目标或任意未忽略材料变化后，重新审阅并生成对应身份的确认；旧确认不复用。
 5. 候选仅供审查；确认只解除 confirmation_required，不能消除 hash_drift 或授权写回。只按明确白名单重算实际改动及必要登记，记录组、路径、旧/新 SHA 和理由，再审计。中央变化不得掩盖成员、分母或用途变化。
 

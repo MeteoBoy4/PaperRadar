@@ -92,16 +92,16 @@ SHARED_MATERIALS = {
         "a4d08449eb65ac7e2c39d2fe972cccf28ec8af13dcf5d34795ac1c088212ae0a"
     ),
     "scripts/verification_scope_audit.py": (
-        "92cca0fe14de340def2451e0b8d1b453d3b7c5471f7b3823001954d2f0fbe9de"
+        "599fa750491e60f8482524266d7a5f771d3007811e120d91968071943db13c9f"
     ),
     "scripts/verification_scope_baseline.py": (
-        "078c71a868048558962ab934a8594b5da3bb6560f892134a887061f06873b9d8"
+        "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627"
     ),
     "scripts/verification_scope_collection.py": (
-        "502b88820a6e935bb443a85c29ef9e35bbc7f60ecfa005f8445525c6caf27fc6"
+        "83f038a2d15c10058bd53bcb2a05808453718bdcf9812cd51a5997b20477b3ad"
     ),
     "scripts/verification_scope_registry.py": (
-        "11964e13977694e7d114dc13c7c6dd993eb9802a304566517d1874acefcbc8ed"
+        "1768d91569a3ecbc4331a2852a19485e73e3d70238223bf9fb411f2eceb12b7b"
     ),
     "scripts/verification_status.py": (
         "081a13f82706ebc16aee21138c40bcf6620ad8daeb8efa6338a1512f07edd1c5"

@@ -46,7 +46,9 @@ def _print_report(report: AuditReport) -> None:
     print("仅供维护审阅；收集不代表实际执行或验收通过。")
     print("建议处理顺序：" + " → ".join(report["order"]))
     for path, downstream in report["downstream"].items():
-        print(f"修改 {path} 后需重算下游登记：" + ("、".join(downstream) or "无"))
+        print(
+            f"修改 {path} 后需审阅/验证的受影响下游：" + ("、".join(downstream) or "无")
+        )
     for record in report["files"]:
         if record["reason"] != AuditReason.OK:
             print(

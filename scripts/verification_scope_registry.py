@@ -1,20 +1,219 @@
-"""从生产 writer 登记推导 scope; 只解释固定常量, 不扫描路径/哈希形状。"""
+"""固定登记的数据类型、接收校验与静态解释;不依赖审计或基线编排。"""
 
 from __future__ import annotations
 
 import ast
 import inspect
-from dataclasses import replace
-from pathlib import Path
-from typing import Any
+import re
+from collections.abc import Mapping
+from dataclasses import dataclass, replace
+from enum import StrEnum
+from pathlib import Path, PurePosixPath
+from typing import Any, Literal, NotRequired, TypedDict, TypeGuard
 
-from scripts.verification_scope_audit import (
-    CENTRAL_REGISTRATION_PATH,
-    AuditReason,
-    FileKind,
-    Scope,
-    parse_file_bindings,
-)
+CENTRAL_REGISTRATION_PATH = "scripts/verification_scope_materials.py"
+CLASSIFICATION_PATH = "docs/verification/scope-material-inventory.json"
+
+
+class AuditReason(StrEnum):
+    OK = "ok"
+    HASH_DRIFT = "hash_drift"
+    MISSING_FILE = "missing_file"
+    UNREADABLE_FILE = "unreadable_file"
+    LIVE_DOCUMENT_BINDING = "live_document_binding"
+    CLASSIFICATION_UNAVAILABLE = "classification_unavailable"
+    INVALID_CLASSIFICATION = "invalid_classification"
+    EMPTY_REGISTRY = "empty_registry"
+    DUPLICATE_SCOPE = "duplicate_scope"
+    EMPTY_BINDING = "empty_binding"
+    INVALID_BINDING = "invalid_binding"
+    DUPLICATE_PATH = "duplicate_path"
+    SELF_REFERENCE = "self_reference"
+    INVALID_COUNTS = "invalid_counts"
+    COUNT_KEYS_MISMATCH = "count_keys_mismatch"
+    INVALID_COUNT = "invalid_count"
+    CONFLICTING_COUNTS = "conflicting_counts"
+    CYCLE = "cycle"
+    REGISTRATION_UNAVAILABLE = "registration_unavailable"
+    INVALID_REGISTRATION = "invalid_registration"
+    UNSUPPORTED_REGISTRATION = "unsupported_registration"
+    DUPLICATE_REGISTRATION = "duplicate_registration"
+    DUPLICATE_COUNT_KEY = "duplicate_count_key"
+    UNSUPPORTED_SCOPE_IMPORT = "unsupported_scope_import"
+    UNSUPPORTED_WRITER_SCOPE = "unsupported_writer_scope"
+    UNSUPPORTED_SCOPE_CONSTANT = "unsupported_scope_constant"
+    UNCONSUMED_REGISTRATION = "unconsumed_registration"
+    UNSUPPORTED_SECONDARY_BINDING = "unsupported_secondary_binding"
+    WRITER_UNAVAILABLE = "writer_unavailable"
+    REGISTRY_UNAVAILABLE = "registry_unavailable"
+    NOT_REQUESTED = "not_requested"
+    AUDIT_FAILED = "audit_failed"
+    COLLECTION_UNAVAILABLE = "collection_unavailable"
+    COLLECTION_TIMEOUT = "collection_timeout"
+    COLLECTION_FAILED = "collection_failed"
+    COLLECTION_SKIPPED = "collection_skipped"
+    COLLECTION_DESELECTED = "collection_deselected"
+    COUNT_MISMATCH = "count_mismatch"
+    UNKNOWN_ARGUMENT = "unknown_argument"
+    INVALID_OPTION_VALUE = "invalid_option_value"
+    INVALID_ARGUMENTS = "invalid_arguments"
+    INVALID_BASELINE = "invalid_baseline"
+    BASELINE_UNAVAILABLE = "baseline_unavailable"
+    BASELINE_REGISTRATION_UNAVAILABLE = "baseline_registration_unavailable"
+    BASELINE_TARGET_MISMATCH = "baseline_target_mismatch"
+    BASELINE_NOT_ANCESTOR = "baseline_not_ancestor"
+    BASELINE_DRIFT = "baseline_drift"
+    BASELINE_IDENTITY_CHANGED = "baseline_identity_changed"
+    INVALID_CONFIRMATION = "invalid_confirmation"
+    CONFIRMATION_REQUIRED = "confirmation_required"
+
+
+class FileKind(StrEnum):
+    TEST = "test"
+    SOURCE = "source"
+    FIXTURE = "fixture"
+
+
+class FileRole(StrEnum):
+    TEST = "test"
+    SOURCE = "source"
+    FIXTURE = "fixture"
+    SUPPORT = "support"
+
+
+class FileRecord(TypedDict):
+    group: str
+    kind: FileKind
+    role: FileRole
+    path: str
+    expected_sha256: str
+    actual_sha256: str | None
+    reason: AuditReason
+
+
+class IssueRecord(TypedDict):
+    group: str
+    path: str
+    reason: AuditReason
+
+
+class CountRecord(TypedDict):
+    group: str
+    path: str
+    expected_cases: int
+
+
+class CollectionResult(TypedDict):
+    reason: AuditReason
+    execution: Literal["not_run"]
+    modules: dict[str, int]
+    collection_skipped: NotRequired[int]
+    deselected: NotRequired[int]
+
+
+BaselineOrigin = Literal["baseline_drift", "current_change"]
+BaselineCategory = Literal[
+    "source_support",
+    "registration",
+    "test",
+    "fixture",
+    "evidence",
+    "classification",
+    "format_or_criteria",
+]
+
+
+class BaselineRegistration(TypedDict):
+    tree: Literal["base", "current"]
+    group: str
+    scope_path: str
+    kind: FileKind
+    expected_sha256: str
+
+
+class BaselineChange(TypedDict):
+    path: str
+    origin: BaselineOrigin
+    sensitivity: Literal["mechanical", "sensitive"]
+    category: BaselineCategory
+    old_sha256: str | None
+    new_sha256: str | None
+    old_entry_sha256: str
+    new_entry_sha256: str
+    registered_sha256: list[str]
+    groups: list[str]
+    affected_groups: list[str]
+    confirmed_groups: list[str]
+    registrations: list[BaselineRegistration]
+
+
+class BaselineResult(TypedDict):
+    base: str
+    head: str
+    integration_target: str
+    target_commit: str
+    worktree_sha256: str
+    dirty: bool
+    baseline_issues: list[IssueRecord]
+    changes: list[BaselineChange]
+
+
+class AuditReport(TypedDict):
+    baseline: NotRequired[BaselineResult]
+    exit_code: int
+    files: list[FileRecord]
+    issues: list[IssueRecord]
+    counts: list[CountRecord]
+    order: list[str]
+    downstream: dict[str, list[str]]
+    affected_groups: list[str]
+    collection: CollectionResult
+
+
+@dataclass(frozen=True)
+class Scope:
+    group: str
+    path: str
+    bindings: Mapping[str, object]
+    counts: object = None
+    errors: tuple[AuditReason, ...] = ()
+    references: object = ()
+    reference_registry: frozenset[str] = frozenset()
+
+
+def valid_path(value: object) -> TypeGuard[str]:
+    """仅允许规范的仓库相对路径, 不回显不受控载荷。"""
+    return (
+        isinstance(value, str)
+        and bool(value)
+        and not PurePosixPath(value).is_absolute()
+        and all(part not in ("", ".", "..") for part in value.split("/"))
+        and all(character.isprintable() for character in value)
+        and "\\" not in value
+        and "::" not in value
+    )
+
+
+def valid_case_count(value: object) -> TypeGuard[int]:
+    return type(value) is int and value > 0
+
+
+def parse_file_bindings(raw: object) -> list[tuple[str, str]] | None:
+    if not isinstance(raw, tuple):
+        return None
+    result = []
+    for item in raw:
+        if (
+            not isinstance(item, tuple)
+            or len(item) != 2
+            or not valid_path(item[0])
+            or not isinstance(item[1], str)
+            or re.fullmatch(r"[0-9a-f]{64}", item[1]) is None
+        ):
+            return None
+        result.append((item[0], item[1]))
+    return result
+
 
 CENTRAL_PATH = CENTRAL_REGISTRATION_PATH
 CENTRAL_NAME = "SHARED_MATERIALS"

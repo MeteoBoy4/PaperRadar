@@ -366,7 +366,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/audit_verification_scope.py",
-        "fab083cd04a25b016dc90e8dde2f38e26807ee9b2a963ec8136fe0f9853898ab",
+        "24cfb56af5c8bf3c685f40d22b27f3f4fa801dd9949461e61b1f41877c5083a8",
     ),
     ("scripts/check-offline", SHARED_MATERIALS["scripts/check-offline"]),
     ("scripts/verification-status", SHARED_MATERIALS["scripts/verification-status"]),

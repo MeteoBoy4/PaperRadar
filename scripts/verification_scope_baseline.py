@@ -11,10 +11,11 @@ import stat
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from scripts.verification_scope_audit import (
+from scripts.verification_scope_registry import (
     CLASSIFICATION_PATH,
     AuditReason,
     AuditReport,
@@ -23,8 +24,11 @@ from scripts.verification_scope_audit import (
     BaselineOrigin,
     BaselineRegistration,
     BaselineResult,
+    Scope,
     valid_path,
 )
+
+GROUP_REGISTRATION_PATH = "scripts/verification_groups.py"
 
 
 class BaselineError(ValueError):
@@ -199,11 +203,27 @@ def _sensitive_constants(root: Path, path: str) -> dict[str, str]:
     )
     result = {}
     for node in ast.walk(tree):
+        if (
+            path == GROUP_REGISTRATION_PATH
+            and isinstance(node, ast.ClassDef)
+            and node.name == "Group"
+        ):
+            # 默认值与字段顺序同样决定未显式提供参数的实际生产声明。
+            result["Group.fields"] = ast.dump(
+                ast.Module(
+                    body=[
+                        item for item in node.body if isinstance(item, ast.AnnAssign)
+                    ],
+                    type_ignores=[],
+                ),
+                include_attributes=False,
+            )
         if isinstance(node, (ast.Assign, ast.AnnAssign)):
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
             for target in targets:
-                if isinstance(target, ast.Name) and any(
-                    word in target.id for word in words
+                if isinstance(target, ast.Name) and (
+                    any(word in target.id for word in words)
+                    or (path == GROUP_REGISTRATION_PATH and target.id == "GROUPS")
                 ):
                     result[target.id] = ast.dump(node, include_attributes=False)
     return result
@@ -254,9 +274,8 @@ def analyze_baseline(
     integration_target: str,
     confirmations: object = (),
     writers: tuple[tuple[str, str], ...] | None = None,
+    audit_scopes: Callable[[Path, tuple[Scope, ...]], AuditReport],
 ) -> AuditReport:
-    from scripts.verification_scope_audit import audit_scopes
-
     report = audit_scopes(root, ())
     try:
         if (
@@ -400,7 +419,8 @@ def _changes(
         groups.update(
             g for mapping in (old_paths, paths) for g, p in mapping.items() if p == path
         )
-        if path == CLASSIFICATION_PATH:
+        if path in (CLASSIFICATION_PATH, GROUP_REGISTRATION_PATH):
+            # 生产声明控制整个计划的 required、产物、依赖、writer 和回执范围。
             groups.update([*paths, *old_paths])
         kinds = {str(f["kind"]) for f in files if f["path"] == path}
         category = _category(
