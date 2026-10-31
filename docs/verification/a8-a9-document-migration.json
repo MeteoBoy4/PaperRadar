@@ -1,0 +1,348 @@
+{
+  "format_version": 1,
+  "artifact_kind": "scope_document_migration",
+  "issue": 128,
+  "authority": "https://github.com/MeteoBoy4/PaperRadar/issues/126#issuecomment-6536667331",
+  "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+  "inventory": {
+    "path": "docs/verification/scope-material-inventory.json",
+    "sha256": "6f742d2bd203cff104d36891035a08d9d13946b7bb0e9aa6950d26712ef9e5bd"
+  },
+  "removed_bindings": [
+    {
+      "group": "A8",
+      "kind": "fixture",
+      "path": "docs/contracts/pi-rpc.md",
+      "old_sha256": "033caa2e6cc3884076747dc63df46ef675d96d1c5c5ea3ac76f21936000cc2c6",
+      "category": "live_document",
+      "purpose": "A8：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "docs/verification/contracts-pi-rpc-history.md",
+          "docs/verification/a8-requirements.md",
+          "tests/fixtures/a8_capabilities.json"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a8_registration"
+      ]
+    },
+    {
+      "group": "A8",
+      "kind": "fixture",
+      "path": "docs/contracts/verification-status.md",
+      "old_sha256": "f485b6b6ebad3cf7791f69834fa0a00617b108a35ead4e74894100e7f0b826e8",
+      "category": "live_document",
+      "purpose": "A8：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "docs/verification/offline-evidence.md",
+          "scripts/verification_status.py"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a8_registration"
+      ]
+    },
+    {
+      "group": "A8",
+      "kind": "fixture",
+      "path": "README.md",
+      "old_sha256": "182b43f5d62898f8aa0261d20f80d3c1e0068d1b0f8a53c786f7c266f2d9a277",
+      "category": "live_document",
+      "purpose": "A8：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "non_evidence_context",
+        "materials": [],
+        "reason": "能力摘要和导航属于非证据上下文；不把摘要改动当历史能力证明。原组实际实现、测试、history 与覆盖材料继续冻结。"
+      },
+      "coupling_ids": [
+        "a8_registration"
+      ]
+    },
+    {
+      "group": "A9",
+      "kind": "fixture",
+      "path": "README.md",
+      "old_sha256": "182b43f5d62898f8aa0261d20f80d3c1e0068d1b0f8a53c786f7c266f2d9a277",
+      "category": "live_document",
+      "purpose": "A9：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "non_evidence_context",
+        "materials": [],
+        "reason": "能力摘要和导航属于非证据上下文；不把摘要改动当历史能力证明。原组实际实现、测试、history 与覆盖材料继续冻结。"
+      },
+      "coupling_ids": [
+        "a9_remaining_registration"
+      ]
+    },
+    {
+      "group": "A9",
+      "kind": "fixture",
+      "path": "GLOSSARY.md",
+      "old_sha256": "8864217fad4e0174398d314230155e145ee9b82185c0af5cf2769e38c88fc4d7",
+      "category": "live_document",
+      "purpose": "A9：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "tests/fixtures/a9_coverage.json",
+          "docs/verification/contracts-read-validation-history.md"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a9_remaining_registration"
+      ]
+    },
+    {
+      "group": "A9",
+      "kind": "fixture",
+      "path": "intent/draft.md",
+      "old_sha256": "1c6afa02e0bb16cb29263db3ea10d06255489aeea224eb6150bcf4c983f99f9d",
+      "category": "live_document",
+      "purpose": "A9：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "tests/fixtures/a9_coverage.json",
+          "docs/verification/a9-scope-review.md",
+          "contracts/read/read/v1/schema.json"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a9_remaining_registration"
+      ]
+    },
+    {
+      "group": "A9",
+      "kind": "fixture",
+      "path": "docs/contracts/read-validation.md",
+      "old_sha256": "7410da94bcf956f8624ae9d40b931b8fd6002d254e47fb62530391c015b7d458",
+      "category": "live_document",
+      "purpose": "A9：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "docs/verification/contracts-read-validation-history.md",
+          "tests/fixtures/a9_coverage.json"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a9_read_writer",
+        "a9_provenance_coverage",
+        "a9_integrity_negative",
+        "a9_scope_membership"
+      ]
+    },
+    {
+      "group": "A9",
+      "kind": "fixture",
+      "path": "docs/contracts/frozen-contracts.md",
+      "old_sha256": "1bd49925125e5abc7c6ef1958a81900693b5095eda1ac6b33b317108fdaf3b00",
+      "category": "live_document",
+      "purpose": "A9：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "contracts/read/read/v1/schema.json",
+          "contracts/read/read/v1/manifest.json",
+          "src/paper_radar/contracts/schema.py"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a9_remaining_registration"
+      ]
+    },
+    {
+      "group": "A9",
+      "kind": "fixture",
+      "path": "docs/contracts/runtime-config.md",
+      "old_sha256": "9ba9c6321680611cf4bd7dd7d9c88b3ea504f2047615d5371e85ee25498089dc",
+      "category": "live_document",
+      "purpose": "A9：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "docs/verification/contracts-runtime-config-history.md",
+          "src/paper_radar/config/schema.py"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a9_remaining_registration"
+      ]
+    },
+    {
+      "group": "A9",
+      "kind": "fixture",
+      "path": "docs/contracts/config-projections.md",
+      "old_sha256": "056d061d8ebf73f999ce2f5615d6032f9f8855b2b2ddcc7ed4f8bc04dd9d0f85",
+      "category": "live_document",
+      "purpose": "A9：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "src/paper_radar/config/projections.py",
+          "tests/fixtures/a9_coverage.json"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a9_remaining_registration"
+      ]
+    },
+    {
+      "group": "A9",
+      "kind": "fixture",
+      "path": "docs/contracts/config-snapshots.md",
+      "old_sha256": "2fc1940a9ad110f97447cad369dd49354b4940417d558543035213e8e8201402",
+      "category": "live_document",
+      "purpose": "A9：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "docs/verification/contracts-config-snapshots-history.md",
+          "tests/fixtures/a9_coverage.json"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a9_remaining_registration"
+      ]
+    },
+    {
+      "group": "A9",
+      "kind": "fixture",
+      "path": "docs/contracts/verification-status.md",
+      "old_sha256": "f485b6b6ebad3cf7791f69834fa0a00617b108a35ead4e74894100e7f0b826e8",
+      "category": "live_document",
+      "purpose": "A9：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "docs/verification/offline-evidence.md",
+          "scripts/verification_status.py"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a9_remaining_registration"
+      ]
+    },
+    {
+      "group": "A9",
+      "kind": "fixture",
+      "path": "docs/contracts/backup-restore.md",
+      "old_sha256": "accd5a6e259eac637dcb834b34288e1efe4914915ba66c7ef88d5aaf486dcc6a",
+      "category": "live_document",
+      "purpose": "A9：活规格、能力摘要、术语或现状契约上下文，不继续整文件冻结",
+      "classification_authority": "live_document",
+      "disposition": "remove_after_migration",
+      "replacement": {
+        "type": "frozen_materials",
+        "materials": [
+          "docs/verification/contracts-backup-restore-history.md",
+          "tests/fixtures/a9_coverage.json"
+        ],
+        "reason": "解除现状文档整文件绑定；所列原组固定材料承载历史要求、实现与证明边界。先迁移 writer/coverage/负例耦合，再解绑；不宣称 history 摘录覆盖现状契约全文。"
+      },
+      "coupling_ids": [
+        "a9_remaining_registration"
+      ]
+    }
+  ],
+  "writer_migration": {
+    "path": "scripts/a9_acceptance.py",
+    "old_sha256": "e1a5cd2d8f352de377f4a59d69cb9c5df0e8356c088f31274b3961d22895ce34",
+    "change": "_coverage 只核对冻结 Read history 的实际哈希及 US01–42/ID01–21/TD01–20；取消额外核对现状 Read Contract，不放宽其他文件字节与能力闭集检查。",
+    "coverage_pointer": {
+      "path": "tests/fixtures/a9_coverage.json",
+      "old_sha256": "36917e6f63fab382ad9b11afcbfb69b993d2e9e8a125596ee9e1dc09ba681650",
+      "capability": "provenance_replay",
+      "old_material": "docs/contracts/read-validation.md",
+      "new_material": "docs/verification/contracts-read-validation-history.md",
+      "semantic_basis": "冻结 history 的恢复范围保存回放切片与 A5 三元组边界；US10–12、US15–18、ID08、TD08 保存引用义务、orig charspan、多 provenance 和原字符保留的既有证明。src/paper_radar/reading/context.py 与 tests/test_read_context.py 指针不变；不主张真实 PDF provenance 或生产源文本恢复闭包。"
+    },
+    "coverage_counts": {
+      "stories_before": 42,
+      "stories_after": 42,
+      "implementation_decisions_before": 21,
+      "implementation_decisions_after": 21,
+      "testing_decisions_before": 20,
+      "testing_decisions_after": 20,
+      "comments_before": 4,
+      "comments_after": 4,
+      "capabilities_before": 12,
+      "capabilities_after": 12
+    }
+  },
+  "frozen_test_changes": [
+    {
+      "path": "tests/test_a9_scope.py",
+      "old_sha256": "843067698f290387b867b3dd42e81a52bcc1cc2eaed36f8f2a47ceedd2673ff7",
+      "test": "test_a9_scope_covers_actual_rules_support_and_omits_self_hash",
+      "old_material": "docs/contracts/read-validation.md",
+      "new_material": "docs/verification/a9-scope-review.md",
+      "reason": "S1(b)：原固定集合肯定断言必须移除活文档；等量改查本组已冻结的 scope 审阅台账，原 history 与 Read Schema 断言保留。",
+      "module_cases_before": 4,
+      "module_cases_after": 4,
+      "membership_assertions_before": 7,
+      "membership_assertions_after": 7
+    },
+    {
+      "path": "tests/test_a9_integrity.py",
+      "old_sha256": "bf7b9fe0c7856a3d652bcaa72474d93cf427e30930275cf0918072b0af53c853",
+      "test": "test_actual_rule_support_and_coverage_bytes_are_fixed",
+      "old_material": "docs/contracts/read-validation.md",
+      "new_material": "docs/verification/a9-scope-review.md",
+      "reason": "S1(b) 与 #128 评论：在原参数位置等量换为本组仍冻结、此前未列入的 scope 审阅台账。仍断言 failed、scope_drift 与 identity_changed，以及无 PRIVATE 泄漏；不选另一份活文档。",
+      "module_cases_before": 92,
+      "module_cases_after": 92,
+      "parameter_cases_before": 9,
+      "parameter_cases_after": 9
+    }
+  ],
+  "integration": {
+    "rebindings_performed": false,
+    "follow_up_issue": 131,
+    "expected_drift": "本票实际改动的 writer、coverage、两份冻结测试及 A8/A9 scope 字节保持待审查漂移；公共 verification-status Contract 的 A10 登记亦将漂移。仅隔离副本按本票已审查路径及 scope DAG 规范化用于相关 pytest 与入口兼容检查；正式树由 #131 统一重绑。",
+    "historical_evidence_changed": false
+  },
+  "new_tests": {
+    "path": "tests/test_a8_a9_document_scope.py",
+    "registered": false,
+    "seams": "S8(a)：公开审计与仓库副本中的现有 writer；合成回执仅核验接收协议，不冒充真实完整验收。"
+  }
+}

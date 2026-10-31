@@ -38,7 +38,7 @@
       ],
       "materials": [
         "src/paper_radar/reading/context.py",
-        "docs/contracts/read-validation.md"
+        "docs/verification/contracts-read-validation-history.md"
       ]
     },
     "numeric_diagnostics": {
