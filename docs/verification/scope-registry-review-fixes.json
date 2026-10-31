@@ -1,7 +1,7 @@
 {
   "format_version": 1,
   "issue": 137,
-  "reviewed_input_commit": "093ba1e486111a01a98c44ff8b5e3462beaf62ab",
+  "reviewed_input_commit": "6cee3a209a4bb636e8a32f9bf0e540c488473945",
   "baseline_commit": "e6c1ec74c9fc8d15fc8f76d2c8a7b29fcdda9438",
   "proof_boundary": "本轮开发验证与精确审阅授权;最终身份须外部绑定,正式唯一完整门禁由root承接;未运行live。",
   "findings": [
@@ -21,15 +21,15 @@
       "axis": "spec",
       "priority": "P2",
       "problem": "生产GROUPS验收语义被当作机械更新",
-      "resolution": "GROUPS与Group字段默认声明纳敏感摘要,全部影响组确认;普通helper实现变化仍机械,更新中央SHA不解除确认。"
+      "resolution": "GROUPS全部模块级Assign/AnnAssign/AugAssign声明按原序完整摘要,不按名称覆盖;Group字段默认值敏感,全部旧新计划组确认;普通helper仍机械。"
     }
   ],
   "new_coverage": [
     {
       "path": "tests/test_scope_review_fixes.py",
-      "cases": 9,
+      "cases": 16,
       "required": false,
-      "sha256": "b976052f6153cbed4332570da965d434ca0457bc9d7a4fd5c80c1d11054eb69c"
+      "sha256": "35d344c4c8edb6e37354d9cd119815547178e84ec5d1b8e8d5f4043a53d98809"
     }
   ],
   "case_breakdown": {
@@ -37,7 +37,9 @@
     "other_declaration_fields": 5,
     "ordinary_helper": 1,
     "text_cli": 1,
-    "default_dependency": 1
+    "default_dependency": 1,
+    "augmented_group_old_plan_confirmation": 1,
+    "earlier_declaration_after_extension": 6
   },
   "new_source_members": [],
   "ordinary_test_support_changes": [],
@@ -124,14 +126,14 @@
     {
       "path": "scripts/verification_scope_baseline.py",
       "old_sha256": "078c71a868048558962ab934a8594b5da3bb6560f892134a887061f06873b9d8",
-      "new_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+      "new_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
       "location": "scripts/verification_scope_materials.py",
       "direct_groups": [
         "A10",
         "A8",
         "A9"
       ],
-      "reason": "当前进程单向依赖registry并接收明确Callable;生产GROUPS及Group字段默认声明纳敏感摘要,语义变化全部组确认;旧确认绑定/漂移/基线规则保持。"
+      "reason": "当前进程单向依赖registry并接收明确Callable;生产GROUPS及Group字段默认声明纳敏感摘要,语义变化全部组确认;旧确认绑定/漂移/基线规则保持。 第二轮补齐全部有序GROUPS声明及增量,完整语义仍逐三组确认。"
     },
     {
       "path": "scripts/verification_scope_collection.py",
@@ -1588,32 +1590,32 @@
           "A8",
           "A9"
         ],
-        "new_entry_sha256": "a4d2d8794835321ed8039b85fd607d3517af003ac05a5eb719ee2e51769bd77e",
-        "new_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+        "new_entry_sha256": "8025352fb41ea4f57c717f155726e0673fa2777b7bc6fca8c492095fb8decc64",
+        "new_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
         "old_entry_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
         "old_sha256": null,
         "origin": "current_change",
         "path": "scripts/verification_scope_baseline.py",
         "registered_sha256": [
-          "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627"
+          "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d"
         ],
         "registrations": [
           {
-            "expected_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+            "expected_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
             "group": "A8",
             "kind": "source",
             "scope_path": "scripts/a8_scope.py",
             "tree": "current"
           },
           {
-            "expected_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+            "expected_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
             "group": "A9",
             "kind": "source",
             "scope_path": "scripts/a9_scope.py",
             "tree": "current"
           },
           {
-            "expected_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+            "expected_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
             "group": "A10",
             "kind": "source",
             "scope_path": "scripts/a10_scope.py",
@@ -1622,7 +1624,7 @@
         ],
         "sensitivity": "sensitive"
       },
-      "reason": "新source成员仍固定A8/A9/A10;当前进程仅依赖registry且显式接收Callable;生产GROUPS及Group字段声明默认值纳敏感摘要,全部影响组确认;保留旧身份/entry/dirty/target/base与hashdrift拒绝;逐三组确认。"
+      "reason": "保留v1新source在A8/A9/A10闭包与身份/漂移规则;生产GROUPS全部模块级Assign/AnnAssign/AugAssign声明按原序摘要,追加新组及追加后修改早先声明均要求旧新全部计划组确认;普通helper仍机械;逐A8/A9/A10确认。"
     },
     {
       "change": {
@@ -3150,32 +3152,32 @@
             "A8",
             "A9"
           ],
-          "new_entry_sha256": "a4d2d8794835321ed8039b85fd607d3517af003ac05a5eb719ee2e51769bd77e",
-          "new_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+          "new_entry_sha256": "8025352fb41ea4f57c717f155726e0673fa2777b7bc6fca8c492095fb8decc64",
+          "new_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
           "old_entry_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
           "old_sha256": null,
           "origin": "current_change",
           "path": "scripts/verification_scope_baseline.py",
           "registered_sha256": [
-            "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627"
+            "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d"
           ],
           "registrations": [
             {
-              "expected_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+              "expected_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
               "group": "A8",
               "kind": "source",
               "scope_path": "scripts/a8_scope.py",
               "tree": "current"
             },
             {
-              "expected_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+              "expected_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
               "group": "A9",
               "kind": "source",
               "scope_path": "scripts/a9_scope.py",
               "tree": "current"
             },
             {
-              "expected_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+              "expected_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
               "group": "A10",
               "kind": "source",
               "scope_path": "scripts/a10_scope.py",
@@ -3184,7 +3186,7 @@
           ],
           "sensitivity": "sensitive"
         },
-        "reason": "新source成员仍固定A8/A9/A10;当前进程仅依赖registry且显式接收Callable;生产GROUPS及Group字段声明默认值纳敏感摘要,全部影响组确认;保留旧身份/entry/dirty/target/base与hashdrift拒绝;逐三组确认。"
+        "reason": "保留v1新source在A8/A9/A10闭包与身份/漂移规则;生产GROUPS全部模块级Assign/AnnAssign/AugAssign声明按原序摘要,追加新组及追加后修改早先声明均要求旧新全部计划组确认;普通helper仍机械;逐A8/A9/A10确认。"
       }
     },
     {
@@ -3425,7 +3427,12 @@
     "stage2-review-fix-reviewed-delta.json": "6b0f049a5c5e8b9d85a4e9beee2b977b1f37b8523ef69caf800b4090e2938225",
     "stage2-review-fix-review-basis.py": "a899094fb25767c5ad1daa55a77565774edd1d0b140e6666235ccb67f04d0e1c",
     "stage2-review-fix-rebind.py": "ed59bf85d109bc3d1a19d94069d1c1c6ed6a7146bcbe44b33f7470bc5e5dc2ff",
-    "stage2-review-fix-bind-confirmations.py": "e6235559cfd73bf405556eb0a313526c3f90edf455e6cb3ec982d5ba0226f595"
+    "stage2-review-fix-bind-confirmations.py": "e6235559cfd73bf405556eb0a313526c3f90edf455e6cb3ec982d5ba0226f595",
+    "stage2-review-fix-v2-reviewed-changes.json": "64c4525e7bdcb3e9b03fdba9d233d899757bd3b3cc554cde0bc4ab088e2effa5",
+    "stage2-review-fix-v2-reviewed-delta.json": "e38925716461a2b83a723de1e5406a289a7107f0c5899f0cfdf44fc2133d7a05",
+    "stage2-review-fix-v2-review-basis.py": "802866130ef45e955c9b45cacb0d669327b483fdeba4e2869ecf74f5a3563a75",
+    "stage2-review-fix-v2-rebind.py": "b28128060da00d2cae9f10272fb55caed13fc9b132f982449b20c03296a114c5",
+    "stage2-review-fix-v2-bind-confirmations.py": "78cc0c1b36a1b066a87bb28fc6b1b3eb7d42c35616c962e27b4477b57e55a54f"
   },
   "validation": {
     "ruff_check": "全项目通过",
@@ -3433,23 +3440,179 @@
     "mypy": "707 source files passed",
     "related": [
       {
-        "modules": 19,
-        "passed": 241,
-        "seconds": 217.51
-      },
-      {
-        "modules": 4,
-        "passed": 64,
-        "seconds": 48.23
+        "modules": 3,
+        "passed": 72,
+        "seconds": 86.81
       }
     ],
-    "related_total": 305,
-    "coverage_boundary": "原269组合+本轮9新回归+27额外相关例;不扩大旧分母。",
-    "compatibility_all": "176 passed; exit0;详见树外原始log",
-    "default_audit": "实际五路径重绑后exit0,issues=[]",
-    "default_collection": "exit0;285模块5281例;skip0/deselect0",
-    "explicit_audit": "待提交后以本轮精确树外依据绑定当前候选身份并验证;最终merge/root须重新绑定。",
-    "full_offline_gate": "未运行,留最终集成与复核后唯一执行者",
+    "related_total": 72,
+    "coverage_boundary": "本轮34基线+22真实新组+16独立回归;v1的305相关与176兼容保留原版本证据,本轮未重跑正常行为未变的all组合。",
+    "default_audit": "本轮唯一源码精确重绑后文件全部ok;默认公开审计exit0另见树外结果",
+    "explicit_audit": "待本轮提交后以v2精确树外依据绑定并显式collect;新merge/root须重新绑定。",
+    "full_offline_gate": "未运行,留最终唯一执行者",
     "live": "未运行"
-  }
+  },
+  "revision": 2,
+  "previous_review_fix": {
+    "candidate_commit": "249652db91e0f3f99635ea19c5aa1bc540fd493d",
+    "integrated_commit": "6cee3a209a4bb636e8a32f9bf0e540c488473945",
+    "cases": 9,
+    "validation": {
+      "ruff_check": "全项目通过",
+      "ruff_format": "980 files already formatted",
+      "mypy": "707 source files passed",
+      "related": [
+        {
+          "modules": 19,
+          "passed": 241,
+          "seconds": 217.51
+        },
+        {
+          "modules": 4,
+          "passed": 64,
+          "seconds": 48.23
+        }
+      ],
+      "related_total": 305,
+      "coverage_boundary": "原269组合+本轮9新回归+27额外相关例;不扩大旧分母。",
+      "compatibility_all": "176 passed; exit0;详见树外原始log",
+      "default_audit": "实际五路径重绑后exit0,issues=[]",
+      "default_collection": "exit0;285模块5281例;skip0/deselect0",
+      "explicit_audit": "待提交后以本轮精确树外依据绑定当前候选身份并验证;最终merge/root须重新绑定。",
+      "full_offline_gate": "未运行,留最终集成与复核后唯一执行者",
+      "live": "未运行"
+    },
+    "remaining_finding": "GROUPS +=增量未入摘要;仅新增组自己的确认可绕过旧11组。"
+  },
+  "ordered_declaration_regression": {
+    "initial": [
+      "Assign",
+      "AnnAssign"
+    ],
+    "extension": [
+      "Assign",
+      "AnnAssign",
+      "AugAssign"
+    ],
+    "cases": 6,
+    "previous_state": "首声明变化被末尾同名声明覆盖,6场景均修前失败",
+    "new_state": "全部顺序声明均保留,6场景通过"
+  },
+  "incremental_rebindings_v2": [
+    {
+      "path": "scripts/verification_scope_baseline.py",
+      "old_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+      "new_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
+      "location": "scripts/verification_scope_materials.py",
+      "direct_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "reason": "保留生产GROUPS全部模块级Assign/AnnAssign/AugAssign声明的有序摘要,使新增组和追加后的早先声明变化都要求全部计划组确认;原确认身份/普通helper分类不变。"
+    }
+  ],
+  "reviewed_delta_from_v1": [
+    {
+      "path": "scripts/verification_scope_baseline.py",
+      "old": {
+        "change": {
+          "affected_groups": [
+            "A10",
+            "A8",
+            "A9"
+          ],
+          "category": "registration",
+          "groups": [
+            "A10",
+            "A8",
+            "A9"
+          ],
+          "new_entry_sha256": "a4d2d8794835321ed8039b85fd607d3517af003ac05a5eb719ee2e51769bd77e",
+          "new_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+          "old_entry_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "old_sha256": null,
+          "origin": "current_change",
+          "path": "scripts/verification_scope_baseline.py",
+          "registered_sha256": [
+            "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627"
+          ],
+          "registrations": [
+            {
+              "expected_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+              "group": "A8",
+              "kind": "source",
+              "scope_path": "scripts/a8_scope.py",
+              "tree": "current"
+            },
+            {
+              "expected_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+              "group": "A9",
+              "kind": "source",
+              "scope_path": "scripts/a9_scope.py",
+              "tree": "current"
+            },
+            {
+              "expected_sha256": "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627",
+              "group": "A10",
+              "kind": "source",
+              "scope_path": "scripts/a10_scope.py",
+              "tree": "current"
+            }
+          ],
+          "sensitivity": "sensitive"
+        },
+        "reason": "新source成员仍固定A8/A9/A10;当前进程仅依赖registry且显式接收Callable;生产GROUPS及Group字段声明默认值纳敏感摘要,全部影响组确认;保留旧身份/entry/dirty/target/base与hashdrift拒绝;逐三组确认。"
+      },
+      "new": {
+        "change": {
+          "affected_groups": [
+            "A10",
+            "A8",
+            "A9"
+          ],
+          "category": "registration",
+          "groups": [
+            "A10",
+            "A8",
+            "A9"
+          ],
+          "new_entry_sha256": "8025352fb41ea4f57c717f155726e0673fa2777b7bc6fca8c492095fb8decc64",
+          "new_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
+          "old_entry_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "old_sha256": null,
+          "origin": "current_change",
+          "path": "scripts/verification_scope_baseline.py",
+          "registered_sha256": [
+            "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d"
+          ],
+          "registrations": [
+            {
+              "expected_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
+              "group": "A8",
+              "kind": "source",
+              "scope_path": "scripts/a8_scope.py",
+              "tree": "current"
+            },
+            {
+              "expected_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
+              "group": "A9",
+              "kind": "source",
+              "scope_path": "scripts/a9_scope.py",
+              "tree": "current"
+            },
+            {
+              "expected_sha256": "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d",
+              "group": "A10",
+              "kind": "source",
+              "scope_path": "scripts/a10_scope.py",
+              "tree": "current"
+            }
+          ],
+          "sensitivity": "sensitive"
+        },
+        "reason": "保留v1新source在A8/A9/A10闭包与身份/漂移规则;生产GROUPS全部模块级Assign/AnnAssign/AugAssign声明按原序摘要,追加新组及追加后修改早先声明均要求旧新全部计划组确认;普通helper仍机械;逐A8/A9/A10确认。"
+      }
+    }
+  ]
 }

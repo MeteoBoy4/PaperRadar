@@ -95,7 +95,7 @@ SHARED_MATERIALS = {
         "599fa750491e60f8482524266d7a5f771d3007811e120d91968071943db13c9f"
     ),
     "scripts/verification_scope_baseline.py": (
-        "b123eeb302638d10604899136f1c4f2f67de0786477940b97dfdd2d82b9df627"
+        "5b635cd206c9abac612676bc6252f23b4aef8fa45ce32962f02fe9f2be77f59d"
     ),
     "scripts/verification_scope_collection.py": (
         "83f038a2d15c10058bd53bcb2a05808453718bdcf9812cd51a5997b20477b3ad"

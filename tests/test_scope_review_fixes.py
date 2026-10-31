@@ -157,3 +157,129 @@ def test_group_default_dependency_is_part_of_declaration_semantics(
         )
         == 11
     )
+
+
+def test_augmented_group_requires_confirmation_from_existing_plan(
+    tmp_path: Path,
+) -> None:
+    from tests.extensible_acceptance_support import register_synthetic
+    from tests.test_scope_baseline_audit import confirmations_for
+
+    root = repository_copy(tmp_path / "repo")
+    git(root, "branch", "review-target")
+    base = git(root, "rev-parse", "HEAD")
+    register_synthetic(root, update_expectation=False, reader=False)
+
+    report = audit_baseline(root, base=base, integration_target="review-target")
+
+    change = next(c for c in report["baseline"]["changes"] if c["path"] == GROUPS_PATH)
+    assert change["category"] == "format_or_criteria"
+    assert change["sensitivity"] == "sensitive"
+    assert set(change["affected_groups"]) == {
+        "A1",
+        "A2-01",
+        "完整 A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10",
+        "合成新组",
+    }
+    only_new_group = [
+        confirmation
+        for confirmation in confirmations_for(report)
+        if confirmation["group"] == "合成新组"
+    ]
+    confirmed = audit_baseline(
+        root,
+        base=base,
+        integration_target="review-target",
+        confirmations=only_new_group,
+    )
+    assert confirmed["exit_code"] == 1
+    assert {
+        issue["group"]
+        for issue in confirmed["issues"]
+        if issue["reason"] == "confirmation_required" and issue["path"] == GROUPS_PATH
+    } == {"A1", "A2-01", "完整 A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"}
+
+
+@pytest.mark.parametrize("initial", ["assign", "annotated"])
+@pytest.mark.parametrize("extension", ["assign", "annotated", "augmented"])
+def test_earlier_group_declaration_remains_sensitive_after_extension(
+    tmp_path: Path, initial: str, extension: str
+) -> None:
+    from tests.extensible_acceptance_support import register_synthetic
+
+    root = repository_copy(tmp_path / "repo")
+    register_synthetic(root, update_expectation=False, reader=False)
+    declaration = root / GROUPS_PATH
+    previous_sha = hashlib.sha256(declaration.read_bytes()).hexdigest()
+    text = declaration.read_text()
+    if initial == "annotated":
+        text = text.replace("\nGROUPS = (", "\nGROUPS: tuple[Group, ...] = (", 1)
+    if extension == "assign":
+        text = text.replace("GROUPS += (", "GROUPS = GROUPS + (")
+    elif extension == "annotated":
+        text = text.replace("GROUPS += (", "GROUPS: tuple[Group, ...] = GROUPS + (")
+    declaration.write_text(text)
+    central = root / "scripts/verification_scope_materials.py"
+    assert central.read_text().count(previous_sha) == 1
+    central.write_text(
+        central.read_text().replace(
+            previous_sha, hashlib.sha256(declaration.read_bytes()).hexdigest()
+        )
+    )
+    git(root, "add", ".")
+    git(
+        root,
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.invalid",
+        "commit",
+        "-m",
+        "existing extended plan",
+    )
+    git(root, "branch", "review-target")
+    base = git(root, "rev-parse", "HEAD")
+    previous_sha = hashlib.sha256(declaration.read_bytes()).hexdigest()
+    declaration.write_text(
+        declaration.read_text().replace(
+            'Group("A1", ".a1.json", True,', 'Group("A1", ".a1.json", False,', 1
+        )
+    )
+    assert central.read_text().count(previous_sha) == 1
+    central.write_text(
+        central.read_text().replace(
+            previous_sha, hashlib.sha256(declaration.read_bytes()).hexdigest()
+        )
+    )
+
+    report = audit_baseline(root, base=base, integration_target="review-target")
+
+    change = next(c for c in report["baseline"]["changes"] if c["path"] == GROUPS_PATH)
+    assert change["category"] == "format_or_criteria"
+    assert change["sensitivity"] == "sensitive"
+    assert {
+        issue["group"]
+        for issue in report["issues"]
+        if issue["reason"] == "confirmation_required" and issue["path"] == GROUPS_PATH
+    } == {
+        "A1",
+        "A2-01",
+        "完整 A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10",
+        "合成新组",
+    }
