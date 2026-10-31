@@ -35,6 +35,7 @@
 - [测试](docs/agents/testing.md)：写测试、修 Bug、改 migration 或运行 live 验收时。
 - [CLI 与用户输出](docs/agents/cli-output.md)：改动 CLI、错误信息或报告文本时。
 - [文档维护](docs/agents/documentation.md)：改动公共 Contract、Schema、vocabulary、版本语义或架构时。
+- [固定范围与集成](docs/agents/verification-scope.md)：改动固定材料或登记、合并 spec、审阅候选或准备收口门禁时。
 - [重构](docs/agents/refactor.md)：用户明确把任务定为重构时（例如 issue 本身就是重构），或新增模块前。
 
 ## Agent skills

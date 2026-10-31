@@ -100,6 +100,7 @@ flowchart TD
 - Audit/Source：I14、I15、T01、T26。
 - Feed：I07，以及[强冲突与语言事实](../intent/draft.md#阶段-c四刊发现身份版本与来源)。
 - Body/B：I03–I13、T02–T25、D02、D04 中的 B 消费者；另落实[StageInput C1](contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)、EXP-6、EXP-7。B 生产 value 登记须先交付真实生产 boundary/RPC 成功来源，保留 test 来源拒绝；在受限实验根核实 JGR 生产解析字段、entry 稳定性、主摘要非截断及语言来源约定，并完成真实材料与审计的字段差异审查、样本冻结和隔离恢复。Body 最小 Read 票另承接输入身份、任务/预算/租约/retry、analysis 持久化与证据规则身份（[规格补充准入](../intent/draft.md#b-最小-read-与正文消费)、[read-validation](contracts/read-validation.md)）；B 首张真实任务票另承接 Screening 产品接线，含 failures/retry、trace 组合及中文 help/退出码/恢复验证，不能后推到 H（[规格补充准入](../intent/draft.md#b-screening-产品接线)、[screening-tasks](contracts/screening-tasks.md)）。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[组合契约](contracts/feed-pipeline.md)、[parser 固定回归边界](verification/feed-parser-v1.md)；EXP-1、DEC-1/2/3 不由 Feed 工程完成替代。
+- Body/B 首个新增 migration 票：实施前核实 [#138 head 字面量集中化评估](https://github.com/MeteoBoy4/PaperRadar/issues/138) 的承接与结论，并按[唯一集成规则](agents/verification-scope.md#共享资源串行与后续承接)处理实际 head 争用；此承接不新增 B/Body 对 Scope spec 的功能依赖。
 - C：I10、I12、I15、T01、T15–T19、T23、T24、T26；承接四刊生产采集扩展、保留器与未揭晓事实扩展、来源假设与语言约定核实、7 天复查/metadata_unobtainable 生命周期及完整 eligibility，不能从 JGR 合成材料推定四刊就绪。保留器装配 waiting_calibration 与身份/合并链全部仍成立的隐藏条件，存活论文继承事实，再调用共享 visibility；实际隐藏须做消费者组合验证。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[元数据契约](contracts/feed-metadata.md)、[共享规则](contracts/eligibility-visibility.md)。
 - F/Abstract：I09、I14、I15、T01、T10、T20、T26。
 - D：I03、I06、I09、I12、I15、T04、T07–T10、T14–T17、T19、T20、T23、T24、T26。
@@ -144,7 +145,7 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 
 ## 未成形
 
-[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 承接 Verification Scope 文档解耦、集中登记与并行集成；按 S7(c) 不增模块、不阻塞 B。活文档解绑与当前单 spec 规则见[项目规则](agents/verification-scope.md)，第一步候选事实见[迁移台账](verification/scope-document-migration.md)。第一步已独立审阅、门禁并保持提交身份合入 main；第二步基于该稳定提交。显式基线审计、全部共享材料中央登记与 scope 显式引用已实现，迁移事实见[第二步台账](verification/scope-shared-dag-delivery.md)；新组机制、跨 spec 自动回归和最终统一重绑/门禁由后续切片承接。
+[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 取代 #112，承接 Verification Scope 文档解耦、集中登记与并行集成；按 S7(c) 不增模块、不阻塞 B。单 spec、跨 spec 与资源串行统一执行[唯一集成规则](agents/verification-scope.md)，第一步事实见[迁移台账](verification/scope-document-migration.md)。第一步已独立审阅、门禁并保持提交身份合入 main；第二步基于该稳定提交。显式基线审计、全部共享材料中央登记与 scope 显式引用已实现，迁移事实见[第二步台账](verification/scope-shared-dag-delivery.md)；跨 spec 自动回归见[独立覆盖台账](verification/scope-parallel-integration-delivery.md)。新组机制与最终组合审阅、必要重绑和唯一授权门禁仍须在最终集成树收口。
 
 Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各自入口、承接责任与待裁决项；依据[§11](../intent/draft.md#十一九阶段实施与验收)。
 
@@ -175,7 +176,7 @@ Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各�
 
 ## 收口安排
 
-A 窄收口新增能力沿用 #114 先例：独立新测试模块作为工程证据，登记到 [A 窄收口覆盖台账](verification/a-narrow-delivery.md)，不计入历史固定分母、不新增既有 required 集合、不改 verification_status 后缀白名单及「十四份 JSON」承诺。最终集成树须在同一次完整门禁中由可信 terminal 证明全部 required 通过；新增能力不得复用 A1–A10 历史结论，`stage_a_verified=false` 保持。机器可读新组注册机制由 [#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 第二步承接；是否、何时将 #114/#120 能力转为 required 组及完整 A 结论仍由 A 真正收口票决定；B 沿用此规则，子票无需为新增组重绑（[#120 D1](https://github.com/MeteoBoy4/PaperRadar/issues/120#issuecomment-6520223100)）。
+A 窄收口新增能力沿用 #114 先例：独立新测试模块作为工程证据，登记到 [A 窄收口覆盖台账](verification/a-narrow-delivery.md)，不计入历史固定分母、不新增既有 required 集合。历史台账和回执保持原字节与原证明范围；新增能力不得复用 A1–A10 历史结论，`stage_a_verified=false` 保持。机器可读新组注册机制由 [#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 第二步承接，测试预期清单与读者支持格式独立维护；是否、何时将 #114/#120 能力转为 required 组及完整 A 结论仍由 A 真正收口票决定。B 沿用此 D1 政策，集成与门禁执行[唯一规则](agents/verification-scope.md)（[#120 D1](https://github.com/MeteoBoy4/PaperRadar/issues/120#issuecomment-6520223100)）。
 
 [阶段 A 收口清单](verification/stage-a-closure.md) 保留规格 §11 A 原实施/测试/DoD 的稳定序号、
 历史证据与后续责任。A1–A10 通过不等于完整 A 通过。该收口清单是过渡清单；A 真正收口时

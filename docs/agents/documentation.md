@@ -66,7 +66,7 @@
 分类事实由 `docs/verification/scope-material-inventory.json` 的精确路径清单维护，新增或改类须显式审阅；未知文档仍按固定材料处理。
 history、需求/覆盖台账、冻结摘录、ADR、Schema、代码、测试、fixture 与依赖身份继续保持固定材料约束。
 改文档或固定材料、开展 spec 集成与收口时，读取并执行
-[固定范围与集成规则](verification-scope.md)；中央登记与新组机制的目标及交付边界也在那里说明。
+[固定范围与集成规则](verification-scope.md)；它是共享中央登记、分级确认及集成顺序的唯一权威。
 
 **变更协议**：一次裁决或实现落地时，在同一变更内依次检查：
 
