@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 from dataclasses import fields
 from enum import StrEnum
@@ -47,6 +48,8 @@ from scripts.verification_checks import (
 from scripts.verification_identity import RunIdentity, capture_identity
 from scripts.verification_publication import publish_conclusion
 from scripts.verification_run import VerificationRun
+from scripts.verification_scope_audit import audit_scopes
+from scripts.verification_scope_registry import load_scopes
 
 
 class A8ReasonCode(StrEnum):
@@ -160,6 +163,37 @@ def _capability_materials(root: Path) -> dict[str, Any] | None:
     except (OSError, ValueError):
         return None
     return value if isinstance(value, dict) else None
+
+
+def _scope_references(root: Path) -> set[str]:
+    from scripts.a2_full_acceptance import acceptance_groups
+
+    # 既有 writer 支持同进程在副本 root 上执行。这里只从正在执行的 registry
+    # 取得 writer 相对位置,登记常量与中央 SHA 仍由传入 root 自己的 AST 提供。
+    implementation = Path(__file__).resolve().parents[1]
+    writers = []
+    for group in acceptance_groups():
+        source = inspect.getsourcefile(group.write)
+        if source is None:
+            continue
+        try:
+            path = Path(source).resolve().relative_to(implementation).as_posix()
+        except ValueError:
+            continue
+        writers.append((group.name, path))
+    scopes = tuple(
+        scope
+        for scope in load_scopes(root, writers=tuple(writers))
+        if scope.group == "A8"
+    )
+    if audit_scopes(root, scopes)["issues"]:
+        return set()
+    return {
+        path
+        for scope in scopes
+        if isinstance(scope.references, tuple)
+        for path in scope.references
+    }
 
 
 def _same_formats(actual: object, expected: object) -> bool:
@@ -443,7 +477,9 @@ def write_a8_conclusion(
                     )
         capability_evidence = _capability_materials(root)
         result["capability_evidence"] = capability_evidence
-        fixed_paths = {
+        # 冻结能力材料中的 scope 指针复用经结构核验的显式证明引用;
+        # 这些登记数据仍由运行身份保护, 不重新引入逐文件哈希。
+        fixed_paths = _scope_references(root) | {
             name
             for name, _ in (
                 *REQUIRED_TEST_MODULES,

@@ -247,7 +247,7 @@ REQUIRED_TEST_MODULES = (
 REQUIRED_SOURCE_MODULES = (
     (
         "src/paper_radar/config/readiness.py",
-        "5b948021ef13dcc628d56f1e6b9736292b0b121a7f07df7833a5e6f00a098b37",
+        SHARED_MATERIALS["src/paper_radar/config/readiness.py"],
     ),
     (
         "src/paper_radar/fixture_audit/service_reads.py",
@@ -265,102 +265,27 @@ REQUIRED_SOURCE_MODULES = (
         "scripts/a10_coverage.py",
         "621742b9602fa50e82da2f57a5ec2b6e7216f7876ffc37bd8b38c87fdfdc6e86",
     ),
-    (
-        "scripts/a1_acceptance.py",
-        "6d823619d4a139c5df7d19be39f7c5ec409af2a7d7d1864d757dcc7fa697b4df",
-    ),
-    (
-        "scripts/a1_scope.py",
-        "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
-    ),
-    (
-        "scripts/a2_acceptance.py",
-        "0843f426d5d59f9d53d718cd7962cee769d0308eda47138d79f0766f43e01c0b",
-    ),
+    ("scripts/a1_acceptance.py", SHARED_MATERIALS["scripts/a1_acceptance.py"]),
+    ("scripts/a2_acceptance.py", SHARED_MATERIALS["scripts/a2_acceptance.py"]),
     (
         "scripts/a2_full_acceptance.py",
         SHARED_MATERIALS["scripts/a2_full_acceptance.py"],
     ),
-    (
-        "scripts/a2_full_scope.py",
-        "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
-    ),
-    (
-        "scripts/a2_test_receipt.py",
-        SHARED_MATERIALS["scripts/a2_test_receipt.py"],
-    ),
-    (
-        "scripts/a3_acceptance.py",
-        "bee7e6b29c2fe1ef4e96311a3c1626e24c7266e440c2e1a685afba1a0448229e",
-    ),
-    (
-        "scripts/a3_scope.py",
-        "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
-    ),
-    (
-        "scripts/a4_acceptance.py",
-        "1fff915ac03183daa659281ad3119e2281bd1f052fe4946a3062d70d454caae2",
-    ),
-    (
-        "scripts/a4_scope.py",
-        "14fff7afafefb2dbacd6505e4f9cabd6745ef60cb5ba49f2c588ac73c9b203a7",
-    ),
-    (
-        "scripts/a5_acceptance.py",
-        "ed5517bec34993540c276c6136b7f30e685559f84a0e9dfd9c9fced3769a95d3",
-    ),
-    (
-        "scripts/a5_scope.py",
-        "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
-    ),
-    (
-        "scripts/a6_acceptance.py",
-        "ebd079873bbe3e440ff109d34cc84dc21ab65209a8033dc63e356c3d44ba040d",
-    ),
-    (
-        "scripts/a6_scope.py",
-        "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265",
-    ),
-    (
-        "scripts/a7_acceptance.py",
-        "2752e1d75cb0ee64efdfe1cf27a1e30c08fb054db20ec25c810e36f791b8a565",
-    ),
-    (
-        "scripts/a7_scope.py",
-        "159e2feaae01cdd2caafc2b76d374c075aea8a2d42dbe96f67a9b6993ed49030",
-    ),
-    (
-        "scripts/a8_acceptance.py",
-        "38d9a4ef5d3078498edefc9d71bf8de1999a0a11db327652fa960147110d2153",
-    ),
-    (
-        "scripts/a8_scope.py",
-        "7e9c6020314c8efa9dcba8dce02f78d61586c7d8def2026e6f6498413a7ecdc2",
-    ),
-    (
-        "scripts/a9_acceptance.py",
-        "9b566dd59ea82caa62ccaffdf32203627db73af4d7734e8e2ddfbbe8320d8899",
-    ),
-    (
-        "scripts/a9_scope.py",
-        "3eab2802e6f159c621918623fd87a6f73b87965f0ed6b5c905ce40bcd4f0ac44",
-    ),
+    ("scripts/a2_test_receipt.py", SHARED_MATERIALS["scripts/a2_test_receipt.py"]),
+    ("scripts/a3_acceptance.py", SHARED_MATERIALS["scripts/a3_acceptance.py"]),
+    ("scripts/a4_acceptance.py", SHARED_MATERIALS["scripts/a4_acceptance.py"]),
+    ("scripts/a5_acceptance.py", SHARED_MATERIALS["scripts/a5_acceptance.py"]),
+    ("scripts/a6_acceptance.py", SHARED_MATERIALS["scripts/a6_acceptance.py"]),
+    ("scripts/a7_acceptance.py", SHARED_MATERIALS["scripts/a7_acceptance.py"]),
+    ("scripts/a8_acceptance.py", SHARED_MATERIALS["scripts/a8_acceptance.py"]),
+    ("scripts/a9_acceptance.py", SHARED_MATERIALS["scripts/a9_acceptance.py"]),
     (
         "scripts/audit-verification-scope",
         "cdc851a05e315b28c27451d39575c5cb41414c9cde9335c2ae65750fb667a17d",
     ),
-    (
-        "scripts/check-offline",
-        SHARED_MATERIALS["scripts/check-offline"],
-    ),
-    (
-        "scripts/offline_evidence.py",
-        SHARED_MATERIALS["scripts/offline_evidence.py"],
-    ),
-    (
-        "scripts/verification-status",
-        "b761281e99e934dfba7949212156ce19f403068414033cb5b194768b684ee4cd",
-    ),
+    ("scripts/check-offline", SHARED_MATERIALS["scripts/check-offline"]),
+    ("scripts/offline_evidence.py", SHARED_MATERIALS["scripts/offline_evidence.py"]),
+    ("scripts/verification-status", SHARED_MATERIALS["scripts/verification-status"]),
     (
         "scripts/verification_checks.py",
         SHARED_MATERIALS["scripts/verification_checks.py"],
@@ -373,10 +298,7 @@ REQUIRED_SOURCE_MODULES = (
         "scripts/verification_publication.py",
         SHARED_MATERIALS["scripts/verification_publication.py"],
     ),
-    (
-        "scripts/verification_run.py",
-        SHARED_MATERIALS["scripts/verification_run.py"],
-    ),
+    ("scripts/verification_run.py", SHARED_MATERIALS["scripts/verification_run.py"]),
     (
         "scripts/verification_scope_audit.py",
         SHARED_MATERIALS["scripts/verification_scope_audit.py"],
@@ -391,167 +313,164 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/backup/__init__.py",
-        "b03e71f04496d78aceb9ab27b399945c72d4ac150db3a47f45e52a6696558078",
+        SHARED_MATERIALS["src/paper_radar/backup/__init__.py"],
     ),
     (
         "src/paper_radar/backup/cli.py",
-        "731e05af4659eefa8c52707516525e27244265ae0bdbd4a6a364228fda92d838",
+        SHARED_MATERIALS["src/paper_radar/backup/cli.py"],
     ),
     (
         "src/paper_radar/backup/cli_support.py",
-        "08b5de8379ea9c357d7ed05c1d4a33f145d56066842e993a8cc0e7301dcb298e",
+        SHARED_MATERIALS["src/paper_radar/backup/cli_support.py"],
     ),
     (
         "src/paper_radar/backup/files.py",
-        "8bf4f05fea2085b1e6b25bb0ae426db2c13da47aa314dd695a1cd5c5259d36b8",
+        SHARED_MATERIALS["src/paper_radar/backup/files.py"],
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "f3022f086d2de599ee7a0e6c2cf57a3d7ec75eed196553f891a6f807de75ab79",
+        SHARED_MATERIALS["src/paper_radar/backup/manifest.py"],
     ),
     (
         "src/paper_radar/backup/restore.py",
-        "13d80b3ce3239dcc8159d02cc91ac50ac6abec1f526a8337b16fad8aba77b46f",
+        SHARED_MATERIALS["src/paper_radar/backup/restore.py"],
     ),
     (
         "src/paper_radar/backup/restore_cli.py",
-        "d168d5159b481ac48fdeff10c2931052a490cb1eea58b784a8494ce2cf81b6e5",
+        SHARED_MATERIALS["src/paper_radar/backup/restore_cli.py"],
     ),
     (
         "src/paper_radar/backup/restore_contract.py",
-        "9f251dd2aa193d3a6908361fd813c184d6dbe605aec122a7cf0de0db9262bb13",
+        SHARED_MATERIALS["src/paper_radar/backup/restore_contract.py"],
     ),
     (
         "src/paper_radar/backup/service.py",
-        "ca0eccbe1b49772e9376172c489e129fef98743a79e12b566a2b6dad33534e4d",
+        SHARED_MATERIALS["src/paper_radar/backup/service.py"],
     ),
-    (
-        "src/paper_radar/cli.py",
-        "ee2e1dc3ac969aa30c74989bb0b19bf7ad30c5b404a894bc5e73b4dca8d23689",
-    ),
+    ("src/paper_radar/cli.py", SHARED_MATERIALS["src/paper_radar/cli.py"]),
     (
         "src/paper_radar/config/__init__.py",
-        "e8e1844c436c97d48bfca7341cfc855502917767bc8da9e6924c3c12d0b9e4f1",
+        SHARED_MATERIALS["src/paper_radar/config/__init__.py"],
     ),
     (
         "src/paper_radar/config/adapter_loading.py",
-        "473a830cef0b15e4c63c387c7e5d386cc167ca1b18e27a5f203ce8eabdd80072",
+        SHARED_MATERIALS["src/paper_radar/config/adapter_loading.py"],
     ),
     (
         "src/paper_radar/config/adapters.py",
-        "09eba6119e74e25d50e493281d00c4ec978ce4e5e874bed7731d1822d92f1c3a",
+        SHARED_MATERIALS["src/paper_radar/config/adapters.py"],
     ),
     (
         "src/paper_radar/config/cli.py",
-        "1bbec637e1017146c595f3aba6bf6b616e067bb20df48581b3d1ac28558c986f",
+        SHARED_MATERIALS["src/paper_radar/config/cli.py"],
     ),
     (
         "src/paper_radar/config/compile.py",
-        "58cc5454dfe5e662f0e7eef0f884c2b562891f9ae7b0a709fbf78984eb81654e",
+        SHARED_MATERIALS["src/paper_radar/config/compile.py"],
     ),
     (
         "src/paper_radar/config/diff.py",
-        "add553638b26d691e1f8ca7fb69261347a5dfff00b5b34288cf8f866f0810b5d",
+        SHARED_MATERIALS["src/paper_radar/config/diff.py"],
     ),
     (
         "src/paper_radar/config/errors.py",
-        "b758636b6e568235bbbc26e1b8c2b7e288a2ba30384b9572d43d4c7a387a5928",
+        SHARED_MATERIALS["src/paper_radar/config/errors.py"],
     ),
     (
         "src/paper_radar/config/escalation.py",
-        "086813af87547c24fce5b2940e6fb773b276a63f7ac880637311e3b24443d24d",
+        SHARED_MATERIALS["src/paper_radar/config/escalation.py"],
     ),
     (
         "src/paper_radar/config/extraction.py",
-        "5e40614630817b84fc66aeed221cf65b0aee58012fe7e09148cc1f635bc36c4e",
+        SHARED_MATERIALS["src/paper_radar/config/extraction.py"],
     ),
     (
         "src/paper_radar/config/extraction_models.py",
-        "a25c95e28eef976d63827959e87da3c09bd1124383bb05b298cb114156768c6b",
+        SHARED_MATERIALS["src/paper_radar/config/extraction_models.py"],
     ),
     (
         "src/paper_radar/config/extraction_policy.py",
-        "5598e53bae6e90eeec8bbf5354013b3f8ae0e3291ab87cabef7310170fab0683",
+        SHARED_MATERIALS["src/paper_radar/config/extraction_policy.py"],
     ),
     (
         "src/paper_radar/config/extraction_toolchain.py",
-        "4f2ae67b03b4ed9d82aba434ca9e30de382804bd73e61217eb8b1559c1f97107",
+        SHARED_MATERIALS["src/paper_radar/config/extraction_toolchain.py"],
     ),
     (
         "src/paper_radar/config/identity.py",
-        "ed02a7920df6c7967c034fe06da3f0ee92e172163ba61fa6c2115db562d99a0e",
+        SHARED_MATERIALS["src/paper_radar/config/identity.py"],
     ),
     (
         "src/paper_radar/config/journals.py",
-        "8eeb3287a83bd0cfc8c7e7cd64b67b39cbf82b06fbfbd613cb4208f46b65060a",
+        SHARED_MATERIALS["src/paper_radar/config/journals.py"],
     ),
     (
         "src/paper_radar/config/material_assembly.py",
-        "42223faf33b7e05519164909cfe111639d8f7d8dfe0c2bf26252da7f20f9d894",
+        SHARED_MATERIALS["src/paper_radar/config/material_assembly.py"],
     ),
     (
         "src/paper_radar/config/material_names.py",
-        "3b9d6d1317ceb2fcaf6f4a27a03a17a1489856009e18a853c7fa08c5204cc959",
+        SHARED_MATERIALS["src/paper_radar/config/material_names.py"],
     ),
     (
         "src/paper_radar/config/projections.py",
-        "be8dcbffc2b1535f9838f90389548c0fa8503a53917a078ad54bb323dad1e63a",
+        SHARED_MATERIALS["src/paper_radar/config/projections.py"],
     ),
     (
         "src/paper_radar/config/read.py",
-        "f6f3ae3d508ae3d7ecfeb34b22ca47d51990cb123f7047f9474d2487f0a15ae0",
+        SHARED_MATERIALS["src/paper_radar/config/read.py"],
     ),
     (
         "src/paper_radar/config/schema.py",
-        "ef445b8335f8c7b9828921d43a6cf116168cb7f2aea06ac1b6f1985f33570bc4",
+        SHARED_MATERIALS["src/paper_radar/config/schema.py"],
     ),
     (
         "src/paper_radar/config/service.py",
-        "4701cf2b828347671ed6ee939ee1f41743860989d3041331ed9ab37a78424aa9",
+        SHARED_MATERIALS["src/paper_radar/config/service.py"],
     ),
     (
         "src/paper_radar/config/snapshot_cli.py",
-        "b6afba96f094800598419763ef8688bebbe59fd5125dd623e27b404169d19420",
+        SHARED_MATERIALS["src/paper_radar/config/snapshot_cli.py"],
     ),
     (
         "src/paper_radar/config/snapshot_queries.py",
-        "6464b7693dfe69530eebf64db78849889481cd04c8e2f88c5d8838f0347de9e3",
+        SHARED_MATERIALS["src/paper_radar/config/snapshot_queries.py"],
     ),
     (
         "src/paper_radar/config/snapshot_summary.py",
-        "a882ac057edcfded0b31fcb4c06a376590cdbb5e77c7bd058b22e81312b0b379",
+        SHARED_MATERIALS["src/paper_radar/config/snapshot_summary.py"],
     ),
     (
         "src/paper_radar/config/topics.py",
-        "f69f0d0a87f8855ca3db9290c5602f40d34a6189b70cc6b63716626fca6a247a",
+        SHARED_MATERIALS["src/paper_radar/config/topics.py"],
     ),
     (
         "src/paper_radar/config/yaml_loader.py",
-        "6af6ec978e54f7e1d375017bf829eb17f850b492cc1802e1855bc096a9a1f815",
+        SHARED_MATERIALS["src/paper_radar/config/yaml_loader.py"],
     ),
     (
         "src/paper_radar/contracts/__init__.py",
-        "52628464b846a047162d2bf72be82e97fceb767a073834644e33a30f0dc08ec5",
+        SHARED_MATERIALS["src/paper_radar/contracts/__init__.py"],
     ),
     (
         "src/paper_radar/contracts/check.py",
-        "7505cd6895e8e7c8ff201a49d8a7a7fa80d36ec1d8314bda95d0ed9a7cda110e",
+        SHARED_MATERIALS["src/paper_radar/contracts/check.py"],
     ),
     (
         "src/paper_radar/contracts/errors.py",
-        "7aba91e43cd25c5141c9757fd0d0d0d5fb0679f687cf73bc5715b3a5650bf71e",
+        SHARED_MATERIALS["src/paper_radar/contracts/errors.py"],
     ),
     (
         "src/paper_radar/contracts/export.py",
-        "81f7b5fc17df7d89f7617ad5bf2ed79792f5bbda4af336c3aedba86e24f0299e",
+        SHARED_MATERIALS["src/paper_radar/contracts/export.py"],
     ),
     (
         "src/paper_radar/contracts/schema.py",
-        "f128e20731ece97f672ce50d9fb760a240abcdbd02b9aae63e83f2849fb0dade",
+        SHARED_MATERIALS["src/paper_radar/contracts/schema.py"],
     ),
     (
         "src/paper_radar/contracts/snapshot.py",
-        "a52553e700aa7a06f69c45c90052ffb813db6319c90d4a9fd39173767af3b9d9",
+        SHARED_MATERIALS["src/paper_radar/contracts/snapshot.py"],
     ),
     (
         "src/paper_radar/fixture_audit/__init__.py",
@@ -719,235 +638,235 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/models.py",
-        "e797ee78cfae739a5d705d5d25ee406e2d43e57511f82364bfa6cacd10a44a64",
+        SHARED_MATERIALS["src/paper_radar/llm/models.py"],
     ),
     (
         "src/paper_radar/papers/__init__.py",
-        "2db5994c8f0a7b00bfd205a739e0f32e96b8769a75c185725335710c3c5fec36",
+        SHARED_MATERIALS["src/paper_radar/papers/__init__.py"],
     ),
     (
         "src/paper_radar/papers/cli.py",
-        "a733d4a91ca64608ec4638518373f2c9022d4d287ab9b6b8d92099ff2d455af2",
+        SHARED_MATERIALS["src/paper_radar/papers/cli.py"],
     ),
     (
         "src/paper_radar/papers/doi.py",
-        "228846911cf806f424da4bbb155062f7b376249696d6625b74c80b6a421c2aee",
+        SHARED_MATERIALS["src/paper_radar/papers/doi.py"],
     ),
     (
         "src/paper_radar/papers/errors.py",
-        "90764831f8e6c8040350b321110a4bbde46873cf8f7ed8c744bcf390be9d86e5",
+        SHARED_MATERIALS["src/paper_radar/papers/errors.py"],
     ),
     (
         "src/paper_radar/papers/fact_reads.py",
-        "8e9672ea7217d4f08d692a4ef705ece3e5b5fe48759e39cac5cffefa79f6f603",
+        SHARED_MATERIALS["src/paper_radar/papers/fact_reads.py"],
     ),
     (
         "src/paper_radar/papers/feed.py",
-        "6212e6b0af9d1d41cf21dc59c85962adcf63402c1d5bb4d7edd9081f50a9722b",
+        SHARED_MATERIALS["src/paper_radar/papers/feed.py"],
     ),
     (
         "src/paper_radar/papers/feed_queries.py",
-        "06da50e3656af7c30ec441471f623b40fc23fbabda5aa10ba619d8ff6459f522",
+        SHARED_MATERIALS["src/paper_radar/papers/feed_queries.py"],
     ),
     (
         "src/paper_radar/papers/feed_repository.py",
-        "2a0118675d0093b3cda3492159d2bc5e71d4bc101cc966498cb4afb620b527dc",
+        SHARED_MATERIALS["src/paper_radar/papers/feed_repository.py"],
     ),
     (
         "src/paper_radar/papers/manual.py",
-        "7a15cf6f464bff49396a710c1560cbde628ef69339f585ad88a56a16a9eecab2",
+        SHARED_MATERIALS["src/paper_radar/papers/manual.py"],
     ),
     (
         "src/paper_radar/papers/mapping.py",
-        "aa588937228e31d2c8ffd58d565d4f13e08a4e619a89d598614e0284e075ee1e",
+        SHARED_MATERIALS["src/paper_radar/papers/mapping.py"],
     ),
     (
         "src/paper_radar/papers/mapping_models.py",
-        "c1770760154967b1e0d4c7090acb79d61ba4a7df379f16af459f3ee7393e5bde",
+        SHARED_MATERIALS["src/paper_radar/papers/mapping_models.py"],
     ),
     (
         "src/paper_radar/papers/models.py",
-        "d8803cbae6b3351a3ddbabcd37e0fc5f2a5ae59aa84f132b1c20431213047561",
+        SHARED_MATERIALS["src/paper_radar/papers/models.py"],
     ),
     (
         "src/paper_radar/papers/queries.py",
-        "87ec3ef5ebcab6ba48e53ee329957c834c520044cf1d5a90d834076c25db550e",
+        SHARED_MATERIALS["src/paper_radar/papers/queries.py"],
     ),
     (
         "src/paper_radar/papers/read_checks.py",
-        "12bed5ba5d4e8b2d005da1e03745748265a3882d0f1b174f6c19b3d0a50ccce5",
+        SHARED_MATERIALS["src/paper_radar/papers/read_checks.py"],
     ),
     (
         "src/paper_radar/papers/relation_repository.py",
-        "16136ddd024e00983128e00bc24af29f1270ea5ae855f10e6a4315b9e2e53115",
+        SHARED_MATERIALS["src/paper_radar/papers/relation_repository.py"],
     ),
     (
         "src/paper_radar/papers/relations.py",
-        "c286f4517b7d9b545a1b7446c2c333f65067c22b0850e46b5da1f2ec56ef3efa",
+        SHARED_MATERIALS["src/paper_radar/papers/relations.py"],
     ),
     (
         "src/paper_radar/papers/repository.py",
-        "b251af530e1b9d23d4772d666a582a89de48db49b4dbdfa89b9bdc02df461473",
+        SHARED_MATERIALS["src/paper_radar/papers/repository.py"],
     ),
     (
         "src/paper_radar/papers/rules.py",
-        "d6e8ff81e894d926c62c1c90dd1c8edb06cf01d7c50799ed8256ec38544952cf",
+        SHARED_MATERIALS["src/paper_radar/papers/rules.py"],
     ),
     (
         "src/paper_radar/papers/selection_repository.py",
-        "27579c3eb0bedbbe90f7da5c5326904b6058023cf3fe1a7576a71afde4b9c7f1",
+        SHARED_MATERIALS["src/paper_radar/papers/selection_repository.py"],
     ),
     (
         "src/paper_radar/papers/service.py",
-        "04473effebe65c5ca44f6765d3d4c5b1d2fc9b7f176ac9e38a6cdfe51b8302f4",
+        SHARED_MATERIALS["src/paper_radar/papers/service.py"],
     ),
     (
         "src/paper_radar/papers/tables.py",
-        "b190ff9f7f1d0ded4bfa559246cd07e5fb8b47290e3c7a76a344c886a6311f21",
+        SHARED_MATERIALS["src/paper_radar/papers/tables.py"],
     ),
     (
         "src/paper_radar/papers/text.py",
-        "4027bfb0b48648f79bdad68b2da3f818c89628a68aae1b06d468d52e898f355f",
+        SHARED_MATERIALS["src/paper_radar/papers/text.py"],
     ),
     (
         "src/paper_radar/papers/text_rules.py",
-        "9cebd0175cc0730bd65940339e8dd8d01402c5cbc635afb29641b2aced635e6f",
+        SHARED_MATERIALS["src/paper_radar/papers/text_rules.py"],
     ),
     (
         "src/paper_radar/pi_supply/__init__.py",
-        "ca7a0dd3ba82152124eaec045fd228d84bc79dad5b6634059ec2d4ec19036ca9",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/__init__.py"],
     ),
     (
         "src/paper_radar/pi_supply/cleanup.py",
-        "1ddbb2730d089ffd95cf867b2321f5f5883c030b23807b6d19a0413282de8170",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/cleanup.py"],
     ),
     (
         "src/paper_radar/pi_supply/cleanup_delete.py",
-        "927c157458db770b0f74a0cc8856d50fa9027fc2d6c8bd4f66c74f37e977e20e",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/cleanup_delete.py"],
     ),
     (
         "src/paper_radar/pi_supply/cleanup_execute.py",
-        "c5a26ecd0e5646aa99f12add02f4e7a36447511a539a25ea82799c8e815355f6",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/cleanup_execute.py"],
     ),
     (
         "src/paper_radar/pi_supply/cleanup_history.py",
-        "302e864f0c51a8d343282f1ac566995e007aab6cce0191fed1d239f9c057240e",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/cleanup_history.py"],
     ),
     (
         "src/paper_radar/pi_supply/cleanup_models.py",
-        "79d07bb9aea0a0aeb568f050eab1ef261d5db1aec6f44ed283d136f36bdbd392",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/cleanup_models.py"],
     ),
     (
         "src/paper_radar/pi_supply/cli.py",
-        "78a2d6b98fce25658f8905212b3b7f9ee50406964fa1fff560bde2d677077046",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/cli.py"],
     ),
     (
         "src/paper_radar/pi_supply/errors.py",
-        "be0cb07450ba8ddd01e534683e079357146261886e85e3402b99893010cd7754",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/errors.py"],
     ),
     (
         "src/paper_radar/pi_supply/execution.py",
-        "d3e4c2e1733d1304879b46c0431c64a0a2612505f626946cea8738d40b01b4fb",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/execution.py"],
     ),
     (
         "src/paper_radar/pi_supply/export.py",
-        "c54f8391c6f8c3761d40992aa5798747642cee56829dcbde473302bf6ea3136b",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/export.py"],
     ),
     (
         "src/paper_radar/pi_supply/filesystem.py",
-        "350548b02c318fd48561c635a3da270330a23e24f500c06f7886c1700b3abc56",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/filesystem.py"],
     ),
     (
         "src/paper_radar/pi_supply/materials.py",
-        "51aca4864e1aadfed9b13dc0cf2577adb95816c4f1a460a6302f6aecb5566d8e",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/materials.py"],
     ),
     (
         "src/paper_radar/pi_supply/models.py",
-        "3c9d16b75ec97f448e743d4dbccb5c1164021a1d13126f039040513f9fd07afd",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/models.py"],
     ),
     (
         "src/paper_radar/pi_supply/protection.py",
-        "515c62247f5bcb989b72a1c2a7a846747ffe5be4f77488adfc237492e9ee436b",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/protection.py"],
     ),
     (
         "src/paper_radar/pi_supply/repository.py",
-        "8e989a1df579c0892957b8f5fa0f119cf3719874e7a88000a647a43a70ef5464",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/repository.py"],
     ),
     (
         "src/paper_radar/pi_supply/retention.py",
-        "ef7d2b59419d15865be23903209666b242397b5c68bb10201266cb205c0f79e0",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/retention.py"],
     ),
     (
         "src/paper_radar/pi_supply/selection.py",
-        "00f6ec83a2b0960b10d64130ae80f0b5a9536a7cecf079abf065e149231068e4",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/selection.py"],
     ),
     (
         "src/paper_radar/pi_supply/service.py",
-        "e1d6d8641e334685f5371c62e78f1183100a263749bee2b449886ce008479155",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/service.py"],
     ),
     (
         "src/paper_radar/pi_supply/source_policy.py",
-        "075b43a8c4d6e1599ebc60458448ecd137f6d028d24be67665d0409e2a262d97",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/source_policy.py"],
     ),
     (
         "src/paper_radar/pi_supply/tables.py",
-        "28128ae4e40986d804a6ef2b1eb862965b2e13f1282d81cb70acf24022003a29",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/tables.py"],
     ),
     (
         "src/paper_radar/pi_supply/transport.py",
-        "cc15d6982ed610a0248a987af6f9faf94743226a71a9f2194224c2d98129c437",
+        SHARED_MATERIALS["src/paper_radar/pi_supply/transport.py"],
     ),
     (
         "src/paper_radar/reading/__init__.py",
-        "46abc1b703683085ac1b770f0a431304f2784117daff97656e97e7a04e6cb2d4",
+        SHARED_MATERIALS["src/paper_radar/reading/__init__.py"],
     ),
     (
         "src/paper_radar/reading/context.py",
-        "0f6965c0e82b8b2617ff8427c4e3bb3686910c50029378604df09745a51c6094",
+        SHARED_MATERIALS["src/paper_radar/reading/context.py"],
     ),
     (
         "src/paper_radar/reading/diagnostics.py",
-        "5776997b330ac4b41fb93ccb98e50302c47feb8f250e91151bc086c27fcea576",
+        SHARED_MATERIALS["src/paper_radar/reading/diagnostics.py"],
     ),
     (
         "src/paper_radar/reading/errors.py",
-        "8cb6363f973b754b944d3246cb370b3ade43cff8c8ab4f99723e941dc445f50c",
+        SHARED_MATERIALS["src/paper_radar/reading/errors.py"],
     ),
     (
         "src/paper_radar/reading/numbers.py",
-        "01dc3d2c77472721393a61b3814748c69cdc64c2cb229fc4e47aeb60c9137e5b",
+        SHARED_MATERIALS["src/paper_radar/reading/numbers.py"],
     ),
     (
         "src/paper_radar/reading/parsing.py",
-        "420422b425f9de9cb9d521f4e10bf1f560c06e8f0f5536c4b0ee875072cf24d5",
+        SHARED_MATERIALS["src/paper_radar/reading/parsing.py"],
     ),
     (
         "src/paper_radar/reading/result.py",
-        "e7ad472d2e0676962ef102412923822533c86b222cb1f494b76a877134e294f4",
+        SHARED_MATERIALS["src/paper_radar/reading/result.py"],
     ),
     (
         "src/paper_radar/reading/schema.py",
-        "db248a1fa6d0efe848b9e68abfc01e8f988e659a77b5b8e61a1a8235a088b316",
+        SHARED_MATERIALS["src/paper_radar/reading/schema.py"],
     ),
     (
         "src/paper_radar/reading/validation.py",
-        "82885031c53814fd2775e7aa09bd3be51333afaeb870b19caca4ab443d9c0eb6",
+        SHARED_MATERIALS["src/paper_radar/reading/validation.py"],
     ),
     (
         "src/paper_radar/reading/value_types.py",
-        "2920ca5f14fba6eba36b7a4b3fd17419bcd611896b762ada4c99249219684ec4",
+        SHARED_MATERIALS["src/paper_radar/reading/value_types.py"],
     ),
     (
         "src/paper_radar/screening/__init__.py",
-        "930c9c05dcd3067898c50b4e3250a816e89c0408504e0b77936a27f97a702b2c",
+        SHARED_MATERIALS["src/paper_radar/screening/__init__.py"],
     ),
     (
         "src/paper_radar/screening/context.py",
-        "a2ab562750e3e68e42facdfddd71922c14a9ecfe1d0af8e44d3081383f86ef37",
+        SHARED_MATERIALS["src/paper_radar/screening/context.py"],
     ),
     (
         "src/paper_radar/screening/errors.py",
-        "9f03054ed7de9aae6093914f9de230b961020928bf441e7e25935bf7b3a551a1",
+        SHARED_MATERIALS["src/paper_radar/screening/errors.py"],
     ),
     (
         "src/paper_radar/screening/excerpt_kinds.py",
@@ -963,151 +882,151 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/screening/schema.py",
-        "3d741ca3876d24fa37df7cb48569b4193fd7c6d24adf47e68e29aa39400635e1",
+        SHARED_MATERIALS["src/paper_radar/screening/schema.py"],
     ),
     (
         "src/paper_radar/screening/text.py",
-        "77e4ad599a2edbbaf30aa2f134918130f2c630fcc74abb9068190614c0f3cff1",
+        SHARED_MATERIALS["src/paper_radar/screening/text.py"],
     ),
     (
         "src/paper_radar/screening/validation.py",
-        "63d26b9b7b5593bb3260a37aacef1d537fa7736f7bbbf7ef25b9198bab17fc62",
+        SHARED_MATERIALS["src/paper_radar/screening/validation.py"],
     ),
     (
         "src/paper_radar/screening/value_types.py",
-        "7a6d1be2b56745e15d074575b7cc4f9f9ae0e4fed3a8409cf098fac0751b5b85",
+        SHARED_MATERIALS["src/paper_radar/screening/value_types.py"],
     ),
     (
         "src/paper_radar/screening_tasks/__init__.py",
-        "40404febc4166e5af5953e5d3fb232b2f27dc14de9a385168b7218a72d6b96d4",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/__init__.py"],
     ),
     (
         "src/paper_radar/screening_tasks/attempt_integrity.py",
-        "a1cc83d965132feab740fcc6ebb4302e349166db1ed9f17c98630b33b5a4c0fc",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/attempt_integrity.py"],
     ),
     (
         "src/paper_radar/screening_tasks/attempt_models.py",
-        "f2d8bdc4b5a194fda4bc114a63b6717f8d5e71ac14ec0b24459e177b78d77176",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/attempt_models.py"],
     ),
     (
         "src/paper_radar/screening_tasks/attempt_repository.py",
-        "19d7826a918be7c6ccca2a7412efc04a566aaf1e46b392b3d3b282c350f4faf7",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/attempt_repository.py"],
     ),
     (
         "src/paper_radar/screening_tasks/attempt_rules.py",
-        "23bedeed3bcf6d258ba326c5a08307f8c389b8d90cc3aac3a10586a0052c6dbf",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/attempt_rules.py"],
     ),
     (
         "src/paper_radar/screening_tasks/database_errors.py",
-        "433e727d768e8281fe69fe48cff91eb861e59572b26ae839ed743872547c6630",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/database_errors.py"],
     ),
     (
         "src/paper_radar/screening_tasks/errors.py",
-        "6b9fb832adb19ce2394f26c19610e8b6eb0860fa47ae46af55de06163a732970",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/errors.py"],
     ),
     (
         "src/paper_radar/screening_tasks/execution.py",
-        "44e11de268e684ae49e6c794ca18d047297aec21a4d1f5b4ec78a449d075532f",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/execution.py"],
     ),
     (
         "src/paper_radar/screening_tasks/frozen.py",
-        "1feeec54b063c149788086812cac02ae148004a496ef9a79cc04b5903842438a",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/frozen.py"],
     ),
     (
         "src/paper_radar/screening_tasks/integrity.py",
-        "83bc3d0f53d44ae1c4ee61b2b3173230bd2e96fa91f568c46d995610b89897eb",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/integrity.py"],
     ),
     (
         "src/paper_radar/screening_tasks/models.py",
-        "42c24b28d5d53d4a748ef2bb8d9948348acf83b8470e26e56aa37f11bcafb249",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/models.py"],
     ),
     (
         "src/paper_radar/screening_tasks/query.py",
-        "8a5a4c8f07e58e5f3c7414d7cc186788fa3bf13fb8297ff8d1759734aa5605cd",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/query.py"],
     ),
     (
         "src/paper_radar/screening_tasks/query_models.py",
-        "a771cf0bc91a6cc4ee961c2c85ebca8b7c7a4f38eaa8e6f64b58e3d3b15f2ad2",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/query_models.py"],
     ),
     (
         "src/paper_radar/screening_tasks/repository.py",
-        "1d72dd519cc8f7ea1a734fc1df0686054ab07351a270e13cb2da30046479cd1c",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/repository.py"],
     ),
     (
         "src/paper_radar/screening_tasks/retry.py",
-        "7723a0e6cb209215860e7bfff74a8fd2b5e060884045492f9a8a1966be885052",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/retry.py"],
     ),
     (
         "src/paper_radar/screening_tasks/rules.py",
-        "ad6e02377fbc3cc965a2644a36c8321324a036e63d493232b387566cd3a3a4bd",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/rules.py"],
     ),
     (
         "src/paper_radar/screening_tasks/service.py",
-        "9313f4f895804662168517c1cfcb9bf5c9593354dbec53b855230513eeb75965",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/service.py"],
     ),
     (
         "src/paper_radar/screening_tasks/success.py",
-        "40fd7a960eeaa0033f84a7e5d9736d9fbe2a3ac00722e644bb5037bc95716190",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/success.py"],
     ),
     (
         "src/paper_radar/screening_tasks/success_integrity.py",
-        "d3498f9fe0ca4c7c1d02aceace45e01898edb9d53a363dc96e4ffc7474f17859",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/success_integrity.py"],
     ),
     (
         "src/paper_radar/screening_tasks/success_models.py",
-        "b948822f22c23219548b8dbbd8500b6a6889563bede7be170b94c9afe9ac7faf",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/success_models.py"],
     ),
     (
         "src/paper_radar/screening_tasks/success_rules.py",
-        "f1d5e40a5c814d4a55ba0c63435c7c52325d5113681ec2d451cde3deef8d4ea6",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/success_rules.py"],
     ),
     (
         "src/paper_radar/screening_tasks/tables.py",
-        "fdd3045c423fa2609bee7303192443d24c020cf36c54cba50710e2cc167b0f51",
+        SHARED_MATERIALS["src/paper_radar/screening_tasks/tables.py"],
     ),
     (
         "src/paper_radar/stage_inputs/__init__.py",
-        "d3a77ae4330d0821ddf84ed6b9f02830292f5b3ba678c69faa48e2bfc7611a87",
+        SHARED_MATERIALS["src/paper_radar/stage_inputs/__init__.py"],
     ),
     (
         "src/paper_radar/stage_inputs/service.py",
-        "d2dc724da98760240b6fa95e09619b2ca435e506c68a221976ae8c3ffba382da",
+        SHARED_MATERIALS["src/paper_radar/stage_inputs/service.py"],
     ),
     (
         "src/paper_radar/storage/__init__.py",
-        "52dd2406b588ddb72767d4621f5bddc12d8b68425e049b562574ca9c1789b236",
+        SHARED_MATERIALS["src/paper_radar/storage/__init__.py"],
     ),
     (
         "src/paper_radar/storage/artifact_contract.py",
-        "ab8284b17b5710fe9e537f6edb88fff7fc84f686417f96e3558405699f1fa999",
+        SHARED_MATERIALS["src/paper_radar/storage/artifact_contract.py"],
     ),
     (
         "src/paper_radar/storage/artifact_repository.py",
-        "e81d40c7330f4a2676524ead4c59bea4c263d81b447deeb32403c0599e7d222b",
+        SHARED_MATERIALS["src/paper_radar/storage/artifact_repository.py"],
     ),
     (
         "src/paper_radar/storage/artifacts.py",
-        "a30949836fd65485df2b3fc477b1027b7deddb405edd90bc4f29c297ade333f5",
+        SHARED_MATERIALS["src/paper_radar/storage/artifacts.py"],
     ),
     (
         "src/paper_radar/storage/blob_store.py",
-        "3664854101b7d4e1612118a9dafa2320a879ca48e9ae9273c05c56821662d8e6",
+        SHARED_MATERIALS["src/paper_radar/storage/blob_store.py"],
     ),
     (
         "src/paper_radar/storage/database.py",
-        "ed8aba07f31eb6019c6d656a9147c682d74073bbdf4d268cd488bdb79ff3b7b1",
+        SHARED_MATERIALS["src/paper_radar/storage/database.py"],
     ),
     (
         "src/paper_radar/storage/errors.py",
-        "a8c859bb0d8a415599887d380218a46490c6e10afa9910c0360a4dda037db19f",
+        SHARED_MATERIALS["src/paper_radar/storage/errors.py"],
     ),
     (
         "src/paper_radar/storage/filesystem.py",
-        "b0904b630bb476eb4a7286ec9b6623176e83549be8c0a33faec7e29a1480e91e",
+        SHARED_MATERIALS["src/paper_radar/storage/filesystem.py"],
     ),
     (
         "src/paper_radar/storage/migrations/env.py",
-        "f22dfaeade1105d7eb46dda731916406fe521051ec0a76b7eeb1e915d42ffd27",
+        SHARED_MATERIALS["src/paper_radar/storage/migrations/env.py"],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a1001_fixture_audit.py",
@@ -1115,79 +1034,109 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/storage/migrations/versions/a201_profile_snapshot.py",
-        "a19059f3143dd9d05e550bfd77f7d89f75bc43a23636ba375d4ac7d4ea2c3039",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a201_profile_snapshot.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a302_artifact_store.py",
-        "0f15648cd3a8fc8cbe8938f1890894cfcba801643aff4204826910b35db88610",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a302_artifact_store.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a401_pi_supply.py",
-        "056ee1f2d83aa14ccd6cb28fc2b6ba735244a2378697bea040050560ed60abd8",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a401_pi_supply.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a402_pi_rebuild_failures.py",
-        "1ffc04c4498325773f773689beadd0b1568254cfcf6a2752760126aabbdd720e",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a402_pi_rebuild_failures.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a403_pi_activation.py",
-        "56c2a029b67c5868e5e5b92e79c54b14eabb8b88b1cf87d67fb794e080d0d2a9",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a403_pi_activation.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a404_pi_cleanup_plans.py",
-        "75b091d3d071aded348fdb71ff7a4505bf87adcff900e38770c254d08f712470",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a404_pi_cleanup_plans.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a405_pi_cleanup_execution.py",
-        "2ed24cd0458ad34e2b6f1b681e2a1826c1ed41228d6223939fc4528306dc8eed",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a405_pi_cleanup_execution.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a601_paper_facts.py",
-        "c5fcf3d84b03619f79c6720fd5aad83df7af6ac884c00d1ed5a161b286ad056d",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a601_paper_facts.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a602_feed_discovery.py",
-        "94cee1dfaa7879a3ed54633a45c7fcfa3da6fc78947075c62a2c049ac4a5d513",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a602_feed_discovery.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a603_source_arbitration.py",
-        "e7f62ecd51ac4b4dadb18bd8e8fa55f60e293e05dd88e3bfeeb0c42c4740a9ab",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a603_source_arbitration.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a604_version_relations.py",
-        "223a7e931d9350f8c42eaaa64ce3204fe9a7ae612c4415e7af326e3041064b9c",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a604_version_relations.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a701_screening_registration.py",
-        "7040fc993c9a8921dd81e3059a5a92e9d0817fe4fa743d5a3aff82461c469d8f",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a701_screening_registration.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a702_screening_attempts.py",
-        "d7ceb107d15d4e22b51b375fa2b13493e79e8e16f902bce2ca618d46f28671a2",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a702_screening_attempts.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a703_screening_success.py",
-        "0f9d61d04cba04a658c4a928394431dff93a75abe13e38f437d20ec19feba9fe",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a703_screening_success.py"
+        ],
     ),
     (
         "src/paper_radar/storage/migrations/versions/a704_screening_retry.py",
-        "720b73887f1ef6d048f645e5043fd421a00052951ee3b7b16441714694a55d8b",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a704_screening_retry.py"
+        ],
     ),
     (
         "src/paper_radar/storage/records.py",
-        "f1e5e7d9ca146fc8439ed8966d6bb3576e838ed7494d831772131731601094ca",
+        SHARED_MATERIALS["src/paper_radar/storage/records.py"],
     ),
     (
         "src/paper_radar/storage/repository.py",
-        "91a48152f1f2fdd840471f81c6db13ca87dc533a8ce4fa03f5b396b08019f5bf",
+        SHARED_MATERIALS["src/paper_radar/storage/repository.py"],
     ),
     (
         "src/paper_radar/storage/schema.py",
-        "291db5e419f3a5a7fd88afab7f369569d0b8e754fa36932210418c0938050a0f",
+        SHARED_MATERIALS["src/paper_radar/storage/schema.py"],
     ),
     (
         "src/paper_radar/storage/snapshot_queries.py",
-        "e394fb3bbc2e70e5bc92f4c539481e7d9660c026f60d709ef990763022f6acf1",
+        SHARED_MATERIALS["src/paper_radar/storage/snapshot_queries.py"],
     ),
     (
         "tests/__init__.py",
@@ -1205,54 +1154,39 @@ REQUIRED_SOURCE_MODULES = (
         "tests/a10_recovery_support.py",
         "33416bfdb4c224fc1100af5bc053ee3eb563b34de07ac2a6bce8439ffaa2beb3",
     ),
-    (
-        "tests/a2_full_support.py",
-        "a15976749dc2ae52448d81ea794c2be1c2e0f53d4e2a09de20f9a9790c16dc38",
-    ),
+    ("tests/a2_full_support.py", SHARED_MATERIALS["tests/a2_full_support.py"]),
     (
         "tests/a3_acceptance_support.py",
-        "d89e4dff6834d19562ffd9a3a5fde14c353962ee67a8c1df21113c75979b2545",
+        SHARED_MATERIALS["tests/a3_acceptance_support.py"],
     ),
-    (
-        "tests/a3_process_support.py",
-        "4c0ca963d2513532060c5f122f92b09933e234c4c65e342b78d3fd5d06880d74",
-    ),
+    ("tests/a3_process_support.py", SHARED_MATERIALS["tests/a3_process_support.py"]),
     (
         "tests/a4_acceptance_support.py",
-        "3e7457b20e193b1076b67c3d8394dcb0b9eebb60fcdc58d3abe44be4d50740cf",
+        SHARED_MATERIALS["tests/a4_acceptance_support.py"],
     ),
     (
         "tests/a5_acceptance_support.py",
-        "528ab9bd6e1a71767083eb514378e028420691d0c61a81237cab85163b2ab1f5",
+        SHARED_MATERIALS["tests/a5_acceptance_support.py"],
     ),
     (
         "tests/a6_acceptance_support.py",
-        "b6642636b0e57bb76e4bcbbe94a540e7239075ab5d6872a01e04ad046a4f28a9",
+        SHARED_MATERIALS["tests/a6_acceptance_support.py"],
     ),
     (
         "tests/a7_acceptance_support.py",
-        "3d9de027d1d9c1a6ffbab594bafb40abdaccb3e8e67297a7b8371ad1021c048d",
+        SHARED_MATERIALS["tests/a7_acceptance_support.py"],
     ),
     (
         "tests/a7_registration_support.py",
-        "fb2a8b308364e85acd7bcf3bfa7fe80dff613f28988c6c59f891497c781a09d5",
+        SHARED_MATERIALS["tests/a7_registration_support.py"],
     ),
-    (
-        "tests/a7_retry_support.py",
-        "ecd292a60410fe31f243d9ce2a466575b01774ac9c5cfe56f9cc6f135f2a2b81",
-    ),
-    (
-        "tests/a7_value_support.py",
-        "6165a17b98609bd0611cd27d80f09aaf165a8df9e08ad9a2808767b79f324404",
-    ),
+    ("tests/a7_retry_support.py", SHARED_MATERIALS["tests/a7_retry_support.py"]),
+    ("tests/a7_value_support.py", SHARED_MATERIALS["tests/a7_value_support.py"]),
     (
         "tests/a9_acceptance_support.py",
-        "475e1413ca1779429e1955c7c0f23fbc96af10989e38302e282e1c83a620b3db",
+        SHARED_MATERIALS["tests/a9_acceptance_support.py"],
     ),
-    (
-        "tests/artifact_support.py",
-        "2771734fb913cb279be6aa9b9518b7d7e2bf70e2b7982f28e47b78be89000664",
-    ),
+    ("tests/artifact_support.py", SHARED_MATERIALS["tests/artifact_support.py"]),
     (
         "tests/audit_matrix_support.py",
         "0103fdc6fe7c52264b41dbc8ca3a709706cbf9d5680d2acd3224fcc8201d9fef",
@@ -1265,46 +1199,37 @@ REQUIRED_SOURCE_MODULES = (
         "tests/audit_sampling_support.py",
         "54068494d5097bac264fe1419e7b7798ddbd1f64d83a7f004134c7b0a600e598",
     ),
-    (
-        "tests/backup_support.py",
-        "f1ee3e3febb10bcf68212af621c79d0d25951fa1464cd11e23d2afe139e8cc37",
-    ),
+    ("tests/backup_support.py", SHARED_MATERIALS["tests/backup_support.py"]),
     (
         "tests/config_adapter_support.py",
-        "04e71ec7c1a888844a7b55c3a1fe8d2dc3445866f08f3fa8f9481ff5b8a345ce",
+        SHARED_MATERIALS["tests/config_adapter_support.py"],
     ),
     (
         "tests/config_extraction_support.py",
-        "7798711c15be510330d405d7dcef6cc8110214498c6a50b04c454a3d696097d9",
+        SHARED_MATERIALS["tests/config_extraction_support.py"],
     ),
     (
         "tests/config_journals_support.py",
-        "639ea499a5d41e3f914c4c1ba36aeff9a6c3502204f0303fc9c76f893dd508bc",
+        SHARED_MATERIALS["tests/config_journals_support.py"],
     ),
     (
         "tests/config_projection_support.py",
-        "1a3aa9a7ce2535a9a52c3fde9dc18cde964d1de8b89654e3d50e566aae79ef2a",
+        SHARED_MATERIALS["tests/config_projection_support.py"],
     ),
-    (
-        "tests/config_test_support.py",
-        "1bdd4ec7d1c3a3c2274455cfe184ea5ee7d58971d65adc1ccd532a55c295e840",
-    ),
+    ("tests/config_test_support.py", SHARED_MATERIALS["tests/config_test_support.py"]),
     (
         "tests/config_transaction_support.py",
-        "b34d3a45de0d377f3a78db7d6ceed20ec2616ad36eecdfb7257f0d20a80c1ef7",
+        SHARED_MATERIALS["tests/config_transaction_support.py"],
     ),
     (
         "tests/deny_external_io/sitecustomize.py",
-        "f0148752ef89a004fcf76048cbc1f070448152683921b6d9d7c452d102a2d48d",
+        SHARED_MATERIALS["tests/deny_external_io/sitecustomize.py"],
     ),
     (
         "tests/deny_network/sitecustomize.py",
-        "dfce12fb68aaefd9b19ec26f1ff6bfb10b3f726fdafe6f466ec031cc2acc3288",
+        SHARED_MATERIALS["tests/deny_network/sitecustomize.py"],
     ),
-    (
-        "tests/feed_support.py",
-        "db26ee02a0164e43f116a5d73f5acdd58946f897ac4c2be063722437dd5814a8",
-    ),
+    ("tests/feed_support.py", SHARED_MATERIALS["tests/feed_support.py"]),
     (
         "tests/fixture_pdf_support.py",
         "beca08e74576cebbf97bf49f4cdc9b3211daffff9a26a6580c4ee5d0e808e715",
@@ -1315,40 +1240,28 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "tests/paper_recovery_reader.py",
-        "5d88105fbf62502c5a36453a4e1f07b21ffe75a29f1207b4c138ab42ee690ec7",
+        SHARED_MATERIALS["tests/paper_recovery_reader.py"],
     ),
     (
         "tests/paper_recovery_support.py",
-        "1ed06b37d511b6b0ca319067737b2d0b629bb7e7efc542a34cccb579d77066ad",
+        SHARED_MATERIALS["tests/paper_recovery_support.py"],
     ),
-    (
-        "tests/pi_supply_support.py",
-        "083385f8ae08954ae8b02b454704d04700181a443a0878104ae7ad52ada6e479",
-    ),
-    (
-        "tests/restore_support.py",
-        "0ab9a716354d3c7481596a59e2ea20aac453de1602bc88712f119f1bab726736",
-    ),
+    ("tests/pi_supply_support.py", SHARED_MATERIALS["tests/pi_supply_support.py"]),
+    ("tests/restore_support.py", SHARED_MATERIALS["tests/restore_support.py"]),
     (
         "tests/test_a2_full_acceptance.py",
-        "86a6c0e2657ad4909f01daeebd033c9bd56185c1f637a298573aa2d05c9c254c",
+        SHARED_MATERIALS["tests/test_a2_full_acceptance.py"],
     ),
     (
         "tests/test_a7_complete_recovery.py",
-        "864129b5025fb14319a2ef3a61d9386b66d86444fce8a9904425e9d6e3280d7a",
+        SHARED_MATERIALS["tests/test_a7_complete_recovery.py"],
     ),
     (
         "tests/test_manual_corrections.py",
-        "ddd5b955b9654de8945518a2d0e4229544104bca3f3d2f79fa16f601c475a77a",
+        SHARED_MATERIALS["tests/test_manual_corrections.py"],
     ),
-    (
-        "tests/test_paper_mapping.py",
-        "8cf3de3591cbc9b2a19cccc8ac93ea9a16909e44121a32f231838b045f956ea0",
-    ),
-    (
-        "tests/test_paper_service.py",
-        "b0517a8a0058e544258a2f1b130ec3f1d05fcee8b495b8ea35b7409bc8efc6c2",
-    ),
+    ("tests/test_paper_mapping.py", SHARED_MATERIALS["tests/test_paper_mapping.py"]),
+    ("tests/test_paper_service.py", SHARED_MATERIALS["tests/test_paper_service.py"]),
     (
         "scripts/verification_scope_baseline.py",
         SHARED_MATERIALS["scripts/verification_scope_baseline.py"],
@@ -1369,7 +1282,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/contracts-backup-restore-history.md",
-        "77fdc9ee348bddd16d5c5a694ef52459d2703241efe5e123da8e6742f68ff46e",
+        SHARED_MATERIALS["docs/verification/contracts-backup-restore-history.md"],
     ),
     (
         "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
@@ -1399,10 +1312,7 @@ REQUIRED_FIXTURE_FILES = (
         "fixtures/a10/historical-v1.json",
         "1a60796b705d2b820384f269811f576dd3ec22c417f6ceb145f9988f705e6637",
     ),
-    (
-        "pyproject.toml",
-        "bf36f1fcade0fcbfcf68164e042d826c369d68e0b5da2f5dfa287d05d12fc5b4",
-    ),
+    ("pyproject.toml", SHARED_MATERIALS["pyproject.toml"]),
     (
         "tests/a10-recovery-coverage.md",
         "1af1a3b450d54ddb3bfa84c0b70c4d4241dc413ad2a089d8e8f1bc6605e98af5",
@@ -1428,4 +1338,17 @@ REQUIRED_FIXTURE_FILES = (
         "8c5a1af640e63ccd1a2215836a5ac12b1bb69c29b132aa5397379a0bb7589d9d",
     ),
     ("uv.lock", "11aa458753aad1447061e7b8e5ef3adc74e53db4db98ecd36da5d88e14267512"),
+)
+
+# 显式证明引用; 不将 scope 登记数据作为逐文件哈希材料。
+REQUIRED_SCOPE_REFERENCES = (
+    "scripts/a1_scope.py",
+    "scripts/a2_full_scope.py",
+    "scripts/a3_scope.py",
+    "scripts/a4_scope.py",
+    "scripts/a5_scope.py",
+    "scripts/a6_scope.py",
+    "scripts/a7_scope.py",
+    "scripts/a8_scope.py",
+    "scripts/a9_scope.py",
 )

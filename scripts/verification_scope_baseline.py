@@ -83,7 +83,7 @@ def _identity(root: Path) -> str:
 
 def _report(
     root: Path, writers: tuple[tuple[str, str], ...] | None
-) -> tuple[AuditReport, dict[str, str]]:
+) -> tuple[AuditReport, dict[str, str], dict[str, object]]:
     # 冷进程从被检查树导入 registry,避免宿主模块缓存污染历史组清单。
     program = """
 import json, sys
@@ -94,7 +94,9 @@ from scripts.verification_scope_registry import load_scopes
 writers = json.loads(sys.argv[2])
 scopes = load_scopes(Path(sys.argv[1]), writers=writers)
 print(json.dumps({'report': audit_scopes(Path(sys.argv[1]), scopes),
-                  'paths': {s.group: s.path for s in scopes}}))
+                  'paths': {s.group: s.path for s in scopes},
+                  'references': {s.group: getattr(s, 'references', ())
+                                 for s in scopes}}))
 """
     try:
         output = subprocess.run(
@@ -113,7 +115,7 @@ print(json.dumps({'report': audit_scopes(Path(sys.argv[1]), scopes),
             env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
         )
         value = json.loads(output.stdout)
-        return value["report"], value["paths"]
+        return value["report"], value["paths"], value["references"]
     except (OSError, ValueError, KeyError, subprocess.SubprocessError):
         raise BaselineError(AuditReason.BASELINE_REGISTRATION_UNAVAILABLE) from None
 
@@ -279,14 +281,23 @@ def analyze_baseline(
         except BaselineError:
             raise BaselineError(AuditReason.BASELINE_NOT_ANCESTOR) from None
         identity = _identity(root)
-        report, paths = _report(root, writers)
+        report, paths, references = _report(root, writers)
         with tempfile.TemporaryDirectory(
             prefix="scope-baseline-", dir="/tmp"
         ) as temporary:
             old = Path(temporary)
             _extract_tree(root, actual_base, old)
-            baseline, old_paths = _report(old, writers)
-            result = _changes(old, root, baseline, report, old_paths, paths)
+            baseline, old_paths, old_references = _report(old, writers)
+            result = _changes(
+                old,
+                root,
+                baseline,
+                report,
+                old_paths,
+                paths,
+                old_references,
+                references,
+            )
         report["baseline"] = BaselineResult(
             base=actual_base,
             head=head,
@@ -329,7 +340,12 @@ def analyze_baseline(
         return report
 
 
-def _entry_identity(report: AuditReport, paths: dict[str, str], path: str) -> str:
+def _entry_identity(
+    report: AuditReport,
+    paths: dict[str, str],
+    path: str,
+    references: dict[str, object],
+) -> str:
     owners = {group for group, scope in paths.items() if scope == path}
     if not owners:
         # 中央引用展开后保留逐路径登记身份;仅中央 SHA 变化也必须可见。
@@ -355,7 +371,10 @@ def _entry_identity(report: AuditReport, paths: dict[str, str], path: str) -> st
         for c in report["counts"]
         if c["group"] in owners
     )
-    encoded = json.dumps([sorted(owners), entries, counts], sort_keys=True).encode()
+    refs = sorted((group, references.get(group, [])) for group in owners)
+    encoded = json.dumps(
+        [sorted(owners), entries, counts, refs], sort_keys=True
+    ).encode()
     return hashlib.sha256(encoded).hexdigest()
 
 
@@ -366,6 +385,8 @@ def _changes(
     report: AuditReport,
     old_paths: dict[str, str],
     paths: dict[str, str],
+    old_references: dict[str, object],
+    references: dict[str, object],
 ) -> list[BaselineChange]:
     files = [*baseline["files"], *report["files"]]
     all_paths = (
@@ -385,8 +406,8 @@ def _changes(
         category = _category(
             old, root, path, kinds, set(paths.values()) | set(old_paths.values())
         )
-        old_entry = _entry_identity(baseline, old_paths, path)
-        new_entry = _entry_identity(report, paths, path)
+        old_entry = _entry_identity(baseline, old_paths, path, old_references)
+        new_entry = _entry_identity(report, paths, path, references)
         memberships = [
             {(f["group"], f["kind"]) for f in view["files"] if f["path"] == path}
             for view in (baseline, report)

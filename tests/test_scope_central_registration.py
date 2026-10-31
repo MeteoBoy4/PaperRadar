@@ -174,6 +174,7 @@ def test_writer_checks_actual_centrally_referenced_material(tmp_path: Path) -> N
                 "scripts/verification_scope_registry.py",
                 "scripts/verification_scope_baseline.py",
                 "scripts/audit_verification_scope.py",
+                "scripts/a8_acceptance.py",
             }
         ),
         verified_groups=frozenset({"A8"}),

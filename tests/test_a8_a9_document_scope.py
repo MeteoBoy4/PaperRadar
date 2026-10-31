@@ -45,7 +45,23 @@ def test_a8_a9_migration_records_every_inventory_removal() -> None:
         ("A9", "source", "scripts/verification_scope_baseline.py"),
         ("A9", "source", "scripts/verification_scope_collection.py"),
     }
-    assert fixed == expected | additions
+    # 第二步将这14条精确scope材料边迁成显式证明引用,不改变其他材料。
+    references = {
+        (group, "source", f"scripts/{name}_scope.py")
+        for group, names in (
+            ("A8", ("a1", "a2_full", "a3", "a5", "a6", "a7")),
+            ("A9", ("a1", "a2_full", "a3", "a4", "a5", "a6", "a7", "a8")),
+        )
+        for name in names
+    }
+    assert fixed == (expected | additions) - references
+    scopes = {scope.group: scope for scope in load_scopes(ROOT)}
+    actual_references: set[tuple[str, str, str]] = set()
+    for group in ("A8", "A9"):
+        paths = scopes[group].references
+        assert isinstance(paths, tuple)
+        actual_references.update((group, "source", path) for path in paths)
+    assert actual_references == references
     for row in removed:
         for material in row["replacement"]["materials"]:
             assert any(

@@ -144,7 +144,7 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 
 ## 未成形
 
-[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 承接 Verification Scope 文档解耦、集中登记与并行集成；按 S7(c) 不增模块、不阻塞 B。活文档解绑与当前单 spec 规则见[项目规则](agents/verification-scope.md)，第一步候选事实见[迁移台账](verification/scope-document-migration.md)。中央登记、新组机制及跨 spec 自动回归由第二步承接；第一步独立审阅、最终门禁与 main 收口完成后，以实际 main 提交另起第二步集成基线。
+[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 承接 Verification Scope 文档解耦、集中登记与并行集成；按 S7(c) 不增模块、不阻塞 B。活文档解绑与当前单 spec 规则见[项目规则](agents/verification-scope.md)，第一步候选事实见[迁移台账](verification/scope-document-migration.md)。第一步已独立审阅、门禁并保持提交身份合入 main；第二步基于该稳定提交。显式基线审计、全部共享材料中央登记与 scope 显式引用已实现，迁移事实见[第二步台账](verification/scope-shared-dag-delivery.md)；新组机制、跨 spec 自动回归和最终统一重绑/门禁由后续切片承接。
 
 Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各自入口、承接责任与待裁决项；依据[§11](../intent/draft.md#十一九阶段实施与验收)。
 

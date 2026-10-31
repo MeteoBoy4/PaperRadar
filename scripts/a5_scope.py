@@ -117,52 +117,27 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/stage_inputs/__init__.py",
-        "d3a77ae4330d0821ddf84ed6b9f02830292f5b3ba678c69faa48e2bfc7611a87",
+        SHARED_MATERIALS["src/paper_radar/stage_inputs/__init__.py"],
     ),
     (
         "src/paper_radar/stage_inputs/service.py",
-        "d2dc724da98760240b6fa95e09619b2ca435e506c68a221976ae8c3ffba382da",
+        SHARED_MATERIALS["src/paper_radar/stage_inputs/service.py"],
     ),
     (
         "src/paper_radar/config/__init__.py",
-        "e8e1844c436c97d48bfca7341cfc855502917767bc8da9e6924c3c12d0b9e4f1",
+        SHARED_MATERIALS["src/paper_radar/config/__init__.py"],
     ),
     (
         "src/paper_radar/screening/__init__.py",
-        "930c9c05dcd3067898c50b4e3250a816e89c0408504e0b77936a27f97a702b2c",
+        SHARED_MATERIALS["src/paper_radar/screening/__init__.py"],
     ),
-    (
-        "scripts/a5_acceptance.py",
-        "ed5517bec34993540c276c6136b7f30e685559f84a0e9dfd9c9fced3769a95d3",
-    ),
-    (
-        "scripts/a1_scope.py",
-        "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
-    ),
-    (
-        "scripts/a2_full_scope.py",
-        "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
-    ),
-    (
-        "scripts/a3_scope.py",
-        "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
-    ),
-    (
-        "scripts/a4_scope.py",
-        "14fff7afafefb2dbacd6505e4f9cabd6745ef60cb5ba49f2c588ac73c9b203a7",
-    ),
+    ("scripts/a5_acceptance.py", SHARED_MATERIALS["scripts/a5_acceptance.py"]),
     (
         "scripts/a2_full_acceptance.py",
         SHARED_MATERIALS["scripts/a2_full_acceptance.py"],
     ),
-    (
-        "scripts/a2_test_receipt.py",
-        SHARED_MATERIALS["scripts/a2_test_receipt.py"],
-    ),
-    (
-        "scripts/offline_evidence.py",
-        SHARED_MATERIALS["scripts/offline_evidence.py"],
-    ),
+    ("scripts/a2_test_receipt.py", SHARED_MATERIALS["scripts/a2_test_receipt.py"]),
+    ("scripts/offline_evidence.py", SHARED_MATERIALS["scripts/offline_evidence.py"]),
     (
         "scripts/verification_checks.py",
         SHARED_MATERIALS["scripts/verification_checks.py"],
@@ -175,30 +150,21 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
         "scripts/verification_publication.py",
         SHARED_MATERIALS["scripts/verification_publication.py"],
     ),
-    (
-        "scripts/verification_run.py",
-        SHARED_MATERIALS["scripts/verification_run.py"],
-    ),
-    (
-        "scripts/check-offline",
-        SHARED_MATERIALS["scripts/check-offline"],
-    ),
+    ("scripts/verification_run.py", SHARED_MATERIALS["scripts/verification_run.py"]),
+    ("scripts/check-offline", SHARED_MATERIALS["scripts/check-offline"]),
     (
         "tests/a5_acceptance_support.py",
-        "528ab9bd6e1a71767083eb514378e028420691d0c61a81237cab85163b2ab1f5",
+        SHARED_MATERIALS["tests/a5_acceptance_support.py"],
     ),
     (
         "tests/a4_acceptance_support.py",
-        "3e7457b20e193b1076b67c3d8394dcb0b9eebb60fcdc58d3abe44be4d50740cf",
+        SHARED_MATERIALS["tests/a4_acceptance_support.py"],
     ),
     (
         "tests/a3_acceptance_support.py",
-        "d89e4dff6834d19562ffd9a3a5fde14c353962ee67a8c1df21113c75979b2545",
+        SHARED_MATERIALS["tests/a3_acceptance_support.py"],
     ),
-    (
-        "tests/a2_full_support.py",
-        "a15976749dc2ae52448d81ea794c2be1c2e0f53d4e2a09de20f9a9790c16dc38",
-    ),
+    ("tests/a2_full_support.py", SHARED_MATERIALS["tests/a2_full_support.py"]),
     (
         "tests/stage_input_process.py",
         "aacb4a33f296a7caedcc70555196d8fd45cea9df3a13447006da3379ddf3ce9d",
@@ -209,16 +175,10 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/config_projection_support.py",
-        "1a3aa9a7ce2535a9a52c3fde9dc18cde964d1de8b89654e3d50e566aae79ef2a",
+        SHARED_MATERIALS["tests/config_projection_support.py"],
     ),
-    (
-        "tests/config_test_support.py",
-        "1bdd4ec7d1c3a3c2274455cfe184ea5ee7d58971d65adc1ccd532a55c295e840",
-    ),
-    (
-        "tests/backup_support.py",
-        "f1ee3e3febb10bcf68212af621c79d0d25951fa1464cd11e23d2afe139e8cc37",
-    ),
+    ("tests/config_test_support.py", SHARED_MATERIALS["tests/config_test_support.py"]),
+    ("tests/backup_support.py", SHARED_MATERIALS["tests/backup_support.py"]),
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
     (
@@ -273,4 +233,12 @@ REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
         "tests/fixtures/stage_inputs/recovery-v1.json",
         "6bf8384d28ebb0ea8dc8f03a2677e8a56761796e099000dc9275928f3e52f355",
     ),
+)
+
+# 显式证明引用; 不将 scope 登记数据作为逐文件哈希材料。
+REQUIRED_SCOPE_REFERENCES = (
+    "scripts/a1_scope.py",
+    "scripts/a2_full_scope.py",
+    "scripts/a3_scope.py",
+    "scripts/a4_scope.py",
 )
