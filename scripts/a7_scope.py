@@ -240,7 +240,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_entry.py",
-        "e59861bb282e5dfb07a5254ec7849ea9aad93885e0833bfef83ef8187dc9ede1",
+        "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
     ),
     (
         "tests/test_a7_status.py",

@@ -118,7 +118,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a9_entry.py",
-        "87d9cde4deef8d3c4fdd21c002c1502569daac2274683dd6f9c35ec2574e1f81",
+        "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003",
     ),
     (
         "tests/test_a9_status.py",
@@ -366,7 +366,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/audit_verification_scope.py",
-        "6e76fcfa02a50155f06dc30ec3ed7f302614fa927c45070f494463722fe1b37f",
+        "fab083cd04a25b016dc90e8dde2f38e26807ee9b2a963ec8136fe0f9853898ab",
     ),
     ("scripts/check-offline", SHARED_MATERIALS["scripts/check-offline"]),
     ("scripts/verification-status", SHARED_MATERIALS["scripts/verification-status"]),
