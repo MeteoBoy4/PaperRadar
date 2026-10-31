@@ -1351,7 +1351,7 @@ REQUIRED_SOURCE_MODULES = (
 REQUIRED_FIXTURE_FILES = (
     (
         "docs/verification/a10-documentation-excerpts.json",
-        "fbed7f8a685db9a9a7259cbb80527b1633022ca46f8685f5e6af3490eb816189",
+        "eae92ce6c217991acc055b40fc907075b64b9cf079fef282086f9f3423687936",
     ),
     (
         "docs/verification/contracts-fixture-audit-history.md",
@@ -1415,7 +1415,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "tests/fixtures/a10_coverage.json",
-        "8a504905e7eb1836616f7797a24718b543cd4ad3f747cefe2e67e822047c038b",
+        "8c5a1af640e63ccd1a2215836a5ac12b1bb69c29b132aa5397379a0bb7589d9d",
     ),
     ("uv.lock", "11aa458753aad1447061e7b8e5ef3adc74e53db4db98ecd36da5d88e14267512"),
 )

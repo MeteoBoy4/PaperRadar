@@ -34,10 +34,10 @@ A10 保留原 693 个需求 ID、顺序、需求来源定位/原文，以及 37 
 `documented_decisions` 由 ADR-0033/0034 与
 [最小冻结摘录](a10-documentation-excerpts.json)承载具体文档义务；
 `sampling_operational_docs`、`documents_and_operational_boundary` 的操作部分转为 operational，
-逐字引用 #104–106 完成/补修原文，产品部分继续由 covered 行为证明。
-只有 A10-104/105/106-BODY-001 三个父票导航条目 covered→operational：
-covered 550→547、operational 108→111，not_assessed=28、superseded=7 不变，合计 693。
-没有产品 AC 转入 not_assessed 或 operational，也没有放宽固定集合外指针。
+逐字引用 #104–106 完成/补修原文；文档内容义务由独立冻结材料证明，产品部分继续由 covered 行为证明。
+A10-104/105/106-BODY-001 三个父票导航条目 covered→operational；另有上述真实缺口 covered→not_assessed：
+covered 550→546、operational 108→111，not_assessed 28→29、superseded=7 不变，合计 693。
+独立review后发现 A10-100-C6405695568-CLAUSE-037 的三处原因登记义务缺少规格 §8.4，单独 covered→not_assessed；Contract/GLOSSARY 两处交付内容保持。固定集合外指针约束未放宽。
 
 ## 冻结测试与受控重绑
 
@@ -72,9 +72,11 @@ A1/A2-01 原审计无固定计数行，不解释为零。共享测试跨组出�
 #130 共享审计实现；其余为 A8→A9/A10、A9→A10 的旧 scope 传播。
 不是接受所有候选哈希，也未增减任何组的测试成员或分母。
 
+独立review修复另在 `review_rebindings` 记录两条实际 fixture 更新：A10 覆盖台账和最小冻结摘录；A10 无下游，不产生额外 scope 传播。原 14 条基线→最终重绑的台账同步最终 SHA，新增摘录绑定也同步实际 SHA。`a10.semantic_review` 指向完整复核记录：原 635 个操作／上下文 occurrence 的 302 个 owner 全部核对，16 个文档义务逐项去向见 [A10迁移说明](a10-scope-document-migration.md#操作与上下文的完整语义复核)。新增 11 段最小原文，加已有 4 段共 15 段，均有基线提交、全文 SHA、章节行号和原文 SHA；其中 §8.4 摘录证明缺口边界。先前候选的审计／测试结果不能代表修复后树。
+
 ## D1 新能力覆盖
 
-四票新增能力均由独立未绑定模块承载，当前总计 76 项；本票只归并文档与登记核对，未新增测试模块。
+四票新增能力与本票review修复均由独立未绑定模块承载，当前总计 93 项。
 它们不进入历史固定分母或回执，最终同次全量 pytest 仍须全部通过。
 
 | 票 | 独立模块 | 用例 | 证明 |
@@ -84,6 +86,9 @@ A1/A2-01 原审计无固定计数行，不解释为零。共享测试跨组出�
 | #129 | `tests/test_a10_scope_migration.py` | 18 | 693/37 保真、2237 指针、处置差、摘录与拒绝 |
 | #130 | `tests/test_scope_document_guards.py` | 27 | 防回绑、受控分类、副本文档与冻结材料、历史适用性因果 |
 | #130 | `tests/test_live_document_links.py` | 4 | 活文档到冻结证据的相对链接存在性 |
+| #131 review修复 | `tests/test_a10_document_obligations.py` | 17 | 15 项文档交付内容、§8.4 真实缺口、302 owner／635指针穷尽复核 |
+
+`tests/scope_document_support.py` 只共享隔离副本重绑与 writer 子进程协议；A8/A9 与防护测试模块各自维护独立白名单、组选择和预期断言。原 18 项 A10 迁移测试仍为18项，仅同步真实处置差；没有修改其他冻结测试。
 
 相关静态/功能验证和 audit/collect 的具体命令与结果由外部 `131-result.md` 交接；
 正式验收只认最终提交上的同次门禁与可信终态。历史 run 样本留在根原目录，root 再按固定样本复核，

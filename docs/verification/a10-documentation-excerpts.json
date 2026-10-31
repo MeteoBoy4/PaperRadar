@@ -15,7 +15,8 @@
       "sha256": "2ad0a96f492d53a704f9eee4c61c2de10437f3b084a865e7e60360a0dcb9b948",
       "requirement_ids": [
         "A10-101-AC-001",
-        "A10-101-AC-002"
+        "A10-101-AC-002",
+        "A10-105-AC-010"
       ],
       "reason": "两项明确的产品文档义务：ADR/history未完整保留主摘要、doiRA及术语/规格文档内容，故保留基线所见的最小内容摘录；不是当前活规范或未来规则。"
     },
@@ -45,7 +46,9 @@
       "sha256": "8ae6c8900f513f3a13ac5909e6303acdda8725e99305ba0c1d38c555628cbcaa",
       "requirement_ids": [
         "A10-101-AC-001",
-        "A10-101-AC-002"
+        "A10-101-AC-002",
+        "A10-100-C6395756759-CLAUSE-115",
+        "A10-100-C6405695568-CLAUSE-037"
       ],
       "reason": "两项明确的产品文档义务：ADR/history未完整保留主摘要、doiRA及术语/规格文档内容，故保留基线所见的最小内容摘录；不是当前活规范或未来规则。"
     },
@@ -60,9 +63,181 @@
       "sha256": "12d81d496a706a3f982376f65e1085b60bc2d341c2a45d6f0a1d814e0d332e73",
       "requirement_ids": [
         "A10-101-AC-001",
-        "A10-101-AC-002"
+        "A10-101-AC-002",
+        "A10-100-C6395756759-CLAUSE-038",
+        "A10-100-C6395756759-CLAUSE-071",
+        "A10-100-C6395889326-CLAUSE-061",
+        "A10-100-C6395889326-CLAUSE-083",
+        "A10-100-C6405695568-CLAUSE-049"
       ],
       "reason": "两项明确的产品文档义务：ADR/history未完整保留主摘要、doiRA及术语/规格文档内容，故保留基线所见的最小内容摘录；不是当前活规范或未来规则。"
+    },
+    {
+      "excerpt_id": "resume-operation-matrix",
+      "path": "docs/contracts/fixture-audit.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "显式恢复、历史回放与追加解释",
+      "line_start": 262,
+      "line_end": 267,
+      "source_sha256": "535e23b9f1e83ce86cb1f58150cf86fd7c291e8983518b2e3deb82fcfaa48138",
+      "original_text": "| 操作 | 输入与副作用 | 证明范围 |\n| --- | --- | --- |\n| `audit resume PLAN_ID --database DB --data-root ROOT --contact-email EMAIL [--json]` / `resume_audit` | 同一计划，显式联网写入；每次重新提供邮箱；CLI 向所选根注入文件汇，记录运行与路线结算摘要，服务默认 NullSink；详见[运行日志](runtime-logging.md) | 继续未结算或允许的暂时路线；不改旧事实 |\n| `audit replay PLAN_ID --database DB --data-root ROOT [--json]` / `replay_audit` | 历史版本，只读、无网络、无执行锁 | 冻结 v1 的成员、候选、截断、仲裁与汇总重建 |\n| `reinterpret_audit(plan_id, parser=..., request_key=...)` | 仅服务 API，显式注入新解析器，短事务追加 | 新解释和相对前驱的字段增减；不换成员、不改 v1 汇总 |\n| `replay_audit_interpretation(..., parser=...)` | 只读，显式匹配该解释声明的运行时 | 可取得材料按该注入解析器重解析；失败仍只有执行事实 |\n",
+      "sha256": "8da78dc338475761ab57a1fb92cc7bef4a2e4bcf62a2abc72d0c34ce8ea9153a",
+      "requirement_ids": [
+        "A10-106-C6411119180-CLAUSE-001",
+        "A10-106-AC-010"
+      ],
+      "reason": "独立交付文档的最小基线内容；与需求原文和完成回帖分开，保留文档存在及内容证明。"
+    },
+    {
+      "excerpt_id": "execution-identity-boundary",
+      "path": "docs/contracts/fixture-audit.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "显式恢复、历史回放与追加解释／代码身份边界",
+      "line_start": 323,
+      "line_end": 325,
+      "source_sha256": "535e23b9f1e83ce86cb1f58150cf86fd7c291e8983518b2e3deb82fcfaa48138",
+      "original_text": "代码身份边界：commit + dirty=true 不能区分同一提交后不同工作树内容；resume 的声明相等\n只证明声明未变。服务记录 installed 或显式 synthetic 身份，不因 dirty=true 自动拒绝计划，\n也不把测试身份或脏树声明认定为真实 clean-code 审计或 live 证据。\n",
+      "sha256": "855b40d1d2ef20a490105daaf8e661e837261d7f30edc80efd79b387eac2db90",
+      "requirement_ids": [
+        "A10-106-C6411119180-CLAUSE-005"
+      ],
+      "reason": "独立交付文档的最小基线内容；与需求原文和完成回帖分开，保留文档存在及内容证明。"
+    },
+    {
+      "excerpt_id": "reason-catalog",
+      "path": "docs/contracts/fixture-audit.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "来源路线与取得安全／路线原因",
+      "line_start": 43,
+      "line_end": 43,
+      "source_sha256": "535e23b9f1e83ce86cb1f58150cf86fd7c291e8983518b2e3deb82fcfaa48138",
+      "original_text": "路线原因沿用[规格 §8.4](../../intent/draft.md#84-http-与外部来源失败)的适用来源分类，审计补充：not_applicable_no_doi、agency_unknown、agency_unsupported、identity_mismatch、unrecognized_page_shape、record_without_abstract、outcome_unknown、deferred_retry_after、not_attempted、disallowed_destination、disallowed_scheme、channel_not_installed。只有有效 Feed 或身份已核验且贡献身份/字段的响应进入 source_snapshot，身份正确但无摘要的页面也保留；失败/限流/挑战/身份未核验 200 仅保留结构化事实。\n",
+      "sha256": "3e909f2bc0f59785b5fd6e4f19001155c94be5c56fca6721add455e76de986aa",
+      "requirement_ids": [
+        "A10-100-C6395756759-CLAUSE-115",
+        "A10-100-C6405695568-CLAUSE-037"
+      ],
+      "reason": "保留独立交付文档的最小基线内容，不以需求或完成回帖替代。"
+    },
+    {
+      "excerpt_id": "fixture-help",
+      "path": "docs/contracts/fixture-audit.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "CLI 与持久化／中文帮助",
+      "line_start": 47,
+      "line_end": 47,
+      "source_sha256": "535e23b9f1e83ce86cb1f58150cf86fd7c291e8983518b2e3deb82fcfaa48138",
+      "original_text": "`fixture register FILE --database DB --data-root ROOT` 显式写登记，不迁移；`fixture check FILE --database DB` 只读比对；`fixture list --database DB [--history]` 与 `fixture show RECORD_ID --database DB` 只读数据库历史，源文件可不存在。共同支持 `--json`（默认关闭）；list 默认 `--history=false`，check 默认声明模式，register 默认无 `--pdf-file` 且 `--backend=false`。可选制品根及 PDF 模式见下节。帮助为中文并说明副作用、配额及示例，无网络/数据库/凭据访问、不创建目录。审计子命令集合为 run/resume/list/show/replay，没有其他命令入口。\n",
+      "sha256": "40fb3c087e039e3eb948638ce67597a757cf3c360b013349740921d9d51c2ea5",
+      "requirement_ids": [
+        "A10-105-AC-013"
+      ],
+      "reason": "保留独立交付文档的最小基线内容，不以需求或完成回帖替代。"
+    },
+    {
+      "excerpt_id": "a6-field-mapping",
+      "path": "docs/contracts/fixture-audit.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "成员摘要与路线矩阵／字段仲裁",
+      "line_start": 234,
+      "line_end": 240,
+      "source_sha256": "535e23b9f1e83ce86cb1f58150cf86fd7c291e8983518b2e3deb82fcfaa48138",
+      "original_text": "成员全部适用路线结算后，构造 A6 RankedObservation 并调用原 choose_fields：\n`observed_at=原取得 settled_at`，`payload_sha256=原响应体 SHA`，`parser_version=1` 对应\nabstract v1，`stream=(plan_id, member_id:route:strategy_version:channel)`；字段引用为\n`(candidate_id, acquisition_id)`。排序复用[论文事实字段仲裁](paper-facts.md#52-字段与优先级)的纯规则，不另建优先级。\n题名/摘要分别获选，\nfinal_abstract_source 只描述摘要；不按长度或截断改写优先级。候选与每字段获选/低优先级/\n较早观察或稳定 tie-break 依据可重建；高优先级获选片段与低优先级未命中截断的冲突按刊计数。\n",
+      "sha256": "ec480484d79b6f4e2be7c6526174eee93b670a92d4e657e8c34d0f4a96001e08",
+      "requirement_ids": [
+        "A10-105-C6411118599-CLAUSE-004"
+      ],
+      "reason": "保留独立交付文档的最小基线内容，不以需求或完成回帖替代。"
+    },
+    {
+      "excerpt_id": "complete-boundary",
+      "path": "docs/contracts/fixture-audit.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "不提供／不证明",
+      "line_start": 394,
+      "line_end": 396,
+      "source_sha256": "535e23b9f1e83ce86cb1f58150cf86fd7c291e8983518b2e3deb82fcfaa48138",
+      "original_text": "- complete 仅表示终态齐备，不实现 B 就绪判定，不证明真实来源稳定、Docling 质量、模型或完整阶段 A 通过。首轮实测与 JGR 来源闸门由[Audit](../roadmap.md#module-audit)/[Source](../roadmap.md#module-source)承接；四刊稳定证据与判据由[Abstract](../roadmap.md#module-abstract)承接。\n- 不提供浏览器、官方 API、仓储或授权运行时，不下载或解析 PDF；正文与全通道责任见[F](../roadmap.md#module-f)，B 单篇正文与接线见[Body](../roadmap.md#module-body)/[B](../roadmap.md#module-b)。本机 PDF 登记不授予许可、身份或质量资格。\n- 不消费附加区块生成生产 Screening，不实现生产人工队列、metadata_ready 或 metadata_unobtainable 生命周期；相关责任见[C](../roadmap.md#module-c)。不提供参考文献 acquired 取得入口，参考文献处理责任见[E](../roadmap.md#module-e)。\n",
+      "sha256": "93323eab878721412eab9e26f92cc8295082cb1bb7559f01a207ad15d5e387f2",
+      "requirement_ids": [
+        "A10-105-AC-010"
+      ],
+      "reason": "保留独立交付文档的最小基线内容，不以需求或完成回帖替代。"
+    },
+    {
+      "excerpt_id": "reference-a10-closure",
+      "path": "docs/contracts/backup-restore.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "组件事实闭包／Fixture 与审计",
+      "line_start": 235,
+      "line_end": 235,
+      "source_sha256": "accd5a6e259eac637dcb834b34288e1efe4914915ba66c7ef88d5aaf486dcc6a",
+      "original_text": "| Fixture 与审计 | 声明、PDF／backend 期望、取得／选样／矩阵／解释与完整汇总引用闭包校验；未实际取得 PDF 不伪报缺件 | [Fixture 审计](fixture-audit.md) |\n",
+      "sha256": "06a9bf53b2a126de474d5ff0a32c0ab4289714e40f40ce6db7a7edb2a1845bd0",
+      "requirement_ids": [
+        "A10-100-C6395889326-CLAUSE-083"
+      ],
+      "reason": "保留独立交付文档的最小基线内容，不以需求或完成回帖替代。"
+    },
+    {
+      "excerpt_id": "fixture-restore-boundary",
+      "path": "docs/contracts/backup-restore.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "Fixture 回放的证明边界",
+      "line_start": 263,
+      "line_end": 269,
+      "source_sha256": "accd5a6e259eac637dcb834b34288e1efe4914915ba66c7ef88d5aaf486dcc6a",
+      "original_text": "### Fixture 回放的证明边界\n\n恢复后的 list/show/replay 只依赖恢复 SQLite 与制品；check 额外检查工作树时，源声明缺失\n独立为 `source_missing`，不是 drift 或批次损坏。恢复不下载／解析 PDF、不自动继续审计，\n不创建审计执行锁。冻结 v1 保留材料按组件规则回放；新 parser 的默认校验只证明声明、\n引用与差异闭包，不声称缺失运行时已经重解析。显式匹配 parser 的重解析规则见\n[审计历史回放](fixture-audit.md#显式恢复历史回放与追加解释106)。\n",
+      "sha256": "50544f4d343597c59b334d4a0ef8e351ccfe4c270b44ee94bad40b7899e8fd37",
+      "requirement_ids": [
+        "A10-100-C6395889326-CLAUSE-083"
+      ],
+      "reason": "保留独立交付文档的最小基线内容，不以需求或完成回帖替代。"
+    },
+    {
+      "excerpt_id": "reference-ra-note",
+      "path": "intent/draft.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "§13.2 参考文献／历史说明",
+      "line_start": 2388,
+      "line_end": 2388,
+      "source_sha256": "1c6afa02e0bb16cb29263db3ea10d06255489aeea224eb6150bcf4c983f99f9d",
+      "original_text": "两篇《大气科学》样本 DOI 的 doiRA 均返回 ISTIC（只读预检观测，非对应票实测），按 §4.3 属其他 RA、判 `agency_unsupported`；上表的 Crossref 无记录结论按 2026-09-13 审计口径并行使用，两者互不覆盖。\n",
+      "sha256": "e9cfb56373eaee6c7e58bc73a565979cf524e7d59b54f8f9d6f7766a7c9094c6",
+      "requirement_ids": [
+        "A10-100-C6405695568-CLAUSE-045"
+      ],
+      "reason": "保留独立交付文档的最小基线内容，不以需求或完成回帖替代。"
+    },
+    {
+      "excerpt_id": "entry-product-count",
+      "path": "docs/contracts/verification-status.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "完整入口的组合边界",
+      "line_start": 136,
+      "line_end": 139,
+      "source_sha256": "f485b6b6ebad3cf7791f69834fa0a00617b108a35ead4e74894100e7f0b826e8",
+      "original_text": "完整入口按顺序发布 A1、A2-01、完整 A2、A3、A4、A5、A6、A7、A8、A9、A10。\n其中 A2-01 为可选组，其余均为 required；正常完整成功包含基础证据、十一份组结论、\npytest 回执和 terminal，共十四份 JSON（十二份主要文件）。当前组合中 A6–A10 的直接前置如下，\n均为同次结论，不继承历史通过；一个组没有直接依赖另一组不免除后者的整体 required 地位。\n",
+      "sha256": "c2a8cc84ceeff1bdfcf1a7d566d0df89b7cdb85d736125eacb2725b0f8c6da3e",
+      "requirement_ids": [
+        "A10-108-AC-004"
+      ],
+      "reason": "保留独立交付文档的最小基线内容，不以需求或完成回帖替代。"
+    },
+    {
+      "excerpt_id": "missing-spec-reasons",
+      "path": "intent/draft.md",
+      "baseline_commit": "78413e6524e0900cb7051a70adcf590fa2e01799",
+      "section": "§8.4 HTTP 与外部来源失败／缺口边界",
+      "line_start": 1473,
+      "line_end": 1491,
+      "source_sha256": "1c6afa02e0bb16cb29263db3ea10d06255489aeea224eb6150bcf4c983f99f9d",
+      "original_text": "### 8.4 HTTP 与外部来源失败\n\nHTTP 请求可以对连接错误和 429/5xx 做同一次任务内的短暂退避，但不能无限重试。长期恢复资格按来源和用途分别保存：\n\n- 304_not_modified；\n- not_found；\n- rate_limited；\n- transient_error；\n- invalid_response；\n- provider_incomplete；\n- access_blocked_403；\n- not_open_access；\n- invalid_pdf；\n- extraction_timeout；\n- extraction_resource_exhausted；\n- extraction_failed_no_text_layer；\n- extraction_failed_quality_gate。\n\n空结果只描述该来源本次没有数据，不能覆盖其他来源事实。错误页面不进入永久 source snapshot。出版方 API 凭证失效（如 Wiley TDM 探测 403）或授权会话失效不是单篇失败，按 §4.8 的凭证级/通道级全文受阻处理，不进入上述单篇分类。\n",
+      "sha256": "40faee3f8f88ee6a649c51b62d18cae5f609072f92551ab11f1c6170f73cbab6",
+      "requirement_ids": [
+        "A10-100-C6405695568-CLAUSE-037"
+      ],
+      "reason": "界定基线§8.4缺少A10新增原因的真实缺口，不证明该义务已交付。"
     }
   ]
 }

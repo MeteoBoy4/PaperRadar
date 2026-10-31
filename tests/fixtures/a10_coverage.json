@@ -9047,7 +9047,8 @@
         "src/paper_radar/fixture_audit/models.py::AuditReference",
         "src/paper_radar/fixture_audit/summary_records.py::SummaryBoundary",
         "src/paper_radar/fixture_audit/summary_records.py::boundary_for",
-        "src/paper_radar/fixture_audit/summary_records.py::load_summary"
+        "src/paper_radar/fixture_audit/summary_records.py::load_summary",
+        "docs/verification/contracts-backup-restore-history.md"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -9058,7 +9059,8 @@
         "full_reference_damage",
         "matrix_not_attempted_closure_fix",
         "audit_reference_binding",
-        "summary_checkpoint_history"
+        "summary_checkpoint_history",
+        "documented_decisions"
       ],
       "capabilities": [
         "isolated_recovery",
@@ -9114,7 +9116,8 @@
         "tests/deny_network/sitecustomize.py",
         "tests/paper_recovery_reader.py",
         "tests/paper_recovery_support.py",
-        "tests/a10-recovery-coverage.md"
+        "tests/a10-recovery-coverage.md",
+        "docs/verification/contracts-backup-restore-history.md"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
       "not_assessed_refs": [
@@ -9125,7 +9128,8 @@
           "responsibility": "匹配旧a704程序verify/restore旧批次后显式升级工作副本。",
           "reason": "本批不扩大当前a1001程序直接接受旧batch的保证。"
         }
-      }
+      },
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-100-DECISION-018",
@@ -16208,7 +16212,8 @@
         "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService._response_settlement",
         "src/paper_radar/fixture_audit/source_http.py::SourceHTTPExecutor.fetch",
         "src/paper_radar/fixture_audit/acquisition_policy.py::checked_source_url",
-        "src/paper_radar/fixture_audit/acquisition_policy.py::request_url"
+        "src/paper_radar/fixture_audit/acquisition_policy.py::request_url",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -16217,7 +16222,8 @@
         "sampling_closed_category",
         "sampling_non_mapping_types_fix",
         "sampling_agency_aies",
-        "http_routes"
+        "http_routes",
+        "documented_decisions"
       ],
       "capabilities": [
         "fixed_sampling",
@@ -16253,10 +16259,12 @@
         "tests/test_audit_sampling_boundaries.py",
         "tests/test_audit_acquisition.py",
         "tests/test_audit_http.py",
-        "docs/adr/0033-classify-journal-articles-from-explicit-source-types.md"
+        "docs/adr/0033-classify-journal-articles-from-explicit-source-types.md",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [],
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-100-C6395756759-CLAUSE-039",
@@ -19763,7 +19771,8 @@
         "src/paper_radar/backup/restore.py::restore_backup",
         "src/paper_radar/fixture_audit/pdf_models.py::PdfModel",
         "src/paper_radar/fixture_audit/pdf_records.py::backend_identity",
-        "fixtures/a10/historical-v1.json"
+        "fixtures/a10/historical-v1.json",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -19782,7 +19791,8 @@
         "pdf_basic_restore",
         "pdf_safe_model_resubmission",
         "pdf_named_model_set_identity",
-        "historical_seed"
+        "historical_seed",
+        "documented_decisions"
       ],
       "capabilities": [
         "registration",
@@ -19852,10 +19862,12 @@
         "tests/test_fixture_pdf_recovery.py",
         "src/paper_radar/fixture_audit/__init__.py",
         "tests/test_a10_isolation.py",
-        "tests/deny_external_io/sitecustomize.py"
+        "tests/deny_external_io/sitecustomize.py",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [],
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-100-C6395756759-CLAUSE-072",
@@ -24072,7 +24084,8 @@
         "src/paper_radar/fixture_audit/abstract_models.py::RouteSummary",
         "src/paper_radar/fixture_audit/abstract_models.py::JournalSummary",
         "src/paper_radar/fixture_audit/audit_cli.py::audit_projection",
-        "src/paper_radar/fixture_audit/audit_cli.py::show_command"
+        "src/paper_radar/fixture_audit/audit_cli.py::show_command",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -24092,7 +24105,8 @@
         "matrix_truncation",
         "matrix_a6_field_arbitration",
         "matrix_summaries",
-        "matrix_safe_cli"
+        "matrix_safe_cli",
+        "documented_decisions"
       ],
       "capabilities": [
         "http_acquisition",
@@ -24165,10 +24179,12 @@
         "tests/test_audit_matrix_boundaries.py",
         "tests/test_audit_sampling.py",
         "tests/test_audit_matrix_recovery.py",
-        "tests/test_audit_resume.py"
+        "tests/test_audit_resume.py",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [],
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-100-C6395756759-CLAUSE-116",
@@ -37987,7 +38003,8 @@
         "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService._response_settlement",
         "src/paper_radar/fixture_audit/source_http.py::SourceHTTPExecutor.fetch",
         "src/paper_radar/fixture_audit/acquisition_policy.py::checked_source_url",
-        "src/paper_radar/fixture_audit/acquisition_policy.py::request_url"
+        "src/paper_radar/fixture_audit/acquisition_policy.py::request_url",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -37996,7 +38013,8 @@
         "sampling_closed_category",
         "sampling_non_mapping_types_fix",
         "sampling_agency_aies",
-        "http_routes"
+        "http_routes",
+        "documented_decisions"
       ],
       "capabilities": [
         "fixed_sampling",
@@ -38032,10 +38050,12 @@
         "tests/test_audit_sampling_boundaries.py",
         "tests/test_audit_acquisition.py",
         "tests/test_audit_http.py",
-        "docs/adr/0033-classify-journal-articles-from-explicit-source-types.md"
+        "docs/adr/0033-classify-journal-articles-from-explicit-source-types.md",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [],
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-100-C6395889326-CLAUSE-062",
@@ -39817,7 +39837,8 @@
         "src/paper_radar/fixture_audit/summary_records.py::boundary_for",
         "src/paper_radar/fixture_audit/summary_records.py::load_summary",
         "src/paper_radar/fixture_audit/summary_records.py::validate_summaries",
-        "fixtures/a10/historical-v1.json"
+        "fixtures/a10/historical-v1.json",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -39829,7 +39850,8 @@
         "fixture_cli",
         "audit_reference_binding",
         "summary_checkpoint_history",
-        "historical_seed"
+        "historical_seed",
+        "documented_decisions"
       ],
       "capabilities": [
         "registration",
@@ -39878,10 +39900,12 @@
         "tests/test_fixture_audit_references.py",
         "src/paper_radar/fixture_audit/__init__.py",
         "tests/test_a10_isolation.py",
-        "tests/deny_external_io/sitecustomize.py"
+        "tests/deny_external_io/sitecustomize.py",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [],
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-100-C6395889326-CLAUSE-084",
@@ -46053,10 +46077,14 @@
         "scripts/a10_coverage.py::validate_coverage",
         "pyproject.toml",
         "uv.lock",
-        "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService.__init__"
+        "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService.__init__",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
-      "not_assessed_responsibility": null,
-      "status": "covered",
+      "not_assessed_responsibility": {
+        "responsibility": "后续词表维护需补齐规格§8.4并独立审阅；本次只披露基线缺口，不改写既有规范或历史结论。",
+        "reason": "基线§8.4未列A10新增原因；Contract与GLOSSARY已有登记，不能证明三处登记义务全部交付。"
+      },
+      "status": "not_assessed",
       "coverage_state": "reviewed",
       "mapped_behavior_ids": [
         "plan_freeze",
@@ -46065,7 +46093,8 @@
         "matrix_summaries",
         "same_run_protocol",
         "scope_and_coverage_binding",
-        "dependency_boundary"
+        "dependency_boundary",
+        "documented_decisions"
       ],
       "capabilities": [
         "http_acquisition",
@@ -46155,10 +46184,14 @@
         "tests/test_a10_isolation.py",
         "scripts/check-offline",
         "scripts/verification_run.py",
-        "docs/verification/offline-evidence.md"
+        "docs/verification/offline-evidence.md",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [
+        "a10_spec_reason_vocabulary"
+      ],
+      "documentation_disposition": "基线§8.4未列A10新增原因；Contract与GLOSSARY已有登记，不能证明三处登记义务全部交付。"
     },
     {
       "requirement_id": "A10-100-C6405695568-CLAUSE-038",
@@ -46745,7 +46778,8 @@
         "src/paper_radar/fixture_audit/service.py::FixtureAudit.continue_audit_sampling",
         "src/paper_radar/fixture_audit/service.py::FixtureAudit.validate_all",
         "src/paper_radar/fixture_audit/source_validation.py::inspect_source",
-        "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService._response_settlement"
+        "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService._response_settlement",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -46754,7 +46788,8 @@
         "historical_seed",
         "sampling_closed_category",
         "sampling_non_mapping_types_fix",
-        "sampling_agency_aies"
+        "sampling_agency_aies",
+        "documented_decisions"
       ],
       "capabilities": [
         "registration",
@@ -46789,10 +46824,12 @@
         "tests/test_audit_sampling.py",
         "tests/test_audit_sampling_boundaries.py",
         "tests/test_audit_acquisition.py",
-        "docs/adr/0033-classify-journal-articles-from-explicit-source-types.md"
+        "docs/adr/0033-classify-journal-articles-from-explicit-source-types.md",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [],
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-100-C6405695568-CLAUSE-046",
@@ -47232,7 +47269,8 @@
         "scripts/a10_coverage.py::validate_coverage",
         "pyproject.toml",
         "uv.lock",
-        "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService.__init__"
+        "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService.__init__",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "operational",
@@ -47244,7 +47282,8 @@
         "fixture_cli",
         "same_run_protocol",
         "scope_and_coverage_binding",
-        "dependency_boundary"
+        "dependency_boundary",
+        "documented_decisions"
       ],
       "capabilities": [
         "registration",
@@ -47320,10 +47359,12 @@
         "scripts/verification_run.py",
         "docs/verification/offline-evidence.md",
         "src/paper_radar/fixture_audit/__init__.py",
-        "tests/deny_external_io/sitecustomize.py"
+        "tests/deny_external_io/sitecustomize.py",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "原评论的只读操作、旧状态或选择依据，规范接线与版本约束由后续具体条款固定。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [],
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-100-C6405695568-CLAUSE-050",
@@ -58314,7 +58355,8 @@
         "src/paper_radar/fixture_audit/service.py::FixtureAudit.resume_audit",
         "src/paper_radar/fixture_audit/acquisition_service.py::AcquisitionService.close_unknown_source",
         "src/paper_radar/fixture_audit/abstract_service.py::AbstractService.advance_matrix",
-        "src/paper_radar/fixture_audit/abstract_rules.py::pending_row"
+        "src/paper_radar/fixture_audit/abstract_rules.py::pending_row",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -58323,7 +58365,8 @@
         "matrix_summaries",
         "matrix_positive_page",
         "resume_unknown_and_atomicity",
-        "documents_and_operational_boundary"
+        "documents_and_operational_boundary",
+        "documented_decisions"
       ],
       "capabilities": [
         "abstract_matrix",
@@ -58390,7 +58433,7 @@
           "reason": "A10沿原A6仲裁，仅披露优先级片段冲突。"
         }
       },
-      "documentation_disposition": "完成/补修与现状说明属于operational；产品部分只由其余covered行为的具体代码/测试与冻结文档证明。"
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-105-AC-011",
@@ -58624,7 +58667,9 @@
         "src/paper_radar/fixture_audit/service.py::FixtureAudit.run_audit",
         "src/paper_radar/fixture_audit/audit_cli.py::audit_projection",
         "src/paper_radar/fixture_audit/audit_cli.py::run_command",
-        "src/paper_radar/fixture_audit/audit_cli.py::show_command"
+        "src/paper_radar/fixture_audit/audit_cli.py::show_command",
+        "docs/verification/a10-documentation-excerpts.json",
+        "src/paper_radar/fixture_audit/audit_cli.py::HELP"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -58633,7 +58678,8 @@
         "matrix_basic_closure",
         "matrix_not_attempted_closure_fix",
         "matrix_safe_cli",
-        "documents_and_operational_boundary"
+        "documents_and_operational_boundary",
+        "documented_decisions"
       ],
       "capabilities": [
         "abstract_matrix",
@@ -58679,7 +58725,7 @@
       ],
       "mapping_note": "沿用既有人工作业map，结合当前107完整恢复与108范围协议审查；不由旧子集通过数推覆盖。",
       "not_assessed_refs": [],
-      "documentation_disposition": "完成/补修与现状说明属于operational；产品部分只由其余covered行为的具体代码/测试与冻结文档证明。"
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-105-AC-014",
@@ -59042,13 +59088,15 @@
       "public_behavior_pointers": [
         "src/paper_radar/fixture_audit/service.py::FixtureAudit.show_audit",
         "src/paper_radar/fixture_audit/abstract_rules.py::project",
-        "src/paper_radar/papers/rules.py::choose_fields"
+        "src/paper_radar/papers/rules.py::choose_fields",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
       "coverage_state": "reviewed",
       "mapped_behavior_ids": [
-        "matrix_a6_field_arbitration"
+        "matrix_a6_field_arbitration",
+        "documented_decisions"
       ],
       "capabilities": [
         "abstract_matrix"
@@ -59066,10 +59114,12 @@
         "src/paper_radar/fixture_audit/abstract_rules.py",
         "src/paper_radar/papers/rules.py",
         "tests/test_audit_matrix_boundaries.py",
-        "tests/test_audit_matrix.py"
+        "tests/test_audit_matrix.py",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "沿用既有人工作业map，结合当前107完整恢复与108范围协议审查；不由旧子集通过数推覆盖。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [],
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-105-C6411118599-CLAUSE-005",
@@ -60109,7 +60159,9 @@
         "src/paper_radar/fixture_audit/interpretation_service.py::InterpretationService.replay",
         "src/paper_radar/fixture_audit/audit_cli.py::resume_command",
         "src/paper_radar/fixture_audit/audit_cli.py::replay_command",
-        "src/paper_radar/fixture_audit/service.py::FixtureAudit.resume_audit"
+        "src/paper_radar/fixture_audit/service.py::FixtureAudit.resume_audit",
+        "docs/verification/a10-documentation-excerpts.json",
+        "src/paper_radar/fixture_audit/audit_cli.py::HELP"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -60117,7 +60169,8 @@
       "mapped_behavior_ids": [
         "history_chain_integrity",
         "reinterpret_three_proof_layers",
-        "resume_replay_cli"
+        "resume_replay_cli",
+        "documented_decisions"
       ],
       "capabilities": [
         "resume_replay"
@@ -60146,10 +60199,12 @@
         "tests/test_audit_resume_recovery.py",
         "tests/test_audit_matrix_recovery.py",
         "tests/test_audit_reinterpret.py",
-        "tests/test_audit_resume_cli.py"
+        "tests/test_audit_resume_cli.py",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "沿用既有人工作业map，结合当前107完整恢复与108范围协议审查；不由旧子集通过数推覆盖。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [],
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-106-AC-011",
@@ -60303,7 +60358,8 @@
         "src/paper_radar/fixture_audit/interpretation_models.py::AuditMaterialParser",
         "src/paper_radar/fixture_audit/service.py::FixtureAudit.replay_audit_interpretation",
         "src/paper_radar/fixture_audit/interpretation_service.py::load_interpretations",
-        "src/paper_radar/fixture_audit/interpretation_service.py::InterpretationService.replay"
+        "src/paper_radar/fixture_audit/interpretation_service.py::InterpretationService.replay",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
@@ -60313,7 +60369,8 @@
         "replay_historical_v1",
         "reinterpret_append_and_differences",
         "reinterpret_three_proof_layers",
-        "documents_and_operational_boundary"
+        "documents_and_operational_boundary",
+        "documented_decisions"
       ],
       "capabilities": [
         "resume_replay"
@@ -60365,7 +60422,7 @@
       ],
       "mapping_note": "沿用既有人工作业map，结合当前107完整恢复与108范围协议审查；不由旧子集通过数推覆盖。",
       "not_assessed_refs": [],
-      "documentation_disposition": "完成/补修与现状说明属于operational；产品部分只由其余covered行为的具体代码/测试与冻结文档证明。"
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-106-C6411119180-CLAUSE-002",
@@ -60611,14 +60668,16 @@
       "public_behavior_pointers": [
         "src/paper_radar/fixture_audit/service.py::FixtureAudit.resume_audit",
         "src/paper_radar/fixture_audit/resume_rules.py::validate_execution_identity",
-        "src/paper_radar/fixture_audit/abstract_service.py::AbstractService.resume"
+        "src/paper_radar/fixture_audit/abstract_service.py::AbstractService.resume",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
       "coverage_state": "reviewed",
       "mapped_behavior_ids": [
         "resume_execution_identity",
-        "documents_and_operational_boundary"
+        "documents_and_operational_boundary",
+        "documented_decisions"
       ],
       "capabilities": [
         "resume_replay"
@@ -60653,7 +60712,7 @@
       ],
       "mapping_note": "沿用既有人工作业map，结合当前107完整恢复与108范围协议审查；不由旧子集通过数推覆盖。",
       "not_assessed_refs": [],
-      "documentation_disposition": "完成/补修与现状说明属于operational；产品部分只由其余covered行为的具体代码/测试与冻结文档证明。"
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-107-BODY-001",
@@ -63145,13 +63204,15 @@
         "scripts/a10_acceptance.py::write_a10_conclusion",
         "scripts/a2_full_acceptance.py::acceptance_groups",
         "scripts/a2_test_receipt.py",
-        "scripts/verification_status.py"
+        "scripts/verification_status.py",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "not_assessed_responsibility": null,
       "status": "covered",
       "coverage_state": "reviewed",
       "mapped_behavior_ids": [
-        "same_run_protocol"
+        "same_run_protocol",
+        "documented_decisions"
       ],
       "capabilities": [
         "same_run_acceptance"
@@ -63190,10 +63251,12 @@
         "tests/test_a10_status.py",
         "scripts/check-offline",
         "scripts/verification_run.py",
-        "docs/verification/offline-evidence.md"
+        "docs/verification/offline-evidence.md",
+        "docs/verification/a10-documentation-excerpts.json"
       ],
       "mapping_note": "逐条规范及后续裁决对照实际公共行为/现有断言；covered仅表示覆盖映射，不是本轮运行通过。",
-      "not_assessed_refs": []
+      "not_assessed_refs": [],
+      "documentation_disposition": "文档义务由独立冻结内容保留；具体产品行为继续由原代码/测试证明，完成回帖只证明操作。"
     },
     {
       "requirement_id": "A10-108-AC-005",
@@ -65743,6 +65806,10 @@
     "artifact_gc": {
       "responsibility": "后续GC实现同时核对Paper与审计引用。",
       "reason": "本批文档记双引用闭包，无新自动清理能力。"
+    },
+    "a10_spec_reason_vocabulary": {
+      "responsibility": "后续词表维护需补齐规格§8.4并独立审阅；本次只披露基线缺口，不改写既有规范或历史结论。",
+      "reason": "基线§8.4未列A10新增原因；Contract与GLOSSARY已有登记，不能证明三处登记义务全部交付。"
     }
   },
   "extra_safety_assertions": [
@@ -66797,7 +66864,7 @@
     {
       "behavior_id": "documented_decisions",
       "status": "covered",
-      "public_behavior": "基线已在ADR0033/0034及冻结摘录中记录类别、doiRA、主摘要、声明权威和通道边界；不证明今天的活文档逐字相同。",
+      "public_behavior": "基线文档内容由逐需求的冻结摘录、ADR与history保留，涵盖类别/路由、词表、声明、恢复、仲裁及操作/代码身份边界；缺失的§8.4登记单列not_assessed，不证明当前活文档或文档时序。",
       "public_behavior_pointers": [
         "docs/verification/a10-documentation-excerpts.json",
         "docs/verification/contracts-fixture-audit-history.md",
@@ -67942,7 +68009,7 @@
     {
       "behavior_id": "documents_and_operational_boundary",
       "status": "operational",
-      "public_behavior": "原#104–#106完成/补修回帖及文档边界属于历史操作记录；不作为当前产品覆盖或测试执行。",
+      "public_behavior": "#105/#106完成与补修回帖属于历史操作记录；独立文档义务转由documented_decisions及逐需求冻结内容承担。",
       "public_behavior_pointers": [
         "tests/fixtures/a10_coverage.json",
         "docs/verification/contracts-fixture-audit-history.md",
@@ -67974,7 +68041,7 @@
         "docs/adr/0034-separate-fixture-declarations-and-acquisition-audits.md",
         "tests/fixtures/a10_coverage.json"
       ],
-      "mapping_note": "原来covered混合了操作与文档事实；修订2明确为operational，关联产品行为仍由各自代码/测试证明。",
+      "mapping_note": "只保留完成/补修操作事实；文档交付内容和缺口在独立冻结摘录及逐需求处置中审查。",
       "operational_source_ids": [
         "issue-105-comment-6414675754",
         "issue-105-comment-6415020905",
