@@ -10,7 +10,7 @@ import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 
-from scripts.verification_scope_audit import (
+from scripts.verification_scope_registry import (
     AuditReason,
     CollectionResult,
     valid_case_count,

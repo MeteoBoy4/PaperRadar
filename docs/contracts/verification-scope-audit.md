@@ -26,13 +26,15 @@
 | `counts` | 各组固定 `expected_cases`；跨组同一模块计数冲突失败，不合并覆盖 |
 | `issues` | 登记/图结构异常的组、scope 或 writer 位置、受控原因；不含原始数据 |
 | `order` | scope 引用 DAG 的拓扑顺序；循环/自引用时为空 |
-| `downstream` | 修改某个 scope 后受影响的传递下游，不是正式结论依赖 |
+| `downstream` | 修改某个 scope 后需审阅/验证的受影响传递下游，不要求下游重绑；实际文件漂移另按 `files.reason` 核对 |
 | `affected_groups` | 直接异常与 scope 修改传播可能影响的验收组；收集超时/失败不推断所有模块漂移 |
 | `collection` | `reason`、`execution`、`modules`；默认 `not_requested`、`not_run`、`{}`；显式收集返回模块节点计数，读取到完整计数结果时另含非负整数 `collection_skipped`、`deselected`；`execution` 恒为 `not_run` |
 
 `kind` 使用登记种类 test/source/fixture；`role` 将 source 中的 scripts/tests 路径
 标为 support。fixture 包含固定向量，仍通过路径明确定位。文件原因仅为 ok、
 hash_drift、missing_file、unreadable_file、live_document_binding。非法路径或哈希不原样回显。
+
+文本输出分别列出需审阅/验证的受影响下游与实际文件漂移；显式引用本身不要求重算下游登记。
 
 ### 活文档防回绑与链接
 
@@ -90,6 +92,9 @@ writer/scope 时，不必另维护审计组列表；改变导入命名约定或�
 解释契约与回归测试。
 
 `AuditReason`、`FileKind`、`FileRole` 约束受控值，输出记录使用 `TypedDict`。
+报告类型、`Scope` 和纯接收校验由登记模块维护；旧审计模块导入位置继续兼容。
+基线编排通过内部显式 callable 使用当前审计核心，不从登记或收集模块反向导入审计。
+历史树由独立进程加载其自己的公开审计接口，以保留跨版本读取协议。
 `Scope.bindings`/`counts` 保留原始 `object` 输入，以便审计非法登记而非假设其已合法；
 `parse_file_bindings` 和严格正整数校验是接收边界。每种文件绑定是由
 `(path, sha256)` 二元 tuple 组成的 tuple；哈希须为 64 位小写十六进制。路径须为
@@ -104,6 +109,8 @@ writer/scope 时，不必另维护审计组列表；改变导入命名约定或�
 `REQUIRED_TEST_CASE_COUNTS`。主 scope 声明这些常量时，writer 必须显式消费它们。
 固定清单表达式也支持负整数字面量，但非正计数仍被接收校验拒绝。允许的元数据
 属性以[登记解释器的 `METADATA`](../../scripts/verification_scope_registry.py)为准。
+
+生产 `scripts/verification_groups.py::GROUPS` 的声明语义（名称、后缀、required、依赖、writer、回执 scope）纳入敏感摘要，改变时须逐全部影响组确认；仅普通 helper 实现变化继续按 source/support 机械变化处理。更新中央 SHA 不能解除语义确认要求。
 
 ### 共享材料中央引用
 
@@ -249,6 +256,6 @@ JSON 的 `reason` 使用 `AuditReason` 的受控值；失败不回显文件内�
 ## 相关
 
 - 依据：[#60](https://github.com/MeteoBoy4/PaperRadar/issues/60)（开发维护命令）、[#132](https://github.com/MeteoBoy4/PaperRadar/issues/132)、[ADR-0038](../adr/0038-separate-live-documents-and-share-verification-registration.md)、[规格 §11](../../intent/draft.md#十一九阶段实施与验收)、[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)（固定材料、同次身份与离线证明边界）。
-- 实现：[命令入口](../../scripts/audit-verification-scope)、[CLI](../../scripts/audit_verification_scope.py)、[审计与报告类型](../../scripts/verification_scope_audit.py)、[登记解释](../../scripts/verification_scope_registry.py)、[独立收集](../../scripts/verification_scope_collection.py)。
+- 实现：[命令入口](../../scripts/audit-verification-scope)、[CLI](../../scripts/audit_verification_scope.py)、[公开审计](../../scripts/verification_scope_audit.py)、[报告类型与登记解释](../../scripts/verification_scope_registry.py)、[独立收集](../../scripts/verification_scope_collection.py)。
 - 正式结论的查询边界见[verification-status](verification-status.md)；固定登记维护与历史证据见[离线验证证据](../verification/offline-evidence.md#固定-scope-维护审计60)。
 - 当前迁移的精确重绑、逐变化审阅依据、固定分母与独立覆盖见[集成台账](../verification/scope-registry-integration.md)；台账中的候选审阅不替代当前身份的外部确认或正式门禁。
