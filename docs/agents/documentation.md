@@ -62,6 +62,12 @@
 - 证据按次冻结于 `docs/verification/` 和 `verification-runs/`。
 - 票的实施过程、审阅发现留在 issue 评论、PR 与 `intent/review/`，不进入长期文档。
 
+**固定验收范围**：规格、README、GLOSSARY 与现状 Contract 已解除整文件历史绑定。
+分类事实由 `docs/verification/scope-material-inventory.json` 的精确路径清单维护，新增或改类须显式审阅；未知文档仍按固定材料处理。
+history、需求/覆盖台账、冻结摘录、ADR、Schema、代码、测试、fixture 与依赖身份继续保持固定材料约束。
+改文档或固定材料、开展 spec 集成与收口时，读取并执行
+[固定范围与集成规则](verification-scope.md)；中央登记与新组机制的目标及交付边界也在那里说明。
+
 **变更协议**：一次裁决或实现落地时，在同一变更内依次检查：
 
 1. 是否达到 ADR 门槛；

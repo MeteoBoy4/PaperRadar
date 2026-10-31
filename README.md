@@ -295,6 +295,11 @@ uv run --offline --locked pytest tests/test_feed_pipeline.py
 操作规则见[scope 审计契约](docs/contracts/verification-scope-audit.md)，
 登记维护见[维护说明](docs/verification/offline-evidence.md#固定-scope-维护审计60)。
 
+规格、README、术语和现状 Contract 已与历史固定材料解绑；修改这些活文档无需重绑，
+仍会改变历史 run 对当前工作树的适用性。冻结依据与本次迁移见
+[第一步迁移台账](docs/verification/scope-document-migration.md)，
+实施与收口遵循[项目集成规则](docs/agents/verification-scope.md)。
+
 ## Pi 固定供给
 
 项目独立管理 Pi／Node 安装，不依赖个人 Pi。`prepare` 与 `rebuild` 会**联网下载并安装**，

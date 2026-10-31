@@ -112,7 +112,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a9_integrity.py",
-        "bf7b9fe0c7856a3d652bcaa72474d93cf427e30930275cf0918072b0af53c853",
+        "ebc1181bcc35320fc097cb2ccae6422372c3fff2e58c795472b12bff10cce1fe",
     ),
     (
         "tests/test_a9_entry.py",
@@ -124,7 +124,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a9_scope.py",
-        "843067698f290387b867b3dd42e81a52bcc1cc2eaed36f8f2a47ceedd2673ff7",
+        "1b889334ba376d5b622071c8aee6f15ce9b250448fc2a8ee830201f42321b5b3",
     ),
 )
 
@@ -331,7 +331,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a9_acceptance.py",
-        "e1a5cd2d8f352de377f4a59d69cb9c5df0e8356c088f31274b3961d22895ce34",
+        "9b566dd59ea82caa62ccaffdf32203627db73af4d7734e8e2ddfbbe8320d8899",
     ),
     (
         "scripts/a1_scope.py",
@@ -383,7 +383,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/verification_scope_audit.py",
-        "8a83ecbc39fb3a7e692d2c17a48646b20e90945d57c2f6712f88b9232d5d0ce5",
+        "f33de0007482e71d67eaeaadc8218b42ac2950105e2b63f00cbc4e941377830a",
     ),
     (
         "scripts/audit_verification_scope.py",
@@ -495,7 +495,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "c36f4d5c5215e51bacfb3be913b540d379ed8309350aa9f0a468ea45f55822c9",
+        "7e9c6020314c8efa9dcba8dce02f78d61586c7d8def2026e6f6498413a7ecdc2",
     ),
 )
 
@@ -590,6 +590,6 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "tests/fixtures/a9_coverage.json",
-        "36917e6f63fab382ad9b11afcbfb69b993d2e9e8a125596ee9e1dc09ba681650",
+        "94630d67864357a4aa014aae7b9b25b0730ad3cdd5830c9da93142a3f3973c16",
     ),
 )

@@ -36,6 +36,11 @@ hash_drift、missing_file、unreadable_file、live_document_binding。非法路�
 
 ### 活文档防回绑与链接
 
+现行登记已移除规格、README、GLOSSARY 与现状 Contract 的 19 条整文件绑定。
+冻结依据继续由 history、需求/覆盖台账、最小冻结摘录、ADR、Schema 及代码/测试/fixture/依赖身份承担；
+[迁移台账](../verification/scope-document-migration.md)记录旧 SHA、替代依据及固定分母。
+共享材料仍在各组重复登记，42 条 scope 引用边仍按旧规则传播；当前接口不提供中央登记或显式基线分析。
+
 审计从仓库的
 [`scope-material-inventory.json`](../verification/scope-material-inventory.json)
 读取唯一分类事实 `classification_rules.live_documents.exact_paths`，对规范仓库相对路径

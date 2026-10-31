@@ -305,7 +305,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/verification_scope_audit.py",
-        "8a83ecbc39fb3a7e692d2c17a48646b20e90945d57c2f6712f88b9232d5d0ce5",
+        "f33de0007482e71d67eaeaadc8218b42ac2950105e2b63f00cbc4e941377830a",
     ),
     (
         "tests/deny_external_io/sitecustomize.py",

@@ -144,7 +144,7 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 
 ## 未成形
 
-[#112](https://github.com/MeteoBoy4/PaperRadar/issues/112) 的 Verification Scope 重构由用户在 #113 后重新梳理，未纳入本次模块图或实施范围。
+[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 承接 Verification Scope 文档解耦、集中登记与并行集成；按 S7(c) 不增模块、不阻塞 B。活文档解绑与当前单 spec 规则见[项目规则](agents/verification-scope.md)，第一步候选事实见[迁移台账](verification/scope-document-migration.md)。中央登记、新组机制及跨 spec 自动回归由第二步承接；第一步独立审阅、最终门禁与 main 收口完成后，以实际 main 提交另起第二步集成基线。
 
 Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各自入口、承接责任与待裁决项；依据[§11](../intent/draft.md#十一九阶段实施与验收)。
 
@@ -175,7 +175,7 @@ Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各�
 
 ## 收口安排
 
-A 窄收口新增能力沿用 #114 先例：独立新测试模块作为工程证据，登记到 [A 窄收口覆盖台账](verification/a-narrow-delivery.md)，不计入历史固定分母、不新增既有 required 集合、不改 verification_status 后缀白名单及「十四份 JSON」承诺。最终集成树须在同一次完整门禁中由可信 terminal 证明全部 required 通过；新增能力不得复用 A1–A10 历史结论，`stage_a_verified=false` 保持。机器可读新增组与完整 A 结论留到 A 真正收口票（或 #112 之后）建立；B 沿用此规则，子票无需为新增组重绑（[#120 D1](https://github.com/MeteoBoy4/PaperRadar/issues/120#issuecomment-6520223100)）。
+A 窄收口新增能力沿用 #114 先例：独立新测试模块作为工程证据，登记到 [A 窄收口覆盖台账](verification/a-narrow-delivery.md)，不计入历史固定分母、不新增既有 required 集合、不改 verification_status 后缀白名单及「十四份 JSON」承诺。最终集成树须在同一次完整门禁中由可信 terminal 证明全部 required 通过；新增能力不得复用 A1–A10 历史结论，`stage_a_verified=false` 保持。机器可读新组注册机制由 [#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 第二步承接；是否、何时将 #114/#120 能力转为 required 组及完整 A 结论仍由 A 真正收口票决定；B 沿用此规则，子票无需为新增组重绑（[#120 D1](https://github.com/MeteoBoy4/PaperRadar/issues/120#issuecomment-6520223100)）。
 
 [阶段 A 收口清单](verification/stage-a-closure.md) 保留规格 §11 A 原实施/测试/DoD 的稳定序号、
 历史证据与后续责任。A1–A10 通过不等于完整 A 通过。该收口清单是过渡清单；A 真正收口时
