@@ -32,7 +32,33 @@
 
 `kind` 使用登记种类 test/source/fixture；`role` 将 source 中的 scripts/tests 路径
 标为 support。fixture 包含固定向量，仍通过路径明确定位。文件原因仅为 ok、
-hash_drift、missing_file、unreadable_file。非法路径或哈希不原样回显。
+hash_drift、missing_file、unreadable_file、live_document_binding。非法路径或哈希不原样回显。
+
+### 活文档防回绑与链接
+
+审计从仓库的
+[`scope-material-inventory.json`](../verification/scope-material-inventory.json)
+读取唯一分类事实 `classification_rules.live_documents.exact_paths`，对规范仓库相对路径
+逐项精确匹配。任何组的 test/source/fixture 清单再次登记其中路径，文件原因均为
+`live_document_binding`，审计失败且不进入测试收集。未知路径继续核对固定字节，
+不因目录或扩展名自动豁免；分类新增或改类须显式审阅。
+
+Python 接口对仓库副本读取副本自己的分类数据；纯合成材料目录没有分类文件、
+项目配置或 Git 仓库标志时，使用当前审计实现所属仓库的同一份规则。
+仅复制审计脚本、连实现目录也没有项目/Git/分类材料的纯合成支撑，保留无分类的
+合成审计语义，不声明生产活文档分类事实。
+分类无法读取、非法 JSON、缺少字段、空清单、重复或非法路径均受控拒绝，
+不回显原始内容，也不在完整仓库缺失分类时回退宿主规则。
+
+普通 pytest 的[链接检查](../../tests/test_live_document_links.py)只读取上述已分类活文档
+中的相对 Markdown 链接，检查指向 `docs/verification/`、`verification-runs/`、
+`intent/review/` 以及清查明确列出的证据、history、coverage/台账路径是否存在。
+断链报告源文档、行号与目标；外部 URL、纯锚点、其他目标及未分类文档不在范围内。
+它不访问网络、不检查锚点或链接语义，也不新增验收组。目标字节仍由固定材料审计负责。
+
+修改活文档可同时保持审计通过、scope 字节不变和 A8–A10 writer 没有 `scope_drift`。
+活文档仍参与完整工作树身份，因此旧 run 的历史状态保持，当前适用性变为
+`applicability=different`，不能把审计通过视为旧结论适用于新树。
 
 ### Python 接口与登记接收
 
@@ -99,6 +125,7 @@ JSON 的 `reason` 使用 `AuditReason` 的受控值；失败不回显文件内�
 | 类别 | 原因 |
 | --- | --- |
 | 登记集合与绑定 | `empty_registry`、`duplicate_scope`、`empty_binding`、`invalid_binding`、`duplicate_path` |
+| 活文档分类 | 文件级 `live_document_binding`；规则级 `classification_unavailable`、`invalid_classification` |
 | 引用图 | `self_reference`、`cycle` |
 | 固定计数 | `invalid_counts`、`count_keys_mismatch`、`invalid_count`、`conflicting_counts` |
 | 登记加载与解释 | `registration_unavailable`、`invalid_registration`、`unsupported_registration`、`duplicate_registration`、`duplicate_count_key`、`unsupported_scope_import`、`unsupported_writer_scope`、`unsupported_scope_constant`、`unconsumed_registration`、`unsupported_secondary_binding`、`writer_unavailable`、`registry_unavailable` |

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -16,6 +17,9 @@ class AuditReason(StrEnum):
     HASH_DRIFT = "hash_drift"
     MISSING_FILE = "missing_file"
     UNREADABLE_FILE = "unreadable_file"
+    LIVE_DOCUMENT_BINDING = "live_document_binding"
+    CLASSIFICATION_UNAVAILABLE = "classification_unavailable"
+    INVALID_CLASSIFICATION = "invalid_classification"
     EMPTY_REGISTRY = "empty_registry"
     DUPLICATE_SCOPE = "duplicate_scope"
     EMPTY_BINDING = "empty_binding"
@@ -176,12 +180,59 @@ def _read_files(
 
 def audit_scopes(root: Path, scopes: tuple[Scope, ...]) -> AuditReport:
     """先采集文件事实, 再用纯逻辑核对固定登记与引用图。"""
-    return _audit(scopes, _read_files(root, scopes))
+    live_documents, classification_error = _live_documents(root)
+    return _audit(
+        scopes, _read_files(root, scopes), live_documents, classification_error
+    )
+
+
+CLASSIFICATION_PATH = "docs/verification/scope-material-inventory.json"
+
+
+def _live_documents(root: Path) -> tuple[frozenset[str], AuditReason | None]:
+    # 纯合成材料目录沿用本实现的分类; 完整仓库副本必须消费自己的规则,
+    # 即使它的规则已缺失也不能回退宿主, 否则副本损坏会静默通过。
+    repository = root
+    if not any(
+        (root / marker).exists() or (root / marker).is_symlink()
+        for marker in (CLASSIFICATION_PATH, "pyproject.toml", ".git")
+    ):
+        repository = Path(__file__).resolve().parents[1]
+        # 兼容仅复制审计脚本的旧合成 CLI fixture。没有项目/Git/分类材料的
+        # 纯合成支撑目录不声明生产分类事实; 真实仓库缺规则仍在下方拒绝。
+        if not any(
+            (repository / marker).exists() or (repository / marker).is_symlink()
+            for marker in (CLASSIFICATION_PATH, "pyproject.toml", ".git")
+        ):
+            return frozenset(), None
+    try:
+        path = repository / CLASSIFICATION_PATH
+        if not path.resolve().is_relative_to(repository.resolve()):
+            raise OSError
+        value = json.loads(path.read_bytes())
+    except OSError:
+        return frozenset(), AuditReason.CLASSIFICATION_UNAVAILABLE
+    except (ValueError, RecursionError):
+        return frozenset(), AuditReason.INVALID_CLASSIFICATION
+    try:
+        paths = value["classification_rules"]["live_documents"]["exact_paths"]
+    except (KeyError, TypeError):
+        return frozenset(), AuditReason.INVALID_CLASSIFICATION
+    if (
+        not isinstance(paths, list)
+        or not paths
+        or any(not valid_path(path) for path in paths)
+        or len(set(paths)) != len(paths)
+    ):
+        return frozenset(), AuditReason.INVALID_CLASSIFICATION
+    return frozenset(paths), None
 
 
 def _audit(
     scopes: tuple[Scope, ...],
     identities: Mapping[str, tuple[str | None, AuditReason]],
+    live_documents: frozenset[str],
+    classification_error: AuditReason | None,
 ) -> AuditReport:
     """确定性校验; 不读取文件或刷新任何登记。"""
     files: list[FileRecord] = []
@@ -192,6 +243,13 @@ def _audit(
 
     def issue(scope: Scope, reason: AuditReason) -> None:
         issues.append(dict(group=scope.group, path=scope.path, reason=reason))
+
+    if classification_error is not None:
+        issues.append(
+            dict(
+                group="registry", path=CLASSIFICATION_PATH, reason=classification_error
+            )
+        )
 
     if not scopes:
         issues.append(
@@ -226,6 +284,8 @@ def _audit(
                 actual, reason = identities[path]
                 if reason == AuditReason.OK and actual != expected:
                     reason = AuditReason.HASH_DRIFT
+                if path in live_documents:
+                    reason = AuditReason.LIVE_DOCUMENT_BINDING
                 files.append(
                     dict(
                         group=scope.group,

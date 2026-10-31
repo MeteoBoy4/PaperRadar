@@ -146,7 +146,7 @@ pytest 回执和 terminal，共十四份 JSON（十二份主要文件）。当�
 | A9 | A1、完整 A2、A3 |
 | A10 | A1、完整 A2、A3、A6 |
 
-A8、A9 不把规格、README、术语与现状 Contract 作为整文件固定材料；原组的
+A8–A10 不把规格、README、术语与现状 Contract 作为整文件固定材料；原组的
 history、需求与覆盖材料、源码、测试和 fixture 仍核验实际字节。A9 的
 `provenance_replay` 由 Read 上下文实现、固定上下文测试与
 [Read 历史覆盖](../verification/contracts-read-validation-history.md)承载；writer

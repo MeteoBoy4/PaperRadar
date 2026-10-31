@@ -64,6 +64,7 @@ report = audit_scopes(root, load_scopes(root))
 assert not report['issues'], report['issues']
 reviewed = {
     'scripts/a9_acceptance.py',
+    'scripts/verification_scope_audit.py',
     'tests/fixtures/a9_coverage.json',
     'tests/test_a9_scope.py',
     'tests/test_a9_integrity.py',
