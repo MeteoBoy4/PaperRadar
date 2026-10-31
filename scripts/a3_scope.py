@@ -6,7 +6,9 @@ MIGRATION_REVISION = "feed06_language_provenance"
 ARTIFACT_MIGRATION_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/storage/migrations/versions/a302_artifact_store.py",
-        "0f15648cd3a8fc8cbe8938f1890894cfcba801643aff4204826910b35db88610",
+        SHARED_MATERIALS[
+            "src/paper_radar/storage/migrations/versions/a302_artifact_store.py"
+        ],
     ),
 )
 
@@ -26,34 +28,28 @@ ARTIFACT_TEST_MODULES: tuple[tuple[str, str], ...] = (
 )
 
 ARTIFACT_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
-    (
-        "tests/a3_process_support.py",
-        "4c0ca963d2513532060c5f122f92b09933e234c4c65e342b78d3fd5d06880d74",
-    ),
+    ("tests/a3_process_support.py", SHARED_MATERIALS["tests/a3_process_support.py"]),
     (
         "src/paper_radar/storage/filesystem.py",
-        "b0904b630bb476eb4a7286ec9b6623176e83549be8c0a33faec7e29a1480e91e",
+        SHARED_MATERIALS["src/paper_radar/storage/filesystem.py"],
     ),
     (
         "src/paper_radar/storage/artifact_contract.py",
-        "ab8284b17b5710fe9e537f6edb88fff7fc84f686417f96e3558405699f1fa999",
+        SHARED_MATERIALS["src/paper_radar/storage/artifact_contract.py"],
     ),
     (
         "src/paper_radar/storage/artifact_repository.py",
-        "e81d40c7330f4a2676524ead4c59bea4c263d81b447deeb32403c0599e7d222b",
+        SHARED_MATERIALS["src/paper_radar/storage/artifact_repository.py"],
     ),
     (
         "src/paper_radar/storage/artifacts.py",
-        "a30949836fd65485df2b3fc477b1027b7deddb405edd90bc4f29c297ade333f5",
+        SHARED_MATERIALS["src/paper_radar/storage/artifacts.py"],
     ),
     (
         "src/paper_radar/storage/blob_store.py",
-        "3664854101b7d4e1612118a9dafa2320a879ca48e9ae9273c05c56821662d8e6",
+        SHARED_MATERIALS["src/paper_radar/storage/blob_store.py"],
     ),
-    (
-        "tests/artifact_support.py",
-        "2771734fb913cb279be6aa9b9518b7d7e2bf70e2b7982f28e47b78be89000664",
-    ),
+    ("tests/artifact_support.py", SHARED_MATERIALS["tests/artifact_support.py"]),
     (
         "tests/artifact_process/sitecustomize.py",
         "93a006ce86ff483ac1bd6fdb574533acc859faf82dca5fae074bb173395f2bc4",
@@ -125,32 +121,29 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
 BACKUP_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/backup/cli_support.py",
-        "08b5de8379ea9c357d7ed05c1d4a33f145d56066842e993a8cc0e7301dcb298e",
+        SHARED_MATERIALS["src/paper_radar/backup/cli_support.py"],
     ),
     (
         "src/paper_radar/backup/__init__.py",
-        "b03e71f04496d78aceb9ab27b399945c72d4ac150db3a47f45e52a6696558078",
+        SHARED_MATERIALS["src/paper_radar/backup/__init__.py"],
     ),
     (
         "src/paper_radar/backup/manifest.py",
-        "f3022f086d2de599ee7a0e6c2cf57a3d7ec75eed196553f891a6f807de75ab79",
+        SHARED_MATERIALS["src/paper_radar/backup/manifest.py"],
     ),
     (
         "src/paper_radar/backup/files.py",
-        "8bf4f05fea2085b1e6b25bb0ae426db2c13da47aa314dd695a1cd5c5259d36b8",
+        SHARED_MATERIALS["src/paper_radar/backup/files.py"],
     ),
     (
         "src/paper_radar/backup/service.py",
-        "ca0eccbe1b49772e9376172c489e129fef98743a79e12b566a2b6dad33534e4d",
+        SHARED_MATERIALS["src/paper_radar/backup/service.py"],
     ),
     (
         "src/paper_radar/backup/cli.py",
-        "731e05af4659eefa8c52707516525e27244265ae0bdbd4a6a364228fda92d838",
+        SHARED_MATERIALS["src/paper_radar/backup/cli.py"],
     ),
-    (
-        "tests/backup_support.py",
-        "f1ee3e3febb10bcf68212af621c79d0d25951fa1464cd11e23d2afe139e8cc37",
-    ),
+    ("tests/backup_support.py", SHARED_MATERIALS["tests/backup_support.py"]),
 )
 
 RESTORE_TEST_CASE_COUNTS = {
@@ -177,20 +170,17 @@ RESTORE_TEST_MODULES: tuple[tuple[str, str], ...] = (
 RESTORE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/backup/restore.py",
-        "13d80b3ce3239dcc8159d02cc91ac50ac6abec1f526a8337b16fad8aba77b46f",
+        SHARED_MATERIALS["src/paper_radar/backup/restore.py"],
     ),
     (
         "src/paper_radar/backup/restore_contract.py",
-        "9f251dd2aa193d3a6908361fd813c184d6dbe605aec122a7cf0de0db9262bb13",
+        SHARED_MATERIALS["src/paper_radar/backup/restore_contract.py"],
     ),
     (
         "src/paper_radar/backup/restore_cli.py",
-        "d168d5159b481ac48fdeff10c2931052a490cb1eea58b784a8494ce2cf81b6e5",
+        SHARED_MATERIALS["src/paper_radar/backup/restore_cli.py"],
     ),
-    (
-        "tests/restore_support.py",
-        "0ab9a716354d3c7481596a59e2ea20aac453de1602bc88712f119f1bab726736",
-    ),
+    ("tests/restore_support.py", SHARED_MATERIALS["tests/restore_support.py"]),
     (
         "tests/restore_process/sitecustomize.py",
         "5db3ad1399ca9d83f4a8143f6724f45dd632b72fd6b246feab9dc75f35b713ae",
@@ -274,10 +264,7 @@ ACCEPTANCE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
 )
 ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
-    (
-        "scripts/a3_acceptance.py",
-        "bee7e6b29c2fe1ef4e96311a3c1626e24c7266e440c2e1a685afba1a0448229e",
-    ),
+    ("scripts/a3_acceptance.py", SHARED_MATERIALS["scripts/a3_acceptance.py"]),
     (
         "scripts/verification_checks.py",
         SHARED_MATERIALS["scripts/verification_checks.py"],
@@ -290,53 +277,34 @@ ACCEPTANCE_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
         "scripts/verification_publication.py",
         SHARED_MATERIALS["scripts/verification_publication.py"],
     ),
-    (
-        "scripts/verification_run.py",
-        SHARED_MATERIALS["scripts/verification_run.py"],
-    ),
+    ("scripts/verification_run.py", SHARED_MATERIALS["scripts/verification_run.py"]),
     (
         "scripts/a2_full_acceptance.py",
         SHARED_MATERIALS["scripts/a2_full_acceptance.py"],
     ),
-    (
-        "scripts/a2_test_receipt.py",
-        SHARED_MATERIALS["scripts/a2_test_receipt.py"],
-    ),
-    (
-        "scripts/offline_evidence.py",
-        SHARED_MATERIALS["scripts/offline_evidence.py"],
-    ),
-    (
-        "scripts/a2_full_scope.py",
-        "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
-    ),
-    (
-        "scripts/check-offline",
-        SHARED_MATERIALS["scripts/check-offline"],
-    ),
+    ("scripts/a2_test_receipt.py", SHARED_MATERIALS["scripts/a2_test_receipt.py"]),
+    ("scripts/offline_evidence.py", SHARED_MATERIALS["scripts/offline_evidence.py"]),
+    ("scripts/check-offline", SHARED_MATERIALS["scripts/check-offline"]),
     (
         "src/paper_radar/storage/database.py",
-        "ed8aba07f31eb6019c6d656a9147c682d74073bbdf4d268cd488bdb79ff3b7b1",
+        SHARED_MATERIALS["src/paper_radar/storage/database.py"],
     ),
     (
         "src/paper_radar/storage/errors.py",
-        "a8c859bb0d8a415599887d380218a46490c6e10afa9910c0360a4dda037db19f",
+        SHARED_MATERIALS["src/paper_radar/storage/errors.py"],
     ),
     (
         "src/paper_radar/storage/schema.py",
-        "291db5e419f3a5a7fd88afab7f369569d0b8e754fa36932210418c0938050a0f",
+        SHARED_MATERIALS["src/paper_radar/storage/schema.py"],
     ),
     (
         "src/paper_radar/storage/migrations/env.py",
-        "f22dfaeade1105d7eb46dda731916406fe521051ec0a76b7eeb1e915d42ffd27",
+        SHARED_MATERIALS["src/paper_radar/storage/migrations/env.py"],
     ),
-    (
-        "src/paper_radar/cli.py",
-        "ee2e1dc3ac969aa30c74989bb0b19bf7ad30c5b404a894bc5e73b4dca8d23689",
-    ),
+    ("src/paper_radar/cli.py", SHARED_MATERIALS["src/paper_radar/cli.py"]),
     (
         "tests/a3_acceptance_support.py",
-        "d89e4dff6834d19562ffd9a3a5fde14c353962ee67a8c1df21113c75979b2545",
+        SHARED_MATERIALS["tests/a3_acceptance_support.py"],
     ),
 )
 REQUIRED_TEST_MODULES = (
@@ -360,3 +328,6 @@ REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
         "c052613cfcbd88f4021d3b16375f194e2b33baf09c1cb749492989a5e3df6c0b",
     ),
 )
+
+# 显式证明引用; 不将 scope 登记数据作为逐文件哈希材料。
+REQUIRED_SCOPE_REFERENCES = ("scripts/a2_full_scope.py",)

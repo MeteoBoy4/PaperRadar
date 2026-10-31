@@ -26,7 +26,7 @@
 | `counts` | 各组固定 `expected_cases`；跨组同一模块计数冲突失败，不合并覆盖 |
 | `issues` | 登记/图结构异常的组、scope 或 writer 位置、受控原因；不含原始数据 |
 | `order` | scope 引用 DAG 的拓扑顺序；循环/自引用时为空 |
-| `downstream` | 修改某个 scope 后需重算登记的传递下游，不是正式结论依赖 |
+| `downstream` | 修改某个 scope 后受影响的传递下游，不是正式结论依赖 |
 | `affected_groups` | 直接异常与 scope 修改传播可能影响的验收组；收集超时/失败不推断所有模块漂移 |
 | `collection` | `reason`、`execution`、`modules`；默认 `not_requested`、`not_run`、`{}`；显式收集返回模块节点计数，读取到完整计数结果时另含非负整数 `collection_skipped`、`deselected`；`execution` 恒为 `not_run` |
 
@@ -39,9 +39,9 @@ hash_drift、missing_file、unreadable_file、live_document_binding。非法路�
 现行登记已移除规格、README、GLOSSARY 与现状 Contract 的 19 条整文件绑定。
 冻结依据继续由 history、需求/覆盖台账、最小冻结摘录、ADR、Schema 及代码/测试/fixture/依赖身份承担；
 [迁移台账](../verification/scope-document-migration.md)记录旧 SHA、替代依据及固定分母。
-首批共享验收基础设施采用中央哈希，各组仍维护显式成员与固定计数；其余材料保留旧字面量。
-当前 41 条 scope 哈希边仍按旧规则传播，取消级联由后续切片承接。
-41 的精确定义与旧描述 42 的差异见[第二步台账](../verification/scope-central-registration-delivery.md)。
+跨两个及以上组实际登记的共享材料采用单处中央哈希，各组仍维护显式成员、用途与固定计数；
+仅属一组的材料可保留字面量。scope 不进入逐文件哈希，原 41 条边由显式证明引用保留。
+精确母集、41 与旧描述 42 的差异见[迁移台账](../verification/scope-shared-dag-delivery.md)。
 显式基线分析遵循下节规则。
 
 审计从仓库的
@@ -80,7 +80,7 @@ Python 接口对仓库副本读取副本自己的分类数据；纯合成材料�
 返回 `CollectionResult`；合并返回新报告，不改写原报告。
 `writers` 仅供显式合成登记或独立目录审计
 使用，不暴露 CLI 覆盖入口；默认始终读取生产 `acceptance_groups()`。
-`Scope` 表达显式组、scope 位置、原始绑定和固定计数；
+`Scope` 表达显式组、scope 位置、原始绑定、固定计数和原始 `references`；
 它不建立新的 required 集合。`load_scopes` 正常导入生产 registry，随后静态解释
 writer 导入的清单 AST。清单仅允许固定赋值、字面量、常量引用、tuple/list 展开与
 dict 展开；重复赋值、重复计数 key、动态增补和未知表达式失败。额外测试清单导入
@@ -117,12 +117,29 @@ scope 使用唯一、未改名的 `from scripts.verification_scope_materials imp
 全部中央条目先作结构校验；缺失、非法路径/SHA、重复 key、循环别名、动态表达式、
 未知引用、改名导入及与中央条目冲突的旧字面量均拒绝。同组重复成员不按同 SHA 去重。
 `Scope.bindings` 继续接收原始 object，非法结构和 replace 注入负例仍由审计报告。
-中央文件自身禁止加入各组整文件哈希，字节仍进入完整工作树身份；审计与 writer
+writer、scope 与中央 AST 只接受规范仓库位置的普通文件，不允许链接重定向
+（包括指向根内 ignored 目标），循环或不可读登记受控拒绝；普通固定材料的软链规则不变。中央文件自身禁止加入各组整文件哈希，字节仍进入完整工作树身份；审计与 writer
 核对展开后的真实材料字节，中央声明本身不能证明材料匹配。
 
-当前迁移范围为验收入口、身份/发布/运行/检查/状态、A2 完整入口与回执、离线证据脚本与说明，
-以及共享审计解释器和新增审计支撑。各路径实际消费组与新增成员详见第二步台账。
-业务源码、测试和其余重复材料的迁移由后续切片承接。
+中央登记覆盖全部实际跨组共享材料，包括业务源码、固定测试、支撑、fixture 和证据；
+同一路径在不同组的 kind/role 独立保留，任一测试或 fixture 用途仍为敏感变化。
+各路径与逐组成员详见[迁移台账](../verification/scope-shared-dag-delivery.md)。
+
+### scope 显式证明引用
+
+主 scope 可声明 `REQUIRED_SCOPE_REFERENCES = ("scripts/a1_scope.py", ...)`。
+静态解释器把它保留为 `Scope.references`；只接受 tuple、规范相对路径和本次登记中实际 scope 路径，
+重复、自引用、未知引用和循环均受控拒绝。`load_scopes` 附带本次已解析的 scope 路径上下文，
+单组审计允许已解析的外部引用，仅对传入节点建局部图。每条边方向为被引用 scope 到消费组，
+保留拓扑与 downstream；这与正式 acceptance group dependencies 不同。
+兼容的 `replace(scope, bindings=...)` 注入 scope 路径仍参与同一图的 self/cycle 检查。
+生产 scope 不再作为材料哈希，完整入口与回执仍消费展开后的原 tuple 清单和固定计数。
+
+A8 冻结能力台账中的 scope 指针只接受当前组经结构审计通过的显式引用；
+普通代码、fixture 与其他证据继续核对固定 SHA，未列指针继续拒绝。
+scope 和中央数据的完整字节仍参与工作树身份，结构与同次前置检查保护登记语义。
+显式引用变化纳入基线 entry 摘要并归为敏感 registration；影响范围取旧图与新图的并集，
+要求每个受影响组确认，不产生下游 scope 的机械 SHA 更新。
 
 ### 显式基线与分级确认
 
@@ -149,7 +166,7 @@ CLI 不提供覆盖入口。默认无 base 的 `audit_scopes`、报告键与原�
 - `origin=current_change` 表示相对 base 的字节或成员/计数登记语义变化；
   `baseline_drift` 表示 base 内登记与真实材料已经不符。两者可以同时出现。
 - `sensitivity=mechanical` 的 `category=source_support` 包括普通 source/support 哈希
-  变化和仅更新其哈希的 scope；测试成员/计数、fixture、冻结负例、需求/覆盖台账、
+  变化和仅更新其哈希的 scope；显式证明引用、测试成员/计数、fixture、冻结负例、需求/覆盖台账、
   格式、绑定契约或证据、分类规范变化为 `sensitive`。
   类别分别为 test、fixture、registration、format_or_criteria、evidence、classification。
 

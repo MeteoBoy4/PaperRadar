@@ -179,7 +179,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/models.py",
-        "e797ee78cfae739a5d705d5d25ee406e2d43e57511f82364bfa6cacd10a44a64",
+        SHARED_MATERIALS["src/paper_radar/llm/models.py"],
     ),
     (
         "src/paper_radar/llm/rpc.py",
@@ -203,7 +203,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "tests/a8_acceptance_support.py",
-        "2bc2b90eaa623493b9b4b2ac449d72e8b6e82e0790893146103abada5e2e64fe",
+        SHARED_MATERIALS["tests/a8_acceptance_support.py"],
     ),
     (
         "tests/a8_call_support.py",
@@ -237,50 +237,14 @@ REQUIRED_SOURCE_MODULES = (
         "tests/a8_rpc_task_support.py",
         "1fdc95fcb1be680e5d478c2cedf95c3e2a3ca12319c51940981727362bdd56ad",
     ),
-    (
-        "scripts/a8_acceptance.py",
-        "38d9a4ef5d3078498edefc9d71bf8de1999a0a11db327652fa960147110d2153",
-    ),
+    ("scripts/a8_acceptance.py", SHARED_MATERIALS["scripts/a8_acceptance.py"]),
     (
         "scripts/a2_full_acceptance.py",
         SHARED_MATERIALS["scripts/a2_full_acceptance.py"],
     ),
-    (
-        "scripts/a2_test_receipt.py",
-        SHARED_MATERIALS["scripts/a2_test_receipt.py"],
-    ),
-    (
-        "scripts/a1_scope.py",
-        "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
-    ),
-    (
-        "scripts/a2_full_scope.py",
-        "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
-    ),
-    (
-        "scripts/a3_scope.py",
-        "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
-    ),
-    (
-        "scripts/a5_scope.py",
-        "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
-    ),
-    (
-        "scripts/a6_scope.py",
-        "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265",
-    ),
-    (
-        "scripts/a7_scope.py",
-        "159e2feaae01cdd2caafc2b76d374c075aea8a2d42dbe96f67a9b6993ed49030",
-    ),
-    (
-        "scripts/check-offline",
-        SHARED_MATERIALS["scripts/check-offline"],
-    ),
-    (
-        "scripts/offline_evidence.py",
-        SHARED_MATERIALS["scripts/offline_evidence.py"],
-    ),
+    ("scripts/a2_test_receipt.py", SHARED_MATERIALS["scripts/a2_test_receipt.py"]),
+    ("scripts/check-offline", SHARED_MATERIALS["scripts/check-offline"]),
+    ("scripts/offline_evidence.py", SHARED_MATERIALS["scripts/offline_evidence.py"]),
     (
         "scripts/verification_checks.py",
         SHARED_MATERIALS["scripts/verification_checks.py"],
@@ -293,10 +257,7 @@ REQUIRED_SOURCE_MODULES = (
         "scripts/verification_publication.py",
         SHARED_MATERIALS["scripts/verification_publication.py"],
     ),
-    (
-        "scripts/verification_run.py",
-        SHARED_MATERIALS["scripts/verification_run.py"],
-    ),
+    ("scripts/verification_run.py", SHARED_MATERIALS["scripts/verification_run.py"]),
     (
         "scripts/verification_status.py",
         SHARED_MATERIALS["scripts/verification_status.py"],
@@ -311,11 +272,11 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "tests/deny_external_io/sitecustomize.py",
-        "f0148752ef89a004fcf76048cbc1f070448152683921b6d9d7c452d102a2d48d",
+        SHARED_MATERIALS["tests/deny_external_io/sitecustomize.py"],
     ),
     (
         "tests/deny_network/sitecustomize.py",
-        "dfce12fb68aaefd9b19ec26f1ff6bfb10b3f726fdafe6f466ec031cc2acc3288",
+        SHARED_MATERIALS["tests/deny_network/sitecustomize.py"],
     ),
     (
         "scripts/verification_scope_baseline.py",
@@ -347,4 +308,14 @@ REQUIRED_FIXTURE_FILES = (
         "docs/verification/a8-requirements.md",
         "bf40f43d19886a3b6c7bcd81891302f2c9a8e1e9b4a3206ad93c5609f19dfce3",
     ),
+)
+
+# 显式证明引用; 不将 scope 登记数据作为逐文件哈希材料。
+REQUIRED_SCOPE_REFERENCES = (
+    "scripts/a1_scope.py",
+    "scripts/a2_full_scope.py",
+    "scripts/a3_scope.py",
+    "scripts/a5_scope.py",
+    "scripts/a6_scope.py",
+    "scripts/a7_scope.py",
 )

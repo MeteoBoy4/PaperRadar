@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,7 @@ BINDINGS = {
     "REQUIRED_FIXTURE_FILES": FileKind.FIXTURE,
 }
 COUNTS = "REQUIRED_TEST_CASE_COUNTS"
+REFERENCES = "REQUIRED_SCOPE_REFERENCES"
 METADATA = {
     "SCOPE",
     "ISSUE",
@@ -52,8 +54,16 @@ class RegistrationError(ValueError):
 
 def _read_tree(root: Path, path: str) -> ast.Module:
     try:
-        return ast.parse((root / path).read_bytes())
-    except (OSError, ValueError, SyntaxError):
+        file = root / path
+        resolved = file.resolve()
+        if (
+            not resolved.is_relative_to(root.resolve())
+            or resolved != root.resolve() / path
+            or not file.is_file()
+        ):
+            raise OSError
+        return ast.parse(file.read_bytes())
+    except (OSError, ValueError, SyntaxError, RuntimeError):
         raise RegistrationError(AuditReason.REGISTRATION_UNAVAILABLE) from None
 
 
@@ -164,7 +174,11 @@ def _shared_materials(root: Path) -> dict[str, str] | None:
     file = root / CENTRAL_PATH
     if not file.exists() and not file.is_symlink():
         return None
-    if not file.resolve().is_relative_to(root.resolve()):
+    try:
+        contained = file.resolve() == root.resolve() / CENTRAL_PATH and file.is_file()
+    except (OSError, RuntimeError):
+        contained = False
+    if not contained:
         raise RegistrationError(AuditReason.INVALID_REGISTRATION)
     tree = _read_tree(root, CENTRAL_PATH)
     if any(isinstance(node, (ast.Import, ast.ImportFrom)) for node in tree.body):
@@ -246,8 +260,11 @@ def _writer_scope(
         bindings: dict[str, object] = {}
         tests: list[tuple[str, str]] = []
         counts: object = None
+        references: object = ()
         for imported_path, aliases in imports.items():
             constants = _Constants(_read_tree(root, imported_path), shared)
+            if imported_path == path and REFERENCES in constants.nodes:
+                references = constants.get(REFERENCES)
             names = {a.name for a in aliases}
             if names - (BINDINGS.keys() | METADATA | {COUNTS}):
                 raise RegistrationError(AuditReason.UNSUPPORTED_SCOPE_CONSTANT)
@@ -285,7 +302,7 @@ def _writer_scope(
                         raise RegistrationError(AuditReason.INVALID_COUNTS)
         # A2 完整回执明确消费 A1 测试; 同时核对这些导入的文件哈希。
         bindings[FileKind.TEST] = tuple(tests)
-        return Scope(group, path, bindings, counts)
+        return Scope(group, path, bindings, counts, references=references)
     except RegistrationError as error:
         return Scope(group, writer, {}, errors=(error.reason,))
 
@@ -325,6 +342,10 @@ def load_scopes(
                 )
             )
         writers = tuple(writers_list)
-    return tuple(
+    scopes = tuple(
         _writer_scope(root, group, writer, shared) for group, writer in writers
     )
+    # 保留局部 audit_scopes(root, (selected,)) 接口:未传入但本次已解析的
+    # 上游是合法外部引用,局部图仅包含传入节点;未知引用仍受控拒绝。
+    paths = frozenset(scope.path for scope in scopes if not scope.errors)
+    return tuple(replace(scope, reference_registry=paths) for scope in scopes)

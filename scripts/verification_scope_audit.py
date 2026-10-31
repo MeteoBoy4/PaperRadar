@@ -176,6 +176,8 @@ class Scope:
     bindings: Mapping[str, object]
     counts: object = None
     errors: tuple[AuditReason, ...] = ()
+    references: object = ()
+    reference_registry: frozenset[str] = frozenset()
 
 
 def valid_path(value: object) -> TypeGuard[str]:
@@ -321,6 +323,23 @@ def _audit(
     for scope in scopes:
         for reason in scope.errors:
             issue(scope, reason)
+        if not isinstance(scope.references, tuple):
+            issue(scope, AuditReason.INVALID_REGISTRATION)
+        else:
+            seen_references: set[str] = set()
+            for reference in scope.references:
+                if not valid_path(reference) or (
+                    reference not in edges and reference not in scope.reference_registry
+                ):
+                    issue(scope, AuditReason.INVALID_REGISTRATION)
+                    continue
+                if reference in seen_references:
+                    issue(scope, AuditReason.DUPLICATE_PATH)
+                seen_references.add(reference)
+                if reference in edges:
+                    edges[reference].add(scope.path)
+                if reference == scope.path:
+                    issue(scope, AuditReason.SELF_REFERENCE)
         seen: set[str] = set()
         if not scope.bindings:
             issue(scope, AuditReason.EMPTY_BINDING)
