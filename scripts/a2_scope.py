@@ -30,6 +30,10 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
+        "scripts/verification_groups.py",
+        SHARED_MATERIALS["scripts/verification_groups.py"],
+    ),
+    (
         "scripts/verification_identity.py",
         SHARED_MATERIALS["scripts/verification_identity.py"],
     ),

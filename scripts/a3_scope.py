@@ -315,6 +315,10 @@ REQUIRED_TEST_MODULES = (
     *ACCEPTANCE_TEST_MODULES,
 )
 REQUIRED_SOURCE_MODULES = (
+    (
+        "scripts/verification_groups.py",
+        SHARED_MATERIALS["scripts/verification_groups.py"],
+    ),
     *ARTIFACT_MIGRATION_MODULES,
     *ARTIFACT_SOURCE_MODULES,
     *EXTRACTION_SOURCE_MODULES,
@@ -323,6 +327,14 @@ REQUIRED_SOURCE_MODULES = (
     *ACCEPTANCE_SOURCE_MODULES,
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/verification_expectations.py",
+        SHARED_MATERIALS["tests/verification_expectations.py"],
+    ),
+    (
+        "tests/fixtures/verification_group_expectations.json",
+        SHARED_MATERIALS["tests/fixtures/verification_group_expectations.json"],
+    ),
     (
         "tests/fixtures/a3_storage_recovery.json",
         "c052613cfcbd88f4021d3b16375f194e2b33baf09c1cb749492989a5e3df6c0b",

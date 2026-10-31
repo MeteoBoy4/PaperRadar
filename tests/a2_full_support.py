@@ -9,8 +9,11 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
+
+from tests.verification_expectations import fixture_receipt_modules
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -84,9 +87,23 @@ def fake_checks(
     binary.mkdir()
     uv = binary / "uv"
     writer = tmp_path / "write_receipt.py"
+    # 模拟executor边界只消费独立测试数据;真实目标执行测试会覆盖此脚本。
+    fixture_payload: dict[str, Any] = json.loads(json.dumps(receipt))
+    for module, count in fixture_receipt_modules().items():
+        fixture_payload["modules"][module] = {
+            key: count if key in ("collected", "passed") else 0
+            for key in (
+                "collected",
+                "passed",
+                "failed",
+                "skipped",
+                "deselected",
+                "incomplete",
+            )
+        }
     writer.write_text(
         "import json, os\nfrom pathlib import Path\n"
-        f"payload = {receipt!r}\n"
+        f"payload = {fixture_payload!r}\n"
         'payload["run_id"] = os.environ["PAPER_RADAR_TEST_RUN_ID"]\n'
         'Path(os.environ["PAPER_RADAR_TEST_RECEIPT"]).write_text(json.dumps(payload))\n',
         encoding="utf-8",

@@ -10,6 +10,7 @@ import pytest
 
 from tests.a2_full_support import fake_checks, repository_copy
 from tests.a10_acceptance_support import passed_receipt
+from tests.verification_expectations import assert_output_files
 
 
 def test_a10_only_failure_blocks_real_entry_even_when_full_a2_passes(
@@ -40,7 +41,7 @@ def test_a10_only_failure_blocks_real_entry_even_when_full_a2_passes(
     assert a10["status"] == "failed" and not a10["a10_verified"]
     assert {reason["code"] for reason in a10["reasons"]} == {"scope_drift"}
     assert all(value == "failed" for value in a10["capabilities"].values())
-    assert len(tuple(output.glob("*.json"))) == 14
+    assert_output_files(output)
 
 
 @pytest.mark.parametrize("failure", ["interrupt", "io"])
@@ -204,4 +205,4 @@ def test_optional_a2_01_failure_remains_independent_of_required_a10(
     assert optional["status"] == "failed" and not optional["a2_01_verified"]
     assert a10["status"] == "passed" and a10["a10_verified"] is True
     assert terminal["exit_code"] == 0 and terminal["materials_consistent"] is True
-    assert len(tuple(output.glob("*.json"))) == 14
+    assert_output_files(output)

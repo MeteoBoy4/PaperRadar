@@ -300,6 +300,10 @@ REQUIRED_TEST_MODULES = (
 )
 REQUIRED_SOURCE_MODULES = (
     (
+        "scripts/verification_groups.py",
+        SHARED_MATERIALS["scripts/verification_groups.py"],
+    ),
+    (
         "scripts/a2_full_acceptance.py",
         SHARED_MATERIALS["scripts/a2_full_acceptance.py"],
     ),
@@ -502,6 +506,14 @@ REQUIRED_SOURCE_MODULES = (
     ),
 )
 REQUIRED_FIXTURE_FILES = (
+    (
+        "tests/verification_expectations.py",
+        SHARED_MATERIALS["tests/verification_expectations.py"],
+    ),
+    (
+        "tests/fixtures/verification_group_expectations.json",
+        SHARED_MATERIALS["tests/fixtures/verification_group_expectations.json"],
+    ),
     (
         "tests/fixtures/paper_facts_v1.json",
         "0e88876d19ceae6df0654d9c3f2699106ffb11845b24399b1b50f6686e19d425",

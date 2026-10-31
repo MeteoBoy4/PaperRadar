@@ -12,6 +12,7 @@ import pytest
 
 from tests.a2_full_support import ROOT, fake_checks, repository_copy
 from tests.a8_acceptance_support import passed_receipt
+from tests.verification_expectations import assert_output_files, historical_stdout_bytes
 
 
 @pytest.mark.parametrize(
@@ -77,22 +78,14 @@ sys.exit(main())
         full["run_id"].encode(), b"<RUN>"
     )
     # 历史 transcript 逐字比较; A8/A9/A10 新输出与终态另有独立测试。
-    historical_stdout = b"".join(
-        line
-        for line in stdout.splitlines(keepends=True)
-        if not line.startswith(
-            ("[A8 验收]".encode(), "[A9 验收]".encode(), "[A10 验收]".encode())
-        )
-    )
+    historical_stdout = historical_stdout_bytes(stdout)
     assert historical_stdout == expected["stdout"].encode()
     assert result.stderr == expected["stderr"].encode()
     assert result.returncode == expected["exit_code"]
     assert len(log.read_text(encoding="utf-8").splitlines()) == (
         5 if case in {"failed", "interrupted"} else 6
     )
-    assert len(list(output.glob("*.json"))) == (
-        13 if case in {"failed", "interrupted"} else 14
-    )
+    assert_output_files(output, include_receipt=case not in {"failed", "interrupted"})
     assert not list(output.glob("*.tmp"))
     legacy = json.loads(next(output.glob("*.a2.json")).read_bytes())
     if case.startswith("a2_"):

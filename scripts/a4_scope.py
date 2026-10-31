@@ -202,6 +202,10 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 )
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
+        "scripts/verification_groups.py",
+        SHARED_MATERIALS["scripts/verification_groups.py"],
+    ),
+    (
         "src/paper_radar/config/readiness.py",
         SHARED_MATERIALS["src/paper_radar/config/readiness.py"],
     ),
@@ -382,6 +386,14 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ("tests/a2_full_support.py", SHARED_MATERIALS["tests/a2_full_support.py"]),
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/verification_expectations.py",
+        SHARED_MATERIALS["tests/verification_expectations.py"],
+    ),
+    (
+        "tests/fixtures/verification_group_expectations.json",
+        SHARED_MATERIALS["tests/fixtures/verification_group_expectations.json"],
+    ),
     (
         "tests/fixtures/pi_supply/manifest-vector.json",
         "cf6d3aa9f6a91b2fec4594bfdd2f69d4d4e52d809da47fa4842923c4447d8823",

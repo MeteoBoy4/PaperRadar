@@ -757,4 +757,13 @@ SHARED_MATERIALS = {
     "tests/test_version_relations.py": (
         "069aa10cc4cb66405e0f093e00b0503bda09200563113ebfaedbf7230805c74e"
     ),
+    "scripts/verification_groups.py": (
+        "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f"
+    ),
+    "tests/verification_expectations.py": (
+        "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78"
+    ),
+    "tests/fixtures/verification_group_expectations.json": (
+        "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8"
+    ),
 }
