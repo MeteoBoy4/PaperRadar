@@ -194,6 +194,9 @@ def test_shell_help_does_not_create_evidence(tmp_path: Path) -> None:
     wrapper = scripts / "check-offline"
     wrapper.write_bytes((ROOT / "scripts/check-offline").read_bytes())
     wrapper.chmod(0o755)
+    (scripts / "verification_groups.py").write_bytes(
+        (ROOT / "scripts/verification_groups.py").read_bytes()
+    )
     result = subprocess.run(
         (str(wrapper), "--help"),
         cwd=tmp_path,
