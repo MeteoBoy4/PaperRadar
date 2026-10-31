@@ -1,0 +1,4592 @@
+{
+  "format_version": 1,
+  "issue": 137,
+  "artifact_kind": "scope-registry-integration-candidate",
+  "baseline_commit": "e6c1ec74c9fc8d15fc8f76d2c8a7b29fcdda9438",
+  "integration_input_commit": "01157728ca6ba1a00ebddf3d94f9910cdb915fc6",
+  "proof_boundary": "候选工程迁移与开发验证；待独立review/最终merge身份/唯一授权门禁，非正式验收。最终run_id仅在树外。",
+  "required_groups": 10,
+  "registered_groups": 11,
+  "optional_group": "A2-01",
+  "rebindings": [
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "scripts/a2_full_acceptance.py",
+      "old_sha256": "ea761e76debed029efb9b37022c2d5dac78fccd32d31184015696618c5a9a204",
+      "new_sha256": "acd3291dc41e4a9947aabce4667e44e13c80b4c2cbe26e2b9c68cf9d8c0c0cdf",
+      "groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "reason": "#135 仅将生产组声明委托轻量登记；保留公开调用、发布顺序、恢复和必需语义。",
+      "direct_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ]
+    },
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "scripts/a2_test_receipt.py",
+      "old_sha256": "38b0fcea6a0028c3652dfc272829f5ac76c201430fcd2d4d187c629db85032e5",
+      "new_sha256": "d37ba26de2373d8e3b186cf90b3f4216e4f8cf13b8ebd848e949c69f351caa64",
+      "groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "reason": "#135 由显式receipt_scope枚举回执模块；未执行仍零记录、writer分母及真实执行拒绝不变。",
+      "direct_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ]
+    },
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "scripts/a8_acceptance.py",
+      "old_sha256": "38d9a4ef5d3078498edefc9d71bf8de1999a0a11db327652fa960147110d2153",
+      "new_sha256": "15904ffeb73edebf34a99e56925840cf849a557064674bccd8de836f67f807a8",
+      "groups": [
+        "A10",
+        "A8"
+      ],
+      "reason": "#134 A8仅以本组结构已核显式refs接受冻结scope指针；其他材料仍固定SHA，同进程副本读取自身AST。",
+      "direct_groups": [
+        "A10",
+        "A8"
+      ],
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ]
+    },
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "scripts/check-offline",
+      "old_sha256": "41a205087015281e5a8a921f20815f0828ef8457c57445d40f95be2bdb6d99d8",
+      "new_sha256": "7c4eb8c6c93895b84e7833c63f2f8873f4e5170414010f27e94f979ce5e2a300",
+      "groups": [
+        "A10",
+        "A2-01",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "reason": "#135 仅帮助从轻量声明生成；不加载writer/scope、uv和外部I/O，实际入口执行未改。",
+      "direct_groups": [
+        "A10",
+        "A2-01",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "affected_groups": [
+        "A10",
+        "A2-01",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ]
+    },
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "scripts/verification_scope_audit.py",
+      "old_sha256": "f33de0007482e71d67eaeaadc8218b42ac2950105e2b63f00cbc4e941377830a",
+      "new_sha256": "92cca0fe14de340def2451e0b8d1b453d3b7c5471f7b3823001954d2f0fbe9de",
+      "groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "reason": "#132–134 公开基线代理、refs图/上下文及中央禁止整文件绑定；原Scope与默认报告兼容。",
+      "direct_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ]
+    },
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "scripts/verification_scope_baseline.py",
+      "old_sha256": "0257c485128ecc76daa8cba7c264fb089fbd400fed12e10380bdf33caf1725e8",
+      "new_sha256": "078c71a868048558962ab934a8594b5da3bb6560f892134a887061f06873b9d8",
+      "groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "reason": "#132–134 独立blob历史树、两维变化、entry/refs摘要及完整身份确认；source新增/fixture变化仍逐组敏感。",
+      "direct_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ]
+    },
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "scripts/verification_scope_registry.py",
+      "old_sha256": "0245aea1f6fd7fd9fc50bcd34abc6591cc9963876b3e4f72d068b76a02a9e871",
+      "new_sha256": "11964e13977694e7d114dc13c7c6dd993eb9802a304566517d1874acefcbc8ed",
+      "groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "reason": "#133–134 静态中央展开、显式refs及规范普通文件AST守卫；不放宽动态/重复/链接拒绝。",
+      "direct_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ]
+    },
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "tests/a2_full_support.py",
+      "old_sha256": "a15976749dc2ae52448d81ea794c2be1c2e0f53d4e2a09de20f9a9790c16dc38",
+      "new_sha256": "c330fadfc4ce9c0cd902b61c126fa6c8580aebf3ebdbb856e2c3ea3d72a3e0e2",
+      "groups": [
+        "A10",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A9",
+        "完整 A2"
+      ],
+      "reason": "#135 模拟executor只消费独立预期fixture模块；真实目标测试另走实际pytest计数，不能回填真实执行。",
+      "direct_groups": [
+        "A10",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A9",
+        "完整 A2"
+      ],
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ]
+    },
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "tests/test_a2_full_entry.py",
+      "old_sha256": "f335f488299732292d94f7931dcdc91e0367c5798e5d67aa5689454da17da192",
+      "new_sha256": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+      "groups": [
+        "A4",
+        "完整 A2"
+      ],
+      "reason": "S4(b) 7例不变；1总份数+1帮助迁移，帮助复制轻量声明并保留I/O哨兵和中断前缀。",
+      "direct_groups": [
+        "A4",
+        "完整 A2"
+      ],
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ]
+    },
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "tests/test_verification_compatibility.py",
+      "old_sha256": "33adb6c58a86acb91f81309fd603c51ae04e8ebd0738e2d28027fa5b53313897",
+      "new_sha256": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf",
+      "groups": [
+        "A4",
+        "完整 A2"
+      ],
+      "reason": "S4(b) 9例不变；条件13/14改独立清单，原stdout/stderr/exit逐字断言；只过滤显式非历史组且拒绝未知前缀。",
+      "direct_groups": [
+        "A4",
+        "完整 A2"
+      ],
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ]
+    },
+    {
+      "location": "scripts/verification_scope_materials.py",
+      "path": "tests/test_verification_run.py",
+      "old_sha256": "6b8d8b0de2cbb768c9c6987a52f7dd9b12d42ce1838873ff52e26854b7cda620",
+      "new_sha256": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed",
+      "groups": [
+        "A4",
+        "完整 A2"
+      ],
+      "reason": "S4(b) 5例不变；额外组总份数以独立清单+extra断言，非法登记/required结果不变。",
+      "direct_groups": [
+        "A4",
+        "完整 A2"
+      ],
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ]
+    },
+    {
+      "location": "scripts/a5_scope.py",
+      "path": "tests/test_a5_entry.py",
+      "old_sha256": "0b4cde834b9fee665da07f4c00f6403584749c955bf23b61d8c6d70e632fe8a6",
+      "new_sha256": "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89",
+      "groups": [
+        "A5"
+      ],
+      "reason": "S4(b) 5例不变；1总份数改独立后缀集合+数量，失败与发布中断断言保留。",
+      "direct_groups": [
+        "A5"
+      ],
+      "affected_groups": [
+        "A10",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ]
+    },
+    {
+      "location": "scripts/a8_scope.py",
+      "path": "tests/test_a8_entry.py",
+      "old_sha256": "148090d5270b8a1989ee4681ff52f6a5e1d5a38fe0faf8414c0a769c4fa5d604",
+      "new_sha256": "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
+      "groups": [
+        "A8"
+      ],
+      "reason": "S4(b) 9例不变；1总份数改独立后缀集合+数量，失败/嵌套回执/发布中断断言保留。",
+      "direct_groups": [
+        "A8"
+      ],
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ]
+    },
+    {
+      "location": "scripts/a6_scope.py",
+      "path": "tests/test_a6_entry.py",
+      "old_sha256": "1b4f67c9e37a74f087ab74a4a64578f53ba353b6be3c19dee3536d7e70f9bff1",
+      "new_sha256": "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6",
+      "groups": [
+        "A6"
+      ],
+      "reason": "S4(b) 9例不变；1总份数改独立后缀集合+数量，失败/依赖/中断断言保留。",
+      "direct_groups": [
+        "A6"
+      ],
+      "affected_groups": [
+        "A10",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ]
+    },
+    {
+      "location": "scripts/a10_scope.py",
+      "path": "tests/test_a10_entry.py",
+      "old_sha256": "2809448ed1e2c31c231a3a818e937a9440447cb172764bec59ca245b69cf0dfb",
+      "new_sha256": "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68",
+      "groups": [
+        "A10"
+      ],
+      "reason": "S4(b) 10例不变；2总份数改独立后缀集合+数量，optional/required及发布中断断言保留。",
+      "direct_groups": [
+        "A10"
+      ],
+      "affected_groups": [
+        "A10"
+      ]
+    },
+    {
+      "location": "scripts/a7_scope.py",
+      "path": "tests/test_a7_entry.py",
+      "old_sha256": "e59861bb282e5dfb07a5254ec7849ea9aad93885e0833bfef83ef8187dc9ede1",
+      "new_sha256": "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
+      "groups": [
+        "A7"
+      ],
+      "reason": "S4(b) 9例不变；1总份数改独立后缀集合+数量，失败/依赖/中断断言保留。",
+      "direct_groups": [
+        "A7"
+      ],
+      "affected_groups": [
+        "A10",
+        "A7",
+        "A8",
+        "A9"
+      ]
+    },
+    {
+      "location": "scripts/a9_scope.py",
+      "path": "tests/test_a9_entry.py",
+      "old_sha256": "87d9cde4deef8d3c4fdd21c002c1502569daac2274683dd6f9c35ec2574e1f81",
+      "new_sha256": "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003",
+      "groups": [
+        "A9"
+      ],
+      "reason": "S4(b) 10例不变；2总份数改独立后缀集合+数量，Read契约及发布中断断言保留。",
+      "direct_groups": [
+        "A9"
+      ],
+      "affected_groups": [
+        "A10",
+        "A9"
+      ]
+    },
+    {
+      "location": "scripts/a9_scope.py",
+      "path": "scripts/audit_verification_scope.py",
+      "old_sha256": "6e76fcfa02a50155f06dc30ec3ed7f302614fa927c45070f494463722fe1b37f",
+      "new_sha256": "fab083cd04a25b016dc90e8dde2f38e26807ee9b2a963ec8136fe0f9853898ab",
+      "groups": [
+        "A9"
+      ],
+      "reason": "#132 新增显式基线/外部确认/身份显示；无base默认接口与失败不泄露保留。",
+      "direct_groups": [
+        "A9"
+      ],
+      "affected_groups": [
+        "A10",
+        "A9"
+      ]
+    },
+    {
+      "location": "scripts/a4_scope.py",
+      "path": "tests/test_a4_entry.py",
+      "old_sha256": "4ed30b5a4bfee215a6c926f375a5cc865289157ed3a0d11a16fc652e2cd45278",
+      "new_sha256": "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c",
+      "groups": [
+        "A4"
+      ],
+      "reason": "S4(b) 5例不变；1总份数改独立后缀集合+数量，失败与发布中断断言保留。",
+      "direct_groups": [
+        "A4"
+      ],
+      "affected_groups": [
+        "A10",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ]
+    }
+  ],
+  "sensitive_review_authorizations": [
+    {
+      "affected_groups": [
+        "A10"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10"
+      ],
+      "new_entry_sha256": "bf5abfdd4553c79d8d14af1f2e6c55aedaba92f6e880621d5d981bf6ef721be7",
+      "new_sha256": "aedddb451e3e0d89990b455ed8e084760bfdb8f2e025d0c24bd6761d29be25c5",
+      "old_entry_sha256": "46cb9917f67faf2e0af54abc4fdfe77d57b48562356b2d9bee19d584c0609798",
+      "old_sha256": "bd12249b7153b8c0a992a28413783da34ffb0f7371e399a5514c058d1aa621f6",
+      "origin": "current_change",
+      "path": "scripts/a10_scope.py",
+      "registered_sha256": [],
+      "registrations": [],
+      "sensitivity": "sensitive",
+      "reason": "原9条scope哈希边逐条保留refs；新增baseline/collection source及生产组声明/两独立预期fixture；A10覆盖台账和693需求/37来源字节未改。"
+    },
+    {
+      "affected_groups": [
+        "A1",
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "category": "registration",
+      "groups": [
+        "A1",
+        "A10",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "new_entry_sha256": "98dc6d6c369462a317a036b602db38a3f133b49aaf34077dba562b93b1798dbf",
+      "new_sha256": "6e7c2a0be80c9090f63c018c63932ab4595bab1874c4253ac79f160f88996d56",
+      "old_entry_sha256": "98dc6d6c369462a317a036b602db38a3f133b49aaf34077dba562b93b1798dbf",
+      "old_sha256": "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
+      "origin": "current_change",
+      "path": "scripts/a1_scope.py",
+      "registered_sha256": [
+        "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
+          "group": "完整 A2",
+          "kind": "source",
+          "scope_path": "scripts/a2_full_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
+          "group": "A4",
+          "kind": "source",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
+          "group": "A5",
+          "kind": "source",
+          "scope_path": "scripts/a5_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
+          "group": "A6",
+          "kind": "source",
+          "scope_path": "scripts/a6_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
+          "group": "A7",
+          "kind": "source",
+          "scope_path": "scripts/a7_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
+          "group": "A8",
+          "kind": "source",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "245cf6e6bd9d1dafe3f747561d2518d32583e6154dc4876ff1cc9a5c78152251",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "base"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "中央语法迁移；A1原测试成员、顺序、固定计数及entry摘要全同，无新增fixture或refs。保守静态格式分类仍逐全下游确认。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "new_entry_sha256": "8a61341b9f0e62db18adb991f6fcd7096134eba850fcc5ddcaf2ca577a4535d1",
+      "new_sha256": "74e20a95d0fa012b19cae6b28f553c23f3e670bef661488509a66fbd003e667b",
+      "old_entry_sha256": "b5ecbf98749509fda86127e1026c7cb2e0a6aece53358d8f676587e7eb4c18dc",
+      "old_sha256": "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
+      "origin": "current_change",
+      "path": "scripts/a2_full_scope.py",
+      "registered_sha256": [
+        "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
+          "group": "A3",
+          "kind": "source",
+          "scope_path": "scripts/a3_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
+          "group": "A4",
+          "kind": "source",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
+          "group": "A5",
+          "kind": "source",
+          "scope_path": "scripts/a5_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
+          "group": "A6",
+          "kind": "source",
+          "scope_path": "scripts/a6_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
+          "group": "A7",
+          "kind": "source",
+          "scope_path": "scripts/a7_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
+          "group": "A8",
+          "kind": "source",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "f428016716fe1fbc91015b4f6db744597b45260c97e4374ee09182285584f644",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "base"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "移除A1 scope SHA保留同一refs；新增生产组声明source及独立预期两fixture；原测试成员/计数保留，三项测试准备另逐项审阅。"
+    },
+    {
+      "affected_groups": [
+        "A2-01"
+      ],
+      "category": "registration",
+      "groups": [
+        "A2-01"
+      ],
+      "new_entry_sha256": "9202409edee7d679efa117aff10100579a375a04964582e6d30771fd3341d6da",
+      "new_sha256": "3d7d9b818696928410daf65f5a1177ab65ca2eaa24e379daa7ec64e2cb825547",
+      "old_entry_sha256": "7f9b9dcebb1ca4b16442d90d48e0635c0c66c8fe69726e8e0a2b88a507d8c6fa",
+      "old_sha256": "b2ea78f4a94fd388b4011a177beccd769ba7962f94164cf3428fd0a65e4f5f26",
+      "origin": "current_change",
+      "path": "scripts/a2_scope.py",
+      "registered_sha256": [],
+      "registrations": [],
+      "sensitivity": "sensitive",
+      "reason": "仅新增实际帮助消费者verification_groups.py；optional A2-01原测试与标准不变。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "new_entry_sha256": "e1c785a12653691daee5865ee1a17aba6642ed683494d57d41a62f4ce3a7746e",
+      "new_sha256": "8ca121566239189de1c3eb86df998b4b0ecf8e4ee1827aa9ec212848ff71177c",
+      "old_entry_sha256": "3b7e7b94f7e59df954f0eefc0938155877a06a89447b2b5e84ea35102b328573",
+      "old_sha256": "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
+      "origin": "current_change",
+      "path": "scripts/a3_scope.py",
+      "registered_sha256": [
+        "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
+          "group": "A4",
+          "kind": "source",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
+          "group": "A5",
+          "kind": "source",
+          "scope_path": "scripts/a5_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
+          "group": "A6",
+          "kind": "source",
+          "scope_path": "scripts/a6_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
+          "group": "A7",
+          "kind": "source",
+          "scope_path": "scripts/a7_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
+          "group": "A8",
+          "kind": "source",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "87e20a97cafef01ed4e0bd08980de9d96a828db33f2f2217b4472f80ce1c9335",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "base"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "原scope哈希边改等价refs；生产组声明和模拟executor消费的两独立预期fixture显式纳入；原测试/计数不变。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A4",
+        "A5",
+        "A9"
+      ],
+      "new_entry_sha256": "1ade83e10e805b1bb527acea6ad521b76e64278eb49065de5220bb6269ba9e66",
+      "new_sha256": "63880c279bf0ea4f257afebe6cebcbbda59ae755aa678619ff223b71310b2531",
+      "old_entry_sha256": "453a885222ad5bb1323ca6f4dbaffa866e11bce4e5053b846756757b45a59a81",
+      "old_sha256": "14fff7afafefb2dbacd6505e4f9cabd6745ef60cb5ba49f2c588ac73c9b203a7",
+      "origin": "current_change",
+      "path": "scripts/a4_scope.py",
+      "registered_sha256": [
+        "14fff7afafefb2dbacd6505e4f9cabd6745ef60cb5ba49f2c588ac73c9b203a7"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "14fff7afafefb2dbacd6505e4f9cabd6745ef60cb5ba49f2c588ac73c9b203a7",
+          "group": "A5",
+          "kind": "source",
+          "scope_path": "scripts/a5_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "14fff7afafefb2dbacd6505e4f9cabd6745ef60cb5ba49f2c588ac73c9b203a7",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "14fff7afafefb2dbacd6505e4f9cabd6745ef60cb5ba49f2c588ac73c9b203a7",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "base"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "原scope哈希边改等价refs；生产组声明及两独立预期fixture；旧entry/compat/run分母与历史断言保留。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "new_entry_sha256": "d6ca3d2d1b9e9c396fb70b3fdbf728882f44a066891ecea873a185ce713c162c",
+      "new_sha256": "b435705a1bf1e4b2e4ac222f60b4be503247a22938f2d4d6cdd589f93073b87f",
+      "old_entry_sha256": "c1f2e2baf42769e76ee7517bb52968c2b66ed0a62cd2b642e753fe017b8cbef0",
+      "old_sha256": "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
+      "origin": "current_change",
+      "path": "scripts/a5_scope.py",
+      "registered_sha256": [
+        "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
+          "group": "A6",
+          "kind": "source",
+          "scope_path": "scripts/a6_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
+          "group": "A7",
+          "kind": "source",
+          "scope_path": "scripts/a7_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
+          "group": "A8",
+          "kind": "source",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "5fab1ec7ab04d07a4c395e9e9bd5422db0706acc710269abf30070f949818a5d",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "base"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "原scope哈希边改等价refs；生产组声明及两独立预期fixture；原测试成员/计数保持。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "new_entry_sha256": "0d00caa986bfe60d2cb00fcb45e9c103dffae4446be0a7213679a0632b6bc5a2",
+      "new_sha256": "1588625af965e0147d95583201103d357746ed0da6d12aebe39cad827cb6e2a8",
+      "old_entry_sha256": "d1742e7d63346b157f442045937a9069aaf0c3bc61d2adada5ef2d7f22689993",
+      "old_sha256": "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265",
+      "origin": "current_change",
+      "path": "scripts/a6_scope.py",
+      "registered_sha256": [
+        "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265",
+          "group": "A7",
+          "kind": "source",
+          "scope_path": "scripts/a7_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265",
+          "group": "A8",
+          "kind": "source",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "0ae372a1bf8df68236970da6594048b71d3915168c8b560d59b6089f384c6265",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "base"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "原scope哈希边改等价refs；生产组声明及两独立预期fixture；原测试成员/计数保持。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "new_entry_sha256": "b8305d1f973ed6f87e6002d5ef6b02cc7bc54afde132a7feee80353f0c67b13a",
+      "new_sha256": "8d92799b5195a6b52d12848e60cf2e19f6b0eada532082d27db34ac2b5f9b74b",
+      "old_entry_sha256": "c718555adaad5eadd92e993827842f7bbe632ca881fc96d921b63e1f694c0690",
+      "old_sha256": "159e2feaae01cdd2caafc2b76d374c075aea8a2d42dbe96f67a9b6993ed49030",
+      "origin": "current_change",
+      "path": "scripts/a7_scope.py",
+      "registered_sha256": [
+        "159e2feaae01cdd2caafc2b76d374c075aea8a2d42dbe96f67a9b6993ed49030"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "159e2feaae01cdd2caafc2b76d374c075aea8a2d42dbe96f67a9b6993ed49030",
+          "group": "A8",
+          "kind": "source",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "159e2feaae01cdd2caafc2b76d374c075aea8a2d42dbe96f67a9b6993ed49030",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "159e2feaae01cdd2caafc2b76d374c075aea8a2d42dbe96f67a9b6993ed49030",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "base"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "原scope哈希边改等价refs；生产组声明及两独立预期fixture；原测试成员/计数保持。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "new_entry_sha256": "df9b36c1ba4ff784b184e8df834b3746e2249d9c355c8aa8302f0a2a082af08a",
+      "new_sha256": "8a1378c4bb185138ab822e1d9db5d531f65be2e0afc4a0dcf12b12387897dba2",
+      "old_entry_sha256": "72c385eca2c3d0a1adc799e4761a200b165ae08ad9925ea893d9b639193bc7a4",
+      "old_sha256": "7e9c6020314c8efa9dcba8dce02f78d61586c7d8def2026e6f6498413a7ecdc2",
+      "origin": "current_change",
+      "path": "scripts/a8_scope.py",
+      "registered_sha256": [
+        "7e9c6020314c8efa9dcba8dce02f78d61586c7d8def2026e6f6498413a7ecdc2"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "7e9c6020314c8efa9dcba8dce02f78d61586c7d8def2026e6f6498413a7ecdc2",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "7e9c6020314c8efa9dcba8dce02f78d61586c7d8def2026e6f6498413a7ecdc2",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "base"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "原7条scope哈希边逐条保留refs；新增baseline审计source及生产组声明/独立预期两fixture；固定计数不变，冻结能力指针仅同组refs例外。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A9"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A9"
+      ],
+      "new_entry_sha256": "c513592616d9435610f4cad9a469bea4a0269f813811e1bf97627659a9c4fe19",
+      "new_sha256": "a94094c211495af57377fc2e5f5c0412130ad93446f151716f35c04e417958a0",
+      "old_entry_sha256": "793d74d16fb2fe835f5c435052681987956f103f1b8e9f9cca8a52d76fb0397e",
+      "old_sha256": "3eab2802e6f159c621918623fd87a6f73b87965f0ed6b5c905ce40bcd4f0ac44",
+      "origin": "current_change",
+      "path": "scripts/a9_scope.py",
+      "registered_sha256": [
+        "3eab2802e6f159c621918623fd87a6f73b87965f0ed6b5c905ce40bcd4f0ac44"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "3eab2802e6f159c621918623fd87a6f73b87965f0ed6b5c905ce40bcd4f0ac44",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "base"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "原7条scope哈希边逐条保留refs；新增baseline与collection审计source及生产组声明/两独立预期fixture；计数/原成员不减。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A2-01",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A2-01",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "new_entry_sha256": "2a78d34f907d9e155d8259994620db02a683da2d47d51c47c87ee406a3384752",
+      "new_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+      "old_entry_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "old_sha256": null,
+      "origin": "current_change",
+      "path": "scripts/verification_groups.py",
+      "registered_sha256": [
+        "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+          "group": "A2-01",
+          "kind": "source",
+          "scope_path": "scripts/a2_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+          "group": "完整 A2",
+          "kind": "source",
+          "scope_path": "scripts/a2_full_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+          "group": "A3",
+          "kind": "source",
+          "scope_path": "scripts/a3_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+          "group": "A4",
+          "kind": "source",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+          "group": "A5",
+          "kind": "source",
+          "scope_path": "scripts/a5_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+          "group": "A6",
+          "kind": "source",
+          "scope_path": "scripts/a6_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+          "group": "A7",
+          "kind": "source",
+          "scope_path": "scripts/a7_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+          "group": "A8",
+          "kind": "source",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "新轻量生产声明实际10组source消费闭包；11组中10 required、A2-01 optional；writer惰性加载和receipt_scope显式模块，reader白名单独立且未改。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "new_entry_sha256": "2aa1236a9bf12a60a0a17ad92955dac444652ee51cc3e2089b2a9e123964b7e1",
+      "new_sha256": "078c71a868048558962ab934a8594b5da3bb6560f892134a887061f06873b9d8",
+      "old_entry_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "old_sha256": null,
+      "origin": "current_change",
+      "path": "scripts/verification_scope_baseline.py",
+      "registered_sha256": [
+        "078c71a868048558962ab934a8594b5da3bb6560f892134a887061f06873b9d8"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "078c71a868048558962ab934a8594b5da3bb6560f892134a887061f06873b9d8",
+          "group": "A8",
+          "kind": "source",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "078c71a868048558962ab934a8594b5da3bb6560f892134a887061f06873b9d8",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "078c71a868048558962ab934a8594b5da3bb6560f892134a887061f06873b9d8",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "新审计支撑纳入A8/A9/A10实际source闭包；逐树blob/中央展开、refs与entry摘要及完整身份确认，新增成员须全部下游确认。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A9"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A9"
+      ],
+      "new_entry_sha256": "1a1c1fd11eb598213899810a00cefcf2c601a49c918ccf0760518d9411bf47ad",
+      "new_sha256": "502b88820a6e935bb443a85c29ef9e35bbc7f60ecfa005f8445525c6caf27fc6",
+      "old_entry_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "old_sha256": "502b88820a6e935bb443a85c29ef9e35bbc7f60ecfa005f8445525c6caf27fc6",
+      "origin": "current_change",
+      "path": "scripts/verification_scope_collection.py",
+      "registered_sha256": [
+        "502b88820a6e935bb443a85c29ef9e35bbc7f60ecfa005f8445525c6caf27fc6"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "502b88820a6e935bb443a85c29ef9e35bbc7f60ecfa005f8445525c6caf27fc6",
+          "group": "A9",
+          "kind": "source",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "502b88820a6e935bb443a85c29ef9e35bbc7f60ecfa005f8445525c6caf27fc6",
+          "group": "A10",
+          "kind": "source",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "既有收集支撑补入A9/A10实际source闭包；源文件本身未改，不能省略source成员新增确认。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "new_entry_sha256": "cdff6a6f597a597d53103434968aa26a88c02352e38f32a5fdfa2e2201e768f0",
+      "new_sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8",
+      "old_entry_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "old_sha256": null,
+      "origin": "current_change",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "registered_sha256": [
+        "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8",
+          "group": "完整 A2",
+          "kind": "fixture",
+          "scope_path": "scripts/a2_full_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8",
+          "group": "A3",
+          "kind": "fixture",
+          "scope_path": "scripts/a3_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8",
+          "group": "A4",
+          "kind": "fixture",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8",
+          "group": "A5",
+          "kind": "fixture",
+          "scope_path": "scripts/a5_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8",
+          "group": "A6",
+          "kind": "fixture",
+          "scope_path": "scripts/a6_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8",
+          "group": "A7",
+          "kind": "fixture",
+          "scope_path": "scripts/a7_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8",
+          "group": "A8",
+          "kind": "fixture",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8",
+          "group": "A9",
+          "kind": "fixture",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8",
+          "group": "A10",
+          "kind": "fixture",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "新独立人工预期：明确11组/14后缀、历史输出组及空模拟fixture映射；9消费组按fixture绑定，不导入生产登记推导预期。"
+    },
+    {
+      "affected_groups": [
+        "A10"
+      ],
+      "category": "test",
+      "groups": [
+        "A10"
+      ],
+      "new_entry_sha256": "0d8bc1f3f681a2e803adc2f4cd68d256c1de957703a3f71b1c0dca07e3d12dda",
+      "new_sha256": "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68",
+      "old_entry_sha256": "d4aa2fab1d63b016bba6f12ce0d1981a7391757547e8ee12901b2304c9070d41",
+      "old_sha256": "2809448ed1e2c31c231a3a818e937a9440447cb172764bec59ca245b69cf0dfb",
+      "origin": "current_change",
+      "path": "tests/test_a10_entry.py",
+      "registered_sha256": [
+        "2809448ed1e2c31c231a3a818e937a9440447cb172764bec59ca245b69cf0dfb",
+        "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "2809448ed1e2c31c231a3a818e937a9440447cb172764bec59ca245b69cf0dfb",
+          "group": "A10",
+          "kind": "test",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68",
+          "group": "A10",
+          "kind": "test",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "S4(b) 10例不变；2总份数改独立后缀集合+数量，optional/required及发布中断断言保留。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "category": "test",
+      "groups": [
+        "A4",
+        "完整 A2"
+      ],
+      "new_entry_sha256": "696531a1387be4031c5c575ed6ae0b0f879aeccaddeaf633f5acfc4e329aa180",
+      "new_sha256": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+      "old_entry_sha256": "b5d89fc51243bf1e79c272779393aecfbd4f388c92b6e45b12bf97c9185c9723",
+      "old_sha256": "f335f488299732292d94f7931dcdc91e0367c5798e5d67aa5689454da17da192",
+      "origin": "current_change",
+      "path": "tests/test_a2_full_entry.py",
+      "registered_sha256": [
+        "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+        "f335f488299732292d94f7931dcdc91e0367c5798e5d67aa5689454da17da192"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "f335f488299732292d94f7931dcdc91e0367c5798e5d67aa5689454da17da192",
+          "group": "完整 A2",
+          "kind": "test",
+          "scope_path": "scripts/a2_full_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "f335f488299732292d94f7931dcdc91e0367c5798e5d67aa5689454da17da192",
+          "group": "A4",
+          "kind": "test",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+          "group": "完整 A2",
+          "kind": "test",
+          "scope_path": "scripts/a2_full_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+          "group": "A4",
+          "kind": "test",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "S4(b) 7例不变；1总份数+1帮助迁移，帮助复制轻量声明并保留I/O哨兵和中断前缀。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "category": "test",
+      "groups": [
+        "A4"
+      ],
+      "new_entry_sha256": "e0e238c509686abe5d73361b56d50fa2fbf8f6e2f8686bcc192c12ac942340e1",
+      "new_sha256": "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c",
+      "old_entry_sha256": "b8fb6e167a27c210bbcd5c5021c2569c860df23b238c234a7da6af9a7d6198e6",
+      "old_sha256": "4ed30b5a4bfee215a6c926f375a5cc865289157ed3a0d11a16fc652e2cd45278",
+      "origin": "current_change",
+      "path": "tests/test_a4_entry.py",
+      "registered_sha256": [
+        "4ed30b5a4bfee215a6c926f375a5cc865289157ed3a0d11a16fc652e2cd45278",
+        "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "4ed30b5a4bfee215a6c926f375a5cc865289157ed3a0d11a16fc652e2cd45278",
+          "group": "A4",
+          "kind": "test",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c",
+          "group": "A4",
+          "kind": "test",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "S4(b) 5例不变；1总份数改独立后缀集合+数量，失败与发布中断断言保留。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "category": "test",
+      "groups": [
+        "A5"
+      ],
+      "new_entry_sha256": "ab0137b22afce13ec74234c4c0457b2a8548f12100ceccb8376c68cbcbbc4285",
+      "new_sha256": "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89",
+      "old_entry_sha256": "1c1c729c734af5504687eb46d4690f380036b5d9b46c780978fe87d8738be584",
+      "old_sha256": "0b4cde834b9fee665da07f4c00f6403584749c955bf23b61d8c6d70e632fe8a6",
+      "origin": "current_change",
+      "path": "tests/test_a5_entry.py",
+      "registered_sha256": [
+        "0b4cde834b9fee665da07f4c00f6403584749c955bf23b61d8c6d70e632fe8a6",
+        "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "0b4cde834b9fee665da07f4c00f6403584749c955bf23b61d8c6d70e632fe8a6",
+          "group": "A5",
+          "kind": "test",
+          "scope_path": "scripts/a5_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89",
+          "group": "A5",
+          "kind": "test",
+          "scope_path": "scripts/a5_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "S4(b) 5例不变；1总份数改独立后缀集合+数量，失败与发布中断断言保留。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A6",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "category": "test",
+      "groups": [
+        "A6"
+      ],
+      "new_entry_sha256": "098694878abac1b25d8e4e94a577810a96901a859cbb1bccc5a12d6667b73d82",
+      "new_sha256": "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6",
+      "old_entry_sha256": "f817ba0497ab6b89550ab27f31dfc065cbc82d88bf819d74a0472c9171a638bc",
+      "old_sha256": "1b4f67c9e37a74f087ab74a4a64578f53ba353b6be3c19dee3536d7e70f9bff1",
+      "origin": "current_change",
+      "path": "tests/test_a6_entry.py",
+      "registered_sha256": [
+        "1b4f67c9e37a74f087ab74a4a64578f53ba353b6be3c19dee3536d7e70f9bff1",
+        "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "1b4f67c9e37a74f087ab74a4a64578f53ba353b6be3c19dee3536d7e70f9bff1",
+          "group": "A6",
+          "kind": "test",
+          "scope_path": "scripts/a6_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6",
+          "group": "A6",
+          "kind": "test",
+          "scope_path": "scripts/a6_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "S4(b) 9例不变；1总份数改独立后缀集合+数量，失败/依赖/中断断言保留。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "category": "test",
+      "groups": [
+        "A7"
+      ],
+      "new_entry_sha256": "e9837f675612d4b0ee60b576eab2795ba9300c1b8bf60de52d426bdf633e5c15",
+      "new_sha256": "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
+      "old_entry_sha256": "ba0805cb90fd95b659ff132553263b7cda4869caa4ab2782237244c3435acc01",
+      "old_sha256": "e59861bb282e5dfb07a5254ec7849ea9aad93885e0833bfef83ef8187dc9ede1",
+      "origin": "current_change",
+      "path": "tests/test_a7_entry.py",
+      "registered_sha256": [
+        "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
+        "e59861bb282e5dfb07a5254ec7849ea9aad93885e0833bfef83ef8187dc9ede1"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "e59861bb282e5dfb07a5254ec7849ea9aad93885e0833bfef83ef8187dc9ede1",
+          "group": "A7",
+          "kind": "test",
+          "scope_path": "scripts/a7_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
+          "group": "A7",
+          "kind": "test",
+          "scope_path": "scripts/a7_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "S4(b) 9例不变；1总份数改独立后缀集合+数量，失败/依赖/中断断言保留。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A8",
+        "A9"
+      ],
+      "category": "test",
+      "groups": [
+        "A8"
+      ],
+      "new_entry_sha256": "77115580db0702fbcb691e560938ce48af9c8a3c6441839a3c454eefd1db6f1c",
+      "new_sha256": "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
+      "old_entry_sha256": "ef654b635128a70aed756385b898dd1852b5e1ffdde7e3511889b483655847d2",
+      "old_sha256": "148090d5270b8a1989ee4681ff52f6a5e1d5a38fe0faf8414c0a769c4fa5d604",
+      "origin": "current_change",
+      "path": "tests/test_a8_entry.py",
+      "registered_sha256": [
+        "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
+        "148090d5270b8a1989ee4681ff52f6a5e1d5a38fe0faf8414c0a769c4fa5d604"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "148090d5270b8a1989ee4681ff52f6a5e1d5a38fe0faf8414c0a769c4fa5d604",
+          "group": "A8",
+          "kind": "test",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
+          "group": "A8",
+          "kind": "test",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "S4(b) 9例不变；1总份数改独立后缀集合+数量，失败/嵌套回执/发布中断断言保留。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A9"
+      ],
+      "category": "test",
+      "groups": [
+        "A9"
+      ],
+      "new_entry_sha256": "8eeb5270ad915afddf1201dcb5533a46f7a40bc98eaba5e595533ed6ff4f124b",
+      "new_sha256": "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003",
+      "old_entry_sha256": "a99e75345fe32832f898b27e22ccc490a4651a831cefd43ddb569cf779dc13fd",
+      "old_sha256": "87d9cde4deef8d3c4fdd21c002c1502569daac2274683dd6f9c35ec2574e1f81",
+      "origin": "current_change",
+      "path": "tests/test_a9_entry.py",
+      "registered_sha256": [
+        "87d9cde4deef8d3c4fdd21c002c1502569daac2274683dd6f9c35ec2574e1f81",
+        "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "87d9cde4deef8d3c4fdd21c002c1502569daac2274683dd6f9c35ec2574e1f81",
+          "group": "A9",
+          "kind": "test",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003",
+          "group": "A9",
+          "kind": "test",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "S4(b) 10例不变；2总份数改独立后缀集合+数量，Read契约及发布中断断言保留。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "category": "test",
+      "groups": [
+        "A4",
+        "完整 A2"
+      ],
+      "new_entry_sha256": "642881fbdcba5d76cdf85a407fe76f66a7596a311c2cabce30106ba9214c5fc2",
+      "new_sha256": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf",
+      "old_entry_sha256": "88143fa209c9b7d825b0a827a794acff62123669a60c36fc6215fcaf14c3996d",
+      "old_sha256": "33adb6c58a86acb91f81309fd603c51ae04e8ebd0738e2d28027fa5b53313897",
+      "origin": "current_change",
+      "path": "tests/test_verification_compatibility.py",
+      "registered_sha256": [
+        "33adb6c58a86acb91f81309fd603c51ae04e8ebd0738e2d28027fa5b53313897",
+        "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "33adb6c58a86acb91f81309fd603c51ae04e8ebd0738e2d28027fa5b53313897",
+          "group": "完整 A2",
+          "kind": "test",
+          "scope_path": "scripts/a2_full_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "33adb6c58a86acb91f81309fd603c51ae04e8ebd0738e2d28027fa5b53313897",
+          "group": "A4",
+          "kind": "test",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf",
+          "group": "完整 A2",
+          "kind": "test",
+          "scope_path": "scripts/a2_full_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf",
+          "group": "A4",
+          "kind": "test",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "S4(b) 9例不变；条件13/14改独立清单，原stdout/stderr/exit逐字断言；只过滤显式非历史组且拒绝未知前缀。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "category": "test",
+      "groups": [
+        "A4",
+        "完整 A2"
+      ],
+      "new_entry_sha256": "4721a3881b0694c4c8ee598a0b9609de020e20b6d53d1b01bf09964df7579864",
+      "new_sha256": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed",
+      "old_entry_sha256": "777236ae186e1aca167e1f3bf7d614e0a22de372c078f6811677dc5823293453",
+      "old_sha256": "6b8d8b0de2cbb768c9c6987a52f7dd9b12d42ce1838873ff52e26854b7cda620",
+      "origin": "current_change",
+      "path": "tests/test_verification_run.py",
+      "registered_sha256": [
+        "6b8d8b0de2cbb768c9c6987a52f7dd9b12d42ce1838873ff52e26854b7cda620",
+        "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "6b8d8b0de2cbb768c9c6987a52f7dd9b12d42ce1838873ff52e26854b7cda620",
+          "group": "完整 A2",
+          "kind": "test",
+          "scope_path": "scripts/a2_full_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "6b8d8b0de2cbb768c9c6987a52f7dd9b12d42ce1838873ff52e26854b7cda620",
+          "group": "A4",
+          "kind": "test",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "base"
+        },
+        {
+          "expected_sha256": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed",
+          "group": "完整 A2",
+          "kind": "test",
+          "scope_path": "scripts/a2_full_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed",
+          "group": "A4",
+          "kind": "test",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "S4(b) 5例不变；额外组总份数以独立清单+extra断言，非法登记/required结果不变。"
+    },
+    {
+      "affected_groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "category": "registration",
+      "groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "完整 A2"
+      ],
+      "new_entry_sha256": "a11168b2540052366e62e334b9a8a216bce5b792bfb6b140a9a7d0c25f6a1b41",
+      "new_sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+      "old_entry_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "old_sha256": null,
+      "origin": "current_change",
+      "path": "tests/verification_expectations.py",
+      "registered_sha256": [
+        "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78"
+      ],
+      "registrations": [
+        {
+          "expected_sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+          "group": "完整 A2",
+          "kind": "fixture",
+          "scope_path": "scripts/a2_full_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+          "group": "A3",
+          "kind": "fixture",
+          "scope_path": "scripts/a3_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+          "group": "A4",
+          "kind": "fixture",
+          "scope_path": "scripts/a4_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+          "group": "A5",
+          "kind": "fixture",
+          "scope_path": "scripts/a5_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+          "group": "A6",
+          "kind": "fixture",
+          "scope_path": "scripts/a6_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+          "group": "A7",
+          "kind": "fixture",
+          "scope_path": "scripts/a7_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+          "group": "A8",
+          "kind": "fixture",
+          "scope_path": "scripts/a8_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+          "group": "A9",
+          "kind": "fixture",
+          "scope_path": "scripts/a9_scope.py",
+          "tree": "current"
+        },
+        {
+          "expected_sha256": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+          "group": "A10",
+          "kind": "fixture",
+          "scope_path": "scripts/a10_scope.py",
+          "tree": "current"
+        }
+      ],
+      "sensitivity": "sensitive",
+      "reason": "新独立预期读取支撑按fixture绑定9组；精确后缀集合+数量/required/help/输出顺序，历史stdout只过滤明确非历史组，未知前缀拒绝。"
+    }
+  ],
+  "s3_confirmation_rows": 144,
+  "added_consumption_closure_133": {
+    "A8": [
+      "scripts/verification_scope_baseline.py"
+    ],
+    "A9": [
+      "scripts/verification_scope_baseline.py",
+      "scripts/verification_scope_collection.py"
+    ],
+    "A10": [
+      "scripts/verification_scope_baseline.py",
+      "scripts/verification_scope_collection.py"
+    ]
+  },
+  "added_consumption_closure_135": [
+    {
+      "group": "A2-01",
+      "scope_path": "scripts/a2_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "完整 A2",
+      "scope_path": "scripts/a2_full_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "完整 A2",
+      "scope_path": "scripts/a2_full_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "完整 A2",
+      "scope_path": "scripts/a2_full_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A3",
+      "scope_path": "scripts/a3_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A3",
+      "scope_path": "scripts/a3_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A3",
+      "scope_path": "scripts/a3_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A4",
+      "scope_path": "scripts/a4_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A4",
+      "scope_path": "scripts/a4_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A4",
+      "scope_path": "scripts/a4_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A5",
+      "scope_path": "scripts/a5_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A5",
+      "scope_path": "scripts/a5_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A5",
+      "scope_path": "scripts/a5_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A6",
+      "scope_path": "scripts/a6_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A6",
+      "scope_path": "scripts/a6_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A6",
+      "scope_path": "scripts/a6_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A7",
+      "scope_path": "scripts/a7_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A7",
+      "scope_path": "scripts/a7_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A7",
+      "scope_path": "scripts/a7_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A8",
+      "scope_path": "scripts/a8_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A8",
+      "scope_path": "scripts/a8_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A8",
+      "scope_path": "scripts/a8_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A9",
+      "scope_path": "scripts/a9_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A9",
+      "scope_path": "scripts/a9_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A9",
+      "scope_path": "scripts/a9_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A10",
+      "scope_path": "scripts/a10_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A10",
+      "scope_path": "scripts/a10_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A10",
+      "scope_path": "scripts/a10_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    }
+  ],
+  "preparation_test_changes": [
+    {
+      "path": "tests/test_a2_full_entry.py",
+      "old_sha256": "f335f488299732292d94f7931dcdc91e0367c5798e5d67aa5689454da17da192",
+      "new_sha256": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+      "expected_cases_before": 7,
+      "expected_cases_after": 7,
+      "total_assertions": 1,
+      "help_assertions": 1,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。 帮助fixture复制轻量声明，保留sitecustomize哨兵与零产物边界。"
+    },
+    {
+      "path": "tests/test_a4_entry.py",
+      "old_sha256": "4ed30b5a4bfee215a6c926f375a5cc865289157ed3a0d11a16fc652e2cd45278",
+      "new_sha256": "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c",
+      "expected_cases_before": 5,
+      "expected_cases_after": 5,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a5_entry.py",
+      "old_sha256": "0b4cde834b9fee665da07f4c00f6403584749c955bf23b61d8c6d70e632fe8a6",
+      "new_sha256": "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89",
+      "expected_cases_before": 5,
+      "expected_cases_after": 5,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a6_entry.py",
+      "old_sha256": "1b4f67c9e37a74f087ab74a4a64578f53ba353b6be3c19dee3536d7e70f9bff1",
+      "new_sha256": "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6",
+      "expected_cases_before": 9,
+      "expected_cases_after": 9,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a7_entry.py",
+      "old_sha256": "e59861bb282e5dfb07a5254ec7849ea9aad93885e0833bfef83ef8187dc9ede1",
+      "new_sha256": "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
+      "expected_cases_before": 9,
+      "expected_cases_after": 9,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a8_entry.py",
+      "old_sha256": "148090d5270b8a1989ee4681ff52f6a5e1d5a38fe0faf8414c0a769c4fa5d604",
+      "new_sha256": "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
+      "expected_cases_before": 9,
+      "expected_cases_after": 9,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a9_entry.py",
+      "old_sha256": "87d9cde4deef8d3c4fdd21c002c1502569daac2274683dd6f9c35ec2574e1f81",
+      "new_sha256": "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003",
+      "expected_cases_before": 10,
+      "expected_cases_after": 10,
+      "total_assertions": 2,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a10_entry.py",
+      "old_sha256": "2809448ed1e2c31c231a3a818e937a9440447cb172764bec59ca245b69cf0dfb",
+      "new_sha256": "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68",
+      "expected_cases_before": 10,
+      "expected_cases_after": 10,
+      "total_assertions": 2,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_verification_run.py",
+      "old_sha256": "6b8d8b0de2cbb768c9c6987a52f7dd9b12d42ce1838873ff52e26854b7cda620",
+      "new_sha256": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed",
+      "expected_cases_before": 5,
+      "expected_cases_after": 5,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_verification_compatibility.py",
+      "old_sha256": "33adb6c58a86acb91f81309fd603c51ae04e8ebd0738e2d28027fa5b53313897",
+      "new_sha256": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf",
+      "expected_cases_before": 9,
+      "expected_cases_after": 9,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。 按独立预期仅剔除明确非历史组，核对全声明组输出与拒绝未知前缀；原历史stdout/stderr/退出码继续逐字比较。"
+    }
+  ],
+  "stage2_frozen_scope_tests": [
+    {
+      "path": "tests/test_a10_scope.py",
+      "sha256": "b0cecfa82d8f96d40724bfbdadd0ed2e03024e3a150de3c18fa8508b76239665"
+    },
+    {
+      "path": "tests/test_a9_scope.py",
+      "sha256": "1b889334ba376d5b622071c8aee6f15ce9b250448fc2a8ee830201f42321b5b3"
+    },
+    {
+      "path": "tests/test_verification_scope_audit.py",
+      "sha256": "97e9a200d739a40fe248943d1d1e02260c9851e1eecefbe3757478d341493eb8"
+    },
+    {
+      "path": "tests/test_verification_scope_cli.py",
+      "sha256": "39a218b01cb1fd7b80f5695f878215596e9f632a40606c18e8a10d444b1bc75b"
+    },
+    {
+      "path": "tests/test_verification_scope_collection.py",
+      "sha256": "7ffd0534b15dc0eed8ddb46fc0debfcd2451c20a4f99643e174c44396ea48bf9"
+    },
+    {
+      "path": "tests/test_verification_scope_registry.py",
+      "sha256": "16376df3cf4fe746c50ed54db173e2d68671283abbc047009bf1169c7de9d491"
+    }
+  ],
+  "first_step_coverage": [
+    {
+      "issue": 127,
+      "path": "tests/test_scope_material_inventory.py",
+      "cases": 4,
+      "current_sha256": "14fea36bafd94a88983ec7f7e1a121f9c4634bbd75b00e7fcf1913aa9e4acd8d"
+    },
+    {
+      "issue": 128,
+      "path": "tests/test_a8_a9_document_scope.py",
+      "cases": 23,
+      "current_sha256": "1ca0947814f7474e29d2ee6dddc58ec7f14627ec4b3d601f2a34c0bc4448e7b6"
+    },
+    {
+      "issue": 129,
+      "path": "tests/test_a10_scope_migration.py",
+      "cases": 18,
+      "current_sha256": "c62f3648bfee63ff3a3681d6dd63b357dcabbd133773f140bfa8667d82bd1fe5"
+    },
+    {
+      "issue": 130,
+      "path": "tests/test_scope_document_guards.py",
+      "cases": 27,
+      "current_sha256": "b48a8bad6e1b01fabbc7ee690cda9197ba3e58f602e6f0efa950fc5bd8348f9e"
+    },
+    {
+      "issue": 130,
+      "path": "tests/test_live_document_links.py",
+      "cases": 4,
+      "current_sha256": "e6d30b2931f8abcb4315230209bcf552c04194172f2b32c4cd7706757cc30d27"
+    },
+    {
+      "issue": 131,
+      "path": "tests/test_a10_document_obligations.py",
+      "cases": 17,
+      "current_sha256": "2100ed754917ad3419df7a32e0fc35dae6e72ef7abccebae5eabb4c4829848dd"
+    }
+  ],
+  "second_step_coverage": [
+    {
+      "issue": 132,
+      "path": "tests/test_scope_baseline_audit.py",
+      "cases": 34,
+      "required": false,
+      "sha256": "bafd6df6a388af0df82d0fc64bc8c87afe55be5afdacb5c9f2ba6c789e1120b5"
+    },
+    {
+      "issue": 133,
+      "path": "tests/test_scope_central_registration.py",
+      "cases": 17,
+      "required": false,
+      "sha256": "08fc9b899f6dd0f904a75517049ab4828285d260a94c68d8a6a43521d6472aa2"
+    },
+    {
+      "issue": 134,
+      "path": "tests/test_scope_shared_dag.py",
+      "cases": 24,
+      "required": false,
+      "sha256": "5c99949cde9abb942efd03c914dd56cdc200397098e38c60e96943da8b57577a"
+    },
+    {
+      "issue": 135,
+      "path": "tests/test_extensible_acceptance.py",
+      "cases": 22,
+      "required": false,
+      "sha256": "01faaf0b8ab13271ffcf689d6073afadd5df681a757cf403ad4427a4d91207ea"
+    },
+    {
+      "issue": 136,
+      "path": "tests/test_scope_parallel_integration.py",
+      "cases": 7,
+      "required": false,
+      "sha256": "967a1f6733404c70b1db1a2ea87572aa669ec0eb4e7cf427af86c75a27898cd9"
+    }
+  ],
+  "second_step_cases": 104,
+  "first_step_cases": 93,
+  "unbound_compatibility_changes": {
+    "133": [
+      {
+        "path": "tests/test_a8_a9_document_scope.py",
+        "old_sha256": "f088692f030198029cf295cdb61eef6d05e361b77f1c9cdf327346a6b2744ad8",
+        "new_sha256": "df9685facab1821e2342df20cff220857506b9fd4433a4001205129d40e5e9ad",
+        "reason": "未绑定D1最小兼容:显式新增消费闭包/按调用方白名单支持中央SHA;原用例数不变"
+      },
+      {
+        "path": "tests/scope_document_support.py",
+        "old_sha256": "8c25ca796385e5cadacfd60874d7fccd4c7155b93e2a3567d6319ed48953eba3",
+        "new_sha256": "37ca1c9938b530d49f1d966953b6a57f4003d9ed4ab0076e2ef0e95f764a59ba",
+        "reason": "未绑定D1最小兼容:显式新增消费闭包/按调用方白名单支持中央SHA;原用例数不变"
+      }
+    ],
+    "134": [
+      {
+        "path": "tests/test_a8_a9_document_scope.py",
+        "old_sha256": "df9685facab1821e2342df20cff220857506b9fd4433a4001205129d40e5e9ad",
+        "new_sha256": "ab2bcfc9234ced075f2d4cfc61de3f1d155eef787737c1a4b8e66a6753dd7764",
+        "reason": "精确扣除A8/A9共14条已迁移scope SHA成员并独立核对同14条显式引用;用例数不变"
+      },
+      {
+        "path": "tests/test_scope_central_registration.py",
+        "old_sha256": "a141d1d96ae4d5caa090ff8b1a57c2a0ffdce850d96d19717d7a5f972a051cf0",
+        "new_sha256": "08fc9b899f6dd0f904a75517049ab4828285d260a94c68d8a6a43521d6472aa2",
+        "reason": "真实writer回归副本审阅白名单显式加入实际变化的A8 writer;用例数不变"
+      }
+    ],
+    "135": [
+      {
+        "path": "tests/test_scope_shared_dag.py",
+        "old_sha256": "f9629e5f9df61927de21f34ae7c8f1cd4b552bd80aa232350c49c9affba47759",
+        "reason": "未绑定模块显式承接本票28新增消费成员，保留原1175集合/固定分母/41引用/历史快照等价断言",
+        "new_sha256": "5c99949cde9abb942efd03c914dd56cdc200397098e38c60e96943da8b57577a"
+      },
+      {
+        "path": "tests/test_a8_a9_document_scope.py",
+        "old_sha256": "ab2bcfc9234ced075f2d4cfc61de3f1d155eef787737c1a4b8e66a6753dd7764",
+        "reason": "未绑定模块显式承接本票28新增消费成员，保留原1175集合/固定分母/41引用/历史快照等价断言",
+        "new_sha256": "1ca0947814f7474e29d2ee6dddc58ec7f14627ec4b3d601f2a34c0bc4448e7b6"
+      },
+      {
+        "path": "tests/test_verification_status.py",
+        "old_sha256": "d6c0340ea8d04fdb226735b0e8ddedf9c7eb18923b08dcc765cb9762bf28b490",
+        "new_sha256": "ccfc4a004ecbf423947434fade68ac740dad052025abb6286f5a91b6da84df73",
+        "reason": "未绑定当前组合回归读取独立组后缀预期，保留发布绑定/只读性/历史格式全部断言；用例数不变"
+      }
+    ]
+  },
+  "preserved_prior_verification_files": {
+    "docs/verification/a-narrow-delivery.md": "9ade0d5cd3b8944b636023ffa0897d701107894210573f59b71798327b92a6c8",
+    "docs/verification/a10-documentation-excerpts.json": "eae92ce6c217991acc055b40fc907075b64b9cf079fef282086f9f3423687936",
+    "docs/verification/a10-requirements.md": "7318bb1eb9087363995be9396e447aeaafe77d8de89b6cebdf1197cbdfe1ed85",
+    "docs/verification/a10-scope-document-migration.json": "dccdfb66aa3ef9406dde64be52ecafda46a7451d22dd003757f052a3003adc88",
+    "docs/verification/a10-scope-document-migration.md": "8f2a9ee46d2feb8b30b15200835f50086a14cc911bfeebba91264a2de0e31a2c",
+    "docs/verification/a10-scope-review.md": "660d46801d7a63c861cc04a20bcb3860cf18d843172ae5c18e5bf22694e4596c",
+    "docs/verification/a4-requirements.md": "990c1c3f4b106e8fc44404650810f9b28a8fb6e47f6668a64c947c53fbd7765d",
+    "docs/verification/a6-requirements.md": "c63d0580b63fa6dcf05ba62eef4fb2607eaf75fdc5e43166fd41c85302d1e1e8",
+    "docs/verification/a7-external-review-disposition.md": "bffa56fc443cb4b9839d66108cb7a607f320062c4872e8d2d06a6162be768aba",
+    "docs/verification/a7-history-ledger.json": "61ab6f74d6230e0b2dac424806a19cca15691263c576196d9b3d42fa294c2b68",
+    "docs/verification/a7-requirements.md": "2f583dfe87358abf874ff25155de50bbde337ff7d11f9a099c7e10a4f3f60e6b",
+    "docs/verification/a8-a9-document-migration.json": "6d657293a53edbbc07835804645e0ff3f2ffaa649df53c833c609b89119bf460",
+    "docs/verification/a8-requirements.md": "bf40f43d19886a3b6c7bcd81891302f2c9a8e1e9b4a3206ad93c5609f19dfce3",
+    "docs/verification/a9-scope-review.md": "df26042232b218c2369ce2a231b8713c3c47b9089b4de45f9c71c22213be448e",
+    "docs/verification/contracts-backup-restore-history.md": "77fdc9ee348bddd16d5c5a694ef52459d2703241efe5e123da8e6742f68ff46e",
+    "docs/verification/contracts-config-snapshots-history.md": "4d3d3e37b659dd060bf8ee0889c3dcedb14e1159cd7148df2fb849c6d2cfa2fa",
+    "docs/verification/contracts-fixture-audit-history.md": "995e9308143ba53befb1cd3d3160f3fcfbeaf90db19fd75b3c1d678555fbe4cc",
+    "docs/verification/contracts-paper-facts-history.md": "f8453106f42439eddb325092cfddc33647f3d3df8f0d026b56578c00484a3b43",
+    "docs/verification/contracts-pi-rpc-history.md": "340df677cd790e33f63a42ef631037f9d6ce1629840bfd2b23a2ee3519e0fc5a",
+    "docs/verification/contracts-pi-supply-history.md": "90d44809d9195a3642b381f6070db29dcc619b2df0745ecc8e698d12f1f71746",
+    "docs/verification/contracts-read-validation-history.md": "649e7cd781d7ca4a55c9baeb4df8cb280a184e19ca6e8884dd74e52c5e7e9cfb",
+    "docs/verification/contracts-runtime-config-history.md": "6d2f5b069cf12fc5895c5bca5a6074c5f3af3b2d7e7c1d6de5f317be122662c8",
+    "docs/verification/contracts-screening-tasks-history.md": "95a5e0b4bca82d0f23a89adb7035ee5ebcb15356c945dd3975d480b83632756e",
+    "docs/verification/contracts-screening-validation-history.md": "9dcadbbdfca48a2629b6753484cd2b837791a4379a750d3de73d07e5a6f3e4d2",
+    "docs/verification/contracts-stage-inputs-history.md": "ce84a7edc2f35df1b95b4c45b2ec6da22edc920817c885e99a60edcf76f1a5d8",
+    "docs/verification/doc-unification-history.md": "058edee0c74349d62dd6432dc5a59125e1adbd195ddd1ddf984b46732653ae5b",
+    "docs/verification/doc-unification-ledger.md": "40062bd8b712c794eb0d589306ec656c6a138dafe84ab3254f3054e46b7d59f7",
+    "docs/verification/doctor-readonly.md": "af37557a36e566509cd7fb187b7dfc5085d6280baeae9b64bf0c1e78acb3fe21",
+    "docs/verification/feed-parser-v1.md": "ef19345e39e6d74c2c3de207ca04e3a058f09c2d4cda71081571b0ad4e9a6c73",
+    "docs/verification/issue-109-feedback-timings.md": "ae81bf7bc3d01a884cc2488c36eceab5242488d94f11b5afd32e31733882a448",
+    "docs/verification/issue-109-scope-review.md": "0423f5a0f885188a9552f34249ba98317a56d84b71aa21bd1af08a45bd47e00e",
+    "docs/verification/issue-114-feed-delivery.md": "45e70d5885411ce1a8655a7f1c066810d20e965e4baf883c95b3b646a6f569e9",
+    "docs/verification/offline-evidence.md": "49189beae5ae244378f37bfadf2b5fbdd9be3f8b81f18ee3083a909a205009f9",
+    "docs/verification/scope-baseline-audit-delivery.md": "7334fcbe23d1eb8ed460d88dfce911585d7016a5e8b4f35ea4eb2fcb02330fd1",
+    "docs/verification/scope-central-registration-delivery.json": "c541fc8e3f8bcd105cfa77b128cf41cee8e1ea2f0097bd59ba3368370037b268",
+    "docs/verification/scope-central-registration-delivery.md": "daf4a6ee745a2ad4ca24185a4159b1e882906cd619ae68beb4065fcbb8020bec",
+    "docs/verification/scope-document-migration.json": "ade2984876aa55ed68399cec17daabe313038b199cefdf17f9b00e2379e98aa1",
+    "docs/verification/scope-document-migration.md": "37732492b24ccb9ee750d44a421229c3e38b8cbee1cf548ec5363a5600a45e96",
+    "docs/verification/scope-extensible-groups-delivery.json": "1b8b31da7d1f57b2a50cbf057b0c9a6551ede0aec1584a393a96cde0a8b38fc0",
+    "docs/verification/scope-extensible-groups-delivery.md": "6faeb58781dc6d5fdb77f36cd55ebb21e464e72ddcefb2c666b1580ac215781c",
+    "docs/verification/scope-material-inventory.json": "6f742d2bd203cff104d36891035a08d9d13946b7bb0e9aa6950d26712ef9e5bd",
+    "docs/verification/scope-material-inventory.md": "c1591485475ed40492f6a6ff42f49db50a171eca591c48ad14809ae6fa97c5c0",
+    "docs/verification/scope-parallel-integration-delivery.md": "81264507b257326c077c66c77c6ebb81e66b94556fbfb5110e0abbd1d22928e3",
+    "docs/verification/scope-shared-dag-delivery.json": "fbbcbb1f7bb6246444135bb3381695ea0b9f817839d96560535628805991a8eb",
+    "docs/verification/scope-shared-dag-delivery.md": "beeb76f77570b75505daa229ec15067b31450642dccda82e765549c71a678395",
+    "docs/verification/stage-a-closure.md": "ee6ef2f3085e47ff8ace78ec72038ac4167ebe51c3014f6b27fcd35443b2bba7",
+    "docs/verification/t07-call-isolation.md": "8c1a44f0ca3bc6d3c02e6716620cf0e8ce1e7e775b721bb3b7eedbe2807a3454"
+  },
+  "a10": {
+    "sha256": "8c5a1af640e63ccd1a2215836a5ac12b1bb69c29b132aa5397379a0bb7589d9d",
+    "original_inventory_count": 693,
+    "source_document_count": 37,
+    "dispositions": {
+      "operational": 111,
+      "covered": 546,
+      "not_assessed": 29,
+      "superseded": 7
+    },
+    "historical_gap": "A10-100-C6405695568-CLAUSE-037 remains not_assessed"
+  },
+  "registration_shape": {
+    "bindings": 1203,
+    "paths": 695,
+    "shared_paths_before_135": 252,
+    "shared_paths_after_135": 255,
+    "new_shared_paths": [
+      "scripts/verification_groups.py",
+      "tests/verification_expectations.py",
+      "tests/fixtures/verification_group_expectations.json"
+    ],
+    "scope_hash_edges": 0,
+    "explicit_scope_references": 41,
+    "physical_shared_sha_positions_before_134": 644,
+    "physical_shared_sha_positions_after_134": 252,
+    "logical_shared_memberships_at_134": 735
+  },
+  "fixed_counts": [
+    {
+      "expected_cases": 6,
+      "group": "完整 A2",
+      "path": "tests/test_verification_checks.py"
+    },
+    {
+      "expected_cases": 18,
+      "group": "完整 A2",
+      "path": "tests/test_verification_integrity.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "完整 A2",
+      "path": "tests/test_verification_publication.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "完整 A2",
+      "path": "tests/test_verification_run.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "完整 A2",
+      "path": "tests/test_verification_compatibility.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "完整 A2",
+      "path": "tests/test_a1_acceptance.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "完整 A2",
+      "path": "tests/test_a2_acceptance.py"
+    },
+    {
+      "expected_cases": 34,
+      "group": "完整 A2",
+      "path": "tests/test_a2_full_acceptance.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "完整 A2",
+      "path": "tests/test_a2_full_entry.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "完整 A2",
+      "path": "tests/test_a2_full_examples.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "完整 A2",
+      "path": "tests/test_a2_test_receipt.py"
+    },
+    {
+      "expected_cases": 39,
+      "group": "完整 A2",
+      "path": "tests/test_boundary_validation.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "完整 A2",
+      "path": "tests/test_cli_help.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "完整 A2",
+      "path": "tests/test_config_adapter_architecture.py"
+    },
+    {
+      "expected_cases": 13,
+      "group": "完整 A2",
+      "path": "tests/test_config_adapter_cli.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "完整 A2",
+      "path": "tests/test_config_adapter_persistence.py"
+    },
+    {
+      "expected_cases": 55,
+      "group": "完整 A2",
+      "path": "tests/test_config_adapter_validation.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "完整 A2",
+      "path": "tests/test_config_adapters.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "完整 A2",
+      "path": "tests/test_config_architecture.py"
+    },
+    {
+      "expected_cases": 16,
+      "group": "完整 A2",
+      "path": "tests/test_config_boundary.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "完整 A2",
+      "path": "tests/test_config_cli.py"
+    },
+    {
+      "expected_cases": 20,
+      "group": "完整 A2",
+      "path": "tests/test_config_diff_cli.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "完整 A2",
+      "path": "tests/test_config_diff_review.py"
+    },
+    {
+      "expected_cases": 20,
+      "group": "完整 A2",
+      "path": "tests/test_config_diff_service.py"
+    },
+    {
+      "expected_cases": 41,
+      "group": "完整 A2",
+      "path": "tests/test_config_escalation.py"
+    },
+    {
+      "expected_cases": 14,
+      "group": "完整 A2",
+      "path": "tests/test_config_extraction.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "完整 A2",
+      "path": "tests/test_config_extraction_architecture.py"
+    },
+    {
+      "expected_cases": 14,
+      "group": "完整 A2",
+      "path": "tests/test_config_extraction_cli.py"
+    },
+    {
+      "expected_cases": 8,
+      "group": "完整 A2",
+      "path": "tests/test_config_extraction_persistence.py"
+    },
+    {
+      "expected_cases": 82,
+      "group": "完整 A2",
+      "path": "tests/test_config_extraction_validation.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "完整 A2",
+      "path": "tests/test_config_journals.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "完整 A2",
+      "path": "tests/test_config_journals_architecture.py"
+    },
+    {
+      "expected_cases": 16,
+      "group": "完整 A2",
+      "path": "tests/test_config_journals_cli.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "完整 A2",
+      "path": "tests/test_config_journals_persistence.py"
+    },
+    {
+      "expected_cases": 48,
+      "group": "完整 A2",
+      "path": "tests/test_config_journals_validation.py"
+    },
+    {
+      "expected_cases": 152,
+      "group": "完整 A2",
+      "path": "tests/test_config_material_compatibility.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "完整 A2",
+      "path": "tests/test_config_projection_adapters.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "完整 A2",
+      "path": "tests/test_config_projection_algorithms.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "完整 A2",
+      "path": "tests/test_config_projection_architecture.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "完整 A2",
+      "path": "tests/test_config_projection_formats.py"
+    },
+    {
+      "expected_cases": 36,
+      "group": "完整 A2",
+      "path": "tests/test_config_projections.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "完整 A2",
+      "path": "tests/test_config_prompt_identity.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "完整 A2",
+      "path": "tests/test_config_prompt_only.py"
+    },
+    {
+      "expected_cases": 12,
+      "group": "完整 A2",
+      "path": "tests/test_config_read.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "完整 A2",
+      "path": "tests/test_config_read_architecture.py"
+    },
+    {
+      "expected_cases": 18,
+      "group": "完整 A2",
+      "path": "tests/test_config_read_cli.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "完整 A2",
+      "path": "tests/test_config_read_persistence.py"
+    },
+    {
+      "expected_cases": 28,
+      "group": "完整 A2",
+      "path": "tests/test_config_read_validation.py"
+    },
+    {
+      "expected_cases": 15,
+      "group": "完整 A2",
+      "path": "tests/test_config_reuse.py"
+    },
+    {
+      "expected_cases": 16,
+      "group": "完整 A2",
+      "path": "tests/test_config_reuse_cli.py"
+    },
+    {
+      "expected_cases": 19,
+      "group": "完整 A2",
+      "path": "tests/test_config_reuse_persistence.py"
+    },
+    {
+      "expected_cases": 13,
+      "group": "完整 A2",
+      "path": "tests/test_config_service.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "完整 A2",
+      "path": "tests/test_config_snapshot_architecture.py"
+    },
+    {
+      "expected_cases": 30,
+      "group": "完整 A2",
+      "path": "tests/test_config_snapshot_cli.py"
+    },
+    {
+      "expected_cases": 24,
+      "group": "完整 A2",
+      "path": "tests/test_config_snapshot_queries.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "完整 A2",
+      "path": "tests/test_config_transaction_cli.py"
+    },
+    {
+      "expected_cases": 13,
+      "group": "完整 A2",
+      "path": "tests/test_config_transactions.py"
+    },
+    {
+      "expected_cases": 26,
+      "group": "完整 A2",
+      "path": "tests/test_config_validation.py"
+    },
+    {
+      "expected_cases": 63,
+      "group": "完整 A2",
+      "path": "tests/test_config_value.py"
+    },
+    {
+      "expected_cases": 8,
+      "group": "完整 A2",
+      "path": "tests/test_config_value_cli.py"
+    },
+    {
+      "expected_cases": 32,
+      "group": "完整 A2",
+      "path": "tests/test_contract_check.py"
+    },
+    {
+      "expected_cases": 37,
+      "group": "完整 A2",
+      "path": "tests/test_contract_cli.py"
+    },
+    {
+      "expected_cases": 22,
+      "group": "完整 A2",
+      "path": "tests/test_contract_export.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "完整 A2",
+      "path": "tests/test_contract_schema.py"
+    },
+    {
+      "expected_cases": 63,
+      "group": "完整 A2",
+      "path": "tests/test_decision_reason_validation.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "完整 A2",
+      "path": "tests/test_offline_evidence.py"
+    },
+    {
+      "expected_cases": 49,
+      "group": "完整 A2",
+      "path": "tests/test_reuse_assessment_validation.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "完整 A2",
+      "path": "tests/test_screening_architecture.py"
+    },
+    {
+      "expected_cases": 88,
+      "group": "完整 A2",
+      "path": "tests/test_value_prediction_validation.py"
+    },
+    {
+      "expected_cases": 15,
+      "group": "A3",
+      "path": "tests/test_artifact_contract.py"
+    },
+    {
+      "expected_cases": 25,
+      "group": "A3",
+      "path": "tests/test_artifact_store.py"
+    },
+    {
+      "expected_cases": 23,
+      "group": "A3",
+      "path": "tests/test_storage_migrations.py"
+    },
+    {
+      "expected_cases": 34,
+      "group": "A3",
+      "path": "tests/test_extraction_artifacts.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A3",
+      "path": "tests/test_backup_service.py"
+    },
+    {
+      "expected_cases": 34,
+      "group": "A3",
+      "path": "tests/test_backup_integrity.py"
+    },
+    {
+      "expected_cases": 22,
+      "group": "A3",
+      "path": "tests/test_backup_failures.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "A3",
+      "path": "tests/test_backup_cli.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A3",
+      "path": "tests/test_backup_wheel.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A3",
+      "path": "tests/test_backup_architecture.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A3",
+      "path": "tests/test_restore_service.py"
+    },
+    {
+      "expected_cases": 25,
+      "group": "A3",
+      "path": "tests/test_restore_failures.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "A3",
+      "path": "tests/test_restore_cli.py"
+    },
+    {
+      "expected_cases": 46,
+      "group": "A3",
+      "path": "tests/test_a3_acceptance.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A3",
+      "path": "tests/test_a3_combination.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A3",
+      "path": "tests/test_a3_test_receipt.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A3",
+      "path": "tests/test_a3_entry.py"
+    },
+    {
+      "expected_cases": 16,
+      "group": "A4",
+      "path": "tests/test_pi_supply.py"
+    },
+    {
+      "expected_cases": 12,
+      "group": "A4",
+      "path": "tests/test_pi_supply_activation.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A4",
+      "path": "tests/test_pi_supply_activation_cli.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A4",
+      "path": "tests/test_pi_supply_activation_history.py"
+    },
+    {
+      "expected_cases": 24,
+      "group": "A4",
+      "path": "tests/test_pi_supply_boundaries.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A4",
+      "path": "tests/test_pi_supply_cleanup.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "A4",
+      "path": "tests/test_pi_supply_cleanup_cli.py"
+    },
+    {
+      "expected_cases": 32,
+      "group": "A4",
+      "path": "tests/test_pi_supply_cleanup_execute.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A4",
+      "path": "tests/test_pi_supply_cleanup_execute_history.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "A4",
+      "path": "tests/test_pi_supply_cleanup_history.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A4",
+      "path": "tests/test_pi_supply_cleanup_unreadable.py"
+    },
+    {
+      "expected_cases": 13,
+      "group": "A4",
+      "path": "tests/test_pi_supply_cli.py"
+    },
+    {
+      "expected_cases": 24,
+      "group": "A4",
+      "path": "tests/test_pi_supply_export.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A4",
+      "path": "tests/test_pi_supply_export_history.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A4",
+      "path": "tests/test_pi_supply_history.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "A4",
+      "path": "tests/test_pi_supply_process.py"
+    },
+    {
+      "expected_cases": 16,
+      "group": "A4",
+      "path": "tests/test_pi_supply_protection.py"
+    },
+    {
+      "expected_cases": 20,
+      "group": "A4",
+      "path": "tests/test_pi_supply_rebuild.py"
+    },
+    {
+      "expected_cases": 8,
+      "group": "A4",
+      "path": "tests/test_pi_supply_rebuild_cli.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A4",
+      "path": "tests/test_pi_supply_rebuild_history.py"
+    },
+    {
+      "expected_cases": 8,
+      "group": "A4",
+      "path": "tests/test_pi_supply_transport.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A4",
+      "path": "tests/test_pi_supply_tree.py"
+    },
+    {
+      "expected_cases": 84,
+      "group": "A4",
+      "path": "tests/test_a4_acceptance.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A4",
+      "path": "tests/test_a4_combination.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A4",
+      "path": "tests/test_a4_test_receipt.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A4",
+      "path": "tests/test_a4_entry.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A4",
+      "path": "tests/test_a2_full_entry.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A4",
+      "path": "tests/test_verification_run.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A4",
+      "path": "tests/test_verification_compatibility.py"
+    },
+    {
+      "expected_cases": 18,
+      "group": "A4",
+      "path": "tests/test_verification_integrity.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A5",
+      "path": "tests/test_stage_input_architecture.py"
+    },
+    {
+      "expected_cases": 125,
+      "group": "A5",
+      "path": "tests/test_stage_input_common_contract.py"
+    },
+    {
+      "expected_cases": 28,
+      "group": "A5",
+      "path": "tests/test_stage_input_comparison.py"
+    },
+    {
+      "expected_cases": 14,
+      "group": "A5",
+      "path": "tests/test_stage_input_dependencies.py"
+    },
+    {
+      "expected_cases": 38,
+      "group": "A5",
+      "path": "tests/test_stage_input_extraction.py"
+    },
+    {
+      "expected_cases": 62,
+      "group": "A5",
+      "path": "tests/test_stage_input_extraction_reuse.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A5",
+      "path": "tests/test_stage_input_recovery.py"
+    },
+    {
+      "expected_cases": 33,
+      "group": "A5",
+      "path": "tests/test_stage_input_replay.py"
+    },
+    {
+      "expected_cases": 63,
+      "group": "A5",
+      "path": "tests/test_stage_input_reuse.py"
+    },
+    {
+      "expected_cases": 27,
+      "group": "A5",
+      "path": "tests/test_stage_input_value.py"
+    },
+    {
+      "expected_cases": 20,
+      "group": "A5",
+      "path": "tests/test_stage_inputs.py"
+    },
+    {
+      "expected_cases": 106,
+      "group": "A5",
+      "path": "tests/test_a5_acceptance.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A5",
+      "path": "tests/test_a5_entry.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A5",
+      "path": "tests/test_a5_test_receipt.py"
+    },
+    {
+      "expected_cases": 22,
+      "group": "A6",
+      "path": "tests/test_paper_review_boundaries.py"
+    },
+    {
+      "expected_cases": 18,
+      "group": "A6",
+      "path": "tests/test_paper_review_reads.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A6",
+      "path": "tests/test_a6_review_formats.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A6",
+      "path": "tests/test_pending_relation_roles.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A6",
+      "path": "tests/test_paper_model_validation.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A6",
+      "path": "tests/test_feed_arbitration.py"
+    },
+    {
+      "expected_cases": 18,
+      "group": "A6",
+      "path": "tests/test_feed_backup.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A6",
+      "path": "tests/test_feed_cli.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A6",
+      "path": "tests/test_feed_discovery.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A6",
+      "path": "tests/test_feed_identity.py"
+    },
+    {
+      "expected_cases": 18,
+      "group": "A6",
+      "path": "tests/test_feed_inputs.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A6",
+      "path": "tests/test_feed_migrations.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A6",
+      "path": "tests/test_feed_process.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A6",
+      "path": "tests/test_feed_registration.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A6",
+      "path": "tests/test_manual_corrections.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A6",
+      "path": "tests/test_paper_acquisitions.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A6",
+      "path": "tests/test_paper_backup.py"
+    },
+    {
+      "expected_cases": 8,
+      "group": "A6",
+      "path": "tests/test_paper_cli.py"
+    },
+    {
+      "expected_cases": 31,
+      "group": "A6",
+      "path": "tests/test_paper_identity.py"
+    },
+    {
+      "expected_cases": 52,
+      "group": "A6",
+      "path": "tests/test_paper_inputs.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A6",
+      "path": "tests/test_paper_mapping.py"
+    },
+    {
+      "expected_cases": 17,
+      "group": "A6",
+      "path": "tests/test_paper_mapping_failures.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A6",
+      "path": "tests/test_paper_mapping_process.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A6",
+      "path": "tests/test_paper_migrations.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A6",
+      "path": "tests/test_paper_process.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A6",
+      "path": "tests/test_paper_recovery_combined.py"
+    },
+    {
+      "expected_cases": 12,
+      "group": "A6",
+      "path": "tests/test_paper_recovery_damage.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "A6",
+      "path": "tests/test_paper_recovery_integrity.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A6",
+      "path": "tests/test_paper_reparse.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A6",
+      "path": "tests/test_paper_service.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A6",
+      "path": "tests/test_source_arbitration.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A6",
+      "path": "tests/test_source_backup.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A6",
+      "path": "tests/test_source_cli.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A6",
+      "path": "tests/test_source_migrations.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "A6",
+      "path": "tests/test_source_process.py"
+    },
+    {
+      "expected_cases": 8,
+      "group": "A6",
+      "path": "tests/test_version_relation_backup.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "A6",
+      "path": "tests/test_version_relation_cli.py"
+    },
+    {
+      "expected_cases": 14,
+      "group": "A6",
+      "path": "tests/test_version_relation_inputs.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A6",
+      "path": "tests/test_version_relation_materials.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A6",
+      "path": "tests/test_version_relation_migrations.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A6",
+      "path": "tests/test_version_relation_process.py"
+    },
+    {
+      "expected_cases": 13,
+      "group": "A6",
+      "path": "tests/test_version_relations.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A6",
+      "path": "tests/test_a6_acceptance.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A6",
+      "path": "tests/test_a6_entry.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A6",
+      "path": "tests/test_a6_formats.py"
+    },
+    {
+      "expected_cases": 114,
+      "group": "A6",
+      "path": "tests/test_a6_integrity.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A6",
+      "path": "tests/test_a6_status.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A6",
+      "path": "tests/test_a6_test_receipt.py"
+    },
+    {
+      "expected_cases": 26,
+      "group": "A7",
+      "path": "tests/test_a7_text_boundaries.py"
+    },
+    {
+      "expected_cases": 93,
+      "group": "A7",
+      "path": "tests/test_screening_strict_json.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A7",
+      "path": "tests/test_a7_registration.py"
+    },
+    {
+      "expected_cases": 34,
+      "group": "A7",
+      "path": "tests/test_a7_registration_failures.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A7",
+      "path": "tests/test_a7_registration_migrations.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A7",
+      "path": "tests/test_a7_registration_backup.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A7",
+      "path": "tests/test_a7_registration_process.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A7",
+      "path": "tests/test_a7_registration_imports.py"
+    },
+    {
+      "expected_cases": 12,
+      "group": "A7",
+      "path": "tests/test_a7_attempts.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A7",
+      "path": "tests/test_a7_driver_preconditions.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A7",
+      "path": "tests/test_a7_attempt_inputs.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "A7",
+      "path": "tests/test_a7_attempts_process.py"
+    },
+    {
+      "expected_cases": 12,
+      "group": "A7",
+      "path": "tests/test_a7_attempt_integrity.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A7",
+      "path": "tests/test_a7_attempt_backup.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A7",
+      "path": "tests/test_a7_attempt_migrations.py"
+    },
+    {
+      "expected_cases": 22,
+      "group": "A7",
+      "path": "tests/test_a7_boundary_success.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A7",
+      "path": "tests/test_a7_success_applicability.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A7",
+      "path": "tests/test_a7_success_process.py"
+    },
+    {
+      "expected_cases": 16,
+      "group": "A7",
+      "path": "tests/test_a7_success_integrity.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A7",
+      "path": "tests/test_a7_success_backup.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A7",
+      "path": "tests/test_a7_success_migrations.py"
+    },
+    {
+      "expected_cases": 26,
+      "group": "A7",
+      "path": "tests/test_a7_value_success.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A7",
+      "path": "tests/test_a7_value_context.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A7",
+      "path": "tests/test_a7_value_integrity.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A7",
+      "path": "tests/test_a7_value_backup.py"
+    },
+    {
+      "expected_cases": 27,
+      "group": "A7",
+      "path": "tests/test_a7_retry.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "A7",
+      "path": "tests/test_a7_task_query.py"
+    },
+    {
+      "expected_cases": 13,
+      "group": "A7",
+      "path": "tests/test_a7_retry_process.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A7",
+      "path": "tests/test_a7_retry_integrity.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A7",
+      "path": "tests/test_a7_retry_backup.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A7",
+      "path": "tests/test_a7_retry_migrations.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A7",
+      "path": "tests/test_a7_complete_recovery.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A7",
+      "path": "tests/test_a7_recovery_integrity.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A7",
+      "path": "tests/test_a7_acceptance.py"
+    },
+    {
+      "expected_cases": 124,
+      "group": "A7",
+      "path": "tests/test_a7_integrity.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A7",
+      "path": "tests/test_a7_entry.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A7",
+      "path": "tests/test_a7_status.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A7",
+      "path": "tests/test_a7_test_receipt.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A7",
+      "path": "tests/test_a7_formats.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A8",
+      "path": "tests/test_a8_call_description.py"
+    },
+    {
+      "expected_cases": 8,
+      "group": "A8",
+      "path": "tests/test_a8_call_rejections.py"
+    },
+    {
+      "expected_cases": 14,
+      "group": "A8",
+      "path": "tests/test_a8_request_vectors.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A8",
+      "path": "tests/test_a8_llm_architecture.py"
+    },
+    {
+      "expected_cases": 69,
+      "group": "A8",
+      "path": "tests/test_a8_rpc_protocol.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A8",
+      "path": "tests/test_a8_rpc_boundary.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A8",
+      "path": "tests/test_a8_rpc_preflight.py"
+    },
+    {
+      "expected_cases": 219,
+      "group": "A8",
+      "path": "tests/test_a8_rpc_candidates.py"
+    },
+    {
+      "expected_cases": 22,
+      "group": "A8",
+      "path": "tests/test_a8_rpc_value.py"
+    },
+    {
+      "expected_cases": 67,
+      "group": "A8",
+      "path": "tests/test_a8_rpc_lifecycle.py"
+    },
+    {
+      "expected_cases": 19,
+      "group": "A8",
+      "path": "tests/test_a8_rpc_pipes.py"
+    },
+    {
+      "expected_cases": 16,
+      "group": "A8",
+      "path": "tests/test_a8_rpc_recovery.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A8",
+      "path": "tests/test_a8_rpc_history.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A8",
+      "path": "tests/test_a8_rpc_backup.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A8",
+      "path": "tests/test_a8_acceptance.py"
+    },
+    {
+      "expected_cases": 137,
+      "group": "A8",
+      "path": "tests/test_a8_integrity.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A8",
+      "path": "tests/test_a8_entry.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A8",
+      "path": "tests/test_a8_status.py"
+    },
+    {
+      "expected_cases": 6,
+      "group": "A8",
+      "path": "tests/test_a8_test_receipt.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A8",
+      "path": "tests/test_a8_formats.py"
+    },
+    {
+      "expected_cases": 60,
+      "group": "A9",
+      "path": "tests/test_read_contract.py"
+    },
+    {
+      "expected_cases": 60,
+      "group": "A9",
+      "path": "tests/test_read_context.py"
+    },
+    {
+      "expected_cases": 76,
+      "group": "A9",
+      "path": "tests/test_read_validation.py"
+    },
+    {
+      "expected_cases": 94,
+      "group": "A9",
+      "path": "tests/test_read_numbers.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "A9",
+      "path": "tests/test_read_privacy.py"
+    },
+    {
+      "expected_cases": 56,
+      "group": "A9",
+      "path": "tests/test_read_restricted.py"
+    },
+    {
+      "expected_cases": 42,
+      "group": "A9",
+      "path": "tests/test_read_reduce.py"
+    },
+    {
+      "expected_cases": 29,
+      "group": "A9",
+      "path": "tests/test_read_config.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A9",
+      "path": "tests/test_read_config_cli.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "A9",
+      "path": "tests/test_read_recovery.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A9",
+      "path": "tests/test_a9_acceptance.py"
+    },
+    {
+      "expected_cases": 92,
+      "group": "A9",
+      "path": "tests/test_a9_integrity.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A9",
+      "path": "tests/test_a9_entry.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "A9",
+      "path": "tests/test_a9_status.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A9",
+      "path": "tests/test_a9_scope.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "A10",
+      "path": "tests/test_a10_acceptance.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A10",
+      "path": "tests/test_a10_behavior_coverage.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A10",
+      "path": "tests/test_a10_complete_recovery.py"
+    },
+    {
+      "expected_cases": 21,
+      "group": "A10",
+      "path": "tests/test_a10_coverage.py"
+    },
+    {
+      "expected_cases": 10,
+      "group": "A10",
+      "path": "tests/test_a10_entry.py"
+    },
+    {
+      "expected_cases": 108,
+      "group": "A10",
+      "path": "tests/test_a10_integrity.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A10",
+      "path": "tests/test_a10_isolation.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A10",
+      "path": "tests/test_a10_reference_recovery.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A10",
+      "path": "tests/test_a10_scope.py"
+    },
+    {
+      "expected_cases": 11,
+      "group": "A10",
+      "path": "tests/test_a10_status.py"
+    },
+    {
+      "expected_cases": 30,
+      "group": "A10",
+      "path": "tests/test_audit_acquisition.py"
+    },
+    {
+      "expected_cases": 13,
+      "group": "A10",
+      "path": "tests/test_audit_acquisition_recovery.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A10",
+      "path": "tests/test_audit_cli.py"
+    },
+    {
+      "expected_cases": 24,
+      "group": "A10",
+      "path": "tests/test_audit_http.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A10",
+      "path": "tests/test_audit_matrix.py"
+    },
+    {
+      "expected_cases": 20,
+      "group": "A10",
+      "path": "tests/test_audit_matrix_boundaries.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "A10",
+      "path": "tests/test_audit_matrix_cli.py"
+    },
+    {
+      "expected_cases": 9,
+      "group": "A10",
+      "path": "tests/test_audit_matrix_recovery.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A10",
+      "path": "tests/test_audit_processes.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A10",
+      "path": "tests/test_audit_reinterpret.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "A10",
+      "path": "tests/test_audit_replay.py"
+    },
+    {
+      "expected_cases": 8,
+      "group": "A10",
+      "path": "tests/test_audit_resume.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A10",
+      "path": "tests/test_audit_resume_atomicity.py"
+    },
+    {
+      "expected_cases": 3,
+      "group": "A10",
+      "path": "tests/test_audit_resume_cli.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A10",
+      "path": "tests/test_audit_resume_recovery.py"
+    },
+    {
+      "expected_cases": 25,
+      "group": "A10",
+      "path": "tests/test_audit_sampling.py"
+    },
+    {
+      "expected_cases": 5,
+      "group": "A10",
+      "path": "tests/test_audit_sampling_boundaries.py"
+    },
+    {
+      "expected_cases": 17,
+      "group": "A10",
+      "path": "tests/test_audit_sampling_categories.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A10",
+      "path": "tests/test_audit_sampling_feed_safety.py"
+    },
+    {
+      "expected_cases": 2,
+      "group": "A10",
+      "path": "tests/test_audit_sampling_recovery.py"
+    },
+    {
+      "expected_cases": 20,
+      "group": "A10",
+      "path": "tests/test_fixture_audit_references.py"
+    },
+    {
+      "expected_cases": 7,
+      "group": "A10",
+      "path": "tests/test_fixture_cli.py"
+    },
+    {
+      "expected_cases": 24,
+      "group": "A10",
+      "path": "tests/test_fixture_pdf.py"
+    },
+    {
+      "expected_cases": 1,
+      "group": "A10",
+      "path": "tests/test_fixture_pdf_cli.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A10",
+      "path": "tests/test_fixture_pdf_recovery.py"
+    },
+    {
+      "expected_cases": 4,
+      "group": "A10",
+      "path": "tests/test_fixture_recovery.py"
+    },
+    {
+      "expected_cases": 15,
+      "group": "A10",
+      "path": "tests/test_fixture_registry.py"
+    }
+  ],
+  "maintenance_scenarios": [
+    {
+      "material": "README.md",
+      "unit": "登记文件中实际新增/删除/修改的行；原材料改动不计入",
+      "before": {
+        "registration_lines": {
+          "added": 0,
+          "deleted": 0,
+          "modified": 0
+        },
+        "changed_registration_files": {},
+        "direct_groups": [],
+        "affected_groups": [],
+        "extra_downstream_groups": [],
+        "audit_exit": 0,
+        "other_scope_bytes_unchanged": true
+      },
+      "after": {
+        "registration_lines": {
+          "added": 0,
+          "deleted": 0,
+          "modified": 0
+        },
+        "changed_registration_files": {},
+        "direct_groups": [],
+        "affected_groups": [],
+        "extra_downstream_groups": [],
+        "audit_exit": 0,
+        "other_scope_bytes_unchanged": true
+      }
+    },
+    {
+      "material": "src/paper_radar/cli.py",
+      "unit": "登记文件中实际新增/删除/修改的行；原材料改动不计入",
+      "before": {
+        "registration_lines": {
+          "added": 0,
+          "deleted": 0,
+          "modified": 40
+        },
+        "changed_registration_files": {
+          "scripts/a2_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          },
+          "scripts/a2_full_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          },
+          "scripts/a3_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 2
+          },
+          "scripts/a4_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 3
+          },
+          "scripts/a5_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 3
+          },
+          "scripts/a6_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 4
+          },
+          "scripts/a7_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 4
+          },
+          "scripts/a8_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 5
+          },
+          "scripts/a9_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 8
+          },
+          "scripts/a10_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 9
+          }
+        },
+        "direct_groups": [
+          "A10",
+          "A2-01",
+          "A3",
+          "A4",
+          "A6",
+          "A9",
+          "完整 A2"
+        ],
+        "affected_groups": [
+          "A10",
+          "A2-01",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "extra_downstream_groups": [
+          "A5",
+          "A7",
+          "A8"
+        ],
+        "audit_exit": 0,
+        "other_scope_bytes_unchanged": false
+      },
+      "after": {
+        "registration_lines": {
+          "added": 0,
+          "deleted": 0,
+          "modified": 1
+        },
+        "changed_registration_files": {
+          "scripts/verification_scope_materials.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          }
+        },
+        "direct_groups": [
+          "A10",
+          "A2-01",
+          "A3",
+          "A4",
+          "A6",
+          "A9",
+          "完整 A2"
+        ],
+        "affected_groups": [
+          "A10",
+          "A2-01",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "extra_downstream_groups": [
+          "A5",
+          "A7",
+          "A8"
+        ],
+        "audit_exit": 0,
+        "other_scope_bytes_unchanged": true
+      }
+    },
+    {
+      "material": "tests/test_boundary_validation.py",
+      "unit": "登记文件中实际新增/删除/修改的行；原材料改动不计入",
+      "before": {
+        "registration_lines": {
+          "added": 0,
+          "deleted": 0,
+          "modified": 42
+        },
+        "changed_registration_files": {
+          "scripts/a1_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          },
+          "scripts/a2_full_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          },
+          "scripts/a3_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          },
+          "scripts/a4_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 3
+          },
+          "scripts/a5_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 4
+          },
+          "scripts/a6_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 4
+          },
+          "scripts/a7_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 5
+          },
+          "scripts/a8_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 6
+          },
+          "scripts/a9_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 8
+          },
+          "scripts/a10_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 9
+          }
+        },
+        "direct_groups": [
+          "A1",
+          "完整 A2"
+        ],
+        "affected_groups": [
+          "A1",
+          "A10",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "extra_downstream_groups": [
+          "A10",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9"
+        ],
+        "audit_exit": 0,
+        "other_scope_bytes_unchanged": false
+      },
+      "after": {
+        "registration_lines": {
+          "added": 0,
+          "deleted": 0,
+          "modified": 1
+        },
+        "changed_registration_files": {
+          "scripts/verification_scope_materials.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          }
+        },
+        "direct_groups": [
+          "A1",
+          "完整 A2"
+        ],
+        "affected_groups": [
+          "A1",
+          "A10",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "extra_downstream_groups": [
+          "A10",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9"
+        ],
+        "audit_exit": 0,
+        "other_scope_bytes_unchanged": true
+      }
+    },
+    {
+      "material": "scripts/a1_scope.py",
+      "unit": "登记文件中实际新增/删除/修改的行；原材料改动不计入",
+      "before": {
+        "registration_lines": {
+          "added": 0,
+          "deleted": 0,
+          "modified": 41
+        },
+        "changed_registration_files": {
+          "scripts/a2_full_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          },
+          "scripts/a3_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          },
+          "scripts/a4_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 3
+          },
+          "scripts/a5_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 4
+          },
+          "scripts/a6_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 4
+          },
+          "scripts/a7_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 5
+          },
+          "scripts/a8_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 6
+          },
+          "scripts/a9_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 8
+          },
+          "scripts/a10_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 9
+          }
+        },
+        "direct_groups": [
+          "A1"
+        ],
+        "affected_groups": [
+          "A1",
+          "A10",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "extra_downstream_groups": [
+          "A10",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "audit_exit": 0,
+        "other_scope_bytes_unchanged": false
+      },
+      "after": {
+        "registration_lines": {
+          "added": 0,
+          "deleted": 0,
+          "modified": 0
+        },
+        "changed_registration_files": {},
+        "direct_groups": [
+          "A1"
+        ],
+        "affected_groups": [
+          "A1",
+          "A10",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "extra_downstream_groups": [
+          "A10",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "audit_exit": 0,
+        "other_scope_bytes_unchanged": true
+      }
+    },
+    {
+      "material": "scripts/check-offline",
+      "unit": "登记文件中实际新增/删除/修改的行；原材料改动不计入",
+      "before": {
+        "registration_lines": {
+          "added": 0,
+          "deleted": 0,
+          "modified": 43
+        },
+        "changed_registration_files": {
+          "scripts/a2_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          },
+          "scripts/a2_full_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          },
+          "scripts/a3_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 2
+          },
+          "scripts/a4_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 3
+          },
+          "scripts/a5_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 4
+          },
+          "scripts/a6_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 4
+          },
+          "scripts/a7_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 5
+          },
+          "scripts/a8_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 6
+          },
+          "scripts/a9_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 8
+          },
+          "scripts/a10_scope.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 9
+          }
+        },
+        "direct_groups": [
+          "A10",
+          "A2-01",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "affected_groups": [
+          "A10",
+          "A2-01",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "extra_downstream_groups": [],
+        "audit_exit": 0,
+        "other_scope_bytes_unchanged": false
+      },
+      "after": {
+        "registration_lines": {
+          "added": 0,
+          "deleted": 0,
+          "modified": 1
+        },
+        "changed_registration_files": {
+          "scripts/verification_scope_materials.py": {
+            "added": 0,
+            "deleted": 0,
+            "modified": 1
+          }
+        },
+        "direct_groups": [
+          "A10",
+          "A2-01",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "affected_groups": [
+          "A10",
+          "A2-01",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9",
+          "完整 A2"
+        ],
+        "extra_downstream_groups": [],
+        "audit_exit": 0,
+        "other_scope_bytes_unchanged": true
+      }
+    }
+  ],
+  "synthetic_extension": {
+    "source_ledger": "scope-extensible-groups-delivery.json",
+    "old_scope_and_prepared_test_sha256": {
+      "scripts/a9_scope.py": "a94094c211495af57377fc2e5f5c0412130ad93446f151716f35c04e417958a0",
+      "scripts/a6_scope.py": "1588625af965e0147d95583201103d357746ed0da6d12aebe39cad827cb6e2a8",
+      "scripts/a10_scope.py": "aedddb451e3e0d89990b455ed8e084760bfdb8f2e025d0c24bd6761d29be25c5",
+      "scripts/a5_scope.py": "b435705a1bf1e4b2e4ac222f60b4be503247a22938f2d4d6cdd589f93073b87f",
+      "scripts/a2_full_scope.py": "74e20a95d0fa012b19cae6b28f553c23f3e670bef661488509a66fbd003e667b",
+      "scripts/a3_scope.py": "8ca121566239189de1c3eb86df998b4b0ecf8e4ee1827aa9ec212848ff71177c",
+      "scripts/a4_scope.py": "63880c279bf0ea4f257afebe6cebcbbda59ae755aa678619ff223b71310b2531",
+      "scripts/a1_scope.py": "6e7c2a0be80c9090f63c018c63932ab4595bab1874c4253ac79f160f88996d56",
+      "scripts/a7_scope.py": "8d92799b5195a6b52d12848e60cf2e19f6b0eada532082d27db34ac2b5f9b74b",
+      "scripts/a8_scope.py": "8a1378c4bb185138ab822e1d9db5d531f65be2e0afc4a0dcf12b12387897dba2",
+      "scripts/a2_scope.py": "3d7d9b818696928410daf65f5a1177ab65ca2eaa24e379daa7ec64e2cb825547",
+      "tests/test_a8_entry.py": "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
+      "tests/test_a10_entry.py": "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68",
+      "tests/test_verification_run.py": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed",
+      "tests/test_a4_entry.py": "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c",
+      "tests/test_a7_entry.py": "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
+      "tests/test_verification_compatibility.py": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf",
+      "tests/test_a5_entry.py": "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89",
+      "tests/test_a9_entry.py": "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003",
+      "tests/test_a2_full_entry.py": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+      "tests/test_a6_entry.py": "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6"
+    },
+    "old_tests_result": {
+      "modules": 10,
+      "collected": 78,
+      "passed": 78,
+      "skipped": 0,
+      "deselected": 0,
+      "incomplete": 0,
+      "elapsed_seconds": 140.19,
+      "target_execution": "此78例使用泛化边界fixture，真实合成计数另见22例机制回归",
+      "scope_audit_exit_code": 0,
+      "scope_registration": "目标测试与writer真实固定SHA，writer核对材料，读者支持仅副本临时声明"
+    },
+    "boundary": "副本临时新增组；当前required/reader格式未扩大。21文件原字节保持，旧10模块78例通过。",
+    "current_integration_copy": {
+      "old_scope_and_prepared_test_sha256": {
+        "scripts/a4_scope.py": "63880c279bf0ea4f257afebe6cebcbbda59ae755aa678619ff223b71310b2531",
+        "scripts/a2_scope.py": "3d7d9b818696928410daf65f5a1177ab65ca2eaa24e379daa7ec64e2cb825547",
+        "scripts/a1_scope.py": "6e7c2a0be80c9090f63c018c63932ab4595bab1874c4253ac79f160f88996d56",
+        "scripts/a10_scope.py": "aedddb451e3e0d89990b455ed8e084760bfdb8f2e025d0c24bd6761d29be25c5",
+        "scripts/a7_scope.py": "8d92799b5195a6b52d12848e60cf2e19f6b0eada532082d27db34ac2b5f9b74b",
+        "scripts/a9_scope.py": "a94094c211495af57377fc2e5f5c0412130ad93446f151716f35c04e417958a0",
+        "scripts/a2_full_scope.py": "74e20a95d0fa012b19cae6b28f553c23f3e670bef661488509a66fbd003e667b",
+        "scripts/a5_scope.py": "b435705a1bf1e4b2e4ac222f60b4be503247a22938f2d4d6cdd589f93073b87f",
+        "scripts/a8_scope.py": "8a1378c4bb185138ab822e1d9db5d531f65be2e0afc4a0dcf12b12387897dba2",
+        "scripts/a3_scope.py": "8ca121566239189de1c3eb86df998b4b0ecf8e4ee1827aa9ec212848ff71177c",
+        "scripts/a6_scope.py": "1588625af965e0147d95583201103d357746ed0da6d12aebe39cad827cb6e2a8",
+        "tests/test_verification_run.py": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed",
+        "tests/test_a6_entry.py": "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6",
+        "tests/test_a9_entry.py": "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003",
+        "tests/test_a5_entry.py": "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89",
+        "tests/test_a10_entry.py": "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68",
+        "tests/test_a4_entry.py": "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c",
+        "tests/test_a8_entry.py": "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
+        "tests/test_a2_full_entry.py": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+        "tests/test_a7_entry.py": "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
+        "tests/test_verification_compatibility.py": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf"
+      },
+      "files_unchanged": 21,
+      "old_scope_count": 11,
+      "prepared_test_module_count": 10,
+      "hash_registration_lines": {
+        "added": 0,
+        "deleted": 0,
+        "modified": 3
+      },
+      "hash_paths": [
+        "scripts/verification_groups.py",
+        "scripts/verification_status.py",
+        "tests/fixtures/verification_group_expectations.json"
+      ],
+      "scope_audit_exit_code": 0,
+      "new_group_scope_tests": 2,
+      "note": "三条数据SHA维护；新组自身test/writer/source/分母的登记另列，不属于旧组hash级联。读者支持只在副本临时扩展。"
+    }
+  },
+  "history": {
+    "fixed_samples": 4,
+    "json_files": 49,
+    "source": "树外stage2-history-baseline.json；在根verification-runs原位置读取；不搬迁。",
+    "status_reason_and_sha256_unchanged": true,
+    "current_applicability": "different"
+  },
+  "validation": {
+    "ruff": "全项目check与format通过，977files",
+    "mypy": "全配置706 source files通过",
+    "d1_collection": "104 collected; no skip/deselect",
+    "related": "269 passed /178.33s；实际合并树",
+    "compatibility_all": "176 passed /270.27s；exit0；入口总270.83s；实际重绑合并树",
+    "default_and_explicit_audit": "默认--collect exit0；285模块5281例、skip0/deselect0；显式144授权在干净提交身份绑定后由树外报告验证",
+    "full_offline_gate": "未运行；留最终merge审阅修复后唯一executor"
+  }
+}

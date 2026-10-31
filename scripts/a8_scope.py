@@ -153,7 +153,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a8_entry.py",
-        "148090d5270b8a1989ee4681ff52f6a5e1d5a38fe0faf8414c0a769c4fa5d604",
+        "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
     ),
     (
         "tests/test_a8_status.py",

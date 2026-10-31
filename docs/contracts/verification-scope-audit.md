@@ -251,3 +251,4 @@ JSON 的 `reason` 使用 `AuditReason` 的受控值；失败不回显文件内�
 - 依据：[#60](https://github.com/MeteoBoy4/PaperRadar/issues/60)（开发维护命令）、[#132](https://github.com/MeteoBoy4/PaperRadar/issues/132)、[ADR-0038](../adr/0038-separate-live-documents-and-share-verification-registration.md)、[规格 §11](../../intent/draft.md#十一九阶段实施与验收)、[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)（固定材料、同次身份与离线证明边界）。
 - 实现：[命令入口](../../scripts/audit-verification-scope)、[CLI](../../scripts/audit_verification_scope.py)、[审计与报告类型](../../scripts/verification_scope_audit.py)、[登记解释](../../scripts/verification_scope_registry.py)、[独立收集](../../scripts/verification_scope_collection.py)。
 - 正式结论的查询边界见[verification-status](verification-status.md)；固定登记维护与历史证据见[离线验证证据](../verification/offline-evidence.md#固定-scope-维护审计60)。
+- 当前迁移的精确重绑、逐变化审阅依据、固定分母与独立覆盖见[集成台账](../verification/scope-registry-integration.md)；台账中的候选审阅不替代当前身份的外部确认或正式门禁。

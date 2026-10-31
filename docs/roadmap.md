@@ -145,7 +145,7 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 
 ## 未成形
 
-[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 取代 #112，承接 Verification Scope 文档解耦、集中登记与并行集成；按 S7(c) 不增模块、不阻塞 B。单 spec、跨 spec 与资源串行统一执行[唯一集成规则](agents/verification-scope.md)，第一步事实见[迁移台账](verification/scope-document-migration.md)。第一步已独立审阅、门禁并保持提交身份合入 main；第二步基于该稳定提交。显式基线审计、全部共享材料中央登记与 scope 显式引用已实现，迁移事实见[第二步台账](verification/scope-shared-dag-delivery.md)；跨 spec 自动回归见[独立覆盖台账](verification/scope-parallel-integration-delivery.md)。新组机制与最终组合审阅、必要重绑和唯一授权门禁仍须在最终集成树收口。
+[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 取代 #112，承接 Verification Scope 文档解耦、集中登记与并行集成；按 S7(c) 不增模块、不阻塞 B。单 spec、跨 spec 与资源串行统一执行[唯一集成规则](agents/verification-scope.md)，第一步事实见[迁移台账](verification/scope-document-migration.md)。第一步已独立审阅、门禁并保持提交身份合入 main；第二步基于该稳定提交。显式基线审计、全部共享材料中央登记、scope 显式引用与新组机制已实现；[集成台账](verification/scope-registry-integration.md)归并第二步新增 104 例和实际维护行数，保留第一步 93 例及历史固定分母。候选完成必要精确重绑后，仍须独立审阅、修复并在最终合并提交上冻结材料，由唯一执行者取得授权完整门禁结论。
 
 Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各自入口、承接责任与待裁决项；依据[§11](../intent/draft.md#十一九阶段实施与验收)。
 
@@ -176,7 +176,7 @@ Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各�
 
 ## 收口安排
 
-A 窄收口新增能力沿用 #114 先例：独立新测试模块作为工程证据，登记到 [A 窄收口覆盖台账](verification/a-narrow-delivery.md)，不计入历史固定分母、不新增既有 required 集合。历史台账和回执保持原字节与原证明范围；新增能力不得复用 A1–A10 历史结论，`stage_a_verified=false` 保持。机器可读新组注册机制由 [#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 第二步承接，测试预期清单与读者支持格式独立维护；是否、何时将 #114/#120 能力转为 required 组及完整 A 结论仍由 A 真正收口票决定。B 沿用此 D1 政策，集成与门禁执行[唯一规则](agents/verification-scope.md)（[#120 D1](https://github.com/MeteoBoy4/PaperRadar/issues/120#issuecomment-6520223100)）。
+A 窄收口新增能力沿用 #114 先例：独立新测试模块作为工程证据，登记到 [A 窄收口覆盖台账](verification/a-narrow-delivery.md)，不计入历史固定分母、不新增既有 required 集合。历史台账和回执保持原字节与原证明范围；新增能力不得复用 A1–A10 历史结论，`stage_a_verified=false` 保持。机器可读新组注册机制见 [#126 集成台账](verification/scope-registry-integration.md)，测试预期清单与读者支持格式独立维护；是否、何时将 #114/#120 能力转为 required 组及完整 A 结论仍由 A 真正收口票决定。B 沿用此 D1 政策，集成与门禁执行[唯一规则](agents/verification-scope.md)（[#120 D1](https://github.com/MeteoBoy4/PaperRadar/issues/120#issuecomment-6520223100)）。
 
 [阶段 A 收口清单](verification/stage-a-closure.md) 保留规格 §11 A 原实施/测试/DoD 的稳定序号、
 历史证据与后续责任。A1–A10 通过不等于完整 A 通过。该收口清单是过渡清单；A 真正收口时

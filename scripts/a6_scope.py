@@ -279,7 +279,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_entry.py",
-        "1b4f67c9e37a74f087ab74a4a64578f53ba353b6be3c19dee3536d7e70f9bff1",
+        "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6",
     ),
     (
         "tests/test_a6_formats.py",

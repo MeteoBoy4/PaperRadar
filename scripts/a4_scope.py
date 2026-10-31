@@ -184,7 +184,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a4_entry.py",
-        "4ed30b5a4bfee215a6c926f375a5cc865289157ed3a0d11a16fc652e2cd45278",
+        "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c",
     ),
     ("tests/test_a2_full_entry.py", SHARED_MATERIALS["tests/test_a2_full_entry.py"]),
     (

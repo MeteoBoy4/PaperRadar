@@ -301,6 +301,8 @@ uv run --offline --locked pytest tests/test_feed_pipeline.py
 全部实际跨组共享材料采用单处中央哈希，各组保留显式成员、用途和固定计数；
 scope 使用显式引用保留下游影响，不再要求下游 scope 机械更新哈希。
 中央条目变化按实际消费组、材料用途与显式基线审阅，详见审计契约。
+第二步的固定分母、新增独立覆盖及登记维护实测见
+[集成台账](docs/verification/scope-registry-integration.md)；开发审计和组合回归不代替最终树的正式门禁。
 
 规格、README、术语和现状 Contract 已与历史固定材料解绑；修改这些活文档无需重绑，
 仍会改变历史 run 对当前工作树的适用性。冻结依据与本次迁移见

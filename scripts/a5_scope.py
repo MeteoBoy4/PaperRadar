@@ -107,7 +107,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a5_entry.py",
-        "0b4cde834b9fee665da07f4c00f6403584749c955bf23b61d8c6d70e632fe8a6",
+        "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89",
     ),
     (
         "tests/test_a5_test_receipt.py",

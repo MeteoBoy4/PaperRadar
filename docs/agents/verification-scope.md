@@ -10,6 +10,10 @@
 - scope 通过 `REQUIRED_SCOPE_REFERENCES` 保留显式 DAG；scope 与中央文件不进入组内整文件哈希，由结构审计、实际材料字节和完整工作树身份保护。当前旧 scope 哈希边已全部移除，实际为零哈希边、41 条显式 refs；计数口径和逐边清单见[共享迁移台账](../verification/scope-shared-dag-delivery.md)。不恢复机械 scope 级联。
 - 活文档也参与工作树身份。旧 run 的 status/reason 保持，当前 applicability 单独计算；新 merge commit 即使文件树相同，也不能沿用旧门禁作为当前树结论。开发审计、候选与组合测试均不代表正式验收。
 
+当前集中登记与一次性新组准备的完整消费闭包、D1 模块及物理维护行数见
+[集成台账](../verification/scope-registry-integration.md)。其审阅授权只描述具体材料变化；
+后续执行者仍须绑定本次最终 HEAD、target 和完整工作树身份，不能复用候选确认。
+
 ## 基线、候选与 S3 确认
 
 1. 先记录实际 HEAD、dirty 状态和本地目标分支；以目标当前 commit 作为显式 `--base`，声明 `--integration-target`。base 必须等于本地目标且为 HEAD 祖先；目标移动、旧 merge-base 或非祖先均先重新集成再分析，不隐式 fetch。分阶段实施可声明稳定本地 main 为 base/target，但 integration 中的子票漂移仍交收口处理。

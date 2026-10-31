@@ -113,7 +113,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a10_entry.py",
-        "2809448ed1e2c31c231a3a818e937a9440447cb172764bec59ca245b69cf0dfb",
+        "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68",
     ),
     (
         "tests/test_a10_integrity.py",
