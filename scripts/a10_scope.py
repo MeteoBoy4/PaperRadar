@@ -115,7 +115,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a10_integrity.py",
-        "f76ec801ccd2423a3b27c69ee2784d5109d09b9b2426d5bcbd3905fb6b6006f5",
+        "87060a1084532011f78230314d278030f53dff38245d58ecb64aa13780b3a239",
     ),
     (
         "tests/test_a10_isolation.py",
@@ -261,7 +261,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a10_coverage.py",
-        "16b7c930bc987f8710964c08aa46f7594b71d9132847b831ad3ce2d7fc1ce656",
+        "621742b9602fa50e82da2f57a5ec2b6e7216f7876ffc37bd8b38c87fdfdc6e86",
     ),
     (
         "scripts/a1_acceptance.py",
@@ -333,15 +333,15 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a8_scope.py",
-        "c36f4d5c5215e51bacfb3be913b540d379ed8309350aa9f0a468ea45f55822c9",
+        "7e9c6020314c8efa9dcba8dce02f78d61586c7d8def2026e6f6498413a7ecdc2",
     ),
     (
         "scripts/a9_acceptance.py",
-        "e1a5cd2d8f352de377f4a59d69cb9c5df0e8356c088f31274b3961d22895ce34",
+        "9b566dd59ea82caa62ccaffdf32203627db73af4d7734e8e2ddfbbe8320d8899",
     ),
     (
         "scripts/a9_scope.py",
-        "79c2fbd0d82abad1e322b8915a1882ba07856595a6bba2454059653d5ea2cb4d",
+        "3eab2802e6f159c621918623fd87a6f73b87965f0ed6b5c905ce40bcd4f0ac44",
     ),
     (
         "scripts/audit-verification-scope",
@@ -377,7 +377,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/verification_scope_audit.py",
-        "8a83ecbc39fb3a7e692d2c17a48646b20e90945d57c2f6712f88b9232d5d0ce5",
+        "f33de0007482e71d67eaeaadc8218b42ac2950105e2b63f00cbc4e941377830a",
     ),
     (
         "scripts/verification_scope_registry.py",
@@ -1415,7 +1415,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "tests/fixtures/a10_coverage.json",
-        "77e537af3dd3e2adc9aaa5f4fb253ebb8dc46b86c2e1cbad5f5a2b50e8b6ce05",
+        "8a504905e7eb1836616f7797a24718b543cd4ad3f747cefe2e67e822047c038b",
     ),
     ("uv.lock", "11aa458753aad1447061e7b8e5ef3adc74e53db4db98ecd36da5d88e14267512"),
 )

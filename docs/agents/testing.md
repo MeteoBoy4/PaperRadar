@@ -7,6 +7,7 @@
 - Live source 验收通过显式命令运行，且只在用户明确要求、配置和 credential 可用时运行。
 - 新增或修改 migration 时，测试从上一 revision 升级到当前 revision；涉及快照或恢复的改动，测试恢复路径。
 - 完整离线验证入口与证据格式见 `docs/verification/offline-evidence.md`。
+- 新增能力沿用 D1：使用独立未绑定测试模块与新的 `docs/verification/` 覆盖台账，逐模块点名数量；同次全量 pytest 退出约束不等于进入既有组回执或固定分母。冻结测试修改须先有裁决并逐项登记，skip/deselect/incomplete 不算通过。spec 集成与必要重绑见[固定范围与集成规则](verification-scope.md)。
 
 ## 按变更类型运行开发期检查
 
