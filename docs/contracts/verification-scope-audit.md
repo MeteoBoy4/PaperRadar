@@ -2,7 +2,7 @@
 
 ## 用途与范围
 
-`./scripts/audit-verification-scope [--json] [--collect]` 是固定验收登记的开发维护
+`./scripts/audit-verification-scope [--json] [--collect] [--base COMMIT --integration-target BRANCH] [--confirmations FILE]` 是固定验收登记的开发维护
 命令，不是正式验收结果或 Frozen Contract。它核对 writer 消费的显式材料、固定
 计数及 scope 引用图，不扩展 required 集合。
 
@@ -17,7 +17,7 @@
 
 默认向 stdout 输出中文文本，不收集测试；`--json` 改为输出完整 JSON 对象，
 `--collect` 显式启用独立 pytest 收集，两者可组合。`-h` / `--help` 只打印帮助并
-退出 0，不加载登记或收集测试。CLI 不接受路径、组、writer 或任意 pytest 参数。
+退出 0，不加载登记或收集测试。CLI 仅接受审计选项与工作树外的确认文件路径，不接受组、writer 或任意 pytest 参数。
 
 | 输出 | 含义 |
 | --- | --- |
@@ -39,7 +39,7 @@ hash_drift、missing_file、unreadable_file、live_document_binding。非法路�
 现行登记已移除规格、README、GLOSSARY 与现状 Contract 的 19 条整文件绑定。
 冻结依据继续由 history、需求/覆盖台账、最小冻结摘录、ADR、Schema 及代码/测试/fixture/依赖身份承担；
 [迁移台账](../verification/scope-document-migration.md)记录旧 SHA、替代依据及固定分母。
-共享材料仍在各组重复登记，42 条 scope 引用边仍按旧规则传播；当前接口不提供中央登记或显式基线分析。
+共享材料仍在各组重复登记，42 条 scope 引用边仍按旧规则传播；当前共享登记尚未中央化；显式基线分析遵循下节规则。
 
 审计从仓库的
 [`scope-material-inventory.json`](../verification/scope-material-inventory.json)
@@ -102,6 +102,58 @@ writer/scope 时，不必另维护审计组列表；改变导入命名约定或�
 固定清单表达式也支持负整数字面量，但非正计数仍被接收校验拒绝。允许的元数据
 属性以[登记解释器的 `METADATA`](../../scripts/verification_scope_registry.py)为准。
 
+### 显式基线与分级确认
+
+`--base COMMIT` 与 `--integration-target BRANCH` 必须同时提供。base 解析为明确提交，
+必须是当前 HEAD 的祖先，并等于声明的本地 `refs/heads/BRANCH`（也接受完整本地分支名）
+当前提交。目标分支前移后旧 base 被拒绝；不隐式 fetch、不修改 refs 或索引。
+base 是本轮比较起点，target 是核实其新鲜度的本地分支，不表示该分支已包含本轮实施。
+例如分阶段实施可显式以稳定本地 main 为 target/base；尚在 integration 上的子票漂移
+仍是本轮待审内容，不能声称已处理。
+
+公开接口 `audit_baseline(root, *, base, integration_target, confirmations=(), writers=None)`
+读取当前树和 base 自己的登记、分类规则。历史树仅由 `git ls-tree` / `git cat-file --batch` 按 blob 原字节在 `/tmp` 临时目录
+展开（不应用 archive 导出替换/忽略属性），使用冷进程读取，结束后清理；不使用当前登记或宿主模块缓存替代历史登记。
+`writers` 是与 `load_scopes` 相同的显式合成 writer 清单，只用于 Python 合成材料，
+CLI 不提供覆盖入口。默认无 base 的 `audit_scopes`、报告键与原有冻结测试接口保持不变。
+历史/当前登记仍执行仓库 Python 代码，仅限已审查树；临时副本不是执行沙箱。
+
+显式报告额外包含 `baseline`：实际 `base`、`head`、规范本地 `integration_target`、
+`target_commit`、`dirty`、`worktree_sha256`、`baseline_issues` 和 `changes`。
+每条变化保留路径、base/当前文件 SHA（缺失为 null）、原登记 SHA 集合，
+以及 base/当前 `registrations`（group、scope_path、kind、expected_sha256），
+直接 `groups` 和传递 `affected_groups`。两个维度独立：
+
+- `origin=current_change` 表示相对 base 的字节或成员/计数登记语义变化；
+  `baseline_drift` 表示 base 内登记与真实材料已经不符。两者可以同时出现。
+- `sensitivity=mechanical` 的 `category=source_support` 包括普通 source/support 哈希
+  变化和仅更新其哈希的 scope；测试成员/计数、fixture、冻结负例、需求/覆盖台账、
+  格式、绑定契约或证据、分类规范变化为 `sensitive`。
+  类别分别为 test、fixture、registration、format_or_criteria、evidence、classification。
+
+scope 的测试/fixture 完整绑定、source 成员与固定计数另有 `old_entry_sha256`、
+`new_entry_sha256`，防止仅看文件字节遗漏注册组/成员变化；source 哈希不进入该语义摘要。
+scope 格式等元数据、Python 常量中 FORMAT/COUNT/REQUIRED_TEST/FIXTURE/NEGATIVE/
+REQUIREMENT/COVERAGE/CAPABILIT/NOT_ASSESSED/NOT_IMPLEMENTED/REQUIRED_CHECK/
+DEPENDENC/MIGRATION/SCOPE/ISSUE 名称的赋值变化均保守列为敏感。
+未绑定的 `scope-material-inventory.json` 控制每组分类，变化影响全部旧/新组；
+不能通过移除其 scope 绑定绕过审阅。普通未登记文件不扩张验收集合，但参与树身份。
+
+确认文件必须位于被审计工作树外，UTF-8 JSON 顶层为数组，每个元素只包含：
+`base`、`head`、`integration_target`、`target_commit`、`worktree_sha256`、
+`group`、`path`、`origin`（current_change）、`category`、`old_sha256`、`new_sha256`、
+`old_entry_sha256`、`new_entry_sha256`、非空可打印人工审查 `reason`。
+每个敏感本轮变化的每个受影响组需要一条精确匹配记录；未知/多余字段、错误作用域、
+重复或旧身份确认均拒绝。工具不生成“一键接受全部候选”的确认文件。
+Python `confirmations` 接受同样的 list/tuple 对象；输入不是正式回执或写回授权。
+
+工作树身份覆盖 Git 管理及非忽略路径的类型、模式和字节，包括未登记活文档；
+确认文件放在树外避免自哈希循环。继续修改同一 HEAD 下任何身份材料后确认失效，
+HEAD 或 target 变化也失效。计算结束再次检查 HEAD、target 与树摘要，防止混合身份。
+基线既有漂移单独失败，不能被本轮修改、更新当前登记或确认消除；先明确处理基线问题。
+确认只解除 `confirmation_required`，不会清除 `files` 的 `hash_drift` 或结构错误；
+候选要经人工授权修改登记后重跑才可能匹配。显式分析仍不写任何登记或正式证据。
+
 ### 显式收集
 
 显式 `--collect` 在文件哈希漂移或计数 key/分母错误时仍可收集已明确列入测试清单的
@@ -135,6 +187,7 @@ JSON 的 `reason` 使用 `AuditReason` 的受控值；失败不回显文件内�
 | 固定计数 | `invalid_counts`、`count_keys_mismatch`、`invalid_count`、`conflicting_counts` |
 | 登记加载与解释 | `registration_unavailable`、`invalid_registration`、`unsupported_registration`、`duplicate_registration`、`duplicate_count_key`、`unsupported_scope_import`、`unsupported_writer_scope`、`unsupported_scope_constant`、`unconsumed_registration`、`unsupported_secondary_binding`、`writer_unavailable`、`registry_unavailable` |
 | 收集 | `not_requested`、`audit_failed`（审计阻止收集或无可收集目标）、`collection_unavailable`、`collection_timeout`、`collection_failed`、`collection_skipped`、`collection_deselected`、`count_mismatch`；成功为 `ok`，直接调用时非法预期映射返回 `invalid_counts` |
+| 基线与确认 | `invalid_baseline`、`baseline_unavailable`、`baseline_registration_unavailable`、`baseline_target_mismatch`、`baseline_not_ancestor`、`baseline_drift`、`baseline_identity_changed`、`invalid_confirmation`、`confirmation_required` |
 | 参数（stderr，退出 2） | `unknown_argument`、`invalid_option_value`、`invalid_arguments` |
 
 登记漂移或无法核验时退出 1；先审查具体原因和候选哈希，按 `order` 人工核对并
@@ -151,6 +204,6 @@ JSON 的 `reason` 使用 `AuditReason` 的受控值；失败不回显文件内�
 
 ## 相关
 
-- 依据：[#60](https://github.com/MeteoBoy4/PaperRadar/issues/60)（开发维护命令）、[规格 §11](../../intent/draft.md#十一九阶段实施与验收)、[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)（固定材料、同次身份与离线证明边界）。
+- 依据：[#60](https://github.com/MeteoBoy4/PaperRadar/issues/60)（开发维护命令）、[#132](https://github.com/MeteoBoy4/PaperRadar/issues/132)、[ADR-0038](../adr/0038-separate-live-documents-and-share-verification-registration.md)、[规格 §11](../../intent/draft.md#十一九阶段实施与验收)、[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)（固定材料、同次身份与离线证明边界）。
 - 实现：[命令入口](../../scripts/audit-verification-scope)、[CLI](../../scripts/audit_verification_scope.py)、[审计与报告类型](../../scripts/verification_scope_audit.py)、[登记解释](../../scripts/verification_scope_registry.py)、[独立收集](../../scripts/verification_scope_collection.py)。
 - 正式结论的查询边界见[verification-status](verification-status.md)；固定登记维护与历史证据见[离线验证证据](../verification/offline-evidence.md#固定-scope-维护审计60)。

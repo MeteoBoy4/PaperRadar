@@ -54,6 +54,15 @@ class AuditReason(StrEnum):
     UNKNOWN_ARGUMENT = "unknown_argument"
     INVALID_OPTION_VALUE = "invalid_option_value"
     INVALID_ARGUMENTS = "invalid_arguments"
+    INVALID_BASELINE = "invalid_baseline"
+    BASELINE_UNAVAILABLE = "baseline_unavailable"
+    BASELINE_REGISTRATION_UNAVAILABLE = "baseline_registration_unavailable"
+    BASELINE_TARGET_MISMATCH = "baseline_target_mismatch"
+    BASELINE_NOT_ANCESTOR = "baseline_not_ancestor"
+    BASELINE_DRIFT = "baseline_drift"
+    BASELINE_IDENTITY_CHANGED = "baseline_identity_changed"
+    INVALID_CONFIRMATION = "invalid_confirmation"
+    CONFIRMATION_REQUIRED = "confirmation_required"
 
 
 class FileKind(StrEnum):
@@ -99,7 +108,55 @@ class CollectionResult(TypedDict):
     deselected: NotRequired[int]
 
 
+BaselineOrigin = Literal["baseline_drift", "current_change"]
+BaselineCategory = Literal[
+    "source_support",
+    "registration",
+    "test",
+    "fixture",
+    "evidence",
+    "classification",
+    "format_or_criteria",
+]
+
+
+class BaselineRegistration(TypedDict):
+    tree: Literal["base", "current"]
+    group: str
+    scope_path: str
+    kind: FileKind
+    expected_sha256: str
+
+
+class BaselineChange(TypedDict):
+    path: str
+    origin: BaselineOrigin
+    sensitivity: Literal["mechanical", "sensitive"]
+    category: BaselineCategory
+    old_sha256: str | None
+    new_sha256: str | None
+    old_entry_sha256: str
+    new_entry_sha256: str
+    registered_sha256: list[str]
+    groups: list[str]
+    affected_groups: list[str]
+    confirmed_groups: list[str]
+    registrations: list[BaselineRegistration]
+
+
+class BaselineResult(TypedDict):
+    base: str
+    head: str
+    integration_target: str
+    target_commit: str
+    worktree_sha256: str
+    dirty: bool
+    baseline_issues: list[IssueRecord]
+    changes: list[BaselineChange]
+
+
 class AuditReport(TypedDict):
+    baseline: NotRequired[BaselineResult]
     exit_code: int
     files: list[FileRecord]
     issues: list[IssueRecord]
@@ -438,3 +495,23 @@ def merge_collection(
             affected,
         )
     return merged
+
+
+def audit_baseline(
+    root: Path,
+    *,
+    base: str,
+    integration_target: str,
+    confirmations: object = (),
+    writers: tuple[tuple[str, str], ...] | None = None,
+) -> AuditReport:
+    """只读比较显式基线;确认仅为逐变化审阅依据,不写回登记。"""
+    from scripts.verification_scope_baseline import analyze_baseline
+
+    return analyze_baseline(
+        root,
+        base=base,
+        integration_target=integration_target,
+        confirmations=confirmations,
+        writers=writers,
+    )
