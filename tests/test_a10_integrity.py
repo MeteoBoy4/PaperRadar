@@ -198,7 +198,7 @@ def test_six_actual_checks_cannot_be_omitted_reordered_or_reused(
         "tests/a10_recovery_reader.py",
         "fixtures/a10/historical-v1.json",
         "tests/fixtures/a10_coverage.json",
-        "docs/contracts/fixture-audit.md",
+        "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
         "docs/verification/contracts-fixture-audit-history.md",
         "docs/verification/contracts-backup-restore-history.md",
         "scripts/a10_acceptance.py",

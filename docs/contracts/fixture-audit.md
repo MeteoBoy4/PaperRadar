@@ -397,9 +397,21 @@ validate_all 与备份固定副本核验声明原字节/替换链、全部审计
 - 不以本机恢复或历史离线工程证据推定 NAS、无人值守或 live 就绪；恢复扩展责任见[I](../roadmap.md#module-i)。原有过程与恢复证明范围见[历史摘录](../verification/contracts-fixture-audit-history.md)，独立 A10 验收边界见[验证状态契约](verification-status.md#a10-结论支持)。
 
 
+## A10 静态覆盖依据
+
+A10 覆盖台账的 `ledger_revision=2` 保留 693 个原 ID 与 37 份来源原文及 SHA。
+`methodology.scope` 将产品覆盖限定为固定的行为、具体测试及冻结文档依据；
+当前 README、规格、术语和现状 Contract 只作导航，不参与 A10 整文件哈希。
+基线文档的具体内容缺口由[冻结摘录](../verification/a10-documentation-excerpts.json)
+承载；完成回帖及纯导航项按 `operational` 处理，不冒充产品覆盖。
+逐项旧指针、行为和需求 ID 的去向，以及处置计数与冻结负例替换见
+[迁移记录](../verification/a10-scope-document-migration.md)。writer 仍拒绝固定集合外指针，
+台账或保留材料损坏仍阻断通过。该静态台账不代表本次执行、live 或完整阶段 A 通过。
+
+
 ## 相关
 
-依据：[#100](https://github.com/MeteoBoy4/PaperRadar/issues/100)、[#101](https://github.com/MeteoBoy4/PaperRadar/issues/101)、[#102](https://github.com/MeteoBoy4/PaperRadar/issues/102)、[#103](https://github.com/MeteoBoy4/PaperRadar/issues/103)、[#104](https://github.com/MeteoBoy4/PaperRadar/issues/104)、[#105](https://github.com/MeteoBoy4/PaperRadar/issues/105)、[#106](https://github.com/MeteoBoy4/PaperRadar/issues/106)、[#107](https://github.com/MeteoBoy4/PaperRadar/issues/107)、[#108](https://github.com/MeteoBoy4/PaperRadar/issues/108)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。
+依据：[#100](https://github.com/MeteoBoy4/PaperRadar/issues/100)、[#101](https://github.com/MeteoBoy4/PaperRadar/issues/101)、[#102](https://github.com/MeteoBoy4/PaperRadar/issues/102)、[#103](https://github.com/MeteoBoy4/PaperRadar/issues/103)、[#104](https://github.com/MeteoBoy4/PaperRadar/issues/104)、[#105](https://github.com/MeteoBoy4/PaperRadar/issues/105)、[#106](https://github.com/MeteoBoy4/PaperRadar/issues/106)、[#107](https://github.com/MeteoBoy4/PaperRadar/issues/107)、[#108](https://github.com/MeteoBoy4/PaperRadar/issues/108)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)、[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126)、[#129](https://github.com/MeteoBoy4/PaperRadar/issues/129)。
 
 - 目标：[规格 §4.3](../../intent/draft.md#43-元数据与来源仲裁)、[§11 B](../../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)、[§13](../../intent/draft.md#十三真实来源与冻结样本)。
 - 决策：[ADR-0032](../adr/0032-relax-paper-acquisition-without-evading-access-controls.md)、[ADR-0033](../adr/0033-classify-journal-articles-from-explicit-source-types.md)、[ADR-0034](../adr/0034-separate-fixture-declarations-and-acquisition-audits.md)、[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。

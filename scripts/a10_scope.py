@@ -1350,6 +1350,10 @@ REQUIRED_SOURCE_MODULES = (
 )
 REQUIRED_FIXTURE_FILES = (
     (
+        "docs/verification/a10-documentation-excerpts.json",
+        "fbed7f8a685db9a9a7259cbb80527b1633022ca46f8685f5e6af3490eb816189",
+    ),
+    (
         "docs/verification/contracts-fixture-audit-history.md",
         "995e9308143ba53befb1cd3d3160f3fcfbeaf90db19fd75b3c1d678555fbe4cc",
     ),
@@ -1357,8 +1361,6 @@ REQUIRED_FIXTURE_FILES = (
         "docs/verification/contracts-backup-restore-history.md",
         "77fdc9ee348bddd16d5c5a694ef52459d2703241efe5e123da8e6742f68ff46e",
     ),
-    ("GLOSSARY.md", "8864217fad4e0174398d314230155e145ee9b82185c0af5cf2769e38c88fc4d7"),
-    ("README.md", "182b43f5d62898f8aa0261d20f80d3c1e0068d1b0f8a53c786f7c266f2d9a277"),
     (
         "docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md",
         "381ad4f95d5ce321f9abc8baab82c0e1c2e3e146d1968e4d08de84a2173f9aa0",
@@ -1370,18 +1372,6 @@ REQUIRED_FIXTURE_FILES = (
     (
         "docs/adr/0034-separate-fixture-declarations-and-acquisition-audits.md",
         "2e941e46173afca8ab9a49f3a7ef1dc431ab82bb8e225296116498224191aeb1",
-    ),
-    (
-        "docs/contracts/backup-restore.md",
-        "accd5a6e259eac637dcb834b34288e1efe4914915ba66c7ef88d5aaf486dcc6a",
-    ),
-    (
-        "docs/contracts/fixture-audit.md",
-        "535e23b9f1e83ce86cb1f58150cf86fd7c291e8983518b2e3deb82fcfaa48138",
-    ),
-    (
-        "docs/contracts/verification-status.md",
-        "f485b6b6ebad3cf7791f69834fa0a00617b108a35ead4e74894100e7f0b826e8",
     ),
     (
         "docs/verification/a10-requirements.md",
@@ -1398,10 +1388,6 @@ REQUIRED_FIXTURE_FILES = (
     (
         "fixtures/a10/historical-v1.json",
         "1a60796b705d2b820384f269811f576dd3ec22c417f6ceb145f9988f705e6637",
-    ),
-    (
-        "intent/draft.md",
-        "1c6afa02e0bb16cb29263db3ea10d06255489aeea224eb6150bcf4c983f99f9d",
     ),
     (
         "pyproject.toml",
