@@ -1,5 +1,7 @@
 """#84 固定 A7 验收范围;预期由人工审阅源码和参数化登记,运行时不能刷新。"""
 
+from scripts.verification_scope_materials import SHARED_MATERIALS
+
 SCOPE = "a7_screening_tasks"
 ISSUE = 84
 PARENT_ISSUE = 76
@@ -264,7 +266,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "ea761e76debed029efb9b37022c2d5dac78fccd32d31184015696618c5a9a204",
+        SHARED_MATERIALS["scripts/a2_full_acceptance.py"],
     ),
     (
         "scripts/a2_full_scope.py",
@@ -272,7 +274,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_test_receipt.py",
-        "38b0fcea6a0028c3652dfc272829f5ac76c201430fcd2d4d187c629db85032e5",
+        SHARED_MATERIALS["scripts/a2_test_receipt.py"],
     ),
     (
         "scripts/a3_scope.py",
@@ -292,27 +294,27 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/check-offline",
-        "41a205087015281e5a8a921f20815f0828ef8457c57445d40f95be2bdb6d99d8",
+        SHARED_MATERIALS["scripts/check-offline"],
     ),
     (
         "scripts/verification_checks.py",
-        "f93113dcaa037ed7b5992133320a58d36dcf438c1d82969c94611c54649788bc",
+        SHARED_MATERIALS["scripts/verification_checks.py"],
     ),
     (
         "scripts/verification_identity.py",
-        "27ebdd057098256f0419c34cb9dbc410e0c6f0c7a8c3c931f62cc6942ca8d7b5",
+        SHARED_MATERIALS["scripts/verification_identity.py"],
     ),
     (
         "scripts/verification_publication.py",
-        "337c9efb7ee906486e9de9bb5ec4d60bd9bde7fe358f60098036862e1ac77072",
+        SHARED_MATERIALS["scripts/verification_publication.py"],
     ),
     (
         "scripts/verification_run.py",
-        "a4d08449eb65ac7e2c39d2fe972cccf28ec8af13dcf5d34795ac1c088212ae0a",
+        SHARED_MATERIALS["scripts/verification_run.py"],
     ),
     (
         "scripts/verification_status.py",
-        "081a13f82706ebc16aee21138c40bcf6620ad8daeb8efa6338a1512f07edd1c5",
+        SHARED_MATERIALS["scripts/verification_status.py"],
     ),
     (
         "src/paper_radar/backup/files.py",

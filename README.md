@@ -296,6 +296,9 @@ uv run --offline --locked pytest tests/test_feed_pipeline.py
 需要核对固定用例数时添加 `--collect`；收集不执行测试体，也不发布验收结论。
 操作规则见[scope 审计契约](docs/contracts/verification-scope-audit.md)，
 登记维护见[维护说明](docs/verification/offline-evidence.md#固定-scope-维护审计60)。
+首批共享验收基础设施已采用单处中央哈希，各组保留显式成员和固定计数；
+旧字面量与中央引用共存，其他材料和 scope 哈希边由后续迁移承接。
+中央条目变化按实际消费组、材料用途与显式基线审阅，详见审计契约。
 
 规格、README、术语和现状 Contract 已与历史固定材料解绑；修改这些活文档无需重绑，
 仍会改变历史 run 对当前工作树的适用性。冻结依据与本次迁移见

@@ -331,6 +331,14 @@ def analyze_baseline(
 
 def _entry_identity(report: AuditReport, paths: dict[str, str], path: str) -> str:
     owners = {group for group, scope in paths.items() if scope == path}
+    if not owners:
+        # 中央引用展开后保留逐路径登记身份;仅中央 SHA 变化也必须可见。
+        registrations = sorted(
+            (f["group"], str(f["kind"]), f["expected_sha256"])
+            for f in report["files"]
+            if f["path"] == path
+        )
+        return hashlib.sha256(json.dumps(registrations).encode()).hexdigest()
     # source 哈希更新是机械;成员、测试/fixture 字节与固定计数是语义边界。
     entries = sorted(
         (
@@ -379,7 +387,14 @@ def _changes(
         )
         old_entry = _entry_identity(baseline, old_paths, path)
         new_entry = _entry_identity(report, paths, path)
-        if old_entry != new_entry:
+        memberships = [
+            {(f["group"], f["kind"]) for f in view["files"] if f["path"] == path}
+            for view in (baseline, report)
+        ]
+        if old_entry != new_entry and (
+            path in set(paths.values()) | set(old_paths.values())
+            or memberships[0] != memberships[1]
+        ):
             category = "registration"
         old_sha, new_sha = _sha(old, path), _sha(root, path)
         drift = [
@@ -393,7 +408,13 @@ def _changes(
         origins: list[BaselineOrigin] = []
         if drift:
             origins.append("baseline_drift")
-        if old_sha != new_sha or old_entry != new_entry:
+        registration_changed = old_entry != new_entry and (
+            path in set(paths.values()) | set(old_paths.values())
+            or memberships[0] == memberships[1]
+            or {f["expected_sha256"] for f in baseline["files"] if f["path"] == path}
+            != {f["expected_sha256"] for f in report["files"] if f["path"] == path}
+        )
+        if old_sha != new_sha or registration_changed:
             origins.append("current_change")
         for origin in origins:
             changes.append(

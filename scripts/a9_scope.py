@@ -1,5 +1,7 @@
 """#99 固定 A9 Read 离线验收;登记必须人工审阅,不在运行时刷新。"""
 
+from scripts.verification_scope_materials import SHARED_MATERIALS
+
 SCOPE = "a9_read_offline_validation_config_recovery"
 ISSUE = 92
 PARENT_ISSUE = 92
@@ -347,43 +349,43 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "ea761e76debed029efb9b37022c2d5dac78fccd32d31184015696618c5a9a204",
+        SHARED_MATERIALS["scripts/a2_full_acceptance.py"],
     ),
     (
         "scripts/a2_test_receipt.py",
-        "38b0fcea6a0028c3652dfc272829f5ac76c201430fcd2d4d187c629db85032e5",
+        SHARED_MATERIALS["scripts/a2_test_receipt.py"],
     ),
     (
         "scripts/offline_evidence.py",
-        "3c53fd4e272ee346da23b72cd977180b78aeaa55a027064a97f5540ea24d9a28",
+        SHARED_MATERIALS["scripts/offline_evidence.py"],
     ),
     (
         "scripts/verification_checks.py",
-        "f93113dcaa037ed7b5992133320a58d36dcf438c1d82969c94611c54649788bc",
+        SHARED_MATERIALS["scripts/verification_checks.py"],
     ),
     (
         "scripts/verification_identity.py",
-        "27ebdd057098256f0419c34cb9dbc410e0c6f0c7a8c3c931f62cc6942ca8d7b5",
+        SHARED_MATERIALS["scripts/verification_identity.py"],
     ),
     (
         "scripts/verification_publication.py",
-        "337c9efb7ee906486e9de9bb5ec4d60bd9bde7fe358f60098036862e1ac77072",
+        SHARED_MATERIALS["scripts/verification_publication.py"],
     ),
     (
         "scripts/verification_run.py",
-        "a4d08449eb65ac7e2c39d2fe972cccf28ec8af13dcf5d34795ac1c088212ae0a",
+        SHARED_MATERIALS["scripts/verification_run.py"],
     ),
     (
         "scripts/verification_status.py",
-        "081a13f82706ebc16aee21138c40bcf6620ad8daeb8efa6338a1512f07edd1c5",
+        SHARED_MATERIALS["scripts/verification_status.py"],
     ),
     (
         "scripts/verification_scope_registry.py",
-        "0245aea1f6fd7fd9fc50bcd34abc6591cc9963876b3e4f72d068b76a02a9e871",
+        SHARED_MATERIALS["scripts/verification_scope_registry.py"],
     ),
     (
         "scripts/verification_scope_audit.py",
-        "f33de0007482e71d67eaeaadc8218b42ac2950105e2b63f00cbc4e941377830a",
+        SHARED_MATERIALS["scripts/verification_scope_audit.py"],
     ),
     (
         "scripts/audit_verification_scope.py",
@@ -391,7 +393,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "scripts/check-offline",
-        "41a205087015281e5a8a921f20815f0828ef8457c57445d40f95be2bdb6d99d8",
+        SHARED_MATERIALS["scripts/check-offline"],
     ),
     (
         "scripts/verification-status",
@@ -497,6 +499,14 @@ REQUIRED_SOURCE_MODULES = (
         "scripts/a8_scope.py",
         "7e9c6020314c8efa9dcba8dce02f78d61586c7d8def2026e6f6498413a7ecdc2",
     ),
+    (
+        "scripts/verification_scope_baseline.py",
+        SHARED_MATERIALS["scripts/verification_scope_baseline.py"],
+    ),
+    (
+        "scripts/verification_scope_collection.py",
+        SHARED_MATERIALS["scripts/verification_scope_collection.py"],
+    ),
 )
 
 REQUIRED_FIXTURE_FILES = (
@@ -586,7 +596,7 @@ REQUIRED_FIXTURE_FILES = (
     ),
     (
         "docs/verification/offline-evidence.md",
-        "49189beae5ae244378f37bfadf2b5fbdd9be3f8b81f18ee3083a909a205009f9",
+        SHARED_MATERIALS["docs/verification/offline-evidence.md"],
     ),
     (
         "tests/fixtures/a9_coverage.json",

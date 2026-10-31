@@ -3,6 +3,7 @@
 # 保留既有导入入口; 回执格式词表归共享核对模块所有。
 from scripts.verification_checks import RECEIPT_COUNTERS as RECEIPT_COUNTERS
 from scripts.verification_checks import ReceiptCounter as ReceiptCounter
+from scripts.verification_scope_materials import SHARED_MATERIALS
 
 SCOPE = "a2_versioned_config_snapshots"
 ISSUE = 25
@@ -348,19 +349,19 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
         "scripts/verification_checks.py",
-        "f93113dcaa037ed7b5992133320a58d36dcf438c1d82969c94611c54649788bc",
+        SHARED_MATERIALS["scripts/verification_checks.py"],
     ),
     (
         "scripts/verification_identity.py",
-        "27ebdd057098256f0419c34cb9dbc410e0c6f0c7a8c3c931f62cc6942ca8d7b5",
+        SHARED_MATERIALS["scripts/verification_identity.py"],
     ),
     (
         "scripts/verification_publication.py",
-        "337c9efb7ee906486e9de9bb5ec4d60bd9bde7fe358f60098036862e1ac77072",
+        SHARED_MATERIALS["scripts/verification_publication.py"],
     ),
     (
         "scripts/verification_run.py",
-        "a4d08449eb65ac7e2c39d2fe972cccf28ec8af13dcf5d34795ac1c088212ae0a",
+        SHARED_MATERIALS["scripts/verification_run.py"],
     ),
     (
         "pyproject.toml",
@@ -380,19 +381,19 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "scripts/a2_full_acceptance.py",
-        "ea761e76debed029efb9b37022c2d5dac78fccd32d31184015696618c5a9a204",
+        SHARED_MATERIALS["scripts/a2_full_acceptance.py"],
     ),
     (
         "scripts/a2_test_receipt.py",
-        "38b0fcea6a0028c3652dfc272829f5ac76c201430fcd2d4d187c629db85032e5",
+        SHARED_MATERIALS["scripts/a2_test_receipt.py"],
     ),
     (
         "scripts/check-offline",
-        "41a205087015281e5a8a921f20815f0828ef8457c57445d40f95be2bdb6d99d8",
+        SHARED_MATERIALS["scripts/check-offline"],
     ),
     (
         "scripts/offline_evidence.py",
-        "3c53fd4e272ee346da23b72cd977180b78aeaa55a027064a97f5540ea24d9a28",
+        SHARED_MATERIALS["scripts/offline_evidence.py"],
     ),
     (
         "src/paper_radar/cli.py",
