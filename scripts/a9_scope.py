@@ -132,6 +132,10 @@ REQUIRED_TEST_MODULES = (
 
 REQUIRED_SOURCE_MODULES = (
     (
+        "scripts/verification_groups.py",
+        SHARED_MATERIALS["scripts/verification_groups.py"],
+    ),
+    (
         "src/paper_radar/reading/__init__.py",
         SHARED_MATERIALS["src/paper_radar/reading/__init__.py"],
     ),
@@ -445,6 +449,14 @@ REQUIRED_SOURCE_MODULES = (
 )
 
 REQUIRED_FIXTURE_FILES = (
+    (
+        "tests/verification_expectations.py",
+        SHARED_MATERIALS["tests/verification_expectations.py"],
+    ),
+    (
+        "tests/fixtures/verification_group_expectations.json",
+        SHARED_MATERIALS["tests/fixtures/verification_group_expectations.json"],
+    ),
     (
         "docs/verification/contracts-read-validation-history.md",
         "649e7cd781d7ca4a55c9baeb4df8cb280a184e19ca6e8884dd74e52c5e7e9cfb",

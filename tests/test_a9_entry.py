@@ -10,6 +10,7 @@ import pytest
 
 from tests.a2_full_support import fake_checks, repository_copy
 from tests.a9_acceptance_support import passed_receipt
+from tests.verification_expectations import assert_output_files
 
 
 def test_a9_only_failure_blocks_real_entry_even_when_full_a2_passes(
@@ -40,7 +41,7 @@ def test_a9_only_failure_blocks_real_entry_even_when_full_a2_passes(
     assert a9["status"] == "failed" and not a9["a9_verified"]
     assert {reason["code"] for reason in a9["reasons"]} == {"scope_drift"}
     assert all(value == "failed" for value in a9["capabilities"].values())
-    assert len(tuple(output.glob("*.json"))) == 14
+    assert_output_files(output)
 
 
 @pytest.mark.parametrize("failure", ["interrupt", "io"])
@@ -190,4 +191,4 @@ def test_missing_read_contract_blocks_entry_while_a1_four_contracts_pass(
     a9 = run.conclusions["A9"][1]
     assert a9["a9_verified"] is False
     assert "read_contract_invalid" in {reason["code"] for reason in a9["reasons"]}
-    assert len(tuple(run.output_dir.glob("*.json"))) == 14
+    assert_output_files(run.output_dir)

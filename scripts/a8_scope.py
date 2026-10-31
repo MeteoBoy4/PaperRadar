@@ -170,6 +170,10 @@ REQUIRED_TEST_MODULES = (
 )
 REQUIRED_SOURCE_MODULES = (
     (
+        "scripts/verification_groups.py",
+        SHARED_MATERIALS["scripts/verification_groups.py"],
+    ),
+    (
         "src/paper_radar/llm/__init__.py",
         "593aded4206190482fceb1646ad1a37804499340f488c3cd87d5f154590e9ced",
     ),
@@ -284,6 +288,14 @@ REQUIRED_SOURCE_MODULES = (
     ),
 )
 REQUIRED_FIXTURE_FILES = (
+    (
+        "tests/verification_expectations.py",
+        SHARED_MATERIALS["tests/verification_expectations.py"],
+    ),
+    (
+        "tests/fixtures/verification_group_expectations.json",
+        SHARED_MATERIALS["tests/fixtures/verification_group_expectations.json"],
+    ),
     (
         "tests/fixtures/a8_capabilities.json",
         "be2f6c0422550c4f7594e201da0d8408442263b569f7c5ede50ef84055ec31ea",

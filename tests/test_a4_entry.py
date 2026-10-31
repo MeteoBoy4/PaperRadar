@@ -11,6 +11,7 @@ import pytest
 from scripts.a2_full_acceptance import run_full_verification
 from tests.a2_full_support import fake_checks, repository_copy
 from tests.a8_acceptance_support import passed_receipt
+from tests.verification_expectations import assert_output_files
 
 
 def test_a4_only_failure_blocks_real_entry_even_when_full_a2_passes(
@@ -40,7 +41,7 @@ def test_a4_only_failure_blocks_real_entry_even_when_full_a2_passes(
     assert a4["status"] == "failed" and not a4["a4_verified"]
     assert {reason["code"] for reason in a4["reasons"]} == {"scope_drift"}
     assert all(value == "failed" for value in a4["capabilities"].values())
-    assert len(tuple(output.glob("*.json"))) == 14
+    assert_output_files(output)
 
     # A4 仍阻止整体通过,但不是 A5 的直接前置。
     a5 = json.loads(next(output.glob("*.a5.json")).read_bytes())

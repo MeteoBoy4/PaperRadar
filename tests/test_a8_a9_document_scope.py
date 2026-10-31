@@ -54,6 +54,14 @@ def test_a8_a9_migration_records_every_inventory_removal() -> None:
         )
         for name in names
     }
+    preparation = json.loads(
+        (directory / "scope-extensible-groups-delivery.json").read_bytes()
+    )
+    additions.update(
+        (row["group"], row["kind"], row["path"])
+        for row in preparation["added_bindings"]
+        if row["group"] in {"A8", "A9"}
+    )
     assert fixed == (expected | additions) - references
     scopes = {scope.group: scope for scope in load_scopes(ROOT)}
     actual_references: set[tuple[str, str, str]] = set()

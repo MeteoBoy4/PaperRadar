@@ -336,6 +336,10 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
 )
 REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     (
+        "scripts/verification_groups.py",
+        SHARED_MATERIALS["scripts/verification_groups.py"],
+    ),
+    (
         "scripts/verification_checks.py",
         SHARED_MATERIALS["scripts/verification_checks.py"],
     ),
@@ -542,6 +546,14 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ),
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/verification_expectations.py",
+        SHARED_MATERIALS["tests/verification_expectations.py"],
+    ),
+    (
+        "tests/fixtures/verification_group_expectations.json",
+        SHARED_MATERIALS["tests/fixtures/verification_group_expectations.json"],
+    ),
     (
         "tests/fixtures/verification_transcripts.json",
         SHARED_MATERIALS["tests/fixtures/verification_transcripts.json"],

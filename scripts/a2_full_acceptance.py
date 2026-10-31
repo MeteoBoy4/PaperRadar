@@ -13,7 +13,6 @@ from typing import Any
 from scripts import a1_acceptance
 from scripts.a1_acceptance import capture_identity
 from scripts.a1_scope import REQUIRED_TEST_MODULES as A1_TEST_MODULES
-from scripts.a2_acceptance import A2_01_GROUP
 from scripts.a2_full_scope import (
     FORMAT_VERSION,
     FORMAT_VERSIONS,
@@ -28,14 +27,6 @@ from scripts.a2_full_scope import (
     REQUIRED_TEST_MODULES,
     SCOPE,
 )
-from scripts.a3_acceptance import write_group as write_a3_group
-from scripts.a4_acceptance import write_group as write_a4_group
-from scripts.a5_acceptance import write_group as write_a5_group
-from scripts.a6_acceptance import write_group as write_a6_group
-from scripts.a7_acceptance import write_group as write_a7_group
-from scripts.a8_acceptance import write_group as write_a8_group
-from scripts.a9_acceptance import write_group as write_a9_group
-from scripts.a10_acceptance import write_group as write_a10_group
 from scripts.offline_evidence import (
     CheckReason,
     CheckStatus,
@@ -385,83 +376,10 @@ def _write_group(
 
 
 def acceptance_groups() -> tuple[AcceptanceGroup, ...]:
-    """生产登记处: 发布顺序与是否决定整体通过分别声明。"""
-    return (
-        a1_acceptance.A1_GROUP,
-        A2_01_GROUP,
-        AcceptanceGroup(
-            name="完整 A2",
-            suffix=".a2-full.json",
-            write=_write_group,
-            required=True,
-            dependencies=("A1",),
-            show_reasons=True,
-        ),
-        AcceptanceGroup(
-            name="A3",
-            suffix=".a3.json",
-            write=write_a3_group,
-            required=True,
-            dependencies=("A1", "完整 A2"),
-            show_reasons=True,
-        ),
-        AcceptanceGroup(
-            name="A4",
-            suffix=".a4.json",
-            write=write_a4_group,
-            required=True,
-            dependencies=("A1", "完整 A2", "A3"),
-            show_reasons=True,
-        ),
-        AcceptanceGroup(
-            name="A5",
-            suffix=".a5.json",
-            write=write_a5_group,
-            required=True,
-            dependencies=("A1", "完整 A2", "A3"),
-            show_reasons=True,
-        ),
-        AcceptanceGroup(
-            name="A6",
-            suffix=".a6.json",
-            write=write_a6_group,
-            required=True,
-            dependencies=("A1", "完整 A2", "A3", "A5"),
-            show_reasons=True,
-        ),
-        AcceptanceGroup(
-            name="A7",
-            suffix=".a7.json",
-            write=write_a7_group,
-            required=True,
-            dependencies=("A1", "完整 A2", "A3", "A5", "A6"),
-            show_reasons=True,
-        ),
-        AcceptanceGroup(
-            name="A8",
-            suffix=".a8.json",
-            write=write_a8_group,
-            required=True,
-            dependencies=("A1", "完整 A2", "A3", "A5", "A6", "A7"),
-            show_reasons=True,
-        ),
-        AcceptanceGroup(
-            name="A9",
-            suffix=".a9.json",
-            write=write_a9_group,
-            required=True,
-            dependencies=("A1", "完整 A2", "A3"),
-            show_reasons=True,
-        ),
-        AcceptanceGroup(
-            name="A10",
-            suffix=".a10.json",
-            write=write_a10_group,
-            required=True,
-            dependencies=("A1", "完整 A2", "A3", "A6"),
-            show_reasons=True,
-        ),
-    )
+    """生产登记处由轻量声明维护; 本入口保留既有 Python 调用边界。"""
+    from scripts.verification_groups import acceptance_groups as registered_groups
+
+    return registered_groups()
 
 
 def _run_verification(root: Path, output_dir: Path) -> VerificationRun:

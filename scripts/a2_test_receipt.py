@@ -9,20 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from scripts.a1_scope import REQUIRED_TEST_MODULES as A1_TEST_MODULES
-from scripts.a2_full_scope import (
-    RECEIPT_COUNTERS,
-    REQUIRED_TEST_MODULES,
-    ReceiptCounter,
-)
-from scripts.a3_scope import REQUIRED_TEST_MODULES as A3_TEST_MODULES
-from scripts.a4_scope import REQUIRED_TEST_MODULES as A4_TEST_MODULES
-from scripts.a5_scope import REQUIRED_TEST_MODULES as A5_TEST_MODULES
-from scripts.a6_scope import REQUIRED_TEST_MODULES as A6_TEST_MODULES
-from scripts.a7_scope import REQUIRED_TEST_MODULES as A7_TEST_MODULES
-from scripts.a8_scope import REQUIRED_TEST_MODULES as A8_TEST_MODULES
-from scripts.a9_scope import REQUIRED_TEST_MODULES as A9_TEST_MODULES
-from scripts.a10_scope import REQUIRED_TEST_MODULES as A10_TEST_MODULES
+from scripts.a2_full_scope import RECEIPT_COUNTERS, ReceiptCounter
+from scripts.verification_groups import receipt_modules
 
 
 class TestReceipt:
@@ -31,19 +19,7 @@ class TestReceipt:
         self.run_id = run_id
         self.nodes: dict[str, dict[str, str]] = {}
         self.modules = {
-            name: dict.fromkeys(RECEIPT_COUNTERS, 0)
-            for name, _ in (
-                *A1_TEST_MODULES,
-                *REQUIRED_TEST_MODULES,
-                *A3_TEST_MODULES,
-                *A4_TEST_MODULES,
-                *A5_TEST_MODULES,
-                *A6_TEST_MODULES,
-                *A7_TEST_MODULES,
-                *A8_TEST_MODULES,
-                *A9_TEST_MODULES,
-                *A10_TEST_MODULES,
-            )
+            name: dict.fromkeys(RECEIPT_COUNTERS, 0) for name in receipt_modules()
         }
 
     def _write(self, *, completed: bool = False, exit_code: int | None = None) -> None:

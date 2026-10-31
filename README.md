@@ -284,6 +284,8 @@ uv run --offline --locked pytest tests/test_feed_pipeline.py
 `verification-runs/`。正式结论与当前工作树适用性分开查询，不用历史 passed 代替当前验证。
 检查计划、回执登记范围及各组证明边界见[离线验证证据](docs/verification/offline-evidence.md)，
 输出说明见[状态查询契约](docs/contracts/verification-status.md)。
+完整入口的执行、回执模块与本地帮助使用显式生产组登记；测试人工预期和历史读者格式表
+分别独立维护。新增组机制保持当前 required 集合与完整 A 证明边界，扩展规则见状态查询契约。
 
 固定验收材料变化时，可先运行只读登记审计：
 

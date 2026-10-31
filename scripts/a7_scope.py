@@ -257,6 +257,10 @@ REQUIRED_TEST_MODULES = (
 )
 REQUIRED_SOURCE_MODULES = (
     (
+        "scripts/verification_groups.py",
+        SHARED_MATERIALS["scripts/verification_groups.py"],
+    ),
+    (
         "src/paper_radar/screening_tasks/attempt_repository.py",
         SHARED_MATERIALS["src/paper_radar/screening_tasks/attempt_repository.py"],
     ),
@@ -631,6 +635,14 @@ REQUIRED_SOURCE_MODULES = (
     ),
 )
 REQUIRED_FIXTURE_FILES = (
+    (
+        "tests/verification_expectations.py",
+        SHARED_MATERIALS["tests/verification_expectations.py"],
+    ),
+    (
+        "tests/fixtures/verification_group_expectations.json",
+        SHARED_MATERIALS["tests/fixtures/verification_group_expectations.json"],
+    ),
     (
         "tests/fixtures/a7_capabilities.json",
         "60701c091af0700149320a12b011b0883ad58eb933e5062f1fd6a6c1249e44b7",

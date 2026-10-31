@@ -1,0 +1,73 @@
+{
+  "groups": [
+    {
+      "name": "A1",
+      "suffix": ".a1.json",
+      "required": true
+    },
+    {
+      "name": "A2-01",
+      "suffix": ".a2.json",
+      "required": false
+    },
+    {
+      "name": "完整 A2",
+      "suffix": ".a2-full.json",
+      "required": true
+    },
+    {
+      "name": "A3",
+      "suffix": ".a3.json",
+      "required": true
+    },
+    {
+      "name": "A4",
+      "suffix": ".a4.json",
+      "required": true
+    },
+    {
+      "name": "A5",
+      "suffix": ".a5.json",
+      "required": true
+    },
+    {
+      "name": "A6",
+      "suffix": ".a6.json",
+      "required": true
+    },
+    {
+      "name": "A7",
+      "suffix": ".a7.json",
+      "required": true
+    },
+    {
+      "name": "A8",
+      "suffix": ".a8.json",
+      "required": true
+    },
+    {
+      "name": "A9",
+      "suffix": ".a9.json",
+      "required": true
+    },
+    {
+      "name": "A10",
+      "suffix": ".a10.json",
+      "required": true
+    }
+  ],
+  "evidence_suffix": ".json",
+  "receipt_suffix": ".pytest.json",
+  "terminal_suffix": ".terminal.json",
+  "historical_stdout_groups": [
+    "A1",
+    "A2-01",
+    "完整 A2",
+    "A3",
+    "A4",
+    "A5",
+    "A6",
+    "A7"
+  ],
+  "fixture_receipt_modules": {}
+}

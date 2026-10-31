@@ -19,6 +19,7 @@ from scripts.verification_identity import capture_identity
 from scripts.verification_run import AcceptanceGroup, VerificationRun, run_verification
 from tests.a2_full_support import ROOT, fake_checks, repository_copy
 from tests.a8_acceptance_support import passed_receipt
+from tests.verification_expectations import expected_groups
 
 
 def test_controller_publishes_bound_terminal_after_all_groups(
@@ -32,17 +33,7 @@ def test_controller_publishes_bound_terminal_after_all_groups(
     terminal = json.loads((run.output_dir / f"{run.run_id}.terminal.json").read_bytes())
     assert terminal["exit_code"] == 0
     assert [group["suffix"] for group in terminal["groups"]] == [
-        ".a1.json",
-        ".a2.json",
-        ".a2-full.json",
-        ".a3.json",
-        ".a4.json",
-        ".a5.json",
-        ".a6.json",
-        ".a7.json",
-        ".a8.json",
-        ".a9.json",
-        ".a10.json",
+        group["suffix"] for group in expected_groups()
     ]
     before = {path: path.read_bytes() for path in run.output_dir.iterdir()}
     result = subprocess.run(

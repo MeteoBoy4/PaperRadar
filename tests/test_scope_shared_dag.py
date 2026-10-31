@@ -148,7 +148,11 @@ def test_production_migration_keeps_exact_materials_counts_and_graph() -> None:
     scopes = load_scopes(root)
     report = audit.audit_scopes(root, scopes)
     assert report["issues"] == []
-    assert len(report["files"]) == 1175
+    preparation = json.loads(
+        (root / "docs/verification/scope-extensible-groups-delivery.json").read_bytes()
+    )
+    additions = preparation["added_bindings"]
+    assert len(report["files"]) == 1175 + len(additions)
     assert report["order"] == ledger["original_order"]
     assert report["downstream"] == ledger["original_downstream"]
     assert (
@@ -182,7 +186,12 @@ def test_production_migration_keeps_exact_materials_counts_and_graph() -> None:
             for kind, entries in scope.bindings.items()
             if isinstance(entries, tuple)
         } == {
-            kind: [entry[0] for entry in entries]
+            kind: [
+                row["path"]
+                for row in additions
+                if row["group"] == scope.group and row["kind"] == kind
+            ]
+            + [entry[0] for entry in entries]
             for kind, entries in migrated["bindings"].items()
         }
         assert scope.counts == old["counts"]
@@ -192,7 +201,7 @@ def test_production_migration_keeps_exact_materials_counts_and_graph() -> None:
     owners: dict[str, set[str]] = {}
     for row in report["files"]:
         owners.setdefault(row["path"], set()).add(row["group"])
-    assert len(SHARED_MATERIALS) == 252
+    assert len(SHARED_MATERIALS) == 252 + len(preparation["new_central_paths"])
     assert set(SHARED_MATERIALS) == {
         path for path, groups in owners.items() if len(groups) >= 2
     }

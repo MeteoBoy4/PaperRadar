@@ -133,10 +133,28 @@ JSON 与中文文本展示相同事实。JSON 使用以下受控字段：
 
 ### 完整入口的组合边界
 
-完整入口按顺序发布 A1、A2-01、完整 A2、A3、A4、A5、A6、A7、A8、A9、A10。
+完整入口使用 `scripts/verification_groups.py::GROUPS` 的显式生产登记，按顺序发布
+A1、A2-01、完整 A2、A3、A4、A5、A6、A7、A8、A9、A10。
 其中 A2-01 为可选组，其余均为 required；正常完整成功包含基础证据、十一份组结论、
 pytest 回执和 terminal，共十四份 JSON（十二份主要文件）。当前组合中 A6–A10 的直接前置如下，
 均为同次结论，不继承历史通过；一个组没有直接依赖另一组不免除后者的整体 required 地位。
+
+登记分别声明名称、后缀、required、writer、回执 scope 和直接前置；执行时才加载 writer。
+pytest 回执从登记的 scope 读取显式测试模块，未收集模块仍保留零计数；每组 writer
+独立核对自己的正整数固定分母、完整回执及六项执行计数，skip、deselect、缺模块、
+未执行或失败均不能充当成功。A2-01 保留原有独立判据，不新增回执门槛。
+`check-offline --help` 从轻量生产登记展示组名、required 与产物份数，不启动 uv、
+writer、检查或迁移，不写数据库、字节码或证据；没有项目环境时可用宿主 Python 打印帮助。
+
+测试的人工预期在 `tests/fixtures/verification_group_expectations.json`，由独立读取支撑
+核对帮助、组后缀与全部产物集合；它不从生产登记或实际输出生成。预期数据与读取支撑
+按敏感 fixture 经中央哈希登记。旧 entry 单测的模拟执行器只消费独立 fixture 模块清单，
+不证明这些模块真实执行；扩展机制的执行证明使用真实 pytest 计数。
+生产新增组而漏更新预期时检查失败；新增组需要显式
+声明自己的测试范围与分母、writer 和读者支持格式，不修改准备后的旧 scope 或冻结测试。
+读者的 `SUPPORTED_GROUP_FORMATS` 仍是独立历史解析能力表，不导入生产登记；
+终态只界定当次成员，不授予新格式支持。此机制不改变当前 required 集合，不登记
+#114/#120，也不扩大完整阶段 A 的结论。
 
 | 组 | 直接前置 |
 | --- | --- |
@@ -185,7 +203,7 @@ history、需求与覆盖材料、源码、测试和 fixture 仍核验实际字�
   [ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)；阶段目标见
   [规格 §11](../../intent/draft.md#十一九阶段实施与验收)。
 - 实现：[查询入口](../../scripts/verification-status)、[状态读者](../../scripts/verification_status.py)、
-  [控制方](../../scripts/verification_run.py)、[生产组登记](../../scripts/a2_full_acceptance.py)、
+  [控制方](../../scripts/verification_run.py)、[生产组登记](../../scripts/verification_groups.py)、
   [身份核验](../../scripts/verification_identity.py)、[共享核验](../../scripts/verification_checks.py)、
   [原子发布](../../scripts/verification_publication.py)。
 - 证据：[离线验证证据](../verification/offline-evidence.md)；只读 scope 登记审计见

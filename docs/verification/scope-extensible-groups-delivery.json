@@ -1,0 +1,566 @@
+{
+  "format_version": 1,
+  "issue": 135,
+  "baseline_commit": "c5caefad2a1f935263c14e58fdfecc71b1f82a14",
+  "required_changed": false,
+  "historical_evidence_changed": false,
+  "preparation_test_changes": [
+    {
+      "path": "tests/test_a2_full_entry.py",
+      "old_sha256": "f335f488299732292d94f7931dcdc91e0367c5798e5d67aa5689454da17da192",
+      "new_sha256": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+      "expected_cases_before": 7,
+      "expected_cases_after": 7,
+      "total_assertions": 1,
+      "help_assertions": 1,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。 帮助fixture复制轻量声明，保留sitecustomize哨兵与零产物边界。"
+    },
+    {
+      "path": "tests/test_a4_entry.py",
+      "old_sha256": "4ed30b5a4bfee215a6c926f375a5cc865289157ed3a0d11a16fc652e2cd45278",
+      "new_sha256": "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c",
+      "expected_cases_before": 5,
+      "expected_cases_after": 5,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a5_entry.py",
+      "old_sha256": "0b4cde834b9fee665da07f4c00f6403584749c955bf23b61d8c6d70e632fe8a6",
+      "new_sha256": "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89",
+      "expected_cases_before": 5,
+      "expected_cases_after": 5,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a6_entry.py",
+      "old_sha256": "1b4f67c9e37a74f087ab74a4a64578f53ba353b6be3c19dee3536d7e70f9bff1",
+      "new_sha256": "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6",
+      "expected_cases_before": 9,
+      "expected_cases_after": 9,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a7_entry.py",
+      "old_sha256": "e59861bb282e5dfb07a5254ec7849ea9aad93885e0833bfef83ef8187dc9ede1",
+      "new_sha256": "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
+      "expected_cases_before": 9,
+      "expected_cases_after": 9,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a8_entry.py",
+      "old_sha256": "148090d5270b8a1989ee4681ff52f6a5e1d5a38fe0faf8414c0a769c4fa5d604",
+      "new_sha256": "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
+      "expected_cases_before": 9,
+      "expected_cases_after": 9,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a9_entry.py",
+      "old_sha256": "87d9cde4deef8d3c4fdd21c002c1502569daac2274683dd6f9c35ec2574e1f81",
+      "new_sha256": "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003",
+      "expected_cases_before": 10,
+      "expected_cases_after": 10,
+      "total_assertions": 2,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_a10_entry.py",
+      "old_sha256": "2809448ed1e2c31c231a3a818e937a9440447cb172764bec59ca245b69cf0dfb",
+      "new_sha256": "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68",
+      "expected_cases_before": 10,
+      "expected_cases_after": 10,
+      "total_assertions": 2,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_verification_run.py",
+      "old_sha256": "6b8d8b0de2cbb768c9c6987a52f7dd9b12d42ce1838873ff52e26854b7cda620",
+      "new_sha256": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed",
+      "expected_cases_before": 5,
+      "expected_cases_after": 5,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。"
+    },
+    {
+      "path": "tests/test_verification_compatibility.py",
+      "old_sha256": "33adb6c58a86acb91f81309fd603c51ae04e8ebd0738e2d28027fa5b53313897",
+      "new_sha256": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf",
+      "expected_cases_before": 9,
+      "expected_cases_after": 9,
+      "total_assertions": 1,
+      "help_assertions": 0,
+      "reason": "S4(b)一次性准备：写死总份数改人工预期后缀集合+独立数量核对；保留历史字节、退出码、检查数与发布中断前缀。 按独立预期仅剔除明确非历史组，核对全声明组输出与拒绝未知前缀；原历史stdout/stderr/退出码继续逐字比较。"
+    }
+  ],
+  "added_bindings": [
+    {
+      "group": "A2-01",
+      "scope_path": "scripts/a2_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "完整 A2",
+      "scope_path": "scripts/a2_full_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "完整 A2",
+      "scope_path": "scripts/a2_full_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "完整 A2",
+      "scope_path": "scripts/a2_full_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A3",
+      "scope_path": "scripts/a3_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A3",
+      "scope_path": "scripts/a3_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A3",
+      "scope_path": "scripts/a3_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A4",
+      "scope_path": "scripts/a4_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A4",
+      "scope_path": "scripts/a4_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A4",
+      "scope_path": "scripts/a4_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A5",
+      "scope_path": "scripts/a5_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A5",
+      "scope_path": "scripts/a5_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A5",
+      "scope_path": "scripts/a5_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A6",
+      "scope_path": "scripts/a6_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A6",
+      "scope_path": "scripts/a6_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A6",
+      "scope_path": "scripts/a6_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A7",
+      "scope_path": "scripts/a7_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A7",
+      "scope_path": "scripts/a7_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A7",
+      "scope_path": "scripts/a7_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A8",
+      "scope_path": "scripts/a8_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A8",
+      "scope_path": "scripts/a8_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A8",
+      "scope_path": "scripts/a8_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A9",
+      "scope_path": "scripts/a9_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A9",
+      "scope_path": "scripts/a9_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A9",
+      "scope_path": "scripts/a9_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A10",
+      "scope_path": "scripts/a10_scope.py",
+      "kind": "source",
+      "path": "scripts/verification_groups.py",
+      "reason": "入口/回执/帮助实际消费的轻量生产声明"
+    },
+    {
+      "group": "A10",
+      "scope_path": "scripts/a10_scope.py",
+      "kind": "fixture",
+      "path": "tests/verification_expectations.py",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    },
+    {
+      "group": "A10",
+      "scope_path": "scripts/a10_scope.py",
+      "kind": "fixture",
+      "path": "tests/fixtures/verification_group_expectations.json",
+      "reason": "已绑定entry/compat测试实际消费的独立人工预期或读取支撑，敏感材料"
+    }
+  ],
+  "new_central_paths": [
+    "scripts/verification_groups.py",
+    "tests/verification_expectations.py",
+    "tests/fixtures/verification_group_expectations.json"
+  ],
+  "preparation_scopes": [
+    {
+      "path": "scripts/a10_scope.py",
+      "old_sha256": "f2be2a09802886fd37b821c208fd668c2b614146c5ffe159c7707e008ab337d0",
+      "new_sha256": "69075b82b93b2d259e15f5d474552dfd1c81c49903e5fa04013cb2fb85502145",
+      "test_counts_changed": false,
+      "references_changed": false
+    },
+    {
+      "path": "scripts/a2_full_scope.py",
+      "old_sha256": "66985e4e4aabc927529ad44b99a0e1a0b50fe9c286c7c9749c342b7d1f9bab51",
+      "new_sha256": "74e20a95d0fa012b19cae6b28f553c23f3e670bef661488509a66fbd003e667b",
+      "test_counts_changed": false,
+      "references_changed": false
+    },
+    {
+      "path": "scripts/a2_scope.py",
+      "old_sha256": "a8eba9613070f130211acc6085965adad3dfc475e526bbe9e4f9b5aed4b3bf3d",
+      "new_sha256": "3d7d9b818696928410daf65f5a1177ab65ca2eaa24e379daa7ec64e2cb825547",
+      "test_counts_changed": false,
+      "references_changed": false
+    },
+    {
+      "path": "scripts/a3_scope.py",
+      "old_sha256": "f3969aab3e766975e2a4575c320c62673785128a6d537f5a898324a5e888b9dd",
+      "new_sha256": "8ca121566239189de1c3eb86df998b4b0ecf8e4ee1827aa9ec212848ff71177c",
+      "test_counts_changed": false,
+      "references_changed": false
+    },
+    {
+      "path": "scripts/a4_scope.py",
+      "old_sha256": "18de63fda596b5cd16575f51da74ae3858a81fddd6709961c8ccabf3ce2c9e1c",
+      "new_sha256": "2da54d3e5edc5df87a11858acff885123dcbb0f556939d15799ab71f8a1122cf",
+      "test_counts_changed": false,
+      "references_changed": false
+    },
+    {
+      "path": "scripts/a5_scope.py",
+      "old_sha256": "973f30d16614a2f8f1230df01226ef164111bbd1e596c8f045b19fdcbaadef9e",
+      "new_sha256": "4be39a16e127697b248452625415e7c94e3310aece698a30af95d28ebc8c81e9",
+      "test_counts_changed": false,
+      "references_changed": false
+    },
+    {
+      "path": "scripts/a6_scope.py",
+      "old_sha256": "7d6c6d0e864af4177be228a11d02d9394046cda4262323338d8c9990bf982a92",
+      "new_sha256": "3f0141b668467e9cb56f3db39ab3ab2f94cbf9b5f7be64c282ecca093046a6fb",
+      "test_counts_changed": false,
+      "references_changed": false
+    },
+    {
+      "path": "scripts/a7_scope.py",
+      "old_sha256": "475b465f982ff2c78434a66ff9c4c24aaf98d4371a9f312ed82543a6d08f1f47",
+      "new_sha256": "d37a50a78046c67d70e4fbbde8e1dda4fb0dad811e816b520ac107c5ad9bb5c4",
+      "test_counts_changed": false,
+      "references_changed": false
+    },
+    {
+      "path": "scripts/a8_scope.py",
+      "old_sha256": "54d7dce253dbf510d77d5cfb5bdf884108d4f7b2d695e2be4f9b6e66ad84a1b4",
+      "new_sha256": "307f6f4851911413ee5f5e0be4bba0eafdbda7dd589d71708f5c77e21b9e411d",
+      "test_counts_changed": false,
+      "references_changed": false
+    },
+    {
+      "path": "scripts/a9_scope.py",
+      "old_sha256": "30be7cb318e561796966f5a305050cca9bd7a6d652fbf25f24a58a40f42d6f28",
+      "new_sha256": "f56cbd57d5e7cc2a4ca38172c16cb9e3707c96f33ab673d31b8c2c79eb29e1ff",
+      "test_counts_changed": false,
+      "references_changed": false
+    }
+  ],
+  "prepared_frozen_test_sha256": {
+    "tests/test_a2_full_entry.py": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+    "tests/test_a4_entry.py": "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c",
+    "tests/test_a5_entry.py": "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89",
+    "tests/test_a6_entry.py": "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6",
+    "tests/test_a7_entry.py": "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
+    "tests/test_a8_entry.py": "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
+    "tests/test_a9_entry.py": "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003",
+    "tests/test_a10_entry.py": "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68",
+    "tests/test_verification_run.py": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed",
+    "tests/test_verification_compatibility.py": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf"
+  },
+  "independent_expected_counts": {
+    "tests/test_a2_full_entry.py": 7,
+    "tests/test_a4_entry.py": 5,
+    "tests/test_a5_entry.py": 5,
+    "tests/test_a6_entry.py": 9,
+    "tests/test_a7_entry.py": 9,
+    "tests/test_a8_entry.py": 9,
+    "tests/test_a9_entry.py": 10,
+    "tests/test_a10_entry.py": 10,
+    "tests/test_verification_run.py": 5,
+    "tests/test_verification_compatibility.py": 9
+  },
+  "assertions": {
+    "total_positions": 12,
+    "help_positions": 1,
+    "test_modules": 10,
+    "total_cases_unchanged": 78
+  },
+  "new_coverage": {
+    "path": "tests/test_extensible_acceptance.py",
+    "required": false,
+    "expected_cases": 22,
+    "sha256": "01faaf0b8ab13271ffcf689d6073afadd5df681a757cf403ad4427a4d91207ea",
+    "support": [
+      {
+        "path": "tests/extensible_acceptance_support.py",
+        "sha256": "9f7b9c997f880ce20a8e2b8278b7007524e019179e3933ef7af04f9a77503dbe"
+      }
+    ]
+  },
+  "compatibility_support_changes": [
+    {
+      "path": "tests/test_scope_shared_dag.py",
+      "old_sha256": "f9629e5f9df61927de21f34ae7c8f1cd4b552bd80aa232350c49c9affba47759",
+      "reason": "未绑定模块显式承接本票28新增消费成员，保留原1175集合/固定分母/41引用/历史快照等价断言",
+      "new_sha256": "5c99949cde9abb942efd03c914dd56cdc200397098e38c60e96943da8b57577a"
+    },
+    {
+      "path": "tests/test_a8_a9_document_scope.py",
+      "old_sha256": "ab2bcfc9234ced075f2d4cfc61de3f1d155eef787737c1a4b8e66a6753dd7764",
+      "reason": "未绑定模块显式承接本票28新增消费成员，保留原1175集合/固定分母/41引用/历史快照等价断言",
+      "new_sha256": "1ca0947814f7474e29d2ee6dddc58ec7f14627ec4b3d601f2a34c0bc4448e7b6"
+    },
+    {
+      "path": "tests/test_verification_status.py",
+      "old_sha256": "d6c0340ea8d04fdb226735b0e8ddedf9c7eb18923b08dcc765cb9762bf28b490",
+      "new_sha256": "ccfc4a004ecbf423947434fade68ac740dad052025abb6286f5a91b6da84df73",
+      "reason": "未绑定当前组合回归读取独立组后缀预期，保留发布绑定/只读性/历史格式全部断言；用例数不变"
+    }
+  ],
+  "preparation_support_changes": [
+    {
+      "path": "tests/a2_full_support.py",
+      "old_sha256": "a15976749dc2ae52448d81ea794c2be1c2e0f53d4e2a09de20f9a9790c16dc38",
+      "new_sha256": "c330fadfc4ce9c0cd902b61c126fa6c8580aebf3ebdbb856e2c3ea3d72a3e0e2",
+      "reason": "仅旧entry模拟executor从独立人工fixture_receipt_modules填充边界成功fixture；不证明目标执行。真实新组验证覆盖脚本且不回填目标计数"
+    }
+  ],
+  "six_frozen_scope_test_bytes": [
+    {
+      "path": "tests/test_a10_scope.py",
+      "sha256": "b0cecfa82d8f96d40724bfbdadd0ed2e03024e3a150de3c18fa8508b76239665"
+    },
+    {
+      "path": "tests/test_a9_scope.py",
+      "sha256": "1b889334ba376d5b622071c8aee6f15ce9b250448fc2a8ee830201f42321b5b3"
+    },
+    {
+      "path": "tests/test_verification_scope_audit.py",
+      "sha256": "97e9a200d739a40fe248943d1d1e02260c9851e1eecefbe3757478d341493eb8"
+    },
+    {
+      "path": "tests/test_verification_scope_cli.py",
+      "sha256": "39a218b01cb1fd7b80f5695f878215596e9f632a40606c18e8a10d444b1bc75b"
+    },
+    {
+      "path": "tests/test_verification_scope_collection.py",
+      "sha256": "7ffd0534b15dc0eed8ddb46fc0debfcd2451c20a4f99643e174c44396ea48bf9"
+    },
+    {
+      "path": "tests/test_verification_scope_registry.py",
+      "sha256": "16376df3cf4fe746c50ed54db173e2d68671283abbc047009bf1169c7de9d491"
+    }
+  ],
+  "central_initial_sha256": {
+    "scripts/verification_groups.py": "b970c3857a0809b1f2d970efcfa4c93ed30a8477038944eaf18f105753e5264f",
+    "tests/verification_expectations.py": "f8717737f642b84b10ed600e47348a41e667612374c1989cbe24730e1e7e6f78",
+    "tests/fixtures/verification_group_expectations.json": "99068638177887123b22bdee65f0843e41492dc746ced8e5c3e73f266f4dc7e8"
+  },
+  "extension_old_scopes_and_tests_sha256": {
+    "scripts/a9_scope.py": "a94094c211495af57377fc2e5f5c0412130ad93446f151716f35c04e417958a0",
+    "scripts/a6_scope.py": "1588625af965e0147d95583201103d357746ed0da6d12aebe39cad827cb6e2a8",
+    "scripts/a10_scope.py": "aedddb451e3e0d89990b455ed8e084760bfdb8f2e025d0c24bd6761d29be25c5",
+    "scripts/a5_scope.py": "b435705a1bf1e4b2e4ac222f60b4be503247a22938f2d4d6cdd589f93073b87f",
+    "scripts/a2_full_scope.py": "74e20a95d0fa012b19cae6b28f553c23f3e670bef661488509a66fbd003e667b",
+    "scripts/a3_scope.py": "8ca121566239189de1c3eb86df998b4b0ecf8e4ee1827aa9ec212848ff71177c",
+    "scripts/a4_scope.py": "63880c279bf0ea4f257afebe6cebcbbda59ae755aa678619ff223b71310b2531",
+    "scripts/a1_scope.py": "6e7c2a0be80c9090f63c018c63932ab4595bab1874c4253ac79f160f88996d56",
+    "scripts/a7_scope.py": "8d92799b5195a6b52d12848e60cf2e19f6b0eada532082d27db34ac2b5f9b74b",
+    "scripts/a8_scope.py": "8a1378c4bb185138ab822e1d9db5d531f65be2e0afc4a0dcf12b12387897dba2",
+    "scripts/a2_scope.py": "3d7d9b818696928410daf65f5a1177ab65ca2eaa24e379daa7ec64e2cb825547",
+    "tests/test_a8_entry.py": "0aaf870d50a3a34eae2c8e8732ceede7cc683079617ce0954524432fde9a2095",
+    "tests/test_a10_entry.py": "c6fff5749e242e3968e1f5fde926bf6dade9996360a7934df276b14408e1cb68",
+    "tests/test_verification_run.py": "ba22149fcd05095563ce364260b452d59c9ca3d8400f2fd0a18dc525e64f8aed",
+    "tests/test_a4_entry.py": "5b4dc8f3d2ce93a9f0d076c5ebdec5bd231c11e6dd8153a420fea3b3d8593e7c",
+    "tests/test_a7_entry.py": "979989f8bdfa59297b181bc29adfeb33b746a9963edc1f93848e966d83d05e0e",
+    "tests/test_verification_compatibility.py": "6ea10dc52c601ad5f690adfcd96e2c780cd3ce94c3f25b43ba5fb2b6a6effdbf",
+    "tests/test_a5_entry.py": "d371f20ec1794c4bcaeb18e66f347e49688580365fa2e824fc99d0c4c78dda89",
+    "tests/test_a9_entry.py": "e4faaf618619514b33f0764be7e5d5574fe904bf04f48541dc1d8477bf39a003",
+    "tests/test_a2_full_entry.py": "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53",
+    "tests/test_a6_entry.py": "4cb38e8b25d028d3a7bdba4fb7d95a67b345f8255d59d0be4ef1422fc624bcd6"
+  },
+  "extension_old_tests_result": {
+    "modules": 10,
+    "collected": 78,
+    "passed": 78,
+    "skipped": 0,
+    "deselected": 0,
+    "incomplete": 0,
+    "elapsed_seconds": 140.19,
+    "target_execution": "此78例使用泛化边界fixture，真实合成计数另见22例机制回归",
+    "scope_audit_exit_code": 0,
+    "scope_registration": "目标测试与writer真实固定SHA，writer核对材料，读者支持仅副本临时声明"
+  },
+  "validation": {
+    "real_mechanism": {
+      "passed": 22,
+      "seconds": 52.04
+    },
+    "candidate_related_initial": {
+      "passed": 268,
+      "failed": 1,
+      "seconds": 172.01,
+      "failure": "新增审阅fixture在候选已无变化时不允许空Git提交"
+    },
+    "candidate_related_targeted_fix": {
+      "passed": 1,
+      "seconds": 2.65,
+      "fix": "只修改未绑定新测试fixture允许空提交，生产行为不改"
+    },
+    "candidate_compatibility_all": {
+      "passed": 176,
+      "exit_code": 0,
+      "pytest_seconds": 270.69,
+      "entry_seconds": 271.34
+    },
+    "ruff": {
+      "modules": 31,
+      "check": "passed",
+      "format_check": "passed"
+    },
+    "mypy": {
+      "source_files": 706,
+      "result": "passed"
+    },
+    "full_gate_run": false,
+    "live_run": false
+  },
+  "preserved_transcript": {
+    "path": "tests/fixtures/verification_transcripts.json",
+    "sha256": "f746f0dc76acbfb01e2f8f488e49f5db796c0793f425ccb1f76e95c341dcb16a"
+  },
+  "candidate_rebindings": {
+    "physical_sha_positions": 19,
+    "central_positions": 11,
+    "scope_literal_positions": 8,
+    "production_rebound": false,
+    "scope_hash_edges": 0,
+    "references": 41
+  }
+}
