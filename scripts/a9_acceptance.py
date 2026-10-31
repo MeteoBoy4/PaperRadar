@@ -223,12 +223,11 @@ def _coverage(root: Path) -> dict[str, Any] | None:
     ):
         return None
     try:
-        for relative in ("docs/contracts/read-validation.md", _COVERAGE_DOCUMENT):
-            raw = (root / relative).read_bytes()
-            if hashlib.sha256(raw).hexdigest() != dict(REQUIRED_FIXTURE_FILES).get(
-                relative
-            ):
-                return None
+        raw = (root / _COVERAGE_DOCUMENT).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != dict(REQUIRED_FIXTURE_FILES).get(
+            _COVERAGE_DOCUMENT
+        ):
+            return None
         text = raw.decode("utf-8")
     except (OSError, ValueError):
         return None

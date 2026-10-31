@@ -146,6 +146,14 @@ pytest 回执和 terminal，共十四份 JSON（十二份主要文件）。当�
 | A9 | A1、完整 A2、A3 |
 | A10 | A1、完整 A2、A3、A6 |
 
+A8、A9 不把规格、README、术语与现状 Contract 作为整文件固定材料；原组的
+history、需求与覆盖材料、源码、测试和 fixture 仍核验实际字节。A9 的
+`provenance_replay` 由 Read 上下文实现、固定上下文测试与
+[Read 历史覆盖](../verification/contracts-read-validation-history.md)承载；writer
+核验该 history 的哈希及原有 42 条故事、21 项实现决策、20 项测试决策编号，
+不读取现状 Read Contract 来决定历史覆盖是否成立。活文档仍进入运行的完整工作树
+身份；编辑后旧 run 的适用性仍为 `different`。
+
 各组详细证明范围与测试材料见[离线验证证据](../verification/offline-evidence.md)，
 查询不补跑检查、不刷新 scope 或需求映射。同次必需结论缺失、失败、篡改、不完整或格式
 不受支持时，历史成功不能补位。自动化核对当前集成树时，须等待真实完整入口退出 0，

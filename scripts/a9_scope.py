@@ -580,43 +580,9 @@ REQUIRED_FIXTURE_FILES = (
         "examples/contracts/screening/boundary/v1/manifest.json",
         "5efa0aec0e41329fe8736dcd533706309fd9c3717aeac14ddbf55d05cce0ed0b",
     ),
-    ("README.md", "182b43f5d62898f8aa0261d20f80d3c1e0068d1b0f8a53c786f7c266f2d9a277"),
-    ("GLOSSARY.md", "8864217fad4e0174398d314230155e145ee9b82185c0af5cf2769e38c88fc4d7"),
-    (
-        "intent/draft.md",
-        "1c6afa02e0bb16cb29263db3ea10d06255489aeea224eb6150bcf4c983f99f9d",
-    ),
-    (
-        "docs/contracts/read-validation.md",
-        "7410da94bcf956f8624ae9d40b931b8fd6002d254e47fb62530391c015b7d458",
-    ),
     (
         "docs/verification/a9-scope-review.md",
         "df26042232b218c2369ce2a231b8713c3c47b9089b4de45f9c71c22213be448e",
-    ),
-    (
-        "docs/contracts/frozen-contracts.md",
-        "1bd49925125e5abc7c6ef1958a81900693b5095eda1ac6b33b317108fdaf3b00",
-    ),
-    (
-        "docs/contracts/runtime-config.md",
-        "9ba9c6321680611cf4bd7dd7d9c88b3ea504f2047615d5371e85ee25498089dc",
-    ),
-    (
-        "docs/contracts/config-projections.md",
-        "056d061d8ebf73f999ce2f5615d6032f9f8855b2b2ddcc7ed4f8bc04dd9d0f85",
-    ),
-    (
-        "docs/contracts/config-snapshots.md",
-        "2fc1940a9ad110f97447cad369dd49354b4940417d558543035213e8e8201402",
-    ),
-    (
-        "docs/contracts/verification-status.md",
-        "f485b6b6ebad3cf7791f69834fa0a00617b108a35ead4e74894100e7f0b826e8",
-    ),
-    (
-        "docs/contracts/backup-restore.md",
-        "accd5a6e259eac637dcb834b34288e1efe4914915ba66c7ef88d5aaf486dcc6a",
     ),
     (
         "docs/verification/offline-evidence.md",
