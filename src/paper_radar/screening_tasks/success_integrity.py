@@ -9,6 +9,7 @@ from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.frozen import load_frozen
 from paper_radar.screening_tasks.rules import is_stage
 from paper_radar.screening_tasks.success import SuccessService
+from paper_radar.screening_tasks.success_references import validate_execution_reference
 from paper_radar.screening_tasks.success_rules import (
     decode_issues,
     encode_issues,
@@ -103,6 +104,15 @@ def validate_successes(service: SuccessService, connection: Connection) -> None:
                 and re.fullmatch(r"[0-9a-f]{64}", row["submission_sha256"]) is not None
             )
             candidate = stored_candidate(b"", row["audit_json"])
+            if candidate.execution_audit is not None:
+                validate_execution_reference(
+                    service.attempts.database,
+                    connection,
+                    task_id=row["task_id"],
+                    attempt_no=row["attempt_no"],
+                    audit=candidate.execution_audit,
+                    reason=TaskReason.CORRUPT_REFERENCE,
+                )
             budget = dict(
                 connection.execute(
                     select(budgets)
