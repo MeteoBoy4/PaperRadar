@@ -29,8 +29,10 @@ CAPABILITIES = (
         "pi_adapter",
         "Pi 适配器就绪检查",
         "Pi/Cwd/Live",
-        "启动器未交付；cwd 白名单与现场隔离未验。另用 doctor --scope pi-supply "
-        "--database <库> --snapshot <引用> 诊断供给。",
+        "执行资源已提供；现场隔离与 Cwd/Live 准入证据未验。"
+        "另用 doctor --scope pi-supply "
+        "--database <库> --snapshot <引用> 诊断供给；"
+        "用 --scope pi-exec 加显式 --credentials-dir 诊断执行阻断。",
     ),
     ("calibration", "校准就绪检查", "D", "配置 Profile/模型并完成正式校准。"),
     ("auto_read", "自动精读门禁", "D/G", "核实校准门禁与自动名额。"),

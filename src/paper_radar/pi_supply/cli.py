@@ -53,7 +53,7 @@ class DoctorCommand(TyperCommand):
     def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
         if not args:
             typer.echo(
-                "请显式选择 --scope basic/config/pi-supply；"
+                "请显式选择 --scope basic/config/pi-supply/pi-exec；"
                 "查看 paper-radar doctor --help。",
                 err=True,
             )
@@ -399,12 +399,15 @@ def activate_command(
     )
 
 
-DOCTOR_HELP = """只读诊断显式选定的 basic/config/pi-supply 范围。
+DOCTOR_HELP = """只读诊断显式选定的 basic/config/pi-supply/pi-exec 范围。
 
 参数与选项：--scope 与 --database 必填；basic 不接受配置选择；config 必须恰选
---settings 或 --snapshot；pi-supply 仅接受 --snapshot。无默认 scope 或隐式最新。
-副作用：basic/config 只读迁移与显式配置；仅 pi-supply 读取供给引用闭包与现场全树哈希。
-不运行程序、不联网、不读取凭据、不保存快照、不创建日志或目录。
+--settings 或 --snapshot；pi-supply 仅接受 --snapshot；pi-exec 必须显式
+--snapshot 与 --credentials-dir。无默认 scope 或隐式最新。
+副作用：basic/config 只读迁移与显式配置；
+pi-supply/pi-exec 读取供给引用闭包与现场全树哈希。
+pi-exec 只查凭据元数据和本机隔离能力；Cwd/Live 证据缺失或必要项未验即退出 2。
+不运行程序、不联网、不读取凭据内容、不保存快照、不创建日志或目录。
 输出去向：终端分别显示当前匹配、配置缺项、历史现场、保留保护与未验证能力。
 基础或选择层失败返回 2；阶段 missing 不改变退出码；0 不代表任何阶段可运行。
 供给必需项缺失、损坏或实际树超过四棵时返回2；0仅表示该scope通过。
@@ -418,7 +421,7 @@ Profile/模型/Read配置缺项单独披露，不代表全项目就绪；不授�
 
 def doctor_command(
     scope: Annotated[
-        str, typer.Option("--scope", help="显式范围：basic/config/pi-supply。")
+        str, typer.Option("--scope", help="显式范围：basic/config/pi-supply/pi-exec。")
     ],
     database: Annotated[
         Path, typer.Option("--database", help="既有数据库，只读打开。", readable=False)
@@ -432,23 +435,48 @@ def doctor_command(
             "--settings", help="显式 settings，只读检查，不保存快照。", readable=False
         ),
     ] = None,
+    credentials_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--credentials-dir",
+            help="Pi 执行专用凭据目录，仅检查元数据。",
+            readable=False,
+        ),
+    ] = None,
 ) -> None:
-    if scope not in {"basic", "config", "pi-supply"}:
+    if scope not in {"basic", "config", "pi-supply", "pi-exec"}:
         typer.echo(
-            "诊断范围无效；请显式使用 --scope basic/config/pi-supply。", err=True
+            "诊断范围无效；请显式使用 --scope basic/config/pi-supply/pi-exec。",
+            err=True,
         )
         raise typer.Exit(2)
     if (
         (scope == "basic" and (settings is not None or snapshot is not None))
         or (scope == "config" and ((settings is None) == (snapshot is None)))
-        or (scope == "pi-supply" and (settings is not None or snapshot is None))
+        or (
+            scope in {"pi-supply", "pi-exec"}
+            and (settings is not None or snapshot is None)
+        )
+        or (scope == "pi-exec" and credentials_dir is None)
+        or (scope != "pi-exec" and credentials_dir is not None)
     ):
         typer.echo(
             "配置选择无效；config 恰选 --settings 或 --snapshot；"
-            "pi-supply 必须仅选 --snapshot；basic 无需选择。",
+            "pi-supply 必须仅选 --snapshot；pi-exec 必须选 --snapshot 与 "
+            "--credentials-dir；basic 无需选择，其他范围不接受凭据目录。",
             err=True,
         )
         raise typer.Exit(2)
+    if scope == "pi-exec":
+        from paper_radar.doctor.pi_exec import diagnose_execution
+
+        assert snapshot is not None and credentials_dir is not None
+        try:
+            diagnose_execution(database, snapshot, credentials_dir)
+        except KeyboardInterrupt:
+            typer.echo("只读诊断中断；请重试。", err=True)
+            raise typer.Exit(130) from None
+        return
     if scope in {"basic", "config"}:
         from paper_radar.doctor.cli import diagnose
 

@@ -137,13 +137,13 @@ SHARED_MATERIALS = {
         "ca0eccbe1b49772e9376172c489e129fef98743a79e12b566a2b6dad33534e4d"
     ),
     "src/paper_radar/cli.py": (
-        "ee2e1dc3ac969aa30c74989bb0b19bf7ad30c5b404a894bc5e73b4dca8d23689"
+        "584d6560d20ddcd7ca6c8fe2f4a73e5b3fb43f2b2499cf5b96594ee6a7f4b50e"
     ),
     "src/paper_radar/config/__init__.py": (
         "e8e1844c436c97d48bfca7341cfc855502917767bc8da9e6924c3c12d0b9e4f1"
     ),
     "src/paper_radar/config/adapter_loading.py": (
-        "473a830cef0b15e4c63c387c7e5d386cc167ca1b18e27a5f203ce8eabdd80072"
+        "8134aa6313a3566be651424db347408d6a0327e2ef1593493251b15cf915ddde"
     ),
     "src/paper_radar/config/adapters.py": (
         "09eba6119e74e25d50e493281d00c4ec978ce4e5e874bed7731d1822d92f1c3a"
@@ -152,7 +152,7 @@ SHARED_MATERIALS = {
         "1bbec637e1017146c595f3aba6bf6b616e067bb20df48581b3d1ac28558c986f"
     ),
     "src/paper_radar/config/compile.py": (
-        "58cc5454dfe5e662f0e7eef0f884c2b562891f9ae7b0a709fbf78984eb81654e"
+        "6da7f52b929c3e0246fe97bee0cb209ef06be2c7d126f9d2cd8d735622c4268b"
     ),
     "src/paper_radar/config/diff.py": (
         "add553638b26d691e1f8ca7fb69261347a5dfff00b5b34288cf8f866f0810b5d"
@@ -182,7 +182,7 @@ SHARED_MATERIALS = {
         "8eeb3287a83bd0cfc8c7e7cd64b67b39cbf82b06fbfbd613cb4208f46b65060a"
     ),
     "src/paper_radar/config/material_assembly.py": (
-        "42223faf33b7e05519164909cfe111639d8f7d8dfe0c2bf26252da7f20f9d894"
+        "5c9c63dd804b6cfe7b28da60ff8ac220d2fb36529ef42768de31e0dc05059482"
     ),
     "src/paper_radar/config/material_names.py": (
         "3b9d6d1317ceb2fcaf6f4a27a03a17a1489856009e18a853c7fa08c5204cc959"
@@ -197,7 +197,7 @@ SHARED_MATERIALS = {
         "5b948021ef13dcc628d56f1e6b9736292b0b121a7f07df7833a5e6f00a098b37"
     ),
     "src/paper_radar/config/schema.py": (
-        "ef445b8335f8c7b9828921d43a6cf116168cb7f2aea06ac1b6f1985f33570bc4"
+        "84b5cbcc527c5f291cba50bf4cf83aa652c94040a822d051968811541fb5fb7b"
     ),
     "src/paper_radar/config/service.py": (
         "4701cf2b828347671ed6ee939ee1f41743860989d3041331ed9ab37a78424aa9"
@@ -236,7 +236,7 @@ SHARED_MATERIALS = {
         "a52553e700aa7a06f69c45c90052ffb813db6319c90d4a9fd39173767af3b9d9"
     ),
     "src/paper_radar/llm/models.py": (
-        "e797ee78cfae739a5d705d5d25ee406e2d43e57511f82364bfa6cacd10a44a64"
+        "1b76045e1ca56dd94cd412da1ff1a1ca37c9765f09fe5f489dd2e84a09a7280e"
     ),
     "src/paper_radar/papers/__init__.py": (
         "2db5994c8f0a7b00bfd205a739e0f32e96b8769a75c185725335710c3c5fec36"
@@ -326,7 +326,7 @@ SHARED_MATERIALS = {
         "79d07bb9aea0a0aeb568f050eab1ef261d5db1aec6f44ed283d136f36bdbd392"
     ),
     "src/paper_radar/pi_supply/cli.py": (
-        "78a2d6b98fce25658f8905212b3b7f9ee50406964fa1fff560bde2d677077046"
+        "fdb7dc415f7dffd77689bcd236003222ab114cbb946c9de3a69c2596c50ae1f5"
     ),
     "src/paper_radar/pi_supply/errors.py": (
         "be0cb07450ba8ddd01e534683e079357146261886e85e3402b99893010cd7754"
@@ -422,7 +422,7 @@ SHARED_MATERIALS = {
         "7a6d1be2b56745e15d074575b7cc4f9f9ae0e4fed3a8409cf098fac0751b5b85"
     ),
     "src/paper_radar/screening_tasks/__init__.py": (
-        "40404febc4166e5af5953e5d3fb232b2f27dc14de9a385168b7218a72d6b96d4"
+        "dc13d29177723406c86a03b062ed898b849d798b374b6e8f8a8c4471af49a71d"
     ),
     "src/paper_radar/screening_tasks/attempt_integrity.py": (
         "a1cc83d965132feab740fcc6ebb4302e349166db1ed9f17c98630b33b5a4c0fc"
@@ -473,16 +473,16 @@ SHARED_MATERIALS = {
         "9313f4f895804662168517c1cfcb9bf5c9593354dbec53b855230513eeb75965"
     ),
     "src/paper_radar/screening_tasks/success.py": (
-        "40fd7a960eeaa0033f84a7e5d9736d9fbe2a3ac00722e644bb5037bc95716190"
+        "141e8cb16bfeebe6d1bff893ba6899eed63237f2e32d5fda82ace3f0de02ebda"
     ),
     "src/paper_radar/screening_tasks/success_integrity.py": (
-        "d3498f9fe0ca4c7c1d02aceace45e01898edb9d53a363dc96e4ffc7474f17859"
+        "907353d6b4397de05691f5a5b0f8a56d5b2cae45bf581babbb4e6e53b52301bb"
     ),
     "src/paper_radar/screening_tasks/success_models.py": (
-        "b948822f22c23219548b8dbbd8500b6a6889563bede7be170b94c9afe9ac7faf"
+        "45aa125007f447a348210d4d4b1183240565022ac54bda0f8fae80e68efba9e9"
     ),
     "src/paper_radar/screening_tasks/success_rules.py": (
-        "f1d5e40a5c814d4a55ba0c63435c7c52325d5113681ec2d451cde3deef8d4ea6"
+        "f9e615a4cb1e4a6b7f3dadcba7ea2cd74589b2d997e64c9ba3862f79cf234338"
     ),
     "src/paper_radar/screening_tasks/tables.py": (
         "fdd3045c423fa2609bee7303192443d24c020cf36c54cba50710e2cc167b0f51"

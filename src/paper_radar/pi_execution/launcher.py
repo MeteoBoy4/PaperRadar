@@ -24,6 +24,7 @@ from paper_radar.pi_execution.resources import (
     LAUNCH_POLICY_VERSION,
     AttemptResources,
     ExecutionRoots,
+    check_auth_mode,
     check_credentials_directory,
     check_cwd,
     check_system_prompt,
@@ -202,8 +203,7 @@ def prepare_launch(
     auth_timeout: float = 30,
 ) -> Iterator[PreparedLaunch]:
     """领取前刷新是唯一允许的宿主写回;不创建 attempt 或模型会话。"""
-    if auth_mode != "chatgpt_subscription" or description.provider != "openai":
-        raise ExecutionError("auth_mode_unsupported")
+    check_auth_mode(description.provider, auth_mode)
     if any(
         not math.isfinite(value) or value <= 0
         for value in (attempt_timeout, auth_timeout)

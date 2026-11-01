@@ -16192,6 +16192,7 @@
         "docs/contracts/fixture-audit.md",
         "docs/contracts/frozen-contracts.md",
         "docs/contracts/paper-facts.md",
+        "docs/contracts/pi-execution.md",
         "docs/contracts/pi-rpc.md",
         "docs/contracts/pi-supply.md",
         "docs/contracts/read-validation.md",

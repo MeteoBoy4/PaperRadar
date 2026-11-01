@@ -556,7 +556,7 @@ gc 执行结果 incomplete 返回 2。所有供给操作消耗 0 次模型自动
 - 固定供给不承诺脱网重建或远端大包永久可得，不导出安装树、Node/npm 大包、认证或完整会话。
   历史事实与小型材料回放不依赖安装树。
 - 有界无模型启动和安装 flock 不构成生产 OS 隔离，也不识别共用原根的另一个空闲活动库副本。
-  生产启动器与权限资源责任见[Pi](../roadmap.md#module-pi)，现场隔离责任见[Cwd](../roadmap.md#module-cwd)。
+  受控启动器与权限资源见[执行契约](pi-execution.md)，现场隔离责任见[Cwd](../roadmap.md#module-cwd)。
 
 <a id="b-首次生产供给目标111"></a>
 

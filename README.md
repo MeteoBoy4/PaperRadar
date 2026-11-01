@@ -84,6 +84,16 @@ uv run --offline --locked paper-radar doctor --scope pi-supply \
 ```
 
 四态结论区分缺失、非法、所检范围通过与未检查；退出 0 不代表任何阶段可运行。
+`pi-exec` 需要显式选择，退出 2 会逐项解释执行阻断：
+
+```bash
+uv run --offline --locked paper-radar doctor --scope pi-exec \
+  --database data/paperradar.sqlite3 --snapshot <id> \
+  --credentials-dir /path/to/owner-provisioned-credentials
+```
+
+它仅检查凭据元数据，不刷新、不解析 token；Cwd/Live 产品证据仍缺失，单项通过不代表可执行。
+
 doctor/help 不建库或日志，不调用网络、模型或 Docling。选择规则、六阶段 readiness、
 外发说明和证明边界见 [doctor Contract](docs/contracts/doctor.md)。
 
@@ -366,7 +376,7 @@ uv run --offline --locked paper-radar pi supply gc --execute <plan_id> \
 `paper_radar.pi_execution` 提供固定安装保护、宿主专用 OAuth 刷新、独立 attempt 资源与
 Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接口与权限见
 [Pi 执行资源契约](docs/contracts/pi-execution.md)，独立测试范围见
-[#141 台账](docs/verification/issue-141-pi-launch.md)。真实 cwd、订阅认证、TLS/DNS、参数和
+[#140 独立组合台账](docs/verification/issue-140-pi-delivery.md)。真实 cwd、订阅认证、TLS/DNS、参数和
 Pi 1.4.0 兼容仍未验证；缺少 Cwd/Live 证据时产品执行保持阻断。
 真实执行接线的承接入口见[路线图承接索引](docs/roadmap.md#模块承接索引)。
 
