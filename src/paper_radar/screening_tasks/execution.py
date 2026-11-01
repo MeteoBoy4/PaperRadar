@@ -1,6 +1,6 @@
 """执行编排:事务外映射,数据库短事务串行化领取与租约。"""
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -13,6 +13,7 @@ from paper_radar.papers import PaperFacts, resolve_revision
 from paper_radar.runtime_logging import RuntimeLog
 from paper_radar.screening_tasks.attempt_models import (
     ATTEMPTS_PER_GENERATION,
+    AttemptRow,
     Claim,
     Clock,
     FailureKind,
@@ -74,7 +75,13 @@ class AttemptService:
             except (ValueError, TypeError, KeyError, OverflowError):
                 raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
 
-    def claim(self, receipt: RequestReceipt, frozen: FrozenInput) -> Claim:
+    def claim(
+        self,
+        receipt: RequestReceipt,
+        frozen: FrozenInput,
+        *,
+        preclaim: Callable[[str | None], None] | None = None,
+    ) -> Claim:
         # 时钟错误与指纹变化都先于领取事务,不会占用预算。
         now = utc_now(self.clock)
         mapping = PaperFacts(self.database).map_screening_inputs(
@@ -106,12 +113,19 @@ class AttemptService:
                 is not None
             ):
                 raise TaskError(TaskReason.ALREADY_SUCCEEDED)
+            if (
+                existing
+                and existing[-1]["kind"] is None
+                and now < read_timestamp(existing[-1]["expires_at"])
+            ):
+                raise TaskError(TaskReason.TASK_RUNNING)
+            number = len(existing) + 1
+            if preclaim is not None and number <= ATTEMPTS_PER_GENERATION:
+                # 同连接读取并验证将实际执行的修正;拒绝先于回收与预算写入。
+                preclaim(self._correction(existing, recover=True))
             if existing and existing[-1]["kind"] is None:
-                if now < read_timestamp(existing[-1]["expires_at"]):
-                    raise TaskError(TaskReason.TASK_RUNNING)
                 recover_attempt(connection, existing[-1], now)
                 recovered = existing[-1]["attempt_no"]
-            number = len(existing) + 1
             if number <= ATTEMPTS_PER_GENERATION:
                 if existing and now < read_timestamp(
                     existing[-1]["settled_at"] or timestamp(now)
@@ -157,14 +171,27 @@ class AttemptService:
             rows = read_attempts(connection, receipt.task_id)
             return derive_status(receipt.task_id, rows, now)
 
-    def correction(self, receipt: RequestReceipt) -> str | None:
+    def correction(
+        self, receipt: RequestReceipt, *, for_claim: bool = False
+    ) -> str | None:
         with self.connection(write=False) as connection:
             rows = read_attempts(connection, receipt.task_id)
-            previous = next(
-                (row for row in reversed(rows) if row["kind"] is not None), None
+            recover = (
+                for_claim
+                and bool(rows)
+                and rows[-1]["kind"] is None
+                and rows[-1]["success_id"] is None
+                and utc_now(self.clock) >= read_timestamp(rows[-1]["expires_at"])
             )
-            if previous is None or previous["kind"] is None:
-                return None
+            return self._correction(rows, recover=recover)
+
+    @staticmethod
+    def _correction(rows: Sequence[AttemptRow], *, recover: bool) -> str | None:
+        previous = next(
+            (row for row in reversed(rows) if row["kind"] is not None), None
+        )
+        message = None
+        if previous is not None and previous["kind"] is not None:
             message = correction_for(FailureKind(previous["kind"]))
             issues = decode_issues(previous["issues_json"])
             if issues:
@@ -175,7 +202,9 @@ class AttemptService:
                         f"{issue.location} [{issue.category.value}]" for issue in issues
                     )
                 )
-            return message
+        if recover and rows and rows[-1]["kind"] is None:
+            return correction_for(FailureKind.OUTCOME_UNKNOWN)
+        return message
 
     def renew(self, handle: str) -> datetime:
         require_secret(handle)

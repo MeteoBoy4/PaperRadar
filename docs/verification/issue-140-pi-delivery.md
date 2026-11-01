@@ -22,13 +22,27 @@
 | `tests/test_pi_execution_feed.py` | 1 | boundary→实际本机合成 RPC→pi_rpc 权威接收→Feed 生产 value 登记→value 成功→查询/备份/隔离恢复；新执行缺证据零领取 |
 | `tests/test_doctor_pi_exec.py` | 31 | 独立冷进程 import/help/用法、显式 snapshot/凭据选择、四态、缺失/损坏/版本/采样/模型、只读和无泄漏；cwd 共享规则 |
 | `tests/test_pi_execution_integration.py` | 3 | 真实本机合成成功恢复；原安装消失与当前证据失效均阻断独立新论文、预算不变；审计 install/Pi 版本损坏拒绝查询及备份 |
-| 合计 | 182 | S1=36、S2=44、S3=68、S4=34；不计支撑文件或复用历史回归 |
+| `tests/test_pi_execution_review.py` | 10 | 接管中断及目录清理失败的优先级；含修正帧超限、过期回收、认证期间事实变化；同事务修正与执行者一致 |
+| 合计 | 192 | S1=36、S2=44、S3=68、S4=34、双轴审阅回归=10；不计支撑文件或复用历史回归 |
 
 新增支撑为 `tests/pi_execution_support.py`、`tests/pi_rpc_source_support.py`、
 `tests/pi_execution_service_support.py`、`tests/pi_execution_rpc_peer.py` 与
 `tests/doctor_pi_exec_guard/sitecustomize.py`。没有修改历史 A7/A8 test/helper/count。
 S1–S3 的按次证明分别见 [S1](issue-141-pi-launch.md)、[S2](issue-142-pi-rpc-source.md)、
 [S3](issue-143-pi-execution.md)；它们不能代替最终合并树验证。
+
+审阅回归逐节点：
+
+- `test_adoption_interruption_reaps_process_and_resources_but_keeps_lease`：
+  KeyboardInterrupt/SystemExit × 正常删除/删除拒绝共4例，真实 Popen 的进程组与管道
+  均已回收；正常删除不留目录，删除拒绝明确保留残留，原中断与未结算租约不变。
+- `test_correction_overflow_is_rejected_before_claim_without_task_effects`：
+  既有 timeout、已过期、认证期间 timeout 结算、认证期间到期共4例。初始合法大帧
+  加权威修正后超限，在领取/回收写入前拒绝，任务查询、次数、失败/成功与日志不变，
+  无模型会话；后两例仅发生既定允许的认证刷新。
+- `test_valid_preclaim_uses_same_authoritative_correction_as_executor`：timeout/
+  expired 共2例，只读预览不写事实；合法校验后第二次领取、过期回收和执行者使用
+  同一权威修正，预算不重置。默认 A7/A8 接缝与冻结计数保持。
 
 ## 最终 C2 收缩与 C3/C4 归属
 
@@ -87,23 +101,43 @@ C3/C4 逐项归属：
 
 ## 开发期验证
 
-相关组合覆盖上述11个新模块及 doctor、Feed、供给保护、配置黄金身份/投影和
+S1–S4集成时，相关组合覆盖当时11个新模块及 doctor、Feed、供给保护、配置黄金身份/投影和
 A8 call/preflight/lifecycle/pipes/架构的既有回归：**542 passed**，170.62秒。
 命令统一 `uv run --offline --locked pytest -q`，精确选择与原始日志留工作树外。
-新D1单独 collect：**182 tests collected**；不等于正式组回执。
+当时新D1单独 collect：**182 tests collected**；不等于正式组回执。
 CLI注册/帮助/导入链触发 `./scripts/check-compatibility cli`：**59 passed**，退出0，
 入口总耗时67.39秒。未触及验收发布/回执接线，因此不扩为acceptance/all。
 相关19个Python文件Ruff检查、格式检查和mypy全部通过。拆出凭据元数据检查后，
 保留原四根检查的受控OSError转换；最终metadata/doctor子集再次**46 passed**。
 
+双轴审阅修复先取得接管中断、含修正帧超限、清理失败中断优先级的修前失败，
+再修实现。最终相关组合包括全部12个D1模块、受影响A7领取/成功/retry/恢复、
+A8调用/协议/候选/管道/生命周期/恢复，以及日志/Feed/供给保护：
+**898 passed**，329.31秒；最终测试类型收窄后的新回归再验 **10 passed**，7.79秒。
+D1独立收集为 **192 tests collected**，没有加入历史分母。
+服务导入链触发CLI组合 **59 passed**，退出0，入口67.20秒；未触及验收发布/回执接线，
+不触发acceptance/all。全仓Ruff、格式检查及mypy通过（741个source文件）；
+纯哈希登记更新后该文件Ruff/格式再次通过。精确选择、修前/修后日志及审计留树外，
+这些开发期结果不能替代最终冻结integration树的完整门禁。
+
 ## 固定登记审阅
 
-稳定 main 基线没有 baseline_drift。只更新15条实际 source 哈希：中央共享12条
+稳定 main 基线没有 baseline_drift。S1–S4集成更新15条实际 source 哈希：中央共享12条
 （cli；config 的 adapter_loading/compile/material_assembly/schema；llm/models；
 pi_supply/cli；screening_tasks 的 __init__/success/success_integrity/success_models/success_rules），
 A8 单组3条（llm/calls、rpc、rpc_messages）。成员、用途、测试计数、fixture、negative、
 required 与显式 DAG 不变；不恢复 scope 哈希边。精确 group/path/旧新 SHA 的白名单
 与最终身份确认保存在工作树外审计报告，最终合并身份须重新确认。
+
+双轴审阅修复另只重绑中央 `screening_tasks/execution.py` 与 `screening_tasks/service.py`
+两条 source：前者拥有只读/领取事务内同源修正，后者增加公开预览及可选纯校验接缝。
+直接登记组为 A7/A10，下游影响 A8/A9；均只改 source 哈希。累计17条实际 source
+（中央14条、A8单组3条），历史成员、用途、测试字节/计数、fixture、required与DAG不变。
+旧S1/S2/S3按次台账保持原字节，10条新回归仅在本台账独立登记，不加入历史组。
+无确认审计只允许既有分类控制变化的11组 `confirmation_required`；它会使
+`--collect` 保持 `not_run/audit_failed`，不能冒称已收集通过。最终 root 在最终
+合并身份逐组重新确认后再收集。登记计数逐条对照前次集成的289条固定计数保持相同，
+本次D1的192条独立收集不替代历史组收集或正式回执。
 
 分类控制仅把新增现状契约 `docs/contracts/pi-execution.md` 加入 live_documents 精确路径。
 它维护当前已实现接口与权限细节，符合其他现状 Contract 的分类；ADR、D1台账、历史快照、

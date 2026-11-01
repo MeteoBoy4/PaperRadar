@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import overload
@@ -114,6 +114,10 @@ class ScreeningTasks:
     def status(self, receipt_id: str) -> TaskStatus:
         return self._attempts.status(self.get_receipt(receipt_id))
 
+    def prepare_correction(self, receipt_id: str) -> str | None:
+        """只读预览下一次领取的受控修正,含过期回收;不回收或预留预算。"""
+        return self._attempts.correction(self.get_receipt(receipt_id), for_claim=True)
+
     def renew(self, handle: str) -> datetime:
         return self._attempts.renew(handle)
 
@@ -164,18 +168,30 @@ class ScreeningTasks:
 
     @overload
     def run_once(
-        self, receipt_id: str, executor: FailureExecutor
+        self,
+        receipt_id: str,
+        executor: FailureExecutor,
+        *,
+        preclaim: Callable[[str | None], None] | None = None,
     ) -> FailureReceipt: ...
 
     @overload
     def run_once(
-        self, receipt_id: str, executor: TestExecutor
+        self,
+        receipt_id: str,
+        executor: TestExecutor,
+        *,
+        preclaim: Callable[[str | None], None] | None = None,
     ) -> FailureReceipt | SuccessReceipt: ...
 
     def run_once(
-        self, receipt_id: str, executor: TestExecutor
+        self,
+        receipt_id: str,
+        executor: TestExecutor,
+        *,
+        preclaim: Callable[[str | None], None] | None = None,
     ) -> FailureReceipt | SuccessReceipt:
-        if not callable(executor):
+        if not callable(executor) or (preclaim is not None and not callable(preclaim)):
             raise TaskError(TaskReason.INVALID_REQUEST)
         receipt = self.get_receipt(receipt_id)
         with self.log.operation(
@@ -186,7 +202,7 @@ class ScreeningTasks:
             stage=receipt.stage,
             fingerprint=receipt.fingerprint,
         ):
-            return self._run_once(receipt, executor)
+            return self._run_once(receipt, executor, preclaim=preclaim)
 
     def _task_event(self, event: str, claim: Claim, **fields: object) -> None:
         if isinstance(self.log.sink, NullSink):
@@ -207,13 +223,17 @@ class ScreeningTasks:
             warn_once()
 
     def _run_once(
-        self, receipt: RequestReceipt, executor: TestExecutor
+        self,
+        receipt: RequestReceipt,
+        executor: TestExecutor,
+        *,
+        preclaim: Callable[[str | None], None] | None = None,
     ) -> FailureReceipt | SuccessReceipt:
         frozen = self.load_input(receipt.receipt_id)
         # 先拒绝已有修正依据损坏;领取可能回收过期尝试,提交后需重读实际修正。
         self._attempts.correction(receipt)
         self._success.store().prepare_publish()
-        claim = self._attempts.claim(receipt, frozen)
+        claim = self._attempts.claim(receipt, frozen, preclaim=preclaim)
         self._task_event("claimed", claim)
         self.log.bind(attempt=claim.attempt_no)
         stage_input = frozen.stage_input

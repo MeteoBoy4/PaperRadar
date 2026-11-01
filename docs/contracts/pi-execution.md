@@ -22,7 +22,9 @@
 会话沿用 `PipeSession` 的独立进程组、二进制有界管道和整组回收规则。
 `terminate` 成功回收整组之后才删除该 attempt 的私有目录；清理失败向上返回失败，不能产生成功。
 上下文退出再次确保回收，然后释放安装保护。子进程继承安装保护 fd，父句柄 close 不能替活子进程解锁。
-Popen 成功而 PipeSession 拒绝接管时，启动器仍负责有界组回收与管道关闭。
+Popen 成功而 PipeSession 拒绝接管时，启动器仍负责有界组回收与管道关闭，确认回收后
+删除本次私有目录。接管时的 KeyboardInterrupt/SystemExit 保留中断语义；目录删除
+失败不把中断改结算为普通执行失败，残留目录不视为清理成功。
 
 `LaunchIdentity` 只包含供给、安装、Pi/Node 版本、启动/隔离策略版本、声明认证来源以及
 `proxy_used`/`proxy_port`。不包含 prompt、模型输入、凭据目录、代理 URL、token 或任何 token 派生值。
@@ -151,8 +153,10 @@ credentials_dir, auth_mode, proxy=None, sink=None, clock=None)` 提供显式回�
 B 后续产品入口承担所选根的文件日志与入口守卫。
 
 只读 `prepare_call(tasks, receipt_id)` 通过公共 load_input/load_config_snapshot/build_call
-取得预算首次语义与本回执审计；核对同阶段投影而非完整 snapshot ID。随后验证实际外层
-RPC 帧、系统指令路径和单参数 argv 上限、超时界限、采样映射与当前激活供给事实。
+取得预算首次语义与本回执审计；核对同阶段投影而非完整 snapshot ID。通过
+`ScreeningTasks.prepare_correction` 只读取得本次领取的受控修正（含将要发生的过期
+回收），验证包含该修正的实际外层 RPC 帧、系统指令路径和单参数 argv 上限、超时
+界限、采样映射与当前激活供给事实。修正文案及脱敏字段路径由任务服务唯一构造。
 `admission.EvidenceBinding` 把 supply/install、启动/隔离策略、cwd 段、provider/model/
 thinking、sampling/两参数、protocol_profile、auth_mode 绑定到同一证据。
 纯 `admit(binding, evidence)` 返回封闭原因或 None，`read_evidence` 产品恒为 None。
@@ -164,6 +168,9 @@ thinking、sampling/两参数、protocol_profile、auth_mode 绑定到同一证�
 匹配同一绑定，防止选择在预检与取得间切换。保护从准备、auth 到 run_once 返回及整组
 回收持续持有。prepare_launch 的只读资源检查和受控 auth 刷新失败仍在领取前；唯一
 宿主副作用仍是专用凭据目录刷新。其余预检失败无任务/预算/失败行/成功/任务日志副作用。
+`run_once(..., preclaim=...)` 在领取事务中用同连接的最新修正再次核验实际帧，先于
+过期回收及预算写入；认证期间前次尝试结算或到期也不能绕过。拒绝不提交回收事实或
+任务日志；已发生的受控认证刷新仍仅属既定宿主例外。
 领取后工厂复核 cwd/树，创建独占资源和隔离，再启动一次会话；这些失败按
 startup_error→executor_error 消耗 attempt。RPC timeout/cancelled/environment/protocol
 分别沿既有 timeout/cancelled/executor_error/protocol_error 结算，不重发或 fallback。
