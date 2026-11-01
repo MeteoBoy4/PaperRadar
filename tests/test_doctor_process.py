@@ -144,7 +144,7 @@ def test_help_and_usage_errors_have_no_io_or_sensitive_echo(
     assert result.returncode == (0 if args == ("--help",) else 2)
     assert "SECRET" not in result.stdout + result.stderr
     if args in {(), ("--help",)}:
-        assert "basic/config/pi-supply" in result.stdout + result.stderr
+        assert "basic/config/pi-supply/pi-exec" in result.stdout + result.stderr
     assert inventory(tmp_path) == ()
 
 

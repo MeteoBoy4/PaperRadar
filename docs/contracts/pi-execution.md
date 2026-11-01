@@ -2,7 +2,13 @@
 
 本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。没有执行 CLI，也不保存准入证据。产品缺少 Cwd/Live 证据时在领取前阻断；这里的合成对端通过不产生兼容 passed。
 
-## 资源所有权
+## 用途与范围
+
+本边界提供受控会话和一次 Screening 任务执行组合；只读诊断见 [doctor](doctor.md#pi-执行诊断)。
+
+## 规则
+
+### 资源所有权
 
 `prepare_launch(database, description, roots=ExecutionRoots(...), credentials_dir=..., auth_mode=...)` 是上下文管理器。
 它用 **本次回执审计 snapshot 完整 ID** `description.audit_snapshot_id` 调用既有 `use_install`。
@@ -22,13 +28,14 @@ Popen 成功而 PipeSession 拒绝接管时，启动器仍负责有界组回收�
 `proxy_used`/`proxy_port`。不包含 prompt、模型输入、凭据目录、代理 URL、token 或任何 token 派生值。
 它是受控执行身份，不是供应商测量、校准或生产用途许可；生产审计接收仍由上层权威负责。
 
-## 领取前与领取后
+### 领取前与领取后
 
 领取前只读检查：
 
 - `check_cwd()`：唯一权威常量 `/srv/pi-cwd`，没有公开 cwd 参数或默认回退；lstat 是真实目录、每个路径组件无符号链接、目录为空。测试只能私有替换模块常量。`/srv`、`/` 等祖先的现场 context 检查由 Cwd 承接。
 - `check_system_prompt(bytes)`：精确 UTF-8 文本，拒绝空值、NUL、绝对路径或首个路径组件为 `.`/`..`。每个 argv 的字节长度含末尾 NUL 不超过 131072；超限在模型启动之前拒绝。
-- `check_credentials_directory`：只查元数据，不读 auth 内容，不执行刷新，供 doctor 复用。
+- `check_credentials_directory`：只查元数据，不读 auth 内容，不执行刷新，执行服务另核对显式四根；doctor 复用其中 `check_credentials_metadata` 的路径/owner/类型规则，
+  根隔离有意标为 not_assessed。
 - `isolation_capability()`：Linux 已登记 syscall ABI，Landlock ABI≥4 且 ruleset 可创建。只创建内核描述符后立即关闭，不创建文件、不启动进程；不冒称实际 Node/TLS 可用。
 - 代理语法、provider/auth_mode 闭集、协议档案与有限正超时。
 - `use_install` 的供给与安装保护、平台和完整树检查。
@@ -41,7 +48,7 @@ Popen 成功而 PipeSession 拒绝接管时，启动器仍负责有界组回收�
 pre-exec 中再次核对 cwd 的无链接与为空条件；低于隔离能力要求或建立失败均不能无隔离降级。
 预检不是未来 I/O 成功的保证。
 
-## 启动策略 `pi-launch-1.4.0-v1`
+### 启动策略 `pi-launch-1.4.0-v1`
 
 模型进程固定 argv：
 
@@ -81,7 +88,7 @@ pre-exec 中再次核对 cwd 的无链接与为空条件；低于隔离能力要
 仅在该 attempt 的 settings 写 `httpProxy`，不把 URL 写入身份、日志或数据库。
 清理只删除 mkdtemp 登记的完整目录，不按宽泛前缀扫描或删除其他 attempt。
 
-## 宿主认证边界
+### 宿主认证边界
 
 首批只支持 `provider=openai`、`auth_mode=chatgpt_subscription`、
 `credential_source=owner_provisioned_dir`。
@@ -110,7 +117,7 @@ token 不进入 argv、attempt 文件、DB、审计、日志、repr；也不保�
 Python 内存引用在启动或上下文退出时释放，不承诺对不可变字符串物理清零。
 测试对端的 env/argv 观察只在测试进程内，不提供产品转储能力。
 
-## 隔离策略 `pi-landlock-v1`
+### 隔离策略 `pi-landlock-v1`
 
 Landlock ABI≥4；ABI≥6 追加 signal 与 abstract Unix socket scope。先设置 `no_new_privs` 再限制自身，
 不 fallback 到 bwrap 或未隔离运行。全部支持的文件访问权受控：ABI4 包含 refer/truncate，ABI≥5 包含 ioctl_dev；
@@ -134,7 +141,7 @@ TCP bind/connect 均默认拒绝，只给指定端口 connect 权限。
 Landlock 端口规则不限制主机，也不覆盖 UDP/DNS；主机级出站缺口由 Cwd/Live 承接。
 本机 ABI 与可观察拒绝测试仅证明本次工程环境，不能迁移成部署机隔离事实。
 
-## 一次任务执行组合
+### 一次任务执行组合
 
 `paper_radar.pi_execution.service.PiExecution(database, data_root, *, roots,
 credentials_dir, auth_mode, proxy=None, sink=None, clock=None)` 提供显式回执
@@ -173,10 +180,27 @@ KeyboardInterrupt/SystemExit 保留未结算租约；显式过期恢复记 outco
 构造 EvidenceBinding 并调用同一 admit，不虚构任务、不调用 prepare_launch 或 run_attempt。
 覆盖与未验边界见 [#143 台账](../verification/issue-143-pi-execution.md)。
 
-## 后续承接
+## 错误与拒绝
+
+错误只携受控 ExecutionReason，不附输入、路径、token 或外部异常。
+未支持采样为 sampling_mapping_unavailable，证据缺失/错配及三类未验分别保留共享准入原因；
+固定安装、cwd、凭据、隔离、代理、超时和指令非法在领取前拒绝。
+领取后 exec/隔离建立或 cwd/树变化统一沿 startup_error→executor_error 结算。
+RPC 四类映射和任务业务拒绝仍由各自权威处理，不新增失败类别或重试器。
+
+## 不提供／不证明
 
 本模块不解决 EXP-2。实际 cwd/祖先目录、固定 1.4.0 入口、订阅刷新、模型权限、参数能力、
 TLS/DNS、主机级出站、旗标/settings 的自动网络抑制和 RPC 兼容均未验。
 `provider_default` 不能当作 `temperature=0`，采样声明与校准取舍以 runtime-config 契约与[ADR-0040](../adr/0040-declare-provider-default-sampling.md) 为准；
 本模块不删除或注入 sampling 参数。
 覆盖分母与历史范围见 [#141 独立台账](../verification/issue-141-pi-launch.md)。
+
+## 相关
+
+依据：[#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终 B/N/C/D；
+[ADR-0039](../adr/0039-isolate-pi-with-landlock.md)、[ADR-0040](../adr/0040-declare-provider-default-sampling.md)。
+
+[供给](pi-supply.md)、[RPC](pi-rpc.md)、[Screening任务](screening-tasks.md)、
+[Feed组合](feed-pipeline.md)、[doctor](doctor.md)、
+[独立覆盖与收口判据](../verification/issue-140-pi-delivery.md)。

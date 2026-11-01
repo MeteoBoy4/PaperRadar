@@ -1325,7 +1325,9 @@ Read 专用变化保持既有范围。无自动门禁继承，订阅取舍见
   retry.provider.maxRetries=0；两个 RPC 开关会写全局设置，ACK 不证明写入/隔离。
   没观察到预热不等于关闭预热（其触发另有 cache TTL/节省条件）。
 - --offline --no-session -ne -ns -np -nc -nt，PI_SKIP_VERSION_CHECK=1、PI_TELEMETRY=0；
-  验证禁止自动网络活动（目录刷新、版本检查、遥测、缓存预热、隐含 provider retry）。
+  验证模型沙箱禁止自动网络活动（目录刷新、版本检查、遥测、缓存预热、隐含 provider retry）；
+  唯一宿主例外为领取前一次有界订阅凭据刷新，可联网并写回专用凭据目录，
+  对任务、预算、失败和成功制品保持零副作用（ADR-0039）。
 - 通过 --system-prompt 精确传入声明系统指令；防止参数被当成文件路径。确认无默认
   prompt、个人设置、项目资源、skills/extensions/MCP、AGENTS.md/CLAUDE.md 等注入。
 - #111 已确认本机 cwd 为 `/srv/pi-cwd`，无默认值显式传入、白名单仅此值；该目录无 .pi/、AGENTS.md、CLAUDE.md 或

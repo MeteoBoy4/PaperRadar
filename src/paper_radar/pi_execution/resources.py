@@ -80,8 +80,14 @@ def check_system_prompt(prompt: bytes) -> str:
     return text
 
 
-def check_credentials_directory(directory: Path, roots: ExecutionRoots) -> None:
-    """doctor 可用;只核对元数据,绝不读取 auth 内容或刷新。"""
+def check_auth_mode(provider: str, auth_mode: str) -> None:
+    """声明式通道闭集判定;不读取凭据或连接认证执行。"""
+    if auth_mode != "chatgpt_subscription" or provider != "openai":
+        raise ExecutionError("auth_mode_unsupported")
+
+
+def check_credentials_metadata(directory: Path) -> None:
+    """只核对元数据,绝不读取 auth 内容或刷新;不证明与执行根隔离。"""
     try:
         info = directory.lstat()
         auth = directory / "auth.json"
@@ -90,10 +96,19 @@ def check_credentials_directory(directory: Path, roots: ExecutionRoots) -> None:
             or not stat.S_ISDIR(info.st_mode)
             or stat.S_IMODE(info.st_mode) != 0o700
             or info.st_uid != os.getuid()
-            or not roots.outside(directory)
             or not stat.S_ISREG(auth.lstat().st_mode)
             or auth.lstat().st_uid != os.getuid()
         ):
+            raise ExecutionError("credentials_invalid")
+    except OSError:
+        raise ExecutionError("credentials_invalid") from None
+
+
+def check_credentials_directory(directory: Path, roots: ExecutionRoots) -> None:
+    """执行路径额外核对显式业务根;doctor 没有这些根的选择权。"""
+    check_credentials_metadata(directory)
+    try:
+        if not roots.outside(directory):
             raise ExecutionError("credentials_invalid")
     except OSError:
         raise ExecutionError("credentials_invalid") from None

@@ -179,7 +179,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/calls.py",
-        "00df2a1de87c8954546ed0a73613e5cabf7b306b925ebe26b9cae163f104a2db",
+        "141c593a2c89fa1a74f25ed4a8f81cbe6f1ba95245407297614c6fa4095f24d6",
     ),
     (
         "src/paper_radar/llm/models.py",
@@ -187,7 +187,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/rpc.py",
-        "295fca3e595de9003baf76a92e82bb382de83207c23aa0e3ce327d21b0e61857",
+        "99c6203bf4e02d308d12b2498147fe04c2777d4841308c3e2aed79f27d82adc5",
     ),
     (
         "src/paper_radar/llm/rpc_frames.py",
@@ -195,7 +195,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/rpc_messages.py",
-        "c33ce58005583b16142ae0fa6b033ff7b776eb1f5505e6376dc1ddaa1049128c",
+        "53c244de76943573a7938c8c22a2500c860e5fce63ec0b96ac3f215b6b9600a6",
     ),
     (
         "src/paper_radar/llm/rpc_pipes.py",
