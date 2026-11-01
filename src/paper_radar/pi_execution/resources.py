@@ -107,8 +107,11 @@ def check_credentials_metadata(directory: Path) -> None:
 def check_credentials_directory(directory: Path, roots: ExecutionRoots) -> None:
     """执行路径额外核对显式业务根;doctor 没有这些根的选择权。"""
     check_credentials_metadata(directory)
-    if not roots.outside(directory):
-        raise ExecutionError("credentials_invalid")
+    try:
+        if not roots.outside(directory):
+            raise ExecutionError("credentials_invalid")
+    except OSError:
+        raise ExecutionError("credentials_invalid") from None
 
 
 def proxy_port(proxy: str | None) -> int | None:

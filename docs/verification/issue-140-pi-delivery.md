@@ -93,7 +93,8 @@ A8 call/preflight/lifecycle/pipes/架构的既有回归：**542 passed**，170.6
 新D1单独 collect：**182 tests collected**；不等于正式组回执。
 CLI注册/帮助/导入链触发 `./scripts/check-compatibility cli`：**59 passed**，退出0，
 入口总耗时67.39秒。未触及验收发布/回执接线，因此不扩为acceptance/all。
-相关19个Python文件Ruff检查、格式检查和mypy全部通过。
+相关19个Python文件Ruff检查、格式检查和mypy全部通过。拆出凭据元数据检查后，
+保留原四根检查的受控OSError转换；最终metadata/doctor子集再次**46 passed**。
 
 ## 固定登记审阅
 
