@@ -363,7 +363,12 @@ uv run --offline --locked paper-radar pi supply gc --execute <plan_id> \
 有界单次协议组件；管道组件接管已启动的进程，不提供默认生产启动器。
 接口与支持范围见[RPC 契约](docs/contracts/pi-rpc.md)，架构决策见
 [ADR-0026](docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。
-真实执行与隔离接线的承接入口见[路线图承接索引](docs/roadmap.md#模块承接索引)。
+`paper_radar.pi_execution` 提供固定安装保护、宿主专用 OAuth 刷新、独立 attempt 资源与
+Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接口与权限见
+[Pi 执行资源契约](docs/contracts/pi-execution.md)，独立测试范围见
+[#141 台账](docs/verification/issue-141-pi-launch.md)。真实 cwd、订阅认证、TLS/DNS、参数和
+Pi 1.4.0 兼容仍未验证；缺少 Cwd/Live 证据时产品执行保持阻断。
+真实执行接线的承接入口见[路线图承接索引](docs/roadmap.md#模块承接索引)。
 
 ## 论文事实与 Feed 发现的本地查询
 
