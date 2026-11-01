@@ -10,7 +10,7 @@ def test_current_migration_literal_has_single_owner() -> None:
     owners = sorted(
         path.relative_to(tests_root).as_posix()
         for path in tests_root.rglob("*.py")
-        if "fixtures" not in path.relative_to(tests_root).parts[:-1]
+        if path.relative_to(tests_root).parts[0] != "fixtures"
         and EXPECTED_MIGRATION_REVISION in path.read_text(encoding="utf-8")
     )
     assert owners == ["migration_expectations.py"], owners

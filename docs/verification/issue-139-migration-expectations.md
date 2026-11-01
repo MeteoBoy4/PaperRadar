@@ -105,3 +105,24 @@ MIGRATION_REVISION（10 处），A3 backup_database_revision（1 处），本票
 
 本台账不宣称完整离线门禁、完整阶段 A 或 live 就绪；没有执行网络来源、模型、
 Docling 或 NAS 验收。最终身份的审计 JSON 与确认材料留在被审计树外。
+
+## 开发验证实测
+
+- 31 个直接测试模块、两个实际恢复消费者与 D1（共 34 模块、1012 用例）均已取得通过结果。
+  首次组合为 1011 passed、1 failed（505.54s）：补写本台账期间触发 A4
+  `test_every_predecessor_must_independently_bind_and_pass[status-full]` 的
+  `identity_changed` 保护；材料稳定后该具体用例复跑通过。A4 独立复跑另为 84 passed。
+  这里不把首次组合记为退出 0，也不把组合结果当作完整离线门禁。
+- `./scripts/check-compatibility acceptance`：117 passed，退出 0（214.00s）。
+- `uv run --offline --locked ruff check .`、mypy 均通过；mypy 检查 712 个文件。
+  改动 Python 文件的 Ruff 格式检查通过；32 个既有文件仅内联新常量后 AST 与旧版完全等价。
+- 默认审计及 `--collect` 的登记核对无漂移；285 个去重模块、5281 个固定用例，
+  `collection_skipped=0`、`deselected=0`、`reason=ok`，固定计数未改。
+  显式 base/target 的敏感变化按具体路径、用途和全部传递影响组逐项审阅；最终确认
+  绑定最终提交及树身份放在 `/tmp/issue139-confirmations.json`，不复用中间身份。
+- 临时将常量改错：E 的成功/失败/kill 三分支及 F 探针全部失败；恢复后与 D1 共五例通过。
+  临时在测试文件写回当前 head 文本：D1 失败；改动已恢复，不提交探针。
+- 仅改常量的审计实测：变化为 `sensitive/fixture`，要求 A2-01、完整 A2、A3–A10
+  十组确认；没有修改分类规则。探针报告 `/tmp/issue139-constant-only.json`，属于开发诊断。
+- 独立双轴代码审阅：Standards 0 项、Spec 0 项；D1 最终精确排除 tests/fixtures 的调整
+  经 Spec 轴复核通过。完整 `check-offline` 与 live 未执行。
