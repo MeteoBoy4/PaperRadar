@@ -11,6 +11,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "78413e6524e0900cb7051a70adcf590fa2e01799"
+HEAD_EXPECTATION_CENTRALIZATION = "69aaa69c76f821df1610a5bcc41bbc9fe88e3686"
 LEDGER = "tests/fixtures/a10_coverage.json"
 MIGRATION = "docs/verification/a10-scope-document-migration.json"
 LIVE = {
@@ -344,12 +345,40 @@ def test_frozen_negative_case_is_replaced_without_reducing_the_denominator() -> 
         capture_output=True,
         check=True,
     ).stdout.decode()
-    current = (ROOT / "tests/test_a10_integrity.py").read_text()
-    assert current == old.replace(
+    # 文档迁移仍按#139之前的不可变字节核验,不把后续合法变化写回旧证明。
+    before_centralization = subprocess.run(
+        [
+            "git",
+            "show",
+            f"{HEAD_EXPECTATION_CENTRALIZATION}^:tests/test_a10_integrity.py",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        check=True,
+    ).stdout
+    assert hashlib.sha256(before_centralization).hexdigest() == (
+        "87060a1084532011f78230314d278030f53dff38245d58ecb64aa13780b3a239"
+    )
+    assert before_centralization.decode() == old.replace(
         '"docs/contracts/fixture-audit.md"',
         '"docs/adr/0032-relax-paper-acquisition-without-evading-access-controls.md"',
         1,
     )
+    # #139仅集中人工head预期;独立绑定其交付checkpoint和台账SHA,拒绝其他改动。
+    after_centralization = subprocess.run(
+        [
+            "git",
+            "show",
+            f"{HEAD_EXPECTATION_CENTRALIZATION}:tests/test_a10_integrity.py",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        check=True,
+    ).stdout
+    assert hashlib.sha256(after_centralization).hexdigest() == (
+        "49e43ecaec3bedb6c3af819cb599f8d8a7ed8a49aa28745500843ebfa07fb97e"
+    )
+    assert (ROOT / "tests/test_a10_integrity.py").read_bytes() == after_centralization
 
 
 @pytest.mark.parametrize(

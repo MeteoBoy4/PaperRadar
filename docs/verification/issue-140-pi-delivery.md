@@ -144,6 +144,40 @@ D1独立收集为 **192 tests collected**，没有加入历史分母。
 入口68.50秒；全仓Ruff、格式检查与mypy通过（744个source文件）。未触及验收发布或
 回执接线，不扩大为acceptance/all；原失败完整门禁证据按次保留，未用开发回归改写。
 
+## 未绑定历史守卫兼容
+
+固定回执只统计显式登记模块，不能凭固定分母全过推断全部pytest通过。本次从权威
+`receipt_modules()` 与真实全量collection计算：350模块、6325节点，其中固定285模块/
+5281节点，未绑定65模块/1044节点。仅对这65模块作显式开发期诊断，原始结果为
+**4 failed、1040 passed**，582.46秒；没有启动完整正式门禁。
+
+三处遗漏来自已交付的 [#139](https://github.com/MeteoBoy4/PaperRadar/issues/139)
+人工迁移预期集中化，相关文件在本票main基线已是相同字节；一处承接本票已审阅的
+`pi-execution.md`精确live分类。按tracker完整核对#139正文、全部评论及
+[逐文件/成员交付台账](issue-139-migration-expectations.md)后，只补接下列未绑定消费者：
+
+| 既有未绑定模块 | 保持数量 | 精确兼容范围 |
+| --- | ---: | --- |
+| `tests/test_a10_scope_migration.py` | 18 | 原文档替换仍对#139前checkpoint原字节核验；当前文件另与#139授权后checkpoint及独立SHA严格相等 |
+| `tests/test_a8_a9_document_scope.py` | 23 | 显式枚举#139在A8/A9的两条`migration_expectations.py`fixture，保留13条历史移除及14条引用 |
+| `tests/test_scope_material_inventory.py` | 4 | 旧baseline文档集合只加已批准`docs/contracts/pi-execution.md`一路径，不扫描当前目录自动放行 |
+| `tests/test_scope_shared_dag.py` | 24 | 保留1175旧基数、28历史增量、41引用；另显式枚举#139的A2-01 source及其余9组fixture与一条中央成员 |
+
+四模块原有69节点不增减，也不计入上表195条新增Pi能力或历史required分母。
+A10 checkpoint固定为`69aaa69c76f821df1610a5bcc41bbc9fe88e3686`前后：
+前SHA=`87060a1084532011f78230314d278030f53dff38245d58ecb64aa13780b3a239`，
+后SHA=`49e43ecaec3bedb6c3af819cb599f8d8a7ed8a49aa28745500843ebfa07fb97e`，
+均与#139台账一致。旧checkpoint、原负例/计数、历史JSON/证据与所有登记均未改；
+没有按当前生产输出机械生成期望。此次没有生产代码、注册成员或哈希重绑。
+
+四个原红节点修后 **4 passed**，0.64秒。树外6项独立反向检查确认：旧checkpoint、
+#139后checkpoint、当前文件未授权字节、未知live文档、未知A8成员，以及带正确哈希
+的未知DAG成员均仍被拒绝。之后按同一完整显式清单重跑全部65未绑定模块：
+**1044 passed**，580.94秒、退出0；不是仅重跑本票D1或局部组合。
+全仓Ruff、格式与mypy通过（744个source文件）。只改未绑定测试及本台账，没有触发
+CLI/验收发布接线的兼容组合。两次失败run的28份正式JSON及旧外部报告原位保留，
+本次开发期输出不改写它们，也不代表最终冻结integration树完整门禁通过。
+
 ## 固定登记审阅
 
 稳定 main 基线没有 baseline_drift。S1–S4集成更新15条实际 source 哈希：中央共享12条
