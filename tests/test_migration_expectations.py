@@ -7,6 +7,7 @@ from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 def test_current_migration_literal_has_single_owner() -> None:
     tests_root = Path(__file__).resolve().parent
+    # 按 #139 检查源文本; 注释或更长字符串含有当前值也算重复。
     owners = sorted(
         path.relative_to(tests_root).as_posix()
         for path in tests_root.rglob("*.py")

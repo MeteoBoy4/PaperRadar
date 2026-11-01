@@ -83,8 +83,8 @@ A2-01 沿用历史 writer 的 source 检查路径，不修改 A2_01_GROUP 或 a2
 
 独立未绑定模块 `tests/test_migration_expectations.py`：1 个用例
 `test_current_migration_literal_has_single_owner`，扫描 tests 下除 fixtures 子树外全部
-Python 文本，仅允许人工常量文件出现当前 head 字面值。初次运行检出原 32 文件并失败，
-集中化后通过。它不扫描 scripts/src/docs，不约束历史 revision，不进入既有组回执。
+Python 文本，仅允许人工常量文件出现当前 head 字面值。
+它不扫描 scripts/src/docs，不约束历史 revision，不进入既有组回执。
 
 实际恢复支撑闭包由 `rg` 核实：`test_a10_behavior_coverage.py` 直接调用，
 `test_a10_complete_recovery.py` 直接调用并通过 `python -m tests.a10_recovery_reader`
@@ -106,23 +106,20 @@ MIGRATION_REVISION（10 处），A3 backup_database_revision（1 处），本票
 本台账不宣称完整离线门禁、完整阶段 A 或 live 就绪；没有执行网络来源、模型、
 Docling 或 NAS 验收。最终身份的审计 JSON 与确认材料留在被审计树外。
 
-## 开发验证实测
+## 开发验证摘要
 
-- 31 个直接测试模块、两个实际恢复消费者与 D1（共 34 模块、1012 用例）均已取得通过结果。
-  首次组合为 1011 passed、1 failed（505.54s）：补写本台账期间触发 A4
-  `test_every_predecessor_must_independently_bind_and_pass[status-full]` 的
-  `identity_changed` 保护；材料稳定后该具体用例复跑通过。A4 独立复跑另为 84 passed。
-  这里不把首次组合记为退出 0，也不把组合结果当作完整离线门禁。
-- `./scripts/check-compatibility acceptance`：117 passed，退出 0（214.00s）。
-- `uv run --offline --locked ruff check .`、mypy 均通过；mypy 检查 712 个文件。
-  改动 Python 文件的 Ruff 格式检查通过；32 个既有文件仅内联新常量后 AST 与旧版完全等价。
-- 默认审计及 `--collect` 的登记核对无漂移；285 个去重模块、5281 个固定用例，
-  `collection_skipped=0`、`deselected=0`、`reason=ok`，固定计数未改。
-  显式 base/target 的敏感变化按具体路径、用途和全部传递影响组逐项审阅；最终确认
-  绑定最终提交及树身份放在 `/tmp/issue139-confirmations.json`，不复用中间身份。
-- 临时将常量改错：E 的成功/失败/kill 三分支及 F 探针全部失败；恢复后与 D1 共五例通过。
-  临时在测试文件写回当前 head 文本：D1 失败；改动已恢复，不提交探针。
-- 仅改常量的审计实测：变化为 `sensitive/fixture`，要求 A2-01、完整 A2、A3–A10
-  十组确认；没有修改分类规则。探针报告 `/tmp/issue139-constant-only.json`，属于开发诊断。
-- 独立双轴代码审阅：Standards 0 项、Spec 0 项；D1 最终精确排除 tests/fixtures 的调整
-  经 Spec 轴复核通过。完整 `check-offline` 与 live 未执行。
+以下为本票原实现的开发验证结果，运行差异与审阅处置见
+[r1 审查核实记录](../../intent/review/issue-139-migration-expectations-review-r1.md#逐条核实与处置)。
+
+| 验证 | 结果 |
+| --- | --- |
+| 31 个直接测试模块、两个恢复消费者与 D1 | 34 模块、1012 用例均取得通过结果；组合与复验分别记录，不宣称同次组合退出 0 |
+| `./scripts/check-compatibility acceptance` | 117 passed，退出 0 |
+| `uv run --offline --locked ruff check .`、mypy、改动 Python 的格式检查 | 均通过；mypy 覆盖 712 文件 |
+| 既有测试的受限 AST 归一化校验 | 32/32 文件匹配；移除新增常量导入、将该常量引用还原为原值并折叠相应 f-string 后比较；原始 AST 并不相同 |
+| 默认及显式 main 基线的 scope 审计与收集 | 无漂移，285 个去重模块、5281 个固定用例；skip/deselect 为 0，计数未改 |
+| 错误常量的 E/F 负例及 head 文本回流负例 | 均按预期失败，恢复后对应五例通过 |
+| 仅改中央预期的敏感分类 | `sensitive/fixture`，全部十组要求确认 |
+
+上述结果不替代后续提交的最终身份审计；S3 确认须在树外重新绑定当前身份。
+完整离线门禁及 live 未执行。
