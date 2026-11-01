@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from paper_radar.llm.models import PROTOCOL_PROFILES
+from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 Version = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")]
 ProgramVersion = Annotated[

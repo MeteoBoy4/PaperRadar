@@ -23,7 +23,8 @@
 | `tests/test_doctor_pi_exec.py` | 31 | 独立冷进程 import/help/用法、显式 snapshot/凭据选择、四态、缺失/损坏/版本/采样/模型、只读和无泄漏；cwd 共享规则 |
 | `tests/test_pi_execution_integration.py` | 3 | 真实本机合成成功恢复；原安装消失与当前证据失效均阻断独立新论文、预算不变；审计 install/Pi 版本损坏拒绝查询及备份 |
 | `tests/test_pi_execution_review.py` | 10 | 接管中断及目录清理失败的优先级；含修正帧超限、过期回收、认证期间事实变化；同事务修正与执行者一致 |
-| 合计 | 192 | S1=36、S2=44、S3=68、S4=34、双轴审阅回归=10；不计支撑文件或复用历史回归 |
+| `tests/test_pi_execution_history_imports.py` | 3 | 冷任务导入禁LLM/供给执行和I/O；实际pi_rpc备份核验/隔离恢复/成功查询不加载执行实现 |
+| 合计 | 195 | S1=36、S2=44、S3=68、S4=34、双轴审阅回归=10、历史依赖回归=3；不计支撑文件或复用历史回归 |
 
 新增支撑为 `tests/pi_execution_support.py`、`tests/pi_rpc_source_support.py`、
 `tests/pi_execution_service_support.py`、`tests/pi_execution_rpc_peer.py` 与
@@ -43,6 +44,17 @@ S1–S3 的按次证明分别见 [S1](issue-141-pi-launch.md)、[S2](issue-142-p
 - `test_valid_preclaim_uses_same_authoritative_correction_as_executor`：timeout/
   expired 共2例，只读预览不写事实；合法校验后第二次领取、过期回收和执行者使用
   同一权威修正，预算不重置。默认 A7/A8 接缝与冻结计数保持。
+
+历史消费闭包补充：`pi_protocol.py` 是协议映射的单一纯注册，`llm.models` 兼容导出
+同一对象；任务审计直接消费中立注册，不导入LLM。
+`execution_history.py` 只向任务层提供供给/安装/Pi/Node历史身份核对，完整复用
+`pi_supply.repository.read_records`，没有第二套Supply Schema、材料校验或较宽松回放。
+供给公共 `list_supplies` 同样直接调用只读仓储；包初始化只加载纯类型，不加载供给
+service/execution/protection/transport。没有改变审计字节、持久格式或执行准入。
+新冷进程节点分两种边界：独立任务导入额外拒绝httpx与SQLite；完整备份回放禁止LLM
+及供给执行/HTTP/进程实现，并审计拒绝实际网络/子进程。既有Feed闭包的纯header helper
+会导入httpx，该既有依赖不在本次修复范围，不能把模块导入误当成实际网络调用。
+冻结A7依赖守卫和Read冷恢复模块/worker保持原字节，作为原始失败反馈环继续验证。
 
 ## 最终 C2 收缩与 C3/C4 归属
 
@@ -120,6 +132,18 @@ D1独立收集为 **192 tests collected**，没有加入历史分母。
 纯哈希登记更新后该文件Ruff/格式再次通过。精确选择、修前/修后日志及审计留树外，
 这些开发期结果不能替代最终冻结integration树的完整门禁。
 
+历史依赖修复的原始反馈环为冻结 `test_a7_registration_migrations.py` 与
+`test_read_recovery.py`：修前 **2 failed、15 passed**（9.34秒），失败分别指向任务层
+直接导入供给包，以及Read冷恢复最终检测到LLM导入。前者由中立历史身份接缝修复，
+后者由共享纯协议注册修复；原测试及worker未改。新冷进程实际备份回放还先捕获
+`list_supplies` 引入供给执行服务，随后修为直接完整只读回放。
+原始两模块加3条新回归 **20 passed**，11.81秒；最终加强fork/exec/DNS拒绝后的
+新回归 **3 passed**，3.71秒。相关组合覆盖全部13个D1模块、两个原失败模块、
+供给历史/清理/导出、协议/恢复、Feed及任务接收：**565 passed**，258.28秒。
+当前D1独立收集 **195 tests collected**，0.62秒。CLI组合 **59 passed**、退出0，
+入口68.50秒；全仓Ruff、格式检查与mypy通过（744个source文件）。未触及验收发布或
+回执接线，不扩大为acceptance/all；原失败完整门禁证据按次保留，未用开发回归改写。
+
 ## 固定登记审阅
 
 稳定 main 基线没有 baseline_drift。S1–S4集成更新15条实际 source 哈希：中央共享12条
@@ -131,13 +155,19 @@ required 与显式 DAG 不变；不恢复 scope 哈希边。精确 group/path/�
 
 双轴审阅修复另只重绑中央 `screening_tasks/execution.py` 与 `screening_tasks/service.py`
 两条 source：前者拥有只读/领取事务内同源修正，后者增加公开预览及可选纯校验接缝。
-直接登记组为 A7/A10，下游影响 A8/A9；均只改 source 哈希。累计17条实际 source
+直接登记组为 A7/A10，下游影响 A8/A9；均只改 source 哈希。该轮累计17条实际 source
 （中央14条、A8单组3条），历史成员、用途、测试字节/计数、fixture、required与DAG不变。
 旧S1/S2/S3按次台账保持原字节，10条新回归仅在本台账独立登记，不加入历史组。
 无确认审计只允许既有分类控制变化的11组 `confirmation_required`；它会使
 `--collect` 保持 `not_run/audit_failed`，不能冒称已收集通过。最终 root 在最终
 合并身份逐组重新确认后再收集。登记计数逐条对照前次集成的289条固定计数保持相同，
-本次D1的192条独立收集不替代历史组收集或正式回执。
+当时D1的192条独立收集不替代历史组收集或正式回执。
+
+历史依赖修复只再重绑中央 `llm/models.py` 与 `pi_supply/__init__.py`：前者是已有
+source再次更新（纯注册兼容导出），后者是新增变化路径（公共list查询直接只读回放）。
+直接组分别为 A8/A10、A4/A10，下游分别影响 A9 与 A5–A9。累计18条不同source路径
+（中央15条、A8单组3条）；仅重算实际字节，无测试/分母/用途或required变化。
+新增中立模块与3条独立回归的消费闭包如上；当前D1独立分母为195。
 
 分类控制仅把新增现状契约 `docs/contracts/pi-execution.md` 加入 live_documents 精确路径。
 它维护当前已实现接口与权限细节，符合其他现状 Contract 的分类；ADR、D1台账、历史快照、

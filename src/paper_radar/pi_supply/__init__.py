@@ -126,9 +126,9 @@ def prepare_supply(
 
 
 def list_supplies(database: Path) -> tuple[SupplyRecord, ...]:
-    from paper_radar.pi_supply.service import list_supplies as discover
+    from paper_radar.pi_supply.repository import read_records
 
-    return discover(database)
+    return read_records(database)
 
 
 def show_supply(database: Path, supply_id: str) -> SupplyRecord:

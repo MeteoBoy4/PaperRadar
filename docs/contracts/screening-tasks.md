@@ -358,6 +358,11 @@ invalid_candidate，持久化损坏返回 corrupt_reference。幂等规范摘要
 已结算 attempt 的任一审计身份变化返回 settlement_conflict；不覆盖历史。
 旧 test 的审计字节、摘要与回执身份保持不变，无 migration。
 
+供给身份核验经过中立 `execution_history` 只读接缝，完整复用供给仓储的冻结材料与
+引用回放，不加载供给执行服务、HTTP/进程实现或安装保护。协议版本配对只读取中立
+`pi_protocol` 纯注册；导入任务服务或回放历史不加载 LLM。仍核验完整历史供给，
+不以复制的清单字段解析或较宽松的第二套校验替代权威回放。
+
 此闭包证明登记事实一致性，不证明输出真实来自 Pi 或供应商。生产来源、Feed 用途与质量
 资格分别判断；非 test 来源不授予实验产物正常消费、校准或 Read 资格。受控启动服务由
 [Pi 组合](../roadmap.md#module-pi)接入，真实兼容与执行仍由

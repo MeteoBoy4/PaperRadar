@@ -236,7 +236,7 @@ SHARED_MATERIALS = {
         "a52553e700aa7a06f69c45c90052ffb813db6319c90d4a9fd39173767af3b9d9"
     ),
     "src/paper_radar/llm/models.py": (
-        "1b76045e1ca56dd94cd412da1ff1a1ca37c9765f09fe5f489dd2e84a09a7280e"
+        "7f35d52f95900c67061d16c8fb5b6ec9707c676353b2bd2e0bc82c7d5d491742"
     ),
     "src/paper_radar/papers/__init__.py": (
         "2db5994c8f0a7b00bfd205a739e0f32e96b8769a75c185725335710c3c5fec36"
@@ -308,7 +308,7 @@ SHARED_MATERIALS = {
         "9cebd0175cc0730bd65940339e8dd8d01402c5cbc635afb29641b2aced635e6f"
     ),
     "src/paper_radar/pi_supply/__init__.py": (
-        "ca7a0dd3ba82152124eaec045fd228d84bc79dad5b6634059ec2d4ec19036ca9"
+        "1c3892fcf511c98a6aa586db02a9153cb6df7bea24530cee1c5e4e152584320f"
     ),
     "src/paper_radar/pi_supply/cleanup.py": (
         "1ddbb2730d089ffd95cf867b2321f5f5883c030b23807b6d19a0413282de8170"
