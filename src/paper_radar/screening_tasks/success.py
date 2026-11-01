@@ -43,6 +43,7 @@ from paper_radar.screening_tasks.success_models import (
     SuccessReceipt,
     SuccessView,
 )
+from paper_radar.screening_tasks.success_references import validate_execution_reference
 from paper_radar.screening_tasks.success_rules import (
     candidate_audit,
     decode_issues,
@@ -107,6 +108,15 @@ class SuccessService:
         submission = submission_digest(candidate.raw_response, audit)
         with self.attempts.connection(write=False) as connection:
             row, replayed = self._precheck(connection, claim, submission)
+            if candidate.execution_audit is not None:
+                validate_execution_reference(
+                    self.attempts.database,
+                    connection,
+                    task_id=claim.task_id,
+                    attempt_no=claim.attempt_no,
+                    audit=candidate.execution_audit,
+                    reason=TaskReason.INVALID_CANDIDATE,
+                )
             if replayed is not None:
                 return replayed
             request = receipt_row(connection, row["receipt_id"])
@@ -146,6 +156,15 @@ class SuccessService:
         )
         with self.attempts.connection(write=True) as connection:
             row, replayed = self._precheck(connection, claim, submission)
+            if candidate.execution_audit is not None:
+                validate_execution_reference(
+                    self.attempts.database,
+                    connection,
+                    task_id=claim.task_id,
+                    attempt_no=claim.attempt_no,
+                    audit=candidate.execution_audit,
+                    reason=TaskReason.INVALID_CANDIDATE,
+                )
             if replayed is not None:
                 return replayed
             now = utc_now(self.attempts.clock)
@@ -224,7 +243,7 @@ class SuccessService:
             row["artifact_id"],
             row["fingerprint"],
             row["stage"],
-            "test",
+            stored_candidate(b"", row["audit_json"]).executor_kind,
             read_timestamp(row["settled_at"]),
         )
 
@@ -257,6 +276,16 @@ class SuccessService:
             raise TaskError(TaskReason.CORRUPT_REFERENCE)
         raw = store.read_artifact(row["artifact_id"])["payload"]
         candidate = stored_candidate(raw, row["audit_json"])
+        if candidate.execution_audit is not None:
+            with self.attempts.connection(write=False) as connection:
+                validate_execution_reference(
+                    self.attempts.database,
+                    connection,
+                    task_id=row["task_id"],
+                    attempt_no=row["attempt_no"],
+                    audit=candidate.execution_audit,
+                    reason=TaskReason.CORRUPT_REFERENCE,
+                )
         if not model_matches(candidate, frozen.snapshot):
             raise TaskError(TaskReason.CORRUPT_REFERENCE)
         try:
@@ -296,6 +325,16 @@ class SuccessService:
             result = []
             for identifier in ids:
                 row = self._row(connection, identifier)
+                candidate = stored_candidate(b"", row["audit_json"])
+                if candidate.execution_audit is not None:
+                    validate_execution_reference(
+                        self.attempts.database,
+                        connection,
+                        task_id=row["task_id"],
+                        attempt_no=row["attempt_no"],
+                        audit=candidate.execution_audit,
+                        reason=TaskReason.CORRUPT_REFERENCE,
+                    )
                 applicability: Literal["current", "historical", "undeterminable"] = (
                     "undeterminable"
                     if mapped.reason is not None

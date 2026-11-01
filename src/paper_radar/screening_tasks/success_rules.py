@@ -6,6 +6,8 @@ from hashlib import sha256
 from typing import Any
 from uuid import UUID
 
+from pydantic import ValidationError
+
 from paper_radar.config import RuntimeConfigSnapshot
 from paper_radar.config.compile import MaterialKind
 from paper_radar.screening import (
@@ -17,6 +19,7 @@ from paper_radar.screening import (
 )
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.models import FrozenInput, Stage
+from paper_radar.screening_tasks.pi_rpc_audit import PiRpcAudit, PiRpcExecutionAudit
 from paper_radar.screening_tasks.rules import canonical, require_bounded_text
 from paper_radar.screening_tasks.success_models import SuccessCandidate
 
@@ -25,11 +28,13 @@ def candidate_audit(candidate: SuccessCandidate) -> str:
     if (
         type(candidate) is not SuccessCandidate
         or type(candidate.raw_response) is not bytes
-        or candidate.executor_kind != "test"
         or type(candidate.executor_kind) is not str
+        or candidate.executor_kind not in {"test", "pi_rpc"}
     ):
         raise TaskError(TaskReason.INVALID_CANDIDATE)
-    audit: dict[str, Any] = {"executor_kind": "test"}
+    audit: dict[str, Any] = {"executor_kind": candidate.executor_kind}
+    if candidate.executor_kind == "test" and candidate.execution_audit is not None:
+        raise TaskError(TaskReason.INVALID_CANDIDATE)
     for name in ("reported_provider", "reported_model", "provider_request_id"):
         value = getattr(candidate, name)
         if value is not None:
@@ -45,6 +50,19 @@ def candidate_audit(candidate: SuccessCandidate) -> str:
         if value is not None and (type(value) is not int or value < 0):
             raise TaskError(TaskReason.INVALID_CANDIDATE)
         audit[name] = value
+    if candidate.executor_kind == "pi_rpc":
+        if type(candidate.execution_audit) is not PiRpcExecutionAudit:
+            raise TaskError(TaskReason.INVALID_CANDIDATE)
+        try:
+            audit = PiRpcAudit.model_validate(
+                {
+                    **candidate.execution_audit.model_dump(),
+                    **audit,
+                    "format_version": 2,
+                }
+            ).model_dump(mode="json")
+        except ValidationError:
+            raise TaskError(TaskReason.INVALID_CANDIDATE) from None
     try:
         return canonical(audit).decode("utf-8")
     except ValueError:
@@ -153,7 +171,28 @@ def stored_candidate(raw: bytes, audit_json: str) -> SuccessCandidate:
         audit = json.loads(audit_json)
         if type(audit) is not dict:
             raise ValueError
-        candidate = SuccessCandidate(raw, **audit)
+        if audit.get("executor_kind") == "pi_rpc":
+            parsed = PiRpcAudit.model_validate(audit)
+            fields = {
+                name: audit[name]
+                for name in (
+                    "executor_kind",
+                    "reported_provider",
+                    "reported_model",
+                    "provider_request_id",
+                    "input_tokens",
+                    "output_tokens",
+                )
+            }
+            execution = PiRpcExecutionAudit.model_validate(
+                {
+                    name: getattr(parsed, name)
+                    for name in PiRpcExecutionAudit.model_fields
+                }
+            )
+            candidate = SuccessCandidate(raw, execution_audit=execution, **fields)
+        else:
+            candidate = SuccessCandidate(raw, **audit)
         if candidate_audit(candidate) != audit_json:
             raise ValueError
         return candidate

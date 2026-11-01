@@ -5,8 +5,9 @@
 `paper_radar.llm` 提供冻结调用描述与 `render_format=1` 渲染；
 `paper_radar.llm.rpc.run_call` 提供显式注入会话的有界单次协议服务。
 管道组件接管已启动的独立进程组，处理字节通信、取消与回收。
-本 Contract 定义调用描述、协议、候选及执行观察；boundary/value 的任务组合只使用
-现有 test 接收边界，不提供生产启动器或模型调用 CLI。
+本 Contract 定义调用描述、协议、候选及执行观察；boundary/value 任务的权威接收支持
+`test | pi_rpc` 来源。生产来源的审计与恢复规则见
+[Screening 任务](screening-tasks.md#10-原始候选接收与派生查询)。本组件不提供启动器或模型调用 CLI。
 
 阶段输入、配置、业务输出、任务预算及恢复的详细规则分别见
 [StageInput](stage-inputs.md)、[适配器配置](adapter-config.md)、
@@ -124,9 +125,12 @@ ConfigError。executor 只核对 StageInput 的 stage/fingerprint/payload，不�
 或猜 attempt，不向对端传续租能力。
 
 正常结果是未验证的 RpcCandidate，含 raw_response、provider、model、input_tokens、
-output_tokens；原始文本及 provider/model 隐于 repr。只在离线接线层转换为精确的
-SuccessCandidate(executor_kind=test)。失败是只含封闭 reason 的 RpcFailure，
-其 category 由内核唯一映射，接线层只一对一换成既有 FailureReport。没有生产执行来源。
+output_tokens；原始文本及 provider/model 隐于 repr。历史离线接线层转换为精确的
+SuccessCandidate(executor_kind=test)；受控组合可携带执行审计转换为 `pi_rpc` 候选，
+继续经过同一权威接收。审计唯一格式见
+[`PiRpcAudit` Schema](../../src/paper_radar/screening_tasks/pi_rpc_audit.py)，RPC 不重复计算用量。
+失败是只含封闭 reason 的 RpcFailure，其 category 由内核唯一映射，接线层只一对一换成
+既有 FailureReport；协议正常结束不自动成为业务成功。
 本 API 不返回 CLI 退出码；子进程退出码仅是协议观察，成功必须观察到退出 0。
 
 ## 固定协议与生命周期
@@ -290,7 +294,7 @@ snapshot，只要同阶段投影相等且本次版本已登记，就可组合原
 回执，包括回摆与 retry，不能把首次语义版本冒写为本次执行版本。
 纯执行审计、日期、会话或进程重建均不另给预算。
 
-组合产生的 test 成功、失败、retry 父链和未结算历史由既有
+组合产生的 test/pi_rpc 成功、失败、retry 父链和未结算历史由既有
 [备份恢复](backup-restore.md)闭包处理；恢复不导入或调用 RPC 执行入口。
 显式继续仍经任务领取和剩余预算，不加载旧会话；完整事件、失败全文、thinking 和
 自由错误不进入备份。RPC 不扩大恢复 revision 范围，不保证追回备份回退后丢失的预算。
@@ -326,7 +330,8 @@ repr、异常或任务接线的日志、数据库、制品及验收结果；只�
 
 ## 不提供／不证明
 
-本组件不提供默认生产启动器、命令/env/cwd 构造或凭据读取，不提供生产成功来源。
+本组件不提供默认生产启动器、命令/env/cwd 构造或凭据读取。`pi_rpc` 的持久成功来源
+由[任务接收边界](screening-tasks.md#10-原始候选接收与派生查询)提供，完整性不等于真实执行证明。
 系统补丁形状、空 commands 和 state 回读只核对可观察记录，不证明 cwd 无项目资源、
 未加载个人设置、关闭持久化、自动外发抑制或 OS 文件/进程/网络权限隔离。
 常量 cwd、资源/权限与生产启动器由[路线图 Pi](../roadmap.md#module-pi)及

@@ -386,7 +386,9 @@ Python 服务 `PaperFacts` 提供来源提交、Feed 登记、人工字段修正
 ## Screening 任务
 
 `paper_radar.screening_tasks.ScreeningTasks` 提供 boundary/value 请求登记、冻结回放、
-有限尝试、租约、成功接收、显式 retry 与历史查询；这是 Python 服务，不是 screening CLI。
+有限尝试、租约、`test | pi_rpc` 来源的成功接收、显式 retry 与历史查询。
+`pi_rpc` 的供给/安装与回执审计随备份恢复核验；这只证明持久事实一致性，
+真实执行和兼容仍需 Live 验收。这是 Python 服务，不是 screening CLI。
 value 通过 `register` 登记时由调用方提供语言事实，`register_feed_value` 则从 Feed
 发现归属派生该事实。
 接口与任务语义见[Screening 任务契约](docs/contracts/screening-tasks.md)，
