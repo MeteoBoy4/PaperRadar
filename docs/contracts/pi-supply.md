@@ -43,6 +43,8 @@ prepare/rebuild 返回不可变 `PrepareResult(supply_id, install_id, reused_con
 `reused_concurrent` 标明并发 prepare 复用结果，`residuals` 标明已提交重建的管理文件清理残留。
 `list_supplies` 返回 `SupplyRecord` 元组，`show_supply` 返回指定完整 ID 的记录；材料保留原字节，
 实例、逐实例检查和供给级重建失败分别回查，不以最近失败覆盖成功历史。
+`list_supplies` 直接复用只读仓储的完整历史回放，不加载供给执行服务、HTTP或进程实现；
+备份及执行审计的历史身份核验复用同一回放，不读取原安装树或授予当前执行资格。
 
 请求为不超过 4 MiB 的 UTF-8 严格 YAML/JSON：拒绝未知键、重复键、锚点、合并、多文档、非有限数和任意命令/参数；
 整数格式版本严格为 1，布尔不算整数。证据文件相对请求文件所在目录解析，

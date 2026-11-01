@@ -33,6 +33,8 @@ projection_id 相等；只支持 boundary/value。系统指令、业务 Prompt�
 封闭 `PROTOCOL_PROFILES` 仅含 `1.4.0 → pi-rpc-1.4.0-v1`。这是离线协议支持
 范围，不是生产 rpc_compatibility、固定安装或模型兼容证明。配置可保存其他正式
 版本，但 prepare 必须在 `run_once` 前拒绝未登记版本，不领取、不占次数、不写失败。
+该注册由中立纯模块 `paper_radar.pi_protocol` 唯一维护；`llm.models` 保留同一对象的
+兼容导出，持久审计校验直接消费纯注册，历史回放不因此导入 LLM。
 
 | 描述拒绝 | DescriptionReason | prepare 的既有 TaskReason |
 | --- | --- | --- |
@@ -64,8 +66,11 @@ contract 仅取相应投影的 schema 对象，规范 JSON，不含 manifest。p
 题名 title、摘要 abstract 和严格布尔 abstract_truncated。value topics 只含启用项
 id/name/description，按既有投影 ID 顺序；boundary 没有 topics 键。
 
-correction 始终保留槽位：首次为 null，后续为 A7 在领取后产生的受控说明字符串。
-prepare 只可核验 correction=None 的首次字节；executor 用实际 correction 重新渲染。
+correction 始终保留槽位：首次为 null，后续为 A7 唯一构造的受控说明字符串。
+通用调用描述不查询任务修正；生产 Pi 组合用任务服务只读预览及领取事务内复核，
+在领取前核验含实际修正的完整帧，executor 再用领取后的实际 correction 渲染。
+任务修正接缝与过期回收规则见[任务 Contract](screening-tasks.md#rpc-组合前置)，
+执行前拒绝规则见[Pi 执行组合](pi-execution.md#一次任务执行组合)。
 修正可带 A1 安全字段/类别，不得拼入失败原文、上一轮输出或消息。修正不进指纹，
 也不能由是否为空推断 attempt 编号。独立完整字节向量见
 [request-vectors.json](../../tests/fixtures/pi_rpc/1.4.0/request-vectors.json)。

@@ -2,11 +2,10 @@
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from types import MappingProxyType
 from typing import Literal, get_args
 
-# 只声明离线协议支持;不授予真实 RPC 或生产执行资格。
-PROTOCOL_PROFILES = MappingProxyType({"1.4.0": "pi-rpc-1.4.0-v1"})
+from paper_radar.pi_protocol import PROTOCOL_PROFILES as PROTOCOL_PROFILES
+
 RENDER_FORMAT = 1
 MAX_REQUEST_BYTES = 256 * 1024
 REQUEST_HEADER = "PaperRadar bounded-rpc-v1\n"
