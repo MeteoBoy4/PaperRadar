@@ -141,7 +141,7 @@ ISSN 只接受七位 ASCII 数字加数字或 `X/x` 校验位，可在第四位�
 
 ## 模型、提示词与契约
 
-models 文件必须有 `version` 和 `screening`、`reuse_assessment`、`reading` 三个具名槽；每槽写 `null` 或严格对象。对象允许 `provider`、`model`、`protocol`、`temperature`、`top_p`，未知字段均拒绝。`provider`、`model`、`protocol` 均可省略或为 `null`，默认 `null`；前两项为文本，`protocol` 为 `json_schema`、`json_object`、`prompt_only` 之一。`temperature` 是 0.0–2.0 的有限数字，默认 0.0；`top_p` 是大于 0 且不超过 1 的有限数字，默认 1.0。不得填写凭据、自由参数字典或 fallback 列表。先判占位：`provider` 或 `model` 去除首尾空白后精确等于 `REQUIRED`、`REQUIRED_FOR_FORMAL_CALIBRATION`、`REQUIRED_FOR_READ` 之一时，槽为 `placeholder`；否则三项缺失、为 `null` 或 provider/model 为空白时，槽为 `unconfigured`。其余非空文本视为已配置；此处不探测供应商能力或读取凭据。三槽可以写相同的 provider/model，但各自保留身份。
+旧格式（无根级 `format_version`）的 models 文件必须有 `version` 和 `screening`、`reuse_assessment`、`reading` 三个具名槽；每槽写 `null` 或严格对象。对象允许 `provider`、`model`、`protocol`、`temperature`、`top_p`，未知字段均拒绝。`provider`、`model`、`protocol` 均可省略或为 `null`，默认 `null`；前两项为文本，`protocol` 为 `json_schema`、`json_object`、`prompt_only` 之一。`temperature` 是 0.0–2.0 的有限数字，默认 0.0；`top_p` 是大于 0 且不超过 1 的有限数字，默认 1.0。不得填写凭据、自由参数字典或 fallback 列表。先判占位：`provider` 或 `model` 去除首尾空白后精确等于 `REQUIRED`、`REQUIRED_FOR_FORMAL_CALIBRATION`、`REQUIRED_FOR_READ` 之一时，槽为 `placeholder`；否则三项缺失、为 `null` 或 provider/model 为空白时，槽为 `unconfigured`。其余非空文本视为已配置；此处不探测供应商能力或读取凭据。三槽可以写相同的 provider/model，但各自保留身份。
 
 ```yaml
 version: models-pi-v1
@@ -166,6 +166,51 @@ reading: null
 配置 `ready` 不证明参数支持、运行资源或隔离；执行边界见 [Pi RPC](pi-rpc.md)，
 生产准入承接见[路线图 Pi](../roadmap.md#module-pi)与[Live](../roadmap.md#module-live)。
 配置不提供专用提交工具协议或自动协议切换；后续责任见[路线图 Pi](../roadmap.md#module-pi)。
+
+### models 格式 2 与采样声明
+
+根级 `format_version: 2` 显式选择 models-v2；`version` 始终只是声明版本标签，
+不按 `models-v1`、`models-pi-v1` 等名称推断格式。无格式标记只使用旧严格验证器，
+旧 compiled config、默认 0.0/1.0、快照、投影及历史字节保持；显式格式标记仅接受
+严格整数 2，null、布尔、浮点、文本或其他值均拒绝。v2 验证失败绝不回退 v1。
+没有标记但带 `sampling` 的输入由旧 extra-forbid 拒绝。
+
+每个非 null 的 v2 模型槽都必须有 `sampling`，封闭为：
+
+| 声明 | temperature / top_p |
+| --- | --- |
+| `explicit` | 两项必填且非 null，范围与旧格式相同。 |
+| `provider_default` | 两项都必须缺席；显式 null 也拒绝。 |
+
+混用、只给一项、未知声明/字段及非有限数字受控拒绝；provider/model/protocol、
+占位与未配置规则沿用旧格式。示例：
+
+```yaml
+format_version: 2
+version: models-subscription-v2
+screening:
+  provider: openai
+  model: REQUIRED
+  protocol: prompt_only
+  sampling: provider_default
+reuse_assessment: null
+reading: null
+```
+
+当前选择与历史回放使用同一分派和编译规则。v2 compiled config 保留格式标记和
+采样声明；`provider_default` 不生成 temperature/top_p。调用描述保留两参数为 None，
+不写 models.json、不注入 0/1。v2 explicit 可以合法编译、回放并进入阶段语义；当前
+受控执行的显式采样映射表为空，v1 与 v2 explicit 均在领取前返回
+`sampling_mapping_unavailable`。配置合法、语义可回放和本次可执行分别判断。
+
+采样声明随实际 model 分量进入阶段投影：Screening 影响 boundary/value，reuse
+影响 reuse，Read 专用声明只影响 read。前两者进入既有校准基线与差异分级，不自动
+继承门禁、不自动判 minor/major。provider_default 不保证确定参数或逐字重现；
+订阅通道取舍见 [ADR-0040](../adr/0040-declare-provider-default-sampling.md)。
+同时删除格式标记和全部 sampling 后，其结构与合法 legacy 无法区分，按 legacy
+处理并在执行前拒绝显式映射；历史存储删改仍由原字节哈希和完整快照重建身份拒绝。
+
+### 提示词与契约
 
 提示词的逻辑名为 `boundary`、`value`、`reuse` 或 `reading`，声明版本来自对应 `settings.prompts.*`，Prompt 本身无需内嵌版本。文件去除首尾空白后为空或精确等于 ASCII `...` 时为占位。两个声明版本可登记完全相同的 Prompt 原始字节；同一版本任何字节变化都拒绝。Profile 的文件内版本与 selector 一致性仍是强制要求。
 `prompt/reading` 是 Read 业务提示词，与 `prompt/pi-system` 的登记声明系统指令使用不同登记键；

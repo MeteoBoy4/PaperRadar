@@ -49,7 +49,7 @@ class PipelineError(Exception):
             "metadata_stale": "元数据依据已落后于当前版本或修订，请显式重新准备。",
             "boundary_missing": "请提供当前输入的boundary成功依据。",
             "out_of_scope": "boundary判定out_of_scope，不能登记value。",
-            "test_source": "生产入口拒绝test来源，真实生产RPC仍由B承接。",
+            "test_source": "生产入口只接收已登记的pi_rpc来源；根用途仍由B承接。",
             "corrupt_reference": "组合依据损坏，请停止使用并核对备份。",
         }
         super().__init__(reason + "：" + guidance.get(reason, "请核对组合前置。"))
@@ -238,7 +238,7 @@ class FeedPipeline:
             raise PipelineError("boundary_missing")
         if content.output.boundary == "out_of_scope":
             raise PipelineError("out_of_scope")
-        if purpose == "production" and content.receipt.executor_kind == "test":
+        if purpose == "production" and content.receipt.executor_kind not in {"pi_rpc"}:
             raise PipelineError("test_source")
         gate = FeedGate(
             key,
@@ -283,7 +283,7 @@ class FeedPipeline:
             or content.output.boundary == "out_of_scope"
             or (
                 result.purpose == "production"
-                and content.receipt.executor_kind == "test"
+                and content.receipt.executor_kind not in {"pi_rpc"}
             )
             or frozen.original_title_is_zh
             != result.language_basis["original_title_is_zh"]

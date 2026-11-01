@@ -19,6 +19,7 @@ from paper_radar.config.schema import (
     MODEL_SLOTS,
     PROFILE_FIELDS,
     Models,
+    ModelsV2,
     Profile,
     PromptName,
     Settings,
@@ -118,7 +119,7 @@ class SelectedMaterials:
     settings: Settings
     profile: Profile | None
     profile_material: Material | None
-    models: Models | None
+    models: Models | ModelsV2 | None
     topics: Topics | None
     additional: tuple[CompiledMaterial, ...]
     escalation: Escalation | None = None

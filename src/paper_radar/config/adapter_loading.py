@@ -13,12 +13,18 @@ from paper_radar.config.adapters import (
 )
 from paper_radar.config.compile import CompiledMaterial, Material, MaterialKind
 from paper_radar.config.errors import ConfigError
-from paper_radar.config.schema import MODEL_SLOTS, ModelProtocol, Models, Settings
+from paper_radar.config.schema import (
+    MODEL_SLOTS,
+    ModelProtocol,
+    Models,
+    ModelsV2,
+    Settings,
+)
 from paper_radar.config.yaml_loader import read_prompt, read_yaml
 
 
 def selected_adapter_materials(
-    config_dir: Path, settings: Settings, models: Models | None
+    config_dir: Path, settings: Settings, models: Models | ModelsV2 | None
 ) -> tuple[tuple[CompiledMaterial, ...], tuple[tuple[str, AdapterSemantics], ...]]:
     """同一声明版本只装载一次。所有资源绑定精确内容而非外部路径。"""
     adapters: dict[str, PiAdapter] = {}
@@ -72,7 +78,7 @@ def selected_adapter_materials(
 
 def adapter_semantics(
     settings: Settings,
-    models: Models | None,
+    models: Models | ModelsV2 | None,
     adapters: Mapping[str, PiAdapter],
     prompts: Mapping[str, bytes],
 ) -> tuple[tuple[str, AdapterSemantics], ...]:

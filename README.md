@@ -400,8 +400,10 @@ value 通过 `register` 登记时由调用方提供语言事实，`register_feed
 派生入口见[Feed 原题名语言来源](docs/contracts/screening-tasks.md#feed-原题名语言来源)，
 来源政策见[ADR-0035](docs/adr/0035-feed-derived-original-title-language-fact.md)。
 
-当前执行边界仅提供 test 来源，不提供真实模型执行。产品接线与后续责任见
-[路线图 B](docs/roadmap.md#module-b)。
+Pi 一次执行的离线组合已支持 models-v2 采样声明、领取前纯证据门禁、受保护隔离启动、
+pi_rpc 权威成功与 Feed value 登记/恢复。产品仍缺 Cwd/Live 证据，真实执行保持阻断；
+合成对端通过不代表真实认证、参数或 RPC 兼容。见 [执行契约](docs/contracts/pi-execution.md#一次任务执行组合)。
+后续产品入口与实验用途由 [B](docs/roadmap.md#module-b) 承接。
 
 ## JGR Feed 与元数据
 

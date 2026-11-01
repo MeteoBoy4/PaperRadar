@@ -22,14 +22,30 @@ from paper_radar.config.escalation import Escalation
 from paper_radar.config.extraction import Extraction
 from paper_radar.config.journals import Journals
 from paper_radar.config.read import ReadConfig
-from paper_radar.config.schema import Models, Profile, Settings
+from paper_radar.config.schema import (
+    Models,
+    ModelsDocument,
+    ModelsV2,
+    Profile,
+    Settings,
+)
 from paper_radar.config.topics import Topics
 from paper_radar.config.yaml_loader import validate_yaml_bytes
 
 # 仅约束当前解码器目录。MaterialAssembly 的入口不暴露这些具体种类。
-type _YamlConfig = (
-    Profile | Models | Topics | Journals | Escalation | Extraction | ReadConfig
+type _YamlValue = (
+    Profile
+    | Models
+    | ModelsV2
+    | Topics
+    | Journals
+    | Escalation
+    | Extraction
+    | ReadConfig
 )
+
+
+type _YamlConfig = _YamlValue | ModelsDocument
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,7 +62,7 @@ class _YamlSpec:
 # 顺序也是当前装载的首次报错顺序, 不能按材料名排序。
 _YAML_SPECS = (
     _YamlSpec(MaterialKind.PROFILE, Profile, "profiles"),
-    _YamlSpec(MaterialKind.MODELS, Models, "models"),
+    _YamlSpec(MaterialKind.MODELS, ModelsDocument, "models"),
     _YamlSpec(MaterialKind.TOPICS, Topics, "topics"),
     _YamlSpec(MaterialKind.JOURNALS, Journals, "journals"),
     _YamlSpec(MaterialKind.ESCALATION, Escalation, "screening"),
@@ -54,6 +70,13 @@ _YAML_SPECS = (
     _YamlSpec(MaterialKind.READ, ReadConfig, "read"),
 )
 _BY_KEY = {(spec.kind, spec.kind.value): spec for spec in _YAML_SPECS}
+
+
+def _validate(material: Material, spec: _YamlSpec) -> _YamlValue:
+    parsed = validate_yaml_bytes(material.raw, spec.model, material.kind.value)
+    if isinstance(parsed, ModelsDocument):
+        return parsed.root
+    return parsed
 
 
 def selected_yaml_paths(settings: Settings) -> Iterator[tuple[MaterialKind, str, str]]:
@@ -65,7 +88,7 @@ def selected_yaml_paths(settings: Settings) -> Iterator[tuple[MaterialKind, str,
 
 
 def _compiled_config(config: BaseModel) -> dict[str, Any]:
-    if isinstance(config, Extraction):
+    if isinstance(config, (Extraction, ModelsV2)):
         return config.compiled_config()
     if isinstance(config, Profile):
         return config.model_dump()
@@ -96,7 +119,7 @@ class MaterialAssembly:
     def add_selected(self, material: Material) -> None:
         """验证当前选择的原始材料, 版本不一致沿用字段级中文指引。"""
         spec = _BY_KEY[(material.kind, material.name)]
-        config = validate_yaml_bytes(material.raw, spec.model, material.kind.value)
+        config = _validate(material, spec)
         if config.version != spec.selected_version(self._settings):
             label = material.kind.value
             raise ConfigError(
@@ -109,7 +132,7 @@ class MaterialAssembly:
         spec = _BY_KEY.get((material.kind, material.name))
         if spec is None:
             return False
-        config = validate_yaml_bytes(material.raw, spec.model, material.kind.value)
+        config = _validate(material, spec)
         if (
             config.version != spec.selected_version(self._settings)
             or _compiled_config(config) != entry["config"]
@@ -143,9 +166,14 @@ class MaterialAssembly:
         return item.config
 
     @property
-    def models(self) -> Models | None:
+    def models(self) -> Models | ModelsV2 | None:
         """模型适配器仍需已验证的模型槽配置进行协议检查。"""
-        return self._config(MaterialKind.MODELS, Models)
+        item = self._validated.get(MaterialKind.MODELS)
+        if item is None:
+            return None
+        if not isinstance(item.config, (Models, ModelsV2)):
+            raise TypeError
+        return item.config
 
     def finish(
         self,

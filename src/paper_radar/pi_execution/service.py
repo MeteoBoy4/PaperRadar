@@ -1,0 +1,236 @@
+"""领取前准备与一次受控执行;任务预算/成功接收仍由 ScreeningTasks 拥有。"""
+
+import math
+from dataclasses import asdict
+from datetime import UTC, datetime
+from pathlib import Path
+from time import monotonic
+
+from paper_radar.config import ConfigError, load_config_snapshot
+from paper_radar.llm import (
+    CallDescription,
+    CallDescriptionError,
+    DescriptionReason,
+    build_call,
+    render_request,
+)
+from paper_radar.llm.rpc import run_call, validate_request
+from paper_radar.llm.rpc_types import (
+    DEFAULT_LIMITS,
+    Cancellation,
+    MonotonicClock,
+    RpcCandidate,
+    RpcCategory,
+    RpcLimits,
+)
+from paper_radar.pi_execution.admission import (
+    EvidenceBinding,
+    admit,
+    bind_description,
+    read_evidence,
+)
+from paper_radar.pi_execution.errors import ExecutionError
+from paper_radar.pi_execution.isolation import ISOLATION_POLICY_VERSION
+from paper_radar.pi_execution.launcher import LaunchIdentity, prepare_launch
+from paper_radar.pi_execution.resources import (
+    LAUNCH_POLICY_VERSION,
+    ExecutionRoots,
+    check_system_prompt,
+    expected_cwd_section,
+)
+from paper_radar.pi_supply import SupplyError, activation_history, show_supply
+from paper_radar.runtime_logging import Sink
+from paper_radar.runtime_logging.events import Clock
+from paper_radar.screening_tasks import (
+    FailureKind,
+    FailureReceipt,
+    FailureReport,
+    PiRpcExecutionAudit,
+    ScreeningTasks,
+    SuccessCandidate,
+    SuccessReceipt,
+    TaskError,
+    TaskReason,
+)
+from paper_radar.stage_inputs import StageInput
+
+_FAILURE_KINDS = {
+    RpcCategory.TIMEOUT: FailureKind.TIMEOUT,
+    RpcCategory.CANCELLED: FailureKind.CANCELLED,
+    RpcCategory.ENVIRONMENT: FailureKind.EXECUTOR_ERROR,
+    RpcCategory.PROTOCOL: FailureKind.PROTOCOL_ERROR,
+}
+# 唯一测试私有接缝;产品不接收任意 evidence/factory 参数。
+_evidence_for = read_evidence
+
+
+def prepare_call(tasks: ScreeningTasks, receipt_id: str) -> CallDescription:
+    receipt = tasks.get_receipt(receipt_id)
+    frozen = tasks.load_input(receipt_id)
+    try:
+        audit = load_config_snapshot(tasks.database, receipt.snapshot_id)
+        return build_call(frozen.stage_input, frozen.snapshot, audit)
+    except ConfigError:
+        raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
+    except CallDescriptionError as error:
+        reasons = {
+            DescriptionReason.INVALID_CONTEXT: TaskReason.INVALID_CONTEXT,
+            DescriptionReason.PROJECTION_MISMATCH: TaskReason.CONTEXT_CONFLICT,
+            DescriptionReason.CORRUPT_REFERENCE: TaskReason.CORRUPT_REFERENCE,
+        }
+        raise TaskError(reasons[error.reason]) from None
+
+
+class PiExecution:
+    def __init__(
+        self,
+        database: Path,
+        data_root: Path,
+        *,
+        roots: ExecutionRoots,
+        credentials_dir: Path,
+        auth_mode: str,
+        proxy: str | None = None,
+        sink: Sink | None = None,
+        clock: Clock | None = None,
+    ) -> None:
+        self.database, self.data_root = database, data_root
+        self.tasks = ScreeningTasks(
+            database, data_root, sink=sink, clock=clock or (lambda: datetime.now(UTC))
+        )
+        self.roots, self.credentials_dir = roots, credentials_dir
+        self.auth_mode, self.proxy = auth_mode, proxy
+
+    def _binding(
+        self, description: CallDescription, identity: LaunchIdentity
+    ) -> EvidenceBinding:
+        return bind_description(
+            description,
+            supply_id=identity.supply_id,
+            install_id=identity.install_id,
+            launch_policy_version=identity.launch_policy_version,
+            isolation_policy_version=identity.isolation_policy_version,
+            cwd_section=expected_cwd_section(),
+            auth_mode=identity.auth_mode,
+        )
+
+    def run_attempt(
+        self,
+        receipt_id: str,
+        *,
+        limits: RpcLimits = DEFAULT_LIMITS,
+        cancelled: Cancellation = lambda: False,
+        clock: MonotonicClock = monotonic,
+    ) -> SuccessReceipt | FailureReceipt:
+        if type(limits) is not RpcLimits or any(
+            type(value) not in (int, float)
+            or not math.isfinite(value)
+            or value <= 0
+            or value > maximum
+            for value, maximum in zip(
+                (
+                    limits.initialization,
+                    limits.total,
+                    limits.close,
+                    limits.terminate,
+                    limits.poll,
+                ),
+                (
+                    DEFAULT_LIMITS.initialization,
+                    DEFAULT_LIMITS.total,
+                    DEFAULT_LIMITS.close,
+                    DEFAULT_LIMITS.terminate,
+                    DEFAULT_LIMITS.poll,
+                ),
+                strict=True,
+            )
+        ):
+            raise ExecutionError("timeout_invalid")
+        description = prepare_call(self.tasks, receipt_id)
+        if validate_request(render_request(description)) is not None:
+            raise TaskError(TaskReason.INVALID_CONTEXT)
+        check_system_prompt(description.system_prompt)
+        if description.sampling != "provider_default":
+            raise ExecutionError("sampling_mapping_unavailable")
+        try:
+            history = activation_history(self.tasks.database)
+            if not history:
+                raise ExecutionError("install_unavailable")
+            selected = history[-1]
+            record = show_supply(self.tasks.database, selected.supply_id)
+            if record.manifest.pi_version != description.pi_version:
+                raise ExecutionError("protocol_unsupported")
+            identity = LaunchIdentity(
+                selected.supply_id,
+                selected.install_id,
+                record.manifest.pi_version,
+                record.manifest.node_version,
+                LAUNCH_POLICY_VERSION,
+                ISOLATION_POLICY_VERSION,
+                self.auth_mode,
+                "openai",
+                "owner_provisioned_dir",
+                False,
+                None,
+            )
+        except SupplyError:
+            raise ExecutionError("install_unavailable") from None
+        binding = self._binding(description, identity)
+        reason = admit(binding, _evidence_for(binding))
+        if reason is not None:
+            raise ExecutionError(reason)
+        with prepare_launch(
+            self.tasks.database,
+            description,
+            roots=self.roots,
+            credentials_dir=self.credentials_dir,
+            auth_mode=self.auth_mode,
+            proxy=self.proxy,
+            attempt_timeout=limits.total + limits.terminate + limits.close,
+        ) as prepared:
+            if self._binding(description, prepared.identity) != binding:
+                raise ExecutionError("evidence_mismatch")
+            audit = PiRpcExecutionAudit.model_validate(
+                {
+                    **asdict(prepared.identity),
+                    "adapter_version": description.adapter_version,
+                    "protocol_profile": description.protocol_profile,
+                    "protocol": description.protocol,
+                }
+            )
+
+            def executor(
+                stage_input: StageInput, correction: str | None, _renewal: str
+            ) -> SuccessCandidate | FailureReport:
+                if (
+                    stage_input.fingerprint != description.fingerprint
+                    or stage_input.payload_bytes != description.stage_input_payload
+                    or stage_input.stage.value != description.stage
+                ):
+                    return FailureReport(FailureKind.PROTOCOL_ERROR)
+                try:
+                    message = render_request(description, correction)
+                except CallDescriptionError:
+                    return FailureReport(FailureKind.PROTOCOL_ERROR)
+                result = run_call(
+                    description,
+                    message,
+                    prepared,
+                    clock=clock,
+                    cancelled=cancelled,
+                    limits=limits,
+                    expected_cwd_section=expected_cwd_section(),
+                )
+                if isinstance(result, RpcCandidate):
+                    return SuccessCandidate(
+                        result.raw_response,
+                        executor_kind="pi_rpc",
+                        reported_provider=result.provider,
+                        reported_model=result.model,
+                        input_tokens=result.input_tokens,
+                        output_tokens=result.output_tokens,
+                        execution_audit=audit,
+                    )
+                return FailureReport(_FAILURE_KINDS[result.category])
+
+            return self.tasks.run_once(receipt_id, executor)

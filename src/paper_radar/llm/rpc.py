@@ -288,9 +288,12 @@ def _match_model(model: object, description: CallDescription) -> None:
 
 
 def _run(
-    connection: _Connection, description: CallDescription, user_message: bytes
+    connection: _Connection,
+    description: CallDescription,
+    user_message: bytes,
+    expected_cwd_section: str | None,
 ) -> RpcCandidate:
-    events = RunEvents(description, user_message.decode("utf-8"))
+    events = RunEvents(description, user_message.decode("utf-8"), expected_cwd_section)
     connection.before_command(connection.total_deadline)
     connection.command_no = _PROMPT_COMMAND_NO
     connection.awaiting = (_PROMPT_COMMAND_ID, _PROMPT_COMMAND_NAME)
@@ -403,6 +406,7 @@ def run_call(
     clock: MonotonicClock = monotonic,
     cancelled: Cancellation = lambda: False,
     limits: RpcLimits = DEFAULT_LIMITS,
+    expected_cwd_section: str | None = None,
 ) -> RpcCandidate | RpcFailure:
     """一次调用仅一个显式会话/一条prompt,失败不携原文或自动重发。"""
     session: ByteSession | None = None
@@ -466,7 +470,7 @@ def run_call(
         if connection.records or connection.decoder.has_tail:
             raise RpcProblem(RpcReason.EARLY_RECORD)
         _initialize(connection, description, initialization)
-        result = _run(connection, description, user_message)
+        result = _run(connection, description, user_message, expected_cwd_section)
         connection.check(connection.total_deadline, closing=True)
         cleanup_deadline = clock() + limits.terminate
         _cleanup(session, clock, cleanup_deadline)

@@ -19,12 +19,13 @@
 公共 `paper_radar.llm.build_call(stage_input, semantic_snapshot, audit_snapshot)` 只
 消费已验证的配置/阶段输入公共面。语义 snapshot 必须为任务预算首次冻结的历史
 snapshot；执行审计 snapshot 必须为 `get_receipt(receipt_id).snapshot_id` 的历史
-加载结果。`tests/a8_call_support.py.prepare_call` 只读取得两者，不读当前 selector、
+加载结果。生产 `paper_radar.pi_execution.service.prepare_call` 与历史 A8 测试接线
+分别只读取得两者，不读当前 selector、
 个人安装、网络或凭据。`load_input` 的 snapshot 来源是预算行，不能用回执替代。
 
 先严格回放 StageInput 并核对对象字段，再核对两份 snapshot 的同阶段投影格式和
 projection_id 相等；只支持 boundary/value。系统指令、业务 Prompt、Profile、Schema、
-模型、档位、temperature/top_p 和固定策略来自语义 snapshot；`pi_version` 与
+模型、档位、采样声明（v1 视为 explicit）、temperature/top_p 和固定策略来自语义 snapshot；`pi_version` 与
 `adapter_version` 仅来自审计 snapshot。它们和 snapshot ID/指纹只保存在描述中，不
 进入模型消息。审计升级可以共享旧预算和原请求字节，不把执行版本变成语义输入。
 描述为不可变值，输入原文、模型名称、请求、系统指令不出现在 repr。
@@ -328,14 +329,30 @@ repr、异常或任务接线的日志、数据库、制品及验收结果；只�
 
 <a id="d4来源推导与-not_assessed"></a>
 
+## 受控执行组合与 cwd opt-in
+
+llm 只消费普通调用描述和字节会话；生产组合在
+[Pi 执行服务](pi-execution.md#一次任务执行组合)完成准备、纯证据门禁与任务领取。
+CallDescription 新增 sampling（旧构造默认 explicit），两采样参数允许 None；
+provider_default 不补 0/1。内核不解释执行能力或读取数据库/凭据。
+
+`run_call(..., expected_cwd_section: str | None = None)` 贯穿 RunEvents 的 system
+sections 校验：None 保持 A8 既有默认行为；受控生产显式传入启动策略
+`expected_cwd_section()`，要求精确 `<cwd>\n/srv/pi-cwd\n</cwd>`，不符为
+system_mismatch→protocol_error。期望文本属于启动策略，Live 推翻 DERIVED-02 时修改
+策略版本；不放宽默认内核或散落新的 cwd 常量。
+
+完整 RPC 候选转换为带 S2 执行审计的 pi_rpc SuccessCandidate，仍经既有严格 JSON、
+Schema、业务与模型匹配接收。测试正例只证明受控工程接线，未产生 Live passed。
+
 ## 不提供／不证明
 
 本组件不提供默认生产启动器、命令/env/cwd 构造或凭据读取。`pi_rpc` 的持久成功来源
 由[任务接收边界](screening-tasks.md#10-原始候选接收与派生查询)提供，完整性不等于真实执行证明。
 系统补丁形状、空 commands 和 state 回读只核对可观察记录，不证明 cwd 无项目资源、
 未加载个人设置、关闭持久化、自动外发抑制或 OS 文件/进程/网络权限隔离。
-常量 cwd、资源/权限与生产启动器由[路线图 Pi](../roadmap.md#module-pi)及
-[Cwd](../roadmap.md#module-cwd)承接；固定安装/激活另见 [Pi 供给](pi-supply.md)。
+常量 cwd、资源/权限与受控执行组合见 [Pi 执行](pi-execution.md)；
+现场隔离验收由 [Cwd](../roadmap.md#module-cwd) 承接，固定安装/激活另见 [Pi 供给](pi-supply.md)。
 
 源码推导与合成字节流不是实际 Pi、供应商、参数生效、用量或模型兼容性观测。
 三态来源及 DERIVED-01…11 的固定依据由

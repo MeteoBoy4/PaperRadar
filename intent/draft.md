@@ -1274,6 +1274,15 @@ V1 首次接入使用 `prompt_only`：提示词要求最终纯 JSON 文本，Pyt
 
 上例是目标选择示意，不授权原地修改已经登记的 `models-v1`；既有协议枚举及当前配置编译契约见 `docs/contracts/runtime-config.md`。Pi 运行策略的版本化配置、三槽选择与 models 协议一致性检查由配置编译提供（依据 #26），执行映射由 RPC 边界实现；提交工具的显式协议名称及配置 Contract 需在启用该升级前另行定义并同步权威 Schema、文档和必要 migration，不能复用 `json_schema` 或 `json_object` 隐藏其真实通道。V1 默认验收不要求启用提交工具。
 
+models 格式 2 通过根级 `format_version: 2` 明确分派；非 null 槽必须声明
+`sampling=explicit|provider_default`。字段规则唯一见
+[运行配置 Contract](../docs/contracts/runtime-config.md#models-格式-2-与采样声明)。
+explicit 可合法编译和回放；没有已支持执行映射时，v1/v2 explicit 领取前均拒绝
+sampling_mapping_unavailable。provider_default 显式接受供应商缺省采样，不补 0/1、
+不承诺确定性；声明进入实际阶段投影，Screening/reuse 的变化进入既有校准分级，
+Read 专用变化保持既有范围。无自动门禁继承，订阅取舍见
+[ADR-0040](../docs/adr/0040-declare-provider-default-sampling.md)。
+
 现有 `temperature`、`top_p` 等模型参数须在接入时明确映射到 Pi/provider 的实际能力；不能静默忽略、改写或用个人默认设置代替。所选参数或协议无法实现时，执行就绪检查给出具体不支持原因，不将已有的配置完整性判断解释为真实调用已就绪。
 
 当前运行配置快照的校准语义基线与门禁所依据的 evaluation 基线（或其已分级的 minor 继承链末端）存在校准相关差异时，doctor 和 run-due 必须列出差异并要求用户分级。只改变 Read 模型等无关配置时，即使完整快照 ID 变化，也不得因此关闭门禁、重算 Screening 或创建校准变更。系统不得仅依据文件名、版本号或 diff 大小自动判定 minor/major；用户选择和理由形成审计事件。minor 可沿审计链继承既有门禁，major 才关闭既有门禁，但待分级期间自动精读保持暂停。

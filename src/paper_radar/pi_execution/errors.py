@@ -4,6 +4,12 @@ from typing import Literal
 
 ExecutionReason = Literal[
     "snapshot_invalid",
+    "sampling_mapping_unavailable",
+    "evidence_missing",
+    "evidence_mismatch",
+    "cwd_evidence_missing",
+    "rpc_evidence_missing",
+    "model_evidence_missing",
     "cwd_invalid",
     "cwd_not_empty",
     "system_prompt_path",

@@ -1,6 +1,6 @@
 # Pi 执行资源与隔离
 
-本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。本模块不领取任务、不接收成功、不提供执行 CLI，也不保存准入证据。产品缺少 Cwd/Live 证据时仍必须由上层在领取前阻断；这里的合成对端通过不产生兼容 passed。
+本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。没有执行 CLI，也不保存准入证据。产品缺少 Cwd/Live 证据时在领取前阻断；这里的合成对端通过不产生兼容 passed。
 
 ## 资源所有权
 
@@ -134,10 +134,49 @@ TCP bind/connect 均默认拒绝，只给指定端口 connect 权限。
 Landlock 端口规则不限制主机，也不覆盖 UDP/DNS；主机级出站缺口由 Cwd/Live 承接。
 本机 ABI 与可观察拒绝测试仅证明本次工程环境，不能迁移成部署机隔离事实。
 
+## 一次任务执行组合
+
+`paper_radar.pi_execution.service.PiExecution(database, data_root, *, roots,
+credentials_dir, auth_mode, proxy=None, sink=None, clock=None)` 提供显式回执
+`run_attempt(receipt_id, *, limits=DEFAULT_LIMITS, cancelled=..., clock=monotonic)`。
+构造不执行 I/O。wall clock 传给 ScreeningTasks（默认当前 UTC）；run_attempt 的 clock
+是协议有界单调时钟。sink 原样交给任务服务，缺省 NullSink；不新增日志类型或 CLI，
+B 后续产品入口承担所选根的文件日志与入口守卫。
+
+只读 `prepare_call(tasks, receipt_id)` 通过公共 load_input/load_config_snapshot/build_call
+取得预算首次语义与本回执审计；核对同阶段投影而非完整 snapshot ID。随后验证实际外层
+RPC 帧、系统指令路径和单参数 argv 上限、超时界限、采样映射与当前激活供给事实。
+`admission.EvidenceBinding` 把 supply/install、启动/隔离策略、cwd 段、provider/model/
+thinking、sampling/两参数、protocol_profile、auth_mode 绑定到同一证据。
+纯 `admit(binding, evidence)` 返回封闭原因或 None，`read_evidence` 产品恒为 None。
+缺失、错配以及 cwd_isolation/rpc_compatibility/model_parameters 任一未通过均拒绝；
+当前 explicit 映射为空。没有证据表、migration、产品文件/JSON/布尔导入或自动兼容探测。
+合成正例仅由测试私有 `_evidence_for` 注入内存事实。
+
+门禁通过才调用 prepare_launch，避免已知缺证据仍刷新凭据。受保护 identity 必须重新
+匹配同一绑定，防止选择在预检与取得间切换。保护从准备、auth 到 run_once 返回及整组
+回收持续持有。prepare_launch 的只读资源检查和受控 auth 刷新失败仍在领取前；唯一
+宿主副作用仍是专用凭据目录刷新。其余预检失败无任务/预算/失败行/成功/任务日志副作用。
+领取后工厂复核 cwd/树，创建独占资源和隔离，再启动一次会话；这些失败按
+startup_error→executor_error 消耗 attempt。RPC timeout/cancelled/environment/protocol
+分别沿既有 timeout/cancelled/executor_error/protocol_error 结算，不重发或 fallback。
+系统正常关闭并完成整组回收后才允许返回完整候选，转换成严格 pi_rpc 执行审计交给
+ScreeningTasks 唯一权威；不另建接收器、预算或租约。
+
+KeyboardInterrupt/SystemExit 保留未结算租约；显式过期恢复记 outcome_unknown，
+进程重建不加次数。历史成功及 Feed 组合可在原根/安装不可访问时查询和恢复，继续
+新执行仍重新检查当前证据/供给/auth，不加载旧会话。Feed 仅接收闭集 pi_rpc，根用途
+仍独立于 executor_kind。认证 token 的 `sk-` 前缀拒绝是形状启发式，不能证明 token
+确属订阅、有效或具有模型权限；真实认证、额度/用量和参数能力仍交 Live。
+
+纯 admission 模块及包导入不连接 auth/launcher/安装保护；doctor 可从只读快照/供给事实
+构造 EvidenceBinding 并调用同一 admit，不虚构任务、不调用 prepare_launch 或 run_attempt。
+覆盖与未验边界见 [#143 台账](../verification/issue-143-pi-execution.md)。
+
 ## 后续承接
 
 本模块不解决 EXP-2。实际 cwd/祖先目录、固定 1.4.0 入口、订阅刷新、模型权限、参数能力、
 TLS/DNS、主机级出站、旗标/settings 的自动网络抑制和 RPC 兼容均未验。
-`provider_default` 不能当作 `temperature=0`，采样声明与校准取舍以 runtime-config 契约与后续采样 ADR 为准；
+`provider_default` 不能当作 `temperature=0`，采样声明与校准取舍以 runtime-config 契约与[ADR-0040](../adr/0040-declare-provider-default-sampling.md) 为准；
 本模块不删除或注入 sampling 参数。
 覆盖分母与历史范围见 [#141 独立台账](../verification/issue-141-pi-launch.md)。

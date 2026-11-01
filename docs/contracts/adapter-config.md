@@ -94,7 +94,7 @@ resources:
 权威输出通道由 models 的 `prompt_only` 唯一指定，不在 adapter 重复定义协议。
 已选 adapter 对应模型槽的非空 protocol 只能为 `prompt_only`；槽或 protocol
 尚未配置也可保存不完整快照。明确选择 json_schema/json_object 时整次检查/编译
-拒绝，未选 adapter 的既有协议仍合法且可回放。provider/model/temperature/top_p
+拒绝，未选 adapter 的既有协议仍合法且可回放。provider/model 与采样声明及 temperature/top_p
 仍由 models 唯一决定。最多两次 Python attempt 不开放为参数；timeout、内存、
 凭据/引用、任意 CLI 参数和命令均未定义。
 
@@ -161,11 +161,19 @@ UTF-8 字节的 SHA-256。完整材料仍保存审计版本。
 锁定版本、相同语义 ID 或完整供给树哈希都不构成兼容性证明；无法判断行为影响时不能宣称
 校准兼容。升级及语义身份更新纪律见[规格 §7.8](../../intent/draft.md#78-pi-固定版本供给)。
 
+## 采样与执行能力
+
+models-v2 的采样字段规则由 [运行配置 Contract](runtime-config.md#models-格式-2-与采样声明)
+唯一维护。声明进入实际消费者的 model 分量，属于适配器语义；不改写旧
+AdapterSemantics 序列化或 Pi 执行审计身份。provider_default 不代表 temperature=0，
+显式参数合法也不代表已支持执行映射。当前显式映射为空；订阅通道准入仍需绑定该声明
+的 Cwd/Live 模型能力证据。参见 [ADR-0040](../adr/0040-declare-provider-default-sampling.md)。
+
 ## 不提供／不证明
 
 - 本边界不安装 Pi/Node、不执行 RPC、不检查凭据或 provider 参数能力、不启用流水线。
-  固定供给由 [Pi 供给契约](pi-supply.md)定义；生产启动器与参数映射由
-  [Pi](../roadmap.md#module-pi)、实际安装/RPC 验证由 [Live](../roadmap.md#module-live)承接。
+  固定供给由 [Pi 供给契约](pi-supply.md)定义；受控启动/采样准入见
+  [Pi 执行](pi-execution.md)，实际安装/RPC/参数验证由 [Live](../roadmap.md#module-live)承接。
 - 配置只保存声明系统指令与固定策略，不证明实际有效指令、资源隔离或 OS 权限已受控。
   Pi 1.4.0 的有效指令另含强制追加的 cwd 段，本配置不选择或核验它。
   `/srv/pi-cwd` 的显式提供、唯一白名单及首次 prompt 前现场隔离门槛见
