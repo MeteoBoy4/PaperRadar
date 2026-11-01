@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from scripts.a2_full_acceptance import acceptance_groups
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 
 def test_a9_is_required_and_only_declares_its_direct_predecessors() -> None:
@@ -62,7 +63,7 @@ def test_a9_records_read_rules_contract_same_run_execution_and_coverage(
         is result["rpc_verified"]
         is False
     )
-    assert result["migration_revision"] == "feed06_language_provenance"
+    assert result["migration_revision"] == EXPECTED_MIGRATION_REVISION
     assert result["format_versions"] == {
         "read_contract": "v1",
         "evidence_rules": "read-evidence-v1",

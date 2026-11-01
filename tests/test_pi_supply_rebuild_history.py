@@ -20,6 +20,7 @@ from paper_radar.pi_supply import (
 from paper_radar.storage import database as database_module
 from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.database import upgrade_database
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 from tests.pi_supply_support import Run, inputs, prepare
 
 
@@ -57,7 +58,7 @@ def test_nonempty_a401_migrates_without_changing_any_previous_fact(
                 previous.executemany(
                     f"INSERT INTO {table} VALUES ({placeholders})", values
                 )
-    assert upgrade_database(old) == "feed06_language_provenance"
+    assert upgrade_database(old) == EXPECTED_MIGRATION_REVISION
     assert show_supply(old, prepared.supply_id) == show_supply(
         source[0], prepared.supply_id
     )

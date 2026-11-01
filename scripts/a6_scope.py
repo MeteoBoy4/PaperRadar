@@ -231,7 +231,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_source_backup.py",
-        "ad48b6ecea65191f6f576fe451c0fe3daada00011dd1e66270c1441e94d639e6",
+        "05d2756b4707d7553da72b45f779a5210c8c312b464885e2b14b0ecd8401a80a",
     ),
     (
         "tests/test_source_cli.py",
@@ -239,7 +239,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_source_migrations.py",
-        "f6611c4eb3cec0afceb8f4773088aba3579269b6d22c0834cb564a58405540e1",
+        "b55a61641ccd82d09861b82d7aaa94ebfd9eea2a403aa544ece700e3c815283f",
     ),
     (
         "tests/test_source_process.py",
@@ -263,7 +263,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_version_relation_migrations.py",
-        "3fb7bafe4c9a773b98fc97168ae86b3cb24bbc9bbc0796164662743d660f811c",
+        "bbde4bb1cfb06ceda609c26d78e70ed5c4b9048ecb052148ac0c7db04a10b698",
     ),
     (
         "tests/test_version_relation_process.py",
@@ -275,7 +275,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_acceptance.py",
-        "828977e575b2bf62ec1e02013d132df6169cfb29a0853ddefe53c6c9b201d8ec",
+        "1b6ae4f260ac651041d77758de51663501e72b38a4a3860312810b4873170fd2",
     ),
     (
         "tests/test_a6_entry.py",
@@ -287,7 +287,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a6_integrity.py",
-        "d3783a4fd7a4a0f8a7d7b9b4a478e087c89b182501c45804b469a942e562b31c",
+        "353e59b22a320811f1fd851d5db94ce4ca074f36603bd8deee6469c8ddbda646",
     ),
     (
         "tests/test_a6_status.py",
@@ -506,6 +506,10 @@ REQUIRED_SOURCE_MODULES = (
     ),
 )
 REQUIRED_FIXTURE_FILES = (
+    (
+        "tests/migration_expectations.py",
+        SHARED_MATERIALS["tests/migration_expectations.py"],
+    ),
     (
         "tests/verification_expectations.py",
         SHARED_MATERIALS["tests/verification_expectations.py"],

@@ -9,6 +9,7 @@ from typing import Any
 from scripts.a1_acceptance import capture_identity
 from scripts.a2_acceptance import write_a2_conclusion
 from scripts.offline_evidence import default_checks, file_sha256
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -50,7 +51,7 @@ def test_a2_conclusion_binds_fixed_scope_and_same_run(tmp_path: Path) -> None:
     assert result["status"] == "passed", result["reasons"]
     assert result["a2_01_verified"] is True
     assert result["evidence_sha256"] == a1["evidence_sha256"]
-    assert result["migration_revision"] == "feed06_language_provenance"
+    assert result["migration_revision"] == EXPECTED_MIGRATION_REVISION
     assert result["snapshot_format_version"] == 1
     assert result["stage_projection_format_version"] is None
     assert json.loads(path.read_text(encoding="utf-8")) == result

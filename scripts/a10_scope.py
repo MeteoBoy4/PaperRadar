@@ -117,7 +117,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a10_integrity.py",
-        "87060a1084532011f78230314d278030f53dff38245d58ecb64aa13780b3a239",
+        "49e43ecaec3bedb6c3af819cb599f8d8a7ed8a49aa28745500843ebfa07fb97e",
     ),
     (
         "tests/test_a10_isolation.py",
@@ -237,7 +237,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_fixture_recovery.py",
-        "11606ce5c3c7528c3d1411ab4ce7c8a29c096124b0c39ef68c31e6c7e6af7cc0",
+        "fb1ca60549b486a4157be0ac4476722bb1e7b4c6fa778797115c4b5c481b0922",
     ),
     (
         "tests/test_fixture_registry.py",
@@ -1156,7 +1156,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "tests/a10_recovery_support.py",
-        "33416bfdb4c224fc1100af5bc053ee3eb563b34de07ac2a6bce8439ffaa2beb3",
+        "307d14e07db43c270ecd63bce70faaeec2674d3a0477da1b8cc9dad501edad68",
     ),
     ("tests/a2_full_support.py", SHARED_MATERIALS["tests/a2_full_support.py"]),
     (
@@ -1276,6 +1276,10 @@ REQUIRED_SOURCE_MODULES = (
     ),
 )
 REQUIRED_FIXTURE_FILES = (
+    (
+        "tests/migration_expectations.py",
+        SHARED_MATERIALS["tests/migration_expectations.py"],
+    ),
     (
         "tests/verification_expectations.py",
         SHARED_MATERIALS["tests/verification_expectations.py"],

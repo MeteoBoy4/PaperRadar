@@ -19,6 +19,7 @@ from paper_radar.papers import PaperFacts
 from paper_radar.storage import database as database_module
 from paper_radar.storage.database import upgrade_database
 from tests.fixture_registry_support import declaration_bytes
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 
 def registered(root: Path) -> tuple[FixtureAudit, str]:
@@ -154,8 +155,8 @@ def test_nonempty_a704_upgrade_preserves_existing_tables_and_foreign_keys(
             name: connection.execute(f"SELECT * FROM {name}").fetchall()
             for name in names
         }
-    assert upgrade_database(database) == "feed06_language_provenance"
-    assert upgrade_database(database) == "feed06_language_provenance"
+    assert upgrade_database(database) == EXPECTED_MIGRATION_REVISION
+    assert upgrade_database(database) == EXPECTED_MIGRATION_REVISION
     with closing(sqlite3.connect(database)) as connection:
         assert not connection.execute("PRAGMA foreign_key_check").fetchall()
         assert {

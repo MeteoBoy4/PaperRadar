@@ -96,7 +96,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_activation_history.py",
-        "3681d91c936e3a56f1c98b47e228a127102dbf13119a597de675db1d2969a4ad",
+        "724aec9beed606ceea0593dd8496c376b3e06676f844babd6e5659780a48a993",
     ),
     (
         "tests/test_pi_supply_boundaries.py",
@@ -116,11 +116,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_cleanup_execute_history.py",
-        "13c8c0e44fc1ed99c895646a213f4577871e88151ea3fb0bb0980b059ffb22f0",
+        "c973bc2602619c959cff3caad2ecfc9de5fc17652526c2b67e637ae748f3e3f8",
     ),
     (
         "tests/test_pi_supply_cleanup_history.py",
-        "a92978df3e34b386fb8632766831cfe3669fc67cbdc71631e0b752c64841338e",
+        "066ed18b293b186d960d52afcb8ec5896540acab9c4626909eb6443067fecb41",
     ),
     (
         "tests/test_pi_supply_cleanup_unreadable.py",
@@ -140,7 +140,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_history.py",
-        "c24d20749f95a2e1424c81a0239757d960f4920a9fee17ddf2b3d0c4e63c2632",
+        "c4551e147ccf2c30cf3f2a7cb499dadd26552619301f602953a8a2a271da4d2c",
     ),
     (
         "tests/test_pi_supply_process.py",
@@ -160,7 +160,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_pi_supply_rebuild_history.py",
-        "59cf8dabfc4bb74614d6e21e634947b7486ca07fa1e714c637873f814b428f73",
+        "b814f1e692608b5e00c6d0886791cf6282143ef9164390e2b03b082729b146d5",
     ),
     (
         "tests/test_pi_supply_transport.py",
@@ -172,7 +172,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a4_acceptance.py",
-        "6ef2a010b5ef1922b7b43b34b91ff998323d0527116f6ad626ae0a5c8e5795f1",
+        "56fcf11a518ac89b05a58e6fe41ece955e3ff49e099bab5eaef92b6573ac3894",
     ),
     (
         "tests/test_a4_combination.py",
@@ -386,6 +386,10 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ("tests/a2_full_support.py", SHARED_MATERIALS["tests/a2_full_support.py"]),
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/migration_expectations.py",
+        SHARED_MATERIALS["tests/migration_expectations.py"],
+    ),
     (
         "tests/verification_expectations.py",
         SHARED_MATERIALS["tests/verification_expectations.py"],

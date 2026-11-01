@@ -7,6 +7,7 @@ import pytest
 from paper_radar.backup import create_backup, restore_backup
 from paper_radar.storage.artifacts import ArtifactStore
 from tests.backup_support import populated, tree
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 
 def test_restore_publishes_an_independent_complete_private_copy(tmp_path: Path) -> None:
@@ -181,7 +182,7 @@ def test_new_process_replays_old_facts_after_all_original_roots_and_copies_move(
     assert restored_db.read_bytes()[18:20] == b"\x01\x01"
     upgraded = run_cli(tmp_path, "db", "upgrade", "--database", str(restored_db))
     assert upgraded.returncode == 0, upgraded.stderr
-    assert "feed06_language_provenance" in upgraded.stdout
+    assert EXPECTED_MIGRATION_REVISION in upgraded.stdout
     with closing(sqlite3.connect(restored_db)) as connection:
         assert connection.execute("PRAGMA journal_mode").fetchone() == ("wal",)
     assert history_view(restored_db, moved) == expected

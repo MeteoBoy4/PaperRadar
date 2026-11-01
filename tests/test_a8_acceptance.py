@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from scripts.a2_full_acceptance import acceptance_groups
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 
 def test_a8_is_required_and_binds_all_actual_same_run_predecessors() -> None:
@@ -21,7 +22,7 @@ def test_a8_records_production_formats_and_only_offline_capabilities(
     path, result = conclude(tmp_path, same_a8_run(tmp_path))
     assert result["status"] == "passed", result["reasons"]
     assert result["a8_verified"] is True
-    assert result["migration_revision"] == "feed06_language_provenance"
+    assert result["migration_revision"] == EXPECTED_MIGRATION_REVISION
     assert (result["format_version"], result["issue"], result["parent_issue"]) == (
         1,
         85,

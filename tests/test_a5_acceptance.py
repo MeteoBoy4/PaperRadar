@@ -8,6 +8,7 @@ import pytest
 from scripts.a2_full_acceptance import acceptance_groups
 from scripts.offline_evidence import file_sha256
 from tests.a5_acceptance_support import conclude, same_a5_run
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 
 def test_a5_is_required_and_declares_all_same_run_predecessors() -> None:
@@ -37,7 +38,7 @@ def test_a5_records_complete_independent_capabilities_and_live_boundaries(
         "passed",
     )
 
-    assert result["migration_revision"] == "feed06_language_provenance"
+    assert result["migration_revision"] == EXPECTED_MIGRATION_REVISION
     assert result["scope"] == "a5_stage_input_fingerprints"
     assert (result["format_version"], result["parent_issue"], result["issue"]) == (
         1,
@@ -305,7 +306,7 @@ def test_actual_new_migration_head_is_rejected_until_explicitly_registered(
     migrations = tmp_path / "migrations"
     shutil.copytree(Path(database.__file__).parent / "migrations", migrations)
     (migrations / "versions/unregistered.py").write_text(
-        "revision='unregistered'\ndown_revision='feed06_language_provenance'\n"
+        f"revision='unregistered'\ndown_revision='{EXPECTED_MIGRATION_REVISION}'\n"
         "def upgrade():pass\ndef downgrade():pass\n",
         encoding="utf-8",
     )

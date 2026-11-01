@@ -18,6 +18,7 @@ from paper_radar.storage import database as database_module
 from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.database import upgrade_database
 from tests.backup_support import populated
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 from tests.pi_supply_support import encoded, inputs, prepare
 
 
@@ -52,7 +53,7 @@ def test_real_a302_nonempty_upgrade_preserves_all_old_bytes(tmp_path: Path) -> N
                 previous.executemany(
                     f"INSERT INTO {table} VALUES ({placeholders})", values
                 )
-    assert upgrade_database(old) == "feed06_language_provenance"
+    assert upgrade_database(old) == EXPECTED_MIGRATION_REVISION
     assert load_config_snapshot(old, snapshot_id).snapshot_id == snapshot_id
     assert (
         ArtifactStore(old, data).list_artifacts()

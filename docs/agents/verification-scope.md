@@ -50,7 +50,10 @@
 这些边不是业务功能依赖；不新增 Scope 模块，也不把 B/Body 依赖到 #126。机器可读新组机制与
 实际 required 纳入分开，#114/#120 是否及何时转 required 仍由 A 真正收口票决定。
 
-S5(a) 的 head 字面量集中化由 [#138](https://github.com/MeteoBoy4/PaperRadar/issues/138) 另行评估；
-Body/B 首个新增 migration 票须在实施前核实该评估承接与结论，并按当时规则登记串行关系。
-本规则不实施 head 集中化，不新增 migration，也不改变 Frozen Contract 已登记版本。
+S5(a) 的测试/支撑 head 人工预期集中化见 [#139](https://github.com/MeteoBoy4/PaperRadar/issues/139)
+及[交付台账](../verification/issue-139-migration-expectations.md)。Body/B 首个新增 migration
+票须先核实本票完成；若在本票关闭前创建，以原生 blocked-by 依赖本票。推进 head 的
+人工更新清单见[测试规则](testing.md)；常量在 A2-01 登记为 source，在完整 A2 与 A3–A10
+登记为 fixture，因此仅改中央预期仍须对全部十组作 S3 敏感确认。实际争用 Alembic head
+的 migration 票继续以原生 blocked-by 串行，不新增 B/Body 对 Scope 的功能依赖。
 完整 A、四刊 live、Pi RPC、模型质量、正式校准、Docling 和 NAS 继续由各自验收负责。

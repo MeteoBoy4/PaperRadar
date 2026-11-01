@@ -16,6 +16,7 @@ from paper_radar.storage.database import upgrade_database
 from paper_radar.storage.errors import StorageError
 from tests.a7_registration_support import archive, request_for
 from tests.artifact_support import fail_sql, paused_operation
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 NOW = datetime(2026, 1, 1, tzinfo=UTC)
 
@@ -121,8 +122,8 @@ def test_nonempty_attempt_upgrade_retains_old_attempts_and_is_atomic(
                 ).fetchall()
                 for name in expected
             } == expected
-    assert upgrade_database(target) == "feed06_language_provenance"
-    assert upgrade_database(target) == "feed06_language_provenance"
+    assert upgrade_database(target) == EXPECTED_MIGRATION_REVISION
+    assert upgrade_database(target) == EXPECTED_MIGRATION_REVISION
     with closing(sqlite3.connect(target)) as connection:
         assert {
             name: connection.execute(

@@ -23,6 +23,7 @@ from paper_radar.storage.database import upgrade_database
 from paper_radar.storage.errors import StorageError
 from tests.a7_registration_support import archive, request_for
 from tests.artifact_support import fail_sql, paused_operation
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 from tests.test_paper_mapping import screening_fields
 from tests.test_paper_service import observation
 
@@ -165,8 +166,8 @@ def test_nonempty_success_cycle_upgrade_is_atomic_with_foreign_keys_enabled(
 
     event.listen(Engine, "before_cursor_execute", observe)
     try:
-        assert upgrade_database(target) == "feed06_language_provenance"
-        assert upgrade_database(target) == "feed06_language_provenance"
+        assert upgrade_database(target) == EXPECTED_MIGRATION_REVISION
+        assert upgrade_database(target) == EXPECTED_MIGRATION_REVISION
     finally:
         event.remove(Engine, "before_cursor_execute", observe)
     assert checked and set(checked) == {1}

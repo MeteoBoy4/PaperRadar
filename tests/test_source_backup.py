@@ -15,6 +15,7 @@ from paper_radar.backup.restore_contract import RestoreError
 from paper_radar.papers import PaperFacts
 from tests.backup_support import tree
 from tests.feed_support import facts, item
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 from tests.test_manual_corrections import correction
 from tests.test_paper_service import observation
 
@@ -168,4 +169,4 @@ def test_nonempty_wal_backup_restores_all_source_history_in_new_process_after_mo
     assert recovered.correct(request) == result
     assert recovered.revision(first.version_id, 1).fields["title"].value == "A"
     assert history_view(recovered.database, moved) == expected_history
-    assert upgrade_database(recovered.database) == "feed06_language_provenance"
+    assert upgrade_database(recovered.database) == EXPECTED_MIGRATION_REVISION

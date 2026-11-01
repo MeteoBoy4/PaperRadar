@@ -9,6 +9,7 @@ import pytest
 from paper_radar.backup import BackupError, create_backup, service, verify_backup
 from paper_radar.backup.files import publish_directory
 from tests.backup_support import populated, tree
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 
 @pytest.mark.parametrize(
@@ -193,7 +194,7 @@ def test_unregistered_future_package_head_is_not_implicitly_a_supported_backup_r
     migrations = tmp_path / "migrations"
     shutil.copytree(Path(storage_database.__file__).parent / "migrations", migrations)
     (migrations / "versions/future.py").write_text(
-        "revision='future'\ndown_revision='feed06_language_provenance'\n"
+        f"revision='future'\ndown_revision='{EXPECTED_MIGRATION_REVISION}'\n"
         "def upgrade(): pass\ndef downgrade(): pass\n",
         encoding="utf-8",
     )

@@ -547,6 +547,10 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
     (
+        "tests/migration_expectations.py",
+        SHARED_MATERIALS["tests/migration_expectations.py"],
+    ),
+    (
         "tests/verification_expectations.py",
         SHARED_MATERIALS["tests/verification_expectations.py"],
     ),

@@ -12,6 +12,7 @@ from paper_radar.feed_metadata import JGRMetadata
 from paper_radar.papers import PaperFacts
 from paper_radar.papers.errors import PaperError
 from tests.artifact_support import fail_sql
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 from tests.test_feed_metadata import DOI, FULL, enrich, setup_metadata
 
 
@@ -141,7 +142,7 @@ def test_nonempty_previous_revision_migrates_and_preserves_facts(
                     rows,
                 )
         previous.commit()
-    assert upgrade_database(target) == "feed06_language_provenance"
+    assert upgrade_database(target) == EXPECTED_MIGRATION_REVISION
     assert PaperFacts(target, papers.data_root).trace(paper_id) == before
     assert papers.data_root
     JGRMetadata(target, papers.data_root).validate_all()

@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from scripts.a2_full_acceptance import acceptance_groups
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 
 def test_a7_is_required_and_declares_actual_same_run_predecessors() -> None:
@@ -19,7 +20,7 @@ def test_a7_records_actual_task_formats_and_offline_boundaries(tmp_path: Path) -
     _, result = conclude(tmp_path, same_a7_run(tmp_path))
     assert result["status"] == "passed", result["reasons"]
     assert result["a7_verified"] is True
-    assert result["migration_revision"] == "feed06_language_provenance"
+    assert result["migration_revision"] == EXPECTED_MIGRATION_REVISION
     assert (result["format_version"], result["issue"], result["parent_issue"]) == (
         1,
         84,

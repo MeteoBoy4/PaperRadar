@@ -120,7 +120,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_registration_migrations.py",
-        "b54875c45c1cd9b3568165841f345aed3eaf73f76dc1ec5d2a4d1b6b37f8c9ad",
+        "686efabe18a0b5920dabe6fb600c9f07758b295c163252df071b46a9948f27ad",
     ),
     (
         "tests/test_a7_registration_backup.py",
@@ -156,7 +156,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_attempt_migrations.py",
-        "6b1e5db3b2301a16153ac758e4eec8f352c3566fe126fba6a5a2cdffdb44d24a",
+        "198f4cf315700145032410d49b3b07fe1ab3fe51e5fb131da45f2ba24b26ca53",
     ),
     (
         "tests/test_a7_boundary_success.py",
@@ -180,7 +180,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_success_migrations.py",
-        "b00c27c92ebbafef9ae933baa076bb01e07195f627f880853cf11a296dee4385",
+        "05b70f51724e9d4771042aec3a5fef7b7ca34232b1d76859f076bebc1ee6b20e",
     ),
     (
         "tests/test_a7_value_success.py",
@@ -220,7 +220,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_retry_migrations.py",
-        "b2894320c179083c01789e0595779a1fa6ab8ea4c896e7d3570329471af891dd",
+        "64a8c97a09769a0b039aa6e77794a8438f27b2af7dc4c1b2fac3817ed2fa5b54",
     ),
     (
         "tests/test_a7_complete_recovery.py",
@@ -232,11 +232,11 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a7_acceptance.py",
-        "22309eec15893a1d9f34bc11bd6221662c6bf7b55f7a8e3c5e5a87b78ced29bd",
+        "bc517972142a5ad9336897cb97344e2e31cbcf3e2a7ab5c80c1bee9c66b7cfa2",
     ),
     (
         "tests/test_a7_integrity.py",
-        "d10c7561392bc841925f565b11b8ef6c3977e5d66d091e2b2532862c0feb68b0",
+        "8a25915cbac7927c8a1b9f1ab6d4a47595628c4119772cff520f46a0fca95986",
     ),
     (
         "tests/test_a7_entry.py",
@@ -635,6 +635,10 @@ REQUIRED_SOURCE_MODULES = (
     ),
 )
 REQUIRED_FIXTURE_FILES = (
+    (
+        "tests/migration_expectations.py",
+        SHARED_MATERIALS["tests/migration_expectations.py"],
+    ),
     (
         "tests/verification_expectations.py",
         SHARED_MATERIALS["tests/verification_expectations.py"],

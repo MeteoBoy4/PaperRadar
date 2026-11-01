@@ -15,6 +15,7 @@ from paper_radar.storage.database import upgrade_database
 from paper_radar.storage.errors import StorageError
 from tests.artifact_support import fail_sql, paused_operation
 from tests.feed_support import item
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 from tests.pi_supply_support import inputs, prepare
 from tests.restore_support import history_view
 from tests.test_manual_corrections import correction
@@ -116,7 +117,7 @@ def test_nonempty_a603_upgrade_is_atomic_and_preserves_all_history(
                 for name, (columns, _) in expected.items()
             } == {name: rows for name, (_, rows) in expected.items()}
             assert not connection.execute("PRAGMA foreign_key_check").fetchall()
-    assert upgrade_database(old) == "feed06_language_provenance"
+    assert upgrade_database(old) == EXPECTED_MIGRATION_REVISION
     with closing(sqlite3.connect(old)) as connection:
         assert {
             name: connection.execute(

@@ -23,7 +23,7 @@ ARTIFACT_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_storage_migrations.py",
-        "495bf2467b7d0c5082f6df126501a4debafa5cd982a662eb4552594b06e0d315",
+        "aa0f739ec2395e30476067f2f26c64d953ae7fe016feb57ebc8ff59f25f323e2",
     ),
 )
 
@@ -102,7 +102,7 @@ BACKUP_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_backup_failures.py",
-        "18f12ea21f0368d17f1eb4913fdda2705ac163f02ed3b1ad6134269c3d89a153",
+        "8f9ac9003640285f24c6f24bdc751ce96031006cc37fa6b217795b5aee1d6817",
     ),
     (
         "tests/test_backup_cli.py",
@@ -155,7 +155,7 @@ RESTORE_TEST_CASE_COUNTS = {
 RESTORE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_restore_service.py",
-        "c7011496dd054ffb561e42267bf02e3ea1b97c36e3950314e28e116643527180",
+        "4efb6f4378aa966e26826112f4931c7bb7af9180d9fbb08ffb0ba34cc43de023",
     ),
     (
         "tests/test_restore_failures.py",
@@ -248,7 +248,7 @@ REQUIRED_TEST_CASE_COUNTS = {
 ACCEPTANCE_TEST_MODULES: tuple[tuple[str, str], ...] = (
     (
         "tests/test_a3_acceptance.py",
-        "b4a1dc2ecd7e0bc93a64e04af1b3962429518e3dd3d611e30f7b3b6ee77ea0fc",
+        "9f388ea326b86aa2734769629c21d8f47588b7493305c203b7cd88783eedbca3",
     ),
     (
         "tests/test_a3_combination.py",
@@ -327,6 +327,10 @@ REQUIRED_SOURCE_MODULES = (
     *ACCEPTANCE_SOURCE_MODULES,
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/migration_expectations.py",
+        SHARED_MATERIALS["tests/migration_expectations.py"],
+    ),
     (
         "tests/verification_expectations.py",
         SHARED_MATERIALS["tests/verification_expectations.py"],

@@ -8,6 +8,7 @@ import pytest
 from scripts.a3_acceptance import write_a3_conclusion
 from scripts.offline_evidence import file_sha256
 from tests.a3_acceptance_support import ROOT, conclude, same_a3_run
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 
 def test_a3_records_its_independent_scope_actual_revision_and_all_bound_inputs(
@@ -36,13 +37,13 @@ def test_a3_records_its_independent_scope_actual_revision_and_all_bound_inputs(
     )
     assert result["a3_verified"] is True
     assert result["stage_a_verified"] is result["live_verified"] is False
-    assert result["migration_revision"] == "feed06_language_provenance"
+    assert result["migration_revision"] == EXPECTED_MIGRATION_REVISION
     assert result["environment"]["sqlite"]
     assert result["format_versions"] == {
         "artifact": 1,
         "blob_layout": 1,
         "backup": 1,
-        "backup_database_revision": "feed06_language_provenance",
+        "backup_database_revision": EXPECTED_MIGRATION_REVISION,
     }
     for key, source in (
         ("evidence", evidence),
@@ -299,7 +300,7 @@ def test_actual_new_migration_head_is_rejected_until_explicitly_registered(
     migrations = tmp_path / "migrations"
     shutil.copytree(Path(database.__file__).parent / "migrations", migrations)
     (migrations / "versions/unregistered.py").write_text(
-        "revision='unregistered'\ndown_revision='feed06_language_provenance'\n"
+        f"revision='unregistered'\ndown_revision='{EXPECTED_MIGRATION_REVISION}'\n"
         "def upgrade():pass\ndef downgrade():pass\n",
         encoding="utf-8",
     )

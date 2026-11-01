@@ -103,7 +103,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_a5_acceptance.py",
-        "68f3686fb54d225d5f76b8e434b55f9709a8f303ccbfcabc9623f3cbd18f2095",
+        "8f5c500e722b33fb73cb7f36bbef8ef1ff3d43440ab9995833100f15a3ad8445",
     ),
     (
         "tests/test_a5_entry.py",
@@ -185,6 +185,10 @@ REQUIRED_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ("tests/backup_support.py", SHARED_MATERIALS["tests/backup_support.py"]),
 )
 REQUIRED_FIXTURE_FILES: tuple[tuple[str, str], ...] = (
+    (
+        "tests/migration_expectations.py",
+        SHARED_MATERIALS["tests/migration_expectations.py"],
+    ),
     (
         "tests/verification_expectations.py",
         SHARED_MATERIALS["tests/verification_expectations.py"],

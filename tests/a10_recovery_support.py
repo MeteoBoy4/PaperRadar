@@ -27,6 +27,7 @@ from tests.a7_registration_support import Archive, request_for
 from tests.a7_retry_support import exhaust, retry_for
 from tests.audit_matrix_support import MatrixSources
 from tests.audit_sampling_support import SamplingClock
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 from tests.paper_recovery_reader import digest
 from tests.pi_supply_support import inputs, prepare
 from tests.restore_support import history_view
@@ -188,8 +189,8 @@ def upgraded_legacy(root: Path) -> tuple[Path, Path, dict[str, Any]]:
     assert expected["config_versions"] and expected["pi_supplies"]
     assert expected["paper_observations"] and expected["screening_successes"]
     assert expected["screening_failures"] and len(expected["screening_requests"]) == 3
-    assert upgrade_database(target) == "feed06_language_provenance"
-    assert upgrade_database(target) == "feed06_language_provenance"
+    assert upgrade_database(target) == EXPECTED_MIGRATION_REVISION
+    assert upgrade_database(target) == EXPECTED_MIGRATION_REVISION
     with closing(sqlite3.connect(target)) as upgraded:
         assert not upgraded.execute("PRAGMA foreign_key_check").fetchall()
         assert {

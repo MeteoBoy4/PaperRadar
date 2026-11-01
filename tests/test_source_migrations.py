@@ -15,6 +15,7 @@ from paper_radar.storage.database import upgrade_database
 from paper_radar.storage.errors import StorageError
 from tests.artifact_support import fail_sql, paused_operation
 from tests.feed_support import item
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 from tests.pi_supply_support import inputs, prepare
 from tests.restore_support import history_view
 from tests.test_manual_corrections import correction
@@ -122,7 +123,7 @@ def test_nonempty_previous_revision_upgrades_atomically_preserving_history(
                 name: previous_rows(connection, name) for name in expected
             } == expected
             assert not connection.execute("PRAGMA foreign_key_check").fetchall()
-    assert upgrade_database(previous) == "feed06_language_provenance"
+    assert upgrade_database(previous) == EXPECTED_MIGRATION_REVISION
     with closing(sqlite3.connect(previous)) as connection:
         assert {name: previous_rows(connection, name) for name in expected} == expected
         assert not connection.execute("PRAGMA foreign_key_check").fetchall()

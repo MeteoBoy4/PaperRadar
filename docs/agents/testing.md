@@ -6,6 +6,15 @@
 - 常规测试完全离线：使用固定 fixture / mock，不访问实时网络、付费 API 或用户数据库。
 - Live source 验收通过显式命令运行，且只在用户明确要求、配置和 credential 可用时运行。
 - 新增或修改 migration 时，测试从上一 revision 升级到当前 revision；涉及快照或恢复的改动，测试恢复路径。
+  测试/支撑中的当前 head 预期及 future 探针的 `down_revision` 引用人工维护的
+  `tests/migration_expectations.py::EXPECTED_MIGRATION_REVISION`；禁止从生产代码、
+  Alembic、scope 或实际输出推导。D1 守卫扫描 `tests/` 下除 `tests/fixtures/` 外的
+  Python 文件，阻止当前 head 文本回流。推进 head 时仍须人工更新：该常量、
+  10 个 scope 的 `MIGRATION_REVISION`、A3 `FORMAT_VERSIONS["backup_database_revision"]`、
+  生产 `BACKUP_DATABASE_REVISION`、`docs/contracts/artifact-store.md` 与
+  `docs/contracts/backup-restore.md`，以及常量和生产备份声明的两个中央哈希。
+  既有 migration 节点、刻意使用的历史 revision 和历史证据保持原字节；
+  串行与逐组敏感确认见[固定范围与集成规则](verification-scope.md)。
 - 完整离线验证入口与证据格式见 `docs/verification/offline-evidence.md`。
 - 新增能力沿用 D1：使用独立未绑定测试模块与新的 `docs/verification/` 覆盖台账，逐模块点名数量；同次全量 pytest 退出约束不等于进入既有组回执或固定分母。冻结测试修改须先有裁决并逐项登记，skip/deselect/incomplete 不算通过。spec 集成与必要重绑见[固定范围与集成规则](verification-scope.md)。
 

@@ -18,6 +18,7 @@ from paper_radar.pi_supply import (
 )
 from paper_radar.storage import database as database_module
 from paper_radar.storage.database import upgrade_database
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 from tests.pi_supply_support import inputs, prepare
 
 
@@ -111,7 +112,7 @@ def test_upgrade_nonempty_a403_preserves_selection_and_all_previous_rows(
                     f"INSERT INTO {table} VALUES ({','.join('?' for _ in values[0])})",
                     values,
                 )
-    assert upgrade_database(old) == "feed06_language_provenance"
+    assert upgrade_database(old) == EXPECTED_MIGRATION_REVISION
     assert show_supply(old, installed.supply_id) == show_supply(
         source[0], installed.supply_id
     )

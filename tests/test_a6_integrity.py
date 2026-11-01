@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from tests.a6_acceptance_support import conclude, rebind, same_a6_run
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 
 @pytest.mark.parametrize("predecessor", ["a1", "full", "a3", "a5"])
@@ -235,7 +236,7 @@ def test_unknown_real_migration_head_is_not_registered_automatically(
     migrations = tmp_path / "migrations"
     shutil.copytree(Path(database.__file__).parent / "migrations", migrations)
     (migrations / "versions/unregistered.py").write_text(
-        "revision='unregistered'\ndown_revision='feed06_language_provenance'\n"
+        f"revision='unregistered'\ndown_revision='{EXPECTED_MIGRATION_REVISION}'\n"
         "def upgrade():pass\ndef downgrade():pass\n"
     )
     monkeypatch.setattr(database, "_MIGRATIONS", migrations)

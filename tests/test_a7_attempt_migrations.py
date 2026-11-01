@@ -16,6 +16,7 @@ from paper_radar.storage.database import upgrade_database
 from paper_radar.storage.errors import StorageError
 from tests.a7_registration_support import archive, request_for
 from tests.artifact_support import fail_sql, paused_operation
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 
 def previous_registration_copy(
@@ -116,8 +117,8 @@ def test_nonempty_registration_upgrade_retains_receipts_and_is_atomic(
                 name: connection.execute(f"SELECT * FROM {name}").fetchall()
                 for name in expected
             } == expected
-    assert upgrade_database(old) == "feed06_language_provenance"
-    assert upgrade_database(old) == "feed06_language_provenance"
+    assert upgrade_database(old) == EXPECTED_MIGRATION_REVISION
+    assert upgrade_database(old) == EXPECTED_MIGRATION_REVISION
     with closing(sqlite3.connect(old)) as connection:
         assert {
             name: [

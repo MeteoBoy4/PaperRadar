@@ -1,6 +1,9 @@
 """跨组共享固定材料的唯一哈希登记; 各组显式保留用途与成员资格。"""
 
 SHARED_MATERIALS = {
+    "tests/migration_expectations.py": (
+        "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f"
+    ),
     "docs/verification/contracts-backup-restore-history.md": (
         "77fdc9ee348bddd16d5c5a694ef52459d2703241efe5e123da8e6742f68ff46e"
     ),
@@ -671,10 +674,10 @@ SHARED_MATERIALS = {
         "e2bada5b0eb60926426009400ec44dcb9d85a09152f22880f8c3dc8ac0fd966a"
     ),
     "tests/test_a2_acceptance.py": (
-        "a74bab43404c6b38aaed45bbb9cbb4e0f6d47ab2ae96270563f92c0a86ef1fec"
+        "956c3c35606751d97b01057df5d53c8d00ddcc2a44c0865263a9c4352c54e0c7"
     ),
     "tests/test_a2_full_acceptance.py": (
-        "86a6c0e2657ad4909f01daeebd033c9bd56185c1f637a298573aa2d05c9c254c"
+        "a6aa253c1a3547b56ce734308d16eb96be90266f79115986a86c43bb356148f6"
     ),
     "tests/test_a2_full_entry.py": (
         "5a69ed6cce68efb123ae78c8f35e305d87efa5079a08ce0c09eadd0b26415c53"

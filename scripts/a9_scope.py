@@ -110,11 +110,11 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a9_acceptance.py",
-        "2cbd937ba93b0cf1de2ef1fe3c5ef2ffd023c22bf5d983d22668368bef3a96cf",
+        "7571198f0b5c9d1ba03a7a0168966d24b4aa67c65d3c8426703c5ffb63dcc2e6",
     ),
     (
         "tests/test_a9_integrity.py",
-        "ebc1181bcc35320fc097cb2ccae6422372c3fff2e58c795472b12bff10cce1fe",
+        "db80392c0fc68b630b71b9efecb92140b6551b061e9c1207018d85ef339ee873",
     ),
     (
         "tests/test_a9_entry.py",
@@ -449,6 +449,10 @@ REQUIRED_SOURCE_MODULES = (
 )
 
 REQUIRED_FIXTURE_FILES = (
+    (
+        "tests/migration_expectations.py",
+        SHARED_MATERIALS["tests/migration_expectations.py"],
+    ),
     (
         "tests/verification_expectations.py",
         SHARED_MATERIALS["tests/verification_expectations.py"],

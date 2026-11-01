@@ -14,6 +14,7 @@ from scripts.a1_acceptance import capture_identity
 from scripts.a2_full_acceptance import write_full_a2_conclusion
 from scripts.offline_evidence import default_checks, file_sha256
 from tests.a2_full_support import init_fixture_repository, passed_receipt
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -74,7 +75,7 @@ def test_full_a2_records_independent_scope_formats_fixtures_and_actual_migration
     assert result["format_version"] == 2
     assert result["a2_verified"] is True
     assert result["stage_a_verified"] is result["live_verified"] is False
-    assert result["migration_revision"] == "feed06_language_provenance"
+    assert result["migration_revision"] == EXPECTED_MIGRATION_REVISION
     assert result["format_versions"] == {
         "snapshot": 1,
         "stage_projections": {
@@ -249,7 +250,7 @@ def test_migration_revision_comes_from_a_real_temporary_database_and_new_head_fa
     shutil.copytree(ROOT / "src/paper_radar/storage/migrations", migrations)
     (migrations / "versions/new_head.py").write_text(
         'revision = "unregistered_head"\n'
-        'down_revision = "feed06_language_provenance"\n'
+        f'down_revision = "{EXPECTED_MIGRATION_REVISION}"\n'
         "def upgrade():\n    pass\n",
         encoding="utf-8",
     )

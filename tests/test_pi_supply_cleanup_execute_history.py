@@ -21,6 +21,7 @@ from paper_radar.pi_supply import (
 )
 from paper_radar.storage import database as database_module
 from paper_radar.storage.database import upgrade_database
+from tests.migration_expectations import EXPECTED_MIGRATION_REVISION
 from tests.pi_cleanup_process_support import interrupted_execution
 from tests.pi_supply_support import SupplyRoots, inputs, prepare
 
@@ -63,7 +64,7 @@ def test_nonempty_a404_upgrade_preserves_original_plan_bytes(tmp_path: Path) -> 
                     f"INSERT INTO {table} VALUES ({','.join('?' for _ in values[0])})",
                     values,
                 )
-    assert upgrade_database(old) == "feed06_language_provenance"
+    assert upgrade_database(old) == EXPECTED_MIGRATION_REVISION
     assert show_cleanup_plan(old, plan.plan_id).canonical_bytes == plan.canonical_bytes
     assert show_supply(old, first.supply_id) == show_supply(source[0], first.supply_id)
     with sqlite3.connect(old) as connection:
