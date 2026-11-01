@@ -20,6 +20,7 @@ from paper_radar.screening_tasks.models import (
     RequestReceipt,
     RetryRequest,
 )
+from paper_radar.screening_tasks.pi_rpc_audit import PiRpcExecutionAudit
 from paper_radar.screening_tasks.query_models import (
     TASK_QUERY_FORMAT_VERSION,
     AttemptView,
@@ -48,6 +49,7 @@ __all__ = [
     "FailureReceipt",
     "FailureReport",
     "FrozenInput",
+    "PiRpcExecutionAudit",
     "RequestReceipt",
     "RetryRequest",
     "ScreeningTasks",

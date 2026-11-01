@@ -7,6 +7,7 @@ from typing import Literal
 from paper_radar.papers import PaperReason
 from paper_radar.screening.schema import BoundaryOutput, ValuePredictionOutput
 from paper_radar.screening_tasks.models import Stage
+from paper_radar.screening_tasks.pi_rpc_audit import PiRpcExecutionAudit
 
 Applicability = Literal["current", "historical", "undeterminable"]
 
@@ -14,12 +15,13 @@ Applicability = Literal["current", "historical", "undeterminable"]
 @dataclass(frozen=True, slots=True)
 class SuccessCandidate:
     raw_response: bytes = field(repr=False)
-    executor_kind: Literal["test"] = field(default="test", repr=False)
+    executor_kind: Literal["test", "pi_rpc"] = field(default="test", repr=False)
     reported_provider: str | None = field(default=None, repr=False)
     reported_model: str | None = field(default=None, repr=False)
     provider_request_id: str | None = field(default=None, repr=False)
     input_tokens: int | None = field(default=None, repr=False)
     output_tokens: int | None = field(default=None, repr=False)
+    execution_audit: PiRpcExecutionAudit | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,7 +32,7 @@ class SuccessReceipt:
     artifact_id: str
     fingerprint: str
     stage: Stage
-    executor_kind: Literal["test"]
+    executor_kind: Literal["test", "pi_rpc"]
     settled_at: datetime
 
 
@@ -39,7 +41,7 @@ class SuccessContent:
     receipt: SuccessReceipt
     raw_response: bytes = field(repr=False)
     output: BoundaryOutput | ValuePredictionOutput = field(repr=False)
-    audit: dict[str, str | int | None] = field(repr=False)
+    audit: dict[str, str | int | bool | None] = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)

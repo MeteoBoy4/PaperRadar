@@ -14,7 +14,8 @@
 必须相等。可预检的描述/协议错误在领取前拒绝，不写失败、不占预算；准备不回收租约、
 不判断任务状态。详细输入、协议及错误映射见[RPC Contract](pi-rpc.md)。
 协议内核只提供完整候选，内层业务 JSON 与最终模型身份仍由本任务服务权威接收；
-接线不改变 `executor_kind=test`、唯一成功、两次预算、600 秒租约及 `model_mismatch` 规则。
+接线保留唯一成功、两次预算、600 秒租约及 `model_mismatch` 规则；
+成功来源封闭为 `test | pi_rpc`，审计格式见[原始候选接收](#10-原始候选接收与派生查询)。
 
 ## 1. 服务边界与身份
 
@@ -116,9 +117,9 @@ JSON 语法、字段及业务规则的详细分类见[权威验证 Contract](scr
 **不在提交事务核对当前论文事实**。过期已结算凭据不能写成功或失败，最多留下事务外
 已发布的完整孤立制品。发布、业务提交与回包故障不能制造半成功或退还预算。
 
-执行来源封闭为 `executor_kind=test`；test 制品不具有生产建议或校准消费资格。
-执行者报告的 provider/model 与冻结配置矛盾即 `model_mismatch`；缺报告则记录未知。
-provider request ID 与 token 未报告为 null，报告 0 保持 0；不预建金额/成本字段。
+执行来源封闭为 `test | pi_rpc`；来源、必填模型观察和可空用量的详细规则见
+[原始候选接收](#10-原始候选接收与派生查询)。test 制品不具有生产建议或校准消费资格。
+执行者报告的 provider/model 与冻结配置矛盾即 `model_mismatch`；不预建金额/成本字段。
 此边界不证明真实模型、settled、输出通道、Pi 供给/安装和隔离通过；承接责任见[路线图 Pi/Live](../roadmap.md#module-live)。
 
 value 与 boundary 共用领取、预算、候选提交、发布及唯一成功事务。value 的唯一
@@ -276,7 +277,7 @@ RevisionView 暴露的 event_no。事务外预读后任意修订变化均在写�
 | `fail(claim, report)` | 原子追加封闭失败结算，返回安全 FailureReceipt；同凭据同内容精确重放返回原回执，内容不同拒绝 |
 | `reclaim(receipt_id)` | 显式结算已到期 attempt 为 outcome_unknown；不到期不结算、不退预算 |
 | `status(receipt_id)` | 只读推导 TaskStatus，包括 used_attempts/remaining_attempts、状态与 last_failure；不回收、不创建事实，和 §11 的版本化 query 结果类型不同 |
-| `run_once(receipt_id, executor)` | 先校验可调用执行者、冻结输入和显式制品根的发布前置条件，再持久化领取并至多调用一次 test 执行边界；接收失败报告或 boundary/value 原始成功候选 |
+| `run_once(receipt_id, executor)` | 先校验可调用执行者、冻结输入和显式制品根的发布前置条件，再持久化领取并至多调用一次显式执行者；接收失败报告或 boundary/value 原始成功候选 |
 
 领取先用请求自身 snapshot 映射当前 Paper，只比较阶段指纹；历史 version/revision 与
 当前不同本身不阻止领取。写事务使用同连接复核本次预读的 version/revision/selection，
@@ -293,7 +294,7 @@ RevisionView 暴露的 event_no。事务外预读后任意修订变化均在写�
 执行者只取得冻结 StageInput、由封闭失败类别生成的必要安全修正说明和续租句柄；
 不取得数据库连接、PaperFacts、完整 FrozenInput/snapshot 或前次原始失败字节。
 FailureReport 仅有 kind；修正说明从受控类别选择固定中文，不接收调用方自由文本。
-执行边界封闭为 test；执行者可报告 timeout、cancelled、protocol_error、executor_error，
+执行来源封闭为 `test | pi_rpc`（格式与引用闭包见下节）；执行者可报告 timeout、cancelled、protocol_error、executor_error，
 真实捕获异常结算 executor_error；执行者不能报告 outcome_unknown 代替回收，也不能
 声明 output_invalid/model_mismatch 或已验证成功。后两种失败仅由权威接收服务形成。
 直接 fail 的不支持报告返回 invalid_failure；run_once 中不支持的执行者返回值
@@ -323,24 +324,47 @@ FailureReceipt 包含 task_id、attempt_no、kind、origin、settled_at 与安�
 ## 10. 原始候选接收与派生查询
 
 公共 `SuccessCandidate(raw_response, executor_kind="test", reported_provider=None,
-reported_model=None, provider_request_id=None, input_tokens=None, output_tokens=None)`
+reported_model=None, provider_request_id=None, input_tokens=None, output_tokens=None,
+execution_audit=None)`
 只接受严格 bytes；不接收已解析模型、自由字典或 validated 标记。所有审计字段隐藏 repr。
-执行来源仅支持严格字符串 test，provider/model/request ID 为可空非空 UTF-8 字符串
+执行来源只接受严格字符串 `test | pi_rpc`。test 不接收 execution_audit，其
+provider/model/request ID 为可空非空 UTF-8 字符串
 （最多 2048 字节）；token 为可空非负严格整数，bool 非整数。未报告的字段保留 NULL，
 报告 0 保持 0。不另设 token 业务上限；运行时不能规范序列化的审计受控拒绝。
 run_once 收到非法候选协议形状时结算 protocol_error；直接非法调用
 报 invalid_candidate。provider/model 与预算首次冻结 snapshot 的 screening 槽矛盾时
 结算 model_mismatch，占用当次预算。test 制品不具有生产建议或校准消费资格。
 
+`pi_rpc` 候选必须提供精确 `PiRpcExecutionAudit` 对象，provider/model 必须非空；
+`provider_request_id` 必须为 null。执行身份与归一化观察合并为独立格式 2 的规范审计。
+全部必填、可空、类型和闭集由唯一格式
+[`PiRpcExecutionAudit` / `PiRpcAudit` Schema](../../src/paper_radar/screening_tasks/pi_rpc_audit.py)
+定义，持久 JSON 不接受额外字段、缺字段或未知格式。当前认证只支持
+openai/chatgpt_subscription，凭据来自 owner_provisioned_dir；代理只记录是否使用及端口。
+不保存路径、PID、env、代理 URL、认证材料或其派生值。
+
+提交、load_success、query_successes、validate_all 与备份校验只读核对供给/安装登记、
+清单 Pi/Node 版本及该 attempt **本次回执** snapshot 中的 Pi/adapter 版本；
+模型语义与业务校验仍使用预算首次 snapshot。恢复从持久 audit_json、回执、供给清单和
+制品重建闭包，不使用提交进程对象、selector 或现场安装树。无效候选引用返回
+invalid_candidate，持久化损坏返回 corrupt_reference。幂等规范摘要包含格式 2 的完整审计，
+已结算 attempt 的任一审计身份变化返回 settlement_conflict；不覆盖历史。
+旧 test 的审计字节、摘要与回执身份保持不变，无 migration。
+
+此闭包证明登记事实一致性，不证明输出真实来自 Pi 或供应商。生产来源、Feed 用途与质量
+资格分别判断；非 test 来源不授予实验产物正常消费、校准或 Read 资格。受控启动服务由
+[Pi 组合](../roadmap.md#module-pi)接入，真实兼容与执行仍由
+[Live](../roadmap.md#module-live)验收。
+
 | 方法 | 结果与范围 |
 | --- | --- |
 | `submit(claim, candidate)` | 权威校验 boundary/value 原始字节；合法返回 SuccessReceipt，校验/模型失败返回 FailureReceipt |
-| `run_once(receipt_id, executor)` | 沿用一次尝试驱动，接受 FailureReport 或 SuccessCandidate；没有生产执行者 |
+| `run_once(receipt_id, executor)` | 沿用一次尝试驱动，接受 FailureReport 或 SuccessCandidate；调用方显式注入执行者 |
 | `load_success(success_id)` | 显式内部消费 SuccessContent：原始成功字节、A1 权威 BoundaryOutput 或 ValuePredictionOutput、可空审计；敏感内容隐藏 repr |
 | `query_successes(paper_id=..., stage=..., snapshot_id=...)` | stage 只接受 boundary/value；只读安全 SuccessView 序列，含成功回执、三值适用性及可空 PaperReason，不含判断/理由/raw |
 
 SuccessReceipt 固定为 success_id、task_id、attempt_no、artifact_id、fingerprint、stage、
-executor_kind=test、settled_at。FailureReceipt 的安全 issues 只持久化 A1 原 category/location，
+executor_kind=`test | pi_rpc`、settled_at。FailureReceipt 的安全 issues 只持久化 A1 原 category/location，
 回放为受控说明，不保存失败全文或自由指导文本。第二次执行只取得封闭失败说明及 A1
 安全类别/路径。请求格式 1 的 nullable cached_success_id 只在本次登记时命中已有
 同预算成功才保存 ID；旧请求原来未命中的精确重放永远不被后来成功改写。
@@ -362,7 +386,7 @@ query_successes 复用 PaperFacts 的独立只读一致映射视图，随后读�
 删除摘要暂不可判定，其他来源补回同文本后自然重新适用，无绑定写入。
 
 validate_all 沿用同一备份钩子，重验原始响应、权威结构、冻结输入和期望模型、执行
-来源、UTC 成功时间、终局排他和缓存归属；失败细节只允许权威 Schema 字段路径和
+来源及其持久审计引用闭包、UTC 成功时间、终局排他和缓存归属；失败细节只允许权威 Schema 字段路径和
 封闭类别。语义损坏仍映 registration_invalid。完整未引用 model_success_response
 合法；备份恢复保留成功、旧请求当时回执、失败和未结算预算，不触发执行。
 候选/读取原因包括 `invalid_candidate`、`already_succeeded`、`success_not_found`、
