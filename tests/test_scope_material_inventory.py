@@ -79,7 +79,10 @@ def test_classification_distinguishes_authority_from_replacement(
             for path in (baseline_repository / "docs/contracts").glob("*.md")
         ),
     }
-    assert live == expected_live
+    # #140新增现状Contract的精确分类;旧基线集合保持,不扫描当前目录放行未知文档。
+    authorized_additions = {"docs/contracts/pi-execution.md"}
+    assert live == expected_live | authorized_additions
+    assert all((ROOT / path).is_file() for path in authorized_additions)
     assert "path_prefixes" not in rules["live_documents"]
     rows = inventory["bindings"]
     kept = {

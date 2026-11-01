@@ -151,7 +151,25 @@ def test_production_migration_keeps_exact_materials_counts_and_graph() -> None:
     preparation = json.loads(
         (root / "docs/verification/scope-extensible-groups-delivery.json").read_bytes()
     )
-    additions = preparation["added_bindings"]
+    assert len(preparation["added_bindings"]) == 28
+    # #139人工预期按已批准的10组kind独立枚举,不从当前scope推导期望。
+    expectation_additions = [
+        {
+            "group": "A2-01",
+            "kind": "source",
+            "path": "tests/migration_expectations.py",
+        },
+        *(
+            {
+                "group": group,
+                "kind": "fixture",
+                "path": "tests/migration_expectations.py",
+            }
+            for group in ("完整 A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10")
+        ),
+    ]
+    assert len(expectation_additions) == 10
+    additions = expectation_additions + preparation["added_bindings"]
     assert len(report["files"]) == 1175 + len(additions)
     assert report["order"] == ledger["original_order"]
     assert report["downstream"] == ledger["original_downstream"]
@@ -201,7 +219,8 @@ def test_production_migration_keeps_exact_materials_counts_and_graph() -> None:
     owners: dict[str, set[str]] = {}
     for row in report["files"]:
         owners.setdefault(row["path"], set()).add(row["group"])
-    assert len(SHARED_MATERIALS) == 252 + len(preparation["new_central_paths"])
+    assert len(SHARED_MATERIALS) == 252 + len(preparation["new_central_paths"]) + 1
+    assert "tests/migration_expectations.py" in SHARED_MATERIALS
     assert set(SHARED_MATERIALS) == {
         path for path, groups in owners.items() if len(groups) >= 2
     }
