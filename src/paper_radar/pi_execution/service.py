@@ -147,8 +147,16 @@ class PiExecution:
         ):
             raise ExecutionError("timeout_invalid")
         description = prepare_call(self.tasks, receipt_id)
-        if validate_request(render_request(description)) is not None:
-            raise TaskError(TaskReason.INVALID_CONTEXT)
+
+        def preclaim(correction: str | None) -> None:
+            try:
+                message = render_request(description, correction)
+            except CallDescriptionError:
+                raise TaskError(TaskReason.INVALID_CONTEXT) from None
+            if validate_request(message) is not None:
+                raise TaskError(TaskReason.INVALID_CONTEXT)
+
+        preclaim(self.tasks.prepare_correction(receipt_id))
         check_system_prompt(description.system_prompt)
         if description.sampling != "provider_default":
             raise ExecutionError("sampling_mapping_unavailable")
@@ -233,4 +241,4 @@ class PiExecution:
                     )
                 return FailureReport(_FAILURE_KINDS[result.category])
 
-            return self.tasks.run_once(receipt_id, executor)
+            return self.tasks.run_once(receipt_id, executor, preclaim=preclaim)

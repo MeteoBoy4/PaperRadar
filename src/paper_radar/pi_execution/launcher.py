@@ -181,6 +181,16 @@ class _PreparedLaunch:
             if resources is not None:
                 resources.close()
             raise RpcProblem(RpcReason.STARTUP_ERROR) from None
+        except BaseException as error:
+            # adopt_process 已确认组回收后才重抛原异常;所有权尚未交给会话。
+            if resources is not None:
+                try:
+                    resources.close()
+                except ExecutionError:
+                    # 目录残留不代表清理成功,也不能把中断改结算为普通失败。
+                    if not isinstance(error, (KeyboardInterrupt, SystemExit)):
+                        raise
+            raise
         finally:
             self._token = None
 
