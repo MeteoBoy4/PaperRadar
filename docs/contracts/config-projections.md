@@ -45,7 +45,9 @@
 
 模型阶段的分量键统一为 `profile/model/prompt/contract/adapter`；表中的槽说明从哪里
 取内容，不额外把槽选择标签加入载荷。完整 models 文件三个槽分别提取，protocol 与
-有效 temperature/top_p 等参数保留；完整文件版本与原始哈希不进入投影。
+有效 temperature/top_p 等参数保留；models-v2 的 sampling 声明也进入实际 model 分量，
+provider_default 保持两参数缺席。字段规则见 [运行配置](runtime-config.md#models-格式-2-与采样声明)。
+完整文件版本、models 格式分派标记与原始哈希不额外进入投影；v1 历史身份不变。
 adapter 分量直接引用对应槽已有的 `AdapterSemantics.semantics_id`，其载荷自带独立
 格式版本；不复制 adapter 序列化，也不把 Pi/adapter 执行审计版本当作语义。
 分量内容与执行审计边界见[适配器语义契约](adapter-config.md#语义与消费者依赖)；

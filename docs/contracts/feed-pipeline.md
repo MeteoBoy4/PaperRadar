@@ -35,14 +35,16 @@ JGR Feed 取得、当前版本最低元数据结果、语言依据及 value 任�
   但语言值由服务派生。元数据须最低完整且对应同 Paper 的当前版本/修订；boundary
   成功须属于同 Paper，且在请求 `snapshot_id` 下对当前输入适用，不要求成功最初使用
   同一个 snapshot ID。`in_scope` 和 `uncertain` 均可继续，`out_of_scope` 拒绝。
-  生产入口拒绝 `executor_kind=test` 来源。
+  生产登记和回放仅接收已登记非 test 来源闭集（当前仅 `executor_kind=pi_rpc`）；
+  test 仍返回 test_source，未知或损坏来源由权威成功加载拒绝。
 - `register_test_value(...)` 使用相同参数，明确用于既有任务的 test 来源工程路径。
   它与生产入口执行相同的 metadata/current/boundary/out_of_scope/语言检查，但允许
   `test` 成功作为前置，不赋予生产模型、B 实验入口或自动 Read 资格。两种登记均返回
   `ValueRegistration`：用途、任务回执、元数据请求、boundary 成功和冻结语言依据；
   `scope` 明确声明仅登记任务。`Preparation.scope` 同样不表示真实来源或执行资格通过。
-- 当前任务成功接收只支持 `test` 来源，因此生产入口当前不能完成 value 登记。
-  组合服务不生成 boundary 成功、不发送模型请求，不伪造生产成功来满足登记条件。
+- 任务成功接收已支持 `test | pi_rpc`，受控一次执行可提供生产来源 boundary。
+  合成对端已验证登记/value/恢复接线，产品仍缺 Cwd/Live 证据，不能真实执行。
+  组合服务不生成 boundary 成功、不发送模型请求。
 - 新登记在现有任务写事务中复核预读论文版本/修订及 boundary 指纹；任务、预算、
   语言依据和组合前置引用一起提交。事实并发变化返回 `facts_changed`，事务故障不留下
   没有前置依据的新组合预算。迁移 `feed05_composition` 只追加实际消费的组合引用。
@@ -85,11 +87,15 @@ HTTP、条目失败、元数据缺项及异常均不被解释成“无新论文�
 
 未提供能力的承接责任：[Audit](../roadmap.md#module-audit)／
 [Source](../roadmap.md#module-source)负责真实来源判据，
-[Pi](../roadmap.md#module-pi)／[Live](../roadmap.md#module-live)负责生产执行来源与 RPC，
+[Live](../roadmap.md#module-live)负责真实执行与 RPC 兼容验收，
 [B](../roadmap.md#module-b)负责实验入口及纵向接线，
 [C](../roadmap.md#module-c)负责四刊扩展与元数据生命周期，
 [H](../roadmap.md#module-h)负责完整日常 CLI 与调度入口。
 离线工程行为不证明真实 JGR 字段/entry 稳定性、语言来源约定或 live 就绪。
+
+生产来源不会放宽 metadata/current/out_of_scope/语言检查，也不授予 B 实验产物正常
+生产、正式校准或 Read 消费资格；根用途和样本隔离仍由 B 按 ADR-0036 承接。
+实际执行组合见 [Pi 执行](pi-execution.md#一次任务执行组合)。
 
 ## 相关
 

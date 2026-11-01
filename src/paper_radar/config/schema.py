@@ -4,8 +4,16 @@ from __future__ import annotations
 
 import re
 from enum import StrEnum
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    field_validator,
+    model_validator,
+)
 
 PROFILE_FIELDS = (
     "background",
@@ -46,14 +54,12 @@ class ModelProtocol(StrEnum):
     PROMPT_ONLY = "prompt_only"
 
 
-class ModelSlot(BaseModel):
+class _ModelIdentity(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     provider: str | None = None
     model: str | None = None
     protocol: ModelProtocol | None = None
-    temperature: float = Field(default=0.0, ge=0.0, le=2.0)
-    top_p: float = Field(default=1.0, gt=0.0, le=1.0)
 
     @field_validator("protocol", mode="before")
     @classmethod
@@ -63,6 +69,11 @@ class ModelSlot(BaseModel):
         if not isinstance(value, str):
             raise ValueError("协议必须是受控文本")
         return ModelProtocol(value)
+
+
+class ModelSlot(_ModelIdentity):
+    temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+    top_p: float = Field(default=1.0, gt=0.0, le=1.0)
 
 
 class Models(BaseModel):
@@ -79,7 +90,68 @@ class Models(BaseModel):
         return valid_declared_version(value)
 
 
-def model_slot_status(value: ModelSlot | None) -> SlotStatus:
+class ModelSlotV2(_ModelIdentity):
+    sampling: Literal["explicit", "provider_default"]
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    top_p: float | None = Field(default=None, gt=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def sampling_parameters(self) -> ModelSlotV2:
+        present = self.model_fields_set & {"temperature", "top_p"}
+        if self.sampling == "provider_default":
+            if present:
+                raise ValueError("provider_default 不接受采样参数")
+        elif (
+            present != {"temperature", "top_p"}
+            or self.temperature is None
+            or self.top_p is None
+        ):
+            raise ValueError("explicit 必须提供两项采样参数")
+        return self
+
+
+class ModelsV2(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    version: str
+    format_version: Literal[2]
+    screening: ModelSlotV2 | None
+    reuse_assessment: ModelSlotV2 | None
+    reading: ModelSlotV2 | None
+
+    @field_validator("format_version", mode="before")
+    @classmethod
+    def strict_format(cls, value: object) -> object:
+        if type(value) is not int or value != 2:
+            raise ValueError("格式版本无效")
+        return value
+
+    @field_validator("version")
+    @classmethod
+    def valid_version(cls, value: str) -> str:
+        return valid_declared_version(value)
+
+    def compiled_config(self) -> dict[str, object]:
+        result = self.model_dump(mode="json")
+        for slot in MODEL_SLOTS:
+            value = result[slot]
+            if value is not None and value["sampling"] == "provider_default":
+                del value["temperature"], value["top_p"]
+        return result
+
+
+class ModelsDocument(RootModel[Models | ModelsV2]):
+    """只依根级格式标记分派;v2 错误绝不回退旧格式。"""
+
+    @model_validator(mode="before")
+    @classmethod
+    def dispatch(cls, value: object) -> Models | ModelsV2:
+        if isinstance(value, dict) and "format_version" in value:
+            return ModelsV2.model_validate(value)
+        return Models.model_validate(value)
+
+
+def model_slot_status(value: ModelSlot | ModelSlotV2 | None) -> SlotStatus:
     if value is None:
         return SlotStatus.UNCONFIGURED
     fields = (value.provider, value.model)

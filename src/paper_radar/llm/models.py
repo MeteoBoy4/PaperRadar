@@ -42,10 +42,11 @@ class CallDescription:
     model: str = field(repr=False)
     protocol: Literal["prompt_only"]
     thinking_level: ThinkingLevel
-    temperature: float
-    top_p: float
+    temperature: float | None
+    top_p: float | None
     policy_json: str = field(repr=False)
     system_prompt: bytes = field(repr=False)
     stage_input_payload: bytes = field(repr=False)
     user_payload_json: str = field(repr=False)
+    sampling: Literal["explicit", "provider_default"] = "explicit"
     render_format: Literal[1] = field(default=1, init=False)

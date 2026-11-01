@@ -1,6 +1,6 @@
 # 区分运行配置快照、阶段输入指纹和校准语义基线
 
-状态：决策记录（原文未单列接受状态）；日期：原文未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md)；补充／部分取代：[ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md)。
+状态：决策记录（原文未单列接受状态）；日期：原文未单列；依据：[基线裁决原文](https://github.com/MeteoBoy4/PaperRadar/blob/91e5d02e199f1921ca8afd2b7bdb8f257e6264f3/docs/adr/0023-separate-runtime-config-snapshots-from-calibration-baselines.md)；补充／部分取代：[ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md)。 补充：[ADR-0040](0040-declare-provider-default-sampling.md)。
 
 PaperRadar 将所选版本化配置编译为不可变的运行配置快照（`RuntimeConfigSnapshot`），供多次运行与任务引用；它不是某次运行的执行计划，也不包含论文输入。各阶段只取与自身语义相关的配置投影，再结合该阶段实际使用的论文内容、摘录或 PDF 等输入生成阶段输入指纹；校准语义基线本身不充当所有阶段制品的缓存键。这样保留完整配置审计身份，同时避免无关配置变化误伤制品缓存（ADR-0008）。
 

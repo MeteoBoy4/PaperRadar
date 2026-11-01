@@ -102,7 +102,13 @@ def _usage(message: dict[str, Any]) -> tuple[int | None, int | None]:
 
 
 class RunEvents:
-    def __init__(self, description: CallDescription, user_message: str) -> None:
+    def __init__(
+        self,
+        description: CallDescription,
+        user_message: str,
+        expected_cwd_section: str | None = None,
+    ) -> None:
+        self._expected_cwd_section = expected_cwd_section
         self._description = description
         self._user_message = user_message
         self._position = _Position.AGENT_START
@@ -169,6 +175,10 @@ class RunEvents:
             or sections.get("preamble")
             != self._description.system_prompt.decode("utf-8")
             or not isinstance(sections.get("cwd"), str)
+            or (
+                self._expected_cwd_section is not None
+                and sections.get("cwd") != self._expected_cwd_section
+            )
         ):
             raise RpcProblem(RpcReason.SYSTEM_MISMATCH)
         if self._system is None:
