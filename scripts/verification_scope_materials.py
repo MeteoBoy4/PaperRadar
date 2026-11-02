@@ -77,7 +77,7 @@ SHARED_MATERIALS = {
         "63aae23251385e656b7c55d493de87204a44973f40ccefbc4d2fde78650c3d89"
     ),
     "scripts/offline_evidence.py": (
-        "5025a04e3334142838cadede2de2d866c959d0fa95cc5cec736805dd70f5b360"
+        "b520cd09e633219e475fc8bcb71ad2ebb0bda515330850255a8f2831d416ecdd"
     ),
     "scripts/verification-status": (
         "b761281e99e934dfba7949212156ce19f403068414033cb5b194768b684ee4cd"

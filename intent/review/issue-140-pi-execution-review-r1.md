@@ -104,3 +104,32 @@ submission_digest 与历史输入一致。另覆盖 format2 中仅 channel、双
 状态 `passed/verified/same` 才满足最终判据；run_id 与执行记录只留树外。
 未运行 live、真实 Pi/Node/auth/模型、现场 cwd、TLS/DNS 或主机出站；
 产品证据仍缺失，保持领取前阻断；旧证据不代表当前树通过。
+
+
+## 完整门禁反馈的后续处置（#140/#144）
+
+本节追加在前轮报告之后；前轮结论、旧台账及所有正式JSON/安全sidecar保持原字节。
+完整门禁实际非零，即使固定285模块/5281节点全过，也不能据此认定整套通过。
+新增安全定位指向 `tests/test_extensible_acceptance.py (call)`。
+
+诊断遵循原公开回归：模块实际21 passed/1 failed，紧缩到
+`test_synthetic_history_keeps_material_and_format_boundaries[broken_registry]`，
+未修改时3.11秒稳定失败。失败副本的受控stderr证实：
+verification_status→offline_evidence的顶层诊断导入→pytest_failure_diagnostics→
+当前verification_groups；测试故意破坏当前登记后引发SyntaxError和空stdout。
+新支持文件实际存在，原模块其余历史材料/未知格式用例通过，排除支持复制闭包遗漏。
+
+真实修复仅将诊断读取导入移至tests实际失败分支，恢复历史状态和文件哈希入口
+对当前登记的独立性。保留原broken_registry、缺失材料、未知格式、只读和扩展正例断言；
+没有修改测试、放宽白名单或新造镜像测试。唯一源码哈希按实际变化精确重绑；
+未重绑时现有范围守卫正确拒绝漂移，登记一致后原红节点3.12秒通过。
+当前详细规则只在辅助诊断Contract维护，本轮覆盖另记新台账，不改前轮60或旧195。
+
+- 原broken_registry节点：1 passed，3.12秒；保留原断言与只读材料检查。
+- 原扩展模块/安全诊断/历史状态/离线入口组合：81 passed，113.16秒。
+- 真实全量collection与receipt_modules的完整差集：67模块、1104节点显式执行，**1104 passed，520.81秒，退出0**；无skip/deselect，没有仅复验当前单模块或前轮518项组合。
+- `check-compatibility all`：176 passed，pytest279.92秒，入口280.52秒，退出0。
+- 全仓Ruff check、format check、mypy全通过（格式748文件、mypy747文件），git diff --check通过。
+- 显式main基线候选审计无hash/baseline漂移；最终HEAD/树身份的逐组确认和固定collection单独留树外，289条原计数与41refs保持。
+
+最终完整门禁仍待新提交冻结及根代理核实后执行；不会自行重跑或改写旧失败证据。

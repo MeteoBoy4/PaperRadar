@@ -19,8 +19,6 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, TypedDict
 
-from scripts.pytest_failure_diagnostics import read_failure_diagnostics
-
 
 class CodeIdentity(TypedDict):
     commit: str | None
@@ -407,6 +405,8 @@ def _run_checks(
             if item["status"] == CheckStatus.FAILED:
                 print(f"[离线检查] 处理：{check.help_zh}", flush=True)
         if check.id == "tests" and item["status"] == CheckStatus.FAILED:
+            from scripts.pytest_failure_diagnostics import read_failure_diagnostics
+
             for module, phase in read_failure_diagnostics(
                 root, path.with_suffix(".pytest.json"), evidence["run_id"]
             ):
