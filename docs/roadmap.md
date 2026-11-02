@@ -8,7 +8,7 @@
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-当前没有「可规格化」或「已规格化」模块；Cwd/Live 仍待探索，Pi 工程完成不使 B 进入前沿。
+当前没有「可规格化」或「已规格化」模块；Cwd/Live 仍待探索，Pi 工程和 JGR 来源条件完成均不使 B 进入前沿。
 
 to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 
@@ -40,7 +40,7 @@ flowchart TD
   G --> H
   H --> I[I 最终验收]
   classDef completed fill:#bfdbfe
-  class J,A,Pi,Feed completed
+  class J,Audit,Source,A,Pi,Feed completed
 ```
 
 ## 模块
@@ -50,8 +50,8 @@ flowchart TD
 | ID | 模块 | 状态 | 依赖 | 执行方式 |
 | --- | --- | --- | --- | --- |
 | <a id="module-j"></a>J | JGR 判据固定 | 已完成 | 无 | HITL |
-| <a id="module-audit"></a>Audit | 四刊首轮 HTTP 审计 | 待探索 | J | HITL |
-| <a id="module-source"></a>Source | JGR 达标或用户新裁决 | 待探索 | Audit | HITL |
+| <a id="module-audit"></a>Audit | 四刊首轮 HTTP 审计 | 已完成（[首轮结论与移交](verification/exp-1-http-audit.md)；原计划 partial，不是四刊通过） | J | HITL |
+| <a id="module-source"></a>Source | JGR 达标或用户新裁决 | 已完成（[冻结判据 5/5](verification/exp-1-http-audit.md#jgr-逐成员核查)；仅此来源条件） | Audit | HITL |
 | <a id="module-a"></a>A | A 窄收口：日志、doctor、纯规则 | 已完成（[#120](https://github.com/MeteoBoy4/PaperRadar/issues/120)；[窄范围证据](verification/a-narrow-delivery.md)） | 无 | AFK |
 | <a id="module-pi"></a>Pi | Pi 离线启动器、权限资源、生产成功来源 | 已完成（[#140](https://github.com/MeteoBoy4/PaperRadar/issues/140)；[独立工程覆盖与同次门禁判据](verification/issue-140-gate-followup.md)） | 无 | AFK |
 | <a id="module-cwd"></a>Cwd | /srv/pi-cwd 现场隔离验收 | 待探索 | 无 | HITL |
@@ -98,17 +98,17 @@ flowchart TD
 - A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04 的窄范围处置见[覆盖台账](verification/a-narrow-delivery.md)；完整阶段 A 结论与下游消费仍受收口安排约束。
 - Extra：I02；Pi/Cwd/Live：I04、I05、T05、T07、T08、T12；Pi 工程切片与同次最终门禁判据见[独立台账](verification/issue-140-gate-followup.md)；Pi 另承接[生产启动器准入](../intent/draft.md#pi-生产启动器准入)，Live 另承接[首次 Pi 生产接线](../intent/draft.md#b-首次-pi-生产接线)（首次实际供给/RPC 与预检），依据 [pi-rpc](contracts/pi-rpc.md)。
 - Cwd/Live：承接 Pi 的主机级出站、cwd 祖先资源/现场隔离、DERIVED-01…11（尤其 02 cwd 包装）、订阅凭据刷新与 token 通道/前缀启发式、计划模型权限与限额、采样映射、TLS/DNS 白名单充分性；工程证据与未验范围见[Pi 台账](verification/issue-140-gate-followup.md)。B 仍负责真实产品入口、实验根、所选根安全日志与用途资格，Pi 工程通过不使 B 自动进入前沿。
-- Audit/Source：I14、I15、T01、T26。
+- Audit/Source：I14、I15、T01、T26 的首轮结论见[实测证据](verification/exp-1-http-audit.md)；未完成的四刊材料、完成计划 fixture 引用和新规则 live 验证由 C/F 承接，不回写历史离线结论。
 - Feed：I07，以及[强冲突与语言事实](../intent/draft.md#阶段-c四刊发现身份版本与来源)。
-- Body/B：I03–I13、T02–T25、D02、D04 中的 B 消费者；另落实[StageInput C1](contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)、EXP-6、EXP-7。B 消费已有 pi_rpc boundary/value 工程来源时须补真实接线与用途资格，保留 test 来源拒绝；在受限实验根核实 JGR 生产解析字段、entry 稳定性、主摘要非截断及语言来源约定，并完成真实材料与审计的字段差异审查、样本冻结和隔离恢复。Body 最小 Read 票另承接输入身份、任务/预算/租约/retry、analysis 持久化与证据规则身份（[规格补充准入](../intent/draft.md#b-最小-read-与正文消费)、[read-validation](contracts/read-validation.md)）；B 首张真实任务票另承接 Screening 产品接线，含 failures/retry、trace 组合及中文 help/退出码/恢复验证，不能后推到 H（[规格补充准入](../intent/draft.md#b-screening-产品接线)、[screening-tasks](contracts/screening-tasks.md)）。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[组合契约](contracts/feed-pipeline.md)、[parser 固定回归边界](verification/feed-parser-v1.md)；EXP-1、DEC-1/2/3 不由 Feed 工程完成替代。
+- Body/B：I03–I13、T02–T25、D02、D04 中的 B 消费者；另落实[StageInput C1](contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)、EXP-6、EXP-7。B 消费已有 pi_rpc boundary/value 工程来源时须补真实接线与用途资格，保留 test 来源拒绝；在受限实验根核实 JGR 生产解析字段、entry 稳定性、主摘要非截断及语言来源约定，并完成真实材料与审计的字段差异审查、样本冻结和隔离恢复。Body 最小 Read 票另承接输入身份、任务/预算/租约/retry、analysis 持久化与证据规则身份（[规格补充准入](../intent/draft.md#b-最小-read-与正文消费)、[read-validation](contracts/read-validation.md)）；B 首张真实任务票另承接 Screening 产品接线，含 failures/retry、trace 组合及中文 help/退出码/恢复验证，不能后推到 H（[规格补充准入](../intent/draft.md#b-screening-产品接线)、[screening-tasks](contracts/screening-tasks.md)）。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[组合契约](contracts/feed-pipeline.md)、[parser 固定回归边界](verification/feed-parser-v1.md)；Feed 工程完成不替代来源验收。消费[首轮 JGR 来源证据](verification/exp-1-http-audit.md#生产路径适用性)时须保留 Crossref 主摘要依据，拒绝卷期说明充当主摘要；解析规则变化须补适用的差异审查/新计划证据，DEC-1/DEC-3 不因本轮关闭。
 - Body/B 首个新增 migration 票：实施前核实 [#139 测试 head 人工预期集中化](https://github.com/MeteoBoy4/PaperRadar/issues/139) 完成及[交付结论](verification/issue-139-migration-expectations.md)，人工更新与集成要求分别见[测试规则](agents/testing.md)和[共享资源串行规则](agents/verification-scope.md#共享资源串行与后续承接)；此承接不新增 B/Body 对 Scope spec 的功能依赖。
 - C：I10、I12、I15、T01、T15–T19、T23、T24、T26；承接四刊生产采集扩展、保留器与未揭晓事实扩展、来源假设与语言约定核实、7 天复查/metadata_unobtainable 生命周期及完整 eligibility，不能从 JGR 合成材料推定四刊就绪。保留器装配 waiting_calibration 与身份/合并链全部仍成立的隐藏条件，存活论文继承事实，再调用共享 visibility；实际隐藏须做消费者组合验证。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[元数据契约](contracts/feed-metadata.md)、[共享规则](contracts/eligibility-visibility.md)。
-- F/Abstract：I09、I14、I15、T01、T10、T20、T26。
+- F/Abstract：I09、I14、I15、T01、T10、T20、T26；与 C 共同承接[首轮未完成项](verification/exp-1-http-audit.md#后续责任与边界)：AIES Feed 202、dqkx 第 2 位协议重定向、Wiley 出版者 403 与 RSS 字段误取。修复和新规则补跑分开，保留原 partial/成员及暂停位置；完成新计划后登记 fixture，最迟 D 正式预热冻结/首批校准前逐刊收口。
 - D：I03、I06、I09、I12、I15、T04、T07–T10、T14–T17、T19、T20、T23、T24、T26。
 - G：I03、I09、T04、T07–T10、T13、T17–T20、T24。
 - H：I06、I12、T15–T17、T23、T24；另承接 A3 历史证明未含的报告重建（[规格 §9.1](../intent/draft.md#91-本机一致性快照)）；E 沿用 I07、T02、T03、T11、T24 的共同约束。
 - I：I13、T06、T17、T25、D02、D04；聚合各阶段验收，另承接 A3 历史证明未含的任务续跑、NAS 及最终恢复。
-- A10 遗留：AMS403 策略接 Audit/Source，四刊摘要稳定及附加区块语义接 C/F/Abstract，正文/PDF/Docling 接 Body/F，生产导入接 Feed/C，NAS 接 I；具体未验范围见[A10 继承缺口](verification/doc-unification-history.md#a10-继承缺口)。
+- A10 遗留：AMS 来源与四刊摘要稳定及附加区块语义接 C/F/Abstract，正文/PDF/Docling 接 Body/F，生产导入接 Feed/C，NAS 接 I；首轮 AIES 为 202，不能声称历史 AMS403 复现，来源承接见[实测证据](verification/exp-1-http-audit.md)。其他未验范围见[A10 继承缺口](verification/doc-unification-history.md#a10-继承缺口)。
 
 B 的 Screening 执行、Feed 导入、实验及 run-due 新入口须给所选根显式注入文件日志汇，
 逐个加入已有执行入口守卫；实验根自带日志，库服务继续默认 NullSink。B 首次让
@@ -125,14 +125,12 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 | 编号 | 问题 | 阻塞的模块 | 最迟闸门 | 裁决后位置与出处 |
 | --- | --- | --- | --- | --- |
 | DEC-1 | 四刊摘要稳定阈值与是否一律非截断；未达标的降级及披露 | Abstract、D | 验收前确定，最迟 D 正式预热冻结/首批校准前逐刊收口 | 规格 §4.3/§11；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
-| DEC-2 | JGR 首轮任一判据不满足时的新裁决（条件触发） | Source、B | B 入口 | 规格 §11 B；[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界) |
 | DEC-3 | 附加摘要区块消费语义 | C | C 消费前 | 规格 §4.3；[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界) |
 
 ## 待探索
 
 | 编号 | 问题 | 阻塞的模块 | 解决方式与出处 |
 | --- | --- | --- | --- |
-| EXP-1 | 四刊首轮 HTTP 审计、JGR 达标情况 | Audit、Source、B | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
 | EXP-2 | cwd 无资源/权限隔离、1.4.0 DERIVED 假设及实际参数 | Cwd、Live、B | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
 | EXP-3 | Docling/Python 兼容、模型安装与样本质量 | Extra、Body、B | live 探测；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
 | EXP-4 | 四刊正文/摘录及 TDM/渲染/授权通道 | F、Abstract、D | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
@@ -142,7 +140,7 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 
 ## 用户须提供
 
-配置清单仅见[规格 §14](../intent/draft.md#十四上线前必须由用户提供的配置)。`/srv/pi-cwd` 已确认，现场隔离仍未验；依据[收口未决项](verification/stage-a-closure.md#收口责任与未决项)。其他配置的就绪状态未记录，不从历史工程验收推定已提供。
+配置清单仅见[规格 §14](../intent/draft.md#十四上线前必须由用户提供的配置)。`/srv/pi-cwd` 已确认，现场隔离仍未验；依据[收口未决项](verification/stage-a-closure.md#收口责任与未决项)。EXP-1 的临时 HTTP 联系标识与无代理选择只适用于[该次审计](verification/exp-1-http-audit.md)，后续 live 仍显式提供。其他配置的就绪状态未记录，不从历史工程验收推定已提供。
 
 ## 未成形
 

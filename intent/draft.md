@@ -1806,7 +1806,7 @@ A 真正收口时由收口实现票产出机器可读阶段结论，I 聚合。�
 **B 入口条件：**
 
 - 所用 A1/A2/A3/A5/A6/A7/A8/A9/A10 契约、配置、持久化、恢复、任务与接收机制的离线证据齐备，Pi 固定供给复用 A4；未完成 A 的所有 live 项不自动阻止独立工程开发。
-- 四刊首轮 http-only 审计先执行并冻结原位次选样、失败和不足；审计之前即固定 JGR 判据：selected 至少 5 篇，以 A10 矩阵为分母，受阻/失败不剔除，每篇至少一条已交付路线取得非 `suspected_truncated` 的主区块摘要。任一不满足即不放行，交回用户裁决。其余刊不足转 C/F，A 仍未完成。
+- 四刊首轮 http-only 审计先执行并冻结原位次选样、失败和不足；审计之前即固定 JGR 判据：selected 至少 5 篇，以 A10 矩阵为分母，受阻/失败不剔除，每篇至少一条已交付路线取得非 `suspected_truncated` 的主区块摘要。任一不满足即不放行，交回用户裁决。其余刊不足转 C/F，A 仍未完成。仅非 JGR 选样受阻而整计划为 `partial` 时，须保留暂停位置、明确移交后续责任，并独立核验 JGR 全部固定成员的路线、主区块及证据；不以计划状态或命令退出码代替该判据，也不得将 partial 伪注册为 acquired 完成审计引用（[#145 移交确认](https://github.com/MeteoBoy4/PaperRadar/issues/145#issuecomment-6576278062)）。
 - 审计证据须适用于生产路径：复用同一套版本化主区块/截断/HTTP 规则作为共享权威，或将生产解析器经 `reinterpret_audit` 追加到冻结 JGR 材料，完成字段差异审查。B 样本本身也须经生产路径取得完整主摘要；不消费 Key Points/Plain Language Summary。
 - A 最小日志、基础/配置 doctor、eligibility/visibility 纯规则按上文最迟点交付；B 接线验收不能以合成测试代替。
 - Docling extra 独立验证实际 slim/CPU 安装、lockfile、模型取得及 Python 兼容范围；无 extra 的普通离线测试继续可运行。
