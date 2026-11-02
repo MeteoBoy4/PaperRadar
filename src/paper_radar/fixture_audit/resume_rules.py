@@ -1,6 +1,10 @@
 """显式继续允许的暂时性终态及完整执行身份。"""
 
 from paper_radar.fixture_audit import abstract_models, acquisition_models
+from paper_radar.fixture_audit.abstract_versions import (
+    ABSTRACT_RULES_VERSION,
+    parse_abstract_rules_version,
+)
 from paper_radar.fixture_audit.acquisition_identity import capture_code_identity
 from paper_radar.fixture_audit.acquisition_models import (
     AuditPlan,
@@ -41,6 +45,19 @@ def validate_execution_identity(
         raise FixtureError(
             FixtureReason.PLAN_IDENTITY_MISMATCH, path="code_identity"
         ) from None
+    try:
+        rules = parse_abstract_rules_version(plan.abstract_rules_version)
+    except ValueError:
+        raise FixtureError(
+            FixtureReason.PLAN_IDENTITY_MISMATCH, path="code_identity"
+        ) from None
+    # The legacy execution path still checks its current declaration. Supported
+    # opt-in rules have their own implementations and no implicit fallback.
+    if (
+        rules == ABSTRACT_RULES_VERSION
+        and rules != abstract_models.ABSTRACT_RULES_VERSION
+    ):
+        raise FixtureError(FixtureReason.PLAN_IDENTITY_MISMATCH, path="code_identity")
     # 当前执行准入随默认实现升级;历史回放独立使用 history_rules.HISTORICAL_V1。
     versions = {
         "acquisition_strategy_version": acquisition_models.ACQUISITION_STRATEGY_VERSION,
@@ -50,11 +67,6 @@ def validate_execution_identity(
         "sampling_rules_version": acquisition_models.SAMPLING_RULES_VERSION,
         "category_rules_version": acquisition_models.CATEGORY_RULES_VERSION,
         "ua_template_version": acquisition_models.UA_TEMPLATE_VERSION,
-        "abstract_rules_version": (
-            "audit-abstract-v2"
-            if plan.abstract_rules_version == "audit-abstract-v2"
-            else abstract_models.ABSTRACT_RULES_VERSION
-        ),
         "truncation_rules_version": abstract_models.TRUNCATION_RULES_VERSION,
         "matrix_rules_version": abstract_models.MATRIX_RULES_VERSION,
     }

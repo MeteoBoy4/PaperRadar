@@ -14,6 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from paper_radar.fixture_audit.abstract_models import AbstractAuditView, MatrixRow
 from paper_radar.fixture_audit.abstract_parser import signals
 from paper_radar.fixture_audit.abstract_service import AbstractService
+from paper_radar.fixture_audit.abstract_versions import ABSTRACT_PARSER_VERSIONS
 from paper_radar.fixture_audit.acquisition_models import (
     identity_sha256,
     require_utc_timestamp,
@@ -316,7 +317,7 @@ class InterpretationService:
                 parser_version=parser.version,
                 implementation_sha256=parser.implementation_sha256,
             )
-            if declaration.parser_version in {"audit-abstract-v1", "audit-abstract-v2"}:
+            if declaration.parser_version in ABSTRACT_PARSER_VERSIONS:
                 raise ValueError("published_parser")
             return declaration.model_copy(
                 update={"declaration_id": identity_sha256(declaration)}

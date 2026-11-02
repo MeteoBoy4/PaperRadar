@@ -23,6 +23,11 @@ from paper_radar.feed_ingestion.repository import (
     validate_checks,
 )
 from paper_radar.feed_ingestion.tables import checks, items
+from paper_radar.fixture_audit.abstract_versions import (
+    ABSTRACT_RULES_VERSION,
+    abstract_parser_version,
+    abstract_rules_for_parser,
+)
 from paper_radar.fixture_audit.acquisition_models import SourceRequest
 from paper_radar.fixture_audit.acquisition_policy import (
     normalize_request,
@@ -121,7 +126,7 @@ class JGRFeed:
         *,
         request_id: str,
         contact_email: str,
-        parser_version: int = 1,
+        parser_version: int | None = None,
     ) -> FeedCheck:
         with self.log.execution("feed", controlled=(PaperError, FixtureError)):
             return self._check(
@@ -138,11 +143,16 @@ class JGRFeed:
         *,
         request_id: str,
         contact_email: str,
-        parser_version: int = 1,
+        parser_version: int | None = None,
     ) -> FeedCheck:
         validate_contact(contact_email)
-        if type(parser_version) is not int or parser_version not in {1, 2}:
-            raise PaperError(PaperReason.INVALID_OBSERVATION, path="parser_version")
+        try:
+            if parser_version is not None:
+                abstract_rules_for_parser(parser_version)
+        except ValueError:
+            raise PaperError(
+                PaperReason.INVALID_OBSERVATION, path="parser_version"
+            ) from None
         if (
             not isinstance(request_id, str)
             or not request_id.strip()
@@ -161,8 +171,27 @@ class JGRFeed:
                     )
                 ).scalar()
                 if previous:
+                    previous_row = (
+                        connection.execute(
+                            select(checks).where(checks.c.check_id == previous)
+                        )
+                        .mappings()
+                        .one()
+                    )
+                    saved = read_check(
+                        connection, dict(previous_row), self.database, self.data_root
+                    )
+                    if (
+                        parser_version is not None
+                        and parser_version != saved.parser_version
+                    ):
+                        raise PaperError(
+                            PaperReason.INVALID_OBSERVATION, path="parser_version"
+                        )
                     check_id = previous
                 else:
+                    if parser_version is None:
+                        parser_version = abstract_parser_version(ABSTRACT_RULES_VERSION)
                     latest = (
                         connection.execute(
                             select(checks)

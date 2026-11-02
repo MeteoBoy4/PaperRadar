@@ -8,6 +8,7 @@ from typing import Literal, Self
 
 from pydantic import Field, field_validator, model_validator
 
+from paper_radar.fixture_audit.abstract_versions import ABSTRACT_RULES_VERSION
 from paper_radar.fixture_audit.models import ConditionalHeaders, FrozenModel, Journal
 
 ACQUISITION_STRATEGY_VERSION = "audit-acquisition-v1"
@@ -76,7 +77,8 @@ class AuditPlan(FrozenModel):
     sampling_rules_version: str = SAMPLING_RULES_VERSION
     category_rules_version: str = CATEGORY_RULES_VERSION
     ua_template_version: str = UA_TEMPLATE_VERSION
-    abstract_rules_version: str = "audit-abstract-v1"
+    # Preserve unknown stored identities for unsupported_history classification.
+    abstract_rules_version: str = ABSTRACT_RULES_VERSION
     truncation_rules_version: str = "audit-truncation-v1"
     matrix_rules_version: str = "audit-matrix-v1"
     created_at: str

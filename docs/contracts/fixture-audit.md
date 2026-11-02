@@ -183,6 +183,10 @@ CLI 向显式所选根注入文件汇，记录运行与路线结算的安全诊�
 `create_audit_plan` / `run_audit` 的服务参数 `abstract_rules_version` 默认
 `audit-abstract-v1`，显式传入 `audit-abstract-v2` 创建新语义计划；CLI 沿用 v1。
 同一 plan_key 不能切换规则，未知版本以 `invalid_plan`（`plan`）拒绝。
+已安装规则的封闭类型和整数 parser 对应关系统一由
+[`abstract_versions`](../../src/paper_radar/fixture_audit/abstract_versions.py) 定义；
+持久化 AuditPlan 的版本仍保留原字符串，以便未知历史被归类为 unsupported_history，
+而非误报材料损坏。
 矩阵身份为 `(member_id, route, acquisition_strategy_version, channel)`，适用性来自冻结策略：
 
 | 条件 | 适用路线/通道 |

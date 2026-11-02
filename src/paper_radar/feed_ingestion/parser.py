@@ -9,6 +9,7 @@ from paper_radar.fixture_audit.abstract_models import (
     TRUNCATION_RULES_VERSION,
 )
 from paper_radar.fixture_audit.abstract_parser import parse_material
+from paper_radar.fixture_audit.abstract_versions import abstract_rules_for_parser
 from paper_radar.fixture_audit.acquisition_models import SourceRequest
 from paper_radar.fixture_audit.acquisition_policy import checked_source_url
 from paper_radar.fixture_audit.sampling_models import FeedCandidate
@@ -117,9 +118,7 @@ def landing_doi(url: str) -> str | None:
 def parse_items(
     raw: bytes, decoding: str = "utf-8", *, parser_version: int = 1
 ) -> tuple[ParsedItem, ...]:
-    if type(parser_version) is not int or parser_version not in {1, 2}:
-        raise ValueError("unsupported_feed_parser_version")
-    rules_version = f"audit-abstract-v{parser_version}"
+    rules_version = abstract_rules_for_parser(parser_version)
     candidates = production_candidates(raw, decoding)
     try:
         ranges = spans(raw, decoding)

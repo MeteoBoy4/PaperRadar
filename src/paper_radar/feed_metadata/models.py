@@ -5,6 +5,10 @@ from typing import Literal
 from pydantic import Field, field_validator
 
 from paper_radar.fixture_audit.abstract_models import AbstractCandidate, ExcludedBlock
+from paper_radar.fixture_audit.abstract_versions import (
+    ABSTRACT_RULES_VERSION,
+    AbstractRulesVersion,
+)
 from paper_radar.fixture_audit.acquisition_models import (
     HTTPFacts,
     Route,
@@ -38,9 +42,7 @@ class MetadataBasis(FrozenModel):
     revision_no: int = Field(ge=1)
     request_id: str = Field(min_length=1, max_length=128)
     observed_at: str
-    abstract_rules_version: Literal["audit-abstract-v1", "audit-abstract-v2"] = (
-        "audit-abstract-v1"
-    )
+    abstract_rules_version: AbstractRulesVersion = ABSTRACT_RULES_VERSION
 
     @field_validator("observed_at")
     @classmethod
@@ -62,9 +64,7 @@ class MetadataRoute(FrozenModel):
     categories: tuple[CategoryBasis, ...] = ()
     acquisition_id: str | None = None
     committed: bool = False
-    abstract_rules_version: Literal["audit-abstract-v1", "audit-abstract-v2"] = (
-        "audit-abstract-v1"
-    )
+    abstract_rules_version: AbstractRulesVersion = ABSTRACT_RULES_VERSION
     truncation_rules_version: Literal["audit-truncation-v1"] = "audit-truncation-v1"
 
 

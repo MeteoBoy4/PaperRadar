@@ -29,6 +29,12 @@ from paper_radar.fixture_audit.abstract_models import (
     ExcludedBlock,
 )
 from paper_radar.fixture_audit.abstract_parser import parse_material
+from paper_radar.fixture_audit.abstract_versions import (
+    ABSTRACT_RULES_VERSION,
+    AbstractRulesVersion,
+    abstract_parser_version,
+    parse_abstract_rules_version,
+)
 from paper_radar.fixture_audit.acquisition_models import Route, SourceRequest
 from paper_radar.fixture_audit.acquisition_policy import (
     normalize_request,
@@ -75,7 +81,7 @@ class JGRMetadata:
         *,
         request_id: str,
         contact_email: str,
-        abstract_rules_version: str = "audit-abstract-v1",
+        abstract_rules_version: AbstractRulesVersion | None = None,
     ) -> MetadataResult:
         with self.log.execution(
             "metadata", controlled=(PaperError, FixtureError), paper_id=paper_id
@@ -94,13 +100,18 @@ class JGRMetadata:
         *,
         request_id: str,
         contact_email: str,
-        abstract_rules_version: str = "audit-abstract-v1",
+        abstract_rules_version: AbstractRulesVersion | None = None,
     ) -> MetadataResult:
         validate_contact(contact_email)
-        if abstract_rules_version not in {"audit-abstract-v1", "audit-abstract-v2"}:
+        try:
+            if abstract_rules_version is not None:
+                abstract_rules_version = parse_abstract_rules_version(
+                    abstract_rules_version
+                )
+        except ValueError:
             raise PaperError(
                 PaperReason.INVALID_OBSERVATION, path="abstract_rules_version"
-            )
+            ) from None
         if (
             type(request_id) is not str
             or not request_id.strip()
@@ -112,7 +123,16 @@ class JGRMetadata:
             existing = connection.execute(
                 select(runs.c.request_key).where(runs.c.request_key == key)
             ).first()
-            if existing is None:
+            if existing is not None:
+                saved, _ = load_run(connection, key)
+                if (
+                    abstract_rules_version is not None
+                    and abstract_rules_version != saved.abstract_rules_version
+                ):
+                    raise PaperError(
+                        PaperReason.INVALID_OBSERVATION, path="abstract_rules_version"
+                    )
+            else:
                 # 冻结当前版本;后到发现不重绑已登记请求。
                 trace = PaperFacts(self.database).trace(paper_id)
                 current = trace.current
@@ -135,11 +155,8 @@ class JGRMetadata:
                     revision_no=current.revision_no,
                     request_id=request_id,
                     observed_at=datetime.now(UTC).isoformat(),
-                    abstract_rules_version=(
-                        "audit-abstract-v2"
-                        if abstract_rules_version == "audit-abstract-v2"
-                        else "audit-abstract-v1"
-                    ),
+                    abstract_rules_version=abstract_rules_version
+                    or ABSTRACT_RULES_VERSION,
                 )
                 payload = canonical(basis.model_dump())
                 connection.execute(
@@ -339,9 +356,7 @@ class JGRMetadata:
                     if route == "publisher"
                     else basis.doi,
                     observed_at=datetime.fromisoformat(basis.observed_at),
-                    parser_version=2
-                    if old.abstract_rules_version == "audit-abstract-v2"
-                    else 1,
+                    parser_version=abstract_parser_version(old.abstract_rules_version),
                     interpretation="complete",
                     payload=raw,
                     fields=fields,
@@ -545,7 +560,7 @@ class JGRMetadata:
                 or found.version_id != basis.version_id
                 or found.payload_sha256 != route.payload_sha256
                 or found.parser_version
-                != (2 if route.abstract_rules_version == "audit-abstract-v2" else 1)
+                != abstract_parser_version(route.abstract_rules_version)
             ):
                 raise corrupt()
 

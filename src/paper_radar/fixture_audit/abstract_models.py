@@ -4,6 +4,12 @@ from typing import Literal
 
 from pydantic import Field
 
+from paper_radar.fixture_audit.abstract_versions import (
+    ABSTRACT_RULES_VERSION as ABSTRACT_RULES_VERSION,
+)
+from paper_radar.fixture_audit.abstract_versions import (
+    AbstractRulesVersion,
+)
 from paper_radar.fixture_audit.acquisition_models import (
     Channel,
     SourceReason,
@@ -12,7 +18,6 @@ from paper_radar.fixture_audit.acquisition_models import (
 from paper_radar.fixture_audit.models import FrozenModel, Journal
 from paper_radar.fixture_audit.sampling_models import SamplingAuditView
 
-ABSTRACT_RULES_VERSION = "audit-abstract-v1"
 TRUNCATION_RULES_VERSION = "audit-truncation-v1"
 MATRIX_RULES_VERSION = "audit-matrix-v1"
 Signal = Literal[
@@ -62,7 +67,7 @@ class MatrixRow(FrozenModel):
     payload_sha256: str | None = None
     candidates: tuple[AbstractCandidate, ...] = ()
     excluded_blocks: tuple[ExcludedBlock, ...] = ()
-    abstract_rules_version: str = ABSTRACT_RULES_VERSION
+    abstract_rules_version: AbstractRulesVersion = ABSTRACT_RULES_VERSION
     truncation_rules_version: str = TRUNCATION_RULES_VERSION
     matrix_rules_version: str = MATRIX_RULES_VERSION
 

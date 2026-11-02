@@ -14,6 +14,10 @@ from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from paper_radar.fixture_audit.abstract_models import AbstractAuditView
 from paper_radar.fixture_audit.abstract_records import load_abstracts
 from paper_radar.fixture_audit.abstract_service import AbstractService
+from paper_radar.fixture_audit.abstract_versions import (
+    ABSTRACT_RULES_VERSION,
+    AbstractRulesVersion,
+)
 from paper_radar.fixture_audit.acquisition_models import (
     AuditPlan,
     Channel,
@@ -573,7 +577,7 @@ class FixtureAudit:
         target_count: int = 5,
         plan_key: str | None = None,
         code_identity: CodeIdentity | None = None,
-        abstract_rules_version: str = "audit-abstract-v1",
+        abstract_rules_version: AbstractRulesVersion = ABSTRACT_RULES_VERSION,
     ) -> AuditPlan:
         return self.acquisitions.create_audit_plan(
             contact_email=contact_email,
@@ -618,7 +622,7 @@ class FixtureAudit:
         target_count: int = 5,
         plan_key: str | None = None,
         code_identity: CodeIdentity | None = None,
-        abstract_rules_version: str = "audit-abstract-v1",
+        abstract_rules_version: AbstractRulesVersion = ABSTRACT_RULES_VERSION,
     ) -> AbstractAuditView:
         validate_contact(contact_email)
         with self.log.execution("audit", controlled=(FixtureError,)):

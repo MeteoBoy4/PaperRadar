@@ -12,6 +12,11 @@ from uuid import uuid4
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
+from paper_radar.fixture_audit.abstract_versions import (
+    ABSTRACT_RULES_VERSION,
+    AbstractRulesVersion,
+    parse_abstract_rules_version,
+)
 from paper_radar.fixture_audit.acquisition_identity import capture_code_identity
 from paper_radar.fixture_audit.acquisition_models import (
     AuditPlan,
@@ -93,14 +98,15 @@ class AcquisitionService:
         target_count: int = 5,
         plan_key: str | None = None,
         code_identity: CodeIdentity | None = None,
-        abstract_rules_version: str = "audit-abstract-v1",
+        abstract_rules_version: AbstractRulesVersion = ABSTRACT_RULES_VERSION,
     ) -> AuditPlan:
         validate_contact(contact_email)
         try:
             if code_identity is not None:
                 code_identity = revalidate_model(code_identity, CodeIdentity)
-            if abstract_rules_version not in {"audit-abstract-v1", "audit-abstract-v2"}:
-                raise ValueError("unsupported_abstract_rules_version")
+            abstract_rules_version = parse_abstract_rules_version(
+                abstract_rules_version
+            )
             plan = AuditPlan(
                 plan_id="",
                 plan_key=plan_key if plan_key is not None else uuid4().hex,

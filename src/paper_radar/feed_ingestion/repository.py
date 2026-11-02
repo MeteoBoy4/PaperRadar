@@ -53,27 +53,20 @@ def require_feed(connection: Connection, feed_id: str) -> str:
 
 
 def check_identity(row: dict[str, Any]) -> str:
-    return sha(
-        canonical(
-            {
-                **(
-                    {"parser_version": row["parser_version"]}
-                    if row.get("parser_version", 1) != 1
-                    else {}
-                ),
-                **{
-                    key: row[key]
-                    for key in (
-                        "feed_id",
-                        "request_id",
-                        "checked_at",
-                        "request_json",
-                        "prior_check_id",
-                    )
-                },
-            }
+    payload = {
+        key: row[key]
+        for key in (
+            "feed_id",
+            "request_id",
+            "checked_at",
+            "request_json",
+            "prior_check_id",
         )
-    )
+    }
+    # v1 predates the version column: keep its original identity bytes exactly.
+    if row["parser_version"] != 1:
+        payload["parser_version"] = row["parser_version"]
+    return sha(canonical(payload))
 
 
 def read_check(

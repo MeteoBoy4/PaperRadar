@@ -14,6 +14,7 @@ from paper_radar.fixture_audit.abstract_models import (
     MemberAbstract,
     RouteSummary,
 )
+from paper_radar.fixture_audit.abstract_versions import parse_abstract_rules_version
 from paper_radar.fixture_audit.acquisition_models import SourceRequest, identity_sha256
 from paper_radar.fixture_audit.sampling_models import SamplingAuditView, SamplingMember
 from paper_radar.papers.rules import SOURCE_PRIORITY, RankedObservation, choose_fields
@@ -185,7 +186,9 @@ def pending_row(
         generation=previous.generation + 1 if previous else 1,
         previous_row_id=previous.row_id if previous else None,
         interpretation_pending=True,
-        abstract_rules_version=view.plan.abstract_rules_version,
+        abstract_rules_version=parse_abstract_rules_version(
+            view.plan.abstract_rules_version
+        ),
         plan_id=view.plan.plan_id,
         member_id=member.member_id,
         request=request,

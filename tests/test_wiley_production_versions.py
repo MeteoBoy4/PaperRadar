@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import httpx
+import pytest
 
 from paper_radar.feed_ingestion import JGRFeed
 from paper_radar.feed_metadata import JGRMetadata
@@ -213,3 +214,93 @@ def test_metadata_replay_rejects_rules_mislabeled_against_acquisition(
         metadata.replay(result.request_key)
     assert corrupt.value.reason == "corrupt_reference"
     assert corrupt.value.path == "metadata"
+
+
+@pytest.mark.parametrize("version", [1, 2])
+def test_existing_feed_request_rejects_explicit_version_change(
+    tmp_path: Path, version: int
+) -> None:
+    from paper_radar.papers.errors import PaperError
+
+    papers = facts(tmp_path)
+    registered = papers.register_feed(endpoint("jgr"))
+    assert papers.data_root
+    calls: list[httpx.Request] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, content=feed(f"<description>{NOTE}</description>"))
+
+    service = JGRFeed(
+        papers.database,
+        papers.data_root,
+        http=SourceHTTPExecutor(transport=httpx.MockTransport(respond)),
+    )
+    saved = service.check(
+        registered.feed_id,
+        request_id="same",
+        contact_email="audit@example.org",
+        parser_version=version,
+    )
+    with pytest.raises(PaperError) as mismatch:
+        service.check(
+            registered.feed_id,
+            request_id="same",
+            contact_email="audit@example.org",
+            parser_version=3 - version,
+        )
+    assert mismatch.value.reason == "invalid_observation"
+    assert mismatch.value.path == "parser_version"
+    assert len(calls) == 1
+    assert service.replay(saved.check_id) == saved
+    assert (
+        service.check(
+            registered.feed_id, request_id="same", contact_email="audit@example.org"
+        )
+        == saved
+    )
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize("version", [1, 2])
+def test_existing_metadata_request_rejects_explicit_version_change(
+    tmp_path: Path,
+    version: int,
+) -> None:
+    from paper_radar.fixture_audit.abstract_versions import AbstractRulesVersion
+    from paper_radar.papers.errors import PaperError
+    from tests.test_feed_metadata import enrich, setup_metadata
+    from tests.test_feed_metadata_recovery import response
+
+    rules: AbstractRulesVersion = (
+        "audit-abstract-v1" if version == 1 else "audit-abstract-v2"
+    )
+    other: AbstractRulesVersion = (
+        "audit-abstract-v2" if version == 1 else "audit-abstract-v1"
+    )
+    calls: list[httpx.Request] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return response(request)
+
+    _, paper_id, metadata = setup_metadata(tmp_path, respond)
+    saved = metadata.enrich(
+        paper_id,
+        request_id="one",
+        contact_email="contact@example.org",
+        abstract_rules_version=rules,
+    )
+    count = len(calls)
+    with pytest.raises(PaperError) as mismatch:
+        metadata.enrich(
+            paper_id,
+            request_id="one",
+            contact_email="contact@example.org",
+            abstract_rules_version=other,
+        )
+    assert mismatch.value.reason == "invalid_observation"
+    assert mismatch.value.path == "abstract_rules_version"
+    assert metadata.replay(saved.request_key) == saved
+    assert enrich(metadata, paper_id) == saved
+    assert len(calls) == count

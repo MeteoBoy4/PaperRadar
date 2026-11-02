@@ -1,10 +1,12 @@
 """Issue #146:合成字段共存向量,新规则与冻结 v1 分别解释。"""
 
 import hashlib
+from typing import cast
 
 import pytest
 
 from paper_radar.fixture_audit.abstract_parser import parse_material
+from paper_radar.fixture_audit.abstract_versions import AbstractRulesVersion
 from paper_radar.fixture_audit.acquisition_models import SourceRequest
 from paper_radar.fixture_audit.models import Journal
 
@@ -182,7 +184,7 @@ def test_unknown_rule_is_explicitly_rejected() -> None:
             feed(""),
             decoding="utf-8",
             acquisition_id="bad",
-            rules_version="unavailable",
+            rules_version=cast(AbstractRulesVersion, "unavailable"),
         )
 
 

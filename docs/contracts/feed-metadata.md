@@ -12,10 +12,12 @@
 
 ### 请求与来源
 
-- `enrich(paper_id, request_id=..., contact_email=..., abstract_rules_version="audit-abstract-v1")` 首次登记时冻结 Paper、当前版本、DOI、
+- `enrich(paper_id, request_id=..., contact_email=..., abstract_rules_version=None)` 首次登记时冻结 Paper、当前版本、DOI、
   初始修订、UTC `observed_at` 及所选摘要规则身份。显式选择 `audit-abstract-v2`
   使新请求的全部路线共用 v2；历史缺省身份为 v1。未知版本以
   `invalid_observation`（`abstract_rules_version`）拒绝。旧请求/路线恢复始终按原身份，
+  省略版本（None）时新请求使用 v1，旧请求沿用其保存身份；显式版本与同 request_id
+  保存版本不一致时，在联网和追加事实前以 invalid_observation（abstract_rules_version）拒绝。
   新版本须使用新 request_id，不回写既有请求。`request_id` 须为非纯空白的严格字符串，最多 128 字符，
   原样参与同 Paper 内的幂等身份；返回的 `request_key` 用于继续和查询。
   当前版本须为 `journal`，且该版本已有数据库中规范 JGR 端点的发现；其他期刊或仅人工 DOI

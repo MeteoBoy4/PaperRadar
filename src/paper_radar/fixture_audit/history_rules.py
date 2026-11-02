@@ -1,5 +1,6 @@
 """按保存版本选择历史实现;当前默认版本不代替历史版本。"""
 
+from paper_radar.fixture_audit.abstract_versions import parse_abstract_rules_version
 from paper_radar.fixture_audit.acquisition_models import AuditPlan
 from paper_radar.fixture_audit.errors import FixtureError, FixtureReason
 
@@ -20,11 +21,19 @@ HISTORICAL_V1 = {
 
 
 def require_historical_plan(plan: AuditPlan) -> None:
-    versions = {**HISTORICAL_V1, "abstract_rules_version": plan.abstract_rules_version}
-    if plan.abstract_rules_version not in {
-        "audit-abstract-v1",
-        "audit-abstract-v2",
-    } or any(getattr(plan, name) != version for name, version in versions.items()):
+    try:
+        parse_abstract_rules_version(plan.abstract_rules_version)
+    except ValueError:
+        raise FixtureError(
+            FixtureReason.UNSUPPORTED_HISTORY, path="audit.plan_versions"
+        ) from None
+    # HISTORICAL_V1 remains a full historical snapshot. Abstract rules dispatch
+    # independently; every other component must match that frozen combination.
+    if any(
+        getattr(plan, name) != version
+        for name, version in HISTORICAL_V1.items()
+        if name != "abstract_rules_version"
+    ):
         raise FixtureError(
             FixtureReason.UNSUPPORTED_HISTORY, path="audit.plan_versions"
         )

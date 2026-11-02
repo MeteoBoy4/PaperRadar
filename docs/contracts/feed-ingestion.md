@@ -18,7 +18,7 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障继续服�
   本服务只接受已有 `feed_id`，数据库规范 URL 须等于共享声明中的 JGR eTOC 端点
   （[`sources/feeds.py`](../../src/paper_radar/sources/feeds.py)）；端点 query 保留。
   服务不自动登记 Feed，不批准其他订阅；端点声明也供语言归属使用，不在此定义语言策略。
-- `check(feed_id, request_id=..., contact_email=..., parser_version=1) -> FeedCheck` 以
+- `check(feed_id, request_id=..., contact_email=..., parser_version=None) -> FeedCheck` 以
   `(feed_id, request_id)` 幂等。`request_id` 是非全空白、至多 128 字符的字符串，原样保存。
   `contact_email` 每次 `check` 都须显式提供并通过共享联系标识校验，包括重放已完成检查时。
   新检查在 HTTP 前保存不可变请求与 UTC `checked_at`；此时间也是所有 item 的 `observed_at`，
@@ -53,8 +53,9 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障继续服�
 
 - parser 可显式选择整数 1 或 2（严格 int），默认 1；身份分别为
   `jgr-feed-parser-v1` / `jgr-feed-parser-v2`，对应共享 `audit-abstract-v1` / v2。
-  首次检查在 HTTP 前冻结版本；同 request_id 和 resume 始终消费原保存版本，
-  新版本须用新 request_id。生产遍历全部条目，不沿用审计前 50 条
+  首次检查在 HTTP 前冻结版本；省略版本（None）时新检查使用 1，旧 request_id
+  与 resume 沿用原保存版本。显式版本与同 request_id 的保存版本不一致时，
+  在联网和追加事实前以 invalid_observation（parser_version）拒绝；新版本须用新 request_id。生产遍历全部条目，不沿用审计前 50 条
   上限；身份、顺序、类别解释复用共享 parser。RSS 只取唯一 channel 的直接 item，Atom
   只取根级 entry，RDF 只取根级 item 并遵守有效 RDF Seq 顺序。
   缺失或多个 RSS channel、非法 XML、DOCTYPE/ENTITY 等不安全 Feed 被拒绝。

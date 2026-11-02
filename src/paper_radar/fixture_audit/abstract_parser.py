@@ -14,6 +14,12 @@ from paper_radar.fixture_audit.abstract_models import (
     ExcludedBlock,
     Signal,
 )
+from paper_radar.fixture_audit.abstract_versions import (
+    ABSTRACT_RULES_VERSION,
+    WILEY_ABSTRACT_RULES_VERSION,
+    AbstractRulesVersion,
+    parse_abstract_rules_version,
+)
 from paper_radar.fixture_audit.acquisition_models import SourceRequest
 from paper_radar.fixture_audit.models import Journal
 from paper_radar.papers.text_rules import normalize_text
@@ -244,13 +250,16 @@ def parse_material(
     acquisition_id: str,
     entry_locator: str | None = None,
     feed_item: ET.Element | None = None,
-    rules_version: str = "audit-abstract-v1",
+    rules_version: AbstractRulesVersion = ABSTRACT_RULES_VERSION,
 ) -> tuple[
     tuple[AbstractCandidate, ...], tuple[ExcludedBlock, ...], dict[str, str], bool
 ]:
     """返回安全候选、额外区块定位、显式读取用文本及可识别主区块形状。"""
-    if rules_version not in {"audit-abstract-v1", "audit-abstract-v2"}:
-        raise ValueError("unsupported_abstract_rules_version")
+    rules_version = parse_abstract_rules_version(rules_version)
+    wiley_v2 = rules_version == WILEY_ABSTRACT_RULES_VERSION and request.journal in {
+        "jgr",
+        "qjrms",
+    }
     source_kind = (
         "feed"
         if request.route == "feed"
@@ -297,10 +306,7 @@ def parse_material(
             elif (
                 name in {"description", "summary", "content"}
                 and not locator
-                and not (
-                    rules_version == "audit-abstract-v2"
-                    and request.journal in {"jgr", "qjrms"}
-                )
+                and not wiley_v2
             ):
                 # XML child markup stays markup; escaped HTML goes to HTMLParser.
                 inner = (child.text or "") + "".join(
@@ -310,7 +316,7 @@ def parse_material(
                     inner, journal=request.journal, feed=True
                 )
                 locator = f"{entry_locator}/{name}"
-        if rules_version == "audit-abstract-v2" and request.journal in {"jgr", "qjrms"}:
+        if wiley_v2:
             abstract, excluded, locator = _wiley_main(
                 item, request.journal, entry_locator
             )
@@ -501,12 +507,12 @@ def _wiley_main(
             )
             clean, _ = _clean(value)
             if has_main and clean:
-                candidates.append((value, f"{entry_locator}/{child.tag}"))
+                candidates.append((value, clean, f"{entry_locator}/{child.tag}"))
         if chosen is None and not conflict:
-            if level_conflict or len({_clean(value)[0] for value, _ in candidates}) > 1:
+            if level_conflict or len({clean for _, clean, _ in candidates}) > 1:
                 conflict = True
             elif candidates:
-                chosen = candidates[0]
+                chosen = candidates[0][0], candidates[0][2]
     if chosen is not None:
         return chosen[0], tuple(extras), chosen[1]
     return "", tuple(extras), ""

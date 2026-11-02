@@ -21,6 +21,11 @@ from paper_radar.fixture_audit.abstract_rules import (
     retained_acquisition,
 )
 from paper_radar.fixture_audit.abstract_tables import abstract_rows
+from paper_radar.fixture_audit.abstract_versions import (
+    ABSTRACT_RULES_VERSION,
+    AbstractRulesVersion,
+    parse_abstract_rules_version,
+)
 from paper_radar.fixture_audit.acquisition_models import (
     CodeIdentity,
     RouteExecution,
@@ -113,7 +118,9 @@ class AbstractService:
                     self._raw(execution),
                     decoding=settlement.content_decoding or "utf-8",
                     acquisition_id=execution.execution_id,
-                    rules_version=view.plan.abstract_rules_version,
+                    rules_version=parse_abstract_rules_version(
+                        view.plan.abstract_rules_version
+                    ),
                     entry_locator=event.candidate.entry_locator
                     if request.route == "feed"
                     else None,
@@ -150,7 +157,9 @@ class AbstractService:
             payload_sha256=settlement.payload_sha256,
             candidates=candidates,
             excluded_blocks=excluded,
-            abstract_rules_version=view.plan.abstract_rules_version,
+            abstract_rules_version=parse_abstract_rules_version(
+                view.plan.abstract_rules_version
+            ),
         )
         return row.model_copy(update={"row_id": identity_sha256(row)}), texts
 
@@ -192,7 +201,7 @@ class AbstractService:
         target_count: int = 5,
         plan_key: str | None = None,
         code_identity: CodeIdentity | None = None,
-        abstract_rules_version: str = "audit-abstract-v1",
+        abstract_rules_version: AbstractRulesVersion = ABSTRACT_RULES_VERSION,
     ) -> AbstractAuditView:
         contact = validate_contact(contact_email)
         plan = self.acquisitions.create_audit_plan(
