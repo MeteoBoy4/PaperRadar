@@ -24,7 +24,6 @@ from paper_radar.feed_metadata.repository import (
 )
 from paper_radar.feed_metadata.tables import runs
 from paper_radar.fixture_audit.abstract_models import (
-    ABSTRACT_RULES_VERSION,
     TRUNCATION_RULES_VERSION,
     AbstractCandidate,
     ExcludedBlock,
@@ -71,20 +70,37 @@ class JGRMetadata:
 
     @controlled("metadata")
     def enrich(
-        self, paper_id: str, *, request_id: str, contact_email: str
+        self,
+        paper_id: str,
+        *,
+        request_id: str,
+        contact_email: str,
+        abstract_rules_version: str = "audit-abstract-v1",
     ) -> MetadataResult:
         with self.log.execution(
             "metadata", controlled=(PaperError, FixtureError), paper_id=paper_id
         ):
             return self._enrich(
-                paper_id, request_id=request_id, contact_email=contact_email
+                paper_id,
+                request_id=request_id,
+                contact_email=contact_email,
+                abstract_rules_version=abstract_rules_version,
             )
 
     @controlled("metadata")
     def _enrich(
-        self, paper_id: str, *, request_id: str, contact_email: str
+        self,
+        paper_id: str,
+        *,
+        request_id: str,
+        contact_email: str,
+        abstract_rules_version: str = "audit-abstract-v1",
     ) -> MetadataResult:
         validate_contact(contact_email)
+        if abstract_rules_version not in {"audit-abstract-v1", "audit-abstract-v2"}:
+            raise PaperError(
+                PaperReason.INVALID_OBSERVATION, path="abstract_rules_version"
+            )
         if (
             type(request_id) is not str
             or not request_id.strip()
@@ -119,6 +135,11 @@ class JGRMetadata:
                     revision_no=current.revision_no,
                     request_id=request_id,
                     observed_at=datetime.now(UTC).isoformat(),
+                    abstract_rules_version=(
+                        "audit-abstract-v2"
+                        if abstract_rules_version == "audit-abstract-v2"
+                        else "audit-abstract-v1"
+                    ),
                 )
                 payload = canonical(basis.model_dump())
                 connection.execute(
@@ -223,6 +244,7 @@ class JGRMetadata:
                             response.body,
                             decoding=response.facts.decoding or "utf-8",
                             acquisition_id=key + route,
+                            rules_version=basis.abstract_rules_version,
                         )
                         categories = category_bases(
                             "jgr",
@@ -255,6 +277,7 @@ class JGRMetadata:
                         payload_hash = sha(response.body)
             view = MetadataRoute(
                 route=route,
+                abstract_rules_version=basis.abstract_rules_version,
                 request=request,
                 observed_at=basis.observed_at,
                 http=response.facts,
@@ -284,13 +307,14 @@ class JGRMetadata:
                 raw,
                 decoding=old.http.decoding or "utf-8",
                 acquisition_id=key + route,
+                rules_version=old.abstract_rules_version,
             )
             fields: dict[str, CandidateInput] = {
                 candidate.field: CandidateInput(
                     value=AbstractValue(
                         text=texts[candidate.candidate_id],
                         is_truncated=candidate.suspected_truncated,
-                        rule=f"{ABSTRACT_RULES_VERSION}/{TRUNCATION_RULES_VERSION}",
+                        rule=f"{old.abstract_rules_version}/{TRUNCATION_RULES_VERSION}",
                     )
                     if candidate.field == "abstract"
                     else texts[candidate.candidate_id],
@@ -315,7 +339,9 @@ class JGRMetadata:
                     if route == "publisher"
                     else basis.doi,
                     observed_at=datetime.fromisoformat(basis.observed_at),
-                    parser_version=1,
+                    parser_version=2
+                    if old.abstract_rules_version == "audit-abstract-v2"
+                    else 1,
                     interpretation="complete",
                     payload=raw,
                     fields=fields,
@@ -448,6 +474,8 @@ class JGRMetadata:
     def _verify_route(
         self, key: str, basis: MetadataBasis, route: MetadataRoute
     ) -> None:
+        if route.abstract_rules_version != basis.abstract_rules_version:
+            raise corrupt()
         if route.route not in {
             "doi_ra",
             "publisher",
@@ -483,6 +511,7 @@ class JGRMetadata:
                 raw,
                 decoding=route.http.decoding or "utf-8",
                 acquisition_id=key + route.route,
+                rules_version=route.abstract_rules_version,
             )
             expected_categories = category_bases(
                 "jgr",
@@ -515,6 +544,8 @@ class JGRMetadata:
                 found is None
                 or found.version_id != basis.version_id
                 or found.payload_sha256 != route.payload_sha256
+                or found.parser_version
+                != (2 if route.abstract_rules_version == "audit-abstract-v2" else 1)
             ):
                 raise corrupt()
 

@@ -244,10 +244,13 @@ def parse_material(
     acquisition_id: str,
     entry_locator: str | None = None,
     feed_item: ET.Element | None = None,
+    rules_version: str = "audit-abstract-v1",
 ) -> tuple[
     tuple[AbstractCandidate, ...], tuple[ExcludedBlock, ...], dict[str, str], bool
 ]:
     """返回安全候选、额外区块定位、显式读取用文本及可识别主区块形状。"""
+    if rules_version not in {"audit-abstract-v1", "audit-abstract-v2"}:
+        raise ValueError("unsupported_abstract_rules_version")
     source_kind = (
         "feed"
         if request.route == "feed"
@@ -291,7 +294,14 @@ def parse_material(
             if name == "title":
                 title = "".join(child.itertext())
                 title_locator = f"{entry_locator}/title"
-            elif name in {"description", "summary", "content"} and not locator:
+            elif (
+                name in {"description", "summary", "content"}
+                and not locator
+                and not (
+                    rules_version == "audit-abstract-v2"
+                    and request.journal in {"jgr", "qjrms"}
+                )
+            ):
                 # XML child markup stays markup; escaped HTML goes to HTMLParser.
                 inner = (child.text or "") + "".join(
                     ET.tostring(part, encoding="unicode") for part in child
@@ -300,6 +310,10 @@ def parse_material(
                     inner, journal=request.journal, feed=True
                 )
                 locator = f"{entry_locator}/{name}"
+        if rules_version == "audit-abstract-v2" and request.journal in {"jgr", "qjrms"}:
+            abstract, excluded, locator = _wiley_main(
+                item, request.journal, entry_locator
+            )
     elif request.route == "publisher":
         tree = Tree()
         tree.feed(decoded)
@@ -427,3 +441,72 @@ def _serialize(node: Node) -> str:
         for child in node.children
     )
     return f"<{node.tag} {attributes}>{body}</{node.tag}>"
+
+
+def _wiley_main(
+    item: ET.Element, journal: Journal, entry_locator: str | None
+) -> tuple[str, tuple[ExcludedBlock, ...], str]:
+    """v2:按显式字段优先级取单一主区块,同级矛盾时保守缺项。"""
+    chosen: tuple[str, str] | None = None
+    conflict = False
+    extras: list[ExcludedBlock] = []
+    for tags in (
+        {"{http://purl.org/rss/1.0/modules/content/}encoded"},
+        {"{http://purl.org/dc/elements/1.1/}description"},
+        {"description"},
+        {"summary", "{http://www.w3.org/2005/Atom}summary"},
+        {"content", "{http://www.w3.org/2005/Atom}content"},
+    ):
+        candidates = []
+        level_conflict = False
+        for child in item:
+            if child.tag not in tags:
+                continue
+            inner = (child.text or "") + "".join(
+                ET.tostring(part, encoding="unicode") for part in child
+            )
+            tree = Tree()
+            tree.feed(inner)
+            labels = [
+                node
+                for node in nodes(tree.root)
+                if node.tag in {"h1", "h2", "h3", "h4", "h5", "b", "strong", "p"}
+                and text(node, headings=True).strip().rstrip(":：").lower()
+                == "abstract"
+            ]
+            # One visual label may contain nested inline markup, such as p/strong.
+            nested_labels = {
+                id(descendant) for label in labels for descendant in nodes(label)[1:]
+            }
+            labels = [label for label in labels if id(label) not in nested_labels]
+            if len(labels) > 1:
+                level_conflict = True
+            has_main = bool(labels)
+            if not labels:
+                # dc:description may contain a plain standalone Abstract label.
+                plain = re.fullmatch(
+                    r"\s*Abstract(?:\s*[:：]\s*|\s*[\r\n]+\s*)(.+)",
+                    inner,
+                    re.I | re.S,
+                )
+                if plain is not None:
+                    inner = "<h2>Abstract</h2>" + plain[1]
+                    has_main = True
+            value, excluded = _fragment(inner, journal=journal, feed=True)
+            extras.extend(
+                block.model_copy(
+                    update={"locator": f"{entry_locator}/{child.tag}/{block.locator}"}
+                )
+                for block in excluded
+            )
+            clean, _ = _clean(value)
+            if has_main and clean:
+                candidates.append((value, f"{entry_locator}/{child.tag}"))
+        if chosen is None and not conflict:
+            if level_conflict or len({_clean(value)[0] for value, _ in candidates}) > 1:
+                conflict = True
+            elif candidates:
+                chosen = candidates[0]
+    if chosen is not None:
+        return chosen[0], tuple(extras), chosen[1]
+    return "", tuple(extras), ""

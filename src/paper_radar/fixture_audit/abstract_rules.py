@@ -185,6 +185,7 @@ def pending_row(
         generation=previous.generation + 1 if previous else 1,
         previous_row_id=previous.row_id if previous else None,
         interpretation_pending=True,
+        abstract_rules_version=view.plan.abstract_rules_version,
         plan_id=view.plan.plan_id,
         member_id=member.member_id,
         request=request,

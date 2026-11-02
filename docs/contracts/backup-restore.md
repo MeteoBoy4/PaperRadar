@@ -63,7 +63,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。批次根及根内任何路径�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 `feed06_language_provenance`，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 `feed07_parser_versions`，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -203,9 +203,9 @@ backup verify 一样只给批次 ID、清单 SHA-256 及按 kind 汇总，不逐
 
 ## 版本准入与旧批次
 
-`BACKUP_DATABASE_REVISION` 固定支持 `feed06_language_provenance`，且要求与随包唯一 head
+`BACKUP_DATABASE_REVISION` 固定支持 `feed07_parser_versions`，且要求与随包唯一 head
 一致。format 1 不表示任意 revision 兼容：verify／restore 对所有旧 revision（包括 a302、
-a405、a704、a1001 及 feed01–feed05）返回 `unsupported_revision`，不在批次内部迁移。
+a405、a704、a1001 及 feed01–feed06）返回 `unsupported_revision`，不在批次内部迁移。
 保留原批次，用匹配该 revision 的旧程序先 verify／restore，再切回当前程序，对恢复的
 活动副本显式 `db upgrade`，随后创建新批次；不得修改原清单 revision 绕过准入。
 即使 revision 相同，当前程序也按当前配置、阶段输入和输出权威规则重验历史事实；
@@ -291,7 +291,7 @@ attempt，源库与副本独立继续时，不承诺追回丢失次数、跨恢�
   这些是固定历史证据，不替代当前程序校验、完整阶段 A 或 live 验收。
 - 实现依据：[备份与校验](../../src/paper_radar/backup/service.py)、
   [清单与原因](../../src/paper_radar/backup/manifest.py)、[恢复](../../src/paper_radar/backup/restore.py)、
-  [当前迁移](../../src/paper_radar/storage/migrations/versions/feed06_language_provenance.py)。
+  [当前迁移](../../src/paper_radar/storage/migrations/versions/feed07_parser_versions.py)。
 - 规格与决策依据：[§9.1](../../intent/draft.md#91-本机一致性快照)、
   [ADR-0027](../adr/0027-address-artifacts-by-content.md)、
   [ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)、

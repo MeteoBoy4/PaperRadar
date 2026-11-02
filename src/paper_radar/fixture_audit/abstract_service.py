@@ -113,6 +113,7 @@ class AbstractService:
                     self._raw(execution),
                     decoding=settlement.content_decoding or "utf-8",
                     acquisition_id=execution.execution_id,
+                    rules_version=view.plan.abstract_rules_version,
                     entry_locator=event.candidate.entry_locator
                     if request.route == "feed"
                     else None,
@@ -149,6 +150,7 @@ class AbstractService:
             payload_sha256=settlement.payload_sha256,
             candidates=candidates,
             excluded_blocks=excluded,
+            abstract_rules_version=view.plan.abstract_rules_version,
         )
         return row.model_copy(update={"row_id": identity_sha256(row)}), texts
 
@@ -190,6 +192,7 @@ class AbstractService:
         target_count: int = 5,
         plan_key: str | None = None,
         code_identity: CodeIdentity | None = None,
+        abstract_rules_version: str = "audit-abstract-v1",
     ) -> AbstractAuditView:
         contact = validate_contact(contact_email)
         plan = self.acquisitions.create_audit_plan(
@@ -197,6 +200,7 @@ class AbstractService:
             target_count=target_count,
             plan_key=plan_key,
             code_identity=code_identity,
+            abstract_rules_version=abstract_rules_version,
         )
         self.acquisitions.log.bind(plan_id=plan.plan_id)
         with self.acquisitions.audit_execution(plan.plan_id) as guard:

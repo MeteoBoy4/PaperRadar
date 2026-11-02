@@ -6,7 +6,6 @@ from xml.parsers import expat
 
 from paper_radar.feed_ingestion.models import ItemParseReason
 from paper_radar.fixture_audit.abstract_models import (
-    ABSTRACT_RULES_VERSION,
     TRUNCATION_RULES_VERSION,
 )
 from paper_radar.fixture_audit.abstract_parser import parse_material
@@ -115,7 +114,12 @@ def landing_doi(url: str) -> str | None:
     return None
 
 
-def parse_items(raw: bytes, decoding: str = "utf-8") -> tuple[ParsedItem, ...]:
+def parse_items(
+    raw: bytes, decoding: str = "utf-8", *, parser_version: int = 1
+) -> tuple[ParsedItem, ...]:
+    if type(parser_version) is not int or parser_version not in {1, 2}:
+        raise ValueError("unsupported_feed_parser_version")
+    rules_version = f"audit-abstract-v{parser_version}"
     candidates = production_candidates(raw, decoding)
     try:
         ranges = spans(raw, decoding)
@@ -156,7 +160,8 @@ def parse_items(raw: bytes, decoding: str = "utf-8") -> tuple[ParsedItem, ...]:
                 request,
                 raw,
                 decoding=decoding,
-                acquisition_id="production-feed-v1",
+                acquisition_id=f"production-feed-v{parser_version}",
+                rules_version=rules_version,
                 entry_locator=candidate.entry_locator,
                 feed_item=node,
             )
@@ -166,7 +171,7 @@ def parse_items(raw: bytes, decoding: str = "utf-8") -> tuple[ParsedItem, ...]:
                     value=AbstractValue(
                         text=text,
                         is_truncated=value.suspected_truncated,
-                        rule=f"{ABSTRACT_RULES_VERSION}/{TRUNCATION_RULES_VERSION}",
+                        rule=f"{rules_version}/{TRUNCATION_RULES_VERSION}",
                     )
                     if value.field == "abstract"
                     else text,

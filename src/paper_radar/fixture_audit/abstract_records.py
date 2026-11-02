@@ -57,6 +57,12 @@ def load_abstracts(
                 or key not in expected[row.plan_id]
                 or expected[row.plan_id][key][1] != row.request
                 or row.row_id != record["row_id"]
+                or row.abstract_rules_version
+                != by_plan[row.plan_id].plan.abstract_rules_version
+                or row.truncation_rules_version
+                != by_plan[row.plan_id].plan.truncation_rules_version
+                or row.matrix_rules_version
+                != by_plan[row.plan_id].plan.matrix_rules_version
                 or row.interpretation_pending
                 or row.generation != record["generation"]
                 or row.previous_row_id != record["previous_row_id"]

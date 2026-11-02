@@ -115,15 +115,34 @@ class JGRFeed:
             engine.dispose()
 
     @controlled("feed_check")
-    def check(self, feed_id: str, *, request_id: str, contact_email: str) -> FeedCheck:
+    def check(
+        self,
+        feed_id: str,
+        *,
+        request_id: str,
+        contact_email: str,
+        parser_version: int = 1,
+    ) -> FeedCheck:
         with self.log.execution("feed", controlled=(PaperError, FixtureError)):
             return self._check(
-                feed_id, request_id=request_id, contact_email=contact_email
+                feed_id,
+                request_id=request_id,
+                contact_email=contact_email,
+                parser_version=parser_version,
             )
 
     @controlled("feed_check")
-    def _check(self, feed_id: str, *, request_id: str, contact_email: str) -> FeedCheck:
+    def _check(
+        self,
+        feed_id: str,
+        *,
+        request_id: str,
+        contact_email: str,
+        parser_version: int = 1,
+    ) -> FeedCheck:
         validate_contact(contact_email)
+        if type(parser_version) is not int or parser_version not in {1, 2}:
+            raise PaperError(PaperReason.INVALID_OBSERVATION, path="parser_version")
         if (
             not isinstance(request_id, str)
             or not request_id.strip()
@@ -169,7 +188,9 @@ class JGRFeed:
                             if_modified_since=last.last_modified,
                             prior_artifact_id=last.artifact_id,
                         )
-                        if last and (last.etag or last.last_modified)
+                        if last
+                        and last.parser_version == parser_version
+                        and (last.etag or last.last_modified)
                         else ConditionalHeaders()
                     )
                     request = normalize_request(
@@ -179,6 +200,7 @@ class JGRFeed:
                     )
                     row = dict(
                         feed_id=feed_id,
+                        parser_version=parser_version,
                         request_id=request_id,
                         checked_at=datetime.now(UTC).isoformat(),
                         request_json=request.model_dump_json(),
@@ -227,7 +249,11 @@ class JGRFeed:
                     )
                     if not inspection.retain:
                         raise ValueError("invalid_feed")
-                    parse_items(response.body, response.facts.decoding or "utf-8")
+                    parse_items(
+                        response.body,
+                        response.facts.decoding or "utf-8",
+                        parser_version=view.parser_version,
+                    )
                 except (FixtureError, ValueError):
                     reason = "invalid_feed"
                 else:
@@ -276,7 +302,9 @@ class JGRFeed:
         raw = ArtifactStore(self.database, self.data_root).read_artifact(
             view.artifact_id
         )["payload"]
-        parsed = parse_items(raw, view.content_decoding or "utf-8")
+        parsed = parse_items(
+            raw, view.content_decoding or "utf-8", parser_version=view.parser_version
+        )
         done = {item.position for item in view.items}
         papers = PaperFacts(self.database, self.data_root)
         for position, value in enumerate(parsed, 1):
@@ -293,7 +321,7 @@ class JGRFeed:
                         doi=value.candidate.doi,
                         version_kind="journal",
                         observed_at=datetime.fromisoformat(view.checked_at),
-                        parser_version=1,
+                        parser_version=view.parser_version,
                         interpretation="complete",
                         payload_scope="single_item",
                         payload=raw[value.start : value.end],
@@ -352,7 +380,9 @@ class JGRFeed:
         raw = ArtifactStore(self.database, self.data_root).read_artifact(
             view.artifact_id
         )["payload"]
-        values = parse_items(raw, view.content_decoding or "utf-8")
+        values = parse_items(
+            raw, view.content_decoding or "utf-8", parser_version=view.parser_version
+        )
         if position > len(values):
             raise PaperError(PaperReason.INVALID_OBSERVATION, path="position")
         value = values[position - 1]

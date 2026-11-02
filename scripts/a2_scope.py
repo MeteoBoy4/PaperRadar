@@ -7,7 +7,7 @@ from scripts.verification_scope_materials import SHARED_MATERIALS
 SCOPE = "a2_01_profile_runtime_config_snapshots"
 ISSUE = 16
 SNAPSHOT_FORMAT_VERSION = 1
-MIGRATION_REVISION = "feed06_language_provenance"
+MIGRATION_REVISION = "feed07_parser_versions"
 
 # 材料组装重构只更新 service 并登记 material_assembly, 原固定测试不变。
 # 哈希在完成本票改动后固定。预期值不能从被检查文件动态生成。

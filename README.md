@@ -419,6 +419,9 @@ pi_rpc 权威成功与 Feed value 登记/恢复。产品仍缺 Cwd/Live 证据�
 
 ## JGR Feed 与元数据
 
+服务 API 可显式选择 Wiley 主摘要规则 v2；旧调用与历史回放保留 v1。
+用法与字段缺项/冲突规则见[摘要审计契约](docs/contracts/fixture-audit.md#摘要矩阵与显式运行105)。
+
 JGR 的网络取得服务已可显式调用；这些 Python API 不提供真实导入 CLI、调度或模型调用。
 
 | 能力 | 公共服务与文档 |

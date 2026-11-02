@@ -573,12 +573,14 @@ class FixtureAudit:
         target_count: int = 5,
         plan_key: str | None = None,
         code_identity: CodeIdentity | None = None,
+        abstract_rules_version: str = "audit-abstract-v1",
     ) -> AuditPlan:
         return self.acquisitions.create_audit_plan(
             contact_email=contact_email,
             target_count=target_count,
             plan_key=plan_key,
             code_identity=code_identity,
+            abstract_rules_version=abstract_rules_version,
         )
 
     def audit_execution(self, plan_id: str) -> AuditProtection:
@@ -616,6 +618,7 @@ class FixtureAudit:
         target_count: int = 5,
         plan_key: str | None = None,
         code_identity: CodeIdentity | None = None,
+        abstract_rules_version: str = "audit-abstract-v1",
     ) -> AbstractAuditView:
         validate_contact(contact_email)
         with self.log.execution("audit", controlled=(FixtureError,)):
@@ -624,6 +627,7 @@ class FixtureAudit:
                 target_count=target_count,
                 plan_key=plan_key,
                 code_identity=code_identity,
+                abstract_rules_version=abstract_rules_version,
             )
 
     def reinterpret_audit(

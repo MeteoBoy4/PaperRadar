@@ -12,8 +12,11 @@
 
 ### 请求与来源
 
-- `enrich(paper_id, request_id=..., contact_email=...)` 首次登记时冻结 Paper、当前版本、DOI、
-  初始修订及 UTC `observed_at`。`request_id` 须为非纯空白的严格字符串，最多 128 字符，
+- `enrich(paper_id, request_id=..., contact_email=..., abstract_rules_version="audit-abstract-v1")` 首次登记时冻结 Paper、当前版本、DOI、
+  初始修订、UTC `observed_at` 及所选摘要规则身份。显式选择 `audit-abstract-v2`
+  使新请求的全部路线共用 v2；历史缺省身份为 v1。未知版本以
+  `invalid_observation`（`abstract_rules_version`）拒绝。旧请求/路线恢复始终按原身份，
+  新版本须使用新 request_id，不回写既有请求。`request_id` 须为非纯空白的严格字符串，最多 128 字符，
   原样参与同 Paper 内的幂等身份；返回的 `request_key` 用于继续和查询。
   当前版本须为 `journal`，且该版本已有数据库中规范 JGR 端点的发现；其他期刊或仅人工 DOI
   不满足此前置。新请求 ID 表达显式新取得，不修改旧请求依据。
@@ -26,8 +29,9 @@
 - 无 DOI 时 `registry_applicability=not_applicable_no_doi`，不构造外部目标或路线。
   有 DOI 时实际路线为 `doi_ra`、`publisher`，加适用的 `registry_crossref` 或
   `registry_datacite`；只使用公开 `http`，不使用授权会话或其他通道。
-- 沿用 `audit-acquisition-v1`、`audit-http-v1`、`audit-abstract-v1` 和
-  `audit-truncation-v1`。服务直接调用共享 `inspect_source`、`parse_material` 与封闭类别判据，
+- 沿用 `audit-acquisition-v1`、`audit-http-v1` 和 `audit-truncation-v1`，
+  主摘要由请求冻结的 `audit-abstract-v1` 或 v2 解释，候选提交的整数 parser_version
+  分别为 1 或 2，AbstractValue.rule 同时保存摘要与截断规则。服务直接调用共享 `inspect_source`、`parse_material` 与封闭类别判据，
   不维护独立主摘要解析器。主摘要切分、规范化、截断信号及类别表由
   [fixture 审计契约](fixture-audit.md#摘要矩阵与显式运行105)定义；类别依据只保存到路线，
   本服务不据此授予 journal-article 或 Screening 资格。生产复用不覆盖旧审计解释；
@@ -75,7 +79,8 @@
 - 材料发布与事实提交分离；提交失败可遗留完整未引用制品，但未提交路线不声称成功。
   事实提交后回复中断重跑复用原取得，同请求并发以已保存路线为依据，不重复创建版本或来源观察。
 - 请求及路线保存哈希绑定、制品和取得事实引用；非空元数据请求禁止降级删除。
-  `validate_all()` 只读核验请求、路线、保留字节重解析及事实引用；备份闭包调用同一核验。
+  `validate_all()` 只读核验请求、路线、保留字节重解析及事实引用，包括实际取得的
+  整数 parser_version 与路线规则的对应；备份闭包调用同一核验。
   原根不可访问的隔离恢复仍可读取原字节和历史结果，不激活配置、不执行任务；
   备份/恢复的布局与安全边界见[备份契约](backup-restore.md)。
 
@@ -117,7 +122,7 @@
   [结果模型](../../src/paper_radar/feed_metadata/models.py)、
   [请求与路线存储](../../src/paper_radar/feed_metadata/repository.py)、
   [迁移 `feed04_metadata`](../../src/paper_radar/storage/migrations/versions/feed04_metadata.py)。
-- 依据：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、
+- 依据：[#146](https://github.com/MeteoBoy4/PaperRadar/issues/146)、[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、
   [#117](https://github.com/MeteoBoy4/PaperRadar/issues/117)、
   [主规格 §4.3](../../intent/draft.md#43-元数据与来源仲裁)、
   [§11 B](../../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)、

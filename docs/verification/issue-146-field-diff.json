@@ -1,0 +1,894 @@
+{
+  "kind": "offline_transient_comparison_not_audit_interpretation",
+  "plan_id": "b1719ffade06f8ec575d3e64fbe5fc6f3495787278f77ce9689c196a91b34b04",
+  "status": "partial",
+  "original_semantic_sha256": "257965f98447d368dcc402af5e217440d04a41e8de8bba933f6d5f395b9f1ba9",
+  "original_unchanged": true,
+  "network_attempts": 0,
+  "records": [
+    {
+      "journal": "jgr",
+      "position": 1,
+      "doi": "10.1029/2025jd045292",
+      "old": {
+        "title": {
+          "candidate_id": "0cb91f119c205eed9c505a06a00259af7e38e66f5186b75dcc4df4bda0c9afbf",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[1]/title",
+          "text_sha256": "8cd48aadc1c167991a3913f3319fad4d5ad8e97544892429e78053500b41f604",
+          "codepoints": 93,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "7f88be7bbed4d0c40fa1c5c5981e24945debe1de295cd1bbb36cb43ef15db3a4",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[1]/description",
+          "text_sha256": "e4f1c5c20d6f551f2b76d9251153edca700377f5ab0acc47195154c410a5e2c3",
+          "codepoints": 85,
+          "signals": [
+            "short_under_100"
+          ],
+          "suspected_truncated": true
+        }
+      },
+      "new": {
+        "title": {
+          "candidate_id": "0cb91f119c205eed9c505a06a00259af7e38e66f5186b75dcc4df4bda0c9afbf",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[1]/title",
+          "text_sha256": "8cd48aadc1c167991a3913f3319fad4d5ad8e97544892429e78053500b41f604",
+          "codepoints": 93,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "d5f84b2878fed80a2eb6f37bf477ef9b9b7a5d543d33f45f2fee826d838a6d83",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[1]/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "text_sha256": "a0c9fed0d4febc5dd17586fc4d4b134504e74ff2ceb8e520f0c344acca52076a",
+          "codepoints": 1410,
+          "signals": [],
+          "suspected_truncated": false
+        }
+      },
+      "added": [],
+      "removed": [],
+      "changed": [
+        "abstract"
+      ],
+      "member_id": "57df08c8fd6766aea8e27a8e8c533c6a1f9a1f4263cd6b818bd2233fe48c4f45",
+      "old_arbitration": {
+        "source": "registry",
+        "text_sha256": "c4a5ed234770831d214257f3705b8da813a2a93a65d075b47f728f0c63b2c693",
+        "codepoints": 1700,
+        "signals": []
+      },
+      "new_arbitration": {
+        "source": "registry",
+        "text_sha256": "c4a5ed234770831d214257f3705b8da813a2a93a65d075b47f728f0c63b2c693",
+        "codepoints": 1700,
+        "signals": []
+      }
+    },
+    {
+      "journal": "jgr",
+      "position": 2,
+      "doi": "10.1029/2026jd048366",
+      "old": {
+        "title": {
+          "candidate_id": "26e0f88538b2b8527fd9ece55e8efba1841888fcd5ac5b7763ba46bf2ff55ae5",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[2]/title",
+          "text_sha256": "59d0eca77d534f1e6f0c8e7d9c7acb49361eef9bbd3a707a07cf7173270a9990",
+          "codepoints": 178,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "b7897952bc4cfca591dbc544bb616f13bc75f1a7ff631600a78cc1256450deb0",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[2]/description",
+          "text_sha256": "e4f1c5c20d6f551f2b76d9251153edca700377f5ab0acc47195154c410a5e2c3",
+          "codepoints": 85,
+          "signals": [
+            "short_under_100"
+          ],
+          "suspected_truncated": true
+        }
+      },
+      "new": {
+        "title": {
+          "candidate_id": "26e0f88538b2b8527fd9ece55e8efba1841888fcd5ac5b7763ba46bf2ff55ae5",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[2]/title",
+          "text_sha256": "59d0eca77d534f1e6f0c8e7d9c7acb49361eef9bbd3a707a07cf7173270a9990",
+          "codepoints": 178,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "8bfa77b51734e2ade78c1734a3f8f4aa9c82b44b35f3cac51fa65142894e6e4f",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[2]/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "text_sha256": "213b640721082f7263e8a76cf1b45c523d264895471a0ba0e3bbf9ef643a228d",
+          "codepoints": 1142,
+          "signals": [],
+          "suspected_truncated": false
+        }
+      },
+      "added": [],
+      "removed": [],
+      "changed": [
+        "abstract"
+      ],
+      "member_id": "e11394d3d3063153f5edf2c9d3258660b1f24ba00f2c04793530544b7b0b6d4b",
+      "old_arbitration": {
+        "source": "registry",
+        "text_sha256": "a5d1a996c2eb0266241fba45e8e3faa17597548dcb1a123097bc767a6d838b28",
+        "codepoints": 1183,
+        "signals": []
+      },
+      "new_arbitration": {
+        "source": "registry",
+        "text_sha256": "a5d1a996c2eb0266241fba45e8e3faa17597548dcb1a123097bc767a6d838b28",
+        "codepoints": 1183,
+        "signals": []
+      }
+    },
+    {
+      "journal": "jgr",
+      "position": 3,
+      "doi": "10.1029/2026jd047220",
+      "old": {
+        "title": {
+          "candidate_id": "9143a53d14adb674929c6e6d777473700a460945d21f43c5c251275ee122e0ee",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[3]/title",
+          "text_sha256": "29602d5cf4711269fda4d51d6eeb40138be1ad48dc7b866520eb5eb35df1a2e3",
+          "codepoints": 142,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "802ccf982f207d552140a7dc12b30ec76d110bf7e102e34b37b0d3df5a872477",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[3]/description",
+          "text_sha256": "e4f1c5c20d6f551f2b76d9251153edca700377f5ab0acc47195154c410a5e2c3",
+          "codepoints": 85,
+          "signals": [
+            "short_under_100"
+          ],
+          "suspected_truncated": true
+        }
+      },
+      "new": {
+        "title": {
+          "candidate_id": "9143a53d14adb674929c6e6d777473700a460945d21f43c5c251275ee122e0ee",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[3]/title",
+          "text_sha256": "29602d5cf4711269fda4d51d6eeb40138be1ad48dc7b866520eb5eb35df1a2e3",
+          "codepoints": 142,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "a485b771fd36277989e7e41b702cec3e575126526e17f306592610b9c5100978",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[3]/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "text_sha256": "93e77f0f5f7f356d69db15759d7556c710c02805b297fa67b6f7ad93a2940992",
+          "codepoints": 1673,
+          "signals": [],
+          "suspected_truncated": false
+        }
+      },
+      "added": [],
+      "removed": [],
+      "changed": [
+        "abstract"
+      ],
+      "member_id": "e0e75e8042aac9aa026b319a43632f519206b197a3279a1746531d2f6b05a048",
+      "old_arbitration": {
+        "source": "registry",
+        "text_sha256": "4cef2d7e8b85ff1c71518305cca18c63b78ae278bd4687b8b30e1550827ac009",
+        "codepoints": 1798,
+        "signals": []
+      },
+      "new_arbitration": {
+        "source": "registry",
+        "text_sha256": "4cef2d7e8b85ff1c71518305cca18c63b78ae278bd4687b8b30e1550827ac009",
+        "codepoints": 1798,
+        "signals": []
+      }
+    },
+    {
+      "journal": "jgr",
+      "position": 4,
+      "doi": "10.1029/2026jd047130",
+      "old": {
+        "title": {
+          "candidate_id": "849180538e82e4d2bef565f38f29f5cbf5d1b1ad5cdbf14c11fea546fb34a08d",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[4]/title",
+          "text_sha256": "2f9fad8413d57dd935974ec8ee81be476fd7d1d24d6faecd03624001fb857859",
+          "codepoints": 97,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "4c7b11204ebb0c7b202ef5f8d425a5317b1444e20fdacae9063da661bae6b926",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[4]/description",
+          "text_sha256": "e4f1c5c20d6f551f2b76d9251153edca700377f5ab0acc47195154c410a5e2c3",
+          "codepoints": 85,
+          "signals": [
+            "short_under_100"
+          ],
+          "suspected_truncated": true
+        }
+      },
+      "new": {
+        "title": {
+          "candidate_id": "849180538e82e4d2bef565f38f29f5cbf5d1b1ad5cdbf14c11fea546fb34a08d",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[4]/title",
+          "text_sha256": "2f9fad8413d57dd935974ec8ee81be476fd7d1d24d6faecd03624001fb857859",
+          "codepoints": 97,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "d3e7a7c05abda53059b2ddf44906ebbd0f5d18469b79ec932f2d2d4f8e7a48a8",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[4]/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "text_sha256": "0fa29e7e973f420e64cc6dc4eb108b13c1c1a7fca1e8474e17d16d0bd67a52d3",
+          "codepoints": 1647,
+          "signals": [],
+          "suspected_truncated": false
+        }
+      },
+      "added": [],
+      "removed": [],
+      "changed": [
+        "abstract"
+      ],
+      "member_id": "0dfb4d2c050cd7a0eeb164ddf724c68fe03c325e5df938c486fe98560c3059b9",
+      "old_arbitration": {
+        "source": "registry",
+        "text_sha256": "03dbd68a071a1762781abe27c1f88e4026c76847fd2baa23904820f95f99af55",
+        "codepoints": 1647,
+        "signals": []
+      },
+      "new_arbitration": {
+        "source": "registry",
+        "text_sha256": "03dbd68a071a1762781abe27c1f88e4026c76847fd2baa23904820f95f99af55",
+        "codepoints": 1647,
+        "signals": []
+      }
+    },
+    {
+      "journal": "jgr",
+      "position": 5,
+      "doi": "10.1029/2026jd047703",
+      "old": {
+        "title": {
+          "candidate_id": "1eb267c5d3e34cb9f1fd6521f884d43787c03e8f720638bd050a14dec1b1897a",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[5]/title",
+          "text_sha256": "d15030cfe07211eb8a0d8ef39e006372b4510864fac471b4342d7e37445503ff",
+          "codepoints": 85,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "46b13ee118bb4564f342fd07d35bfe048df2dbe3ba7b8a79285eb844db137dd5",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[5]/description",
+          "text_sha256": "e4f1c5c20d6f551f2b76d9251153edca700377f5ab0acc47195154c410a5e2c3",
+          "codepoints": 85,
+          "signals": [
+            "short_under_100"
+          ],
+          "suspected_truncated": true
+        }
+      },
+      "new": {
+        "title": {
+          "candidate_id": "1eb267c5d3e34cb9f1fd6521f884d43787c03e8f720638bd050a14dec1b1897a",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[5]/title",
+          "text_sha256": "d15030cfe07211eb8a0d8ef39e006372b4510864fac471b4342d7e37445503ff",
+          "codepoints": 85,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "03c77d1a1712b96c13a10844f0b23d19cbfb140834e678896da34f88a5e08c18",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[5]/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "text_sha256": "b18e3f1c1cae2fd827a175423cdb9397e40eb91b360773065cf1a17df39b20cd",
+          "codepoints": 1579,
+          "signals": [],
+          "suspected_truncated": false
+        }
+      },
+      "added": [],
+      "removed": [],
+      "changed": [
+        "abstract"
+      ],
+      "member_id": "a3d9f55ec5392547b884fe44f0abc9c2b28b5f969328fbf19a4d9f23856f6372",
+      "old_arbitration": {
+        "source": "registry",
+        "text_sha256": "fb6ba956f3237558aee514c6fd994cef2ebfccaf5d8326f73cee804337d5675a",
+        "codepoints": 1579,
+        "signals": []
+      },
+      "new_arbitration": {
+        "source": "registry",
+        "text_sha256": "fb6ba956f3237558aee514c6fd994cef2ebfccaf5d8326f73cee804337d5675a",
+        "codepoints": 1579,
+        "signals": []
+      }
+    },
+    {
+      "journal": "qjrms",
+      "position": 1,
+      "doi": "10.1002/qj.70311",
+      "old": {
+        "title": {
+          "candidate_id": "932cfc7dddfd634b8c148d366e8f9b151145114de43a51b0bb4fd47c30444edc",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[1]/title",
+          "text_sha256": "082d5cbb69b676e4d5504885e5adcb7f4037f2a529cc54689b9c1137347b285c",
+          "codepoints": 49,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "2a0a44a8f6f5c1ad754e6c8f2f4dc4a78bacd8953ef39ab20d97fc0d865b6f77",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[1]/description",
+          "text_sha256": "69b636be3e6c300edf9474772c09da75fe7145954fecbf152230e65395610031",
+          "codepoints": 65,
+          "signals": [
+            "short_under_100"
+          ],
+          "suspected_truncated": true
+        }
+      },
+      "new": {
+        "title": {
+          "candidate_id": "932cfc7dddfd634b8c148d366e8f9b151145114de43a51b0bb4fd47c30444edc",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[1]/title",
+          "text_sha256": "082d5cbb69b676e4d5504885e5adcb7f4037f2a529cc54689b9c1137347b285c",
+          "codepoints": 49,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "db5677002d77f0f6ad907e253e3c2edae4e9919329da30ccea7a8ffebf8344f1",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[1]/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "text_sha256": "8a4eb7d7c908118d64214691ea5a36da71a08678a49c4eef76ba65c0d8316e49",
+          "codepoints": 1510,
+          "signals": [],
+          "suspected_truncated": false
+        }
+      },
+      "added": [],
+      "removed": [],
+      "changed": [
+        "abstract"
+      ],
+      "member_id": "22385c4728c217ede05a08a215c1ced700bdde27967c297db13b875b508c7a57",
+      "old_arbitration": {
+        "source": "registry",
+        "text_sha256": "bf4c14bb69c67eba94ed1fc4243c723435db04a37aa869a419e2b781bff4a04c",
+        "codepoints": 1552,
+        "signals": []
+      },
+      "new_arbitration": {
+        "source": "registry",
+        "text_sha256": "bf4c14bb69c67eba94ed1fc4243c723435db04a37aa869a419e2b781bff4a04c",
+        "codepoints": 1552,
+        "signals": []
+      }
+    },
+    {
+      "journal": "qjrms",
+      "position": 2,
+      "doi": "10.1002/qj.70338",
+      "old": {
+        "title": {
+          "candidate_id": "6e875cc8a063dcc09f8be5ca04d85e2f74fdb827d1455579da4e6a242eb87f3c",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[2]/title",
+          "text_sha256": "99539c8bfa6aa13d284b3a34ef75988dd353ae8003b1ee1b57f584f8ac95db11",
+          "codepoints": 117,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "0b438b3209e74154ddd99974bca6c06607f8825fa2f548b26a22a42c001e38f1",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[2]/description",
+          "text_sha256": "69b636be3e6c300edf9474772c09da75fe7145954fecbf152230e65395610031",
+          "codepoints": 65,
+          "signals": [
+            "short_under_100"
+          ],
+          "suspected_truncated": true
+        }
+      },
+      "new": {
+        "title": {
+          "candidate_id": "6e875cc8a063dcc09f8be5ca04d85e2f74fdb827d1455579da4e6a242eb87f3c",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[2]/title",
+          "text_sha256": "99539c8bfa6aa13d284b3a34ef75988dd353ae8003b1ee1b57f584f8ac95db11",
+          "codepoints": 117,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "d06d1f808697cea987db124b3a556df7feaec5e5070d6eeedbbf57276fb4df3a",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[2]/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "text_sha256": "1f2e592132e264908aa5c86afc98954e16dda8626cfd3cd3e4d66db18acec158",
+          "codepoints": 2059,
+          "signals": [],
+          "suspected_truncated": false
+        }
+      },
+      "added": [],
+      "removed": [],
+      "changed": [
+        "abstract"
+      ],
+      "member_id": "1908912dc3dbe5e73218bb3cfd9db6b2e1e595d855112351efc0f0c5b473fd75",
+      "old_arbitration": {
+        "source": "registry",
+        "text_sha256": "0092b6ca35bef65874adaefd9f5f4d1c7d52d00275a94baf266f8e66ee68f594",
+        "codepoints": 2100,
+        "signals": []
+      },
+      "new_arbitration": {
+        "source": "registry",
+        "text_sha256": "0092b6ca35bef65874adaefd9f5f4d1c7d52d00275a94baf266f8e66ee68f594",
+        "codepoints": 2100,
+        "signals": []
+      }
+    },
+    {
+      "journal": "qjrms",
+      "position": 3,
+      "doi": "10.1002/qj.70347",
+      "old": {
+        "title": {
+          "candidate_id": "1048689e1eea8cff78a15c3ed573be0ac49d2b46133d211b8948f8abe920a638",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[3]/title",
+          "text_sha256": "ba27d14d9ac4c71804bf0d002e9ac5a3f5c78006b62b04498e0498440965006a",
+          "codepoints": 158,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "539548b4ad8294282115f9374ab0b745f13998dc8bdd02f22eb0a1aaca9b8ed2",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[3]/description",
+          "text_sha256": "69b636be3e6c300edf9474772c09da75fe7145954fecbf152230e65395610031",
+          "codepoints": 65,
+          "signals": [
+            "short_under_100"
+          ],
+          "suspected_truncated": true
+        }
+      },
+      "new": {
+        "title": {
+          "candidate_id": "1048689e1eea8cff78a15c3ed573be0ac49d2b46133d211b8948f8abe920a638",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[3]/title",
+          "text_sha256": "ba27d14d9ac4c71804bf0d002e9ac5a3f5c78006b62b04498e0498440965006a",
+          "codepoints": 158,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "776a96dda9c377a23821483e214d0883c0abb25a85be9a6e27e1dd1251aa959b",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[3]/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "text_sha256": "e4d007644b8796a5744027cfb9ceb3fb56171108ff8a1649056576786524c19f",
+          "codepoints": 1795,
+          "signals": [],
+          "suspected_truncated": false
+        }
+      },
+      "added": [],
+      "removed": [],
+      "changed": [
+        "abstract"
+      ],
+      "member_id": "afceb364386f1d028d53eed988481b5789f6c6172762b1c5e6ef5d8fc4fc2d62",
+      "old_arbitration": {
+        "source": "registry",
+        "text_sha256": "202ff27133d95cb145b5d892f6ea32a084e2ff53ece3adecef980c6e05e17e30",
+        "codepoints": 1795,
+        "signals": []
+      },
+      "new_arbitration": {
+        "source": "registry",
+        "text_sha256": "202ff27133d95cb145b5d892f6ea32a084e2ff53ece3adecef980c6e05e17e30",
+        "codepoints": 1795,
+        "signals": []
+      }
+    },
+    {
+      "journal": "qjrms",
+      "position": 4,
+      "doi": "10.1002/qj.70349",
+      "old": {
+        "title": {
+          "candidate_id": "cf2b28b481665835b9cc268606197984c34c2b4779ddbaf04ae1d537a1835ac3",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[4]/title",
+          "text_sha256": "e65c88ff3b30508aad413b51d17e1df8f919de1b1f9f7ec654cf05bee06a4d6f",
+          "codepoints": 133,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "5c92d6cd72dd2784f7b71aa3d8b347862f98447950c37be4c98023510c797d2f",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[4]/description",
+          "text_sha256": "69b636be3e6c300edf9474772c09da75fe7145954fecbf152230e65395610031",
+          "codepoints": 65,
+          "signals": [
+            "short_under_100"
+          ],
+          "suspected_truncated": true
+        }
+      },
+      "new": {
+        "title": {
+          "candidate_id": "cf2b28b481665835b9cc268606197984c34c2b4779ddbaf04ae1d537a1835ac3",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[4]/title",
+          "text_sha256": "e65c88ff3b30508aad413b51d17e1df8f919de1b1f9f7ec654cf05bee06a4d6f",
+          "codepoints": 133,
+          "signals": [],
+          "suspected_truncated": false
+        }
+      },
+      "added": [],
+      "removed": [
+        "abstract"
+      ],
+      "changed": [],
+      "member_id": "3b7d138fb220569475be5cda25ba83d129599e2f11c26b4560e72245e50bb555",
+      "old_arbitration": {
+        "source": "feed",
+        "text_sha256": "69b636be3e6c300edf9474772c09da75fe7145954fecbf152230e65395610031",
+        "codepoints": 65,
+        "signals": [
+          "short_under_100"
+        ]
+      },
+      "new_arbitration": {
+        "source": null,
+        "text_sha256": null,
+        "codepoints": null,
+        "signals": null
+      }
+    },
+    {
+      "journal": "qjrms",
+      "position": 5,
+      "doi": "10.1002/qj.70335",
+      "old": {
+        "title": {
+          "candidate_id": "861f7c75d2a12d11e2be83ff08213b0f6dbad93ad4e3ead9bef8f7d0794a2c8e",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[5]/title",
+          "text_sha256": "ff332983898c131f003176ccec15d87282174671878914f555b5e169b12c9b58",
+          "codepoints": 130,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "e2863e51f682f452f2d478f4e38f5941da152000d369c81c02a970589d16ead2",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[5]/description",
+          "text_sha256": "69b636be3e6c300edf9474772c09da75fe7145954fecbf152230e65395610031",
+          "codepoints": 65,
+          "signals": [
+            "short_under_100"
+          ],
+          "suspected_truncated": true
+        }
+      },
+      "new": {
+        "title": {
+          "candidate_id": "861f7c75d2a12d11e2be83ff08213b0f6dbad93ad4e3ead9bef8f7d0794a2c8e",
+          "field": "title",
+          "source_kind": "feed",
+          "locator": "item[5]/title",
+          "text_sha256": "ff332983898c131f003176ccec15d87282174671878914f555b5e169b12c9b58",
+          "codepoints": 130,
+          "signals": [],
+          "suspected_truncated": false
+        },
+        "abstract": {
+          "candidate_id": "b321a78789574628f3689a6892d1e754fce3af2240c5bd1501a373c7bc6a8f88",
+          "field": "abstract",
+          "source_kind": "feed",
+          "locator": "item[5]/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "text_sha256": "8de61041ff1389d4d27639018819757ead265510c01d23870a690e87ea65ac94",
+          "codepoints": 2196,
+          "signals": [],
+          "suspected_truncated": false
+        }
+      },
+      "added": [],
+      "removed": [],
+      "changed": [
+        "abstract"
+      ],
+      "member_id": "7f8c5603081f8876ad9e4b8bf498699a88568d464374798ffae38c4dd5c3d06b",
+      "old_arbitration": {
+        "source": "registry",
+        "text_sha256": "b4323a55309779d0082a7cf819bce784da4250af191e51f9a531e3fde65514f7",
+        "codepoints": 2236,
+        "signals": []
+      },
+      "new_arbitration": {
+        "source": "registry",
+        "text_sha256": "b4323a55309779d0082a7cf819bce784da4250af191e51f9a531e3fde65514f7",
+        "codepoints": 2236,
+        "signals": []
+      }
+    }
+  ],
+  "production_jgr": [
+    {
+      "position": 1,
+      "doi": "10.1029/2025jd045292",
+      "entry_id_unchanged": true,
+      "doi_unchanged": true,
+      "categories_unchanged": true,
+      "raw_range_unchanged": true,
+      "old": {
+        "title": {
+          "text_sha256": "8cd48aadc1c167991a3913f3319fad4d5ad8e97544892429e78053500b41f604",
+          "codepoints": 93,
+          "locator": "item/title",
+          "is_truncated": null,
+          "rule": null
+        },
+        "abstract": {
+          "text_sha256": "e4f1c5c20d6f551f2b76d9251153edca700377f5ab0acc47195154c410a5e2c3",
+          "codepoints": 85,
+          "locator": "item/description",
+          "is_truncated": true,
+          "rule": "audit-abstract-v1/audit-truncation-v1"
+        }
+      },
+      "new": {
+        "title": {
+          "text_sha256": "8cd48aadc1c167991a3913f3319fad4d5ad8e97544892429e78053500b41f604",
+          "codepoints": 93,
+          "locator": "item/title",
+          "is_truncated": null,
+          "rule": null
+        },
+        "abstract": {
+          "text_sha256": "a0c9fed0d4febc5dd17586fc4d4b134504e74ff2ceb8e520f0c344acca52076a",
+          "codepoints": 1410,
+          "locator": "item/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "is_truncated": false,
+          "rule": "audit-abstract-v2/audit-truncation-v1"
+        }
+      }
+    },
+    {
+      "position": 2,
+      "doi": "10.1029/2026jd048366",
+      "entry_id_unchanged": true,
+      "doi_unchanged": true,
+      "categories_unchanged": true,
+      "raw_range_unchanged": true,
+      "old": {
+        "title": {
+          "text_sha256": "59d0eca77d534f1e6f0c8e7d9c7acb49361eef9bbd3a707a07cf7173270a9990",
+          "codepoints": 178,
+          "locator": "item/title",
+          "is_truncated": null,
+          "rule": null
+        },
+        "abstract": {
+          "text_sha256": "e4f1c5c20d6f551f2b76d9251153edca700377f5ab0acc47195154c410a5e2c3",
+          "codepoints": 85,
+          "locator": "item/description",
+          "is_truncated": true,
+          "rule": "audit-abstract-v1/audit-truncation-v1"
+        }
+      },
+      "new": {
+        "title": {
+          "text_sha256": "59d0eca77d534f1e6f0c8e7d9c7acb49361eef9bbd3a707a07cf7173270a9990",
+          "codepoints": 178,
+          "locator": "item/title",
+          "is_truncated": null,
+          "rule": null
+        },
+        "abstract": {
+          "text_sha256": "213b640721082f7263e8a76cf1b45c523d264895471a0ba0e3bbf9ef643a228d",
+          "codepoints": 1142,
+          "locator": "item/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "is_truncated": false,
+          "rule": "audit-abstract-v2/audit-truncation-v1"
+        }
+      }
+    },
+    {
+      "position": 3,
+      "doi": "10.1029/2026jd047220",
+      "entry_id_unchanged": true,
+      "doi_unchanged": true,
+      "categories_unchanged": true,
+      "raw_range_unchanged": true,
+      "old": {
+        "title": {
+          "text_sha256": "29602d5cf4711269fda4d51d6eeb40138be1ad48dc7b866520eb5eb35df1a2e3",
+          "codepoints": 142,
+          "locator": "item/title",
+          "is_truncated": null,
+          "rule": null
+        },
+        "abstract": {
+          "text_sha256": "e4f1c5c20d6f551f2b76d9251153edca700377f5ab0acc47195154c410a5e2c3",
+          "codepoints": 85,
+          "locator": "item/description",
+          "is_truncated": true,
+          "rule": "audit-abstract-v1/audit-truncation-v1"
+        }
+      },
+      "new": {
+        "title": {
+          "text_sha256": "29602d5cf4711269fda4d51d6eeb40138be1ad48dc7b866520eb5eb35df1a2e3",
+          "codepoints": 142,
+          "locator": "item/title",
+          "is_truncated": null,
+          "rule": null
+        },
+        "abstract": {
+          "text_sha256": "93e77f0f5f7f356d69db15759d7556c710c02805b297fa67b6f7ad93a2940992",
+          "codepoints": 1673,
+          "locator": "item/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "is_truncated": false,
+          "rule": "audit-abstract-v2/audit-truncation-v1"
+        }
+      }
+    },
+    {
+      "position": 4,
+      "doi": "10.1029/2026jd047130",
+      "entry_id_unchanged": true,
+      "doi_unchanged": true,
+      "categories_unchanged": true,
+      "raw_range_unchanged": true,
+      "old": {
+        "title": {
+          "text_sha256": "2f9fad8413d57dd935974ec8ee81be476fd7d1d24d6faecd03624001fb857859",
+          "codepoints": 97,
+          "locator": "item/title",
+          "is_truncated": null,
+          "rule": null
+        },
+        "abstract": {
+          "text_sha256": "e4f1c5c20d6f551f2b76d9251153edca700377f5ab0acc47195154c410a5e2c3",
+          "codepoints": 85,
+          "locator": "item/description",
+          "is_truncated": true,
+          "rule": "audit-abstract-v1/audit-truncation-v1"
+        }
+      },
+      "new": {
+        "title": {
+          "text_sha256": "2f9fad8413d57dd935974ec8ee81be476fd7d1d24d6faecd03624001fb857859",
+          "codepoints": 97,
+          "locator": "item/title",
+          "is_truncated": null,
+          "rule": null
+        },
+        "abstract": {
+          "text_sha256": "0fa29e7e973f420e64cc6dc4eb108b13c1c1a7fca1e8474e17d16d0bd67a52d3",
+          "codepoints": 1647,
+          "locator": "item/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "is_truncated": false,
+          "rule": "audit-abstract-v2/audit-truncation-v1"
+        }
+      }
+    },
+    {
+      "position": 5,
+      "doi": "10.1029/2026jd047703",
+      "entry_id_unchanged": true,
+      "doi_unchanged": true,
+      "categories_unchanged": true,
+      "raw_range_unchanged": true,
+      "old": {
+        "title": {
+          "text_sha256": "d15030cfe07211eb8a0d8ef39e006372b4510864fac471b4342d7e37445503ff",
+          "codepoints": 85,
+          "locator": "item/title",
+          "is_truncated": null,
+          "rule": null
+        },
+        "abstract": {
+          "text_sha256": "e4f1c5c20d6f551f2b76d9251153edca700377f5ab0acc47195154c410a5e2c3",
+          "codepoints": 85,
+          "locator": "item/description",
+          "is_truncated": true,
+          "rule": "audit-abstract-v1/audit-truncation-v1"
+        }
+      },
+      "new": {
+        "title": {
+          "text_sha256": "d15030cfe07211eb8a0d8ef39e006372b4510864fac471b4342d7e37445503ff",
+          "codepoints": 85,
+          "locator": "item/title",
+          "is_truncated": null,
+          "rule": null
+        },
+        "abstract": {
+          "text_sha256": "b18e3f1c1cae2fd827a175423cdb9397e40eb91b360773065cf1a17df39b20cd",
+          "codepoints": 1579,
+          "locator": "item/{http://purl.org/rss/1.0/modules/content/}encoded",
+          "is_truncated": false,
+          "rule": "audit-abstract-v2/audit-truncation-v1"
+        }
+      }
+    }
+  ]
+}

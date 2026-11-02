@@ -16,6 +16,7 @@ checks = sa.Table(
     sa.Column("request_id", sa.Text, nullable=False),
     sa.Column("checked_at", sa.Text, nullable=False),
     sa.Column("request_json", sa.Text, nullable=False),
+    sa.Column("parser_version", sa.Integer, nullable=False, server_default="1"),
     sa.Column(
         "prior_check_id",
         sa.String(64),

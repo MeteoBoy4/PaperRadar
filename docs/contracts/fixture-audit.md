@@ -179,7 +179,10 @@ Feed parser v1 支持 RSS、Atom、RSS 1.0 RDF；拒绝 DOCTYPE/ENTITY、NUL宽�
 CLI 向显式所选根注入文件汇，记录运行与路线结算的安全诊断摘要；服务默认 `NullSink`。
 根准备、日志写失败降级及只读不写事件的规则见[运行日志](runtime-logging.md)。
 
-计划冻结 `audit-matrix-v1`、`audit-abstract-v1`、`audit-truncation-v1`。
+计划冻结 `audit-matrix-v1`、`audit-truncation-v1` 及所选主摘要规则。
+`create_audit_plan` / `run_audit` 的服务参数 `abstract_rules_version` 默认
+`audit-abstract-v1`，显式传入 `audit-abstract-v2` 创建新语义计划；CLI 沿用 v1。
+同一 plan_key 不能切换规则，未知版本以 `invalid_plan`（`plan`）拒绝。
 矩阵身份为 `(member_id, route, acquisition_strategy_version, channel)`，适用性来自冻结策略：
 
 | 条件 | 适用路线/通道 |
@@ -205,14 +208,27 @@ AIES/Wiley 为 class/id `abstract`、`article-section__abstract` 或 `abstractSe
 已核验身份但无主容器的材料仍可保留供历史重解析，不能贡献页面题名。
 已知主容器存在但为空时为 record_without_abstract，有效记录与非空摘要分开。
 
-RSS/Atom/RDF 按固定成员的物理 item 解析 description/summary/content；Wiley/AMS 有完整
+v1 的 RSS/Atom/RDF 按固定成员的物理 item 解析 description/summary/content；Wiley/AMS 有完整
 字面 Abstract/摘要标签时只消费该标签后、下一个附加标签前的主区块，之前段落单列前置区块。
 dqkx Feed 只取 p 内正文，p 外引文尾行不参与仲裁。Significance Statement、Plain Language
 Summary、Key Points 及 abstract-en 只保存存在与定位；已知附加 class/id 也从主容器排除。
 Crossref 只取 message.abstract（允许 JATS 标记），DataCite 只取首个 descriptionType=Abstract。
 不翻译、不拼接不同来源、不从正文、搜索摘要或未标记页面取摘要。
 
-HTML 实体解码一次、去标记与段落连接整体属于 abstract v1；相邻段落以一个换行连接，
+v2 仅改变 JGR/QJRMS 的 Feed 主摘要字段选择：依次检查准确命名空间的
+`content:encoded`（`http://purl.org/rss/1.0/modules/content/`）、
+`dc:description`（`http://purl.org/dc/elements/1.1/`）、无命名空间 `description`、
+`summary`、`content`；后两项接受无命名空间或标准 Atom 命名空间。每项须有明确
+Abstract 标签（完整标题/粗体/段落标签，或开头 `Abstract:` / 独立换行标签）。
+不按 XML 字段顺序、长度或截断信号选择；高优先级主区块为空时检查下一字段。
+同一级多个非空值规范化后相同则取首个，不同则该 item 缺摘要，不回退；
+一个字段出现多个 Abstract 标签也保守缺摘要。跨级不一致由固定优先级解决，
+不拼接字段或来源。无主标签的卷期说明、单独 PLS/Key Points 均不生成候选。
+locator 保留 XML 展开名以区别命名空间；附加区块的存在与字段相对定位独立于
+主摘要是否非空保留，包括未获选的已识别字段。嵌套粗体只算同一个视觉标签。
+其他期刊与来源仍采用 v1 的解释。
+
+HTML 实体解码一次、去标记与段落连接由 v1/v2 共用；相邻段落以一个换行连接，
 内部空白、Unicode、原语言和数学比较保留，最后调用 A6 normalize_text v1。
 实体解码后仍呈真实标签的字面残留先记 markup_residue，再清除真实残留标记后规范化。
 受控 HTML 解析最大嵌套深度 100；超过时记录 invalid_response，不影响其他成员。
@@ -294,7 +310,8 @@ provider_incomplete、access_blocked_403、not_attempted；这不是单次 HTTP 
 同计划竞争返回 execution_busy，show/replay 在执行中依然只读可用。
 恢复中保留单次内部 HTTP 上限与每次显式继续的独立执行账目，不使用 Screening 任务租约或 attempt。
 
-产品历史注册表只包含完整 v1 实现；回放按计划保存的版本选择，不以当前默认
+产品历史注册表保留完整 v1 版本组合，并接受仅将 abstract_rules_version 升为 v2
+的组合；回放按计划保存的版本选择，不以当前默认
 常量替代。保存身份/原字节被篡改为 corrupt_reference；合法身份引用无法加载的历史版本
 为 unsupported_history。AuditReplay 返回安全视图、semantic_sha256 及逐执行证明等级：
 material_reparsed 仅用于真实保留的来源材料，execution_facts_only 用于 doiRA 结构化事实、
@@ -305,7 +322,8 @@ material_reparsed 仅用于真实保留的来源材料，execution_facts_only �
 的显式值或 None；字段可省略，空白视为缺项，未知字段或非字符串值拒绝。category 仅接受
 journal_article/non_journal_article/unknown/conflict，identity_doi 使用 DOI 规范化规则。
 追加解释要求计划 complete，持计划执行锁，不联网。身份/类别变动只形成新解释与差异，
-不重新选样。没有内置 v2 或 reinterpret CLI。解析器版本绑定唯一实现 SHA 声明，不能同版本换实现；声明与解释
+不重新选样。内置 v1/v2 名称不能由注入解析器重新声明；没有 reinterpret CLI。
+内置 v2 使用新计划，不对 partial 计划绕过 complete 前置。外部解析器版本绑定唯一实现 SHA 声明，不能同版本换实现；声明与解释
 同一短事务提交。正文只在瞬时回调输入中，输出持久化仅保存规范字段哈希、code point 长度
 和截断信号，不把新摘要放入普通查询、repr、日志、SQLite 或备份。
 
@@ -411,7 +429,7 @@ A10 覆盖台账的 `ledger_revision=2` 保留 693 个原 ID 与 37 份来源原
 
 ## 相关
 
-依据：[#100](https://github.com/MeteoBoy4/PaperRadar/issues/100)、[#101](https://github.com/MeteoBoy4/PaperRadar/issues/101)、[#102](https://github.com/MeteoBoy4/PaperRadar/issues/102)、[#103](https://github.com/MeteoBoy4/PaperRadar/issues/103)、[#104](https://github.com/MeteoBoy4/PaperRadar/issues/104)、[#105](https://github.com/MeteoBoy4/PaperRadar/issues/105)、[#106](https://github.com/MeteoBoy4/PaperRadar/issues/106)、[#107](https://github.com/MeteoBoy4/PaperRadar/issues/107)、[#108](https://github.com/MeteoBoy4/PaperRadar/issues/108)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)、[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126)、[#129](https://github.com/MeteoBoy4/PaperRadar/issues/129)。
+依据：[#146](https://github.com/MeteoBoy4/PaperRadar/issues/146)、[#100](https://github.com/MeteoBoy4/PaperRadar/issues/100)、[#101](https://github.com/MeteoBoy4/PaperRadar/issues/101)、[#102](https://github.com/MeteoBoy4/PaperRadar/issues/102)、[#103](https://github.com/MeteoBoy4/PaperRadar/issues/103)、[#104](https://github.com/MeteoBoy4/PaperRadar/issues/104)、[#105](https://github.com/MeteoBoy4/PaperRadar/issues/105)、[#106](https://github.com/MeteoBoy4/PaperRadar/issues/106)、[#107](https://github.com/MeteoBoy4/PaperRadar/issues/107)、[#108](https://github.com/MeteoBoy4/PaperRadar/issues/108)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)、[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126)、[#129](https://github.com/MeteoBoy4/PaperRadar/issues/129)。
 
 - 目标：[规格 §4.3](../../intent/draft.md#43-元数据与来源仲裁)、[§11 B](../../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)、[§13](../../intent/draft.md#十三真实来源与冻结样本)。
 - 决策：[ADR-0032](../adr/0032-relax-paper-acquisition-without-evading-access-controls.md)、[ADR-0033](../adr/0033-classify-journal-articles-from-explicit-source-types.md)、[ADR-0034](../adr/0034-separate-fixture-declarations-and-acquisition-audits.md)、[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。

@@ -20,7 +20,11 @@ HISTORICAL_V1 = {
 
 
 def require_historical_plan(plan: AuditPlan) -> None:
-    if any(getattr(plan, name) != version for name, version in HISTORICAL_V1.items()):
+    versions = {**HISTORICAL_V1, "abstract_rules_version": plan.abstract_rules_version}
+    if plan.abstract_rules_version not in {
+        "audit-abstract-v1",
+        "audit-abstract-v2",
+    } or any(getattr(plan, name) != version for name, version in versions.items()):
         raise FixtureError(
             FixtureReason.UNSUPPORTED_HISTORY, path="audit.plan_versions"
         )

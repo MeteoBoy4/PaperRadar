@@ -1,0 +1,152 @@
+[
+  {
+    "group": "A2-01",
+    "path": "tests/migration_expectations.py",
+    "expected_sha256": "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f",
+    "actual_sha256": "cb303a45c7072a6d59b3fc7a60ca6649b0a6eeeacec3d2d29432a98c0a3fb019"
+  },
+  {
+    "group": "\u5b8c\u6574 A2",
+    "path": "tests/migration_expectations.py",
+    "expected_sha256": "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f",
+    "actual_sha256": "cb303a45c7072a6d59b3fc7a60ca6649b0a6eeeacec3d2d29432a98c0a3fb019"
+  },
+  {
+    "group": "A3",
+    "path": "tests/migration_expectations.py",
+    "expected_sha256": "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f",
+    "actual_sha256": "cb303a45c7072a6d59b3fc7a60ca6649b0a6eeeacec3d2d29432a98c0a3fb019"
+  },
+  {
+    "group": "A3",
+    "path": "src/paper_radar/backup/manifest.py",
+    "expected_sha256": "f3022f086d2de599ee7a0e6c2cf57a3d7ec75eed196553f891a6f807de75ab79",
+    "actual_sha256": "226157ce8d52ee9d6f0abea4936efb2fa95cdcd7c0519956b2656d46c6b19da2"
+  },
+  {
+    "group": "A4",
+    "path": "tests/migration_expectations.py",
+    "expected_sha256": "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f",
+    "actual_sha256": "cb303a45c7072a6d59b3fc7a60ca6649b0a6eeeacec3d2d29432a98c0a3fb019"
+  },
+  {
+    "group": "A4",
+    "path": "src/paper_radar/backup/manifest.py",
+    "expected_sha256": "f3022f086d2de599ee7a0e6c2cf57a3d7ec75eed196553f891a6f807de75ab79",
+    "actual_sha256": "226157ce8d52ee9d6f0abea4936efb2fa95cdcd7c0519956b2656d46c6b19da2"
+  },
+  {
+    "group": "A5",
+    "path": "tests/migration_expectations.py",
+    "expected_sha256": "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f",
+    "actual_sha256": "cb303a45c7072a6d59b3fc7a60ca6649b0a6eeeacec3d2d29432a98c0a3fb019"
+  },
+  {
+    "group": "A6",
+    "path": "tests/migration_expectations.py",
+    "expected_sha256": "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f",
+    "actual_sha256": "cb303a45c7072a6d59b3fc7a60ca6649b0a6eeeacec3d2d29432a98c0a3fb019"
+  },
+  {
+    "group": "A6",
+    "path": "src/paper_radar/backup/manifest.py",
+    "expected_sha256": "f3022f086d2de599ee7a0e6c2cf57a3d7ec75eed196553f891a6f807de75ab79",
+    "actual_sha256": "226157ce8d52ee9d6f0abea4936efb2fa95cdcd7c0519956b2656d46c6b19da2"
+  },
+  {
+    "group": "A7",
+    "path": "tests/migration_expectations.py",
+    "expected_sha256": "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f",
+    "actual_sha256": "cb303a45c7072a6d59b3fc7a60ca6649b0a6eeeacec3d2d29432a98c0a3fb019"
+  },
+  {
+    "group": "A7",
+    "path": "src/paper_radar/backup/manifest.py",
+    "expected_sha256": "f3022f086d2de599ee7a0e6c2cf57a3d7ec75eed196553f891a6f807de75ab79",
+    "actual_sha256": "226157ce8d52ee9d6f0abea4936efb2fa95cdcd7c0519956b2656d46c6b19da2"
+  },
+  {
+    "group": "A8",
+    "path": "tests/migration_expectations.py",
+    "expected_sha256": "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f",
+    "actual_sha256": "cb303a45c7072a6d59b3fc7a60ca6649b0a6eeeacec3d2d29432a98c0a3fb019"
+  },
+  {
+    "group": "A9",
+    "path": "tests/migration_expectations.py",
+    "expected_sha256": "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f",
+    "actual_sha256": "cb303a45c7072a6d59b3fc7a60ca6649b0a6eeeacec3d2d29432a98c0a3fb019"
+  },
+  {
+    "group": "A9",
+    "path": "src/paper_radar/backup/manifest.py",
+    "expected_sha256": "f3022f086d2de599ee7a0e6c2cf57a3d7ec75eed196553f891a6f807de75ab79",
+    "actual_sha256": "226157ce8d52ee9d6f0abea4936efb2fa95cdcd7c0519956b2656d46c6b19da2"
+  },
+  {
+    "group": "A10",
+    "path": "tests/migration_expectations.py",
+    "expected_sha256": "df2c2df234a8dcc6029befaff39df032327a093c560805b2ca2bf6bef93a6c8f",
+    "actual_sha256": "cb303a45c7072a6d59b3fc7a60ca6649b0a6eeeacec3d2d29432a98c0a3fb019"
+  },
+  {
+    "group": "A10",
+    "path": "src/paper_radar/backup/manifest.py",
+    "expected_sha256": "f3022f086d2de599ee7a0e6c2cf57a3d7ec75eed196553f891a6f807de75ab79",
+    "actual_sha256": "226157ce8d52ee9d6f0abea4936efb2fa95cdcd7c0519956b2656d46c6b19da2"
+  },
+  {
+    "group": "A10",
+    "path": "src/paper_radar/fixture_audit/abstract_parser.py",
+    "expected_sha256": "89d18ccf678cd63c17de445f08a9d7151160b43e6174fb178d3f976e42b6ed3f",
+    "actual_sha256": "cf7401e0b1b6a1243b22d30b4347e4c6d53d728bdcc929bf28f28a44647d1d60"
+  },
+  {
+    "group": "A10",
+    "path": "src/paper_radar/fixture_audit/abstract_records.py",
+    "expected_sha256": "bc642204e08c08a72c91bb202841e7dc314b93baffef786e3ecf038195061c1a",
+    "actual_sha256": "1431aefbc54c0d8b906957054815df73da8279ee113e4ff027a3b539bcdbec96"
+  },
+  {
+    "group": "A10",
+    "path": "src/paper_radar/fixture_audit/abstract_rules.py",
+    "expected_sha256": "ae2eb470d8432eebca66be0dab72bb95452a2b6b05aecd3d984f5b11db784350",
+    "actual_sha256": "1340b67be3741fd3a06797e4e899802750d79f276f8162f44a978c48e7f328ae"
+  },
+  {
+    "group": "A10",
+    "path": "src/paper_radar/fixture_audit/abstract_service.py",
+    "expected_sha256": "72c268729143f96f8c40c9f21078da28b6f92626ba020b1424f400dd66e2db24",
+    "actual_sha256": "a95dc9deab2bc675efab3f7fd2850ebb478e166b09cdd467a490a159995d0071"
+  },
+  {
+    "group": "A10",
+    "path": "src/paper_radar/fixture_audit/acquisition_service.py",
+    "expected_sha256": "9e65fb0551074a2b6f944700d1afa78cf3623da4dc34386a575ef3b27996cd34",
+    "actual_sha256": "20e05d02d9f68c1631c33e7550467885c975b0aef0ab9190fe025b70543c4c65"
+  },
+  {
+    "group": "A10",
+    "path": "src/paper_radar/fixture_audit/history_rules.py",
+    "expected_sha256": "2fa30000b9594d3210df58bdceb6190d3edfe4cee8e84e9c7cda24b61518c394",
+    "actual_sha256": "e86a36d90a353f0b2fb1fc8ee8da6598cd7a51e32b65f1e0f66c81c0b091913a"
+  },
+  {
+    "group": "A10",
+    "path": "src/paper_radar/fixture_audit/interpretation_service.py",
+    "expected_sha256": "3e42da057853b85aee7153f6f0cdcaf428bef654e201416a3347803e813c5094",
+    "actual_sha256": "8ccc696f51d2a6b86b985ec01085b43926b96d88b528e291f2daf15cf4786fc4"
+  },
+  {
+    "group": "A10",
+    "path": "src/paper_radar/fixture_audit/resume_rules.py",
+    "expected_sha256": "6499998f242fcc9cf2f0f179789e391b9aae9867dadddcd709c2eaeb95dd6594",
+    "actual_sha256": "8e6f963a928053d2abe514456b116349c0cf213c04fc0cca4697986bf7a01147"
+  },
+  {
+    "group": "A10",
+    "path": "src/paper_radar/fixture_audit/service.py",
+    "expected_sha256": "feb7e6e7ef5d8fb0f749622856d132f989973f1962325a046ea50390936b9591",
+    "actual_sha256": "0c2ea81b2fbfb716ee1c53b77763f853df4934952dca990587224dd41f7194d9"
+  }
+]

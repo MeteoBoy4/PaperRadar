@@ -38,6 +38,9 @@ class MetadataBasis(FrozenModel):
     revision_no: int = Field(ge=1)
     request_id: str = Field(min_length=1, max_length=128)
     observed_at: str
+    abstract_rules_version: Literal["audit-abstract-v1", "audit-abstract-v2"] = (
+        "audit-abstract-v1"
+    )
 
     @field_validator("observed_at")
     @classmethod
@@ -59,7 +62,9 @@ class MetadataRoute(FrozenModel):
     categories: tuple[CategoryBasis, ...] = ()
     acquisition_id: str | None = None
     committed: bool = False
-    abstract_rules_version: Literal["audit-abstract-v1"] = "audit-abstract-v1"
+    abstract_rules_version: Literal["audit-abstract-v1", "audit-abstract-v2"] = (
+        "audit-abstract-v1"
+    )
     truncation_rules_version: Literal["audit-truncation-v1"] = "audit-truncation-v1"
 
 

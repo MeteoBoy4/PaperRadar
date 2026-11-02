@@ -56,8 +56,10 @@ class FeedCheck(FrozenModel):
     artifact_id: str | None = None
     prior_check_id: str | None = None
     content_decoding: str | None = None
-    parser_version: Literal[1] = 1
-    parser_identity: Literal["jgr-feed-parser-v1"] = "jgr-feed-parser-v1"
+    parser_version: Literal[1, 2] = 1
+    parser_identity: Literal["jgr-feed-parser-v1", "jgr-feed-parser-v2"] = (
+        "jgr-feed-parser-v1"
+    )
     items: tuple[FeedItem, ...] = ()
     complete: bool = False
     scope: str = "仅证明取得和论文事实工程路径；真实 JGR 来源假设未验证"

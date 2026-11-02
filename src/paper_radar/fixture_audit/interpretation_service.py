@@ -316,7 +316,7 @@ class InterpretationService:
                 parser_version=parser.version,
                 implementation_sha256=parser.implementation_sha256,
             )
-            if declaration.parser_version == "audit-abstract-v1":
+            if declaration.parser_version in {"audit-abstract-v1", "audit-abstract-v2"}:
                 raise ValueError("published_parser")
             return declaration.model_copy(
                 update={"declaration_id": identity_sha256(declaration)}

@@ -56,14 +56,21 @@ def check_identity(row: dict[str, Any]) -> str:
     return sha(
         canonical(
             {
-                key: row[key]
-                for key in (
-                    "feed_id",
-                    "request_id",
-                    "checked_at",
-                    "request_json",
-                    "prior_check_id",
-                )
+                **(
+                    {"parser_version": row["parser_version"]}
+                    if row.get("parser_version", 1) != 1
+                    else {}
+                ),
+                **{
+                    key: row[key]
+                    for key in (
+                        "feed_id",
+                        "request_id",
+                        "checked_at",
+                        "request_json",
+                        "prior_check_id",
+                    )
+                },
             }
         )
     )
@@ -116,6 +123,8 @@ def read_check(
             canonical(
                 dict(
                     check_id=row["check_id"],
+                    parser_version=row["parser_version"],
+                    parser_identity=f"jgr-feed-parser-v{row['parser_version']}",
                     feed_id=row["feed_id"],
                     request_id=row["request_id"],
                     checked_at=row["checked_at"],
@@ -173,7 +182,11 @@ def read_check(
             raw = ArtifactStore(database, data_root).read_artifact(view.artifact_id)[
                 "payload"
             ]
-            parsed = parse_items(raw, view.content_decoding or "utf-8")
+            parsed = parse_items(
+                raw,
+                view.content_decoding or "utf-8",
+                parser_version=view.parser_version,
+            )
             if view.status_code == 304:
                 if (
                     view.items
@@ -229,7 +242,8 @@ def read_check(
                         if discovery_id != result.discovery_id:
                             raise corrupt()
                         if (
-                            acquired["source_kind"] != "feed"
+                            acquired["parser_version"] != view.parser_version
+                            or acquired["source_kind"] != "feed"
                             or acquired["provider"] != view.feed_id
                             or acquired["query_key"] != outcome.entry_id
                             or acquired["payload_sha256"]

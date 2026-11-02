@@ -50,7 +50,11 @@ def validate_execution_identity(
         "sampling_rules_version": acquisition_models.SAMPLING_RULES_VERSION,
         "category_rules_version": acquisition_models.CATEGORY_RULES_VERSION,
         "ua_template_version": acquisition_models.UA_TEMPLATE_VERSION,
-        "abstract_rules_version": abstract_models.ABSTRACT_RULES_VERSION,
+        "abstract_rules_version": (
+            "audit-abstract-v2"
+            if plan.abstract_rules_version == "audit-abstract-v2"
+            else abstract_models.ABSTRACT_RULES_VERSION
+        ),
         "truncation_rules_version": abstract_models.TRUNCATION_RULES_VERSION,
         "matrix_rules_version": abstract_models.MATRIX_RULES_VERSION,
     }

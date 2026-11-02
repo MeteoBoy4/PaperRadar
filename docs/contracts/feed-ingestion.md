@@ -18,7 +18,7 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障继续服�
   本服务只接受已有 `feed_id`，数据库规范 URL 须等于共享声明中的 JGR eTOC 端点
   （[`sources/feeds.py`](../../src/paper_radar/sources/feeds.py)）；端点 query 保留。
   服务不自动登记 Feed，不批准其他订阅；端点声明也供语言归属使用，不在此定义语言策略。
-- `check(feed_id, request_id=..., contact_email=...) -> FeedCheck` 以
+- `check(feed_id, request_id=..., contact_email=..., parser_version=1) -> FeedCheck` 以
   `(feed_id, request_id)` 幂等。`request_id` 是非全空白、至多 128 字符的字符串，原样保存。
   `contact_email` 每次 `check` 都须显式提供并通过共享联系标识校验，包括重放已完成检查时。
   新检查在 HTTP 前保存不可变请求与 UTC `checked_at`；此时间也是所有 item 的 `observed_at`，
@@ -45,12 +45,16 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障继续服�
 - 安全 ETag/Last-Modified 独立保存在生产检查中，不扩展 `HTTPFacts` 序列化身份。
   条件值至多 512 个可打印 ASCII 字符且不含 `@`；不安全响应值舍弃。
   新检查从此前最后一个带保留制品的检查构造条件请求，绑定其检查和制品引用。
+  parser 版本升级时不发送旧版本条件头，要求新的 200 材料解释。
   304 引用原制品并继承 `content_decoding`，只推进检查成功事实，不创建 item 或发现，
   也不继续前次检查尚未结算的 item；后者须按原 check_id 显式继续。
 
 ### 条目解释与论文登记
 
-- parser 身份为 `jgr-feed-parser-v1`、整数版本 1。生产遍历全部条目，不沿用审计前 50 条
+- parser 可显式选择整数 1 或 2（严格 int），默认 1；身份分别为
+  `jgr-feed-parser-v1` / `jgr-feed-parser-v2`，对应共享 `audit-abstract-v1` / v2。
+  首次检查在 HTTP 前冻结版本；同 request_id 和 resume 始终消费原保存版本，
+  新版本须用新 request_id。生产遍历全部条目，不沿用审计前 50 条
   上限；身份、顺序、类别解释复用共享 parser。RSS 只取唯一 channel 的直接 item，Atom
   只取根级 entry，RDF 只取根级 item 并遵守有效 RDF Seq 顺序。
   缺失或多个 RSS channel、非法 XML、DOCTYPE/ENTITY 等不安全 Feed 被拒绝。
@@ -62,7 +66,8 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障继续服�
 - 上游 entry ID 原样沿用，不构造替代 ID；缺失或未通过 entry ID 输入校验时单列
   `missing_entry_id`。`FeedItem` 返回 position、entry_id、规范 DOI、原类别及 reason/result。
   Wiley category/prism:section 原样公开，不按子类型过滤，也不凭 Feed 位置证明 journal-article。
-- 题名、主摘要及截断标记共享 `audit-abstract-v1`、`audit-truncation-v1`，详细文本规则见
+- 题名、主摘要消费所选共享 `audit-abstract-v1` 或 `audit-abstract-v2`，截断标记
+  共享 `audit-truncation-v1`，详细文本规则见
   [主区块与类别边界](fixture-audit.md#共同裁决与后续取得边界)；字段 locator 使用 item 相对路径，
   防止整 Feed 排序变化制造异解释。生产提交的字段限题名、摘要及可接受的落地页 source_url；
   不将作者、日期、卷期页码或附加摘要区块写为字段候选。
@@ -70,7 +75,7 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障继续服�
   `https://agupubs.onlinelibrary.wiley.com` 上 `/doi/`、`/doi/abs/`、`/doi/full/`、
   `/doi/epdf/` 的合法 DOI path，拒绝 userinfo、非默认端口及 query/fragment；不从 query
   构造 DOI。与条目其他 DOI 断言不符时记 `conflicting_dois`，不提交论文事实。
-- 每个可提交条目使用 `version_kind=journal`、`parser_version=1`、
+- 每个可提交条目使用 `version_kind=journal`、检查所选 `parser_version`、
   `interpretation=complete`、`payload_scope=single_item` 及原 item 字节。
   无 DOI 连续身份、唯一补 DOI、跨 Feed 同 DOI、回摆、完整解释/全空保护和来源仲裁由
   [论文事实](paper-facts.md) 唯一定义。强冲突返回 `conflict_id`，仍拒绝成功业务事实；
@@ -80,7 +85,9 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障继续服�
 ### 持久化与恢复
 
 - 迁移 [`feed03_feed_acquisition`](../../src/paper_radar/storage/migrations/versions/feed03_feed_acquisition.py)
-  定义检查与逐 item 结算，服务仍要求随包当前 head，并非只要求此历史 revision。
+  定义检查与逐 item 结算；`feed07_parser_versions` 增加不可变 parser_version，
+  既有检查填 1，原 v1 check_id 算法保持，v2 check_id 加入版本身份。
+  含 v2 检查的数据库拒绝降级至该迁移之前。服务仍要求随包当前 head。
   制品发布、HTTP 结算、论文事实写入、item 结果写入是独立边界。
   论文已提交而 item 结果未写入时，继续复用原论文事实回执补齐，不重复论文身份或取得事实；
   本服务不操作模型预算。完整未引用制品允许存在，不代表检查已结算。
@@ -90,8 +97,8 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障继续服�
 
 ## 错误与拒绝
 
-- 未知或未批准 Feed、非法 request_id、item_bytes 的非法/越界 position 抛
-  `PaperError(invalid_observation)`，路径分别为 `feed_id`、`request_id`、`position`。
+- 未知或未批准 Feed、非法 request_id/parser_version、item_bytes 的非法/越界 position 抛
+  `PaperError(invalid_observation)`，路径分别为 `feed_id`、`request_id`、`parser_version`、`position`。
   未知 check_id、损坏材料或引用抛 `PaperError(corrupt_reference)`；SQLAlchemy/制品错误
   转为该原因（通常路径 `feed_check`）。论文提交返回 `database_busy` 或 `corrupt_reference`
   时停止并抛相同原因，路径 `feed_item_commit`，保留未完成检查供排障后显式继续。
@@ -126,7 +133,7 @@ JGR Feed 取得、逐条目论文事实登记、失败回查和故障继续服�
 - 实现：[`feed_ingestion`](../../src/paper_radar/feed_ingestion/)、
   [`sources/feed_xml.py`](../../src/paper_radar/sources/feed_xml.py)。
 - 固定合成材料的证明边界：[生产 parser 规则证据](../verification/feed-parser-v1.md)。
-- 依据：[规格 §4.2–4.4](../../intent/draft.md#42-feed-抓取)、
+- 依据：[#146](https://github.com/MeteoBoy4/PaperRadar/issues/146)、[规格 §4.2–4.4](../../intent/draft.md#42-feed-抓取)、
   [#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、
   [#116](https://github.com/MeteoBoy4/PaperRadar/issues/116)、
   [ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md)、

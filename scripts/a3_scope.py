@@ -2,7 +2,7 @@
 
 from scripts.verification_scope_materials import SHARED_MATERIALS
 
-MIGRATION_REVISION = "feed06_language_provenance"
+MIGRATION_REVISION = "feed07_parser_versions"
 ARTIFACT_MIGRATION_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/storage/migrations/versions/a302_artifact_store.py",
@@ -203,7 +203,7 @@ FORMAT_VERSIONS = {
     "artifact": 1,
     "blob_layout": 1,
     "backup": 1,
-    "backup_database_revision": "feed06_language_provenance",
+    "backup_database_revision": "feed07_parser_versions",
 }
 CAPABILITIES = (
     "artifact_publication",

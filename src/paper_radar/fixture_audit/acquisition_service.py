@@ -93,11 +93,14 @@ class AcquisitionService:
         target_count: int = 5,
         plan_key: str | None = None,
         code_identity: CodeIdentity | None = None,
+        abstract_rules_version: str = "audit-abstract-v1",
     ) -> AuditPlan:
         validate_contact(contact_email)
         try:
             if code_identity is not None:
                 code_identity = revalidate_model(code_identity, CodeIdentity)
+            if abstract_rules_version not in {"audit-abstract-v1", "audit-abstract-v2"}:
+                raise ValueError("unsupported_abstract_rules_version")
             plan = AuditPlan(
                 plan_id="",
                 plan_key=plan_key if plan_key is not None else uuid4().hex,
@@ -105,6 +108,7 @@ class AcquisitionService:
                 endpoints=FEED_ENDPOINTS,
                 code_identity=code_identity or capture_code_identity(),
                 created_at=utc_now(),
+                abstract_rules_version=abstract_rules_version,
             )
         except (ValidationError, ValueError, TypeError, RecursionError):
             raise FixtureError(FixtureReason.INVALID_PLAN, path="plan") from None
