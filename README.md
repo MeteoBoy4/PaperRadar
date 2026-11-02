@@ -292,6 +292,8 @@ uv run --offline --locked pytest tests/test_feed_pipeline.py
 
 门禁执行锁文件、格式、静态规则、类型、全部 pytest 与冻结契约检查；运行证据保存在
 `verification-runs/`。正式结论与当前工作树适用性分开查询，不用历史 passed 代替当前验证。
+未绑定测试失败时额外显示安全模块路径与 setup/call/teardown/collection 阶段，
+可单独重跑该模块；辅助诊断不含测试参数或原始错误，也不改变正式回执与退出判据。
 检查计划、回执登记范围及各组证明边界见[离线验证证据](docs/verification/offline-evidence.md)，
 输出说明见[状态查询契约](docs/contracts/verification-status.md)。
 完整入口的执行、回执模块与本地帮助使用显式生产组登记；测试人工预期和历史读者格式表

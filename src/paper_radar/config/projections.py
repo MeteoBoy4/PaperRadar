@@ -53,6 +53,19 @@ class ConfigSemantics:
     baseline: CalibrationBaseline
 
 
+def screening_model(snapshot: RuntimeConfigSnapshot) -> dict[str, Any] | None:
+    """只读取已验证快照中的 Screening 模型槽;不重新编译或改变身份字节。"""
+    models = next(
+        (
+            json.loads(material.config_json)
+            for material in snapshot.materials.values()
+            if material.kind == MaterialKind.MODELS and material.name == "models"
+        ),
+        None,
+    )
+    return models["screening"] if models is not None else None
+
+
 def project_config(snapshot: RuntimeConfigSnapshot) -> ConfigSemantics:
     """输入必须已由 check/compile/load 验证。不改变快照或配置就绪判断。"""
     materials = {

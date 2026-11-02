@@ -117,7 +117,7 @@ print(json.dumps({"restored": True}))
         ("pi_version", "1.3.0"),
         ("node_version", "22.20.0"),
         ("adapter_version", "transport-v2"),
-        ("format_version", 3),
+        ("format_version", 4),
         ("format_version", 2.0),
         ("proxy_used", 1),
         ("proxy_port", 8080),

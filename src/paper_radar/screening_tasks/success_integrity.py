@@ -104,15 +104,14 @@ def validate_successes(service: SuccessService, connection: Connection) -> None:
                 and re.fullmatch(r"[0-9a-f]{64}", row["submission_sha256"]) is not None
             )
             candidate = stored_candidate(b"", row["audit_json"])
-            if candidate.execution_audit is not None:
-                validate_execution_reference(
-                    service.attempts.database,
-                    connection,
-                    task_id=row["task_id"],
-                    attempt_no=row["attempt_no"],
-                    audit=candidate.execution_audit,
-                    reason=TaskReason.CORRUPT_REFERENCE,
-                )
+            validate_execution_reference(
+                service.attempts.database,
+                connection,
+                task_id=row["task_id"],
+                attempt_no=row["attempt_no"],
+                audit=candidate.execution_audit,
+                reason=TaskReason.CORRUPT_REFERENCE,
+            )
             budget = dict(
                 connection.execute(
                     select(budgets)

@@ -16,7 +16,7 @@ ReportedName = Annotated[str, Field(min_length=1, max_length=2048)]
 TokenCount = Annotated[int, Field(ge=0)]
 
 
-class PiRpcExecutionAudit(BaseModel):
+class _ExecutionIdentity(BaseModel):
     """启动组合提供的执行身份;不包含路径或任何认证材料。"""
 
     model_config = ConfigDict(
@@ -30,7 +30,6 @@ class PiRpcExecutionAudit(BaseModel):
     protocol_profile: Literal["pi-rpc-1.4.0-v1"]
     launch_policy_version: Version
     isolation_policy_version: Version
-    protocol: Literal["prompt_only"]
     auth_mode: Literal["chatgpt_subscription"]
     credential_provider: Literal["openai"]
     credential_source: Literal["owner_provisioned_dir"]
@@ -38,7 +37,7 @@ class PiRpcExecutionAudit(BaseModel):
     proxy_port: Annotated[int, Field(ge=1, le=65535)] | None
 
     @model_validator(mode="after")
-    def consistent(self) -> PiRpcExecutionAudit:
+    def consistent(self) -> _ExecutionIdentity:
         if (self.proxy_port is not None) != self.proxy_used:
             raise ValueError("proxy state mismatch")
         if PROTOCOL_PROFILES.get(self.pi_version) != self.protocol_profile:
@@ -46,13 +45,31 @@ class PiRpcExecutionAudit(BaseModel):
         return self
 
 
-class PiRpcAudit(PiRpcExecutionAudit):
-    """格式 2 的全部持久字段;nullable 字段仍必填。"""
+class PiRpcExecutionAudit(_ExecutionIdentity):
+    """当前执行审计元数据;通道字段与格式3一致。"""
 
-    format_version: Literal[2]
+    channel: Literal["prompt_only"]
+
+
+class _CandidateFields(BaseModel):
+    """nullable 字段仍必填。"""
+
     executor_kind: Literal["pi_rpc"]
     reported_provider: ReportedName
     reported_model: ReportedName
     provider_request_id: None
     input_tokens: TokenCount | None
     output_tokens: TokenCount | None
+
+
+class PiRpcAudit(PiRpcExecutionAudit, _CandidateFields):
+    """当前写入格式3;不接收旧字段或别名。"""
+
+    format_version: Literal[3]
+
+
+class LegacyPiRpcAudit(_ExecutionIdentity, _CandidateFields):
+    """只读兼容已持久化的格式2;不迁移原审计或 submission_digest。"""
+
+    format_version: Literal[2]
+    protocol: Literal["prompt_only"]

@@ -343,9 +343,9 @@ run_once 收到非法候选协议形状时结算 protocol_error；直接非法�
 结算 model_mismatch，占用当次预算。test 制品不具有生产建议或校准消费资格。
 
 `pi_rpc` 候选必须提供精确 `PiRpcExecutionAudit` 对象，provider/model 必须非空；
-`provider_request_id` 必须为 null。执行身份与归一化观察合并为独立格式 2 的规范审计。
+`provider_request_id` 必须为 null。执行身份与归一化观察合并为独立格式 3 的规范审计，通道字段为 `channel=prompt_only`。
 全部必填、可空、类型和闭集由唯一格式
-[`PiRpcExecutionAudit` / `PiRpcAudit` Schema](../../src/paper_radar/screening_tasks/pi_rpc_audit.py)
+[`PiRpcExecutionAudit` / `PiRpcAudit` / `LegacyPiRpcAudit` Schema](../../src/paper_radar/screening_tasks/pi_rpc_audit.py)
 定义，持久 JSON 不接受额外字段、缺字段或未知格式。当前认证只支持
 openai/chatgpt_subscription，凭据来自 owner_provisioned_dir；代理只记录是否使用及端口。
 不保存路径、PID、env、代理 URL、认证材料或其派生值。
@@ -354,9 +354,13 @@ openai/chatgpt_subscription，凭据来自 owner_provisioned_dir；代理只记�
 清单 Pi/Node 版本及该 attempt **本次回执** snapshot 中的 Pi/adapter 版本；
 模型语义与业务校验仍使用预算首次 snapshot。恢复从持久 audit_json、回执、供给清单和
 制品重建闭包，不使用提交进程对象、selector 或现场安装树。无效候选引用返回
-invalid_candidate，持久化损坏返回 corrupt_reference。幂等规范摘要包含格式 2 的完整审计，
+invalid_candidate，持久化损坏返回 corrupt_reference。幂等规范摘要包含对应版本的完整审计，
 已结算 attempt 的任一审计身份变化返回 settlement_conflict；不覆盖历史。
 旧 test 的审计字节、摘要与回执身份保持不变，无 migration。
+格式 2 通过独立严格 Schema 只读回放，其通道字段保持 `protocol=prompt_only`；
+格式 3 只接受 `channel`，不接受 `protocol`，格式 2 不接受 `channel`。
+不猜测版本、添加字段别名、重写旧审计或重算旧 submission_digest；
+重放使用原版本全部规范字节，未知版本、跨版混用、缺字段和类型非法均受控拒绝。
 
 供给身份核验经过中立 `execution_history` 只读接缝，完整复用供给仓储的冻结材料与
 引用回放，不加载供给执行服务、HTTP/进程实现或安装保护。协议版本配对只读取中立

@@ -219,8 +219,11 @@ def test_production_migration_keeps_exact_materials_counts_and_graph() -> None:
     owners: dict[str, set[str]] = {}
     for row in report["files"]:
         owners.setdefault(row["path"], set()).add(row["group"])
-    assert len(SHARED_MATERIALS) == 252 + len(preparation["new_central_paths"]) + 1
-    assert "tests/migration_expectations.py" in SHARED_MATERIALS
+    issue_139_central_members = {"tests/migration_expectations.py"}
+    assert issue_139_central_members <= set(SHARED_MATERIALS)
+    assert len(SHARED_MATERIALS) == (
+        252 + len(preparation["new_central_paths"]) + len(issue_139_central_members)
+    )
     assert set(SHARED_MATERIALS) == {
         path for path, groups in owners.items() if len(groups) >= 2
     }

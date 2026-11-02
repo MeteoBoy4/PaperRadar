@@ -58,8 +58,9 @@ missing、invalid 或 not_assessed 都退出 2。它不采用 config 对阶段�
 
 `paper_radar.doctor.pi_exec.execution_checks` 先复用基础只读检查和历史快照加载，
 再复用 `doctor_supply` 的供给/版本/树/保护事实，不安装、不激活、不持执行生命周期保护。
-从已验证 snapshot 的 Screening 模型投影、adapter 和当前供给构造普通
-`EvidenceBinding`，调用与执行相同的 `admit/read_evidence`；不创建任务、回执或
+从已验证 snapshot 的 Screening 模型槽、adapter 和当前供给构造普通
+`EvidenceBinding`，复用纯 `admit` 判定且当前证据固定缺失；
+产品没有证据读取来源，doctor 不接收执行服务测试私有的正例注入；不创建任务、回执或
 StageInput，不调用生产 preflight、prepare_launch 或 dry_run。
 模型与采样字段仍由[运行配置](runtime-config.md)唯一定义，绑定与执行判定见[执行组合](pi-execution.md)。
 
@@ -67,7 +68,7 @@ StageInput，不调用生产 preflight、prepare_launch 或 dry_run。
 | --- | --- |
 | selection | 历史快照有效为 passed/configuration_valid；缺失/损坏引用保留 ConfigReason，invalid。 |
 | supply | 无选择/安装/adapter 为 missing；树、版本或登记不符为 invalid；供给必要项通过为 passed/supply_valid。 |
-| admission | 缺 Screening 配置或准入证据为 missing；未支持采样、版本、认证模式或证据不匹配为 invalid；保留共享受控原因。 |
+| admission | 缺 Screening 配置为 missing/screening_configuration_missing；缺当前准入证据为 missing/evidence_missing；未支持采样、版本或认证模式为 invalid，复用执行受控原因。当前始终非 passed，没有 admitted token。screening_configuration_missing 属于本诊断项的公共词汇，不属于 ExecutionReason。 |
 | cwd | 缺常量目录为 missing/cwd_missing；复用执行路径形状/无链接/为空规则，非法为 invalid，满足为 passed/cwd_metadata_valid。祖先现场资源仍交 Cwd。 |
 | credentials_metadata | 缺目录/auth.json 为 missing/credentials_missing；复用 owner、0700、无链接、普通文件检查，非法为 invalid/credentials_invalid，否则 passed/metadata_valid。不读取 auth.json。 |
 | isolation | 内核能力满足为 passed/isolation_capability；不足为 invalid/isolation_unavailable；不证明实际 Pi/TLS/DNS 运行可行。 |

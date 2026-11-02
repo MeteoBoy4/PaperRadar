@@ -22,7 +22,7 @@ def test_pi_rpc_boundary_survives_task_service_restart(tmp_path: Path) -> None:
     content = restarted.load_success(success.success_id)
     assert content.raw_response == RAW
     assert content.audit["supply_id"] == supplied.supply_id
-    assert content.audit["format_version"] == 2
+    assert content.audit["format_version"] == 3
     assert content.audit["input_tokens"] == 42
     assert (
         restarted.query_successes(

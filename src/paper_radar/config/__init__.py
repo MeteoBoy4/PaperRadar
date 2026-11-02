@@ -35,6 +35,7 @@ from paper_radar.config.projections import (
     ConfigSemantics,
     StageConfigProjection,
     project_config,
+    screening_model,
 )
 from paper_radar.config.read import ChunkingVersion, ReadSemantics
 from paper_radar.config.snapshot_summary import ConfigSnapshotSummary, SnapshotVersion
@@ -129,5 +130,6 @@ __all__ = [
     "load_config_snapshot",
     "project_config",
     "resolve_config_snapshot_reference",
+    "screening_model",
     "upgrade_database",
 ]

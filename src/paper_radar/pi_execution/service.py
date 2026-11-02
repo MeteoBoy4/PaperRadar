@@ -30,10 +30,8 @@ from paper_radar.pi_execution.admission import (
     read_evidence,
 )
 from paper_radar.pi_execution.errors import ExecutionError
-from paper_radar.pi_execution.isolation import ISOLATION_POLICY_VERSION
 from paper_radar.pi_execution.launcher import LaunchIdentity, prepare_launch
 from paper_radar.pi_execution.resources import (
-    LAUNCH_POLICY_VERSION,
     ExecutionRoots,
     check_system_prompt,
     expected_cwd_section,
@@ -168,18 +166,11 @@ class PiExecution:
             record = show_supply(self.tasks.database, selected.supply_id)
             if record.manifest.pi_version != description.pi_version:
                 raise ExecutionError("protocol_unsupported")
-            identity = LaunchIdentity(
+            identity = LaunchIdentity.for_install(
                 selected.supply_id,
                 selected.install_id,
-                record.manifest.pi_version,
-                record.manifest.node_version,
-                LAUNCH_POLICY_VERSION,
-                ISOLATION_POLICY_VERSION,
-                self.auth_mode,
-                "openai",
-                "owner_provisioned_dir",
-                False,
-                None,
+                record.manifest,
+                auth_mode=self.auth_mode,
             )
         except SupplyError:
             raise ExecutionError("install_unavailable") from None
@@ -203,7 +194,7 @@ class PiExecution:
                     **asdict(prepared.identity),
                     "adapter_version": description.adapter_version,
                     "protocol_profile": description.protocol_profile,
-                    "protocol": description.protocol,
+                    "channel": description.protocol,
                 }
             )
 

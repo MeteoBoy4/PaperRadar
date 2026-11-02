@@ -8,8 +8,7 @@ from uuid import UUID
 
 from pydantic import ValidationError
 
-from paper_radar.config import RuntimeConfigSnapshot
-from paper_radar.config.compile import MaterialKind
+from paper_radar.config import RuntimeConfigSnapshot, screening_model
 from paper_radar.screening import (
     BoundaryOutput,
     OutputErrorCategory,
@@ -19,7 +18,11 @@ from paper_radar.screening import (
 )
 from paper_radar.screening_tasks.errors import TaskError, TaskReason
 from paper_radar.screening_tasks.models import FrozenInput, Stage
-from paper_radar.screening_tasks.pi_rpc_audit import PiRpcAudit, PiRpcExecutionAudit
+from paper_radar.screening_tasks.pi_rpc_audit import (
+    LegacyPiRpcAudit,
+    PiRpcAudit,
+    PiRpcExecutionAudit,
+)
 from paper_radar.screening_tasks.rules import canonical, require_bounded_text
 from paper_radar.screening_tasks.success_models import SuccessCandidate
 
@@ -58,7 +61,7 @@ def candidate_audit(candidate: SuccessCandidate) -> str:
                 {
                     **candidate.execution_audit.model_dump(),
                     **audit,
-                    "format_version": 2,
+                    "format_version": 3,
                 }
             ).model_dump(mode="json")
         except ValidationError:
@@ -79,12 +82,9 @@ def submission_digest(raw: bytes, audit_json: str) -> str:
 
 
 def model_matches(candidate: SuccessCandidate, snapshot: RuntimeConfigSnapshot) -> bool:
-    models = next(
-        json.loads(material.config_json)
-        for material in snapshot.materials.values()
-        if material.kind == MaterialKind.MODELS and material.name == "models"
-    )
-    expected = models["screening"]
+    expected = screening_model(snapshot)
+    if expected is None:
+        raise TaskError(TaskReason.CORRUPT_REFERENCE)
     return all(
         getattr(candidate, "reported_" + name) is None
         or getattr(candidate, "reported_" + name) == expected[name]
@@ -172,7 +172,16 @@ def stored_candidate(raw: bytes, audit_json: str) -> SuccessCandidate:
         if type(audit) is not dict:
             raise ValueError
         if audit.get("executor_kind") == "pi_rpc":
-            parsed = PiRpcAudit.model_validate(audit)
+            version = audit.get("format_version")
+            if type(version) is not int or version not in (2, 3):
+                raise ValueError
+            parsed = (
+                LegacyPiRpcAudit.model_validate(audit)
+                if version == 2
+                else PiRpcAudit.model_validate(audit)
+            )
+            if canonical(parsed.model_dump(mode="json")).decode("utf-8") != audit_json:
+                raise ValueError
             fields = {
                 name: audit[name]
                 for name in (
@@ -186,14 +195,23 @@ def stored_candidate(raw: bytes, audit_json: str) -> SuccessCandidate:
             }
             execution = PiRpcExecutionAudit.model_validate(
                 {
-                    name: getattr(parsed, name)
-                    for name in PiRpcExecutionAudit.model_fields
+                    **{
+                        name: getattr(parsed, name)
+                        for name in PiRpcExecutionAudit.model_fields
+                        if name != "channel"
+                    },
+                    "channel": parsed.protocol
+                    if isinstance(parsed, LegacyPiRpcAudit)
+                    else parsed.channel,
                 }
             )
             candidate = SuccessCandidate(raw, execution_audit=execution, **fields)
         else:
             candidate = SuccessCandidate(raw, **audit)
-        if candidate_audit(candidate) != audit_json:
+        if (
+            candidate.executor_kind != "pi_rpc"
+            and candidate_audit(candidate) != audit_json
+        ):
             raise ValueError
         return candidate
     except (ValueError, TypeError, KeyError, TaskError):

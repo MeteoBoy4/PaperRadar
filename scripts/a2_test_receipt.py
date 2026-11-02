@@ -10,13 +10,17 @@ from pathlib import Path
 import pytest
 
 from scripts.a2_full_scope import RECEIPT_COUNTERS, ReceiptCounter
+from scripts.pytest_failure_diagnostics import FailureDiagnostics
 from scripts.verification_groups import receipt_modules
 
 
 class TestReceipt:
-    def __init__(self, path: Path, run_id: str) -> None:
+    def __init__(self, path: Path, run_id: str, *, root: Path | None = None) -> None:
         self.path = path
         self.run_id = run_id
+        self.diagnostics = (
+            FailureDiagnostics(path, run_id, root) if root is not None else None
+        )
         self.nodes: dict[str, dict[str, str]] = {}
         self.modules = {
             name: dict.fromkeys(RECEIPT_COUNTERS, 0) for name in receipt_modules()
@@ -37,6 +41,8 @@ class TestReceipt:
                 stream.flush()
                 os.fsync(stream.fileno())
             os.replace(temporary, self.path)
+            if self.diagnostics is not None:
+                self.diagnostics.write()
         finally:
             temporary.unlink(missing_ok=True)
 
@@ -57,7 +63,13 @@ class TestReceipt:
             if module in self.modules:
                 self.modules[module][ReceiptCounter.DESELECTED] += 1
 
+    def pytest_collectreport(self, report: pytest.CollectReport) -> None:
+        if report.failed and self.diagnostics is not None:
+            self.diagnostics.record(report.nodeid, "collection")
+
     def pytest_runtest_logreport(self, report: pytest.TestReport) -> None:
+        if report.failed and self.diagnostics is not None:
+            self.diagnostics.record(report.nodeid, report.when)
         if report.nodeid in self.nodes:
             self.nodes[report.nodeid][report.when] = report.outcome
 
@@ -80,5 +92,5 @@ def pytest_configure(config: pytest.Config) -> None:
     run_id = os.environ.get("PAPER_RADAR_TEST_RUN_ID")
     if path and run_id:
         config.pluginmanager.register(
-            TestReceipt(Path(path), run_id), "a2-test-receipt"
+            TestReceipt(Path(path), run_id, root=config.rootpath), "a2-test-receipt"
         )

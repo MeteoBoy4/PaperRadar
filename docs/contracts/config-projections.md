@@ -53,6 +53,10 @@ adapter 分量直接引用对应槽已有的 `AdapterSemantics.semantics_id`，�
 分量内容与执行审计边界见[适配器语义契约](adapter-config.md#语义与消费者依赖)；
 extraction 分量取[正文提取配置的公共语义](extraction-config.md#公共语义与历史)，不验证本机模型文件。
 
+`screening_model(snapshot)` 只读取已验证快照的 Screening 模型槽，缺模型材料返回 None；
+供任务模型匹配、执行引用核验与只读 doctor 共用。不重新验证内部投影形状、
+不重新编译材料，也不改变 v1/v2 规范字节或身份；公共快照装载仍负责损坏引用拒绝。
+
 ## 规范内容与缺项
 
 普通配置声明 version、settings 选择标签、原 YAML 字节哈希、注释和字段顺序均不

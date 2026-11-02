@@ -25,7 +25,6 @@ ExecutionReason = Literal[
     "resources_invalid",
     "install_unavailable",
     "protocol_unsupported",
-    "launch_reused",
     "timeout_invalid",
     "cleanup_failed",
 ]

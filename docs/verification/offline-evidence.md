@@ -69,7 +69,9 @@ SIGTERM，等待至多两秒，再向残留进程组发送 SIGKILL。Linux 上�
 结束后原子更新。运行中被中断时会尽力记录 `overall=incomplete` 并打印路径；
 突然终止时已有文件保持 `completed=false`，不能当成通过。
 
-失败时按 `checks[].id` 和 `help_zh` 定位并单独重跑检查。脚本有意不保存也不回显子进程的原始输出，
+失败时按 `checks[].id` 和 `help_zh` 定位并单独重跑检查。
+未绑定 pytest 失败另按[辅助诊断契约](../contracts/offline-pytest-diagnostics.md)
+显示安全模块与阶段；辅助文件不属于正式十四份证据，也不参与通过判定。脚本有意不保存也不回显子进程的原始输出，
 避免测试失败信息泄漏 Profile、摘要、正文、Prompt、secret 或模型响应。维护者可按
 `scripts/offline_evidence.py` 的固定计划单独重跑对应检查取得本地诊断；不要把
 含敏感输入的原始输出加入验收证据。`contracts` 项的详细失败类别也可通过已存在的

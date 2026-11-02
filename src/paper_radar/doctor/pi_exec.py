@@ -1,23 +1,21 @@
 """只读执行事实诊断;不导入执行编排、认证或 attempt 资源。"""
 
-import json
 from pathlib import Path
 
 import typer
 
 from paper_radar.config import (
     ConfigError,
-    StageName,
     load_config_snapshot,
-    project_config,
     resolve_config_snapshot_reference,
+    screening_model,
 )
 from paper_radar.config.adapters import PiAdapter
 from paper_radar.config.compile import MaterialKind, RuntimeConfigSnapshot
 from paper_radar.doctor.cli import _show
 from paper_radar.doctor.service import Check, Result, basic_checks
 from paper_radar.llm.models import PROTOCOL_PROFILES
-from paper_radar.pi_execution.admission import EvidenceBinding, admit, read_evidence
+from paper_radar.pi_execution.admission import EvidenceBinding, admit
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.isolation import (
     ISOLATION_POLICY_VERSION,
@@ -41,9 +39,7 @@ def _binding(
     """仅投影已验证 snapshot;不伪造 StageInput、任务或 CallDescription。"""
     adapter = snapshot.adapters["screening"]
     selected = snapshot.adapter_selections.get("screening")
-    model = json.loads(
-        project_config(snapshot).projections[StageName.BOUNDARY].payload_json
-    )["components"]["model"]
+    model = screening_model(snapshot)
     if (
         adapter is None
         or selected is None
@@ -147,24 +143,19 @@ def execution_checks(
                 binding = _binding(
                     snapshot, report.current.supply_id, report.current.install_id
                 )
-                reason: str | None = (
-                    admit(binding, read_evidence(binding))
+                reason: str = (
+                    admit(binding, None) or "evidence_missing"
                     if binding is not None
                     else "screening_configuration_missing"
                 )
             except ExecutionError as error:
                 reason = error.reason
             state = (
-                Result.PASSED
-                if reason is None
-                else Result.MISSING
+                Result.MISSING
                 if reason
                 in {
                     "screening_configuration_missing",
                     "evidence_missing",
-                    "cwd_evidence_missing",
-                    "rpc_evidence_missing",
-                    "model_evidence_missing",
                 }
                 else Result.INVALID
             )
@@ -172,7 +163,7 @@ def execution_checks(
                 Check(
                     "admission",
                     state,
-                    reason or "admitted",
+                    reason,
                     "现场隔离证据交 Cwd；DERIVED、RPC、订阅模型和参数证据交 Live。"
                     "缺证据保持阻断。",
                 )

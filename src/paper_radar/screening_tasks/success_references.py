@@ -1,11 +1,10 @@
 """成功来源与供给、安装、本次回执的只读一致性核对。"""
 
-import json
 from pathlib import Path
 
 from sqlalchemy import Connection, select
 
-from paper_radar.config import ConfigError, load_config_snapshot
+from paper_radar.config import ConfigError, load_config_snapshot, screening_model
 from paper_radar.config.adapters import PiAdapter
 from paper_radar.config.compile import MaterialKind
 from paper_radar.execution_history import require_supply_reference
@@ -21,10 +20,12 @@ def validate_execution_reference(
     *,
     task_id: str,
     attempt_no: int,
-    audit: PiRpcExecutionAudit,
+    audit: PiRpcExecutionAudit | None,
     reason: TaskReason,
 ) -> None:
     """只核对恢复库登记与本 attempt 回执 snapshot;不读取安装树或 selector。"""
+    if audit is None:
+        return
     try:
         require_supply_reference(
             database,
@@ -43,14 +44,11 @@ def validate_execution_reference(
         if request is None:
             raise ValueError
         snapshot = load_config_snapshot(database, request["snapshot_id"])
-        models = next(
-            json.loads(material.config_json)["screening"]
-            for material in snapshot.materials.values()
-            if material.kind == MaterialKind.MODELS and material.name == "models"
-        )
+        models = screening_model(snapshot)
         if (
-            models["provider"] != audit.credential_provider
-            or models["protocol"] != audit.protocol
+            models is None
+            or models["provider"] != audit.credential_provider
+            or models["protocol"] != audit.channel
         ):
             raise ValueError
         selected = snapshot.adapter_selections["screening"]

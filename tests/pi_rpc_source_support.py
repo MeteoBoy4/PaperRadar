@@ -110,7 +110,7 @@ def candidate(
             protocol_profile="pi-rpc-1.4.0-v1",
             launch_policy_version="pi-launch-v1",
             isolation_policy_version="landlock-v1",
-            protocol="prompt_only",
+            channel="prompt_only",
             auth_mode="chatgpt_subscription",
             credential_provider="openai",
             credential_source="owner_provisioned_dir",

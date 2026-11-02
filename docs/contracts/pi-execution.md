@@ -19,6 +19,8 @@
 返回值 `PreparedLaunch` 是只读身份与一次 `SessionFactory` 的接口；实现和 token 构造均私有。
 调用它之前，上层仍须完成调用描述、请求帧上限、采样、外发与全部 Cwd/Live 证据判定，随后领取一次任务。
 `prepared(description)` 只允许与准备时完全相同的描述、只启动一次，返回 `ByteSession`。
+再次调用返回 RPC `startup_error`；领取后沿既有 `executor_error` 消耗预算，
+没有独立的 `launch_reused` 执行原因。
 会话沿用 `PipeSession` 的独立进程组、二进制有界管道和整组回收规则。
 `terminate` 成功回收整组之后才删除该 attempt 的私有目录；清理失败向上返回失败，不能产生成功。
 上下文退出再次确保回收，然后释放安装保护。子进程继承安装保护 fd，父句柄 close 不能替活子进程解锁。
@@ -39,7 +41,7 @@ Popen 成功而 PipeSession 拒绝接管时，启动器仍负责有界组回收�
 - `check_credentials_directory`：只查元数据，不读 auth 内容，不执行刷新，执行服务另核对显式四根；doctor 复用其中 `check_credentials_metadata` 的路径/owner/类型规则，
   根隔离有意标为 not_assessed。
 - `isolation_capability()`：Linux 已登记 syscall ABI，Landlock ABI≥4 且 ruleset 可创建。只创建内核描述符后立即关闭，不创建文件、不启动进程；不冒称实际 Node/TLS 可用。
-- 代理语法、provider/auth_mode 闭集、协议档案与有限正超时。
+- 代理语法、provider/auth_mode 闭集、协议档案与有限正数超时（不接受 bool、NaN、无穷或非数值）。
 - `use_install` 的供给与安装保护、平台和完整树检查。
 
 唯一获准的领取前宿主副作用是专用凭据刷新：可能联网并写回该凭据目录。它不写任务、预算、失败行或成功制品，也不占有 attempt。上层应先完成其余执行证据门禁，再调用 `prepare_launch`，避免在已知不能执行时刷新。

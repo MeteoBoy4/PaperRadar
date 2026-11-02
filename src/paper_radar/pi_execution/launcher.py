@@ -1,5 +1,7 @@
 """固定安装的单次会话工厂;准入事实与任务领取由上层拥有。"""
 
+from __future__ import annotations
+
 import math
 import re
 import subprocess
@@ -7,7 +9,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Literal, Protocol
 
 from paper_radar.llm.models import PROTOCOL_PROFILES, CallDescription
 from paper_radar.llm.rpc_pipes import PipeSession
@@ -31,6 +33,7 @@ from paper_radar.pi_execution.resources import (
     proxy_port,
 )
 from paper_radar.pi_supply.errors import SupplyError
+from paper_radar.pi_supply.models import SupplyManifest
 from paper_radar.pi_supply.protection import InstallUse, inspect_instance, use_install
 
 
@@ -42,11 +45,37 @@ class LaunchIdentity:
     node_version: str
     launch_policy_version: str
     isolation_policy_version: str
-    auth_mode: str
-    credential_provider: str
-    credential_source: str
+    auth_mode: Literal["chatgpt_subscription"]
+    credential_provider: Literal["openai"]
+    credential_source: Literal["owner_provisioned_dir"]
     proxy_used: bool
     proxy_port: int | None
+
+    @classmethod
+    def for_install(
+        cls,
+        supply_id: str,
+        install_id: str,
+        manifest: SupplyManifest,
+        *,
+        auth_mode: str,
+        proxy: str | None = None,
+    ) -> LaunchIdentity:
+        """普通执行身份;供给预绑定与受保护安装分别使用各自已验证的清单。"""
+        check_auth_mode("openai", auth_mode)
+        return cls(
+            supply_id,
+            install_id,
+            manifest.pi_version,
+            manifest.node_version,
+            LAUNCH_POLICY_VERSION,
+            ISOLATION_POLICY_VERSION,
+            "chatgpt_subscription",
+            "openai",
+            "owner_provisioned_dir",
+            proxy is not None,
+            proxy_port(proxy),
+        )
 
 
 class _OwnedSession:
@@ -98,18 +127,12 @@ class _PreparedLaunch:
         self._proxy = proxy
         self._used = False
         self._session: _OwnedSession | None = None
-        self._identity = LaunchIdentity(
+        self._identity = LaunchIdentity.for_install(
             install.supply_id,
             install.install_id,
-            install.record.manifest.pi_version,
-            install.record.manifest.node_version,
-            LAUNCH_POLICY_VERSION,
-            ISOLATION_POLICY_VERSION,
-            auth_mode,
-            "openai",
-            "owner_provisioned_dir",
-            proxy is not None,
-            proxy_port(proxy),
+            install.record.manifest,
+            auth_mode=auth_mode,
+            proxy=proxy,
         )
 
     @property
@@ -215,7 +238,7 @@ def prepare_launch(
     """领取前刷新是唯一允许的宿主写回;不创建 attempt 或模型会话。"""
     check_auth_mode(description.provider, auth_mode)
     if any(
-        not math.isfinite(value) or value <= 0
+        type(value) not in (int, float) or not math.isfinite(value) or value <= 0
         for value in (attempt_timeout, auth_timeout)
     ):
         raise ExecutionError("timeout_invalid")
