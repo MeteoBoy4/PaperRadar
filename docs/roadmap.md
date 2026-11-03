@@ -138,14 +138,6 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 | EXP-6 | `orig` 持久成员哈希的具体设计与落实（由 Body/B 首个真实正文生产者票决定并在该票落实，B 首个正文生产者前确定；F 不再承担） | Body、B，首个正文生产者前 | research／原型；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
 | EXP-7 | 证据/数值规则身份归属；仅后处理警告变化是否触发模型重跑须分析（最小 Read 票决定） | Body、B | research／原型；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
 
-## 已收口/已移交
-
-本节只记录探索项的收口与移交，不改变模块表状态或当前前沿。Extra、Body、B 的完成状态不变，Read/reuse 仍不开放；剩余工程和验收义务由承接模块落实。
-
-| 编号 | 探索项 | 实验记录与收口依据 | 剩余工作承接 |
-| --- | --- | --- | --- |
-| EXP-3 | Docling/Python 兼容、模型安装与样本质量的本轮固定组合探测 | [实验记录](verification/exp-3-docling-probe.md)、[本轮收口口径](verification/exp-3-docling-probe.md#本轮收口口径) | Extra 接产品可选依赖、CPU 锁与安装/缺失提示；Body/B 接生产转换链、C1、逐文档质量与资源门禁；EXP-6/7 接源成员与证据规则身份；F 接四刊 fixture、摘录与资源阈值。详见[模块承接索引](#模块承接索引)及[移交与未验范围](verification/exp-3-docling-probe.md#移交与仍未验范围)，[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) 不变。 |
-
 ## 用户须提供
 
 配置清单仅见[规格 §14](../intent/draft.md#十四上线前必须由用户提供的配置)。`/srv/pi-cwd` 已确认，现场隔离仍未验；依据[收口未决项](verification/stage-a-closure.md#收口责任与未决项)。EXP-1 的临时 HTTP 联系标识与无代理选择分别只适用于明确确认的[首轮审计](verification/exp-1-http-audit.md)和[新规则补跑](verification/exp-1-http-audit-v2.md)，后续 live 仍显式提供。其他配置的就绪状态未记录，不从历史工程验收推定已提供。
@@ -157,8 +149,6 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 Body、B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各自入口、承接责任与待裁决项；依据[§11](../intent/draft.md#十一九阶段实施与验收)。
 
 ## 已完成
-
-出处标签：A7-01（#77）严格解析、A7-02（#78）登记、A7-03（#79）领取、A7-04（#80）boundary 接收、A7-05（#81）value 接收、A7-06（#82）retry、A7-07（#83）恢复、A7-08（#84）验收，证明范围见下表 A7。
 
 仅表示对应固定范围离线工程完成，证据范围以原文为准。
 
