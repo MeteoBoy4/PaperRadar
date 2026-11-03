@@ -3,6 +3,7 @@
 import ast
 import hashlib
 import importlib
+import json
 import tomllib
 from pathlib import Path
 
@@ -26,11 +27,25 @@ def test_product_imports_do_not_require_browser_automation() -> None:
 
 
 def test_lockfile_and_existing_dependency_semantics_remain_fixed() -> None:
-    assert hashlib.sha256((ROOT / "uv.lock").read_bytes()).hexdigest() == (
-        "11aa458753aad1447061e7b8e5ef3adc74e53db4db98ecd36da5d88e14267512"
-    )
+    # #150 允许独立 CPU extra;基础六包仍固定完整记录,不能借接入降级或换源。
+    lock = tomllib.loads((ROOT / "uv.lock").read_text())
+    packages = {package["name"]: package for package in lock["package"]}
+    # 人工预期来自 #150 实施起点的六包,不从当前锁或供给实现生成。
+    expected_records = {
+        "alembic": "5abc68e8451aa8c88ad3a64c1fc3e3a7c5f8b41a33fd0e11533c9dbb399e7a67",
+        "httpx": "aed038606fc110b72f6f30c4d2a89c3f2ea50e429d4c57d35031f6ff6d02fe45",
+        "pydantic": "62f9b9899f3afc2f46a3906ba118ed581628fba8995b1c8167dc1e62c3445d72",
+        "pyyaml": "bd40d52150cc233d79b3d47cae3d8aff81420ee3d63b61974f057e5dabd043a7",
+        "sqlalchemy": (
+            "63b4faa1bc537ea5399f0c8b935ba8a683fdfd9ca90fd09ac55f5d3518942ffe"
+        ),
+        "typer": "df034efc2db07f327802d1f9cf3f7ca2ceb1cc9e0c8fa34aada858e1ad49c278",
+    }
+    for name, expected_record in expected_records.items():
+        record = json.dumps(packages[name], sort_keys=True, separators=(",", ":"))
+        assert hashlib.sha256(record.encode()).hexdigest() == expected_record, name
     project = tomllib.loads((ROOT / "pyproject.toml").read_text())
-    assert "optional-dependencies" not in project["project"]
+    assert set(project["project"]["optional-dependencies"]) == {"docling"}
     assert set(project["dependency-groups"]) == {"dev"}
     assert project["project"]["dependencies"] == [
         "alembic>=1.17,<2",

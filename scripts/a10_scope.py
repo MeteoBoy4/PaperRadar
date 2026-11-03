@@ -121,7 +121,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_a10_isolation.py",
-        "b53e9972f960cbde722e739385e7a37b765802efbf982998b47588d18b57b25c",
+        "5c1ba0d451c028a7c3c0d4f0fd26bc62dae2dd48934828878e15e2f03bd06202",
     ),
     (
         "tests/test_a10_reference_recovery.py",
