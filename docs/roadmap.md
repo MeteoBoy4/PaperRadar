@@ -133,11 +133,18 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 | 编号 | 问题 | 阻塞的模块 | 解决方式与出处 |
 | --- | --- | --- | --- |
 | EXP-2 | cwd 无资源/权限隔离、1.4.0 DERIVED 假设及实际参数 | Cwd、Live、B | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
-| EXP-3 | Docling 产品供给落地与生产样本质量；固定组合兼容/脱网探测已完成 | Extra、Body、B | [本轮探测收口及移交](verification/exp-3-docling-probe.md#本轮收口口径)；Extra 接产品安装工程，Body/B 接生产质量，四刊覆盖接 F；仅收口实验票，不自动解除剩余义务，[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) 不变 |
 | EXP-4 | 四刊正文/摘录及 TDM/渲染/授权通道 | F、Abstract、D | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
 | EXP-5 | 正式校准与 NAS 恢复 | D、I | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
 | EXP-6 | `orig` 持久成员哈希的具体设计与落实（由 Body/B 首个真实正文生产者票决定并在该票落实，B 首个正文生产者前确定；F 不再承担） | Body、B，首个正文生产者前 | research／原型；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
 | EXP-7 | 证据/数值规则身份归属；仅后处理警告变化是否触发模型重跑须分析（最小 Read 票决定） | Body、B | research／原型；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
+
+## 已收口/已移交
+
+本节只记录探索项的收口与移交，不改变模块表状态或当前前沿。Extra、Body、B 的完成状态不变，Read/reuse 仍不开放；剩余工程和验收义务由承接模块落实。
+
+| 编号 | 探索项 | 实验记录与收口依据 | 剩余工作承接 |
+| --- | --- | --- | --- |
+| EXP-3 | Docling/Python 兼容、模型安装与样本质量的本轮固定组合探测 | [实验记录](verification/exp-3-docling-probe.md)、[本轮收口口径](verification/exp-3-docling-probe.md#本轮收口口径) | Extra 接产品可选依赖、CPU 锁与安装/缺失提示；Body/B 接生产转换链、C1、逐文档质量与资源门禁；EXP-6/7 接源成员与证据规则身份；F 接四刊 fixture、摘录与资源阈值。详见[模块承接索引](#模块承接索引)及[移交与未验范围](verification/exp-3-docling-probe.md#移交与仍未验范围)，[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) 不变。 |
 
 ## 用户须提供
 
