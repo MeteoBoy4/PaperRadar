@@ -2,7 +2,7 @@
 
 ## 用途与范围
 
-`paper-radar doctor` 诊断显式范围的基础工程和配置，并提供显式 Pi 执行诊断，保留既有供给诊断。
+`paper-radar doctor` 诊断显式范围的基础工程和配置，并提供显式 Pi 执行及 Docling 依赖诊断，保留既有供给诊断。
 每个检查项使用四态结论；一次命令可以同时有 `passed`、`missing` 与 `not_assessed`。
 输出为中文终端文本，受控 token 便于识别检查范围与原因，不提供 JSON 输出。
 
@@ -14,6 +14,7 @@
 | --- | --- | --- |
 | `basic` | `--database` | 随包唯一迁移 head 可读；显式库存在、可读且 revision 等于 head。 |
 | `config` | `--database`，`--settings` / `--snapshot` 恰好一个 | 包含 basic；以只读 check 或历史 load 检查显式材料，展示六阶段配置 readiness。 |
+| `docling-runtime` | `--database`，`--settings` / `--snapshot` 恰好一个 | 包含 basic；显式材料校验后，按所选工具链检查当前平台、顶层发现与精确版本。 |
 | `pi-supply` | `--database`、`--snapshot` | 沿用 [Pi 供给诊断](pi-supply.md#原子激活与只读诊断)的完整材料闭包与现场检查、输出字节和退出语义。 |
 | `pi-exec` | `--database`、`--snapshot`、`--credentials-dir` | 历史快照、供给现场、cwd/凭据元数据、本机隔离能力与共享执行证据准入；不解析凭据或执行程序。 |
 
@@ -48,6 +49,18 @@ basic/config 退出 0 固定输出：
 basic 明示未选配置；config 逐项列出 boundary/value/reuse/extraction/read/suggestion 的结果、
 MissingReason 和下一步。Profile 或 Screening 模型未配置时明确提示「Profile/模型未配置，不能校准」。
 配置 `ready` 只证明对应配置完整，不证明运行能力、正式校准或自动精读资格。
+
+### Docling 依赖诊断
+
+`scope=docling-runtime result=passed|failed` 的必要项为基础检查、材料选择、extraction
+选择、平台与所选清单依赖。missing/invalid 均阻断并退出 2；全部通过退出 0。
+未知关键平台事实为 invalid，不能因 marker 跳过或包已安装判为成功。
+
+检查项归属既有 `docling_fixture` 类；模型运行、native ABI、fixture/质量与资源单列为
+非必要 not_assessed，整个 fixture 类仍为 not_assessed，不套用 pi-exec 对所有未评项
+的失败汇总。范围通过不授予 executable、Read/reuse 或阶段运行资格；basic/config
+仍不探测这些现场事实。公共探测结果、受控 reason、中文下一步与消费者责任见
+[Docling 运行依赖探测](docling-runtime.md)，本命令不导入 SDK 或执行 parser。
 
 ### Pi 执行诊断
 
@@ -84,7 +97,8 @@ StageInput，不调用生产 preflight、prepare_launch 或 dry_run。
 
 九类沿用规格 §14：基础工程、Feed、Pi adapter、校准、自动精读、全文凭证、Docling fixture、
 backup/restore、unattended automation。basic/config 中基础/选择/阶段项由 A 检查，其余能力均为 `not_assessed`；
-pi-exec 专门展开 Pi adapter 的检查项，不推定其他类别就绪。
+pi-exec 专门展开 Pi adapter 的检查项；docling-runtime 展开 Docling 安装依赖子项，
+两者均不推定其他类别就绪。
 Feed 承接 Audit/Source；Pi adapter 承接 Pi/Cwd/Live；校准承接 D；自动精读承接 D/G；
 全文凭证承接 F；Docling 承接 Extra/Body/F；恢复承接 I；无人值守承接 H/I。
 
@@ -98,7 +112,7 @@ config 仅提示另用 `--scope pi-supply` 或 `--scope pi-exec`，不遍历安�
 
 ## 错误与拒绝
 
-无参数退出 2 并提示 `basic/config/pi-supply/pi-exec`；未知 scope、`all`、`--json`、config 选择冲突/缺失、
+无参数退出 2 并提示 `basic/config/pi-supply/pi-exec/docling-runtime`；未知 scope、`all`、`--json`、config/docling-runtime 选择冲突/缺失、
 pi-supply 缺快照或带 settings、pi-exec 缺快照/凭据目录或带 settings、
 其他 scope 带凭据目录均退出 2。敏感参数不回显；读取错误只显示受控类别与中文修复入口。
 中断退出 130。不可读路径由服务分类，不由参数转换提前降为用法错误。

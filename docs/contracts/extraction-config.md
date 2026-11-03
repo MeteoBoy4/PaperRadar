@@ -59,6 +59,8 @@ Typer 不进入 backend identity、extraction 投影或 StageInput；供给视�
 展开随快照保存；load 从 SQLite 原材料重新校验与存档的组合一致，漂移拒绝，
 不能静默用新清单或新默认解释旧记录。load 不核对当前机器的依赖库存；没有 extra 或
 只有 v2 组件时仍可回放合法 v1 快照。合法历史与现场可执行分别判断，不自动迁移旧选择。
+当前环境的平台/依赖发现由显式 `doctor --scope docling-runtime` 与
+[轻量探测公共接口](docling-runtime.md)检查，不改变配置 check/load 的历史语义。
 
 ## CPU extra 安装与支持面
 

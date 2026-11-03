@@ -75,7 +75,9 @@ def diagnose(
     checks = list(basic_checks(database))
     failure = next((c for c in checks if c.result is not Result.PASSED), None)
     selected = None
-    if scope == "config" and all(c.result is Result.PASSED for c in checks):
+    if scope in {"config", "docling-runtime"} and all(
+        c.result is Result.PASSED for c in checks
+    ):
         try:
             if settings is not None:
                 selected = check_config(settings, database)
@@ -112,6 +114,10 @@ def diagnose(
                         "显式材料已检查；不保存快照。",
                     )
                 )
+    if scope == "docling-runtime" and selected is not None:
+        from paper_radar.doctor.docling_runtime import runtime_checks
+
+        checks.extend(runtime_checks(selected))
     passed = all(check.result is Result.PASSED for check in checks)
     typer.echo(f"scope={scope} result={'passed' if passed else 'failed'}")
     category_result = failure.result.value if failure else "passed"
@@ -189,6 +195,11 @@ def diagnose(
             f"category={name} {label} result=not_assessed "
             f"reason=evidence_not_assessed owner={owner} 下一步：{next_step}"
         )
+    if scope == "docling-runtime":
+        from paper_radar.doctor.docling_runtime import unassessed_checks
+
+        for check in unassessed_checks():
+            _show(check)
     if passed:
         typer.echo(SUCCESS_NOTICE)
     else:

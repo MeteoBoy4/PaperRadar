@@ -66,6 +66,7 @@ doctor --scope config 检查显式配置。
 doctor --scope pi-supply 只读解释所选快照的供给。
 
 doctor --scope pi-exec 用显式 snapshot 和 credentials-dir 只读解释执行阻断。
+doctor --scope docling-runtime 恰选 settings/snapshot 检查 Docling 平台和依赖。
 doctor 不建日志；退出 0 不代表任何阶段可运行，详细规则见 docs/contracts/doctor.md。
 准备与重建不激活，所有供给命令均不调用模型。
 未实现的模型与流程配置会明确显示未就绪。

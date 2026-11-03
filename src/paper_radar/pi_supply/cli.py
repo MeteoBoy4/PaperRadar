@@ -53,7 +53,7 @@ class DoctorCommand(TyperCommand):
     def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
         if not args:
             typer.echo(
-                "请显式选择 --scope basic/config/pi-supply/pi-exec；"
+                "请显式选择 --scope basic/config/pi-supply/pi-exec/docling-runtime；"
                 "查看 paper-radar doctor --help。",
                 err=True,
             )
@@ -399,17 +399,23 @@ def activate_command(
     )
 
 
-DOCTOR_HELP = """只读诊断显式选定的 basic/config/pi-supply/pi-exec 范围。
+DOCTOR_HELP = """只读诊断显式选定范围。
+可选 basic/config/pi-supply/pi-exec/docling-runtime。
 
 参数与选项：--scope 与 --database 必填；basic 不接受配置选择；config 必须恰选
---settings 或 --snapshot；pi-supply 仅接受 --snapshot；pi-exec 必须显式
+--settings 或 --snapshot；docling-runtime 同样恰选一个配置材料，仅按需检查平台和依赖；
+pi-supply 仅接受 --snapshot；pi-exec 必须显式
 --snapshot 与 --credentials-dir。无默认 scope 或隐式最新。
 副作用：basic/config 只读迁移与显式配置；
 pi-supply/pi-exec 读取供给引用闭包与现场全树哈希。
 pi-exec 只查凭据元数据和本机隔离能力；Cwd/Live 证据缺失或必要项未验即退出 2。
 不运行程序、不联网、不读取凭据内容、不保存快照、不创建日志或目录。
 输出去向：终端分别显示当前匹配、配置缺项、历史现场、保留保护与未验证能力。
-基础或选择层失败返回 2；阶段 missing 不改变退出码；0 不代表任何阶段可运行。
+基础或选择层失败返回 2；basic/config 的阶段 missing 不改变退出码；
+0 不代表任何阶段可运行。
+docling-runtime 另要求明确选择 extraction、支持平台及依赖发现/精确版本通过；
+缺包/未选择为 missing，版本/平台不符或未知为 invalid，阻断退出 2；
+模型/native ABI/fixture/资源为非必要 not_assessed，必要项通过退出 0。
 供给必需项缺失、损坏或实际树超过四棵时返回2；0仅表示该scope通过。
 Profile/模型/Read配置缺项单独披露，不代表全项目就绪；不授予模型或校准资格。
 自动配额：消耗0次Screening、复用升级或精读配额。帮助不创建文件或连接数据库。
@@ -421,7 +427,10 @@ Profile/模型/Read配置缺项单独披露，不代表全项目就绪；不授�
 
 def doctor_command(
     scope: Annotated[
-        str, typer.Option("--scope", help="显式范围：basic/config/pi-supply/pi-exec。")
+        str,
+        typer.Option(
+            "--scope", help="显式范围：basic/config/pi-supply/pi-exec/docling-runtime。"
+        ),
     ],
     database: Annotated[
         Path, typer.Option("--database", help="既有数据库，只读打开。", readable=False)
@@ -444,15 +453,19 @@ def doctor_command(
         ),
     ] = None,
 ) -> None:
-    if scope not in {"basic", "config", "pi-supply", "pi-exec"}:
+    if scope not in {"basic", "config", "pi-supply", "pi-exec", "docling-runtime"}:
         typer.echo(
-            "诊断范围无效；请显式使用 --scope basic/config/pi-supply/pi-exec。",
+            "诊断范围无效；请显式使用 --scope "
+            "basic/config/pi-supply/pi-exec/docling-runtime。",
             err=True,
         )
         raise typer.Exit(2)
     if (
         (scope == "basic" and (settings is not None or snapshot is not None))
-        or (scope == "config" and ((settings is None) == (snapshot is None)))
+        or (
+            scope in {"config", "docling-runtime"}
+            and ((settings is None) == (snapshot is None))
+        )
         or (
             scope in {"pi-supply", "pi-exec"}
             and (settings is not None or snapshot is None)
@@ -461,7 +474,7 @@ def doctor_command(
         or (scope != "pi-exec" and credentials_dir is not None)
     ):
         typer.echo(
-            "配置选择无效；config 恰选 --settings 或 --snapshot；"
+            "配置选择无效；config/docling-runtime 恰选 --settings 或 --snapshot；"
             "pi-supply 必须仅选 --snapshot；pi-exec 必须选 --snapshot 与 "
             "--credentials-dir；basic 无需选择，其他范围不接受凭据目录。",
             err=True,
@@ -477,7 +490,7 @@ def doctor_command(
             typer.echo("只读诊断中断；请重试。", err=True)
             raise typer.Exit(130) from None
         return
-    if scope in {"basic", "config"}:
+    if scope in {"basic", "config", "docling-runtime"}:
         from paper_radar.doctor.cli import diagnose
 
         try:

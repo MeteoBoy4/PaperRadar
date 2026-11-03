@@ -108,6 +108,14 @@ uv run --offline --locked paper-radar doctor --scope pi-exec \
 
 它仅检查凭据元数据，不刷新、不解析 token；Cwd/Live 产品证据仍缺失，单项通过不代表可执行。
 
+`docling-runtime` 恰选 settings 或 snapshot，检查当前平台与所选依赖；模型、native ABI、
+fixture/质量与资源仍为 not_assessed，详情见[公共探测契约](docs/contracts/docling-runtime.md)。
+
+```bash
+uv run --offline --locked paper-radar doctor --scope docling-runtime \
+  --database data/paperradar.sqlite3 --settings examples/config/settings-extraction-v2.yaml
+```
+
 doctor/help 不建库或日志，不调用网络、模型或 Docling。选择规则、六阶段 readiness、
 外发说明和证明边界见 [doctor Contract](docs/contracts/doctor.md)。
 
