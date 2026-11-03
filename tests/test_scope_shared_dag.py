@@ -169,7 +169,19 @@ def test_production_migration_keeps_exact_materials_counts_and_graph() -> None:
         ),
     ]
     assert len(expectation_additions) == 10
-    additions = expectation_additions + preparation["added_bindings"]
+    # #146已授权的新生产消费闭包,不从当前登记动态推导。
+    abstract_version_additions = [
+        {
+            "group": "A10",
+            "kind": "source",
+            "path": "src/paper_radar/fixture_audit/abstract_versions.py",
+        },
+    ]
+    additions = (
+        abstract_version_additions
+        + expectation_additions
+        + preparation["added_bindings"]
+    )
     assert len(report["files"]) == 1175 + len(additions)
     assert report["order"] == ledger["original_order"]
     assert report["downstream"] == ledger["original_downstream"]

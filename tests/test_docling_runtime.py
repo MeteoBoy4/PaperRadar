@@ -201,6 +201,8 @@ def test_unsupported_or_unknown_platform_never_passes_even_with_all_packages(
     elif fact == "libc":
         monkeypatch.setattr(os, "confstr", lambda _name: value)
     elif fact == "abi":
+        # CPython 3.12 没有 free-threaded 构建,缺省 ABI 标志不表示未知。
+        monkeypatch.setattr(sys, "version_info", (3, 13, 0))
         monkeypatch.setattr(sysconfig, "get_config_var", lambda _name: value)
     elif fact == "python":
         monkeypatch.setattr(sys, "version_info", value)
@@ -267,12 +269,16 @@ def test_nonposix_interpreter_without_abiflags_is_controlled(
     assert result.reason == "platform_unsupported"
 
 
-def test_unreadable_abi_fact_is_unknown_and_blocks_success(
+@pytest.mark.parametrize("minor", [12, 13, 14])
+def test_unreadable_abi_fact_respects_cpython_build_guarantees(
     monkeypatch: pytest.MonkeyPatch,
+    minor: int,
 ) -> None:
+    import sys
     import sysconfig
 
     environment(monkeypatch)
+    monkeypatch.setattr(sys, "version_info", (3, minor, 0))
 
     def unreadable(_name: str) -> object:
         raise OSError("SECRET")
@@ -281,5 +287,7 @@ def test_unreadable_abi_fact_is_unknown_and_blocks_success(
     result = probe_docling_runtime(
         "docling-2.135.0-cpu-v2", "pypdfium2", requested=True, enabled=True
     )
-    assert result.reason == "platform_unknown"
-    assert not result.passed
+    assert result.reason == (
+        "dependencies_discoverable" if minor == 12 else "platform_unknown"
+    )
+    assert result.passed is (minor == 12)

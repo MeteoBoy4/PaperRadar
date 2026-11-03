@@ -54,7 +54,8 @@ extra 支持 Linux x86_64、glibc ≥2.28、普通启用 GIL 的 CPython 3.12–
 实际安装点为 3.12.14 / 3.13.15 / 3.14.4，其他 patch 未实测。
 安装、模型供给与正文质量分别验证；支持限制、离线失败与模型冻结规则见
 [CPU extra 安装](docs/contracts/extraction-config.md#cpu-extra-安装与支持面)，
-实测范围见[安装证据](docs/verification/issue-152-docling-installation.md)。
+实测范围见[安装证据](docs/verification/issue-152-docling-installation.md)，组合覆盖、
+历史证据适用性与最终门禁判据见[Extra 交付索引](docs/verification/issue-150-extra-delivery.md)。
 
 长时间测试前可运行只读环境检查：
 
