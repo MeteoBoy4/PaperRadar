@@ -211,6 +211,8 @@ uv run --offline --locked paper-radar config compile \
 | [settings-value.yaml](examples/config/settings-value.yaml) | 两阶段 Screening 配置 |
 | [settings-reuse.yaml](examples/config/settings-reuse.yaml) | 复用升级与建议配置 |
 | [settings-extraction.yaml](examples/config/settings-extraction.yaml) | 正文提取工具链与模型配置，不运行 Docling |
+| [settings-extraction-v2.yaml](examples/config/settings-extraction-v2.yaml) | v2 工具链、pypdfium2 显式选择与合成模型身份 |
+| [settings-extraction-v2-threaded.yaml](examples/config/settings-extraction-v2-threaded.yaml) | v2 工具链、threaded 显式选择与独立解析语义 |
 | [settings-pi.yaml](examples/config/settings-pi.yaml) | Pi adapter 槽与系统指令配置，不启动 Pi |
 | [settings-journals.yaml](examples/config/settings-journals.yaml) | 期刊身份与信誉登记 |
 | [settings-read.yaml](examples/config/settings-read.yaml) | Read 缺少契约选择的配置示例 |

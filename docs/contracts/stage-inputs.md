@@ -306,6 +306,10 @@ backend descriptor、组件版本、模型材料、完整解析配置与 `normal
 均经既有 extraction 投影进入，不另设事实字段。不接收题名、DOI、论文摘要、路径、下载
 时间、耗时、安装/供给身份或其他额外字段。构造只检查 extraction 自身的 StageReadiness，
 不要求 Screening、Profile 或模型槽就绪；无关 Screening/Profile 变化不改变此输入。
+工具链通过[受控清单](extraction-config.md#受控工具链)展开实际消费的组件；
+相同 PDF 下 v1/v2 的 core 变化改变投影与 extraction 输入身份，切换 PDF 后端也改变身份。
+声明版本、工具链标签、Typer、安装来源和现场库存不作为额外语义输入；仅安装 parse
+不改变 pypdfium2 输入。历史输入按明确历史快照回放，不随当前供给自动改选。
 
 build/replay 均返回不可直接构造的 `StageInput`，其受控 `stage` 固定为
 `StageName.EXTRACTION`，`facts` 为独立强类型 `ExtractionFacts`。与 Screening 的文本
@@ -324,6 +328,10 @@ build/replay 均返回不可直接构造的 `StageInput`，其受控 `stage` 固
 阶段输入格式 1 的指纹为
 `6ca4e413c842ded79f4d244ebf278fecc62009b3599aa0cd5e7c39084566b0df`。
 向量由独立载荷字面量及 SHA-256 核算固定，未用 builder 生成期望。
+v2 两后端的独立新增向量位于
+[`tests/fixtures/docling_v2/`](../../tests/fixtures/docling_v2/)，
+保留原 v1 向量与身份；新增覆盖与人工预期依据见
+[配置工具链覆盖台账](../verification/issue-150-toolchain-config.md)。
 支持的 normalization 算法与配置拒绝见[正文提取配置契约](extraction-config.md)。
 
 <a id="c1-已知未决问题封面识别的论文元数据依赖"></a>

@@ -17,7 +17,7 @@
 | 字段 | 必填性、默认值与约束 |
 | --- | --- |
 | `version` | 必填声明标签，格式同 Profile；必须与 selector 完全相同。 |
-| `toolchain` | 必填，仅支持 `docling-2.135.0-cpu-v1`，从项目受控清单选择整个组合。 |
+| `toolchain` | 必填，支持 `docling-2.135.0-cpu-v1`、`docling-2.135.0-cpu-v2`，从项目受控清单显式选择整个组合。 |
 | `pdf_backend` | 可省略，默认 `pypdfium2`；另允许显式 `threaded_docling_parse`，不自动 fallback。 |
 | `models` | 必填严格对象；必填 `layout`、`table`；公式开启时必须有 `formula`，关闭时必须省略或写 `null`。 |
 | `policy` | 可省略或 `{}`，补全下表的显式有效值；`null`、自由 options、未知字段拒绝。 |
@@ -30,21 +30,35 @@
 
 ## 受控工具链
 
-唯一权威是包内 [`config/extraction_toolchain.py`](../../src/paper_radar/config/extraction_toolchain.py)
-的不可变版本清单：
-`docling-slim=2.135.0`、`docling-core=2.101.1`、`docling-ibm-models=4.0.3`、
+唯一权威是包内 [`docling_toolchain.py`](../../src/paper_radar/docling_toolchain.py)
+的不可变版本清单；旧 `config.extraction_toolchain` import 保持兼容。
+两个工具链共同固定：`docling-slim=2.135.0`、`docling-ibm-models=4.0.3`、
 `pypdfium2=5.14.0`、`torch=2.14.1+cpu`、`torchvision=0.29.1+cpu`、
 `transformers=5.19.0`；threaded 路线另消费 `docling-parse=7.22.2`。
+
+| 工具链选择 | docling-core 语义身份 | CLI 供给约束 |
+| --- | --- | --- |
+| `docling-2.135.0-cpu-v1` | `2.101.1` | 历史清单未冻结 Typer 约束 |
+| `docling-2.135.0-cpu-v2` | `2.105.0` | `typer=0.27.2` |
+
 `docling` 是转换器名称，实际实现发行包为 `docling-slim`；core 是文档数据模型，
 parse 是所选 PDF 后端包。pypdfium2 路线不把未消费的 parse 包塞入语义；threaded
 路线同时使用 pypdfium2 的 PDF 渲染/回查能力。版本不能由用户分别自由填写。
+
+权威模块只依赖 stdlib，import 不探测本机。`backend_identity(toolchain, pdf_backend)`
+给出所选后端的解析语义；`toolchain_supply(toolchain)` 返回不可变 `ToolchainSupply`，
+`component_versions` 为完整解析供给（含 parse），`cli_constraints` 单列 CLI 供给约束。
+两字段都是 `(发行包名, 精确版本)` 的 tuple；不含安装来源、索引或机器路径。
+Typer 不进入 backend identity、extraction 投影或 StageInput；供给视图不表示当前已安装，
+不能用 parse 的安装或发现情况反推 threaded 已启用。实际供给仍由产品依赖与锁约束。
 
 这些版本仅表示受支持声明组合，不证明生产最小 slim 安装兼容或 fixture 已通过。
 项目没有 Docling extra；此配置边界不提供解析依赖，执行环境依赖由
 [`pyproject.toml`](../../pyproject.toml) 与 [`uv.lock`](../../uv.lock) 声明和锁定。
 编译将所选组合的 `backend_id`、`backend_version`、`component_versions` 与完整有效 `backend_config`
 展开随快照保存；load 从 SQLite 原材料重新校验与存档的组合一致，漂移拒绝，
-不能静默用新清单或新默认解释旧记录。
+不能静默用新清单或新默认解释旧记录。load 不核对当前机器的依赖库存；没有 extra 或
+只有 v2 组件时仍可回放合法 v1 快照。合法历史与现场可执行分别判断，不自动迁移旧选择。
 
 ## 按启用阶段冻结模型文件
 
@@ -145,10 +159,14 @@ V1 `backend_id=docling`，不提供 backend 注册表、自动 fallback、A/B �
 - [`settings-extraction.yaml`](../../examples/config/settings-extraction.yaml) 及其
   [模型声明](../../examples/config/extraction/extraction-example-v1.yaml)是合成工程材料，
   文件哈希不代表真实模型字节，不能用于正式校准或 PDF 解析。
+  新配置可选完整的 [v2 pypdfium2 示例](../../examples/config/settings-extraction-v2.yaml)
+  或 [v2 threaded 示例](../../examples/config/settings-extraction-v2-threaded.yaml)，
+  各自使用新的声明版本和明确后端；同样只证明配置链可校验和回放。
 
 ## 相关
 
 依据：[#20](https://github.com/MeteoBoy4/PaperRadar/issues/20)、
+[#151](https://github.com/MeteoBoy4/PaperRadar/issues/151)、
 [配置研究 §5](../../intent/discussions/docling-issue-20-live-probe.md#5-建议对-20-配置项做的增减澄清)、
 [实测讨论 §7.4](../../intent/discussions/docling-issue-20-live-probe.md#74-这轮实验给出的优先路线)、
 [ADR-0025](../adr/0025-allow-local-formula-candidates-with-source-review.md)、
