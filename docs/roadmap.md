@@ -96,7 +96,7 @@ flowchart TD
 条目引用[阶段 A 收口清单](verification/stage-a-closure.md#原实施逐条处置)的 I/T/D 编号，原文措辞与下一责任节点以该冻结表为准（T、D 分别见其「原测试逐条处置」「原DoD逐条处置」）；责任涉及多个下游时全部保留，不以历史通过代替新消费者验收。各模块同时承接其中指向自己的阶段消费者义务。
 
 - A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04 的窄范围处置见[覆盖台账](verification/a-narrow-delivery.md)；完整阶段 A 结论与下游消费仍受收口安排约束。
-- Extra：I02；承接 [Docling 本轮探测的安装候选](verification/exp-3-docling-probe.md#锁定供给与最小组合)，交付产品可选依赖、CPU 锁文件及安装/缺失提示，核对产品既有锁与支持平台；固定组合探测已收口，不代表模块完成。
+- Extra：I02；承接 [EXP-3 安装候选](verification/exp-3-docling-probe.md#锁定供给与最小组合)与 [EXP-8 单锁、支持面及 threaded 结论](https://github.com/MeteoBoy4/PaperRadar/issues/149#issuecomment-6605884465)，交付产品可选依赖、CPU 锁文件及安装/缺失提示，核对产品既有锁与支持平台。`core 2.105.0 + Typer 0.27.2` 须完成组合全量验证后再正式固定；全量 pytest 仍暂停，旧工具链清单不改写。EXP-8 探测结论或实验票关闭不代表 Extra 完成。
 - Pi/Cwd/Live：I04、I05、T05、T07、T08、T12；Pi 工程切片与同次最终门禁判据见[独立台账](verification/issue-140-gate-followup.md)；Pi 另承接[生产启动器准入](../intent/draft.md#pi-生产启动器准入)，Live 另承接[首次 Pi 生产接线](../intent/draft.md#b-首次-pi-生产接线)（首次实际供给/RPC 与预检），依据 [pi-rpc](contracts/pi-rpc.md)。
 - Cwd/Live：承接 Pi 的主机级出站、cwd 祖先资源/现场隔离、DERIVED-01…11（尤其 02 cwd 包装）、订阅凭据刷新与 token 通道/前缀启发式、计划模型权限与限额、采样映射、TLS/DNS 白名单充分性；工程证据与未验范围见[Pi 台账](verification/issue-140-gate-followup.md)。B 仍负责真实产品入口、实验根、所选根安全日志与用途资格，Pi 工程通过不使 B 自动进入前沿。
 - Audit/Source：I14、I15、T01、T26 的首轮结论见[实测证据](verification/exp-1-http-audit.md)，v2 适用证据与暂停移交见[新计划报告](verification/exp-1-http-audit-v2.md)；两个计划均保留 partial，未完成的四刊材料与完成计划 fixture 引用由 C/F 承接，不回写历史离线结论。
@@ -137,7 +137,6 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 | EXP-5 | 正式校准与 NAS 恢复 | D、I | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
 | EXP-6 | `orig` 持久成员哈希的具体设计与落实（由 Body/B 首个真实正文生产者票决定并在该票落实，B 首个正文生产者前确定；F 不再承担） | Body、B，首个正文生产者前 | research／原型；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
 | EXP-7 | 证据/数值规则身份归属；仅后处理警告变化是否触发模型重跑须分析（最小 Read 票决定） | Body、B | research／原型；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
-| EXP-8 | Docling extra 的锁形态（单 `uv.lock` 表达 `torch`/`torchvision` `+cpu`、是否需 conflicts）与支持平台/解释器面；`threaded_docling_parse` 的 parse 包是否纳入 | Extra | 本机只读 spike；结论写入 Extra spec；[#149](https://github.com/MeteoBoy4/PaperRadar/issues/149) |
 
 ## 用户须提供
 
