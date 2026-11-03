@@ -8,7 +8,7 @@
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-当前没有「可规格化」或「已规格化」模块；Cwd/Live 仍待探索，Pi 工程和 JGR 来源条件完成均不使 B 进入前沿。
+当前前沿为 [Extra](#module-extra)；Cwd/Live 仍待探索，Extra 规格发布、Pi 工程和 JGR 来源条件完成均不使 B 进入前沿。
 
 to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 
@@ -56,7 +56,7 @@ flowchart TD
 | <a id="module-pi"></a>Pi | Pi 离线启动器、权限资源、生产成功来源 | 已完成（[#140](https://github.com/MeteoBoy4/PaperRadar/issues/140)；[独立工程覆盖与同次门禁判据](verification/issue-140-gate-followup.md)） | 无 | AFK |
 | <a id="module-cwd"></a>Cwd | /srv/pi-cwd 现场隔离验收 | 待探索 | 无 | HITL |
 | <a id="module-live"></a>Live | 固定 1.4.0 安装与 RPC 实测 | 待探索 | Pi、Cwd | HITL |
-| <a id="module-extra"></a>Extra | Docling extra 安装与兼容探测 | 待探索 | 无 | HITL |
+| <a id="module-extra"></a>Extra | Docling extra 安装与兼容探测 | 已规格化（[#150](https://github.com/MeteoBoy4/PaperRadar/issues/150)） | 无 | AFK |
 | <a id="module-body"></a>Body | 正文生产切片、Read 身份与预算 | 未成形 | Extra | AFK |
 | <a id="module-feed"></a>Feed | 强冲突持久化、JGR 元数据与语言事实 | 已完成（[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)；[离线工程证据](verification/issue-114-feed-delivery.md)） | 无 | AFK |
 | <a id="module-b"></a>B | B 实验根内纵向闭环 | 未成形 | A、Live、Body、Feed、Source | HITL |
@@ -96,7 +96,7 @@ flowchart TD
 条目引用[阶段 A 收口清单](verification/stage-a-closure.md#原实施逐条处置)的 I/T/D 编号，原文措辞与下一责任节点以该冻结表为准（T、D 分别见其「原测试逐条处置」「原DoD逐条处置」）；责任涉及多个下游时全部保留，不以历史通过代替新消费者验收。各模块同时承接其中指向自己的阶段消费者义务。
 
 - A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04 的窄范围处置见[覆盖台账](verification/a-narrow-delivery.md)；完整阶段 A 结论与下游消费仍受收口安排约束。
-- Extra：I02；承接 [EXP-3 安装候选](verification/exp-3-docling-probe.md#锁定供给与最小组合)与 [EXP-8 单锁、支持面及 threaded 结论](https://github.com/MeteoBoy4/PaperRadar/issues/149#issuecomment-6605884465)，交付产品可选依赖、CPU 锁文件及安装/缺失提示，核对产品既有锁与支持平台。`core 2.105.0 + Typer 0.27.2` 须完成组合全量验证后再正式固定；全量 pytest 仍暂停，旧工具链清单不改写。EXP-8 探测结论或实验票关闭不代表 Extra 完成。
+- Extra：I02；承接 [EXP-3 安装候选](verification/exp-3-docling-probe.md#锁定供给与最小组合)与 [EXP-8 单锁、支持面及 threaded 结论](https://github.com/MeteoBoy4/PaperRadar/issues/149#issuecomment-6605884465)，交付产品可选依赖、CPU 单锁及显式安装/缺失诊断。规格固定 `core 2.105.0 + Typer 0.27.2` 为新工具链目标，同批交付清单、契约、新声明版本示例与测试基线；保留旧工具链与历史回放。支持 Linux x86_64、glibc ≥2.28、普通 GIL-enabled CPython 3.12–3.14，纳入 pypdfium2/threaded 两个显式后端。完成须在装好 extra 的环境跑一次完整 `check-offline` 并返回 0；既有定向测试和探索转换不替代该门禁。规格发布不表示新组合已完成产品验收，EXP-8 关闭不代表 Extra 完成。
 - Pi/Cwd/Live：I04、I05、T05、T07、T08、T12；Pi 工程切片与同次最终门禁判据见[独立台账](verification/issue-140-gate-followup.md)；Pi 另承接[生产启动器准入](../intent/draft.md#pi-生产启动器准入)，Live 另承接[首次 Pi 生产接线](../intent/draft.md#b-首次-pi-生产接线)（首次实际供给/RPC 与预检），依据 [pi-rpc](contracts/pi-rpc.md)。
 - Cwd/Live：承接 Pi 的主机级出站、cwd 祖先资源/现场隔离、DERIVED-01…11（尤其 02 cwd 包装）、订阅凭据刷新与 token 通道/前缀启发式、计划模型权限与限额、采样映射、TLS/DNS 白名单充分性；工程证据与未验范围见[Pi 台账](verification/issue-140-gate-followup.md)。B 仍负责真实产品入口、实验根、所选根安全日志与用途资格，Pi 工程通过不使 B 自动进入前沿。
 - Audit/Source：I14、I15、T01、T26 的首轮结论见[实测证据](verification/exp-1-http-audit.md)，v2 适用证据与暂停移交见[新计划报告](verification/exp-1-http-audit-v2.md)；两个计划均保留 partial，未完成的四刊材料与完成计划 fixture 引用由 C/F 承接，不回写历史离线结论。
