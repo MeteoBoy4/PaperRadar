@@ -42,6 +42,20 @@ uv sync --locked
 准备后统一使用 `uv run --offline --locked …`。其中 `--offline` 限制 uv 获取依赖，
 **不阻止业务命令联网**；Pi 准备／重建、摘要审计和 Feed 取得的副作用见相应章节。
 
+可选的 CPU Docling 供给使用同一张产品锁。首次显式准备与缓存就绪后的离线安装分别为：
+
+```bash
+uv sync --locked --extra docling
+uv sync --offline --locked --extra docling
+uv run --offline --locked --extra docling python scripts/check_docling_imports.py
+```
+
+extra 支持 Linux x86_64、glibc ≥2.28、普通启用 GIL 的 CPython 3.12–3.14；
+实际安装点为 3.12.14 / 3.13.15 / 3.14.4，其他 patch 未实测。
+安装、模型供给与正文质量分别验证；支持限制、离线失败与模型冻结规则见
+[CPU extra 安装](docs/contracts/extraction-config.md#cpu-extra-安装与支持面)，
+实测范围见[安装证据](docs/verification/issue-152-docling-installation.md)。
+
 长时间测试前可运行只读环境检查：
 
 ```bash

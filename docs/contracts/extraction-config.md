@@ -52,13 +52,64 @@ parse 是所选 PDF 后端包。pypdfium2 路线不把未消费的 parse 包塞�
 Typer 不进入 backend identity、extraction 投影或 StageInput；供给视图不表示当前已安装，
 不能用 parse 的安装或发现情况反推 threaded 已启用。实际供给仍由产品依赖与锁约束。
 
-这些版本仅表示受支持声明组合，不证明生产最小 slim 安装兼容或 fixture 已通过。
-项目没有 Docling extra；此配置边界不提供解析依赖，执行环境依赖由
-[`pyproject.toml`](../../pyproject.toml) 与 [`uv.lock`](../../uv.lock) 声明和锁定。
+产品的 `docling` optional extra 供给 v2 组合，使用
+[`pyproject.toml`](../../pyproject.toml) 与同一张 [`uv.lock`](../../uv.lock) 锁定。
+安装兼容与配置合法分别判断；安装或 import 成功不证明 fixture、模型质量或 Read/reuse 准入。
 编译将所选组合的 `backend_id`、`backend_version`、`component_versions` 与完整有效 `backend_config`
 展开随快照保存；load 从 SQLite 原材料重新校验与存档的组合一致，漂移拒绝，
 不能静默用新清单或新默认解释旧记录。load 不核对当前机器的依赖库存；没有 extra 或
 只有 v2 组件时仍可回放合法 v1 快照。合法历史与现场可执行分别判断，不自动迁移旧选择。
+
+## CPU extra 安装与支持面
+
+基础包支持 Python 3.12–3.14，无需安装 extra 即可使用 CLI 帮助、配置
+check/compile/load 与基础 doctor。extra 的声明支持范围为 Linux x86_64、
+glibc ≥2.28、普通启用 GIL 的 CPython 3.12–3.14；aarch64、macOS、其他 Python
+实现与 free-threaded 不支持。`required-environments` 分别覆盖三个 minor 的锁求解；
+实际安装与浅层 smoke 点为 3.12.14、3.13.15、3.14.4，其他 patch 未实测。
+依赖 marker 仅筛选 Linux x86_64 CPython，不检测 glibc/GIL；marker 跳过全部依赖时
+`uv sync` 退出 0 不能证明 extra 已安装或机器受支持。
+
+显式允许联网供给时，在项目根运行：
+
+```bash
+uv sync --locked --extra docling
+```
+
+解释器与全部所需 wheel/build 依赖已在本地缓存后，可以离线锁定安装：
+
+```bash
+uv sync --offline --locked --extra docling
+uv run --offline --locked --extra docling python scripts/check_docling_imports.py
+```
+
+选择其他解释器时，给 `uv sync` 显式传 `--python <解释器路径>`，并用
+`UV_PROJECT_ENVIRONMENT=<独立磁盘环境目录>` 区分环境。离线缓存不足时 uv 返回非零；
+保持失败，单独取得联网授权后按锁补齐缓存，再重试离线命令。不会自动联网、换索引、
+换版本或使用 GPU wheel。普通 pip 安装不视为同一产品锁供给。
+
+extra 只选择 slim 的 `convert-core`、`format-pdf`、`models-local`，IBM models
+使用 `opencv-python-headless`，使 TableFormer 所需 cv2 可导入；不安装完整 `docling`
+元包、OCR、CUDA 或整个 `models-vlm-inline`。torch/torchvision 精确使用
+`2.14.1+cpu` / `0.29.1+cpu`，来源为显式官方 `pytorch-cpu` 索引
+`https://download.pytorch.org/whl/cpu`，其余组件按 v2 清单与产品锁供给。
+
+两个后端同时安装，配置仍须通过 `pdf_backend` 选择；不会自动 fallback，也不会因
+parse 已安装而把其版本加入 pypdfium2 的阶段语义。两后端输出不视为相等。
+新配置示例为 `settings-extraction-v2.yaml` 与 `settings-extraction-v2-threaded.yaml`；
+它们的模型哈希是合成声明，不是可执行模型供给。
+
+`check_docling_imports.py` 是独立显式 smoke，核对安装库存、CPU 状态及 converter、
+两个后端、TableFormer、Transformers、cv2 导入。普通离线 pytest 不运行此 smoke，
+不要求安装 Docling、模型或 PDF。已装 extra 的环境中，普通
+`uv run --offline --locked …` 默认保留额外已装包；`uv sync` 则按选定 extra 精确同步，
+因此需要 extra 时仍显式传 `--extra docling`，并在组合验证前后核对库存。
+
+Python 依赖与模型文件分开供给。安装及 smoke 不下载或加载模型；实际模型仍按下节
+启用阶段的 commit 与逐文件 SHA-256 冻结，不自动取得或替换。EXP-3/EXP-8 只提供各自
+冻结样本与组合的历史证据；组件、模型和选项适用性核对及本次安装矩阵见
+[独立安装证据](../verification/issue-152-docling-installation.md)。这些结果不承诺 wheel
+或模型的脱网重建，不覆盖模型加载、整篇转换、四刊 fixture 或生产正文质量。
 
 ## 按启用阶段冻结模型文件
 

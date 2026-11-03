@@ -1,0 +1,1431 @@
+{
+  "scope": "#152 independent installation evidence, not an offline acceptance receipt",
+  "implementation_base": "f6736d2794f50ac78a541c39c8b40cdae4e8d280",
+  "uv_version": "uv 0.12.15 (x86_64-unknown-linux-gnu)",
+  "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+  "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905",
+  "installation": "uv sync --offline --locked --extra docling --link-mode copy --python <existing interpreter>; new independent on-disk environments; default dev included",
+  "cache_prerequisite": "Existing EXP-8 cache copied to isolated on-disk cache; no network or model supply performed",
+  "base_packages": {
+    "alembic": {
+      "version": "1.20.0",
+      "full_record_unchanged": true,
+      "exploration_record_equal": true,
+      "before_record_sha256": "9aa2d795c0ce75400d361d4c3e85ab801ec083a301317b38eb497e48fae22ec4",
+      "after_record_sha256": "9aa2d795c0ce75400d361d4c3e85ab801ec083a301317b38eb497e48fae22ec4"
+    },
+    "httpx": {
+      "version": "0.28.1",
+      "full_record_unchanged": true,
+      "exploration_record_equal": true,
+      "before_record_sha256": "99e487961db733297834945936893ba07bc917436aacaa854108da4f0775e944",
+      "after_record_sha256": "99e487961db733297834945936893ba07bc917436aacaa854108da4f0775e944"
+    },
+    "pydantic": {
+      "version": "2.13.5",
+      "full_record_unchanged": true,
+      "exploration_record_equal": true,
+      "before_record_sha256": "21e0fd57092597eb9c262b3ae0b3fa63b8845288c410986b6b1e4cc32624b5df",
+      "after_record_sha256": "21e0fd57092597eb9c262b3ae0b3fa63b8845288c410986b6b1e4cc32624b5df"
+    },
+    "pyyaml": {
+      "version": "6.0.3",
+      "full_record_unchanged": true,
+      "exploration_record_equal": true,
+      "before_record_sha256": "b8cbca026187108d3d7bbca9a166ebe3cc37763d5e2ff3deb33ae7a4357eea36",
+      "after_record_sha256": "b8cbca026187108d3d7bbca9a166ebe3cc37763d5e2ff3deb33ae7a4357eea36"
+    },
+    "sqlalchemy": {
+      "version": "2.0.54",
+      "full_record_unchanged": true,
+      "exploration_record_equal": true,
+      "before_record_sha256": "eba4020ec6f5063d17218a9735f89f973e2aa507f9078a23fe912db0f88c17b5",
+      "after_record_sha256": "eba4020ec6f5063d17218a9735f89f973e2aa507f9078a23fe912db0f88c17b5"
+    },
+    "typer": {
+      "version": "0.27.2",
+      "full_record_unchanged": true,
+      "exploration_record_equal": true,
+      "before_record_sha256": "5bb82a1e108d7ac2ce41d08e7223bb0272337ae51c2c60a8f9aae8bc60c6ec8a",
+      "after_record_sha256": "5bb82a1e108d7ac2ce41d08e7223bb0272337ae51c2c60a8f9aae8bc60c6ec8a"
+    }
+  },
+  "matrix": [
+    {
+      "python": "3.12.14 (main, Sep  1 2026, 14:16:52) [Clang 22.1.3 ]",
+      "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+      "machine": "x86_64",
+      "implementation": "CPython",
+      "libc": [
+        "glibc",
+        "2.43"
+      ],
+      "gil_enabled": true,
+      "torch_cuda": null,
+      "environment": "py312",
+      "install_exit": 0,
+      "pip_check_exit": 0,
+      "import_smoke_exit": 0,
+      "pytest_summary": "201 passed in 80.20s (0:01:20)",
+      "inventory_count": 85,
+      "inventory_before_sha256": "0c0471d7f3d4bbc37b9f019fbca8200310db256c954c525d06e1fe440c38c521",
+      "inventory_after_sha256": "0c0471d7f3d4bbc37b9f019fbca8200310db256c954c525d06e1fe440c38c521",
+      "install_command": [
+        "uv",
+        "sync",
+        "--offline",
+        "--locked",
+        "--extra",
+        "docling",
+        "--link-mode",
+        "copy",
+        "--python",
+        "<existing 3.12.14 interpreter>"
+      ],
+      "install_log_sha256": "ea9196151f120334060f363e1ce2864322ca00bd36c72611d88c46eacc427e75",
+      "explicit_native_import_exit": 0,
+      "explicit_native_import_command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py312/bin/python",
+        "python",
+        "scripts/check_docling_imports.py"
+      ],
+      "final_smoke_imports": {
+        "docling.document_converter": [
+          "DocumentConverter",
+          "PdfFormatOption"
+        ],
+        "docling.backend.pypdfium2_backend": [
+          "PyPdfiumDocumentBackend"
+        ],
+        "docling.backend.docling_parse_backend": [
+          "ThreadedDoclingParseDocumentBackend"
+        ],
+        "docling_parse.pdf_parser": [
+          "DoclingThreadedPdfParser"
+        ],
+        "pypdfium2": [
+          "PdfDocument"
+        ],
+        "docling_ibm_models.tableformer.data_management.tf_predictor": [
+          "TFPredictor"
+        ],
+        "transformers": [
+          "AutoModelForImageTextToText",
+          "AutoModelForObjectDetection",
+          "AutoProcessor"
+        ],
+        "cv2": [
+          "__version__"
+        ],
+        "torchvision": [
+          "__version__"
+        ]
+      },
+      "final_smoke_stdout_sha256": "02ab2e8ec4fcff1f441ce5d3a5bc0ee4cdecc052b3523db47abedfa243e2313f"
+    },
+    {
+      "python": "3.13.15 (main, Sep  1 2026, 14:18:08) [Clang 22.1.3 ]",
+      "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+      "machine": "x86_64",
+      "implementation": "CPython",
+      "libc": [
+        "glibc",
+        "2.43"
+      ],
+      "gil_enabled": true,
+      "torch_cuda": null,
+      "environment": "py313",
+      "install_exit": 0,
+      "pip_check_exit": 0,
+      "import_smoke_exit": 0,
+      "pytest_summary": "201 passed in 90.52s (0:01:30)",
+      "inventory_count": 85,
+      "inventory_before_sha256": "0c0471d7f3d4bbc37b9f019fbca8200310db256c954c525d06e1fe440c38c521",
+      "inventory_after_sha256": "0c0471d7f3d4bbc37b9f019fbca8200310db256c954c525d06e1fe440c38c521",
+      "install_command": [
+        "uv",
+        "sync",
+        "--offline",
+        "--locked",
+        "--extra",
+        "docling",
+        "--link-mode",
+        "copy",
+        "--python",
+        "<existing 3.13.15 interpreter>"
+      ],
+      "install_log_sha256": "3e213f81ce6ff8abb53a450f4e64e249218cf1cb153e4da0b64b737ac8912900",
+      "explicit_native_import_exit": 0,
+      "explicit_native_import_command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py313/bin/python",
+        "python",
+        "scripts/check_docling_imports.py"
+      ],
+      "final_smoke_imports": {
+        "docling.document_converter": [
+          "DocumentConverter",
+          "PdfFormatOption"
+        ],
+        "docling.backend.pypdfium2_backend": [
+          "PyPdfiumDocumentBackend"
+        ],
+        "docling.backend.docling_parse_backend": [
+          "ThreadedDoclingParseDocumentBackend"
+        ],
+        "docling_parse.pdf_parser": [
+          "DoclingThreadedPdfParser"
+        ],
+        "pypdfium2": [
+          "PdfDocument"
+        ],
+        "docling_ibm_models.tableformer.data_management.tf_predictor": [
+          "TFPredictor"
+        ],
+        "transformers": [
+          "AutoModelForImageTextToText",
+          "AutoModelForObjectDetection",
+          "AutoProcessor"
+        ],
+        "cv2": [
+          "__version__"
+        ],
+        "torchvision": [
+          "__version__"
+        ]
+      },
+      "final_smoke_stdout_sha256": "ae3c0e5c169babc3b04d2bf6d4b4015ac952cde020b3baf497810d0101705e2f"
+    },
+    {
+      "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+      "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+      "machine": "x86_64",
+      "implementation": "CPython",
+      "libc": [
+        "glibc",
+        "2.43"
+      ],
+      "gil_enabled": true,
+      "torch_cuda": null,
+      "environment": "py314",
+      "install_exit": 0,
+      "pip_check_exit": 0,
+      "import_smoke_exit": 0,
+      "pytest_summary": "201 passed in 79.94s (0:01:19)",
+      "inventory_count": 85,
+      "inventory_before_sha256": "0c0471d7f3d4bbc37b9f019fbca8200310db256c954c525d06e1fe440c38c521",
+      "inventory_after_sha256": "0c0471d7f3d4bbc37b9f019fbca8200310db256c954c525d06e1fe440c38c521",
+      "install_command": [
+        "uv",
+        "sync",
+        "--offline",
+        "--locked",
+        "--extra",
+        "docling",
+        "--link-mode",
+        "copy",
+        "--python",
+        "<existing 3.14.4 interpreter>"
+      ],
+      "install_log_sha256": "bcc14434a53682c6410bdea4baf5a7d087627a494b23a89146a440da5308cf67",
+      "explicit_native_import_exit": 0,
+      "explicit_native_import_command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py314/bin/python",
+        "python",
+        "scripts/check_docling_imports.py"
+      ],
+      "final_smoke_imports": {
+        "docling.document_converter": [
+          "DocumentConverter",
+          "PdfFormatOption"
+        ],
+        "docling.backend.pypdfium2_backend": [
+          "PyPdfiumDocumentBackend"
+        ],
+        "docling.backend.docling_parse_backend": [
+          "ThreadedDoclingParseDocumentBackend"
+        ],
+        "docling_parse.pdf_parser": [
+          "DoclingThreadedPdfParser"
+        ],
+        "pypdfium2": [
+          "PdfDocument"
+        ],
+        "docling_ibm_models.tableformer.data_management.tf_predictor": [
+          "TFPredictor"
+        ],
+        "transformers": [
+          "AutoModelForImageTextToText",
+          "AutoModelForObjectDetection",
+          "AutoProcessor"
+        ],
+        "cv2": [
+          "__version__"
+        ],
+        "torchvision": [
+          "__version__"
+        ]
+      },
+      "final_smoke_stdout_sha256": "039c09dcfdbaa47e5d79c58326f07df37f674e8aaf80d9158a0c86afeea6678d"
+    }
+  ],
+  "common_extra_inventory": [
+    {
+      "name": "accelerate",
+      "version": "1.15.0"
+    },
+    {
+      "name": "alembic",
+      "version": "1.20.0"
+    },
+    {
+      "name": "annotated-doc",
+      "version": "0.0.5"
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0"
+    },
+    {
+      "name": "anyio",
+      "version": "4.15.1"
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.7.22"
+    },
+    {
+      "name": "charset-normalizer",
+      "version": "3.5.2"
+    },
+    {
+      "name": "click",
+      "version": "8.5.0"
+    },
+    {
+      "name": "defusedxml",
+      "version": "0.7.1"
+    },
+    {
+      "name": "doclang",
+      "version": "0.8.1"
+    },
+    {
+      "name": "docling-core",
+      "version": "2.105.0"
+    },
+    {
+      "name": "docling-ibm-models",
+      "version": "4.0.3"
+    },
+    {
+      "name": "docling-parse",
+      "version": "7.22.2"
+    },
+    {
+      "name": "docling-slim",
+      "version": "2.135.0"
+    },
+    {
+      "name": "filelock",
+      "version": "4.2.7"
+    },
+    {
+      "name": "filetype",
+      "version": "1.2.0"
+    },
+    {
+      "name": "fsspec",
+      "version": "2026.9.0"
+    },
+    {
+      "name": "greenlet",
+      "version": "3.5.6"
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0"
+    },
+    {
+      "name": "hf-xet",
+      "version": "1.8.0"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1"
+    },
+    {
+      "name": "huggingface_hub",
+      "version": "1.33.0"
+    },
+    {
+      "name": "idna",
+      "version": "3.20"
+    },
+    {
+      "name": "iniconfig",
+      "version": "2.3.0"
+    },
+    {
+      "name": "Jinja2",
+      "version": "3.1.6"
+    },
+    {
+      "name": "jsonref",
+      "version": "1.1.0"
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.26.0"
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1"
+    },
+    {
+      "name": "langcodes",
+      "version": "3.5.1"
+    },
+    {
+      "name": "latex2mathml",
+      "version": "3.81.1"
+    },
+    {
+      "name": "librt",
+      "version": "0.15.0"
+    },
+    {
+      "name": "lxml",
+      "version": "6.1.3"
+    },
+    {
+      "name": "Mako",
+      "version": "1.4.3"
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "4.2.0"
+    },
+    {
+      "name": "MarkupSafe",
+      "version": "3.0.3"
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2"
+    },
+    {
+      "name": "mpmath",
+      "version": "1.3.0"
+    },
+    {
+      "name": "mypy",
+      "version": "1.20.2"
+    },
+    {
+      "name": "mypy_extensions",
+      "version": "1.1.0"
+    },
+    {
+      "name": "networkx",
+      "version": "3.7"
+    },
+    {
+      "name": "numpy",
+      "version": "2.5.4"
+    },
+    {
+      "name": "opencv-python-headless",
+      "version": "4.14.0.94"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3"
+    },
+    {
+      "name": "pandas",
+      "version": "3.1.0"
+    },
+    {
+      "name": "paper-radar",
+      "version": "0.1.0"
+    },
+    {
+      "name": "pathspec",
+      "version": "1.1.1"
+    },
+    {
+      "name": "pillow",
+      "version": "12.3.0"
+    },
+    {
+      "name": "pluggy",
+      "version": "1.6.0"
+    },
+    {
+      "name": "psutil",
+      "version": "7.2.2"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.13.5"
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.16.2"
+    },
+    {
+      "name": "pydantic_core",
+      "version": "2.46.5"
+    },
+    {
+      "name": "Pygments",
+      "version": "2.21.0"
+    },
+    {
+      "name": "pypdfium2",
+      "version": "5.14.0"
+    },
+    {
+      "name": "pytest",
+      "version": "8.4.2"
+    },
+    {
+      "name": "python-dateutil",
+      "version": "4.0.0"
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.4"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3"
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0"
+    },
+    {
+      "name": "regex",
+      "version": "2026.9.29"
+    },
+    {
+      "name": "requests",
+      "version": "2.34.2"
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0"
+    },
+    {
+      "name": "rpds-py",
+      "version": "2026.9.1"
+    },
+    {
+      "name": "rtree",
+      "version": "1.4.1"
+    },
+    {
+      "name": "ruff",
+      "version": "0.16.8"
+    },
+    {
+      "name": "safetensors",
+      "version": "0.8.0"
+    },
+    {
+      "name": "scipy",
+      "version": "1.18.1"
+    },
+    {
+      "name": "setuptools",
+      "version": "84.2.1"
+    },
+    {
+      "name": "shellingham",
+      "version": "1.5.4"
+    },
+    {
+      "name": "SQLAlchemy",
+      "version": "2.0.54"
+    },
+    {
+      "name": "sympy",
+      "version": "1.14.0"
+    },
+    {
+      "name": "tabulate",
+      "version": "0.10.0"
+    },
+    {
+      "name": "tokenizers",
+      "version": "0.23.3"
+    },
+    {
+      "name": "torch",
+      "version": "2.14.1+cpu"
+    },
+    {
+      "name": "torchvision",
+      "version": "0.29.1+cpu"
+    },
+    {
+      "name": "tqdm",
+      "version": "4.70.1"
+    },
+    {
+      "name": "transformers",
+      "version": "5.19.0"
+    },
+    {
+      "name": "typer",
+      "version": "0.27.2"
+    },
+    {
+      "name": "types-PyYAML",
+      "version": "6.0.12.20260906"
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.4"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0"
+    },
+    {
+      "name": "tzdata",
+      "version": "2026.6"
+    },
+    {
+      "name": "urllib3",
+      "version": "2.8.0"
+    }
+  ],
+  "base_environment": {
+    "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "inventory": [
+      {
+        "name": "alembic",
+        "version": "1.20.0"
+      },
+      {
+        "name": "annotated-doc",
+        "version": "0.0.5"
+      },
+      {
+        "name": "annotated-types",
+        "version": "0.8.0"
+      },
+      {
+        "name": "anyio",
+        "version": "4.15.1"
+      },
+      {
+        "name": "certifi",
+        "version": "2026.7.22"
+      },
+      {
+        "name": "greenlet",
+        "version": "3.5.6"
+      },
+      {
+        "name": "h11",
+        "version": "0.16.0"
+      },
+      {
+        "name": "httpcore",
+        "version": "1.0.9"
+      },
+      {
+        "name": "httpx",
+        "version": "0.28.1"
+      },
+      {
+        "name": "idna",
+        "version": "3.20"
+      },
+      {
+        "name": "iniconfig",
+        "version": "2.3.0"
+      },
+      {
+        "name": "librt",
+        "version": "0.15.0"
+      },
+      {
+        "name": "Mako",
+        "version": "1.4.3"
+      },
+      {
+        "name": "markdown-it-py",
+        "version": "4.2.0"
+      },
+      {
+        "name": "MarkupSafe",
+        "version": "3.0.3"
+      },
+      {
+        "name": "mdurl",
+        "version": "0.1.2"
+      },
+      {
+        "name": "mypy",
+        "version": "1.20.2"
+      },
+      {
+        "name": "mypy_extensions",
+        "version": "1.1.0"
+      },
+      {
+        "name": "packaging",
+        "version": "26.3"
+      },
+      {
+        "name": "paper-radar",
+        "version": "0.1.0"
+      },
+      {
+        "name": "pathspec",
+        "version": "1.1.1"
+      },
+      {
+        "name": "pluggy",
+        "version": "1.6.0"
+      },
+      {
+        "name": "pydantic",
+        "version": "2.13.5"
+      },
+      {
+        "name": "pydantic_core",
+        "version": "2.46.5"
+      },
+      {
+        "name": "Pygments",
+        "version": "2.21.0"
+      },
+      {
+        "name": "pytest",
+        "version": "8.4.2"
+      },
+      {
+        "name": "PyYAML",
+        "version": "6.0.3"
+      },
+      {
+        "name": "rich",
+        "version": "15.0.0"
+      },
+      {
+        "name": "ruff",
+        "version": "0.16.8"
+      },
+      {
+        "name": "shellingham",
+        "version": "1.5.4"
+      },
+      {
+        "name": "SQLAlchemy",
+        "version": "2.0.54"
+      },
+      {
+        "name": "typer",
+        "version": "0.27.2"
+      },
+      {
+        "name": "types-PyYAML",
+        "version": "6.0.12.20260906"
+      },
+      {
+        "name": "typing-inspection",
+        "version": "0.4.4"
+      },
+      {
+        "name": "typing_extensions",
+        "version": "4.16.0"
+      }
+    ],
+    "inventory_count": 35,
+    "inventory_sha256": "0dc2e6e875872ca97a36b268aee8cc11e6a7ff2e8653638df6743959f470a4ae",
+    "root_help_exit": 0,
+    "config_help_exit": 0,
+    "pip_check_exit": 0,
+    "pytest_summary": "201 passed in 78.26s (0:01:18)"
+  },
+  "exploration_applicability": {
+    "lock_equals_accepted_exp8_candidate": true,
+    "model_manifest_sha256": "a40f0b3d77e1d19d076a5ebec1d10ce274983ad48eec5b05679c5e9ed47ddb66",
+    "model_manifest_equals_exp3": true,
+    "component_inventory_comparison": {
+      "312": {
+        "equal": true,
+        "changed": {},
+        "distribution_count": 85
+      },
+      "313": {
+        "equal": true,
+        "changed": {},
+        "distribution_count": 85
+      },
+      "314": {
+        "equal": true,
+        "changed": {},
+        "distribution_count": 85
+      }
+    },
+    "models_all_unchanged": true,
+    "accepted_candidate": "18-optional-typer-threaded-x64"
+  },
+  "model_files": [
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "added_tokens.json",
+      "expected_sha256": "002686b2efb9535c359458cd1121de8e1b58e67426a46e2bd4425843766a3a5e",
+      "actual_sha256": "002686b2efb9535c359458cd1121de8e1b58e67426a46e2bd4425843766a3a5e"
+    },
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "chat_template.json",
+      "expected_sha256": "c9d21553af689882ac89ad8e8412164662d1605f6595119664e85626df7be421",
+      "actual_sha256": "c9d21553af689882ac89ad8e8412164662d1605f6595119664e85626df7be421"
+    },
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "config.json",
+      "expected_sha256": "98f55cfe07dd168f9fab1f1eec35f754b23631ea1a9a7c9759b1b7cb41ab76b1",
+      "actual_sha256": "98f55cfe07dd168f9fab1f1eec35f754b23631ea1a9a7c9759b1b7cb41ab76b1"
+    },
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "generation_config.json",
+      "expected_sha256": "b17f1890b2b2baf172761c9c4d6eb956482ffa05964f357e67544ec998c9851f",
+      "actual_sha256": "b17f1890b2b2baf172761c9c4d6eb956482ffa05964f357e67544ec998c9851f"
+    },
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "model.safetensors",
+      "expected_sha256": "4b04e77af34c4e682a7ab1617628340d658f3c3dcd12456dd2a7fff805cf79d2",
+      "actual_sha256": "4b04e77af34c4e682a7ab1617628340d658f3c3dcd12456dd2a7fff805cf79d2"
+    },
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "preprocessor_config.json",
+      "expected_sha256": "6cb6e36d6fcb88ca1502c4a26750715dc3e7dedddc9a8f17b27d8d167d1457e7",
+      "actual_sha256": "6cb6e36d6fcb88ca1502c4a26750715dc3e7dedddc9a8f17b27d8d167d1457e7"
+    },
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "processor_config.json",
+      "expected_sha256": "e7bff42da73ae9eec9042ef20e066e11f1ee20f025358ff79131e3c0fb549b46",
+      "actual_sha256": "e7bff42da73ae9eec9042ef20e066e11f1ee20f025358ff79131e3c0fb549b46"
+    },
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "special_tokens_map.json",
+      "expected_sha256": "1b17e900a73384d256db6f1a7591fd0d95c09e6aede680022b047386b97afcba",
+      "actual_sha256": "1b17e900a73384d256db6f1a7591fd0d95c09e6aede680022b047386b97afcba"
+    },
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "tokenizer.json",
+      "expected_sha256": "5ec5d3780a2e01b140cf34f023eb600263855a99aacdc3eb0f2600d7b1b4ac96",
+      "actual_sha256": "5ec5d3780a2e01b140cf34f023eb600263855a99aacdc3eb0f2600d7b1b4ac96"
+    },
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "tokenizer_config.json",
+      "expected_sha256": "37a0e94be9c9ab5197b2188e61cf764bbc015f45261013881fe37bd2fe8599e6",
+      "actual_sha256": "37a0e94be9c9ab5197b2188e61cf764bbc015f45261013881fe37bd2fe8599e6"
+    },
+    {
+      "stage": "formula",
+      "repo": "docling-project/CodeFormulaV2",
+      "commit": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+      "path": "vocab.json",
+      "expected_sha256": "8922f7e91084b9862d270c16ce1027071214aa252a1567a4b410f952101005fc",
+      "actual_sha256": "8922f7e91084b9862d270c16ce1027071214aa252a1567a4b410f952101005fc"
+    },
+    {
+      "stage": "layout",
+      "repo": "docling-project/docling-layout-egret-medium",
+      "commit": "77ede7cc7bed96d853c58f319734803d6ea2ea5c",
+      "path": "config.json",
+      "expected_sha256": "e099589367b56b77d4cfce99b0b0d0b610a66866da1b8c9c291b6de82b21007c",
+      "actual_sha256": "e099589367b56b77d4cfce99b0b0d0b610a66866da1b8c9c291b6de82b21007c"
+    },
+    {
+      "stage": "layout",
+      "repo": "docling-project/docling-layout-egret-medium",
+      "commit": "77ede7cc7bed96d853c58f319734803d6ea2ea5c",
+      "path": "model.safetensors",
+      "expected_sha256": "e7fc5b9a353826c123c5d03efc230909ac02b93e26293ec7cb4db8978fe9e3af",
+      "actual_sha256": "e7fc5b9a353826c123c5d03efc230909ac02b93e26293ec7cb4db8978fe9e3af"
+    },
+    {
+      "stage": "layout",
+      "repo": "docling-project/docling-layout-egret-medium",
+      "commit": "77ede7cc7bed96d853c58f319734803d6ea2ea5c",
+      "path": "preprocessor_config.json",
+      "expected_sha256": "cd38cd59999e7a95d68e487fbe5132df3d4e5c32a0836add57e6126ba0c4eaf1",
+      "actual_sha256": "cd38cd59999e7a95d68e487fbe5132df3d4e5c32a0836add57e6126ba0c4eaf1"
+    },
+    {
+      "stage": "table",
+      "repo": "docling-project/docling-models",
+      "commit": "fc0f2d45e2218ea24bce5045f58a389aed16dc23",
+      "path": "model_artifacts/tableformer/accurate/tableformer_accurate.safetensors",
+      "expected_sha256": "2a7d6c924b3cd12fb99a09280ca9c33a89c5d60b93253617d2e088c1a40374d9",
+      "actual_sha256": "2a7d6c924b3cd12fb99a09280ca9c33a89c5d60b93253617d2e088c1a40374d9"
+    },
+    {
+      "stage": "table",
+      "repo": "docling-project/docling-models",
+      "commit": "fc0f2d45e2218ea24bce5045f58a389aed16dc23",
+      "path": "model_artifacts/tableformer/accurate/tm_config.json",
+      "expected_sha256": "984e122ceb8ccf84d84c9d2882f6f2302a44b4f1e577babd6289892c36f3cffd",
+      "actual_sha256": "984e122ceb8ccf84d84c9d2882f6f2302a44b4f1e577babd6289892c36f3cffd"
+    }
+  ],
+  "commands": [
+    {
+      "label": "pip-check-py312",
+      "command": [
+        "uv",
+        "pip",
+        "check",
+        "--offline",
+        "--python",
+        "<environments>/py312/bin/python"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py312",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719391.765932,
+      "seconds": 0.07354211807250977,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "import-py312",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py312/bin/python",
+        "python",
+        "scripts/check_docling_imports.py"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py312",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719391.8400514,
+      "seconds": 8.090120553970337,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "pytest-py312",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py312/bin/python",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_docling_extra_supply.py",
+        "tests/test_docling_toolchain_v2.py",
+        "tests/test_config_extraction.py",
+        "tests/test_config_extraction_cli.py",
+        "tests/test_config_extraction_validation.py",
+        "tests/test_config_extraction_persistence.py",
+        "tests/test_cli_help.py",
+        "tests/test_cli_import_compatibility.py",
+        "tests/test_doctor_process.py",
+        "tests/test_doctor_readonly.py"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py312",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719399.9308438,
+      "seconds": 80.73813796043396,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "after-tests-import-py312",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py312/bin/python",
+        "python",
+        "scripts/check_docling_imports.py"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py312",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719480.6693306,
+      "seconds": 8.013173580169678,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "pip-check-py313",
+      "command": [
+        "uv",
+        "pip",
+        "check",
+        "--offline",
+        "--python",
+        "<environments>/py313/bin/python"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py313",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719488.6832983,
+      "seconds": 0.10633134841918945,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "import-py313",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py313/bin/python",
+        "python",
+        "scripts/check_docling_imports.py"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py313",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719488.7899208,
+      "seconds": 8.267049551010132,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "pytest-py313",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py313/bin/python",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_docling_extra_supply.py",
+        "tests/test_docling_toolchain_v2.py",
+        "tests/test_config_extraction.py",
+        "tests/test_config_extraction_cli.py",
+        "tests/test_config_extraction_validation.py",
+        "tests/test_config_extraction_persistence.py",
+        "tests/test_cli_help.py",
+        "tests/test_cli_import_compatibility.py",
+        "tests/test_doctor_process.py",
+        "tests/test_doctor_readonly.py"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py313",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719497.0575721,
+      "seconds": 91.36130976676941,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "after-tests-import-py313",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py313/bin/python",
+        "python",
+        "scripts/check_docling_imports.py"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py313",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719588.419472,
+      "seconds": 8.486717939376831,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "pip-check-py314",
+      "command": [
+        "uv",
+        "pip",
+        "check",
+        "--offline",
+        "--python",
+        "<environments>/py314/bin/python"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py314",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719596.9071147,
+      "seconds": 0.046384334564208984,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "import-py314",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py314/bin/python",
+        "python",
+        "scripts/check_docling_imports.py"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py314",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719596.9541106,
+      "seconds": 8.138854265213013,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "pytest-py314",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py314/bin/python",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_docling_extra_supply.py",
+        "tests/test_docling_toolchain_v2.py",
+        "tests/test_config_extraction.py",
+        "tests/test_config_extraction_cli.py",
+        "tests/test_config_extraction_validation.py",
+        "tests/test_config_extraction_persistence.py",
+        "tests/test_cli_help.py",
+        "tests/test_cli_import_compatibility.py",
+        "tests/test_doctor_process.py",
+        "tests/test_doctor_readonly.py"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py314",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719605.0934641,
+      "seconds": 80.73554039001465,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "after-tests-import-py314",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py314/bin/python",
+        "python",
+        "scripts/check_docling_imports.py"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/py314",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719685.829493,
+      "seconds": 8.35432243347168,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "base-install",
+      "command": [
+        "uv",
+        "sync",
+        "--offline",
+        "--locked",
+        "--link-mode",
+        "copy",
+        "--python",
+        "<environments>/py314/bin/python"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/base314",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719694.1847572,
+      "seconds": 0.30435609817504883,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "base-inventory",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py314/bin/python",
+        "python",
+        "-c",
+        "import importlib.metadata,json,sys,platform; p=sorted(({'name':d.metadata['Name'],'version':d.version} for d in importlib.metadata.distributions()),key=lambda x:x['name'].lower()); assert not any(x['name'].lower().startswith(('docling','torch','transformers','pypdfium2','opencv')) for x in p); print(json.dumps({'python':sys.version,'executable':sys.executable,'platform':platform.platform(),'inventory':p},indent=2))"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/base314",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719694.4897707,
+      "seconds": 0.09205079078674316,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "base-pip-check",
+      "command": [
+        "uv",
+        "pip",
+        "check",
+        "--offline",
+        "--python",
+        "<environments>/base314/bin/python"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/base314",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719694.5824628,
+      "seconds": 0.012341022491455078,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "base-root-help",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py314/bin/python",
+        "paper-radar",
+        "--help"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/base314",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719694.5954425,
+      "seconds": 0.5212321281433105,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "base-config-help",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py314/bin/python",
+        "paper-radar",
+        "config",
+        "--help"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/base314",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719695.1173615,
+      "seconds": 0.515570878982544,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    },
+    {
+      "label": "base-pytest",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--python",
+        "<environments>/py314/bin/python",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_docling_extra_supply.py",
+        "tests/test_docling_toolchain_v2.py",
+        "tests/test_config_extraction.py",
+        "tests/test_config_extraction_cli.py",
+        "tests/test_config_extraction_validation.py",
+        "tests/test_config_extraction_persistence.py",
+        "tests/test_cli_help.py",
+        "tests/test_cli_import_compatibility.py",
+        "tests/test_doctor_process.py",
+        "tests/test_doctor_readonly.py"
+      ],
+      "environment": {
+        "UV_CACHE_DIR": "<isolated-cache>",
+        "UV_PROJECT_ENVIRONMENT": "<environments>/base314",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "started": 1793719695.633632,
+      "seconds": 78.89156198501587,
+      "exit_code": 0,
+      "pyproject_sha256": "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349",
+      "lock_sha256": "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"
+    }
+  ],
+  "unassessed": [
+    "other CPython patches",
+    "other platforms and implementations",
+    "free-threaded CPython",
+    "model loading",
+    "PDF conversion",
+    "fixture quality",
+    "Read/reuse eligibility",
+    "offline wheel/model rebuild",
+    "full offline gate"
+  ],
+  "starting_pyproject_sha256": "282f74be3e1da65a4819f03c441274f9b47442737243f9e9a80f3d18cb7f89f7",
+  "starting_lock_sha256": "11aa458753aad1447061e7b8e5ef3adc74e53db4db98ecd36da5d88e14267512",
+  "explicit_smoke_script_sha256": "7cd75423f09ca61e3c2eb246df5b5bbb4392d3afb549d25068451e4ca656f762",
+  "d1_test_module": {
+    "path": "tests/test_docling_extra_supply.py",
+    "count": 3,
+    "sha256": "1a7e0cd1f689d9486574a15215ca374d0a2a64379d2be77c2fd1eea1b1dc9268"
+  },
+  "static_checks": {
+    "ruff_check": "passed",
+    "ruff_format_check": "passed",
+    "mypy": "passed (2 source files)"
+  },
+  "scope_audit": {
+    "exit_code": 1,
+    "child_base": "f6736d2794f50ac78a541c39c8b40cdae4e8d280",
+    "integration_target": "integration/issue-150-docling-extra",
+    "current_change": [
+      "pyproject.toml (fixture; full A2, A3–A10)",
+      "uv.lock (fixture; A10)"
+    ],
+    "inherited_child_baseline_drift": [
+      "#151 src/paper_radar/config/extraction_toolchain.py (source_support; A2-01, full A2, A3–A10)"
+    ],
+    "spec_start_baseline": "542265c",
+    "spec_start_audit_exit": 0,
+    "handoff": "#154 final tree audit/review/rebinding; no registry mutations in #152"
+  }
+}
