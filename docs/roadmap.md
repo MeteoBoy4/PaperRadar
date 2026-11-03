@@ -137,6 +137,7 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 | EXP-5 | 正式校准与 NAS 恢复 | D、I | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
 | EXP-6 | `orig` 持久成员哈希的具体设计与落实（由 Body/B 首个真实正文生产者票决定并在该票落实，B 首个正文生产者前确定；F 不再承担） | Body、B，首个正文生产者前 | research／原型；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
 | EXP-7 | 证据/数值规则身份归属；仅后处理警告变化是否触发模型重跑须分析（最小 Read 票决定） | Body、B | research／原型；[ADR-0036 样本与质量](adr/0036-isolate-stage-b-read-experiment.md#样本与质量) |
+| EXP-8 | Docling extra 的锁形态（单 `uv.lock` 表达 `torch`/`torchvision` `+cpu`、是否需 conflicts）与支持平台/解释器面；`threaded_docling_parse` 的 parse 包是否纳入 | Extra | 本机只读 spike；结论写入 Extra spec；[#149](https://github.com/MeteoBoy4/PaperRadar/issues/149) |
 
 ## 用户须提供
 
