@@ -72,7 +72,19 @@ glibc ≥2.28、普通启用 GIL 的 CPython 3.12–3.14；aarch64、macOS、其
 依赖 marker 仅筛选 Linux x86_64 CPython，不检测 glibc/GIL；marker 跳过全部依赖时
 `uv sync` 退出 0 不能证明 extra 已安装或机器受支持。
 
-显式允许联网供给时，在项目根运行：
+在项目根选择解释器和独立磁盘环境后,同一终端中的安装、smoke、doctor 及后续
+`uv run` 共用这两个变量。例如选择 3.13（路径替换为本机实际解释器）：
+
+```bash
+export UV_PYTHON=/absolute/path/to/python3.13
+export UV_PROJECT_ENVIRONMENT="$PWD/.venv-docling-py313"
+```
+
+选择 3.12 或 3.14 时同时替换解释器路径和环境目录。新终端先恢复这两个变量；
+仅设置 `UV_PROJECT_ENVIRONMENT` 不固定解释器,仅给 sync 传 `--python` 也不固定
+后续 run。未固定时,项目 `.python-version` 会使 uv 重新选择 3.14 并可能重建环境。
+
+显式允许联网供给时运行：
 
 ```bash
 uv sync --locked --extra docling
@@ -83,10 +95,13 @@ uv sync --locked --extra docling
 ```bash
 uv sync --offline --locked --extra docling
 uv run --offline --locked --extra docling python scripts/check_docling_imports.py
+uv run --offline --locked --extra docling paper-radar doctor --scope docling-runtime \
+  --database /absolute/path/to/archive.sqlite3 \
+  --settings examples/config/settings-extraction-v2.yaml
 ```
 
-选择其他解释器时，给 `uv sync` 显式传 `--python <解释器路径>`，并用
-`UV_PROJECT_ENVIRONMENT=<独立磁盘环境目录>` 区分环境。离线缓存不足时 uv 返回非零；
+doctor 使用已存在的档案库与本次显式配置；settings 路径替换为实际材料,
+或按 [doctor Contract](doctor.md)改为 snapshot。离线缓存不足时 uv 返回非零；
 保持失败，单独取得联网授权后按锁补齐缓存，再重试离线命令。不会自动联网、换索引、
 换版本或使用 GPU wheel。普通 pip 安装不视为同一产品锁供给。
 
@@ -102,8 +117,11 @@ parse 已安装而把其版本加入 pypdfium2 的阶段语义。两后端输出
 它们的模型哈希是合成声明，不是可执行模型供给。
 
 `check_docling_imports.py` 是独立显式 smoke，核对安装库存、CPU 状态及 converter、
-两个后端、TableFormer、Transformers、cv2 导入。普通离线 pytest 不运行此 smoke，
-不要求安装 Docling、模型或 PDF。已装 extra 的环境中，普通
+两个后端、TableFormer、Transformers、cv2 导入。普通离线 pytest 不执行真实 SDK smoke，
+不要求安装 Docling、模型或 PDF。成功向 stdout 输出既有安装 JSON；缺包、版本不符、
+安装元数据不可读、SDK/native 导入失败、非 CPU torch 或 CUDA/OCR 库存均退出 1,
+向 stderr 给出受控原因、中文说明及锁定供给/支持环境的修复下一步,不回显原始异常。
+安装检查不是轻量 probe,真实 SDK 导入仍仅在此显式入口执行。已装 extra 的环境中，普通
 `uv run --offline --locked …` 默认保留额外已装包；`uv sync` 则按选定 extra 精确同步，
 因此需要 extra 时仍显式传 `--extra docling`，并在组合验证前后核对库存。
 

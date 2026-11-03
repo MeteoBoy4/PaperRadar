@@ -9,7 +9,8 @@
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
 当前没有「可规格化」或「已规格化」模块；Body 仍按模块表推进规格成形，Cwd/Live 仍待探索。
-Extra 的工程交付与最终冻结门禁判据见[独立台账](verification/issue-150-extra-delivery.md)，B 的其他前置不变。
+Extra 的工程交付与最终冻结门禁判据见[独立台账](verification/issue-150-extra-delivery.md)，
+审阅修复的新增 D1 与证据适用性见[修复台账](verification/issue-150-review-fixes.md)，B 的其他前置不变。
 
 to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 

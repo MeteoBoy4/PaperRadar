@@ -127,22 +127,44 @@ def _platform_facts() -> PlatformFacts:
     system, machine = platform.system(), platform.machine()
     implementation = sys.implementation.name
     python_version = (sys.version_info[0], sys.version_info[1], sys.version_info[2])
-    libc = None
-    libc_version = None
     try:
         libc_text = os.confstr("CS_GNU_LIBC_VERSION")
     except (AttributeError, OSError, ValueError):
         libc_text = None
+    try:
+        abi_flag = sysconfig.get_config_var("Py_GIL_DISABLED")
+    except (OSError, ValueError):
+        abi_flag = None
+    return _classify_platform(
+        system=system,
+        machine=machine,
+        implementation=implementation,
+        python_version=python_version,
+        libc_text=libc_text,
+        abi_flag=abi_flag,
+        abiflags=getattr(sys, "abiflags", ""),
+    )
+
+
+def _classify_platform(
+    *,
+    system: str,
+    machine: str,
+    implementation: str,
+    python_version: tuple[int, int, int],
+    libc_text: str | None,
+    abi_flag: object,
+    abiflags: str,
+) -> PlatformFacts:
+    """只按给定事实分类;不读取宿主或加载 SDK。"""
+    libc = None
+    libc_version = None
     if libc_text:
         name, _, version = libc_text.partition(" ")
         libc = name
         parts = version.split(".")
         if len(parts) >= 2 and all(part.isdecimal() for part in parts[:2]):
             libc_version = (int(parts[0]), int(parts[1]))
-    try:
-        abi_flag = sysconfig.get_config_var("Py_GIL_DISABLED")
-    except (OSError, ValueError):
-        abi_flag = None
     gil_disabled = (
         bool(abi_flag)
         if abi_flag in (0, 1)
@@ -150,7 +172,7 @@ def _platform_facts() -> PlatformFacts:
         if implementation == "cpython" and python_version[:2] == (3, 12)
         else None
     )
-    if "t" in getattr(sys, "abiflags", ""):
+    if "t" in abiflags:
         gil_disabled = True
     # 检查构建 ABI;free-threaded 构建即使临时启用 GIL 仍不受支持。
     if (
@@ -193,18 +215,22 @@ def _dependency(distribution: str, expected: str | None) -> DependencyFact:
     except importlib.metadata.PackageNotFoundError:
         installed = None
     except (OSError, ValueError):
-        return DependencyFact(
-            distribution,
-            module,
-            expected,
-            None,
-            None,
-            RuntimeReason.DEPENDENCY_INCONSISTENT,
-        )
+        return _classify_dependency(distribution, module, expected, None, None)
     try:
         found = importlib.util.find_spec(module) is not None
     except (ImportError, OSError, ValueError):
         found = None
+    return _classify_dependency(distribution, module, expected, installed, found)
+
+
+def _classify_dependency(
+    distribution: str,
+    module: str,
+    expected: str | None,
+    installed: str | None,
+    found: bool | None,
+) -> DependencyFact:
+    """只按 metadata/可发现性事实分类;不访问安装环境。"""
     if installed is None and found is False:
         reason = RuntimeReason.DEPENDENCY_MISSING
     elif installed is None or found is not True:
