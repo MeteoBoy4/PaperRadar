@@ -422,17 +422,23 @@ def validate_read_output_v2(
     """按任务层领取序号接收完整候选;不推断末次或创建模型预算。"""
     if type(degrade_policy) is not str or degrade_policy != DEGRADE_POLICY:
         raise ReadV2ContextError(
-            (ReadV2Issue(
-                "$.degrade_policy", ReadV2Category.INVALID_DEGRADE_POLICY,
-                "降级策略仅支持 final_attempt；请使用任务层记录的策略。",
-            ),)
+            (
+                ReadV2Issue(
+                    "$.degrade_policy",
+                    ReadV2Category.INVALID_DEGRADE_POLICY,
+                    "降级策略仅支持 final_attempt；请使用任务层记录的策略。",
+                ),
+            )
         )
     if type(attempt_ordinal) is not int or attempt_ordinal not in (1, 2):
         raise ReadV2ContextError(
-            (ReadV2Issue(
-                "$.attempt_ordinal", ReadV2Category.INVALID_ATTEMPT_ORDINAL,
-                "本代接收序号必须是严格整数 1 或 2；请使用任务领取记录的序号。",
-            ),)
+            (
+                ReadV2Issue(
+                    "$.attempt_ordinal",
+                    ReadV2Category.INVALID_ATTEMPT_ORDINAL,
+                    "本代接收序号必须是严格整数 1 或 2；请使用任务领取记录的序号。",
+                ),
+            )
         )
     context = validate_read_context_v2(context)
     output = _parse(raw)
@@ -477,10 +483,13 @@ def validate_read_output_v2(
     )
     if had_subject_content and not (output.main_findings or output.reusable_points):
         raise ReadV2OutputError(
-            (ReadV2Issue(
-                "$", ReadV2Category.OUTPUT_WITHOUT_SUPPORT,
-                "主要发现与可复用点因证据无效均已清空；请修正引用并按任务预算重试。",
-            ),)
+            (
+                ReadV2Issue(
+                    "$",
+                    ReadV2Category.OUTPUT_WITHOUT_SUPPORT,
+                    "主要发现与可复用点因证据无效均已清空；请修正引用并按任务预算重试。",
+                ),
+            )
         )
     support = context.replay()
     generated = _warnings(
