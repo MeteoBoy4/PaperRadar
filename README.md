@@ -280,8 +280,9 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 
 ## Read 输出与证据校验
 
-`paper_radar.reading.validate_read_output` 验证 Read 候选原始字节与消费上下文，提供
-证据引用核验、受限内容检查、数值诊断与警告视图。它是输出校验接口，不是 Read 执行器。
+`paper_radar.reading.acceptance_v2.validate_read_output_v2` 接收完整 Read 候选与消费上下文，
+首次坏指针要求修正，末次可丢弃无效证据列表项；合法受限源内容保留并附核对警告。
+`paper_radar.reading.validate_read_output` 保留 v1 历史接收规则。两者都是纯输出接收接口。
 结构、上下文和配置接入见[Read 契约](docs/contracts/read-validation.md)，
 恢复边界见[Read 恢复说明](docs/contracts/read-validation.md#恢复范围98)。
 

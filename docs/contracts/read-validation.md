@@ -2,8 +2,8 @@
 
 ## 用途与范围
 
-`paper_radar.reading` 提供 Read 结构输出、给定源字符上下文的纯验证、数值检查和
-降级诊断。Schema 合法只是接收的必要条件；公共业务入口还检查语言、价值类型、
+`paper_radar.reading` 保留冻结 v1 结构与历史验证，
+`paper_radar.reading.acceptance_v2` 提供完整候选的 v2 纯接收、末次条目丢弃及安全降级诊断。Schema 合法只是接收的必要条件；公共业务入口还检查语言、价值类型、
 证据引用与受限内容。本 Contract 定义该纯验证边界及其配置、恢复组合保证，
 不把给定上下文内部一致解释为真实正文来源、质量或生产执行资格。
 
@@ -76,8 +76,17 @@ Rank、Topic、紧急性和流程决定不是模型输出字段。
 
 ## 消费上下文与原始候选
 
-公共入口为 `paper_radar.reading.validate_read_output(raw: bytes, context: ReadContext)`，
-成功返回 `ReadValidationResult`。调用方提交原始 UTF-8 JSON bytes 和合法只读上下文；
+新接收入口为
+`paper_radar.reading.acceptance_v2.validate_read_output_v2(raw, context, *, degrade_policy="final_attempt", attempt_ordinal=...)`，
+返回 `ReadV2Result`。`attempt_ordinal` 是任务层领取时分配的本代接收序号，严格整数闭集
+`{1,2}`；末次等于序号 2，与剩余预算、是否打算 retry 无关。唯一策略值是
+`final_attempt`，未知策略或序号为受控调用方错误。执行器不能覆盖领取序号；候选 JSON
+自带序号字段仍按额外字段拒绝。纯入口不推断序号、不领取或修改预算。
+
+历史公共入口 `paper_radar.reading.validate_read_output(raw, context)` 返回
+`ReadValidationResult`，仍使用 v1 原规则。v2 按模块路径直接导入，不经 v1 包入口复导出；
+v1 源码、Schema、规则常量及 A9 冻结测试与登记保持原字节。
+两版调用方均提交原始 UTF-8 JSON bytes 和合法只读上下文；
 str、bytearray、映射或已处理的模型对象不作为候选接收。顶层前后 JSON 空白合法；
 BOM、坏 UTF-8、孤立代理字符、任意层重复键、NaN/Infinity（含数值溢出）、非对象、
 围栏、截断和非空白尾随内容均拒绝，不作修复。
@@ -142,62 +151,96 @@ single 禁止附带允许集合；reduce 必须提供 `AllowedEvidence(identity,
 | 非权威类型或无序集合 | invalid_allowed_evidence | ReadContextError |
 | 集合内重复 / 非法 ID | duplicate_id / invalid_evidence_id | ReadContextError |
 | 集合跨正文 / 未知成员 | identity_mismatch / unknown_allowed_evidence | ReadContextError |
-| 模型引用正文不存在的 ID | unknown_evidence | ReadOutputError |
-| 模型引用正文存在但未被允许的 ID | evidence_not_allowed | ReadOutputError |
+| 模型引用正文不存在的 ID | unknown_evidence | v1 整份拒绝；v2 按下节处理 |
+| 模型引用正文存在但未被允许的 ID | evidence_not_allowed | v1 整份拒绝；v2 按下节处理 |
 
-空 tuple 可以构造。此时任何实际引用都按越界拒绝，五类保护内容若没有有效允许引用，
-同时报告 evidence_required；两项评分理由必填，因而整份分析不能通过。业务问题按安全
-字段路径排序，保留范围越界和引用义务两种原因。原模型 evidence 列表为空时按
-冻结 Schema 拒绝，不补字段或引用。
+空 tuple 可以构造。此时引用都属于越界，五类保护内容没有有效允许引用时同时报告
+`evidence_required`；两项评分理由必填且不可丢弃，因此整份分析不能通过。
+原模型 evidence 列表为空、ID 为空字符串时按冻结 Schema 整份拒绝。
+`evidence_not_allowed` 与业务层 `evidence_required` 仅适用于 reduce；single 无允许集合。
+reduce 在此只验证给定集合，不实现 map/reduce，也不证明集合的生产来源。
 
-reduce 沿用相同严格 JSON、语言、价值、定位、数值与受限内容入口；程序模式和集合
-不进入模型 Schema。结果保留 mode、三元组和规则身份。
+## v2 判定顺序与末次丢弃
+
+1. 调用方先构造完整合法 `ReadContext`；领取前可用
+   `acceptance_v2.validate_read_context_v2(context)` 重验，返回独立冻结上下文。
+   接收入口也重验全部上下文，不能因候选未引用某成员而略过。上下文错误不消耗模型预算。
+2. 对完整原始候选执行严格 JSON 与 Schema（含评分），再检查全部有意义文本、语言、
+   价值类型条件与重复；该阶段出错即整份拒绝，不继续业务指针与警告。丢弃不能掩盖错误。
+3. 业务指针依次检查严格 ID、同列表重复、正文存在性、允许范围；reduce 另检查有效引用
+   非空。非末次的任何问题整份 `ReadV2OutputError`；末次两项评分理由的任何问题也整份拒绝。
+4. 只有末次的 `main_findings`、`reusable_points`、`key_limitations` 完整列表项可以丢弃。
+   任一引用坏即整条丢，不去重、不改引用、不保留部分内容；共享坏 ID 的每条分别丢弃。
+5. 丢弃后 main_findings 与 reusable_points 同时为空，且丢弃前至少一者非空，返回
+   `$ [output_without_support]`。任务层归为既有 `output_invalid`，没有成功结果。
+   原本合法为空、仅局限清空与无证据义务字段不触发。
+6. 只为保留条目计算数值及受限内容警告；丢弃事件另生成安全丢弃警告。诊断路径保留
+   原始候选索引，不随处理视图的列表压缩而改写。
+
+`ReadV2Discard` 每被丢条目一条，按 main_findings、reusable_points、key_limitations
+及原始顺序排列；字段为 `location`（原条目路径）、`item_category`、`ordinal`（原条目
+从 1 起）、`reason`（该条首个坏指针原因）、`positions`。同条多错按引用原顺序取首因，
+该引用同时符合多类时采用步骤 3 的优先级；reduce 缺有效引用排在逐引用问题之后。
+`positions` 仅保留能解析的坏引用定位，按上下文 evidence/provenance 原顺序去重；
+每项只含 `source_id/page_no/bbox/start/end`，未知或非法 ID 没有定位。
+不另存坏 ID、原文或数值。丢弃不改变原始候选字节。
+
+`ReadV2Result` 返回 identity、mode、degrade_policy、attempt_ordinal、三规则版本、
+`analysis` 独立副本、discards、model_warnings、diagnostics、warnings 和精确回放 support。
+其余集合为 tuple，敏感字段不进入 repr。`ReadV2Diagnostic` 只含 location、reason、ordinal；
+数值序号沿用识别器从 0 起，受限源引用为 0，丢弃警告使用原条目从 1 起的序号。
+`ReadV2Warning` 以 model/program 区分来源；模型警告逐字保留（含重复项），程序警告不带
+原文、字面量或坏 ID。合并视图及 analysis.degraded_content_warnings 先模型后程序；
+程序诊断按路径、原因、序号稳定排序。
+
+同一候选字节、上下文、策略、序号和三规则版本可从零重算相同结果与丢弃清单。
+持久消费者保存全部接收依据，用同一入口重算并逐字段核对清单；纯入口不保存业务事实。
+新代从序号 1 重新判断，不能继承旧代丢弃许可；版本不支持和历史恢复的责任见下节。
 
 <a id="受限内容矩阵95-已交付"></a>
 
 ## 受限内容矩阵
 
-单条 evidence 只要任一 provenance 落在受限源块上，即作为含受限证据处理；数值匹配
-仍按具体切片分类。模型自报 verified 不能放行，额外字段由结构层拒绝。
+合法源块上的 Docling 解析限制在 v2 中只产生降级警告，不使主要发现、评分理由、
+可复用点或关键局限失败。警告不等于人工核对或科学语义蕴含证明。
 
-| 所引证据 | 主要发现 / 两项评分理由 / 可复用点 | 关键局限 |
+| 所引证据 | v2 全部保护字段 | v1 历史规则 |
 | --- | --- | --- |
-| 可靠普通文本 | 允许；数值按规则检查 | 同左 |
-| 表格源块 | 结构描述允许且无警告；某数值仅在受限切片命中则硬失败 | 允许；数值仅受限命中则降级警告 |
-| 公式区域源字符 / 不可靠字符块 | 引用即硬失败 | 可以指向局限所在；数值仅受限命中则降级警告 |
-| 公式候选 / 公式或图片占位 / 生成展示文本 | 非 provenance 目标，上下文构造失败 | 同左 |
+| 可靠普通文本 | 允许；数值按规则检查 | 相同 |
+| 表格源块 | 结构描述允许且无警告；数值仅受限命中则 restricted_numeric_support 警告 | 主要发现/评分理由/可复用点硬失败；关键局限只警告 |
+| 公式区域源字符 / 不可靠字符块 | restricted_source_reference 警告；数值仅受限命中另有警告 | 主要发现/评分理由/可复用点硬失败；关键局限只警告 |
+| 公式候选 / 图片或公式占位 / 生成展示文本 | 无 evidence 锚点；引用其 ID 按业务坏指针处理 | 未知 evidence 整份拒绝 |
+| provenance 指向不存在源块（unknown_source） | 上下文错误整份拒绝，领取前检查 | 相同 |
 
-数值在全部引用切片中均未命中时一律降级，不作硬失败。
-“仅在受限切片命中”逐个字面量判定：全部所引可靠切片都不支持它，但至少一条受限
-切片支持它。同条 evidence 含可靠与受限 provenance 时仍保留每条实际来源；可靠
-切片也能支持的数值不构成表格数值违例。不同数值可分别依赖不同来源，不按整条
-evidence 的受限标记抹去可靠片段。范围仍须在一条切片内同时匹配两端，不跨来源
-拼接。公式区域或不可靠字符引用的独立硬失败不因另有可靠数值来源而取消。
+单条 evidence 任一 provenance 为公式/不可靠源时，对每段保护文本发出
+`restricted_source_reference`。不可靠字符使用与 normalization v1 相同的
+`content_reliability.is_unreliable` 纯规则（声明标记或 U+FFFD、非排版控制字符、代理/私用字符）；
+警告和数值分类共用其判定。表格结构描述不单独告警。数值仍逐字面量、逐实际切片
+比较：至少一条受限片段命中且全部可靠片段不支持它时，发出
+`restricted_numeric_support`；可靠片段也支持时不产生该数值警告。
+数值在所有引用切片中未命中、范围/单位不支持或无法识别的形状也只告警。
+公式或不可靠来源的引用警告不因另有可靠数值来源而取消。
 
-关键局限在该矩阵下只有通过或降级；数值仅受限命中使用
-`restricted_numeric_support` 诊断，数值完全未命中沿用 number/range/unit 的不支持
-原因。结构、引用闭包与定位错误仍拒绝。主要发现、两项评分理由及可复用点分别使用
-`restricted_source_reference` 和 `restricted_numeric_support` 硬失败类别。
-验证入口收集同次全部受限违例；`ReadOutputError.issues` 先列引用类硬失败、再列数值
-依赖硬失败，同级按字段路径和条目顺序；安全 `diagnostics` 保留同次数值降级发现。
-异常不附带警告字符串、字面量或源片段，失败没有分析成功返回值。
-
-表格切片直接来自 SourceBlock.orig 的字符回放，不重新解析表格，也不把候选 LaTeX
-当作来源。本边界不设片段长度上限，不判断科学语义蕴含或人工复核状态。
+provenance 仍只指向 orig，候选 LaTeX、生成展示文本与占位不成为来源。
+合法父源块缺失是正文生产能力缺口，不能给候选补造 evidence。
+真实公式父源块覆盖的统计口径及未验范围由
+[正文提取契约](fulltext-extraction.md)维护；本纯层不统计真实 Docling 覆盖率。
 
 <a id="数值与警告94-已交付"></a>
 
 ## 数值与警告
 
-数值规则 v1 只提取阿拉伯数字（含全角），中文数字不提取、不产生警告。边界显式按
+两版只读复用冻结数值识别器：只提取阿拉伯数字（含全角），中文数字不提取、不产生警告。边界显式按
 拉丁字母/数字/小数点定义，保留 CJK 邻接数值。
 ERA5、CMIP6、PM2.5、CO2、O3、H2O 等拉丁字母直连标识符以及封闭图/表/式/节/
 Fig./Figure/Table/Eq./Section 前缀交叉引用编号排除。单位采用封闭列表与中英别名，
 英文交叉引用前缀须具有左侧拉丁词元边界，stable 或 intersection 的后缀不构成
 Table/Section。未知相邻词不当单位。
 
-数值规则常量 `NUMERIC_RULE_VERSION="read-numeric-v1"`，证据规则常量
-`EVIDENCE_RULE_VERSION="read-evidence-v1"`。v1 的单位与记法闭集如下，大小写保持
+v1 历史常量仍为 `read-numeric-v1` / `read-evidence-v1`。v2 自持
+`NUMERIC_RULE_VERSION="read-numeric-v2"`、`EVIDENCE_RULE_VERSION="read-evidence-v2"`、
+`CONTENT_LIMITATION_RULE_VERSION="read-content-limitation-v1"`。三版本均不进入
+StageInput/模型指纹，不自动触发模型重跑或刷新预算。单位与记法闭集两版共用，大小写保持
 表中所列；只有比较使用这些归一化，orig/charspan/text 始终原样回放。
 
 | 等价类 | 接受的记法 |
@@ -235,9 +278,11 @@ unrecognized_numeric_form，不把内部组件数字当支持。识别器只对�
 结果提供三个视图：原模型警告逐字保留（含重复项）、安全结构化程序诊断、带 origin
 的只读合并视图。程序诊断按字段路径/原因/字面量序号排序；报告定位使用诊断，
 不解析警告字符串。模型即使伪造相同模板，也不能改变诊断或来源。
-程序模板按期望语言选中/英文，可在受控分析视图包含触发数值；repr、异常和结构化
+v1 程序模板可在受控分析视图包含触发数值；v2 只生成不含字面量的中/英文核对指引。repr、异常和结构化
 诊断仅携安全位置/原因/序号，不含全文、片段、响应或数值字面量；纯验证器不写日志。
 幂等指同一原始字节与上下文重复校验结果相等，不把追加警告后的分析当新模型原文。
+
+### v1 历史结果视图
 
 `ReadValidationResult` 提供 `identity`、`mode`、`evidence_rule_version`、
 `numeric_rule_version` 与精确回放的 `support`；`support` 保留整个上下文的全部
@@ -297,26 +342,35 @@ adapter、read 配置（chunking v1）与 read 契约，配有非占位示例 Pr
 
 ## 错误与拒绝
 
-`ReadContextError` 是调用方上下文错误，`ReadOutputError` 是模型候选拒绝；
-上下文错误不属于 `output_invalid`，纯验证器不创建或消耗模型预算。两者 issues
-只含受控 `ReadErrorCategory`、安全字段路径和中文指引；额外键以 `<额外字段>` 替代。
-解析及 Pydantic 异常在退出捕获后转换，不保留含输入的异常链。
-本入口是 Python 纯函数，无 CLI 退出码，也不自动修复、重试、保存或调用模型。
+v1 的 `ReadContextError` / `ReadOutputError` 保留；v2 自持
+`ReadV2ContextError` / `ReadV2OutputError` 与 `ReadV2Category`。
+直接构造复用的 ReadContext 时仍发 v1 上下文错误，v2 预检/接收把相同安全 wire 原因
+转成 v2 issue；错误在退出捕获后转换，无含输入的异常链。
+上下文和策略错误不属于 `output_invalid`；纯接收器不创建或消耗预算。
 
-| 拒绝层 | 当前发出的错误分类 |
-| --- | --- |
-| 上下文类型、身份、重复、归属 | invalid_context、invalid_identity、duplicate_id、identity_mismatch |
-| 页面、源块和 provenance | invalid_page、invalid_source、unknown_source、unknown_page、invalid_bbox、invalid_charspan、empty_support、duplicate_provenance |
-| 模式与允许集合 | unsupported_mode、missing_allowed_evidence、unexpected_allowed_evidence、invalid_allowed_evidence、unknown_allowed_evidence |
-| JSON 与结构 | invalid_json、missing_field、extra_field、invalid_type、invalid_enum、invalid_score、invalid_evidence_id、evidence_required |
-| 文本、语言与价值类型 | invalid_text、language_mismatch、value_types_required、duplicate_value_type |
-| 引用与受限内容 | invalid_evidence_id、duplicate_evidence、unknown_evidence、evidence_not_allowed、evidence_required、restricted_source_reference、restricted_numeric_support |
+| 拒绝层 | 原因 | v2 结果 |
+| --- | --- | --- |
+| 上下文类型、身份、重复、归属 | invalid_context、invalid_identity、duplicate_id、identity_mismatch | 整份上下文错误 |
+| 页面、源块、provenance | invalid_page、invalid_source、unknown_source、unknown_page、invalid_bbox、invalid_charspan、empty_support、duplicate_provenance | 整份上下文错误 |
+| 模式与允许集合 | unsupported_mode、missing_allowed_evidence、unexpected_allowed_evidence、invalid_allowed_evidence、unknown_allowed_evidence | 整份上下文错误 |
+| 策略或序号 | invalid_degrade_policy、invalid_attempt_ordinal | 整份调用方错误 |
+| JSON/Schema（含空 evidence、空字符串 ID） | invalid_json、missing_field、extra_field、invalid_type、invalid_enum、invalid_score、invalid_evidence_id、evidence_required | 整份输出拒绝 |
+| 全部文本/语言/价值类型 | invalid_text、language_mismatch、value_types_required、duplicate_value_type | 整份输出拒绝 |
+| 业务指针 | invalid_evidence_id、duplicate_evidence、unknown_evidence、evidence_not_allowed、evidence_required | 非末次/评分理由整份拒绝；末次三类列表项丢弃 |
+| 丢弃后主体全空 | output_without_support | 整份输出拒绝，任务层归 output_invalid |
+| 合法受限来源、受限数值、普通数值不匹配 | restricted_source_reference、restricted_numeric_support、number_not_supported、range_not_supported、unit_not_supported、unrecognized_numeric_form | 仅安全诊断和警告 |
 
-`ReadErrorCategory` 另导出 `unsupported_source` 枚举值；当前上下文构造对未知 kind
-使用 `invalid_source`，不发出该保留值。Schema 拒绝后不继续业务校验；文本、语言、
-价值与引用业务拒绝后不继续数值/受限检查。上下文构造按检查顺序报告首个问题，
-不承诺一次列出所有上下文错误。修正调用方材料或候选后须重新走同一公共入口；
-降级诊断不改变结论和评分，也不等于候选被拒绝。
+v2 另以 `evidence_item_discarded` 安全诊断标明整条丢弃；具体首因在丢弃清单中。
+issues 只含安全路径、类别和中文指引，额外键统一为 `<额外字段>`。
+Schema 失败后不继续业务校验，完整候选检查失败后不继续指针或警告；非末次/评分理由
+指针失败也不计算警告。上下文按检查顺序报告首个问题，不承诺一次列出全部问题。
+纯函数不自动修复、重试、保存、调用模型，也没有 CLI 退出码。
+
+历史 v1 分析按原接收版本读取；v1 因受限内容失败而不存在的分析不追溯生成。
+持久消费者按所记证据规则版本选择重验入口；未知证据版本应以
+`unsupported_rule_version` 拒绝。未知数值/受限内容警告版本保留当时警告，不因无法重算
+拒绝分析或声称等价；支持旧策略时可重算比对。保存/备份/恢复闭包由
+[Body](../roadmap.md#module-body) 的持久消费者实现，纯接收本身不提供该闭包。
 
 <a id="b-首个真实-read-消费者前置111"></a>
 
@@ -328,7 +382,7 @@ adapter、read 配置（chunking v1）与 read 契约，配有非占位示例 Pr
 - reduce 只检查给定允许集合，不证明它真实来自本轮 map；不提供 map 输出契约、分块、
   长文编排或修正调用，承接责任见[长文 Read G](../roadmap.md#module-g)。
 - 不提供 Read StageInput、任务/预算/租约/retry、analysis 业务持久化与生产接收器；
-  规则版本已随验证结果返回，但其 StageInput 归属未定义，承接责任见
+  三规则版本随结果返回且不进入模型指纹；持久化消费承接责任见
   [Body/B](../roadmap.md#module-body)。
 - 不调用第二个模型判断语义蕴含，不证明科学正确性或模型质量；真实模型、生产 Pi、
   四刊质量、校准、报告及 NAS 不因纯验证或固定上下文恢复而取得资格。对应责任见
@@ -350,9 +404,11 @@ adapter、read 配置（chunking v1）与 read 契约，配有非占位示例 Pr
 本页不以历史通过推断当前门禁或 live 就绪。
 验收状态格式、可信终态及范围字段由[验收状态 Contract](verification-status.md)定义。
 
-依据：[#92](https://github.com/MeteoBoy4/PaperRadar/issues/92)、[#93](https://github.com/MeteoBoy4/PaperRadar/issues/93)、[#94](https://github.com/MeteoBoy4/PaperRadar/issues/94)、[#95](https://github.com/MeteoBoy4/PaperRadar/issues/95)、[#96](https://github.com/MeteoBoy4/PaperRadar/issues/96)、[#97](https://github.com/MeteoBoy4/PaperRadar/issues/97)、[#98](https://github.com/MeteoBoy4/PaperRadar/issues/98)、[#99](https://github.com/MeteoBoy4/PaperRadar/issues/99)。
+v2 独立覆盖与差异矩阵见 [D1 台账](../verification/issue-157-read-v2-delivery.md)。
+
+依据：[#157](https://github.com/MeteoBoy4/PaperRadar/issues/157)、[#155](https://github.com/MeteoBoy4/PaperRadar/issues/155)、[#92](https://github.com/MeteoBoy4/PaperRadar/issues/92)、[#93](https://github.com/MeteoBoy4/PaperRadar/issues/93)、[#94](https://github.com/MeteoBoy4/PaperRadar/issues/94)、[#95](https://github.com/MeteoBoy4/PaperRadar/issues/95)、[#96](https://github.com/MeteoBoy4/PaperRadar/issues/96)、[#97](https://github.com/MeteoBoy4/PaperRadar/issues/97)、[#98](https://github.com/MeteoBoy4/PaperRadar/issues/98)、[#99](https://github.com/MeteoBoy4/PaperRadar/issues/99)。
 
 目标与判据：[规格 §4.10](../../intent/draft.md#410-read-agent)；
-决策：[ADR-0025](../adr/0025-allow-local-formula-candidates-with-source-review.md)、
+决策：[ADR-0042](../adr/0042-accept-read-v2-with-final-attempt-degradation.md)、[ADR-0025](../adr/0025-allow-local-formula-candidates-with-source-review.md)、
 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；
 生产消费者责任：[路线图 Body/B](../roadmap.md#module-body)。
