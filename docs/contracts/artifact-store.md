@@ -191,7 +191,8 @@ extraction 的 `manifest` 成员是上游正文制品原字节，与进入制品
 ## 不提供／不证明
 
 - 不执行来源业务验证、PDF 解析、正文质量或模型输出接收；存储成功不授予业务消费资格。
-  正文生产与消费补齐责任见[Body](../roadmap.md#module-body)，取得通道扩展见
+  正文规范生产与持久证据回查见[规范正文](fulltext-extraction.md)；后续任务与准入责任见
+  [Body](../roadmap.md#module-body)，取得通道扩展见
   [F](../roadmap.md#module-f)。
 - 不提供制品 GC、删除或自动修复，也不扫描回收孤立文件；保留与恢复安全承接见
   [I](../roadmap.md#module-i)。备份无需根锁的论证仅适用于当前无删除边界，不能直接

@@ -167,6 +167,9 @@ class QualityFailure(StrEnum):
     CONTENT_IDENTITY = "content_identity"
     LAYOUT_REVIEW = "layout_review"
     REPRESENTATIVE_COVERAGE = "representative_coverage"
+    SOURCE_GENERATED_SEPARATION = "source_generated_separation"
+    EMBEDDED_BINARY = "embedded_binary"
+    TEXT_INTEGRITY = "text_integrity"
 
 
 @dataclass(frozen=True)

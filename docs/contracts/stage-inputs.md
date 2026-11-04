@@ -342,6 +342,7 @@ extraction 格式 1 不含题名、DOI、摘要等论文元数据。本服务不
 也不把 extraction 指纹当作具体正文输出字节的证明：正文来源同时绑定 extraction 指纹与
 实际消费的 reading/evidence_map 成员哈希。
 
+实际规范生产入口及只用文档/版面信号的 v1 规则见[规范正文](fulltext-extraction.md)。
 正文生产的 C1 约束及不达标处理见[规格 §4.9](../../intent/draft.md#49-docling-正文提取)，
 承接责任见[Body](../roadmap.md#module-body)、[B](../roadmap.md#module-b)与[F](../roadmap.md#module-f)。
 
