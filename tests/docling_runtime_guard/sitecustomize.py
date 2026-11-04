@@ -42,6 +42,13 @@ def deny_import_module(name: str, package: str | None = None) -> Any:
 builtins.__import__ = deny_import
 importlib.import_module = deny_import_module
 
+_database = os.environ.get("DOCLING_READONLY_DATABASE")
+_sidecars = (
+    {os.path.realpath(_database) + suffix for suffix in ("-wal", "-shm", "-journal")}
+    if _database
+    else set()
+)
+
 
 def guard(event: str, args: tuple[object, ...]) -> None:
     if (
@@ -63,7 +70,7 @@ def guard(event: str, args: tuple[object, ...]) -> None:
         os._exit(97)
     if event == "open":
         path, _mode, flags = args
-        if isinstance(path, str) and path.endswith(("-wal", "-shm", "-journal")):
+        if isinstance(path, str) and os.path.realpath(path) in _sidecars:
             return  # 只读 SQLite 既有 sidecar 例外。
         if isinstance(flags, int) and flags & (
             os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC

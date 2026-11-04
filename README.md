@@ -58,13 +58,10 @@ uv sync --offline --locked --extra docling
 uv run --offline --locked --extra docling python scripts/check_docling_imports.py
 ```
 
-extra 支持 Linux x86_64、glibc ≥2.28、普通启用 GIL 的 CPython 3.12–3.14；
-实际安装点为 3.12.14 / 3.13.15 / 3.14.4，其他 patch 未实测。
 安装、模型供给与正文质量分别验证；支持限制、离线失败与模型冻结规则见
 [CPU extra 安装](docs/contracts/extraction-config.md#cpu-extra-安装与支持面)，
-实测范围见[安装证据](docs/verification/issue-152-docling-installation.md)，组合覆盖、
-历史证据适用性与最终门禁判据见[Extra 交付索引](docs/verification/issue-150-extra-delivery.md)，
-当前审阅修复的 D1 与重新验证范围见[修复台账](docs/verification/issue-150-review-fixes.md)。
+实测范围见[安装证据](docs/verification/issue-152-docling-installation.md)，
+进度与后续责任见[路线图](docs/roadmap.md#module-extra)。
 
 长时间测试前可运行只读环境检查：
 

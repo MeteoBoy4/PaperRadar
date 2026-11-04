@@ -55,6 +55,8 @@ MissingReason 和下一步。Profile 或 Screening 模型未配置时明确提�
 `scope=docling-runtime result=passed|failed` 的必要项为基础检查、材料选择、extraction
 选择、平台与所选清单依赖。missing/invalid 均阻断并退出 2；全部通过退出 0。
 未知关键平台事实为 invalid，不能因 marker 跳过或包已安装判为成功。
+输出限于基础、选择、平台、依赖与 Docling 未验项；不展示其他阶段 readiness、
+Profile 或外发说明。范围成功提示仅说明这些必要检查，不改变 basic/config 的提示。
 
 检查项归属既有 `docling_fixture` 类；模型运行、native ABI、fixture/质量与资源单列为
 非必要 not_assessed，整个 fixture 类仍为 not_assessed，不套用 pi-exec 对所有未评项
@@ -105,7 +107,7 @@ Feed 承接 Audit/Source；Pi adapter 承接 Pi/Cwd/Live；校准承接 D；自�
 config 仅提示另用 `--scope pi-supply` 或 `--scope pi-exec`，不遍历安装树、不查询供给或审计事实、不计算 JGR 判据。
 受控执行资源已提供，cwd 现场隔离与 Cwd/Live 准入单列未验，不在 doctor 复制 cwd 白名单字面常量。
 
-外发说明只取本次验证的显式 settings/snapshot，分别显示 Screening（boundary/value）、reuse、Read
+config 范围的外发说明只取本次验证的显式 settings/snapshot，分别显示 Screening（boundary/value）、reuse、Read
 的 provider/model；缺槽显示 null，不补齐。终端字符串使用 JSON 编码，控制字符不成为新诊断行。
 实际执行时数据会离开本机：Screening 的 Profile/题名/摘要及 value 启用主题；reuse 的 Profile 与合法结构化来源或正文的 availability/methods/data 摘录；Read 的 Profile、论文元数据与合法正文提取物。
 本命令不发送数据，不读取或显示凭据内容、Profile 正文、提示词或模型响应。

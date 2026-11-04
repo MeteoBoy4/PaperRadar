@@ -8,6 +8,9 @@ import platform
 import sys
 from pathlib import Path
 
+from paper_radar.docling_runtime import RuntimeReason, docling_platform_facts
+from paper_radar.docling_toolchain import toolchain_supply
+
 
 class _SmokeFailure(Exception):
     def __init__(self, reason: str, message: str) -> None:
@@ -19,19 +22,13 @@ def _smoke() -> None:
     for name in ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "HF_HUB_DISABLE_TELEMETRY"):
         os.environ[name] = "1"
     os.environ["DO_NOT_TRACK"] = "1"
-    expected = {
-        "docling-slim": "2.135.0",
-        "docling-core": "2.105.0",
-        "docling-ibm-models": "4.0.3",
-        "docling-parse": "7.22.2",
-        "pypdfium2": "5.14.0",
-        "torch": "2.14.1+cpu",
-        "torchvision": "0.29.1+cpu",
-        "transformers": "5.19.0",
-        "typer": "0.27.2",
-        "opencv-python-headless": "4.14.0.94",
-    }
-    for name, version in expected.items():
+    supply = toolchain_supply("docling-2.135.0-cpu-v2")
+    expected = dict((*supply.component_versions, *supply.cli_constraints))
+    # native 安装烟测额外核对产品锁的 cv2 版本,不改变 extraction 语义清单。
+    expected["opencv-python-headless"] = "4.14.0.94"
+    # 保留无 extra 时首先指出 docling-slim 的既有失败输出。
+    for name in sorted(expected, key=lambda name: (name != "docling-slim", name)):
+        version = expected[name]
         try:
             actual = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
@@ -47,6 +44,11 @@ def _smoke() -> None:
                 "dependency_version_mismatch",
                 f"{name} 版本不符,需要锁定版本 {version}。",
             )
+    facts = docling_platform_facts()
+    if facts.reason is not RuntimeReason.PLATFORM_SUPPORTED:
+        raise _SmokeFailure(
+            facts.reason.value, "平台或构建 ABI 不受支持或关键事实未知。"
+        )
     imports = {
         "docling.document_converter": ("DocumentConverter", "PdfFormatOption"),
         "docling.backend.pypdfium2_backend": ("PyPdfiumDocumentBackend",),
@@ -106,7 +108,7 @@ def _smoke() -> None:
                 "platform": platform.platform(),
                 "machine": platform.machine(),
                 "libc": platform.libc_ver(),
-                "gil_enabled": sysconfig_gil_enabled(),
+                "gil_enabled": facts.gil_disabled is False,
                 "imports": imports,
                 "torch_cuda": torch.version.cuda,
                 "inventory": inventory,
@@ -117,12 +119,6 @@ def _smoke() -> None:
             indent=2,
         )
     )
-
-
-def sysconfig_gil_enabled() -> bool:
-    import sysconfig
-
-    return not bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 
 
 def main() -> int:

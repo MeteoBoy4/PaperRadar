@@ -141,7 +141,7 @@ def diagnose(
                 f"stage={stage.value} result=missing reason=configuration_unselected "
                 "下一步：使用 config 范围显式选择配置后检查。"
             )
-    if selected is not None:
+    if selected is not None and scope == "config":
         typer.echo(
             "业务配置缺项（独立披露）："
             + (", ".join(configuration_missing(selected)) or "无")
@@ -191,6 +191,8 @@ def diagnose(
                 f"外发数据类别={categories}；仅说明配置，不发送数据。"
             )
     for name, label, owner, next_step in CAPABILITIES:
+        if scope == "docling-runtime" and name != "docling_fixture":
+            continue
         typer.echo(
             f"category={name} {label} result=not_assessed "
             f"reason=evidence_not_assessed owner={owner} 下一步：{next_step}"
@@ -201,6 +203,11 @@ def diagnose(
         for check in unassessed_checks():
             _show(check)
     if passed:
-        typer.echo(SUCCESS_NOTICE)
+        typer.echo(
+            "result=passed 仅表示基础、选择、平台与所选工具链依赖检查通过；"
+            "模型、native ABI、fixture/质量与资源仍未验，0 不代表任何阶段可运行。"
+            if scope == "docling-runtime"
+            else SUCCESS_NOTICE
+        )
     else:
         raise typer.Exit(2)

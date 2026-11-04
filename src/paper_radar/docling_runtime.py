@@ -123,7 +123,8 @@ _MODULES = {
 }
 
 
-def _platform_facts() -> PlatformFacts:
+def docling_platform_facts() -> PlatformFacts:
+    """按需读取并分类 Docling 支持平台;仅 stdlib,不检查依赖或加载 SDK。"""
     system, machine = platform.system(), platform.machine()
     implementation = sys.implementation.name
     python_version = (sys.version_info[0], sys.version_info[1], sys.version_info[2])
@@ -268,26 +269,23 @@ def probe_docling_runtime(
         *toolchain_supply(toolchain).cli_constraints,
         ("opencv-python-headless", None),
     )
-    facts = _platform_facts()
+    facts = docling_platform_facts()
     dependencies = tuple(_dependency(name, version) for name, version in required)
     reason = facts.reason
     if reason is RuntimeReason.PLATFORM_SUPPORTED:
-        reason = next(
-            (
-                item.reason
-                for item in dependencies
-                if item.reason
-                in {
-                    RuntimeReason.DEPENDENCY_INCONSISTENT,
-                    RuntimeReason.VERSION_MISMATCH,
-                }
-            ),
-            RuntimeReason.DEPENDENCY_MISSING
-            if any(
-                item.reason is RuntimeReason.DEPENDENCY_MISSING for item in dependencies
-            )
-            else RuntimeReason.PASSED,
-        )
+        reason = _dependency_reason(dependencies)
     return RuntimeProbe(
         requested, enabled, toolchain, pdf_backend, reason, facts, dependencies
     )
+
+
+def _dependency_reason(dependencies: tuple[DependencyFact, ...]) -> RuntimeReason:
+    for item in dependencies:
+        if item.reason in {
+            RuntimeReason.DEPENDENCY_INCONSISTENT,
+            RuntimeReason.VERSION_MISMATCH,
+        }:
+            return item.reason
+    if any(item.reason is RuntimeReason.DEPENDENCY_MISSING for item in dependencies):
+        return RuntimeReason.DEPENDENCY_MISSING
+    return RuntimeReason.PASSED

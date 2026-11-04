@@ -36,7 +36,7 @@ check/load 的配置材料；安装事实不反推 extraction 已启用。模块
 | `runtime_selection_invalid` | enabled 但缺少工具链或后端 | `configure_extraction` |
 | `platform_unknown` | 无法确认关键平台事实 | `prepare_supported_platform` |
 | `platform_unsupported` | 已知范围外平台 | `prepare_supported_platform` |
-| `platform_supported` | 平台子项元数据匹配 | `consumer_runtime_checks` |
+| `platform_supported` | 仅 `PlatformFacts.reason`：平台子项元数据匹配，不是 `RuntimeProbe.reason` 返回值 | 无（平台子项不提供 `next_step`） |
 | `dependency_missing` | 顶层模块与 metadata 均缺失 | `sync_locked_extra` |
 | `dependency_inconsistent` | 二者不一致，或发现/metadata 无法读取 | `repair_environment` |
 | `dependency_version_mismatch` | 现场版本不等于所选清单的精确版本 | `match_selected_toolchain` |
@@ -47,6 +47,11 @@ libc 由本机 `CS_GNU_LIBC_VERSION` 读取；不运行外部命令。GIL ABI �
 `Py_GIL_DISABLED` 与解释器 ABI 标志；CPython 3.12 不存在 free-threaded 构建，
 其缺省标志按该解释器保证处理。free-threaded 构建即使临时启用 GIL 也拒绝。
 系统、架构、libc 或 ABI 的未知关键事实阻止 passed；marker 跳过不能充当成功依据。
+
+`paper_radar.docling_runtime.docling_platform_facts()` 按需返回上述 `PlatformFacts`，
+供 probe 与显式安装 smoke 共用平台分类；不读取依赖库存、不导入 SDK。
+模块导入仍不读取现场。安装 smoke 复用平台拒绝原因，在 SDK import 前拒绝
+不支持或关键事实未知的平台，成功 JSON 的 `gil_enabled` 来自同一构建 ABI 事实。
 
 包版本来自 `backend_identity` 展开的实际消费组件，以及 `toolchain_supply` 的
 `cli_constraints`，不维护第二份版本清单。两个后端都需要 pypdfium2；仅 threaded
@@ -68,6 +73,8 @@ TableFormer 另要求 `opencv-python-headless` metadata 与顶层 `cv2`；具体
 模型、native ABI、质量/fixture、资源分别以 `.models`、`.native_abi`、`.quality`、
 `.resources` 列为非必要 not_assessed，不阻止仅依赖范围成功。整个 Docling fixture
 类别仍为 not_assessed；安装子项通过不产生 fixture gate、executable 或 Read/reuse 资格。
+此范围只展示基础、选择、平台、依赖和 Docling 的未验项；其他阶段 readiness、Profile
+及外发说明由 `config` 范围展示。
 
 ## 错误与拒绝
 

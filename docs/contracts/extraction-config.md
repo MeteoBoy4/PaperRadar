@@ -119,8 +119,10 @@ parse 已安装而把其版本加入 pypdfium2 的阶段语义。两后端输出
 `check_docling_imports.py` 是独立显式 smoke，核对安装库存、CPU 状态及 converter、
 两个后端、TableFormer、Transformers、cv2 导入。普通离线 pytest 不执行真实 SDK smoke，
 不要求安装 Docling、模型或 PDF。成功向 stdout 输出既有安装 JSON；缺包、版本不符、
-安装元数据不可读、SDK/native 导入失败、非 CPU torch 或 CUDA/OCR 库存均退出 1,
+安装元数据不可读、平台/构建 ABI 不支持或关键事实未知、SDK/native 导入失败、非 CPU torch
+或 CUDA/OCR 库存均退出 1,
 向 stderr 给出受控原因、中文说明及锁定供给/支持环境的修复下一步,不回显原始异常。
+平台分类复用[轻量探测](docling-runtime.md)的 stdlib 平台事实入口。
 安装检查不是轻量 probe,真实 SDK 导入仍仅在此显式入口执行。已装 extra 的环境中，普通
 `uv run --offline --locked …` 默认保留额外已装包；`uv sync` 则按选定 extra 精确同步，
 因此需要 extra 时仍显式传 `--extra docling`，并在组合验证前后核对库存。

@@ -18,7 +18,7 @@ V2_VERSIONS = {
     "pypdfium2": "5.14.0",
     "docling-parse": "7.22.2",
     "typer": "0.27.2",
-    "opencv-python-headless": "4.13.0.92",
+    "opencv-python-headless": "4.14.0.94",
 }
 MODULES = {
     "docling",

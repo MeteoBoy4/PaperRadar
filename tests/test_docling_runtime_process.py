@@ -25,7 +25,10 @@ def invoke(
         "PYTHONPATH": str(Path(__file__).parent / "docling_runtime_guard"),
         "PYTHONDONTWRITEBYTECODE": "1",
         "DOCLING_HELP_ONLY": "1" if "--help" in args else "0",
+        "DOCLING_FORBID_PROBE": "1" if "--help" in args else "0",
     }
+    if "--database" in args:
+        env["DOCLING_READONLY_DATABASE"] = args[args.index("--database") + 1]
     if facts is not None:
         env["DOCLING_FACTS"] = json.dumps(facts)
     return subprocess.run(
@@ -194,6 +197,7 @@ def test_nonruntime_config_and_historical_load_never_probe_inventory(
             "PYTHONPATH": str(Path(__file__).parent / "docling_runtime_guard"),
             "PYTHONDONTWRITEBYTECODE": "1",
             "DOCLING_FORBID_PROBE": "1",
+            "DOCLING_READONLY_DATABASE": str(database),
         },
         capture_output=True,
         text=True,

@@ -7,10 +7,12 @@ from types import SimpleNamespace
 import pytest
 
 from scripts.check_docling_imports import main
+from tests.docling_runtime_support import environment
 
 
 @pytest.fixture
 def installed(monkeypatch: pytest.MonkeyPatch) -> None:
+    environment(monkeypatch)
     versions = {
         "docling-slim": "2.135.0",
         "docling-core": "2.105.0",
