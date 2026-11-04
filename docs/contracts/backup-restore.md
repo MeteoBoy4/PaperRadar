@@ -270,6 +270,11 @@ attempt，源库与副本独立继续时，不承诺追回丢失次数、跨恢�
 共享 source_snapshot 允许论文与审计去重，不使未引用完整制品变成业务成功；
 当前备份不承担制品清理，共享引用规则见[Fixture 审计](fixture-audit.md#完成审计引用与完整恢复107)。
 
+规范正文 extraction 的四成员随通用制品闭包保留；恢复后
+[正文读取服务](fulltext-extraction.md)依据明确三元组校验成员、重建 ReadContext 并逐字回查，
+无需原运行目录或 SDK。通用 backup verify 仍只核验已登记成员，不把任意 extraction
+自动解释为具消费资格的规范正文；后续业务事实的接线责任见[Body](../roadmap.md#module-body)。
+
 ## 不提供／不证明
 
 - 不提供 NAS 增量备份、保留策略或无人值守 timer；本机隔离恢复不证明 NAS 恢复。

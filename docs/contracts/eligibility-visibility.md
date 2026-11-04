@@ -121,7 +121,12 @@ deferred 概念仍保留 None。普通单篇 deferred 结果不制造原因。
 
 质量依据是 `formal_gate/experiment_document_gate/failed/absent/unknown`，
 通过依据必须绑定同一 extraction_reference。failed 必须带闭集 QualityFailure：
-`pdf_text_layer/body_boundary/reading_order/evidence_replay/content_identity/layout_review/representative_coverage`。
+`pdf_text_layer/body_boundary/reading_order/evidence_replay/content_identity/layout_review/representative_coverage/
+source_generated_separation/embedded_binary/text_integrity`。
+后三项分别表示源与生成混合、内联二进制/base64、替换字符或编码损坏；
+详细自动检查见[规范正文](fulltext-extraction.md#自动质量与统计)。
+中文指引由 `eligibility.presentation.quality_failure_guidance` 提供，DTO 的 quality_failure 保留枚举值；
+EligibilityReason 不扩张。转换尚未产出完整规范制品时不伪造质量失败，保持 quality_absent。
 这些是生产者已作判断的失败类别，A 不计算阈值、F 的四刊门槛或 D 的正式 evaluation。
 失败同时返回 quality_failed 与 quality_failure；缺少失败类别是矛盾。
 
