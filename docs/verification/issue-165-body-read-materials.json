@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "scope": "Body #155/#165 independent D1 candidate; stage_a_verified=false",
+  "scope": "Body #155/#165 independent D1 engineering coverage and final gate criteria; stage_a_verified=false",
   "base": "c1a57f11c70521cd506bf8eba0145deef9d0cb60",
   "material_count": 132,
   "identity_rule": "Exact members only; this JSON excludes itself to avoid self-hashing. Its bytes and all live documents are protected by final HEAD/full worktree identity. No run_id; no live classification expansion; no old required/count expansion.",
@@ -415,8 +415,8 @@
     },
     {
       "path": "docs/verification/issue-165-body-read-closure.md",
-      "sha256": "0e0137a21f26bb38c665829da7c5bfe32fe970574c51f0a3c033a7f8ccb8a9c0",
-      "size_bytes": 18803,
+      "sha256": "5086121fd6294b600ea082a6c563dc260c81460bc4075f732e31f3637d76baaa",
+      "size_bytes": 18923,
       "kind": "coverage",
       "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
       "base_sha256": null,
