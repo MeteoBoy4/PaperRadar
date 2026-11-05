@@ -179,6 +179,8 @@ def validate_all(database: Path, root: Path) -> None:
                 )
                 for index, attempt in enumerate(view.attempts):
                     timestamp(attempt.claimed_at)
+                    if attempt.executor_audit is not None:
+                        require(attempt.executor_audit.matches(semantics))
                     backend = connection.execute(
                         select(tables.attempts.c.backend).where(
                             tables.attempts.c.attempt_id == attempt.attempt_id
@@ -241,7 +243,8 @@ def validate_all(database: Path, root: Path) -> None:
                         )
                         # manifest 转换时间在发布前采样,attempt 包含发布耗时。
                         require(
-                            manifest.peak_memory_bytes == attempt.peak_memory_bytes
+                            manifest.execution_audit == attempt.executor_audit
+                            and manifest.peak_memory_bytes == attempt.peak_memory_bytes
                             and attempt.elapsed_seconds is not None
                             and manifest.elapsed_seconds <= attempt.elapsed_seconds
                         )

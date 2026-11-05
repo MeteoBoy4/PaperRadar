@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from paper_radar.eligibility import QualityFailure
 from paper_radar.fulltext.canonical import (
@@ -12,6 +12,7 @@ from paper_radar.fulltext.canonical import (
     CanonicalPage,
     CanonicalProvenance,
 )
+from paper_radar.fulltext.execution_audit import ExtractionExecutionAudit
 from paper_radar.reading.context import ExtractionIdentity, ReadContext, SourceSlice
 
 
@@ -66,6 +67,18 @@ class ExtractionManifest(CanonicalModel):
     elapsed_seconds: float = Field(ge=0, allow_inf_nan=False)
     peak_memory_bytes: int = Field(ge=0)
     warnings: tuple[str, ...] = ()
+    execution_audit: ExtractionExecutionAudit | None = None
+
+    @model_validator(mode="after")
+    def coherent_audit(self) -> "ExtractionManifest":
+        audit = self.execution_audit
+        if audit is not None and (
+            audit.backend_config_hash != self.backend_config_hash
+            or audit.model_artifacts_hash != self.model_artifacts_hash
+            or audit.normalization_version != self.normalization_version
+        ):
+            raise ValueError("执行审计与manifest身份不符")
+        return self
 
 
 @dataclass(frozen=True)
@@ -137,3 +150,11 @@ class FulltextError(ValueError):
         self.reason = FulltextReason(reason)
         self.quality = quality
         super().__init__(f"正文制品拒绝：{reason}")
+
+
+def manifest_payload(manifest: ExtractionManifest) -> dict[str, object]:
+    """旧 manifest 未声明审计时保持原字节编码;不写缺省 null。"""
+    return manifest.model_dump(
+        mode="json",
+        exclude={"execution_audit"} if manifest.execution_audit is None else set(),
+    )

@@ -220,6 +220,12 @@ extraction 配置就绪只要求所选材料合法且完整，不依赖 Profile�
 配置内容哈希不能代替实际正文/evidence 成员的内容身份。
 V1 `backend_id=docling`，不提供 backend 注册表、自动 fallback、A/B 或论文路由。
 
+## 显式执行参数
+
+模型根、超时、内存上限和线程由 `DoclingRun` 显式提供，不写入版本化 extraction 配置或
+Stage fingerprint。模型部署清单、锁前核验顺序、离线与资源口径见
+[Docling 执行契约](docling-execution.md)。本配置服务仍不加载 SDK 或模型。
+
 ## 校验错误
 
 `do_ocr: true` 触发受控原因 `v1_ocr_disabled`，CLI/公共服务将其映射为字段路径与

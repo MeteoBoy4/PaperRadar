@@ -29,7 +29,8 @@ inputs = body_table(
     "extraction_inputs", "fingerprint backend pdf_sha256 snapshot_id payload"
 )
 attempts = body_table(
-    "extraction_attempts", "attempt_id fingerprint backend ordinal claimed_at"
+    "extraction_attempts",
+    "attempt_id fingerprint backend ordinal claimed_at executor_audit_json",
 )
 outcomes = body_table(
     "extraction_outcomes",
