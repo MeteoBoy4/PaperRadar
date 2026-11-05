@@ -12,6 +12,7 @@ from paper_radar.eligibility import (
     RootPurpose,
 )
 from paper_radar.fulltext.canonical import CanonicalDocument
+from paper_radar.fulltext.execution_audit import ExtractionExecutionAudit
 from paper_radar.reading.context import ExtractionIdentity
 
 
@@ -126,8 +127,16 @@ class ParserFailure(Exception):
         super().__init__(self.failure.value)
 
 
+class PreparedParser(Protocol):
+    audit: ExtractionExecutionAudit
+
+    def convert(self, pdf: bytes, semantics: ExtractionSemantics) -> ParserResult: ...
+
+    def close(self) -> None: ...
+
+
 class CanonicalParser(Protocol):
-    def preflight(self, semantics: ExtractionSemantics) -> None:
+    def preflight(self, semantics: ExtractionSemantics) -> PreparedParser | None:
         """外部 probe 与模型核验;在锁/领取前运行,失败不占预算。"""
         ...
 
@@ -144,6 +153,7 @@ class ExtractionAttempt:
     artifact_id: str | None
     elapsed_seconds: float | None
     peak_memory_bytes: int | None
+    executor_audit: ExtractionExecutionAudit | None = None
 
 
 @dataclass(frozen=True)

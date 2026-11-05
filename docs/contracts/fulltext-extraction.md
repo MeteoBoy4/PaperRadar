@@ -138,6 +138,12 @@ inline 总数为零只表示 canonical 未给独立 inline item，不代表不�
 本服务的冷进程重建不证明 PDF 源字节真实性、四刊质量、实际模型调用、
 真实公式覆盖、代表性资源阈值或正常生产 Read。
 
+## 可选执行审计兼容
+
+四角色 manifest 的可选 `execution_audit` 保存受控 Docling 执行参数，详细字段与资源口径见
+[执行契约](docling-execution.md#持久审计)。未声明时编码完全省略该字段，旧 manifest
+仍按原字节验证与读取；不补默认 null，不更改 format_version、角色或正文消费三元组。
+
 ## 相关
 
 - [制品存储](artifact-store.md)、[阶段输入 C1](stage-inputs.md#c1-封面识别的输入边界)、

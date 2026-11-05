@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import ValidationError
 
 from paper_radar.fulltext.canonical import CanonicalDocument
+from paper_radar.fulltext.execution_audit import ExtractionExecutionAudit
 from paper_radar.fulltext.models import (
     EvidenceMap,
     ExtractionManifest,
@@ -13,6 +14,7 @@ from paper_radar.fulltext.models import (
     FulltextError,
     LoadedExtraction,
     PublishedExtraction,
+    manifest_payload,
 )
 from paper_radar.fulltext.normalization import (
     canonical_json,
@@ -45,6 +47,7 @@ class FulltextArtifacts:
         peak_memory_bytes: int,
         document_json: bytes | None = None,
         warnings: tuple[str, ...] = (),
+        execution_audit: ExtractionExecutionAudit | None = None,
     ) -> PublishedExtraction:
         for value in (
             extraction_fingerprint,
@@ -73,12 +76,13 @@ class FulltextArtifacts:
             elapsed_seconds=elapsed_seconds,
             peak_memory_bytes=peak_memory_bytes,
             warnings=warnings,
+            execution_audit=execution_audit,
         )
         members = {
             "document": audit_bytes,
             "reading": reading,
             "evidence_map": evidence_bytes,
-            "manifest": canonical_json(manifest.model_dump(mode="json")),
+            "manifest": canonical_json(manifest_payload(manifest)),
         }
         quality = check_quality(evidence_map, identity, members)
         record = self.store.publish_artifact(
@@ -120,7 +124,7 @@ class FulltextArtifacts:
             != members["evidence_map"]
         ):
             raise FulltextError("invalid_encoding")
-        if canonical_json(manifest.model_dump(mode="json")) != members["manifest"]:
+        if canonical_json(manifest_payload(manifest)) != members["manifest"]:
             raise FulltextError("invalid_encoding")
         quality = check_quality(evidence_map, identity, members)
         if not quality.passed:
