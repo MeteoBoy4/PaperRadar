@@ -59,7 +59,7 @@ SHARED_MATERIALS = {
         "1fff915ac03183daa659281ad3119e2281bd1f052fe4946a3062d70d454caae2"
     ),
     "scripts/a5_acceptance.py": (
-        "ed5517bec34993540c276c6136b7f30e685559f84a0e9dfd9c9fced3769a95d3"
+        "3980b27cc47477d65d49603f5d27ea7d0bddea75042c13aac40dde04655c27d3"
     ),
     "scripts/a6_acceptance.py": (
         "ebd079873bbe3e440ff109d34cc84dc21ab65209a8033dc63e356c3d44ba040d"
@@ -236,7 +236,7 @@ SHARED_MATERIALS = {
         "a52553e700aa7a06f69c45c90052ffb813db6319c90d4a9fd39173767af3b9d9"
     ),
     "src/paper_radar/llm/models.py": (
-        "7f35d52f95900c67061d16c8fb5b6ec9707c676353b2bd2e0bc82c7d5d491742"
+        "a08af74b01fbec27a6108df73b9a54b5a6f3afe70b58794809be598155442664"
     ),
     "src/paper_radar/papers/__init__.py": (
         "2db5994c8f0a7b00bfd205a739e0f32e96b8769a75c185725335710c3c5fec36"
@@ -488,10 +488,10 @@ SHARED_MATERIALS = {
         "fdd3045c423fa2609bee7303192443d24c020cf36c54cba50710e2cc167b0f51"
     ),
     "src/paper_radar/stage_inputs/__init__.py": (
-        "d3a77ae4330d0821ddf84ed6b9f02830292f5b3ba678c69faa48e2bfc7611a87"
+        "7ab559c7612a320baf74915174b90b53d04a2f7fffe498649bfb684f948b076d"
     ),
     "src/paper_radar/stage_inputs/service.py": (
-        "d2dc724da98760240b6fa95e09619b2ca435e506c68a221976ae8c3ffba382da"
+        "8fef16604bd6103ff2909f613db556c66bb9658e8da3e98f38ec1c008e7ceba7"
     ),
     "src/paper_radar/storage/__init__.py": (
         "52dd2406b588ddb72767d4621f5bddc12d8b68425e049b562574ca9c1789b236"

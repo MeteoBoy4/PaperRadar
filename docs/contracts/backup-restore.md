@@ -133,6 +133,7 @@ CLI 参数脱敏，帮助和错误指引为中文，I/O 服务延迟加载；帮
 | file_corrupt | 字节／长度／blob 权限不符，检查保护副本 |
 | database_invalid | SQLite 完整性／外键／单文件模式等校验失败，检查数据库 |
 | registration_invalid | 制品登记或业务事实闭包损坏，检查来源或保护副本 |
+| unsupported_rule_version | 历史 Read 证据接收规则不受支持，使用支持该规则的程序校验恢复；不重跑模型 |
 | config_invalid | 历史配置无法完整回放，检查配置登记 |
 | supply_invalid | 固定供给事实无法完整回放，检查材料及 D5 引用；不安装或联网补齐 |
 | output_invalid | output 不可用或位于受控子树，选择可写安全目录 |
@@ -220,7 +221,8 @@ a405、a704、a1001 及 feed01–feed06）返回 `unsupported_revision`，不在
 ## 组件事实闭包
 
 备份固定副本的公共登记回放之后、manifest 反查之前，`verify_contents` 调用
-`FixtureAudit.validate_all()` 和 `FeedPipeline.validate_all()`；后者组合 PaperFacts、
+`FixtureAudit.validate_all()`、`FeedPipeline.validate_all()`、`BodyService.validate_all()` 和
+`ReadTasks.validate_all()`；FeedPipeline 组合 PaperFacts、
 ScreeningTasks、JGRFeed、JGRMetadata 及组合登记依据的校验。所有来源语义在副本上校验，
 外层数据库／清单重哈希不能绕过这些检查；拒绝不回写源库、不修复批次、不发布错误恢复目标。
 组件详细格式与规则由下列 Contract 唯一定义：
@@ -276,7 +278,7 @@ attempt，源库与副本独立继续时，不承诺追回丢失次数、跨恢�
 已登记的根用途、决定及 Screening 引用、PDF 原字节/选择历史、冻结样本、extraction
 StageInput、两次预算/唯一成功、自动质量和人工核查闭包；损坏为 registration_invalid。
 未被业务事实引用的任意 extraction 不自动取得消费资格。核验不回收未结算 attempt，
-不调用 parser、不改变剩余预算或用途；锁载体 .body-docling.lock 不在批次封闭集合，
+不调用 parser、不改变剩余预算或用途；锁载体 .body-docling.lock 与 .body-read.lock 均不在批次封闭集合，
 恢复不要求存在，误入批次为 unexpected_entry。详细规则见[正文持久化](body-persistence.md)。
 
 Read 业务验证调用 ReadTasks.validate_all，闭包包括每代预算、未结算租约、唯一 retry 边、

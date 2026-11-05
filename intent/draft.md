@@ -747,7 +747,9 @@ document.json 保存不嵌入 base64 图片的 DoclingDocument，保留原始 pa
 
 backend 身份、组件版本、模型制品或解析配置变化只使该 backend 的旧正文制品过期；`normalization_version` 变化使所有 backend 的旧正文制品过期。任一变化都要求重新运行全部四刊 fixtures。失败制品不能成为当前制品，也不能调用 Read 或复用升级。
 
-解析失败按可恢复性分类：`extraction_failed_no_text_layer` 与 `extraction_failed_quality_gate` 对当前指纹是永久失败，分别等待 OCR/V2 或配置、fixture、输入变化；`extraction_resource_exhausted` 与 `extraction_timeout` 可以在后续 `run-due` 中使用剩余尝试预算重试。两次耗尽后进入解析失败队列，只有显式 retry 或新指纹重置预算。永久失败与尝试预算都绑定 backend × 指纹，不绑定论文本身：解析失败记录携带 backend 身份，换 backend 即产生新指纹并重置预算；工具错误到受控枚举的映射由 parser adapter 完成，不散落在编排层。
+质量只对完整规范制品断言：转换失败、`PARTIAL_SUCCESS` 或无法形成完整 canonical 时仅记提取失败，质量保持 absent；已生成规范制品的源/生成混淆、base64 与替换字符分别记 source_generated_separation、embedded_binary、text_integrity，永久拒绝当前指纹（#155 最终裁决）。
+
+解析失败按可恢复性分类：`extraction_failed_no_text_layer` 与 `extraction_failed_quality_gate` 对当前指纹是永久失败，分别等待 OCR/V2 或配置、fixture、输入变化；`extraction_resource_exhausted` 与 `extraction_timeout` 可以在后续 `run-due` 中使用剩余尝试预算重试。两次耗尽后进入解析失败队列，只有显式 retry 或新指纹重置预算。永久失败与尝试预算都绑定 backend × 指纹，不绑定论文本身：解析失败记录携带 backend 身份，换 backend 即产生新指纹并重置预算；工具错误到受控枚举的映射由 parser adapter 完成，不散落在编排层。领取后的 SDK/native ABI 或其他环境异常归任务 executor_error，占用当次预算且可在剩余次数内重试；文档转换失败与 PARTIAL_SUCCESS 归 extraction_failed_quality_gate，可靠文本层缺失仍用 extraction_failed_no_text_layer。模型声明逐文件核验和公共 probe 尽量在领取前完成。
 
 ### 4.10 Read Agent
 
@@ -1502,7 +1504,7 @@ Pi 的 retry、自动 compaction/summarization 和后续模型回合关闭；一
 
 ### 8.4 HTTP 与外部来源失败
 
-Read 的 `output_without_support` 是末次丢弃主体全空时的安全拒绝原因，任务类别仍为 `output_invalid`，不新增外部来源失败类型或预算（ADR-0042）。
+Read 的 `output_without_support` 是末次丢弃主体全空时的安全拒绝原因，任务类别仍为 `output_invalid`，不新增外部来源失败类型或预算（ADR-0042）。Docling 领取后环境/ABI 异常归执行任务 `executor_error`；文档转换失败或 PARTIAL_SUCCESS 归 `extraction_failed_quality_gate`，没有完整规范制品时质量未评估。两者不得互换，详见 §4.9。
 
 HTTP 请求可以对连接错误和 429/5xx 做同一次任务内的短暂退避，但不能无限重试。长期恢复资格按来源和用途分别保存：
 
@@ -1849,8 +1851,9 @@ A 真正收口时由收口实现票产出机器可读阶段结论，I 聚合。�
 - 语言事实用数据库 Feed 身份/发现关系确定首发期刊，再按 ADR-0035 v1 映射，保存来源及策略版本；同刊多 Feed 一致，不做 first-seen/first-wins。跨刊冲突影响 bool 时保留冲突并拒绝新不确定登记；无归属人工 Paper 不登记 value；旧预算/retry 继承原值，策略不进 A5 指纹、不重置预算。
 - 用户在 Screening 前按研究判断预选当轮 JGR 样本并记录理由，冻结 Paper/版本、Feed 来源和 PDF 哈希（取得后绑定）。`out_of_scope` 不调用 value，保留结果后按同一规则换样、记录原因；不为迁就结果修改 Profile/Prompt。历史 §13.3 PDF 不自动等于当轮样本。
 - 校准关闭；B 可保存两阶段输出、实验范围的确定性建议及人工决定，只有用户人工 accepted 生效。实验建议无自动决定权，Read 的必填 `next_action` 保留；实验材料不流入普通生产建议/自动决定链。
-- 最低 PDF 路径为人工附加合法 PDF，验证内容与版本关联，DOI 检测只产生候选；Wiley TDM、授权/渲染与凭据运行时留 F。B 记录样本峰值并显式单次运行，不能把它当作 F 锁定 fixture 峰值。
+- 最低 PDF 路径为人工显式指定 paper/version 附加合法 PDF，缺省 version 在首次附加时冻结为当前版本；校验签名、最小体积与 SHA-256，不推断内容归属。DOI 检测候选不属于 Body 最低路径，由 B/F 后续取得入口承接；Wiley TDM、授权/渲染与凭据运行时留 F。B 记录样本峰值并显式单次运行，不能把它当作 F 锁定 fixture 峰值。
 - 生产 parser/canonical/normalize/evidence 切片与逐文档门槛须先交付；C1 禁止未入 extraction 指纹的题名/DOI/摘要，单样本失败阻断实验。按 ADR-0041 保留自包含 evidence-map 的 orig、页面、源块和 provenance，由 evidence_map_sha256 覆盖，document 只作审计；验证无 extra 冷重建、篡改/缺成员拒绝及恢复后逐字回查，不以方向已定推定真实样本保真已验。
+- Body 提供 SQLite 唯一事实源的不可变根用途、直接人工决定（附上游 Screening 成功引用）、冻结样本、PDF 选择、自动检查与六项人工版式核查 API；B 提供产品命令与真实核查。Read 上游来源取决定所引用的历史成功，不因依据过时而失效；纯人工 accepted 无 Screening 引用仍为 unknown，由 B/C 的专用人工通道扩展（ADR-0043）。
 - 最小 Read 票交付 Read StageInput、任务/两次预算、租约、显式 retry、analysis 持久化与幂等恢复；按 ADR-0042 保存接收策略、序号、三规则身份与丢弃清单。三规则均不进入模型指纹，纯后处理警告变化不触发模型重跑或刷新预算；不能仅把 A9 校验器接 RPC 视为完成。
 - 超出单次安全输入预算时，在任何模型调用前拒绝该样本，或前移该样本所需的完整分块能力；不得截断全文、丢章节或借 Screening 会话。G 继续负责通用长文能力。
 - 首张真实任务票同时交付 `screening failures/retry`、`paper trace` 组合、中文 help/退出码与恢复验证；show/trace/最小日报从第一天调用 A visibility 接口。

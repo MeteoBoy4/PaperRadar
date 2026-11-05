@@ -70,12 +70,21 @@ sink 默认 NullSink，不猜测数据根、不创建日志文件。B 在选定�
 允许字段闭集见[运行日志](runtime-logging.md#read-执行字段闭集)。完整 JSONL/RPC、stderr、
 prompt、Profile、正文、候选、坏 evidence ID、修正、认证及环境值不进入日志；候选只作为必要业务制品保留。
 
+## 错误与拒绝
+
+执行资源、安装、认证、准入、采样映射与超时参数错误保持 ExecutionError 的封闭原因和中文指引，
+不占 attempt；ReadTaskError 保留业务前置、完整帧预算、所有权及持久引用拒绝原因。
+领取后的协议执行失败结算为既定 ReadFailure，不回显原始 stderr 或认证内容；
+文件/数据库发布故障不能留下半条分析。具体闭集由[Pi 执行](pi-execution.md)和
+[Read 任务](read-tasks.md#错误与拒绝)拥有，调用者据原原因处理，不包装成通用模型失败。
+
 ## 不提供／不证明
 
 离线协议/进程替身只验证工程路径；准入离线测试只证明缺失、不符或未实测时拒绝。
 **任何替身运行成功都不得解释为 EXP-2 或真实执行准入已成立。**
 真实供给、安装保护、认证刷新、cwd 祖先资源与主机出站、实际 1.4.0 RPC/模型参数与权限归 Cwd/Live/B。
-真实 PDF→真实 Read→隔离恢复的完整组合由 #165/B 承接，本服务不宣称其通过。
+合成 PDF→正文→Pi 工程进程→隔离恢复的独立组合见[组合覆盖](../verification/issue-165-body-read-closure.md)；
+真实 PDF→真实模型 Read 的完整组合由[B](../roadmap.md#module-b)承接。
 
 ## 相关
 

@@ -290,7 +290,7 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 冻结样本、持久提取预算及独立版式核查。
 `paper_radar.docling_executor.DoclingParser` 通过显式模型根、超时和地址空间上限，
 在离线受限子进程中执行所选工具链；[执行契约与调用方式](docs/contracts/docling-execution.md)
-及[用户 smoke 命令](docs/verification/issue-159-docling-execution.md#用户本人执行的-smoke-命令)说明资源口径和未验范围。
+及[单样本真实 smoke 与隔离恢复记录](docs/verification/issue-164-docling-smoke.md)说明资源口径和能力上限。
 外部 canonical parser 通过显式参数注入，
 只读事实可在调用者事务内核验；备份会重验正文业务闭包。
 接口、拒绝与限制见[正文持久化契约](docs/contracts/body-persistence.md)，
@@ -303,9 +303,11 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 实验分析保留来源/质量/丢弃标记并被普通消费拒绝；备份在无 extra 环境重验完整业务闭包。
 `paper_radar.read_queries.ReadQueries` 提供当前/历史分析、两轴状态、旧配置列表及保留证据回查；
 仅使用明确历史快照，不自动重跑，展示 DTO 不携带原始候选或被丢弃内容。
-公共接口及执行边界见[Read 任务契约](docs/contracts/read-tasks.md)，新增覆盖见
-[独立 D1 台账](docs/verification/issue-161-read-tasks-delivery.md)。产品 CLI 与真实 Pi 接线
-责任见[路线图](docs/roadmap.md#module-body)。
+`paper_radar.read_execution.ReadExecution.run_attempt` 组合单篇 Pi 执行、领取和权威接收；
+当前产品执行准入缺失时在领取前拒绝。公共边界见[Read 任务](docs/contracts/read-tasks.md)及
+[执行契约](docs/contracts/read-execution.md)，跨消费者组合与恢复候选见
+[独立 D1 台账](docs/verification/issue-165-body-read-closure.md)。产品 CLI 与真实 Pi 接线
+责任见[路线图 B](docs/roadmap.md#module-b)。
 
 ## Read 输出与证据校验
 

@@ -1,0 +1,1912 @@
+{
+  "format_version": 1,
+  "scope": "Body #155/#165 independent D1 candidate; stage_a_verified=false",
+  "base": "c1a57f11c70521cd506bf8eba0145deef9d0cb60",
+  "material_count": 131,
+  "identity_rule": "Exact members only; this JSON excludes itself to avoid self-hashing. Its bytes and all live documents are protected by final HEAD/full worktree identity. No run_id; no live classification expansion; no old required/count expansion.",
+  "consumer_review": "Existing registered ingress backup/service, llm/calls, stage_inputs/service and storage artifacts remain independently audited in A scopes. New consumer closure below is independent D1, not recursively certified by ingress SHA. Static edges are conservative review aids, not runtime coverage.",
+  "manual_test_expectations": {
+    "tests/test_fulltext_artifacts.py": {
+      "expected_cases": 10,
+      "purpose": "#156 源成员与质量"
+    },
+    "tests/test_fulltext_normalization.py": {
+      "expected_cases": 7,
+      "purpose": "#156 文档信号、顺序、受限块"
+    },
+    "tests/test_fulltext_quality.py": {
+      "expected_cases": 10,
+      "purpose": "#156 公开质量原因与可靠性"
+    },
+    "tests/test_fulltext_restore.py": {
+      "expected_cases": 4,
+      "purpose": "#156 源字节/身份恢复"
+    },
+    "tests/test_read_acceptance_v2.py": {
+      "expected_cases": 42,
+      "purpose": "#157 v2 末次接收"
+    },
+    "tests/test_read_acceptance_v2_compatibility.py": {
+      "expected_cases": 26,
+      "purpose": "#157 两版等同与差异"
+    },
+    "tests/test_body_facts.py": {
+      "expected_cases": 13,
+      "purpose": "#158 根/PDF/决定/样本"
+    },
+    "tests/test_body_extraction.py": {
+      "expected_cases": 21,
+      "purpose": "#158 提取预算/质量"
+    },
+    "tests/test_body_concurrency.py": {
+      "expected_cases": 5,
+      "purpose": "#158 真实根锁竞争"
+    },
+    "tests/test_body_recovery.py": {
+      "expected_cases": 8,
+      "purpose": "#158 业务闭包恢复"
+    },
+    "tests/test_body_migrations.py": {
+      "expected_cases": 3,
+      "purpose": "#158 feed07→body01"
+    },
+    "tests/test_body_privacy.py": {
+      "expected_cases": 1,
+      "purpose": "#158 安全日志"
+    },
+    "tests/test_docling_executor.py": {
+      "expected_cases": 23,
+      "purpose": "#159 受限 worker、失败与资源"
+    },
+    "tests/test_docling_mapping.py": {
+      "expected_cases": 5,
+      "purpose": "#159 真实 docling-core 映射，不跳过"
+    },
+    "tests/test_docling_manifest_compatibility.py": {
+      "expected_cases": 2,
+      "purpose": "#159 历史 manifest 字节"
+    },
+    "tests/test_docling_cold_import.py": {
+      "expected_cases": 1,
+      "purpose": "#159 延迟导入"
+    },
+    "tests/test_no_extra_runtime.py": {
+      "expected_cases": 1,
+      "purpose": "#159 实际 base 端口"
+    },
+    "tests/test_docling_executor_recovery.py": {
+      "expected_cases": 2,
+      "purpose": "#159 执行审计冷恢复"
+    },
+    "tests/test_read_stage_input.py": {
+      "expected_cases": 27,
+      "purpose": "#160 Read 身份与纯层回放"
+    },
+    "tests/test_read_inputs.py": {
+      "expected_cases": 10,
+      "purpose": "#160 持久正文/渲染/完整帧"
+    },
+    "tests/test_read_tasks.py": {
+      "expected_cases": 5,
+      "purpose": "#161 接收与修正"
+    },
+    "tests/test_read_tasks_leases.py": {
+      "expected_cases": 6,
+      "purpose": "#161 lease/retry/唯一成功"
+    },
+    "tests/test_read_tasks_preconditions.py": {
+      "expected_cases": 11,
+      "purpose": "#161 同事务实际前置"
+    },
+    "tests/test_read_tasks_execution.py": {
+      "expected_cases": 5,
+      "purpose": "#161 来源与模型审计"
+    },
+    "tests/test_read_tasks_recovery.py": {
+      "expected_cases": 18,
+      "purpose": "#161 候选/规则/历史依据恢复"
+    },
+    "tests/test_read_tasks_migrations.py": {
+      "expected_cases": 3,
+      "purpose": "#161 body01→body02"
+    },
+    "tests/test_read_execution_admission.py": {
+      "expected_cases": 18,
+      "purpose": "#162 产品拒绝/顺序"
+    },
+    "tests/test_read_execution_rpc.py": {
+      "expected_cases": 14,
+      "purpose": "#162 独立协议进程"
+    },
+    "tests/test_read_execution_resources.py": {
+      "expected_cases": 7,
+      "purpose": "#162 锁/认证/安装保护"
+    },
+    "tests/test_read_execution_history.py": {
+      "expected_cases": 7,
+      "purpose": "#162 审计配置与历史"
+    },
+    "tests/test_read_execution_logging.py": {
+      "expected_cases": 2,
+      "purpose": "#162 日志与私密性"
+    },
+    "tests/test_read_queries.py": {
+      "expected_cases": 7,
+      "purpose": "#163 正文轴与安全展示"
+    },
+    "tests/test_read_query_config.py": {
+      "expected_cases": 13,
+      "purpose": "#163 配置轴与语言"
+    },
+    "tests/test_read_query_readonly.py": {
+      "expected_cases": 2,
+      "purpose": "#163 零写与历史依据"
+    },
+    "tests/test_read_query_recovery.py": {
+      "expected_cases": 1,
+      "purpose": "#163 双轴冷恢复"
+    },
+    "tests/test_body_read_closure.py": {
+      "expected_cases": 16,
+      "purpose": "#165 跨消费者正常/降级、拒绝、故障、并发与恢复纪律"
+    },
+    "tests/test_body_read_closure_integrity.py": {
+      "expected_cases": 12,
+      "purpose": "#165 完整 Pi 分析批次的逐类损坏及 v1/未知警告策略"
+    },
+    "tests/test_body_read_closure_recovery.py": {
+      "expected_cases": 2,
+      "purpose": "#165 正常/降级的两次实际 base 冷进程全闭包"
+    }
+  },
+  "materials": [
+    {
+      "path": "docs/adr/0010-use-docling-as-the-only-body-parser.md",
+      "sha256": "4a3c6c7c4766f5613d34cee00bbc520ec0607a3868d209c174005a5d9456d1c6",
+      "size_bytes": 2318,
+      "kind": "adr",
+      "purpose": "已接受决策/状态反向关系；正文冻结",
+      "base_sha256": "d149688a9068d452838be294ed3ee1df954e578ebf6a82cb18a9dedfc37f5e44",
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/adr/0025-allow-local-formula-candidates-with-source-review.md",
+      "sha256": "224f734faf97d3e84c4be521e43b77ed4744173d3f0ee799cf6ecba245196ad9",
+      "size_bytes": 2235,
+      "kind": "adr",
+      "purpose": "已接受决策/状态反向关系；正文冻结",
+      "base_sha256": "14e08371bba270496c31bbb6195801ec763fafde3deb6555db011e439293d5ca",
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/adr/0036-isolate-stage-b-read-experiment.md",
+      "sha256": "4a1a9c34b1ac469dae3fcda481ffec9fbe54e7b48e0b6f82dc2a3b1a3c6dcb38",
+      "size_bytes": 7564,
+      "kind": "adr",
+      "purpose": "已接受决策/状态反向关系；正文冻结",
+      "base_sha256": "6f2597c8d2153ade4ab0ad369b25df752396aa8b71528a8a3623657b5d630b35",
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/adr/0041-self-contained-evidence-map.md",
+      "sha256": "9f8bc9ecde3f03c49d4c2741b66edfc299ec1093884b87740b8996f84958d076",
+      "size_bytes": 2610,
+      "kind": "adr",
+      "purpose": "已接受决策/状态反向关系；正文冻结",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/adr/0042-accept-read-v2-with-final-attempt-degradation.md",
+      "sha256": "77090b0bc35798060c576b0aea3a9236f2cc5742adaaab82db70adf5ca6c633d",
+      "size_bytes": 4563,
+      "kind": "adr",
+      "purpose": "已接受决策/状态反向关系；正文冻结",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/adr/0043-persist-body-prerequisites-before-stage-b.md",
+      "sha256": "2dec57f6dead58f84ef3fb937ba21db0d151832e5751a9d1b0dc8faf93bbb859",
+      "size_bytes": 1882,
+      "kind": "adr",
+      "purpose": "已接受决策/状态反向关系；正文冻结",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/adr/0044-freeze-read-input-rendering-and-preclaim-budget.md",
+      "sha256": "48e3f1a5b1a79730e6381ec8bdc5ba54c7263c3add176642383ae0550f88a275",
+      "size_bytes": 2165,
+      "kind": "adr",
+      "purpose": "已接受决策/状态反向关系；正文冻结",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/adr/0045-persist-explicit-read-generations.md",
+      "sha256": "d588aa0ed1f4c16ff31845cde676edb0e92d79748b4bff55ca015364c5a11a8f",
+      "size_bytes": 1744,
+      "kind": "adr",
+      "purpose": "已接受决策/状态反向关系；正文冻结",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/contracts/body-persistence.md",
+      "sha256": "a87bca71bfd14335e89422a40e842f760429de9aebf9240102ac76af0d2901e9",
+      "size_bytes": 10376,
+      "kind": "contract",
+      "purpose": "新增公共服务现状边界；未知文档仍固定，无live改类",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/contracts/docling-execution.md",
+      "sha256": "68070172090126d23bb5bc4aad3ec8a9548707be325d41009a1a44714958ac8c",
+      "size_bytes": 9403,
+      "kind": "contract",
+      "purpose": "新增公共服务现状边界；未知文档仍固定，无live改类",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/contracts/fulltext-extraction.md",
+      "sha256": "fbf28da2ded4581cb59e00fcc27d51ea6ccfcb99c3ecf5dabd9936c3f196f9a4",
+      "size_bytes": 11525,
+      "kind": "contract",
+      "purpose": "新增公共服务现状边界；未知文档仍固定，无live改类",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/contracts/read-execution.md",
+      "sha256": "54c159e380f2da8cc2cfd214760627f69208f898b5d9b09cd1e4d85ea950bc91",
+      "size_bytes": 7331,
+      "kind": "contract",
+      "purpose": "新增公共服务现状边界；未知文档仍固定，无live改类",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/contracts/read-inputs.md",
+      "sha256": "8afeec4a34271a6e8afe6b84ffbd52379a789fdf9ea7f3d41a983d369f312ee2",
+      "size_bytes": 5756,
+      "kind": "contract",
+      "purpose": "新增公共服务现状边界；未知文档仍固定，无live改类",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/contracts/read-tasks.md",
+      "sha256": "9a1dae934cc07ed847b836bf8c02cd0b4c634a6bbbfbca7c367a407529b3152f",
+      "size_bytes": 12569,
+      "kind": "contract",
+      "purpose": "新增公共服务现状边界；未知文档仍固定，无live改类",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/verification/issue-156-fulltext-delivery.md",
+      "sha256": "fc41778155fc4c7e6bb9d1e51fd60d97876c52c8f554ae29e6ae6442ff39604d",
+      "size_bytes": 4632,
+      "kind": "coverage",
+      "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/verification/issue-157-read-v2-delivery.md",
+      "sha256": "44d809d8daba0a8552e0b1bfef41656ba99e30999f6f86121ff4916a68615595",
+      "size_bytes": 6114,
+      "kind": "coverage",
+      "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/verification/issue-158-body-persistence-delivery.md",
+      "sha256": "54c95834e9fc8bbe0c4adff76cf55bddf0b7b0daa86fff52193fd2d04e21ffc6",
+      "size_bytes": 5962,
+      "kind": "coverage",
+      "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/verification/issue-159-docling-execution.md",
+      "sha256": "ae7dbfe06696d994c97997b9c048b5373f247684c241077de5f957898ef12760",
+      "size_bytes": 9986,
+      "kind": "coverage",
+      "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/verification/issue-160-read-input-delivery.md",
+      "sha256": "f60f7953aab34e00f9fa236e1f48194ced33050763b7bc9232acd8915af15e29",
+      "size_bytes": 4324,
+      "kind": "coverage",
+      "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/verification/issue-161-read-tasks-delivery.md",
+      "sha256": "1d6e5601eb6fd9a8977e8dc0cf9d034a982d2233445ba6d10f2b2d6093dbf420",
+      "size_bytes": 5847,
+      "kind": "coverage",
+      "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/verification/issue-162-read-execution-delivery.md",
+      "sha256": "e727895253a3778fb31f8167ee6e9d96b91f2712956b6e171d206087a11f56fa",
+      "size_bytes": 5425,
+      "kind": "coverage",
+      "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/verification/issue-163-read-query-delivery.md",
+      "sha256": "b268e9a892cbcee6241b954d1d1c3d2c75c205bcd40e2840b018f0a10249a66f",
+      "size_bytes": 3151,
+      "kind": "coverage",
+      "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/verification/issue-164-docling-smoke.md",
+      "sha256": "ce16be8dbb7e4650a8bb7a880f0c920f15e0cf3b70dee95bd440bed0edcaab2c",
+      "size_bytes": 12549,
+      "kind": "coverage",
+      "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "docs/verification/issue-165-body-read-closure.md",
+      "sha256": "11e3b1adaca1308d11d55f5fc69560d21eb50387bf7058cfd253d2b15febadee",
+      "size_bytes": 18034,
+      "kind": "coverage",
+      "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/body/__init__.py",
+      "sha256": "6626a4afdd039ca62998758882d49dd136620e346696abe9f84350bc32adc097",
+      "size_bytes": 229,
+      "kind": "source",
+      "purpose": "PDF/根用途/人工决定/样本/提取预算/质量及历史依据，供Read与backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/backup/service.py",
+        "src/paper_radar/body/extraction.py",
+        "src/paper_radar/body/facts.py",
+        "src/paper_radar/body/queries.py",
+        "src/paper_radar/body/repository.py",
+        "src/paper_radar/body/service.py",
+        "src/paper_radar/body/validation.py",
+        "src/paper_radar/docling_execution/mapping.py",
+        "src/paper_radar/docling_execution/sdk.py",
+        "src/paper_radar/docling_execution/worker.py",
+        "src/paper_radar/docling_executor.py",
+        "src/paper_radar/read_queries/models.py",
+        "src/paper_radar/read_queries/service.py",
+        "src/paper_radar/read_tasks/preconditions.py",
+        "src/paper_radar/read_tasks/service.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/body/extraction.py",
+      "sha256": "872e2741a6bd4b17e121e496b303cc17a89301933c8d64a8f5ec2582b6031c19",
+      "size_bytes": 16056,
+      "kind": "source",
+      "purpose": "PDF/根用途/人工决定/样本/提取预算/质量及历史依据，供Read与backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/facts.py",
+        "src/paper_radar/body/queries.py",
+        "src/paper_radar/body/service.py",
+        "src/paper_radar/body/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/body/facts.py",
+      "sha256": "1951272ce90c85071b6923fb989f5a31e97ab6af855b84f1e9c1e1bb99065317",
+      "size_bytes": 5873,
+      "kind": "source",
+      "purpose": "PDF/根用途/人工决定/样本/提取预算/质量及历史依据，供Read与backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/service.py",
+        "src/paper_radar/body/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/body/models.py",
+      "sha256": "d24586c6256b8658fd137b52a1fb5716bc3dac22e1b86255404fcfdefc67061b",
+      "size_bytes": 6277,
+      "kind": "source",
+      "purpose": "PDF/根用途/人工决定/样本/提取预算/质量及历史依据，供Read与backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/__init__.py",
+        "src/paper_radar/body/extraction.py",
+        "src/paper_radar/body/facts.py",
+        "src/paper_radar/body/queries.py",
+        "src/paper_radar/body/repository.py",
+        "src/paper_radar/body/service.py",
+        "src/paper_radar/body/validation.py",
+        "src/paper_radar/docling_execution/mapping.py",
+        "src/paper_radar/docling_execution/sdk.py",
+        "src/paper_radar/docling_execution/worker.py",
+        "src/paper_radar/docling_executor.py",
+        "src/paper_radar/read_queries/models.py",
+        "src/paper_radar/read_queries/service.py",
+        "src/paper_radar/read_tasks/preconditions.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/body/queries.py",
+      "sha256": "fda9fee1ed0f6c10d4e1e0d6e18b6ce931e71bdfd7d54902f25e13446b609718",
+      "size_bytes": 4821,
+      "kind": "source",
+      "purpose": "PDF/根用途/人工决定/样本/提取预算/质量及历史依据，供Read与backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/extraction.py",
+        "src/paper_radar/body/facts.py",
+        "src/paper_radar/body/service.py",
+        "src/paper_radar/body/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/body/repository.py",
+      "sha256": "0d3e71e74313eae5e79338e5a5a8be2ec4c3d6829db3abe722a117a4fb246482",
+      "size_bytes": 2315,
+      "kind": "source",
+      "purpose": "PDF/根用途/人工决定/样本/提取预算/质量及历史依据，供Read与backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/extraction.py",
+        "src/paper_radar/body/queries.py",
+        "src/paper_radar/body/service.py",
+        "src/paper_radar/body/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/body/service.py",
+      "sha256": "a390dd1cdbd90e78cfb12be3d1faa481a3c41d65abcb9a134283c29df059879b",
+      "size_bytes": 21816,
+      "kind": "source",
+      "purpose": "PDF/根用途/人工决定/样本/提取预算/质量及历史依据，供Read与backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/__init__.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/body/tables.py",
+      "sha256": "d4d87e3981376351eb983f0beced2a63a5a74aad71f4155eb6d40e8380fdfcc0",
+      "size_bytes": 1609,
+      "kind": "source",
+      "purpose": "PDF/根用途/人工决定/样本/提取预算/质量及历史依据，供Read与backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/extraction.py",
+        "src/paper_radar/body/facts.py",
+        "src/paper_radar/body/queries.py",
+        "src/paper_radar/body/service.py",
+        "src/paper_radar/body/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/body/validation.py",
+      "sha256": "45f100d8dd4674eaab4fe8ae85af1652001383245e945ff31553c8df6a39ff87",
+      "size_bytes": 12836,
+      "kind": "source",
+      "purpose": "PDF/根用途/人工决定/样本/提取预算/质量及历史依据，供Read与backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/service.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/content_reliability.py",
+      "sha256": "4e8d69524d0f79481aeee85be5fa3c7aa2c316f6a3453ac086996423ee7db56f",
+      "size_bytes": 428,
+      "kind": "source",
+      "purpose": "源字符可靠性共享规则，规范化与v2警告一致",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/fulltext/normalization.py",
+        "src/paper_radar/reading/acceptance_v2/__init__.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py",
+        "src/paper_radar/llm/calls.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/docling_execution/__init__.py",
+      "sha256": "d2f326beb1809974704eb60cccb5de5ab5dd8ec22ce6ed2c259b06e7fbf6ef60",
+      "size_bytes": 56,
+      "kind": "source",
+      "purpose": "离线SDK映射、部署核验、受限子进程与资源/失败审计",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/docling_execution/process.py",
+        "src/paper_radar/docling_execution/sdk.py",
+        "src/paper_radar/docling_execution/worker.py",
+        "src/paper_radar/docling_executor.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/docling_execution/deployment.py",
+      "sha256": "97d93f83e3c96d79ceb63562386e000e5947a7caed935617cfe7286bedee2a60",
+      "size_bytes": 2919,
+      "kind": "source",
+      "purpose": "离线SDK映射、部署核验、受限子进程与资源/失败审计",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/docling_executor.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/docling_execution/mapping.py",
+      "sha256": "a24784ea852f8d4185f969e548f0546aee6a6e54853fa25a53d98a1a73a12834",
+      "size_bytes": 6441,
+      "kind": "source",
+      "purpose": "离线SDK映射、部署核验、受限子进程与资源/失败审计",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/docling_execution/sdk.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/docling_execution/models.py",
+      "sha256": "3e35adfae214ac88d1031b02e4bfad809dbbd76edc8936e55ccf69143268832e",
+      "size_bytes": 1829,
+      "kind": "source",
+      "purpose": "离线SDK映射、部署核验、受限子进程与资源/失败审计",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/docling_execution/process.py",
+        "src/paper_radar/docling_execution/sdk.py",
+        "src/paper_radar/docling_execution/worker.py",
+        "src/paper_radar/docling_executor.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/docling_execution/process.py",
+      "sha256": "4b7dcffc20c9532ddfcb03a45c7e4029338454fd2153748f42a74a4d31c05aec",
+      "size_bytes": 4748,
+      "kind": "source",
+      "purpose": "离线SDK映射、部署核验、受限子进程与资源/失败审计",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/docling_executor.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/docling_execution/sandbox.py",
+      "sha256": "b16e7c6abfa57fda35e557b50fe036999840e90dc1707de614e11e9863d5369d",
+      "size_bytes": 2415,
+      "kind": "source",
+      "purpose": "离线SDK映射、部署核验、受限子进程与资源/失败审计",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/docling_execution/worker.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/docling_execution/sdk.py",
+      "sha256": "ea5732ee787e3ce5f1bb31159435c172bb80102a881f846563b296c3bc5e7f83",
+      "size_bytes": 8229,
+      "kind": "source",
+      "purpose": "离线SDK映射、部署核验、受限子进程与资源/失败审计",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/docling_execution/worker.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/docling_execution/worker.py",
+      "sha256": "aa3cde418633408a4d5e2e1516e40f9ea1e08b61e0af86c1340553b09afe6556",
+      "size_bytes": 1620,
+      "kind": "source",
+      "purpose": "离线SDK映射、部署核验、受限子进程与资源/失败审计",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/docling_executor.py",
+      "sha256": "fe88aff0174369fe948d3a5d75d43272b1696ede3714c487ab859500766d1f13",
+      "size_bytes": 6052,
+      "kind": "source",
+      "purpose": "Body外部parser公开接口与Docling受限执行边界",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/eligibility/models.py",
+      "sha256": "9ee2ffd34617a33c898e9566631f70495c96e70319cada7217d9a8908df02668",
+      "size_bytes": 8929,
+      "kind": "source",
+      "purpose": "三个精确QualityFailure与中文展示，保持共享资格判断",
+      "base_sha256": "25362742eabc4310348528f7b92bb2dead7f7a2864d3128ab28c9187b759908b",
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/eligibility/__init__.py",
+        "src/paper_radar/eligibility/presentation.py",
+        "src/paper_radar/eligibility/rules.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/eligibility/presentation.py",
+      "sha256": "91c3de3d0df83eb3bfde3f455066e1427ca1b96775043a37f804d37f8c061ba2",
+      "size_bytes": 1266,
+      "kind": "source",
+      "purpose": "三个精确QualityFailure与中文展示，保持共享资格判断",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/feed_metadata/projection.py",
+      "sha256": "26af7ef2cf45afe10c184523f6d5ad7248e11cf6513c3f414d6e0b81602b3c60",
+      "size_bytes": 3571,
+      "kind": "source",
+      "purpose": "真实路线/agency/历史revision与同Connection前置依据",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/feed_metadata/service.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/feed_metadata/service.py",
+      "sha256": "bed0c70fb98763ced0a4e38677b98d0284b81c3d1f69925be5922eb680951cbc",
+      "size_bytes": 26309,
+      "kind": "source",
+      "purpose": "真实路线/agency/历史revision与同Connection前置依据",
+      "base_sha256": "e7e0b4ac1bcc06ac30057f1580b1b7f5a66607d7036d96db643b97c3d16d0dbb",
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/feed_metadata/__init__.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/fulltext/__init__.py",
+      "sha256": "733bf30240c4ef512588f8637b49e9709845d62005e6d07f03e6a373696c5329",
+      "size_bytes": 72,
+      "kind": "source",
+      "purpose": "canonical/规范化/四角色/自包含orig与证据重建，供Body/Read/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/extraction.py",
+        "src/paper_radar/body/models.py",
+        "src/paper_radar/body/validation.py",
+        "src/paper_radar/docling_execution/deployment.py",
+        "src/paper_radar/docling_execution/mapping.py",
+        "src/paper_radar/docling_execution/models.py",
+        "src/paper_radar/docling_executor.py",
+        "src/paper_radar/fulltext/artifacts.py",
+        "src/paper_radar/fulltext/execution_audit.py",
+        "src/paper_radar/fulltext/models.py",
+        "src/paper_radar/fulltext/normalization.py",
+        "src/paper_radar/fulltext/quality.py",
+        "src/paper_radar/read_inputs/__init__.py",
+        "src/paper_radar/read_tasks/service.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/fulltext/artifacts.py",
+      "sha256": "477c405d521fc63b4cc753fc35080fe01cea60bd31d17e17e0b440b3a75eddd6",
+      "size_bytes": 6614,
+      "kind": "source",
+      "purpose": "canonical/规范化/四角色/自包含orig与证据重建，供Body/Read/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/extraction.py",
+        "src/paper_radar/body/validation.py",
+        "src/paper_radar/read_inputs/__init__.py",
+        "src/paper_radar/read_tasks/service.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/fulltext/canonical.py",
+      "sha256": "500f32d5146c486ff30e3b95820eaf912d08a4968089eed7199c2b69e0e91be4",
+      "size_bytes": 1664,
+      "kind": "source",
+      "purpose": "canonical/规范化/四角色/自包含orig与证据重建，供Body/Read/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/models.py",
+        "src/paper_radar/docling_execution/deployment.py",
+        "src/paper_radar/docling_execution/mapping.py",
+        "src/paper_radar/docling_execution/models.py",
+        "src/paper_radar/fulltext/artifacts.py",
+        "src/paper_radar/fulltext/execution_audit.py",
+        "src/paper_radar/fulltext/models.py",
+        "src/paper_radar/fulltext/normalization.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/fulltext/execution_audit.py",
+      "sha256": "e016bda4870192a30f01374f3d4b7da9cf6c65785dd331317597cdd7f98b5100",
+      "size_bytes": 2636,
+      "kind": "source",
+      "purpose": "canonical/规范化/四角色/自包含orig与证据重建，供Body/Read/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/extraction.py",
+        "src/paper_radar/body/models.py",
+        "src/paper_radar/docling_executor.py",
+        "src/paper_radar/fulltext/artifacts.py",
+        "src/paper_radar/fulltext/models.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/fulltext/models.py",
+      "sha256": "f4233cf0f4b7459c0ece5ca936b786ad016695edd2b4199a622dcdb76cfad59b",
+      "size_bytes": 4801,
+      "kind": "source",
+      "purpose": "canonical/规范化/四角色/自包含orig与证据重建，供Body/Read/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/extraction.py",
+        "src/paper_radar/body/validation.py",
+        "src/paper_radar/fulltext/artifacts.py",
+        "src/paper_radar/fulltext/normalization.py",
+        "src/paper_radar/fulltext/quality.py",
+        "src/paper_radar/read_inputs/__init__.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/fulltext/normalization.py",
+      "sha256": "1b382bf80562e728f5f9922a3da4311bd97489f847cba5e4ef3e775a5b417eb8",
+      "size_bytes": 8110,
+      "kind": "source",
+      "purpose": "canonical/规范化/四角色/自包含orig与证据重建，供Body/Read/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/body/extraction.py",
+        "src/paper_radar/docling_execution/mapping.py",
+        "src/paper_radar/fulltext/artifacts.py",
+        "src/paper_radar/fulltext/quality.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/fulltext/quality.py",
+      "sha256": "a4c07ddae0df60d4d9c8bc5613eca733bdec55b00452080718e5e9f3fa9e5883",
+      "size_bytes": 6685,
+      "kind": "source",
+      "purpose": "canonical/规范化/四角色/自包含orig与证据重建，供Body/Read/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/docling_execution/mapping.py",
+        "src/paper_radar/fulltext/artifacts.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/llm/read_limits.py",
+      "sha256": "055d8524104d856e4f1eb9009306adf166ff55719a30db403add1decd7a52979",
+      "size_bytes": 1585,
+      "kind": "source",
+      "purpose": "Read冻结呈现/最坏修正槽/完整帧界限，供calls与Read输入预算",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/llm/calls.py",
+        "src/paper_radar/read_inputs/budget.py",
+        "src/paper_radar/read_inputs/corrections.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py",
+        "src/paper_radar/llm/calls.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_execution/__init__.py",
+      "sha256": "4671ee8ee06f030ad83d6c529655e3fdbb94e86464cc33c080852ef2875feaaf",
+      "size_bytes": 162,
+      "kind": "source",
+      "purpose": "共享Pi资源/准入/协议的单篇执行组合；不授予现场资格",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/read_execution/service.py",
+      "sha256": "3add8119cbc1c6db65f0b0199581b3cda34219837b4b75fafa12869962ce88d8",
+      "size_bytes": 8810,
+      "kind": "source",
+      "purpose": "共享Pi资源/准入/协议的单篇执行组合；不授予现场资格",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_execution/__init__.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/read_inputs/__init__.py",
+      "sha256": "edc8e5ba74bd51add77678b446304e3b8e9103dacd39c1634a807299d4bcf79d",
+      "size_bytes": 2992,
+      "kind": "source",
+      "purpose": "持久正文与历史配置准备、完整帧及修正预算，供ReadTasks/ReadExecution消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_execution/service.py",
+        "src/paper_radar/read_tasks/pi_rpc.py",
+        "src/paper_radar/read_tasks/service.py",
+        "src/paper_radar/read_tasks/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_inputs/budget.py",
+      "sha256": "a4315fbf6c169186c7853fb31ba19f56d245ef802560510bfb6c5c9da60b5543",
+      "size_bytes": 1465,
+      "kind": "source",
+      "purpose": "持久正文与历史配置准备、完整帧及修正预算，供ReadTasks/ReadExecution消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_inputs/__init__.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_inputs/corrections.py",
+      "sha256": "34bf8410dad8c7be4136064956d5db8099d23b109ffc9b3a6d229b19fddbcb66",
+      "size_bytes": 2328,
+      "kind": "source",
+      "purpose": "持久正文与历史配置准备、完整帧及修正预算，供ReadTasks/ReadExecution消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_inputs/__init__.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_queries/__init__.py",
+      "sha256": "9ea1a4cf2bff47e7c0e70555efd9f7b7c986eb14a2d6726f3ca4d11eddb3b049",
+      "size_bytes": 409,
+      "kind": "source",
+      "purpose": "两轴/双语言/old列表/降级标记及只读证据消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_queries/service.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/read_queries/models.py",
+      "sha256": "e9263ef12f84be953a644c8b720b1e98c545bc272200744e847d5b3a365c736b",
+      "size_bytes": 1767,
+      "kind": "source",
+      "purpose": "两轴/双语言/old列表/降级标记及只读证据消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_queries/__init__.py",
+        "src/paper_radar/read_queries/service.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/read_queries/service.py",
+      "sha256": "3bbf76319d4ee8c927940d225d3d455250d518b6a2672484b87752f4159d00c6",
+      "size_bytes": 6583,
+      "kind": "source",
+      "purpose": "两轴/双语言/old列表/降级标记及只读证据消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_queries/__init__.py"
+      ],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/read_tasks/__init__.py",
+      "sha256": "8076b5d596a966aa3247af0518741cda9363469ac07baaad7bd6e7ca51c46046",
+      "size_bytes": 467,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/backup/service.py",
+        "src/paper_radar/read_execution/service.py",
+        "src/paper_radar/read_queries/service.py",
+        "src/paper_radar/read_tasks/acceptance.py",
+        "src/paper_radar/read_tasks/execution.py",
+        "src/paper_radar/read_tasks/pi_rpc.py",
+        "src/paper_radar/read_tasks/preconditions.py",
+        "src/paper_radar/read_tasks/queries.py",
+        "src/paper_radar/read_tasks/repository.py",
+        "src/paper_radar/read_tasks/service.py",
+        "src/paper_radar/read_tasks/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_tasks/acceptance.py",
+      "sha256": "7ed2c115d7c3be48d74f91243dc47937d59f10d41ac4d3f72869d6252e579ef6",
+      "size_bytes": 6656,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_tasks/pi_rpc.py",
+        "src/paper_radar/read_tasks/service.py",
+        "src/paper_radar/read_tasks/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_tasks/execution.py",
+      "sha256": "13fbd9008110860cf15bf1800854fc83a2f3696b216ce047ace98850ee79aff2",
+      "size_bytes": 903,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_execution/service.py",
+        "src/paper_radar/read_tasks/service.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_tasks/models.py",
+      "sha256": "5ee1133bf476ab70001e08a2ae833276399459ad8cefe712e5ddd11a438d7f64",
+      "size_bytes": 4270,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_tasks/__init__.py",
+        "src/paper_radar/read_tasks/acceptance.py",
+        "src/paper_radar/read_tasks/execution.py",
+        "src/paper_radar/read_tasks/pi_rpc.py",
+        "src/paper_radar/read_tasks/preconditions.py",
+        "src/paper_radar/read_tasks/queries.py",
+        "src/paper_radar/read_tasks/repository.py",
+        "src/paper_radar/read_tasks/service.py",
+        "src/paper_radar/read_tasks/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_tasks/pi_rpc.py",
+      "sha256": "feb347de0736f2a7c474a0115e7631b836febc167d30341164f4bbfebc5e88b8",
+      "size_bytes": 5481,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_execution/service.py",
+        "src/paper_radar/read_tasks/service.py",
+        "src/paper_radar/read_tasks/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_tasks/preconditions.py",
+      "sha256": "bf1d39eb48826c5e7ceb8cb6f38de02bcada28af68199e2e003cfd94a050b0c3",
+      "size_bytes": 2806,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_tasks/service.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_tasks/queries.py",
+      "sha256": "836f9372ac50cb069434bf225f9933ab53c110b2a5292a2c37cb8abfef6761c5",
+      "size_bytes": 3467,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_tasks/acceptance.py",
+        "src/paper_radar/read_tasks/service.py",
+        "src/paper_radar/read_tasks/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_tasks/repository.py",
+      "sha256": "fb97a949a35f93b0b24dfc28e343c17861dc671980b384bbe1a89743dc4f1a0b",
+      "size_bytes": 1872,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_tasks/acceptance.py",
+        "src/paper_radar/read_tasks/pi_rpc.py",
+        "src/paper_radar/read_tasks/preconditions.py",
+        "src/paper_radar/read_tasks/service.py",
+        "src/paper_radar/read_tasks/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_tasks/service.py",
+      "sha256": "fb2eb0313da0dfbaa797f9fe382a03dae0866f7b2e1f57fc5006665c48f6677a",
+      "size_bytes": 27791,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_tasks/__init__.py",
+        "src/paper_radar/read_tasks/acceptance.py",
+        "src/paper_radar/read_tasks/pi_rpc.py",
+        "src/paper_radar/read_tasks/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_tasks/tables.py",
+      "sha256": "c0c25d491354c18e83d4bd6528cf0e23b6ea32fe14fba906d916fa502c84f1ea",
+      "size_bytes": 1392,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_tasks/acceptance.py",
+        "src/paper_radar/read_tasks/queries.py",
+        "src/paper_radar/read_tasks/service.py",
+        "src/paper_radar/read_tasks/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/read_tasks/validation.py",
+      "sha256": "d3a53d6c70f4570f0d821c8670e10a6ab1da098fd6e134285a30820251c86b82",
+      "size_bytes": 16566,
+      "kind": "source",
+      "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/read_tasks/service.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/reading/acceptance_v2/__init__.py",
+      "sha256": "30d4497f4dc96884dc497ce253566934ac0f55a79400a5b32d81fb396887b9fe",
+      "size_bytes": 18490,
+      "kind": "source",
+      "purpose": "增量v2接收/警告/末次丢弃；只读复用A9原字节v1",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/llm/calls.py",
+        "src/paper_radar/read_inputs/__init__.py",
+        "src/paper_radar/read_inputs/corrections.py",
+        "src/paper_radar/read_tasks/acceptance.py",
+        "src/paper_radar/read_tasks/models.py",
+        "src/paper_radar/read_tasks/queries.py",
+        "src/paper_radar/read_tasks/validation.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py",
+        "src/paper_radar/llm/calls.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/runtime_logging/schema.py",
+      "sha256": "4217393e0ff1bd940a93e8abb7add5203c50b21d7e43adad2c4a2f90fd98d196",
+      "size_bytes": 4431,
+      "kind": "source",
+      "purpose": "body/read安全component闭集，供有限日志消费者",
+      "base_sha256": "4799293e8724df5e2faf352f06bf365e24149195576d0c022e122bbb1356e52e",
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "src/paper_radar/runtime_logging/events.py",
+        "src/paper_radar/runtime_logging/files.py"
+      ],
+      "registered_consumer_roots": [
+        "src/paper_radar/backup/service.py"
+      ]
+    },
+    {
+      "path": "src/paper_radar/storage/migrations/versions/body01_persistence.py",
+      "sha256": "1cef8ceb33436e61a2dc26091cc0a15f8299977cdcfc18651a70c89585795f0d",
+      "size_bytes": 5770,
+      "kind": "migration",
+      "purpose": "保留body01/body02线性节点原字节，一次最终集成head推进",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "src/paper_radar/storage/migrations/versions/body02_read_tasks.py",
+      "sha256": "2773507a1478d384598a35a81ebf191381075d9d3634baa4ee2b87c4df19fafc",
+      "size_bytes": 4594,
+      "kind": "migration",
+      "purpose": "保留body01/body02线性节点原字节，一次最终集成head推进",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/body_read_closure_support.py",
+      "sha256": "f5399f0f35ef48c73bc6aeaa3e562af6a903b6e6f979263f605d2c546a4a3add",
+      "size_bytes": 3690,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/body_read_closure_worker.py",
+      "sha256": "4359fb151a3829426d19ab4d3366c0ab55b9078084e7d863f3aef6771e3abfa4",
+      "size_bytes": 3876,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/body_recovery_worker.py",
+      "sha256": "1a2d946020b6a3f319c93d620ea43e92f09ed2f2d204b9f7ceb33071d972d13e",
+      "size_bytes": 4335,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/body_support.py",
+      "sha256": "721c60cb2aca15a39fe47ab508ca753982b8a0868434844cde553e887bf2311c",
+      "size_bytes": 3648,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/docling_execution_recovery_case.py",
+      "sha256": "bc8e55040dfbc2b92c8dbd12fa9d95e8b75ec58e97001e8a03addbdd5e9f1fdf",
+      "size_bytes": 4694,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/docling_executor_support.py",
+      "sha256": "4d5f79725553517fc2665420a8f0121b19f93197834975f5a776c8b130453f8b",
+      "size_bytes": 3703,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/fixtures/read_inputs/read-request-v1.txt",
+      "sha256": "31120624f2c558f0cff0f47e0fd7fe8069b5151a0024b83ff6d43d023946c78f",
+      "size_bytes": 4104,
+      "kind": "fixture",
+      "purpose": "Read独立冻结渲染/完整RPC帧向量；不改A8旧向量",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/fixtures/read_inputs/rpc9-read-v1.jsonl",
+      "sha256": "fc0840b4d460cb26caa309ce968cd30803db71185413f390615f4b96395e62a1",
+      "size_bytes": 4731,
+      "kind": "fixture",
+      "purpose": "Read独立冻结渲染/完整RPC帧向量；不改A8旧向量",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/no_extra_runtime.py",
+      "sha256": "37480c5064d88a7ac9d8f06b52083cf4a57cdcc11db7dcc07f1d3785e1c3096e",
+      "size_bytes": 3510,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/read_execution_peer.py",
+      "sha256": "c38888edd7bec62640e15a79f988ce1d3db8a7bf3d05a10633ec115a64796537",
+      "size_bytes": 7242,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/read_execution_support.py",
+      "sha256": "9fe52a70e2488c62c467a9d5677eb6b990baf4f0fb3521b4e9c1a9d548a19fc9",
+      "size_bytes": 4354,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/read_queries_recovery_worker.py",
+      "sha256": "f57b8706053c97d92376cca160b2d2fb10d17b834d5337bf55991802dcddc5cf",
+      "size_bytes": 3536,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/read_queries_support.py",
+      "sha256": "0fd5528ac2d8aaad9c3a2350265101bd59e1d4190061b00badd75db6eadbc000",
+      "size_bytes": 3000,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/read_tasks_recovery_worker.py",
+      "sha256": "e965cd42f6742d6d5eaf5848ebf710031d3bd223ca0fcba7905b0c75fccc1512",
+      "size_bytes": 3551,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/read_tasks_support.py",
+      "sha256": "8cd0e7cdb189252926df6ad32e63b2d064e49575ad139a60241cabf76b8075bc",
+      "size_bytes": 6210,
+      "kind": "support",
+      "purpose": "公共服务组合合成材料与独立进程；无真实论文/模型",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_body_concurrency.py",
+      "sha256": "7676c07be4b9d1928334af01ee5ace07b4bc782edfea34360534855e7e8dcd91",
+      "size_bytes": 6565,
+      "kind": "test",
+      "purpose": "#158 真实根锁竞争",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_body_extraction.py",
+      "sha256": "99267c11beb6518cab8a9ebdeb305ff07ad9ac9aa82c9a1f3de1ad9232526c02",
+      "size_bytes": 12919,
+      "kind": "test",
+      "purpose": "#158 提取预算/质量",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_body_facts.py",
+      "sha256": "6b7528ccdfd09ad8210aeb6728e6cc0f2287aac2383261a78602abfdd937b02b",
+      "size_bytes": 14536,
+      "kind": "test",
+      "purpose": "#158 根/PDF/决定/样本",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_body_migrations.py",
+      "sha256": "79498b5eee8f2440619f0998e87aa45bd29f7aa61755c2d9fe03a64b38af2c60",
+      "size_bytes": 3352,
+      "kind": "test",
+      "purpose": "#158 feed07→body01",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_body_privacy.py",
+      "sha256": "e9bc441e424946a714151f72c2b0c149c987e5532a889e5d4150ed5e50c8dc8a",
+      "size_bytes": 1731,
+      "kind": "test",
+      "purpose": "#158 安全日志",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_body_read_closure.py",
+      "sha256": "04e783ed14b1a654c4fc79d3a2052b581c5c11c8a8f4d169ae069f1b97cbd513",
+      "size_bytes": 15007,
+      "kind": "test",
+      "purpose": "#165 跨消费者正常/降级、拒绝、故障、并发与恢复纪律",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_body_read_closure_integrity.py",
+      "sha256": "66ca2d50f978c21e811428d9660661761ba862f1ed1ee4ad923dfb0218387c5e",
+      "size_bytes": 7360,
+      "kind": "test",
+      "purpose": "#165 完整 Pi 分析批次的逐类损坏及 v1/未知警告策略",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_body_read_closure_recovery.py",
+      "sha256": "98d84f3c7bad8fcb3d207c12a9a8c106461a450c810c31a20e67bc4f166f02cb",
+      "size_bytes": 4057,
+      "kind": "test",
+      "purpose": "#165 正常/降级的两次实际 base 冷进程全闭包",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_body_recovery.py",
+      "sha256": "b5bc46f78fa750c9add2a98a9784192d2b052b769d32ac860d4528aa64229c46",
+      "size_bytes": 5853,
+      "kind": "test",
+      "purpose": "#158 业务闭包恢复",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_docling_cold_import.py",
+      "sha256": "bc8ce77d977b7f630e9efe5bed7c6227abfd8466a1c9d49cd18f33ff842c153c",
+      "size_bytes": 2541,
+      "kind": "test",
+      "purpose": "#159 延迟导入",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_docling_executor.py",
+      "sha256": "4be327d1b603023994d0a3d2e01af74408f6657c8375addc822f6ea270f1cabb",
+      "size_bytes": 13364,
+      "kind": "test",
+      "purpose": "#159 受限 worker、失败与资源",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_docling_executor_recovery.py",
+      "sha256": "ad93a4694a33144d4f356898d62df11239af62dbe27b6030a8dbe72843379be1",
+      "size_bytes": 2089,
+      "kind": "test",
+      "purpose": "#159 执行审计冷恢复",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_docling_manifest_compatibility.py",
+      "sha256": "dfe0f8310c7f8cd6ef491f3cd248cff1ed6208d437a92c7d35a119eb4f94a653",
+      "size_bytes": 4240,
+      "kind": "test",
+      "purpose": "#159 历史 manifest 字节",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_docling_mapping.py",
+      "sha256": "da6dd782e56c1e33d20539bb3419162d280a5b8e2770dbf136b6f9b6f51cc47c",
+      "size_bytes": 9237,
+      "kind": "test",
+      "purpose": "#159 真实 docling-core 映射，不跳过",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_fulltext_artifacts.py",
+      "sha256": "7d373ccf6f95a6ead9e00b8342f56c0798654b3433aa0a3b16931a47ca318407",
+      "size_bytes": 7883,
+      "kind": "test",
+      "purpose": "#156 源成员与质量",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_fulltext_normalization.py",
+      "sha256": "affd28190758ea138fb8d0e596804bd531c7e20c9c9582cdea638e290b5c585c",
+      "size_bytes": 9653,
+      "kind": "test",
+      "purpose": "#156 文档信号、顺序、受限块",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_fulltext_quality.py",
+      "sha256": "77e00352a2b54112e4d5aaddc6b216468dae169d89a9a5a9b5e1c6385ac0ab7d",
+      "size_bytes": 1799,
+      "kind": "test",
+      "purpose": "#156 公开质量原因与可靠性",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_fulltext_restore.py",
+      "sha256": "a266438ac1c64348d85c9d8496d93395a27b21517a95062659d0cf6d0860cdf1",
+      "size_bytes": 5853,
+      "kind": "test",
+      "purpose": "#156 源字节/身份恢复",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_no_extra_runtime.py",
+      "sha256": "af30d78702ed3cc6d854fc2cb5a0c35e6a11acc3a79563074f31987f259cc87f",
+      "size_bytes": 1121,
+      "kind": "test",
+      "purpose": "#159 实际 base 端口",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_acceptance_v2.py",
+      "sha256": "5ea6926a752e7e1d2171b2867be57cbf2e6500a3d191c638cc0ca8ec5e014e4c",
+      "size_bytes": 17523,
+      "kind": "test",
+      "purpose": "#157 v2 末次接收",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_acceptance_v2_compatibility.py",
+      "sha256": "1784a0872a2f48e020f45a2d7d71b81d5eb0026e1673c08fba4d4daa5b61c024",
+      "size_bytes": 9127,
+      "kind": "test",
+      "purpose": "#157 两版等同与差异",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_execution_admission.py",
+      "sha256": "bf9d0a980b62a3b10f3a4fd1aadedfcbe2d2a3e9877df757d7d8226dc64393ba",
+      "size_bytes": 6787,
+      "kind": "test",
+      "purpose": "#162 产品拒绝/顺序",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_execution_history.py",
+      "sha256": "ad7a22f617a2928eeedd892ca29e46f5a92787db41aee5f6c94456a460c3411a",
+      "size_bytes": 8480,
+      "kind": "test",
+      "purpose": "#162 审计配置与历史",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_execution_logging.py",
+      "sha256": "7a91875db6233d57469406b4b722c03da2cc690224c87352f6a61898fd7f1f00",
+      "size_bytes": 3018,
+      "kind": "test",
+      "purpose": "#162 日志与私密性",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_execution_resources.py",
+      "sha256": "7f7c119a25c671a03c3549158961a5b7b73544a23bbd8753f07a7f63b44da42f",
+      "size_bytes": 7782,
+      "kind": "test",
+      "purpose": "#162 锁/认证/安装保护",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_execution_rpc.py",
+      "sha256": "00a6145695112e720bec052e54565340c4a213df6b2865c1d8bd3d70ef607afa",
+      "size_bytes": 4855,
+      "kind": "test",
+      "purpose": "#162 独立协议进程",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_inputs.py",
+      "sha256": "fc34271eda0be87ac8efa31553b203456dedad1cdc2c520d268085f9e26e9e88",
+      "size_bytes": 13832,
+      "kind": "test",
+      "purpose": "#160 持久正文/渲染/完整帧",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_queries.py",
+      "sha256": "09afe4c9436a6a797cdf7ba807aca518a2052b02c0529ef02682c1ebbbeae725",
+      "size_bytes": 8826,
+      "kind": "test",
+      "purpose": "#163 正文轴与安全展示",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_query_config.py",
+      "sha256": "03a23738b36aad0ac68b55d24776e3e1d9b0b868656752191588af14b8927258",
+      "size_bytes": 7774,
+      "kind": "test",
+      "purpose": "#163 配置轴与语言",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_query_readonly.py",
+      "sha256": "795d1fb1219beeee01b0cc1a9625c2c1235511b40aa12c86a86618c887c2e163",
+      "size_bytes": 7209,
+      "kind": "test",
+      "purpose": "#163 零写与历史依据",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_query_recovery.py",
+      "sha256": "f1d490f3f9b9da22c19dd34cf927e64169c7d64c76d51b4156b12a7bb5f6a7e7",
+      "size_bytes": 3139,
+      "kind": "test",
+      "purpose": "#163 双轴冷恢复",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_stage_input.py",
+      "sha256": "9293f91cdaf026b61a14ef735be1b01e42f68a8edd13fc5f67aef7880eec6a5f",
+      "size_bytes": 10736,
+      "kind": "test",
+      "purpose": "#160 Read 身份与纯层回放",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_tasks.py",
+      "sha256": "f8d11b984ed92837534398969bb3f03aeda52e9c2343bbe26370739aefc859cf",
+      "size_bytes": 4552,
+      "kind": "test",
+      "purpose": "#161 接收与修正",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_tasks_execution.py",
+      "sha256": "e3adf2a6e75a1a92222dbf8e69084d5a58599f62986b535b13f7132981b9b43f",
+      "size_bytes": 5064,
+      "kind": "test",
+      "purpose": "#161 来源与模型审计",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_tasks_leases.py",
+      "sha256": "ae24a2cd090827b0ad5869791c95c244e85024886498fa27d5a0aec2a0b20fbd",
+      "size_bytes": 5993,
+      "kind": "test",
+      "purpose": "#161 lease/retry/唯一成功",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_tasks_migrations.py",
+      "sha256": "eebcd6da7132b0e0c8518f7f8a6334b42bf342390d45dc434792acbc1cc44b1e",
+      "size_bytes": 2617,
+      "kind": "test",
+      "purpose": "#161 body01→body02",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_tasks_preconditions.py",
+      "sha256": "c952e4ea3c1e40c52920f9082e12f0c24da78533a3517edf4feeb2f9a69b2229",
+      "size_bytes": 8868,
+      "kind": "test",
+      "purpose": "#161 同事务实际前置",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/test_read_tasks_recovery.py",
+      "sha256": "5ae699ad8df3f7af1edc1bdba1868ffb0b8553d2db6b442bdd1095be8589e372",
+      "size_bytes": 12687,
+      "kind": "test",
+      "purpose": "#161 候选/规则/历史依据恢复",
+      "base_sha256": null,
+      "production_scope_member": false,
+      "direct_static_importers": [],
+      "registered_consumer_roots": []
+    }
+  ]
+}

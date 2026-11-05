@@ -179,7 +179,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/calls.py",
-        "141c593a2c89fa1a74f25ed4a8f81cbe6f1ba95245407297614c6fa4095f24d6",
+        "9a42c0331335e47944a115ae46e411bf4f8bfd8ebd15f447bcbabf8db2d8b477",
     ),
     (
         "src/paper_radar/llm/models.py",

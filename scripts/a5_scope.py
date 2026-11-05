@@ -75,7 +75,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_stage_input_extraction.py",
-        "189658296a4cf4e4e0adbb6ba1beb6787f76e1985d90e87ce7bb4fc33c1a49ca",
+        "bc2a4dd997c66126f0790acb4d2d238393551546d0234b53f632063c57e2cfc9",
     ),
     (
         "tests/test_stage_input_extraction_reuse.py",
@@ -87,7 +87,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_stage_input_replay.py",
-        "87b904272f6129638ec481c8ff2cdad20fa754de0cb03ecd2e5eb07d3006c27f",
+        "3e2c22411783dc98a1e3f08c957813e4cc77b03b5f46bd57f2496d169bd7c7d2",
     ),
     (
         "tests/test_stage_input_reuse.py",
@@ -99,11 +99,11 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_stage_inputs.py",
-        "af8542793fc4cc99cb50888f6ddbd4a7f8ba0c7db9756b5932d746dd95a5e64e",
+        "c465f75336abfe86167ad54c4336e2d9f4a6529808dd249e99d50c50fa67d365",
     ),
     (
         "tests/test_a5_acceptance.py",
-        "8f5c500e722b33fb73cb7f36bbef8ef1ff3d43440ab9995833100f15a3ad8445",
+        "2c9fccbf3007074c11f7e3202f6c637af9c3eef96f3f812112e2cab93ef42bb9",
     ),
     (
         "tests/test_a5_entry.py",
