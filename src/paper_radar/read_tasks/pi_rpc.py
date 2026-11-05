@@ -16,6 +16,7 @@ from paper_radar.execution_history import require_supply_reference
 from paper_radar.read_inputs import PreparedReadInput
 from paper_radar.read_tasks.models import (
     ReadAnalysis,
+    ReadFailure,
     ReadHandle,
     ReadTask,
     ReadTaskError,
@@ -31,13 +32,34 @@ class PiReadCandidate:
     reported_model: str = field(repr=False)
     input_tokens: int | None = field(default=None, repr=False)
     output_tokens: int | None = field(default=None, repr=False)
+    audit_snapshot_id: str | None = field(default=None, repr=False)
+
+
+@dataclass(frozen=True)
+class PiReadFailure:
+    failure: ReadFailure
 
 
 def validate_audit(
-    service: ReadTasks, prepared: PreparedReadInput, audit_json: str
+    service: ReadTasks,
+    prepared: PreparedReadInput,
+    audit_json: str,
+    *,
+    task_id: str | None = None,
 ) -> PiRpcAudit:
     try:
-        audit = PiRpcAudit.model_validate_json(audit_json)
+        import json
+
+        value = json.loads(audit_json)
+        if type(value) is not dict:
+            raise ValueError
+        has_snapshot = "audit_snapshot_id" in value
+        snapshot_id = value.pop("audit_snapshot_id", None)
+        if has_snapshot:
+            if type(snapshot_id) is not str or task_id is None:
+                raise ValueError
+            prepared = service.prepare_execution(task_id, audit_snapshot_id=snapshot_id)
+        audit = PiRpcAudit.model_validate(value)
         description = prepared.description
         require_supply_reference(
             service.database,
@@ -78,7 +100,9 @@ def submit_pi(
         or type(candidate.execution_audit) is not PiRpcExecutionAudit
     ):
         raise ReadTaskError("invalid_request")
-    prepared = service.prepare(handle.task_id)
+    prepared = service.prepare_execution(
+        handle.task_id, audit_snapshot_id=candidate.audit_snapshot_id
+    )
     try:
         audit = PiRpcAudit.model_validate(
             {
@@ -99,8 +123,17 @@ def submit_pi(
         prepared.description.model,
     ):
         return service.fail(handle, "model_mismatch")
-    audit_json = audit.model_dump_json()
-    validate_audit(service, prepared, audit_json)
+    from paper_radar.read_tasks.repository import canonical
+
+    audit_value = audit.model_dump()
+    if candidate.audit_snapshot_id is not None:
+        audit_value["audit_snapshot_id"] = candidate.audit_snapshot_id
+    audit_json = (
+        audit.model_dump_json()
+        if candidate.audit_snapshot_id is None
+        else canonical(audit_value)
+    )
+    validate_audit(service, prepared, audit_json, task_id=handle.task_id)
     from paper_radar.read_tasks.acceptance import submit
 
     return submit(
@@ -115,7 +148,7 @@ def submit_pi(
 def run_pi_once(
     service: ReadTasks,
     task_id: str,
-    executor: Callable[[ReadHandle], PiReadCandidate],
+    executor: Callable[[ReadHandle], PiReadCandidate | PiReadFailure],
     *,
     preclaim: Callable[[PreparedReadInput, str | None], None] | None = None,
 ) -> ReadAnalysis | ReadTask:
@@ -125,4 +158,8 @@ def run_pi_once(
         candidate = executor(handle)
     except Exception:
         return service.fail(handle, "executor_error")
-    return submit_pi(service, handle, candidate)
+    if type(candidate) is PiReadFailure:
+        return service.fail(handle, candidate.failure)
+    if isinstance(candidate, PiReadCandidate):
+        return submit_pi(service, handle, candidate)
+    raise ReadTaskError("invalid_request")

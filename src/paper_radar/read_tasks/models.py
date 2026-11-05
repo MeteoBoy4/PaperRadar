@@ -1,14 +1,18 @@
 """Read任务的安全公共值;正文、候选和令牌不进入repr。"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-from paper_radar.llm import CallDescription
 from paper_radar.reading.acceptance_v2 import ReadV2Issue
 from paper_radar.reading.context import ExtractionIdentity
 from paper_radar.reading.schema import ReadAnalysisOutput
+
+if TYPE_CHECKING:
+    from paper_radar.llm import CallDescription
 
 
 class ReadReason(StrEnum):

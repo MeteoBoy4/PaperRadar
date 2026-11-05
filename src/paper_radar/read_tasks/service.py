@@ -1,5 +1,7 @@
 """显式单篇Read:短事务领取,事务外模型,有限预算和追加历史。"""
 
+from __future__ import annotations
+
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -12,11 +14,6 @@ from sqlalchemy.engine import RowMapping
 from paper_radar.body import BodyService
 from paper_radar.config import load_config_snapshot
 from paper_radar.fulltext.artifacts import FulltextArtifacts
-from paper_radar.read_inputs import (
-    PreparedReadInput,
-    build_read_correction,
-    prepare_read_input,
-)
 from paper_radar.read_tasks import tables as t
 from paper_radar.read_tasks.models import (
     ReadAnalysis,
@@ -38,7 +35,8 @@ from paper_radar.runtime_logging import RuntimeLog, Sink
 from paper_radar.storage.artifacts import ArtifactStore
 
 if TYPE_CHECKING:
-    from paper_radar.read_tasks.pi_rpc import PiReadCandidate
+    from paper_radar.read_inputs import PreparedReadInput
+    from paper_radar.read_tasks.pi_rpc import PiReadCandidate, PiReadFailure
 
 LEASE_SECONDS = 600
 
@@ -68,7 +66,15 @@ class ReadTasks:
             raise ReadTaskError("invalid_request")
         return value
 
-    def _prepare(self, budget: RowMapping) -> PreparedReadInput:
+    def _prepare(
+        self,
+        budget: RowMapping,
+        *,
+        audit_snapshot_id: str | None = None,
+        check_budget: bool = True,
+    ) -> PreparedReadInput:
+        from paper_radar.read_inputs import prepare_read_input
+
         with transaction(self.database) as connection:
             extraction = self.body.extraction_input_in_connection(
                 connection, budget["extraction_fingerprint"]
@@ -79,7 +85,9 @@ class ReadTasks:
             budget["artifact_id"],
             extraction,
             snapshot,
-            snapshot,
+            load_config_snapshot(self.database, audit_snapshot_id)
+            if audit_snapshot_id
+            else snapshot,
             expected_identity=identity_of(budget),
             output_language=budget["output_language"],
         )
@@ -88,7 +96,7 @@ class ReadTasks:
             or prepared.stage_input.fingerprint != budget["fingerprint"]
         ):
             raise ReadTaskError("corrupt_reference")
-        if not prepared.budget.accepted:
+        if check_budget and not prepared.budget.accepted:
             raise ReadTaskError("read_input_over_budget")
         return prepared
 
@@ -105,6 +113,8 @@ class ReadTasks:
         required(paper_id, snapshot_id, extraction_fingerprint, request_id, label)
         if output_language not in ("zh", "en"):
             raise ReadTaskError("invalid_request")
+        from paper_radar.read_inputs import prepare_read_input
+
         snapshot = load_config_snapshot(self.database, snapshot_id)
         with transaction(self.database) as connection:
             extraction = self.body.extraction_input_in_connection(
@@ -233,7 +243,34 @@ class ReadTasks:
             budget = budget_for(connection, task_id)
         return self._prepare(budget)
 
+    def prepare_execution(
+        self, task_id: str, *, audit_snapshot_id: str | None = None
+    ) -> PreparedReadInput:
+        """只读历史输入;预算返回普通值,供执行组合先准入后预算。"""
+        with transaction(self.database) as connection:
+            budget = budget_for(connection, task_id)
+            selected_snapshot = (
+                audit_snapshot_id
+                if audit_snapshot_id is not None
+                else budget["snapshot_id"]
+            )
+            if (
+                type(selected_snapshot) is not str
+                or not connection.execute(
+                    select(t.registrations.c.request_id).where(
+                        t.registrations.c.task_id == task_id,
+                        t.registrations.c.snapshot_id == selected_snapshot,
+                    )
+                ).first()
+            ):
+                raise ReadTaskError("corrupt_reference")
+        return self._prepare(
+            budget, audit_snapshot_id=audit_snapshot_id, check_budget=False
+        )
+
     def correction(self, task_id: str) -> str | None:
+        from paper_radar.read_inputs import build_read_correction
+
         view = self.task(task_id)
         return (
             build_read_correction(view.attempts[-1].issues)
@@ -247,6 +284,8 @@ class ReadTasks:
         *,
         preclaim: Callable[[PreparedReadInput, str | None], None] | None = None,
     ) -> ReadHandle:
+        from paper_radar.read_inputs import build_read_correction
+
         prepared = self.prepare(task_id)
         with transaction(self.database, write=True) as connection:
             budget = budget_for(connection, task_id)
@@ -448,7 +487,7 @@ class ReadTasks:
     def run_pi_once(
         self,
         task_id: str,
-        executor: Callable[[ReadHandle], "PiReadCandidate"],
+        executor: Callable[[ReadHandle], PiReadCandidate | PiReadFailure],
         *,
         preclaim: Callable[[PreparedReadInput, str | None], None] | None = None,
     ) -> ReadAnalysis | ReadTask:

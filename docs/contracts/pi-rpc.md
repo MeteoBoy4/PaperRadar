@@ -391,3 +391,11 @@ NAS 及无人值守不属于本 RPC 边界；承接见[路线图模块索引](..
 - [ADR-0026](../adr/0026-control-pi-through-a-bounded-rpc-adapter.md)、[ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)。
 - [A8 固定验收台账](../verification/a8-requirements.md)、[迁入历史原文](../verification/contracts-pi-rpc-history.md)；不代表本次或 live 验收。
 - 实现：[`calls.py`](../../src/paper_radar/llm/calls.py)、[`rpc.py`](../../src/paper_radar/llm/rpc.py)、[`rpc_types.py`](../../src/paper_radar/llm/rpc_types.py)、[`rpc_messages.py`](../../src/paper_radar/llm/rpc_messages.py)、[`rpc_pipes.py`](../../src/paper_radar/llm/rpc_pipes.py)。
+
+## Read 独立消费者
+
+[单篇 Read 执行组合](read-execution.md)直接复用 prepare_launch、admission 与 run_call，
+不扩 ScreeningTasks 或抽取冻结内核。每个 Read attempt 独立进程/session，只有一次
+run_call 的完整候选或失败进入 ReadTasks 的同一 v2 接收链；严格 cwd 与模型观察继续核对。
+准入先于完整帧预算，缺失或未实测时领取前拒绝；当前产品 read_evidence 恒 None。
+离线协议替身成功不构成 EXP-2 或真实模型/RPC 验收。

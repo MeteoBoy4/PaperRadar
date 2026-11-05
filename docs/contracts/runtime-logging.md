@@ -132,6 +132,27 @@ ReadTasks使用read component与现有claimed/succeeded/failed事件，日志只
 指纹前缀、attempt和受控kind。原始候选、修正、上下文、审计与证据全文不进入日志；
 默认NullSink；业务回放与备份不依赖日志文件。见[Read任务](read-tasks.md)。
 
+### Read 执行字段闭集
+
+[单篇 Read Pi 组合](read-execution.md)默认 NullSink；B 显式注入所选根 FileSink。
+领取前准入、预算或资源拒绝不产生 claimed/failed。只发下列字段，未知字段不保存：
+
+| 字段 | 允许内容 |
+| --- | --- |
+| format_version | 固定 1 |
+| event | claimed、succeeded、failed |
+| component / stage | 固定 read / read |
+| task_id / paper_id | 已有 UUID 或 32/64 位小写 hex 标识符；未知时省略 |
+| fingerprint | 仅 16 位前缀 |
+| attempt | 持久 ordinal 1 或 2 |
+| kind | 既有封闭失败类别；只有失败事件携带 |
+| timestamp | 安全 UTC 时间；不含路径或业务文本 |
+| elapsed_ms | 非负整数；当前无 operation 上下文时为 0，不代表模型耗时 |
+
+完整执行审计只进入可信成功事实，不复制到事件。供给/安装完整详情、模型名、认证模式、
+代理 URL/端口、prompt、Profile、全文、evidence、原始候选、坏 ID、修正、stdout/stderr、
+RPC 或完整会话均没有日志字段。日志失败不改变结算、不重试模型；日志条数不是 attempt 权威。
+
 ## 错误与拒绝
 
 序列化、时钟或文件写入的普通异常只导致诊断降级，不改变业务回执、CLI 成功退出码、

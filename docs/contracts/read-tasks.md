@@ -17,6 +17,9 @@ extraction_fingerprint 只用来定位已登记 Body 输入；artifact、reading
 expected_identity 均取持久记录，不能由调用方提交投影或裸指纹自证。
 `prepare(task_id)` 返回首次预算配置重建的 PreparedReadInput；
 `prepare_correction(task_id)` 返回安全修正或 None。两者只读。
+`prepare_execution(task_id, *, audit_snapshot_id=None)` 供 Pi 组合只读加载，返回未提前拒绝的
+完整帧预算，以保证准入先于预算；明确审计快照必须在该任务的登记事实中，Read 投影须与预算首次相同。
+预算语义仍取首次快照，不使用当前 settings。
 
 预算主体为同库 `(paper, read, fingerprint)`，每个代际最多两次领取。
 同输入重复请求、A→B→A、重启、用途或来源标签均回到原预算；标签不进入指纹。
@@ -55,7 +58,7 @@ KeyboardInterrupt/SystemExit 透传并保留已花费但未结算的租约。
 
 `read_tasks.execution.execution_resource(data_root)` 是本机同根 Read 的独占等待资源，
 载体 `.body-read.lock`，等待发生在领取之前；run_once 自动持有它。
-专用 `run_pi_once(task_id, executor, *, preclaim=None)` 使用独立 PiReadCandidate，
+专用 `run_pi_once(task_id, executor, *, preclaim=None)` 使用独立 PiReadCandidate/PiReadFailure，
 由 Pi 执行组合在认证和领取前取得该资源，并持有到结算与进程回收完成。
 低层 claim/submit 本身不持有长时间资源锁。Docling 的独立锁含义不变；
 B 的跨阶段调度与自动任务仍须遵守规格资源纪律。
@@ -64,6 +67,10 @@ PiReadCandidate 没有可变来源字段。专用端口核验严格 PiRpcAudit�
 引用、历史 adapter/protocol/channel/provider 和实际报告模型；模型不符为 model_mismatch。
 审计形状和引用不证明实际执行；Pi 组合另行提供准入、真实独立会话和进程组回收。
 本服务不授予 EXP-2 现场准入，test 端口不能提交 PiReadCandidate。
+PiReadFailure 仅传递封闭执行失败；不允许调用方声明 output_invalid 或 outcome_unknown。
+新的 Pi 组合记录另保留 audit_snapshot_id，回放核对该任务登记和历史投影；PiRpcAudit 的
+严格格式保持不变。既有无该字段的审计继续按首次配置验证，不迁移历史字节。
+实际启动、准入先后与日志范围见[单篇执行组合](read-execution.md)。
 
 ### 权威接收与原子保存
 

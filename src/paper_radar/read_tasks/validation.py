@@ -180,7 +180,7 @@ def replay_analysis(
     else:
         from paper_radar.read_tasks.pi_rpc import validate_audit
 
-        validate_audit(service, prepared, row["audit_json"])
+        validate_audit(service, prepared, row["audit_json"], task_id=row["task_id"])
 
 
 def validate_all(service: ReadTasks) -> None:
