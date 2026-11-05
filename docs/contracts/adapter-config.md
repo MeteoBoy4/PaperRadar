@@ -161,6 +161,14 @@ UTF-8 字节的 SHA-256。完整材料仍保存审计版本。
 锁定版本、相同语义 ID 或完整供给树哈希都不构成兼容性证明；无法判断行为影响时不能宣称
 校准兼容。升级及语义身份更新纪律见[规格 §7.8](../../intent/draft.md#78-pi-固定版本供给)。
 
+## Read 呈现语义
+
+reading 槽的 `bounded-rpc-v1` 与 Read `chunking_version=v1` 唯一映射到
+`read-render-v1`，其正文、证据锚点、原页码和受限占位呈现属于模型可见语义，
+由对应 adapter policy / chunking 版本绑定。改变呈现必须改变相关语义版本，
+不能只改 adapter_version；未知映射受控拒绝。完整请求与修正槽规则见
+[Read 输入准备](read-inputs.md)，三接收/警告规则版本不进入 adapter 语义。
+
 ## 采样与执行能力
 
 models-v2 的采样字段规则由 [运行配置 Contract](runtime-config.md#models-格式-2-与采样声明)

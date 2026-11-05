@@ -264,7 +264,12 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 
 ## 阶段输入
 
-`paper_radar.stage_inputs` 提供 boundary/value/extraction/reuse 输入的构造、规范字节、
+`paper_radar.read_inputs.prepare_read_input` 从登记正文与历史配置准备完整单篇 Read，
+在领取前检查含最坏修正槽的完整 RPC 帧预算；超额返回 `read_input_over_budget`。
+接口和限制见 [Read 输入准备](docs/contracts/read-inputs.md)，覆盖见
+[独立 D1 台账](docs/verification/issue-160-read-input-delivery.md)。
+
+`paper_radar.stage_inputs` 提供 boundary/value/extraction/reuse/read 输入的构造、规范字节、
 指纹、严格回放与比较，不执行模型或正文解析。
 
 论文事实到 boundary/value 输入的映射由 `PaperFacts.map_screening_inputs` 提供，

@@ -108,17 +108,23 @@ def _environment(reasons: list[dict[str, str]]) -> dict[str, Any]:
 
 
 def _formats() -> dict[str, Any]:
+    from paper_radar.config import StageName
     from paper_radar.config.projections import PROJECTION_FORMAT_VERSIONS
     from paper_radar.stage_inputs.service import STAGE_INPUT_FORMAT_VERSIONS
 
+    # A5 只证明其原有四阶段;增量 Read 由独立 D1 覆盖。
+    stages = (
+        StageName.BOUNDARY,
+        StageName.VALUE,
+        StageName.REUSE,
+        StageName.EXTRACTION,
+    )
     return {
         "stage_inputs": {
-            stage.value: version
-            for stage, version in STAGE_INPUT_FORMAT_VERSIONS.items()
+            stage.value: STAGE_INPUT_FORMAT_VERSIONS[stage] for stage in stages
         },
         "stage_projections": {
-            stage.value: PROJECTION_FORMAT_VERSIONS[stage]
-            for stage in STAGE_INPUT_FORMAT_VERSIONS
+            stage.value: PROJECTION_FORMAT_VERSIONS[stage] for stage in stages
         },
     }
 

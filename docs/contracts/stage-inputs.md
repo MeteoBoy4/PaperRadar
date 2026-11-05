@@ -6,9 +6,9 @@
 
 ## 用途与范围
 
-公共入口从 `paper_radar.stage_inputs` 导入。提供 boundary/value/extraction/reuse
+公共入口从 `paper_radar.stage_inputs` 导入。提供 boundary/value/extraction/reuse/read
 各自独立格式 **1**；reuse 的封闭来源联合包含结构化来源与正文来源，可显式组合。
-reuse 使用格式 1，不提供另一份过渡生产格式；本边界不提供 read/suggestion。
+reuse 使用格式 1，不提供另一份过渡生产格式；本边界不提供 suggestion。
 未支持的阶段、字符串冒充 `StageName` 或未知阶段均受控拒绝，不产生占位指纹。
 
 | 入口 / 类型 | 契约 |
@@ -19,6 +19,7 @@ reuse 使用格式 1，不提供另一份过渡生产格式；本边界不提供
 | `ExtractionRef(extraction_input=..., reading_sha256=..., evidence_map_sha256=..., locator=...)` | 正文来源构造只接收 extraction 输入对象，再绑定实际消费成员与冻结定位；不查询制品库。 |
 | `extraction_ref.identity` | 只读的 `(extraction_fingerprint, reading_sha256, evidence_map_sha256)` 正文消费身份；不含定位。 |
 | `SelectedExcerpt(excerpt_id=..., kind=..., text=..., source=...)` | 已选精确摘录；ID/种类由权威 ReuseAssessmentContext 校验。 |
+| `ReadFacts(extraction_input=..., reading_sha256=..., evidence_map_sha256=..., output_language=...)` | extraction 配方对象绑定正文三元组和严格 zh/en；不接收裸指纹或其他事实。 |
 | `ReuseFacts(excerpts=...)` | 非空有序冻结摘录，重复 ID 在构造调用级映射前拒绝；全部正文摘录共享同一配方与消费内容身份。 |
 | `reuse_input.reuse_assessment_context()` | 仅从该输入冻结摘录派生权威 ID/种类映射；不接收外部映射。 |
 | `build_stage_input(snapshot, stage, facts)` | 从已由 check/compile/load 验证的 `RuntimeConfigSnapshot` 选取同阶段 `project_config` 投影，返回不可变 `StageInput`。 |
@@ -114,7 +115,8 @@ value 独立固定向量：完整合成载荷在
 同阶段且阶段/投影格式兼容时，组件采用固定顺序：
 boundary/value 按 `config_projection`、`title`、`abstract`、`abstract_truncated` 排序，
 extraction 按 `config_projection`、`pdf` 排序，
-reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列发生变化者。
+reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序；
+read 按 `config_projection`、`body_identity`、`output_language` 排序，只列发生变化者。
 比较不输出原文、旧/新值或自由字段名。不同阶段或格式不兼容返回不可比，细粒度配置
 解释由 `compare_config_snapshots` 承担。boundary/value 跨阶段比较返回 `different_stage`，不会混用判断。
 
@@ -128,6 +130,7 @@ reuse 按 `config_projection`、`excerpts`、`excerpt_sources` 排序，只列�
 `facts.excerpts.source.content_sha256/facts.excerpts.source.locator/`
 `facts.excerpts.source.extraction_input/facts.excerpts.source.extraction_fingerprint/`
 `facts.excerpts.source.reading_sha256/facts.excerpts.source.evidence_map_sha256`；
+Read 另有 `facts.identity`、`facts.output_language`；
 未知键折叠为所属受控容器位置，
 不含摘录下标、实际 ID 或自由键名。
 
@@ -178,9 +181,9 @@ build 的事实类型与阶段错配为 `invalid_facts`。回放中的非法事�
 摘要来源/提供方、阶段二 artifact 链接同样是审计引用，不是指纹分量。
 `validate_output` 仍独立负责权威 Schema 与业务校验，校验通过不表示制品已发布或落库。
 
-四阶段共同契约核对：公共头、编码/哈希、就绪与投影选择、严格回放、投影核对、
+五阶段共同契约核对：公共头、编码/哈希、就绪与投影选择、严格回放、投影核对、
 比较前置与错误格式化共用一份实现，没有按阶段复制公共载荷或通用错误规则。
-ScreeningFacts、ExtractionFacts、ReuseFacts 保留各自事实与来源业务校验，
+ScreeningFacts、ExtractionFacts、ReuseFacts、ReadFacts 保留各自事实与来源业务校验，
 不把阶段差异扩散到新的公开构造入口。
 
 <a id="结构化-reuse-格式-1"></a>
@@ -368,7 +371,7 @@ extraction 格式 1 不含题名、DOI、摘要等论文元数据。本服务不
 ## 格式版本公开访问
 
 `paper_radar.stage_inputs.STAGE_INPUT_FORMAT_VERSIONS` 是只读映射，明确列出
-boundary/value/reuse/extraction 各自的当前配方版本 1；构造与回放共同消费这一份
+boundary/value/reuse/extraction/read 各自的当前配方版本 1；构造与回放共同消费这一份
 生产权威数据。调用方不能修改映射，也不能把 StageName 的其余成员
 视为已支持阶段。该映射只表达阶段输入格式，配置当前投影格式由 config 维护；历史投影
 回放是否受支持由本模块的封闭策略决定，核对时还要求明确快照能够重建匹配格式。
@@ -377,14 +380,35 @@ boundary/value/reuse/extraction 各自的当前配方版本 1；构造与回放�
 boundary/value 规范载荷持久化、同库预算主体及语言上下文冻结规则见
 [任务登记契约](screening-tasks.md#8-a7-02-公共登记-api已交付)。
 
+## Read 格式 1
+
+Read facts 严格只有 extraction_fingerprint、reading_sha256、evidence_map_sha256 和
+output_language。构造只接受 extraction StageInput 对象，语言必填严格 zh/en；
+回放可从规范字节恢复三元组，再按明确历史 snapshot 核对 Read 投影。默认中文由
+上层准备接口提供，不在纯 facts 层猜测。paper_id、artifact_id、路径、定位、用途、
+运行、会话与安装位置均不进入 facts；模型/Prompt/Contract/Profile/adapter/chunking
+仅通过登记历史配置投影绑定，不接收任意裸 projection 指纹作为构造入口。
+
+| 进入 Read 模型指纹 | 不进入 Read 模型指纹 |
+| --- | --- |
+| 正文消费三元组、输出语言 | paper、用途、安装位置、进程/会话与执行审计版本 |
+| reading 模型、Prompt、Contract、Profile | 卷期页码等书目补全、其他阶段模型 |
+| reading adapter（系统指令/策略/档位）与 chunking v1 | read-evidence-v2、read-numeric-v2、read-content-limitation-v1 |
+| 冻结 read-render-v1（由 adapter policy / chunking v1 版本映射绑定）：页码、锚点、受限占位与完整正文呈现 | 接收序号、末次降级记录与后处理警告 |
+
+正文三元组包含提取配方和实际成员身份；PDF 或提取语义变化影响相关 Read。Read 模型和
+zh/en 的指纹彼此独立，不污染 Screening/校准。Profile 进入输入不表示 Profile 变化使既有
+分析失效；正文当前性、配置已旧和重跑资格由任务/查询消费者判断。三规则版本仅影响
+接收/回放，不借规则变化刷新模型预算。[准备与预算](read-inputs.md)定义完整帧及修正槽。
+
 ## 不提供／不证明
 
-本服务不提供 Read、suggestion 或 report 阶段输入，不执行模型、Docling、选段、
+本服务不提供 suggestion 或 report 阶段输入，不执行模型、Docling、选段、
 调度或业务资格判断；配置 ready、自洽载荷或相同指纹不证明真实来源、成功制品、
 正文质量、RPC 兼容、校准或 live 就绪。
 
-Read 输入身份与正文生产消费由[Body](../roadmap.md#module-body)及[B](../roadmap.md#module-b)
-承接，通用长文由[G](../roadmap.md#module-g)承接；复用执行与筛选建议由
+Read 的[持久正文准备与预算](read-inputs.md)独立组合本纯层；任务持久消费由
+[Body](../roadmap.md#module-body)、产品接线由[B](../roadmap.md#module-b)承接，通用长文由[G](../roadmap.md#module-g)承接；复用执行与筛选建议由
 [D](../roadmap.md#module-d)、报告由[H](../roadmap.md#module-h)承接。
 
 ## 相关
