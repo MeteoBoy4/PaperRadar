@@ -7,7 +7,7 @@ import os
 import stat
 import sys
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from time import monotonic
 from uuid import uuid4
@@ -27,7 +27,9 @@ from paper_radar.body.repository import digest, now, replay, required, transacti
 from paper_radar.config import StageName, load_config_snapshot
 from paper_radar.eligibility import QualityBasis, QualityFact, QualityFailure
 from paper_radar.fulltext.artifacts import FulltextArtifacts
+from paper_radar.fulltext.execution_audit import ExtractionExecutionAudit
 from paper_radar.fulltext.models import FulltextError
+from paper_radar.fulltext.normalization import canonical_json
 from paper_radar.reading.context import ExtractionIdentity
 from paper_radar.stage_inputs import ExtractionFacts, build_stage_input
 from paper_radar.storage.artifacts import ArtifactStore
@@ -74,6 +76,18 @@ def root_lock(root: Path) -> Iterator[None]:
         os.close(fd)
 
 
+def decode_attempt_audit(raw: str | None) -> ExtractionExecutionAudit | None:
+    if raw is None:
+        return None
+    try:
+        audit = ExtractionExecutionAudit.model_validate_json(raw)
+        if canonical_json(audit.model_dump(mode="json")) != raw.encode("utf-8"):
+            raise ValueError("审计编码不符")
+    except ValueError:
+        raise BodyError("corrupt_reference") from None
+    return audit
+
+
 def extraction_view(connection: Connection, fingerprint: str) -> ExtractionView | None:
     row = (
         connection.execute(
@@ -111,6 +125,7 @@ def extraction_view(connection: Connection, fingerprint: str) -> ExtractionView 
                 entry["artifact_id"],
                 entry["elapsed_seconds"],
                 entry["peak_memory_bytes"],
+                decode_attempt_audit(entry["executor_audit_json"]),
             )
         )
         permanent |= failure in PERMANENT
@@ -222,8 +237,15 @@ def extract(
     fingerprint = stage_input.fingerprint
     backend = semantics.backend.backend_id
     # 前置 probe / 模型逐文件核验没有领取事实,也不进入根锁等待。
-    parser.preflight(semantics)
-    with root_lock(root):
+    with ExitStack() as resources:
+        prepared = parser.preflight(semantics)
+        if prepared is not None:
+            resources.callback(prepared.close)
+        executor = prepared if prepared is not None else parser
+        audit = prepared.audit if prepared is not None else None
+        if audit is not None and not audit.matches(semantics):
+            raise BodyError("invalid_request")
+        resources.enter_context(root_lock(root))
         with transaction(database, write=True) as connection:
             selected = current_pdf(
                 connection,
@@ -273,11 +295,16 @@ def extract(
                     backend=backend,
                     ordinal=ordinal,
                     claimed_at=now(),
+                    executor_audit_json=canonical_json(
+                        audit.model_dump(mode="json")
+                    ).decode("utf-8")
+                    if audit is not None
+                    else None,
                 )
             )
         start = monotonic()
         try:
-            result = parser.convert(raw_pdf, semantics)
+            result = executor.convert(raw_pdf, semantics)
             published = FulltextArtifacts(store).publish(
                 result.document,
                 extraction_fingerprint=fingerprint,
@@ -287,6 +314,7 @@ def extract(
                 peak_memory_bytes=result.peak_memory_bytes,
                 document_json=result.document_json,
                 warnings=result.warnings,
+                execution_audit=audit,
             )
         except FulltextError:
             with transaction(database, write=True) as connection:

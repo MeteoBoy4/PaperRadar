@@ -287,7 +287,11 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 ## PDF 与正文持久提取
 
 `paper_radar.body.BodyService` 提供人工 PDF 附加、不可变根用途、直接人工决定、
-冻结样本、持久提取预算及独立版式核查。外部 canonical parser 通过显式参数注入，
+冻结样本、持久提取预算及独立版式核查。
+`paper_radar.docling_executor.DoclingParser` 通过显式模型根、超时和地址空间上限，
+在离线受限子进程中执行所选工具链；[执行契约与调用方式](docs/contracts/docling-execution.md)
+及[用户 smoke 命令](docs/verification/issue-159-docling-execution.md#用户本人执行的-smoke-命令)说明资源口径和未验范围。
+外部 canonical parser 通过显式参数注入，
 只读事实可在调用者事务内核验；备份会重验正文业务闭包。
 接口、拒绝与限制见[正文持久化契约](docs/contracts/body-persistence.md)，
 产品入口和真实核查责任见[路线图 B](docs/roadmap.md#module-b)。

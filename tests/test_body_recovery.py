@@ -4,7 +4,6 @@ import json
 import os
 import sqlite3
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -16,10 +15,12 @@ from paper_radar.body.extraction import LOCK_FILENAME
 from tests.artifact_support import fail_sql
 from tests.body_recovery_worker import view
 from tests.body_support import CHECKS, accepted, add_feed, prepared
+from tests.no_extra_runtime import no_extra_python as no_extra_python
 
 
 def test_business_closure_restores_in_moved_cold_no_extra_process(
     tmp_path: Path,
+    no_extra_python: Path,
 ) -> None:
     source = tmp_path / "source"
     saved, service, parser = prepared(source)
@@ -61,7 +62,7 @@ def test_business_closure_restores_in_moved_cold_no_extra_process(
     source.rename(unavailable)
     result = subprocess.run(
         [
-            sys.executable,
+            str(no_extra_python),
             "-m",
             "tests.body_recovery_worker",
             str(backup.batch_dir),

@@ -50,10 +50,13 @@ version 缺省冻结为首次附加时当前版本，显式 version 必须属于
 `extract(paper_id, *, snapshot_id, parser) -> ExtractionView` 从已登记历史配置和当前 PDF
 构造并保存 extraction StageInput；不接收裸指纹作为权威。
 `CanonicalParser.preflight(ExtractionSemantics)` 在根锁和领取前完成外部诊断及模型核验，
-失败不占预算。`convert(pdf: bytes, semantics) -> ParserResult` 只接收 PDF 与 extraction 语义，
+失败不占预算；可返回独立 `PreparedParser`，服务对全部出口调用其 `close()`，
+并在领取时保存其可选运行审计。旧 parser 返回 None 时仍调用原 convert。
+`convert(pdf: bytes, semantics) -> ParserResult` 只接收 PDF 与 extraction 语义，
 返回 canonical、可选审计 JSON、峰值与警告；不提供题名/DOI/摘要。
 `ParserFailure(ExtractionFailure, peak_memory_bytes=0)` 表达受控失败。
-生产 SDK、进程限额和模型文件核验属于独立执行器边界，Body 不在进程内伪造这些保障。
+生产 SDK、进程限额和模型文件核验由[Docling 执行器](docling-execution.md)提供；
+Body 复用其准备对象，不在进程内加载 SDK。
 规范化、自动质量和四角色定义见[规范正文](fulltext-extraction.md)。
 
 同库 `backend × extraction_fingerprint` 最多两次尝试，跨论文、请求与重启共享；
