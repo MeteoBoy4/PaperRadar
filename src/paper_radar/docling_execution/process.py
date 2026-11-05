@@ -1,5 +1,6 @@
 """单次受限 worker 监管;不管理业务预算、根锁或总耗时。"""
 
+import json
 import os
 import signal
 import subprocess
@@ -7,6 +8,7 @@ import sys
 import time
 from contextlib import suppress
 from pathlib import Path
+from typing import NoReturn
 
 from pydantic import ValidationError
 
@@ -20,6 +22,25 @@ OFFLINE_ENV = {
     "CUDA_VISIBLE_DEVICES": "",
 }
 MAX_RESPONSE_BYTES = 128 * 1024 * 1024
+
+
+def _unique_members(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    members: dict[str, object] = {}
+    for key, value in pairs:
+        if key in members:
+            raise ValueError("重复的 worker 协议字段")
+        members[key] = value
+    return members
+
+
+def _invalid_constant(_value: str) -> NoReturn:
+    raise ValueError("非有限 worker 协议数字")
+
+
+def _response(raw: bytes) -> WorkerResponse:
+    # Pydantic JSON 的 strict 不拒绝重复键,先做 RFC JSON 歧义检查。
+    json.loads(raw, object_pairs_hook=_unique_members, parse_constant=_invalid_constant)
+    return WorkerResponse.model_validate_json(raw)
 
 
 class DoclingProcess:
@@ -84,13 +105,11 @@ class DoclingProcess:
                     response_path.is_file()
                     and response_path.stat().st_size <= MAX_RESPONSE_BYTES
                 ):
-                    response = WorkerResponse.model_validate_json(
-                        response_path.read_bytes()
-                    )
+                    response = _response(response_path.read_bytes())
             elif process.returncode == -signal.SIGXCPU:
                 response = WorkerResponse(failure="resource_exhausted")
             # 单个 SIGKILL 无法证明 OOM,保持 executor_error。
-        except (OSError, ValueError, ValidationError):
+        except (OSError, ValueError, ValidationError, RecursionError):
             response = WorkerResponse(failure="executor_error")
         finally:
             # 即使直接 worker 已退出,也回收仍在组内的后代。

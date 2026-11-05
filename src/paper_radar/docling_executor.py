@@ -24,10 +24,20 @@ __all__ = ["DoclingParser", "DoclingPreflightError", "DoclingRun"]
 class DoclingPreflightError(ValueError):
     def __init__(self, reason: str) -> None:
         self.reason = reason
-        super().__init__(
-            f"Docling 预检拒绝:{reason};"
-            "请核对所选工具链、部署清单与模型文件,未领取尝试。"
+        guidance = {
+            "dependency_missing": (
+                "请用 uv sync --offline --locked --extra docling 准备所选工具链依赖。"
+            ),
+            "dependency_inconsistent": "请修复模块发现与发行包元数据不一致的隔离环境。",
+            "dependency_version_mismatch": "请匹配所选工具链精确版本,或登记新配置。",
+            "platform_unknown": "请核对 Linux x86_64、glibc 与 CPython 平台事实。",
+            "platform_unsupported": "请使用受支持的 Linux x86_64 CPython 环境。",
+            "selection_invalid": "请先 check/compile 合法的 extraction 工具链及后端。",
+        }.get(
+            reason,
+            "请核对 deployment.json、所选 commit 和文件哈希,并预留模型快照磁盘空间。",
         )
+        super().__init__(f"Docling 预检拒绝:{reason};{guidance}未领取尝试。")
 
 
 class DoclingExecution(Protocol):

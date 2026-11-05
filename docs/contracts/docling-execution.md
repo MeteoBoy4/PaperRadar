@@ -46,11 +46,12 @@ worker 只接收该快照，不读取原部署根；原根随后变化不会改�
 建立 Linux x86_64 seccomp，再 import SDK。过滤器继承到后代，禁止网络 socket 系统调用、
 io_uring、setsid/setpgid、namespace 逃逸；普通线程及同组子进程保留。
 结束、硬超时、异常或取消均对整个组 `SIGKILL` 并等待直接 worker 回收。
-原始 stdout/stderr 丢弃，不进入业务日志或异常信息。响应文件最大 128 MiB，坏协议受控拒绝。
+原始 stdout/stderr 丢弃，不进入业务日志或异常信息。响应文件最大 128 MiB；重复键、非 JSON 浮点、缺成功成员等坏协议受控拒绝。
 
 `memory_limit_bytes` 是**每进程虚拟地址空间硬上限**，不是 RSS、整组物理内存上限或
 cgroup MemoryMax。映射库和 torch 可保留大量虚拟地址；合适数值须由用户 smoke 验证。
-不把 EXP-3 样本峰值当通用阈值。整组物理内存与代表性安全余量仍由 F 负责。
+不把 EXP-3 样本峰值当通用阈值。父进程持有的 PDF 字节不在 worker 上限或峰值内，
+模型快照另占磁盘。整组物理内存与代表性安全余量仍由 F 负责。
 
 `peak_memory_bytes` 固定由父侧 Linux `wait4` 的 worker `ru_maxrss`（KiB）乘 1024，
 在回收时取样，硬超时也保留该值；它不是整组 RSS 总和，也不是 cgroup 峰值。
@@ -82,7 +83,8 @@ OCR、代码、图片分类、图片描述、图表 enrichment、remote service�
 
 formula 的 orig/text 分别保留；启用时 text 另存 generated_text 候选，不赋源字符区间。
 真实 SDK 没有明确 display/inline 信号时记 unknown。普通 TableCell.text 仅作为受限展示，
-不变成 orig/evidence；rich table 的真实源子节点按 table 类型保留。行列结构仍在原始 document
+不变成 orig/evidence；rich table 的真实源文字按 table 类型保留，公式子节点保持 formula 类型与候选。
+行列结构仍在原始 document
 审计 JSON 中。图片本体不取得证据，合法 caption/子文本保留。
 
 原始 `export_to_dict()` 明确移除页面与节点的 image 字段，再拒绝残余嵌入二进制；

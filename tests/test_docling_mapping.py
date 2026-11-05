@@ -194,6 +194,14 @@ def test_table_cells_remain_restricted_display_and_images_are_removed() -> None:
             page_no=1, bbox=BoundingBox(l=1, t=1, r=100, b=100), charspan=(0, 0)
         ),
     )
+    nested_formula = document.add_formula(
+        text="x=2",
+        orig="x≈2",
+        parent=table,
+        prov=ProvenanceItem(
+            page_no=1, bbox=BoundingBox(l=5, t=5, r=90, b=30), charspan=(0, 3)
+        ),
+    )
     # 显式已有嵌图不能依赖 generate_images=False 或 PLACEHOLDER 消失。
     document.pages[1].image = ImageRef(
         mimetype="image/png",
@@ -211,6 +219,10 @@ def test_table_cells_remain_restricted_display_and_images_are_removed() -> None:
     mapped = next(b for b in canonical.blocks if b.ref == table.self_ref)
     assert mapped.orig == "" and mapped.text == "12.5" and mapped.role == "placeholder"
     assert mapped.provenance[0].charspan == (0, 0)
+    formula = next(b for b in canonical.blocks if b.ref == nested_formula.self_ref)
+    assert formula.label == "formula" and formula.orig == "x≈2"
+    assert formula.generated_text == "x=2"
+
     assert "image" not in json.loads(raw)["pages"]["1"]
     assert b"base64" not in raw
 

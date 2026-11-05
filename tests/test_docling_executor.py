@@ -12,7 +12,7 @@ from paper_radar.docling_executor import (
 from tests.body_support import prepared
 
 
-def test_missing_deployment_is_rejected_before_attempt(tmp_path: Path) -> None:
+def test_runtime_probe_refusal_never_claims(tmp_path: Path) -> None:
     saved, service, _ = prepared(tmp_path)
     parser = DoclingParser(
         DoclingRun(
@@ -21,8 +21,9 @@ def test_missing_deployment_is_rejected_before_attempt(tmp_path: Path) -> None:
             memory_limit_bytes=2**34,
         )
     )
-    with pytest.raises(DoclingPreflightError):
+    with pytest.raises(DoclingPreflightError) as error:
         service.extract(saved.paper_id, snapshot_id=saved.snapshot_id, parser=parser)
+    assert error.value.reason == "dependency_version_mismatch"
     assert service.facts(saved.paper_id).extraction is None
 
 
@@ -247,7 +248,15 @@ def test_prepared_models_survive_later_deployment_changes(tmp_path: Path) -> Non
         first.close()
 
 
-@pytest.mark.parametrize("body", ["not json", '{"failure":"unknown"}', "{}"])
+@pytest.mark.parametrize(
+    "body",
+    [
+        "not json",
+        '{"failure":"unknown"}',
+        "{}",
+        '{"failure":"executor_error","failure":"timeout"}',
+    ],
+)
 def test_malformed_external_response_is_executor_error(
     tmp_path: Path, body: str
 ) -> None:

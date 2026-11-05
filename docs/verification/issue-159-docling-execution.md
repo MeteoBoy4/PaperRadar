@@ -8,13 +8,13 @@
 
 | 模块 | 节点数 | 可观察行为 |
 | --- | ---: | --- |
-| `tests/test_docling_executor.py` | 22 | 真实 probe 与冻结部署核验、缺失/commit/哈希/链接拒绝先于锁且无领取、真实 BodyService/四角色/唯一成功/两次预算、外部进程结果、真实 worker 的 import/MemoryError 安全结算、整组超时回收与 wait4 峰值、seccomp 及后代网络/进程组禁止、普通线程保留、RLIMIT_AS 实际分配拒绝、并发独立准备和全部出口清理、关闭公式不消费其模型、坏协议 fail-closed |
-| `tests/test_docling_mapping.py` | 5 | 真实 core 对象的 children 顺序/容器/父关系/标题 level、全部多页 charspan 与 codepoint、bottom-left bbox、orig/候选/unknown、缺页与未知层拒绝、越界源不修补且自动质量拒绝、普通表格无 orig/受限展示、已有嵌图去除、图片 caption 子树与 furniture |
+| `tests/test_docling_executor.py` | 23 | 真实 probe 与冻结部署核验、缺失/commit/哈希/链接拒绝先于锁且无领取、真实 BodyService/四角色/唯一成功/两次预算、外部进程结果、真实 worker 的 import/MemoryError 安全结算、整组超时回收与 wait4 峰值、seccomp 及后代网络/进程组禁止、普通线程保留、RLIMIT_AS 实际分配拒绝、并发独立准备和全部出口清理、关闭公式不消费其模型、坏协议 fail-closed |
+| `tests/test_docling_mapping.py` | 5 | 真实 core 对象的 children 顺序/容器/父关系/标题 level、全部多页 charspan 与 codepoint、bottom-left bbox、orig/候选/unknown、缺页与未知层拒绝、越界源不修补且自动质量拒绝、普通表格无 orig/受限展示、rich table 公式子节点保持 formula、已有嵌图去除、图片 caption 子树与 furniture |
 | `tests/test_docling_manifest_compatibility.py` | 2 | 独立旧字段字面量重建原 manifest 字节，公共四角色读取不因新增默认 null 拒绝旧制品；可选审计不改变正文身份且内部身份不一致拒绝 |
 | `tests/test_docling_cold_import.py` | 1 | 冷进程禁止 SDK/网络/执行，公共 parser 构造、Body 查询与 ReadContext 重建无 SDK |
 | `tests/test_no_extra_runtime.py` | 1 | extra 测试进程选择真实无 extra、同 Python minor、同 ROOT 源码的恢复解释器 |
 | `tests/test_docling_executor_recovery.py` | 2 | 成功/失败审计、预算、源字符的真实基础解释器异地恢复/再备份，屏蔽原根；失败 attempt 审计语义篡改拒绝 |
-| 合计 | 33 | extra+dev 主验必须全部执行，零 skip/deselect |
+| 合计 | 34 | extra+dev 主验必须全部执行，零 skip/deselect |
 
 支撑：`tests/docling_executor_support.py` 只在外部 worker 进程边界提供合成结果，
 不替换数据库、锁、预算、制品、规范化或公共 probe。
@@ -57,7 +57,7 @@ UV_PROJECT_ENVIRONMENT="$PAPER_RADAR_EXTRA_ENV" uv run --offline --locked --extr
 真实无 extra 冷入口、帮助、查询、上下文与旧 manifest 消费：
 
 ```bash
-UV_PROJECT_ENVIRONMENT="$PAPER_RADAR_BASE_ENV" uv run --offline --locked pytest -q tests/test_docling_cold_import.py tests/test_docling_runtime_process.py tests/test_docling_manifest_compatibility.py tests/test_fulltext_artifacts.py tests/test_fulltext_quality.py
+UV_PROJECT_ENVIRONMENT="$PAPER_RADAR_BASE_ENV" uv run --offline --locked pytest -q tests/test_docling_cold_import.py tests/test_docling_runtime_process.py tests/test_docling_manifest_compatibility.py tests/test_fulltext_artifacts.py tests/test_fulltext_quality.py tests/test_fulltext_restore.py tests/test_body_recovery.py tests/test_no_extra_runtime.py
 ```
 
 双环境成功/失败新审计恢复（目录须尚不存在）：
@@ -73,9 +73,15 @@ StageInput、doctor/probe 和触发的 `./scripts/check-compatibility cli`。这
 
 ## 结果与证据边界
 
-开发预览先仅复制 #161 尚未提交的第二迁移，公共执行/映射/规范正文组合通过；
-该预览不作为正式集成或恢复验收。正式结果以合入 #161 后重跑的父票收口记录为准。
-预览曾因备份消费者 head 仍旧而受控拒绝，未改 head 或 scope 预期凑绿。
+正式 #161 迁移及消费者合入后，新增 34 节点、Body 51、规范正文 31、Read 48
+组成的相关公共服务组合为 164 passed，零 skip/deselect。成功/失败的新执行审计及
+原 Body/Read 冷恢复均实际使用基础解释器；原根屏蔽、剩余预算与源字符回放通过。
+真实无 extra 的明确基础/备份子集 62 passed；配置、StageInput、工具链与 doctor 冻结回归
+309 passed；合并树 CLI 兼容组合 59 passed。全仓 Ruff 与格式检查、mypy（847 文件）通过。
+完整门禁、正式历史组回执和 live 未运行；最终提交身份与 scope 候选由外部收口报告提供。
+
+此前只复制未提交第二迁移的开发预览曾被旧备份 head 受控拒绝，不作为上述结果的依据；
+正式组合使用 #161 的已提交迁移，不修改旧 head/scope 预期凑绿。
 
 TDD 先观察公共 executor/mapping 入口缺失、空成功协议被误接受及无 extra fixture 缺失，
 再补实现；测试通过公共服务与真实进程观察结果。真实 SDK 只以 core 对象构造做窄映射，

@@ -1,5 +1,6 @@
 """真实 Docling export 的无损源映射;不导入 SDK,不修补源区间。"""
 
+import math
 from typing import Any, Protocol
 
 from paper_radar.body.models import ParserFailure
@@ -35,7 +36,7 @@ def map_document(
         )
     except ParserFailure:
         raise
-    except (KeyError, ValueError, TypeError, IndexError, RecursionError):
+    except (KeyError, ValueError, TypeError, IndexError, RecursionError, OverflowError):
         raise ParserFailure("extraction_failed_quality_gate") from None
 
 
@@ -113,7 +114,11 @@ def _map(
                 if origin == "TOPLEFT"
                 else (bbox["l"], bbox["b"], bbox["r"], bbox["t"])
             )
-            if origin not in {"TOPLEFT", "BOTTOMLEFT"} or p["page_no"] not in expected:
+            if (
+                origin not in {"TOPLEFT", "BOTTOMLEFT"}
+                or p["page_no"] not in expected
+                or not all(math.isfinite(float(c)) for c in coords)
+            ):
                 raise ValueError("定位不符")
             provenance.append(
                 CanonicalProvenance(
@@ -133,7 +138,7 @@ def _map(
             text = "\n".join(
                 c["text"] for c in item.get("data", {}).get("table_cells", [])
             )
-        source_label = "table" if in_table and orig else label
+        source_label = "table" if in_table and orig and label != "formula" else label
         blocks.append(
             CanonicalBlock(
                 ref=ref,
