@@ -5,6 +5,8 @@
 `paper_radar.body.BodyService(database, data_root, *, sink=None)` 持久登记根用途、
 直接人工决定、PDF 当前选择与实验样本，组合 canonical parser 和规范正文制品服务，
 保存全库共享的提取预算及独立人工版式核查。只读查询和备份验证不加载 SDK、调用模型或修补事实。
+Body 与 Read 的关系表完整登记于 `paper_radar.storage.schema.metadata`，查询模块引用
+同一组表定义；用户数据库仍只通过不可变 migration 创建和升级。
 
 ## 规则
 

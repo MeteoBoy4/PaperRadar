@@ -572,7 +572,7 @@ SHARED_MATERIALS = {
         "91a48152f1f2fdd840471f81c6db13ca87dc533a8ce4fa03f5b396b08019f5bf"
     ),
     "src/paper_radar/storage/schema.py": (
-        "291db5e419f3a5a7fd88afab7f369569d0b8e754fa36932210418c0938050a0f"
+        "67d2382bf545bd068b207f0dd525eebeb0c6c70c7efe36c907ffac66fb2d7450"
     ),
     "src/paper_radar/storage/snapshot_queries.py": (
         "e394fb3bbc2e70e5bc92f4c539481e7d9660c026f60d709ef990763022f6acf1"

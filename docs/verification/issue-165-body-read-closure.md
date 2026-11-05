@@ -147,13 +147,23 @@ backup verify/restore。重用合成配置、真实供给登记和真实 Screeni
 逐项审阅，审阅主体为 agent，授权来自 #165 的 migration/实际消费者窄例外及会话两次 A5 明确批准；
 不声称用户亲自签过最终 SHA。确认输入放树外并绑定当时完整身份，不能复用 811 预审。
 
-只重绑 9 路径/15 展开登记：中央 a5_acceptance、llm/models、stage_inputs/__init__、stage_inputs/service
-四键，A5 四测试字面量与 A8 llm/calls 一个字面量；已有五中央键与十 scope head 保留。
+只重绑 10 路径/21 展开登记：中央 a5_acceptance、llm/models、stage_inputs/__init__、stage_inputs/service、
+storage/schema 五键，A5 四测试字面量与 A8 llm/calls 一个字面量；已有五中央键与十 scope head 保留。
 a5_acceptance 的四阶段格式选择影响验收语义，人工另审 A5/A6/A7/A8/A9/A10 六组：
 原四阶段格式检查及异常向量、材料哈希循环和 14 模块/529 不变，新增 Read 仅进 D1，不能因
 工具机械标签豁免。A5 四模块五处保持 20/33/38/106。A9 十 v1 源码、十五测试及 560、
 格式/capabilities、41 旧 fixture 与 A8 向量字节保持；scope 元数据仅迁移窄例外。
 审计器/registry/baseline/collection 不修改，11 旧组成员/分母/required、41 refs 不扩展。
+
+共享 schema 修复补齐 Body/Read 的 18 个完整 Table，查询模块只引用共享定义；
+冷导入不依赖上层业务模块。字段类型、SQLite 原生主键的 nullable、外键、唯一与 CHECK
+均描述 body01/body02 既有 DDL，包含 executor_audit_json，不新增或改写 migration。
+回归 seam 为既有 `test_config_service.py::test_upgrade_is_idempotent_and_schema_matches_metadata`，
+冻结测试原字节保留，不过滤多余表，也不从数据库反射生成声明；D1 38 模块/376 不变。
+storage/schema 原已作为 source 登记于 A2-01、完整 A2、A3、A4、A7、A10，传递影响十组；
+仅在本次 migration/实际消费者窄例外内重绑这一中央 source 键的六处展开登记。
+旧配置与制品表定义保持，Body/Read 查询别名、预算/历史/恢复通过实际服务组合另验。
+原门禁失败事实保留树外，新身份必须重新取得同次完整门禁结论，不能复用失败前的确认。
 
 [独立材料 JSON](issue-165-body-read-materials.json)逐精确路径保存 SHA 与用途，覆盖新业务闭包、
 ADR 状态、新 Contract、测试/支撑/向量和 #164 证据。未知文档仍固定，不扩 live exact_paths，
