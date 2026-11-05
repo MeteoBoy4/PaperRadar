@@ -86,6 +86,12 @@
   原根不可访问的隔离恢复仍可读取原字节和历史结果，不激活配置、不执行任务；
   备份/恢复的布局与安全边界见[备份契约](backup-restore.md)。
 
+`facts_in_connection(connection, paper_id)` 供事务消费者只读装配 MetadataFacts。
+它读取同一 Connection 的持久请求、真实 routes/agency/结算及当前选中字段，复用 replay
+的纯投影规则；无请求返回 None，缺项与未结算保持 missing，不发起 HTTP 或补写事实。result_in_connection同时给出请求与修订身份；
+historical_result_in_connection按明确请求/版本/修订重放历史最低元数据，不用当前版本
+或新metadata请求替换既有依据。
+
 ## 错误与拒绝
 
 - 非法 `request_id`、非 JGR 当前版本发现或非 `journal` 版本返回

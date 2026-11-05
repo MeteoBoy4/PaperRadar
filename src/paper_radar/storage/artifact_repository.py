@@ -106,6 +106,18 @@ def _load(
         raise _corrupt() from None
 
 
+def read_registration_in_connection(
+    connection: Connection, artifact_id: str
+) -> tuple[ArtifactRecord, tuple[BlobRecord, ...]]:
+    """读取调用者事务中的不可变制品闭包,不打开另一个Connection。"""
+    try:
+        return _load(connection, artifact_id)
+    except SQLAlchemyError:
+        raise ArtifactError(
+            ArtifactReason.DATABASE_FAILED, "制品登记无法读取；请检查数据库"
+        ) from None
+
+
 def read_registration(
     engine: Engine, artifact_id: str
 ) -> tuple[ArtifactRecord, tuple[BlobRecord, ...]]:

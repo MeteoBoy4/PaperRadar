@@ -296,6 +296,15 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 接口、拒绝与限制见[正文持久化契约](docs/contracts/body-persistence.md)，
 产品入口和真实核查责任见[路线图 B](docs/roadmap.md#module-b)。
 
+## 显式 Read 任务与历史分析
+
+`paper_radar.read_tasks.ReadTasks` 提供已 accepted 论文的显式登记、有限预算、租约、
+受控修正、retry、v2 分析接收与证据回查。实际前置来自同库 Body 和元数据事实，
+实验分析保留来源/质量/丢弃标记并被普通消费拒绝；备份在无 extra 环境重验完整业务闭包。
+公共接口及执行边界见[Read 任务契约](docs/contracts/read-tasks.md)，新增覆盖见
+[独立 D1 台账](docs/verification/issue-161-read-tasks-delivery.md)。产品 CLI 与真实 Pi 接线
+责任见[路线图](docs/roadmap.md#module-body)。
+
 ## Read 输出与证据校验
 
 `paper_radar.reading.acceptance_v2.validate_read_output_v2` 接收完整 Read 候选与消费上下文，

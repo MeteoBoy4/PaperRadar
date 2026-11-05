@@ -203,6 +203,10 @@ requested_manual_read 仍为 false，请求事实本身不删除。请求为空�
 | waiting_report | 报告候选/成员 | deferred | 不制造资格 | B/H |
 | capacity_warning | 排名/容量估算 | deferred | 不计算容量 | G/H |
 
+ReadTasks登记与领取在同一Connection组合Body持久前置、JGRMetadata真实路线事实与共享
+READ_PREREQUISITES。缺失metadata请求保持metadata_unknown，不以字段存在替代路线完成。
+分析ordinary消费另行核验Read自身来源、根用途和formal质量，见[Read任务](read-tasks.md)。
+
 ## 错误与拒绝
 
 `denied` 是普通动作和 Agent 内容的受控拒绝结果，原因是 `hidden_conditions`，

@@ -179,12 +179,20 @@ def verify_contents(root: Path, manifest: BackupManifest) -> None:
         from paper_radar.feed_pipeline import FeedPipeline, PipelineError
         from paper_radar.fixture_audit import FixtureAudit, FixtureError
         from paper_radar.papers import PaperError
+        from paper_radar.read_tasks import ReadTaskError, ReadTasks
         from paper_radar.screening_tasks import TaskError
 
         try:
             FixtureAudit(database, root).validate_all()
             FeedPipeline(database, root).validate_all()
             BodyService(database, root).validate_all()
+            ReadTasks(database, root).validate_all()
+        except ReadTaskError as error:
+            raise BackupError(
+                BackupReason.UNSUPPORTED_RULE_VERSION
+                if error.reason == "unsupported_rule_version"
+                else BackupReason.REGISTRATION_INVALID
+            ) from None
         except (BodyError, PaperError, TaskError, FixtureError, PipelineError):
             raise BackupError(BackupReason.REGISTRATION_INVALID) from None
         if (

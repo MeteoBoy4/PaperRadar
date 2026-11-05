@@ -100,6 +100,12 @@ checks 必须完整包含 `body_boundary/reading_order/sections/headers_footers/
 `sink=None` 默认 NullSink；显式注入仅发送安全 `body` 事件及截短指纹，
 内容与人工说明不进入日志，详见[日志契约](runtime-logging.md)。
 
+read_basis_in_connection 与 validate_read_basis_in_connection 绑定并重验历史领取时的
+accepted、根、PDF、样本、人工质量核查及上游来源；保留旧决定的效力，不要求旧PDF仍当前。
+
+extraction_input_in_connection(connection, fingerprint) 只读回放首次持久提取配方，
+供Read消费者在明确历史快照下构造输入，不读当前settings或接受裸指纹自证。
+
 ## 错误与拒绝
 
 `BodyError.reason` 为 `BodyReason` 闭集，异常只含受控中文指引，不附路径、PDF 或原异常。
@@ -114,7 +120,7 @@ extraction_absent/extraction_failed、quality_absent/quality_failed、ordinary_c
 ## 不提供／不证明
 
 产品 CLI、真实选样与版式核查、实验暴露清单及日报由 [B](../roadmap.md#module-b) 接线。
-SDK 受限执行、Read 任务与分析、真实 Docling smoke 由 [Body](../roadmap.md#module-body)
+Read 任务与分析由[独立服务](read-tasks.md)提供。SDK 受限执行与真实 Docling smoke 由 [Body](../roadmap.md#module-body)
 其余边界承接；四刊正式质量、PDF 裁切与通用资源阈值由 [F](../roadmap.md#module-f) 验收。
 本服务不调用 Read、不自动 accepted、不授予校准、自动队列或生产消费资格。
 人工附加合成 PDF 的工程回归不证明真实 PDF 归属、Docling 保真、Pi live、完整 B 或 NAS。

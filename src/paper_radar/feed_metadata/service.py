@@ -3,15 +3,14 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import Connection, select
 
+from paper_radar.eligibility import MetadataFacts
 from paper_radar.feed_metadata.models import (
     MetadataBasis,
     MetadataContent,
-    MetadataMissing,
     MetadataResult,
     MetadataRoute,
-    RegistryApplicability,
 )
 from paper_radar.feed_metadata.repository import (
     canonical,
@@ -404,87 +403,126 @@ class JGRMetadata:
                     and acquisition.result_revision_no > revision_no
                 ):
                     raise corrupt()
-        routing = next(
-            (value for value in route_views if value.route == "doi_ra"), None
+        from paper_radar.feed_metadata.projection import project_metadata
+
+        return project_metadata(
+            request_key,
+            basis,
+            revision,
+            PaperFacts(self.database).show(basis.paper_id),
+            route_views,
+            revision_no,
         )
-        applicability: RegistryApplicability = (
-            "not_applicable_no_doi"
-            if basis.doi is None
-            else "applicable"
-            if routing
-            and routing.reason == "acquired"
-            and routing.agency in {"Crossref", "DataCite"}
-            else "agency_unsupported"
-            if routing and routing.reason == "agency_unsupported"
-            else "agency_unknown"
-        )
-        expected = {"doi_ra", "publisher"} if basis.doi else set()
-        if applicability == "applicable":
-            assert routing is not None
-            expected.add(
-                "registry_crossref"
-                if routing.agency == "Crossref"
-                else "registry_datacite"
+
+    def result_in_connection(
+        self, connection: Connection, paper_id: str
+    ) -> MetadataResult | None:
+        """同Connection读取真实路线完成及当前字段,缺失返回None,不创建事实。"""
+        from paper_radar.feed_metadata.projection import project_metadata
+        from paper_radar.papers.queries import load_trace, resolve_revision
+
+        trace = load_trace(connection, paper_id)
+        candidates = []
+        for key in connection.execute(
+            select(runs.c.request_key).where(runs.c.paper_id == paper_id)
+        ).scalars():
+            basis, settled_revision = load_run(connection, key)
+            routes = load_routes(connection, key)
+            revision = (
+                trace.current
+                if basis.version_id == trace.current.version_id
+                else resolve_revision(
+                    connection,
+                    version_id=basis.version_id,
+                    revision_no=settled_revision or basis.revision_no,
+                )
             )
-        if revision_no is not None and (
-            expected != {value.route for value in route_views}
-            or not all(value.committed for value in route_views)
-        ):
+            for route in routes:
+                if (
+                    route.request.doi != basis.doi
+                    or route.abstract_rules_version != basis.abstract_rules_version
+                ):
+                    raise corrupt()
+                if route.acquisition_id:
+                    acquisition = next(
+                        (
+                            v
+                            for v in trace.acquisitions
+                            if v.acquisition_id == route.acquisition_id
+                        ),
+                        None,
+                    )
+                    if (
+                        acquisition is None
+                        or acquisition.version_id != basis.version_id
+                        or acquisition.payload_sha256 != route.payload_sha256
+                    ):
+                        raise corrupt()
+            result = project_metadata(
+                key, basis, revision, trace.current, routes, settled_revision
+            )
+            candidates.append(
+                (
+                    basis.version_id == trace.current.version_id,
+                    basis.observed_at,
+                    key,
+                    result,
+                )
+            )
+        if not candidates:
+            return None
+        return max(candidates, key=lambda v: v[:3])[3]
+
+    def facts_in_connection(
+        self, connection: Connection, paper_id: str
+    ) -> MetadataFacts | None:
+        result = self.result_in_connection(connection, paper_id)
+        return MetadataFacts.from_result(result) if result is not None else None
+
+    def historical_result_in_connection(
+        self,
+        connection: Connection,
+        paper_id: str,
+        request_key: str,
+        version_id: str,
+        revision_no: int,
+    ) -> MetadataResult:
+        """重放明确历史修订的最低元数据依据,不以当前版本/新路线替换。"""
+        from paper_radar.feed_metadata.projection import project_metadata
+        from paper_radar.papers.queries import load_trace, resolve_revision
+
+        basis, settled = load_run(connection, request_key)
+        if basis.paper_id != paper_id or basis.version_id != version_id:
             raise corrupt()
-        routes_settled = (
-            revision_no is not None
-            and expected == {value.route for value in route_views}
-            and all(value.committed for value in route_views)
+        revision = resolve_revision(
+            connection, version_id=version_id, revision_no=revision_no
         )
-        fields = revision.fields
-        title = fields.get("title")
-        abstract = fields.get("abstract")
-        url = fields.get("source_url")
-        abstract_value = (
-            abstract.value
-            if abstract and isinstance(abstract.value, AbstractValue)
-            else None
-        )
-        current = PaperFacts(self.database).show(basis.paper_id)
-        current_version = (
-            current.version_id == basis.version_id and current.doi == basis.doi
-        )
-        missing: list[MetadataMissing] = []
-        if not current_version:
-            missing.append("current_version_changed")
-        if title is None:
-            missing.append("no_title")
-        if abstract_value is None:
-            missing.append("no_abstract")
-        elif abstract_value.is_truncated is None:
-            missing.append("unknown_truncation")
-        if url is None:
-            missing.append("no_source_url")
-        if not routes_settled:
-            missing.append("routes_incomplete")
-        if applicability == "agency_unknown":
-            missing.append("agency_unknown")
-        elif applicability == "agency_unsupported":
-            missing.append("agency_unsupported")
-        return MetadataResult(
-            request_key=request_key,
-            paper_id=basis.paper_id,
-            version_id=basis.version_id,
-            revision_no=revision.revision_no,
-            title=title.value if title and isinstance(title.value, str) else None,
-            abstract_present=abstract_value is not None,
-            suspected_truncated=abstract_value.is_truncated if abstract_value else None,
-            source_url=url.value if url and isinstance(url.value, str) else None,
-            current_version=current_version,
-            routes=route_views,
-            routes_settled=routes_settled,
-            registry_applicability=applicability,
-            minimum_complete=not missing,
-            nontruncated_complete=not missing
-            and abstract_value is not None
-            and abstract_value.is_truncated is False,
-            missing=tuple(missing),
-        )
+        if revision.paper_id != paper_id or revision.doi != basis.doi:
+            raise corrupt()
+        routes = load_routes(connection, request_key)
+        trace = load_trace(connection, paper_id)
+        for route in routes:
+            if (
+                route.request.doi != basis.doi
+                or route.abstract_rules_version != basis.abstract_rules_version
+            ):
+                raise corrupt()
+            if route.acquisition_id:
+                acquisition = next(
+                    (
+                        a
+                        for a in trace.acquisitions
+                        if a.acquisition_id == route.acquisition_id
+                    ),
+                    None,
+                )
+                if (
+                    acquisition is None
+                    or acquisition.version_id != version_id
+                    or acquisition.payload_sha256 != route.payload_sha256
+                ):
+                    raise corrupt()
+        return project_metadata(request_key, basis, revision, revision, routes, settled)
 
     def _verify_route(
         self, key: str, basis: MetadataBasis, route: MetadataRoute
