@@ -9,7 +9,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import ValidationError
 
@@ -75,6 +75,8 @@ class InputField(StrEnum):
     INPUTS = "inputs"
     CONTEXT = "context"
     TITLE_LANGUAGE = "original_title_is_zh"
+    READ_IDENTITY = "facts.identity"
+    OUTPUT_LANGUAGE = "facts.output_language"
     PDF_SHA256 = "facts.pdf_sha256"
     EXCERPTS = "facts.excerpts"
     EXCERPT_ID = "facts.excerpts.excerpt_id"
@@ -360,6 +362,69 @@ class ExtractionFacts:
 
 
 @dataclass(frozen=True, slots=True, init=False)
+class ReadFacts:
+    """完整正文消费身份与显式输出语言。不接受裸提取指纹。"""
+
+    extraction_fingerprint: str = field(repr=False)
+    reading_sha256: str = field(repr=False)
+    evidence_map_sha256: str = field(repr=False)
+    output_language: Literal["zh", "en"]
+
+    def __init__(
+        self,
+        *,
+        extraction_input: Any = _MISSING,
+        reading_sha256: Any = _MISSING,
+        evidence_map_sha256: Any = _MISSING,
+        output_language: Any = _MISSING,
+        **extra: Any,
+    ) -> None:
+        if extra:
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.FACTS)
+        if (
+            type(extraction_input) is not StageInput
+            or extraction_input.stage is not StageName.EXTRACTION
+        ):
+            raise StageInputError(BuildReason.INVALID_FACTS, InputField.READ_IDENTITY)
+        _set_read_facts(
+            self,
+            extraction_input.fingerprint,
+            reading_sha256,
+            evidence_map_sha256,
+            output_language,
+        )
+
+    @property
+    def identity(self) -> tuple[str, str, str]:
+        return (
+            self.extraction_fingerprint,
+            self.reading_sha256,
+            self.evidence_map_sha256,
+        )
+
+
+def _set_read_facts(
+    result: ReadFacts,
+    extraction_fingerprint: Any,
+    reading_sha256: Any,
+    evidence_map_sha256: Any,
+    output_language: Any,
+) -> None:
+    for value in (extraction_fingerprint, reading_sha256, evidence_map_sha256):
+        if not _valid_hash(value):
+            raise StageInputError(BuildReason.INVALID_HASH, InputField.READ_IDENTITY)
+    if type(output_language) is not str or output_language not in ("zh", "en"):
+        raise StageInputError(BuildReason.INVALID_FACTS, InputField.OUTPUT_LANGUAGE)
+    for name, value in (
+        ("extraction_fingerprint", extraction_fingerprint),
+        ("reading_sha256", reading_sha256),
+        ("evidence_map_sha256", evidence_map_sha256),
+        ("output_language", output_language),
+    ):
+        object.__setattr__(result, name, value)
+
+
+@dataclass(frozen=True, slots=True, init=False)
 class StageInput:
     """仅 build/replay 返回的对象是已验证输入。载荷是敏感业务数据。"""
 
@@ -367,7 +432,7 @@ class StageInput:
     format_version: int
     projection_format_version: int
     projection_id: str
-    facts: ScreeningFacts | ExtractionFacts | ReuseFacts = field(repr=False)
+    facts: ScreeningFacts | ExtractionFacts | ReuseFacts | ReadFacts = field(repr=False)
     payload_bytes: bytes = field(repr=False)
 
     def __init__(self, **unvalidated: Any) -> None:
@@ -421,6 +486,8 @@ class ChangeComponent(StrEnum):
     PDF = "pdf"
     EXCERPTS = "excerpts"
     EXCERPT_SOURCES = "excerpt_sources"
+    BODY_IDENTITY = "body_identity"
+    OUTPUT_LANGUAGE = "output_language"
 
 
 class ComparisonStatus(StrEnum):
@@ -443,6 +510,7 @@ STAGE_INPUT_FORMAT_VERSIONS: Mapping[StageName, int] = MappingProxyType(
         StageName.VALUE: 1,
         StageName.REUSE: 1,
         StageName.EXTRACTION: 1,
+        StageName.READ: 1,
     }
 )
 
@@ -479,8 +547,15 @@ def _source_payload(source: SourceSnapshotRef | ExtractionRef) -> dict[str, Any]
 
 
 def _facts_payload(
-    facts: ScreeningFacts | ExtractionFacts | ReuseFacts,
+    facts: ScreeningFacts | ExtractionFacts | ReuseFacts | ReadFacts,
 ) -> dict[str, Any]:
+    if isinstance(facts, ReadFacts):
+        return {
+            "extraction_fingerprint": facts.extraction_fingerprint,
+            "reading_sha256": facts.reading_sha256,
+            "evidence_map_sha256": facts.evidence_map_sha256,
+            "output_language": facts.output_language,
+        }
     if isinstance(facts, ExtractionFacts):
         return {"pdf_sha256": facts.pdf_sha256}
     if isinstance(facts, ReuseFacts):
@@ -507,7 +582,7 @@ def _assemble(
     format_version: int,
     projection_format: int,
     projection_id: str,
-    facts: ScreeningFacts | ExtractionFacts | ReuseFacts,
+    facts: ScreeningFacts | ExtractionFacts | ReuseFacts | ReadFacts,
 ) -> StageInput:
     payload = _canonical(
         {
@@ -537,7 +612,7 @@ def _assemble(
 def build_stage_input(
     snapshot: RuntimeConfigSnapshot,
     stage: StageName,
-    facts: ScreeningFacts | ExtractionFacts | ReuseFacts,
+    facts: ScreeningFacts | ExtractionFacts | ReuseFacts | ReadFacts,
 ) -> StageInput:
     """只从已验证快照构造。配置完整性不代表 RPC 执行就绪。"""
     if type(stage) is not StageName or stage not in STAGE_INPUT_FORMAT_VERSIONS:
@@ -554,6 +629,7 @@ def build_stage_input(
         StageName.VALUE: ScreeningFacts,
         StageName.REUSE: ReuseFacts,
         StageName.EXTRACTION: ExtractionFacts,
+        StageName.READ: ReadFacts,
     }[stage]
     if type(facts) is not expected_type:
         raise StageInputError(BuildReason.INVALID_FACTS, InputField.FACTS)
@@ -619,7 +695,24 @@ def _replay_source(value: Any) -> SourceSnapshotRef | ExtractionRef | None:
 
 def _replay_facts(
     stage: StageName, value: Any
-) -> ScreeningFacts | ExtractionFacts | ReuseFacts | None:
+) -> ScreeningFacts | ExtractionFacts | ReuseFacts | ReadFacts | None:
+    if stage is StageName.READ:
+        if not _keys(
+            value,
+            {
+                "extraction_fingerprint",
+                "reading_sha256",
+                "evidence_map_sha256",
+                "output_language",
+            },
+        ):
+            return None
+        try:
+            result = object.__new__(ReadFacts)
+            _set_read_facts(result, **value)
+            return result
+        except StageInputError:
+            return None
     if stage is StageName.EXTRACTION:
         if not _keys(value, {"pdf_sha256"}):
             return None
@@ -754,7 +847,20 @@ def compare_stage_inputs(before: StageInput, after: StageInput) -> StageInputCom
     components: tuple[tuple[ChangeComponent, object, object], ...] = (
         (ChangeComponent.CONFIG_PROJECTION, before.projection_id, after.projection_id),
     )
-    if before.stage is StageName.REUSE:
+    if isinstance(before.facts, ReadFacts) and isinstance(after.facts, ReadFacts):
+        components += (
+            (
+                ChangeComponent.BODY_IDENTITY,
+                before.facts.identity,
+                after.facts.identity,
+            ),
+            (
+                ChangeComponent.OUTPUT_LANGUAGE,
+                before.facts.output_language,
+                after.facts.output_language,
+            ),
+        )
+    elif before.stage is StageName.REUSE:
         assert isinstance(before.facts, ReuseFacts) and isinstance(
             after.facts, ReuseFacts
         )

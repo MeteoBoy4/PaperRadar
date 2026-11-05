@@ -84,7 +84,7 @@ normalization_version、excerpt_selector_version、chunking_version、suggestion
 
 全部投影无论文题名、摘要、PDF、摘录、输出语言、时间、完整快照 ID、机器路径、
 凭据、执行计划或产物。reuse 与 read 不嵌套 extraction；阶段输入消费者再组合
-实际使用的论文事实或来源引用。四阶段配方、历史投影核对与隔离恢复消费者义务见
+实际使用的论文事实或来源引用。五阶段配方、历史投影核对与隔离恢复消费者义务见
 [阶段输入契约](stage-inputs.md)。完整快照 ID 仍只作审计，不能代替阶段投影 ID。
 得到六投影或基线不会使不完整配置变为 ready。Read 契约通过已有 contract 槽进入投影，
 旧快照仍保留 null、原 snapshot/projection ID；新选择只改变 Read 投影，不改变其余五
@@ -177,6 +177,15 @@ ID 格式校验属于加载服务，不耦合进单快照或纯比较领域能�
 基线身份；不显示完整 Profile/Prompt、原文 diff、输入错误值、原始异常或 SQL 参数。
 只有前后分量均非 null 时追加“（语义变化）”；配置与未配置之间的变化仅显示受控转移。
 所有 help 在外部 I/O 被拒绝时仍可运行，不读配置或数据库，不创建业务文件。
+
+## Read 语义映射
+
+Read 投影中 `reading adapter.policy=bounded-rpc-v1` 与 `chunking_version=v1` 冻结映射到
+`read-render-v1` 的全文、页码、锚点与受限占位呈现；无需增加另一份渲染 selector 或改变
+已有格式 1 投影字节。映射变化必须升相关 adapter policy 或 chunking 版本，不能同投影
+动态更换渲染器。未知版本不套用 v1；完整映射和最坏修正槽见 [Read 准备](read-inputs.md)。
+三证据/数值/受限规则版本属于接收与历史回放，均不加入本投影或模型 fingerprint。
+Read StageInput 将该投影与正文三元组、语言组合；Read 配置变化不传播到 Screening/校准。
 
 ## 不提供／不证明
 

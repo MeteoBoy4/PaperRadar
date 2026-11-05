@@ -63,7 +63,7 @@ def test_replay_rejects_noncanonical_hash_encoding(fingerprint: object) -> None:
     ("change", "reason"),
     [
         ({"kind": "secret-kind"}, ReplayReason.INVALID_PAYLOAD),
-        ({"stage": "read"}, ReplayReason.UNSUPPORTED_STAGE),
+        ({"stage": "read"}, ReplayReason.INVALID_PAYLOAD),
         ({"stage": "suggestion"}, ReplayReason.UNSUPPORTED_STAGE),
         ({"stage": {"secret": "secret"}}, ReplayReason.UNSUPPORTED_STAGE),
         ({"format_version": True}, ReplayReason.UNSUPPORTED_FORMAT),

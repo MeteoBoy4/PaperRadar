@@ -430,6 +430,7 @@ def test_stage_input_format_versions_are_public_and_read_only() -> None:
         StageName.VALUE: 1,
         StageName.REUSE: 1,
         StageName.EXTRACTION: 1,
+        StageName.READ: 1,
     }
     with pytest.raises(TypeError):
         STAGE_INPUT_FORMAT_VERSIONS[StageName.BOUNDARY] = 2  # type: ignore[index]

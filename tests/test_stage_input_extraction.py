@@ -222,7 +222,7 @@ def test_stage_and_fact_types_cannot_impersonate_each_other(tmp_path: Path) -> N
         with pytest.raises(StageInputError) as caught:
             build_stage_input(snapshot, stage, facts)
         assert caught.value.reason is BuildReason.INVALID_FACTS
-    for unsupported_stage in (StageName.READ, StageName.SUGGESTION, "extraction"):
+    for unsupported_stage in ("read", StageName.SUGGESTION, "extraction"):
         with pytest.raises(StageInputError) as caught:
             build_stage_input(snapshot, unsupported_stage, facts)  # type: ignore[arg-type]
         assert caught.value.reason is BuildReason.UNSUPPORTED_STAGE
@@ -260,7 +260,7 @@ def test_stage_and_fact_types_cannot_impersonate_each_other(tmp_path: Path) -> N
             {"config_projection": {"format_version": 1, "projection_id": "A" * 64}},
             "invalid_payload",
         ),
-        ({"stage": "read"}, "unsupported_stage"),
+        ({"stage": "read"}, "invalid_payload"),
         ({"stage": "suggestion"}, "unsupported_stage"),
     ],
 )

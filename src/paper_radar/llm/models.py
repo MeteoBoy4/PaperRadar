@@ -29,7 +29,7 @@ class CallDescriptionError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class CallDescription:
-    stage: Literal["boundary", "value"]
+    stage: Literal["boundary", "value", "read"]
     fingerprint: str
     projection_id: str
     semantic_snapshot_id: str

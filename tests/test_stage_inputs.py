@@ -136,9 +136,7 @@ def test_missing_configuration_keeps_existing_readiness(
     assert caught.value.readiness == snapshot.stages[stage]
 
 
-@pytest.mark.parametrize(
-    "stage", [StageName.READ, StageName.SUGGESTION, "secret-stage", {}]
-)
+@pytest.mark.parametrize("stage", ["read", StageName.SUGGESTION, "secret-stage", {}])
 def test_unclaimed_stages_are_controlled_rejections(
     tmp_path: Path, stage: object
 ) -> None:

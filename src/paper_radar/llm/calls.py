@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from typing import Any
 
@@ -14,7 +15,12 @@ from paper_radar.llm.models import (
     CallDescriptionError,
     DescriptionReason,
 )
+from paper_radar.llm.read_limits import CORRECTION_SLOT_BYTES, READ_RENDER_VERSION
+from paper_radar.llm.rpc_frames import command_frame
+from paper_radar.reading.acceptance_v2 import validate_read_context_v2
+from paper_radar.reading.context import ReadContext
 from paper_radar.stage_inputs import (
+    ReadFacts,
     ScreeningFacts,
     StageInput,
     StageInputError,
@@ -45,10 +51,19 @@ def build_call(
     stage_input: StageInput,
     semantic_snapshot: RuntimeConfigSnapshot,
     audit_snapshot: RuntimeConfigSnapshot,
+    *,
+    read_context: ReadContext | None = None,
+    reading: bytes | None = None,
 ) -> CallDescription:
     """调用者只传已验证历史快照;再次核对阶段输入和两份投影的同源性。"""
     try:
-        result = _build(stage_input, semantic_snapshot, audit_snapshot)
+        result = _build(
+            stage_input,
+            semantic_snapshot,
+            audit_snapshot,
+            read_context=read_context,
+            reading=reading,
+        )
         render_request(result)
         return result
     except CallDescriptionError:
@@ -61,6 +76,9 @@ def _build(
     stage_input: StageInput,
     semantic_snapshot: RuntimeConfigSnapshot,
     audit_snapshot: RuntimeConfigSnapshot,
+    *,
+    read_context: ReadContext | None = None,
+    reading: bytes | None = None,
 ) -> CallDescription:
     if (
         type(stage_input) is not StageInput
@@ -68,13 +86,14 @@ def _build(
         or type(audit_snapshot) is not RuntimeConfigSnapshot
     ):
         raise CallDescriptionError(DescriptionReason.CORRUPT_REFERENCE)
-    if stage_input.stage not in (StageName.BOUNDARY, StageName.VALUE):
+    if stage_input.stage not in (StageName.BOUNDARY, StageName.VALUE, StageName.READ):
         raise CallDescriptionError(DescriptionReason.INVALID_CONTEXT)
-    adapter = semantic_snapshot.adapters["screening"]
+    slot = "reading" if stage_input.stage is StageName.READ else "screening"
+    adapter = semantic_snapshot.adapters[slot]
     if (
         semantic_snapshot.stages[stage_input.stage].status != "ready"
         or adapter is None
-        or semantic_snapshot.adapter_slots["screening"] != "configured"
+        or semantic_snapshot.adapter_slots[slot] != "configured"
     ):
         raise CallDescriptionError(DescriptionReason.INVALID_CONTEXT)
     replayed = replay_stage_input(
@@ -90,7 +109,7 @@ def _build(
         semantic.projection_id,
     ):
         raise CallDescriptionError(DescriptionReason.PROJECTION_MISMATCH)
-    version = audit_snapshot.adapter_selections.get("screening")
+    version = audit_snapshot.adapter_selections.get(slot)
     material = next(
         (
             item
@@ -110,7 +129,32 @@ def _build(
     if model["protocol"] != "prompt_only" or adapter.policy.version != "bounded-rpc-v1":
         raise CallDescriptionError(DescriptionReason.INVALID_CONTEXT)
     facts = stage_input.facts
-    if not isinstance(facts, ScreeningFacts):
+    if stage is StageName.READ:
+        if (
+            not isinstance(facts, ReadFacts)
+            or type(reading) is not bytes
+            or type(read_context) is not ReadContext
+        ):
+            raise CallDescriptionError(DescriptionReason.INVALID_CONTEXT)
+        context = validate_read_context_v2(read_context)
+        if (
+            (
+                context.identity.extraction_fingerprint,
+                context.identity.reading_sha256,
+                context.identity.evidence_map_sha256,
+            )
+            != facts.identity
+            or context.expected_language != facts.output_language
+            or context.mode != "single"
+            or hashlib.sha256(reading).hexdigest() != facts.reading_sha256
+            or components["chunking_version"] != "v1"
+        ):
+            raise CallDescriptionError(DescriptionReason.CORRUPT_REFERENCE)
+    elif (
+        not isinstance(facts, ScreeningFacts)
+        or reading is not None
+        or read_context is not None
+    ):
         raise CallDescriptionError(DescriptionReason.CORRUPT_REFERENCE)
     payload: dict[str, Any] = {
         "stage": stage.value,
@@ -120,17 +164,41 @@ def _build(
             for name in _PROFILE_ORDER
         ],
         "contract": components["contract"]["schema"],
-        "paper": {
+        "correction": None,
+    }
+    if stage is StageName.READ:
+        assert (
+            isinstance(facts, ReadFacts)
+            and reading is not None
+            and read_context is not None
+        )
+        payload.update(
+            output_language=facts.output_language,
+            body={
+                "render_version": READ_RENDER_VERSION,
+                "reading": reading.decode("utf-8"),
+                "evidence": [
+                    {
+                        "evidence_id": item.evidence_id,
+                        "pages": sorted({p.page_no for p in item.provenance}),
+                    }
+                    for item in read_context.evidence
+                ],
+            },
+        )
+    else:
+        assert isinstance(facts, ScreeningFacts)
+        payload["paper"] = {
             "title": facts.title,
             "abstract": facts.abstract,
             "abstract_truncated": facts.abstract_truncated,
-        },
-        "correction": None,
-    }
+        }
     if stage is StageName.VALUE:
         payload["topics"] = components["topics"]
     return CallDescription(
-        stage="boundary" if stage is StageName.BOUNDARY else "value",
+        stage="read"
+        if stage is StageName.READ
+        else ("boundary" if stage is StageName.BOUNDARY else "value"),
         fingerprint=stage_input.fingerprint,
         projection_id=semantic.projection_id,
         semantic_snapshot_id=semantic_snapshot.snapshot_id,
@@ -155,16 +223,30 @@ def _build(
 def render_request(
     description: CallDescription, correction: str | None = None
 ) -> bytes:
-    """精确保留绑定文本;correction 仅由领取后的 A7 受控说明提供。"""
+    """精确保留绑定文本;修正由任务层按冻结安全规则构造。"""
     try:
         if type(description) is not CallDescription or (
             correction is not None and type(correction) is not str
         ):
             raise CallDescriptionError(DescriptionReason.INVALID_CONTEXT)
         payload = json.loads(description.user_payload_json)
+        if description.stage == "read" and correction is not None:
+            initial = command_frame(
+                "rpc-9",
+                "prompt",
+                message=REQUEST_HEADER + _canonical({**payload, "correction": None}),
+            )
+            corrected = command_frame(
+                "rpc-9",
+                "prompt",
+                message=REQUEST_HEADER
+                + _canonical({**payload, "correction": correction}),
+            )
+            if len(corrected) - len(initial) > CORRECTION_SLOT_BYTES:
+                raise CallDescriptionError(DescriptionReason.INVALID_CONTEXT)
         payload["correction"] = correction
         result = (REQUEST_HEADER + _canonical(payload)).encode("utf-8")
-        if len(result) > MAX_REQUEST_BYTES:
+        if description.stage != "read" and len(result) > MAX_REQUEST_BYTES:
             raise CallDescriptionError(DescriptionReason.INVALID_CONTEXT)
         return result
     except CallDescriptionError:

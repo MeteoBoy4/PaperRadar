@@ -24,7 +24,9 @@ snapshot；执行审计 snapshot 必须为 `get_receipt(receipt_id).snapshot_id`
 个人安装、网络或凭据。`load_input` 的 snapshot 来源是预算行，不能用回执替代。
 
 先严格回放 StageInput 并核对对象字段，再核对两份 snapshot 的同阶段投影格式和
-projection_id 相等；只支持 boundary/value。系统指令、业务 Prompt、Profile、Schema、
+projection_id 相等；支持 boundary/value/read。Read 通过仅限关键字的 read_context 与
+reading 参数提供持久正文消费视图，核对三元组、语言、single 模式、完整 reading 哈希及
+v2 上下文；[Read 准备服务](read-inputs.md)统一调用，不能在领取后才重建。系统指令、业务 Prompt、Profile、Schema、
 模型、档位、采样声明（v1 视为 explicit）、temperature/top_p 和固定策略来自语义 snapshot；`pi_version` 与
 `adapter_version` 仅来自审计 snapshot。它们和 snapshot ID/指纹只保存在描述中，不
 进入模型消息。审计升级可以共享旧预算和原请求字节，不把执行版本变成语义输入。
@@ -53,12 +55,15 @@ prepare→run_once；executor 内才准备描述会错误消耗预算，禁止�
 `paper_radar.llm.render_request(description, correction=None)` 返回 UTF-8 bytes。
 `RENDER_FORMAT=1`、固定头部精确为 UTF-8 `PaperRadar bounded-rpc-v1\n`，随后恰好一
 个规范 JSON 对象；不加尾换行。JSON 固定 ensure_ascii=false、sort_keys=true、
-separators=(",", ":")、allow_nan=false。渲染结果最多 256 KiB，超限为
+separators=(",", ":")、allow_nan=false。boundary/value 渲染结果最多 256 KiB，超限为
 CallDescriptionError(invalid_context)；错误描述类型或非字符串 correction 也为
 invalid_context，损坏载荷为 corrupt_reference。作为 RPC `prompt.message` 再整体编码后，
 只有外层完整对象的末尾 LF 是命令分隔；摘要内斜杠/换行不会生成命令。
 
-对象含 stage、prompt、profile、contract、paper、correction；value 另有 topics。
+对象含 stage、prompt、profile、contract、correction；boundary/value 有 paper，value 另有 topics。
+Read 有 output_language 和完整 body，没有 paper/topics；正文与锚点/占位的冻结呈现及
+调用前两帧预算由 [Read 输入准备](read-inputs.md)定义。Read 渲染返回完整字节供纯预算，
+超额由准备结果 `read_input_over_budget` 返回；RPC 仍强制完整帧 256 KiB 硬上限。
 业务 Prompt 精确保留。profile 是按下列顺序的六项 `{name,text}` 数组：background、
 core_questions、transferable_methods、available_data_and_tools、
 theory_and_cognitive_interests、constraints_and_exclusions；段落文本精确保留。
