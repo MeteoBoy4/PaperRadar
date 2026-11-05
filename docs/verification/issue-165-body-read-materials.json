@@ -2,7 +2,7 @@
   "format_version": 1,
   "scope": "Body #155/#165 independent D1 candidate; stage_a_verified=false",
   "base": "c1a57f11c70521cd506bf8eba0145deef9d0cb60",
-  "material_count": 131,
+  "material_count": 132,
   "identity_rule": "Exact members only; this JSON excludes itself to avoid self-hashing. Its bytes and all live documents are protected by final HEAD/full worktree identity. No run_id; no live classification expansion; no old required/count expansion.",
   "consumer_review": "Existing registered ingress backup/service, llm/calls, stage_inputs/service and storage artifacts remain independently audited in A scopes. New consumer closure below is independent D1, not recursively certified by ingress SHA. Static edges are conservative review aids, not runtime coverage.",
   "manual_test_expectations": {
@@ -95,16 +95,16 @@
       "purpose": "#161 lease/retry/唯一成功"
     },
     "tests/test_read_tasks_preconditions.py": {
-      "expected_cases": 11,
-      "purpose": "#161 同事务实际前置"
+      "expected_cases": 15,
+      "purpose": "#161 同事务实际前置与精确登记重放"
     },
     "tests/test_read_tasks_execution.py": {
       "expected_cases": 5,
       "purpose": "#161 来源与模型审计"
     },
     "tests/test_read_tasks_recovery.py": {
-      "expected_cases": 18,
-      "purpose": "#161 候选/规则/历史依据恢复"
+      "expected_cases": 20,
+      "purpose": "#161 候选/规则/历史依据恢复及跨修订来源拒绝"
     },
     "tests/test_read_tasks_migrations.py": {
       "expected_cases": 3,
@@ -305,8 +305,8 @@
     },
     {
       "path": "docs/contracts/read-tasks.md",
-      "sha256": "9a1dae934cc07ed847b836bf8c02cd0b4c634a6bbbfbca7c367a407529b3152f",
-      "size_bytes": 12569,
+      "sha256": "1dd3dc28e6d8d8998dad309459b449bfc0e67b1188543e9b8428a268fc0ec5b4",
+      "size_bytes": 12958,
       "kind": "contract",
       "purpose": "新增公共服务现状边界；未知文档仍固定，无live改类",
       "base_sha256": null,
@@ -415,8 +415,8 @@
     },
     {
       "path": "docs/verification/issue-165-body-read-closure.md",
-      "sha256": "11e3b1adaca1308d11d55f5fc69560d21eb50387bf7058cfd253d2b15febadee",
-      "size_bytes": 18034,
+      "sha256": "0e0137a21f26bb38c665829da7c5bfe32fe970574c51f0a3c033a7f8ccb8a9c0",
+      "size_bytes": 18803,
       "kind": "coverage",
       "purpose": "独立D1覆盖/单样本smoke证据与下游移交，不扩大历史结论",
       "base_sha256": null,
@@ -781,8 +781,8 @@
     },
     {
       "path": "src/paper_radar/feed_metadata/service.py",
-      "sha256": "bed0c70fb98763ced0a4e38677b98d0284b81c3d1f69925be5922eb680951cbc",
-      "size_bytes": 26309,
+      "sha256": "a27cbc101dd484c70887f96f797e290e6c94f33075a0bf37dd12aae4f3243412",
+      "size_bytes": 26496,
       "kind": "source",
       "purpose": "真实路线/agency/历史revision与同Connection前置依据",
       "base_sha256": "e7e0b4ac1bcc06ac30057f1580b1b7f5a66607d7036d96db643b97c3d16d0dbb",
@@ -1216,8 +1216,8 @@
     },
     {
       "path": "src/paper_radar/read_tasks/service.py",
-      "sha256": "fb2eb0313da0dfbaa797f9fe382a03dae0866f7b2e1f57fc5006665c48f6677a",
-      "size_bytes": 27791,
+      "sha256": "35974a7b15e65ca583c9b9219bc957b5f98b66298bb75e4ad8503f93c508f4f7",
+      "size_bytes": 28143,
       "kind": "source",
       "purpose": "持久代际/租约/预算/权威接收/候选与历史闭包，供执行/查询/backup消费",
       "base_sha256": null,
@@ -1389,6 +1389,19 @@
       "base_sha256": null,
       "production_scope_member": false,
       "direct_static_importers": [],
+      "registered_consumer_roots": []
+    },
+    {
+      "path": "tests/docling_runtime_support.py",
+      "sha256": "3da9558e619aec8cae00187c545ec4f7e6bf38e517b584b54fc94c5901383c01",
+      "size_bytes": 1728,
+      "kind": "support",
+      "purpose": "固定外部发行包版本/模块发现及平台事实，由真实probe计算版本拒绝；仅用于单个拒绝测试",
+      "base_sha256": "3da9558e619aec8cae00187c545ec4f7e6bf38e517b584b54fc94c5901383c01",
+      "production_scope_member": false,
+      "direct_static_importers": [
+        "tests/test_docling_executor.py"
+      ],
       "registered_consumer_roots": []
     },
     {
@@ -1602,8 +1615,8 @@
     },
     {
       "path": "tests/test_docling_executor.py",
-      "sha256": "4be327d1b603023994d0a3d2e01af74408f6657c8375addc822f6ea270f1cabb",
-      "size_bytes": 13364,
+      "sha256": "f759c35ed9aa07215bc3826a3f52dbda8ebadfffdf58cfb3af559366b5e689c4",
+      "size_bytes": 13576,
       "kind": "test",
       "purpose": "#159 受限 worker、失败与资源",
       "base_sha256": null,
@@ -1635,8 +1648,8 @@
     },
     {
       "path": "tests/test_docling_mapping.py",
-      "sha256": "da6dd782e56c1e33d20539bb3419162d280a5b8e2770dbf136b6f9b6f51cc47c",
-      "size_bytes": 9237,
+      "sha256": "0d27497712e6c817b1b67bdd9aec40397b3bed5e12be3c6988c416bd2ce651a3",
+      "size_bytes": 9329,
       "kind": "test",
       "purpose": "#159 真实 docling-core 映射，不跳过",
       "base_sha256": null,
@@ -1690,8 +1703,8 @@
     },
     {
       "path": "tests/test_no_extra_runtime.py",
-      "sha256": "af30d78702ed3cc6d854fc2cb5a0c35e6a11acc3a79563074f31987f259cc87f",
-      "size_bytes": 1121,
+      "sha256": "2b40394b00eda3f62687c853ce792679b160e72ed7dd8884e2c67745448f8b3c",
+      "size_bytes": 1422,
       "kind": "test",
       "purpose": "#159 实际 base 端口",
       "base_sha256": null,
@@ -1888,8 +1901,8 @@
     },
     {
       "path": "tests/test_read_tasks_preconditions.py",
-      "sha256": "c952e4ea3c1e40c52920f9082e12f0c24da78533a3517edf4feeb2f9a69b2229",
-      "size_bytes": 8868,
+      "sha256": "6fbcda4d9f288b2abec2b185df2faa550374a37df1482070d999afee5da8cbc4",
+      "size_bytes": 11813,
       "kind": "test",
       "purpose": "#161 同事务实际前置",
       "base_sha256": null,
@@ -1899,8 +1912,8 @@
     },
     {
       "path": "tests/test_read_tasks_recovery.py",
-      "sha256": "5ae699ad8df3f7af1edc1bdba1868ffb0b8553d2db6b442bdd1095be8589e372",
-      "size_bytes": 12687,
+      "sha256": "c67d015ded5b477a1dbefefa4516ffcf3c183e48e2738fd6b6c157b4e3b9eb11",
+      "size_bytes": 15638,
       "kind": "test",
       "purpose": "#161 候选/规则/历史依据恢复",
       "base_sha256": null,

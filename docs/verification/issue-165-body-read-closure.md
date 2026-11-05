@@ -23,6 +23,13 @@ backup verify/restore。重用合成配置、真实供给登记和真实 Screeni
 - 后续决定、质量否决、PDF 与 metadata 变化均在实际模型调用前拒绝，不花 attempt；
   样本缺失、实际完整 Unicode 正文超额也无任务/analysis。准入拒绝先于认证与领取；
   已通过准入后的最新业务前置复核在认证准备之后，不能把“模型前拒绝”写成“认证前拒绝”。
+- 同 request_id 精确登记重放在后来决定、PDF、质量或样本变化后仍返回原任务，
+  数据库字节保持；五项参数任一变化先返回 request_conflict，新登记与新领取仍核验当前资格。
+  历史 metadata 不能把后来 acquisition 拼到较早完整修订；validate_all 受控拒绝，
+  backup 返回 registration_invalid；正常早晚两次完整修订均可验证。
+- Docling 版本拒绝用固定外部发行包/模块发现事实驱动真实 probe，extra/base 结果一致。
+  真实 base 子进程另执行未模拟的 probe 并断言 dependency_missing；extra 主验的
+  worker/model/core 映射保持真实 probe，未知内容层明确断言永久质量失败。
 - 文件 hard-link 前/后故障和 analysis/evidence 事务前故障均没有半条分析，已领预算不退款；
   DBAPI 已 commit 而回执丢失时唯一分析可回查；并发执行只有一个成功。失败终态的 retry 唯一，
   过期查询不回收，显式 reclaim 才追加 outcome_unknown，旧 token 不能提交。
@@ -69,9 +76,9 @@ backup verify/restore。重用合成配置、真实供给登记和真实 Screeni
 | tests/test_read_inputs.py | 10 | #160 持久正文/渲染/完整帧 |
 | tests/test_read_tasks.py | 5 | #161 接收与修正 |
 | tests/test_read_tasks_leases.py | 6 | #161 lease/retry/唯一成功 |
-| tests/test_read_tasks_preconditions.py | 11 | #161 同事务实际前置 |
+| tests/test_read_tasks_preconditions.py | 15 | #161 同事务实际前置与精确登记重放 |
 | tests/test_read_tasks_execution.py | 5 | #161 来源与模型审计 |
-| tests/test_read_tasks_recovery.py | 18 | #161 候选/规则/历史依据恢复 |
+| tests/test_read_tasks_recovery.py | 20 | #161 候选/规则/历史依据恢复及跨修订来源拒绝 |
 | tests/test_read_tasks_migrations.py | 3 | #161 body01→body02 |
 | tests/test_read_execution_admission.py | 18 | #162 产品拒绝/顺序 |
 | tests/test_read_execution_rpc.py | 14 | #162 独立协议进程 |
@@ -85,7 +92,7 @@ backup verify/restore。重用合成配置、真实供给登记和真实 Screeni
 | tests/test_body_read_closure.py | 16 | #165 跨消费者正常/降级、拒绝、故障、并发与恢复纪律 |
 | tests/test_body_read_closure_integrity.py | 12 | #165 完整 Pi 分析批次的逐类损坏及 v1/未知警告策略 |
 | tests/test_body_read_closure_recovery.py | 2 | #165 正常/降级的两次实际 base 冷进程全闭包 |
-| 合计 | 370 | 38 个独立模块；不作为旧组覆盖计数 |
+| 合计 | 376 | 38 个独立模块；不作为旧组覆盖计数 |
 
 ## 34 条用户故事逐项处置
 

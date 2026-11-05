@@ -18,6 +18,10 @@ for name in ('docling-slim','docling-core','torch','transformers'):
  else: raise AssertionError('SDK installed in recovery environment')
 import paper_radar
 assert Path(paper_radar.__file__).resolve().parents[2]==Path(sys.argv[1]).resolve()
+from paper_radar.docling_runtime import probe_docling_runtime
+probe=probe_docling_runtime('docling-2.135.0-cpu-v2','pypdfium2',requested=True,enabled=True)
+assert not probe.passed and probe.reason=='dependency_missing'
+assert {'docling-slim','docling-core','torch','transformers'}<=set(probe.missing)
 print(json.dumps(list(sys.version_info[:2])))
 """
     result = subprocess.run(

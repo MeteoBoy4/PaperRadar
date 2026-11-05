@@ -122,7 +122,7 @@ def test_missing_pages_and_unknown_layers_fail_closed() -> None:
         )
     assert error.value.failure == "extraction_failed_quality_gate"
     text.content_layer = ContentLayer.INVISIBLE
-    with pytest.raises(ParserFailure):
+    with pytest.raises(ParserFailure) as unknown_layer:
         map_document(
             document,
             page_count=2,
@@ -130,6 +130,7 @@ def test_missing_pages_and_unknown_layers_fail_closed() -> None:
             has_text_layer=True,
             formula_enabled=True,
         )
+    assert unknown_layer.value.failure == "extraction_failed_quality_gate"
 
 
 def test_bad_charspan_is_preserved_and_rejected_by_public_artifact_quality(

@@ -41,6 +41,23 @@ if TYPE_CHECKING:
 LEASE_SECONDS = 600
 
 
+def _registration_replay(
+    connection: Connection, request_id: str, request_hash: str
+) -> ReadTask | None:
+    old = (
+        connection.execute(
+            select(t.registrations).where(t.registrations.c.request_id == request_id)
+        )
+        .mappings()
+        .first()
+    )
+    if old is None:
+        return None
+    if old["request_hash"] != request_hash:
+        raise ReadTaskError("request_conflict")
+    return task_view(connection, old["task_id"])
+
+
 class ReadTasks:
     def __init__(
         self,
@@ -113,6 +130,13 @@ class ReadTasks:
         required(paper_id, snapshot_id, extraction_fingerprint, request_id, label)
         if output_language not in ("zh", "en"):
             raise ReadTaskError("invalid_request")
+        request_hash = digest(
+            [paper_id, snapshot_id, extraction_fingerprint, output_language, label]
+        )
+        with transaction(self.database) as connection:
+            replayed = _registration_replay(connection, request_id, request_hash)
+            if replayed is not None:
+                return replayed
         from paper_radar.read_inputs import prepare_read_input
 
         snapshot = load_config_snapshot(self.database, snapshot_id)
@@ -139,24 +163,11 @@ class ReadTasks:
         )
         if not prepared.budget.accepted:
             raise ReadTaskError("read_input_over_budget")
-        request_hash = digest(
-            [paper_id, snapshot_id, extraction_fingerprint, output_language, label]
-        )
         with transaction(self.database, write=True) as connection:
+            replayed = _registration_replay(connection, request_id, request_hash)
+            if replayed is not None:
+                return replayed
             require_facts(self.body, connection, paper_id, view.identity)
-            old = (
-                connection.execute(
-                    select(t.registrations).where(
-                        t.registrations.c.request_id == request_id
-                    )
-                )
-                .mappings()
-                .first()
-            )
-            if old:
-                if old["request_hash"] != request_hash:
-                    raise ReadTaskError("request_conflict")
-                return task_view(connection, old["task_id"])
             budget = (
                 connection.execute(
                     select(t.budgets).where(

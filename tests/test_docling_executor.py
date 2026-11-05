@@ -10,10 +10,15 @@ from paper_radar.docling_executor import (
     DoclingRun,
 )
 from tests.body_support import prepared
+from tests.docling_runtime_support import environment
 
 
-def test_runtime_probe_refusal_never_claims(tmp_path: Path) -> None:
+def test_runtime_probe_refusal_never_claims(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     saved, service, _ = prepared(tmp_path)
+    # 固定外部包/模块事实,由真实probe计算旧工具链对新core的拒绝。
+    environment(monkeypatch)
     parser = DoclingParser(
         DoclingRun(
             model_root=tmp_path / "missing",

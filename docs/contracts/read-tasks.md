@@ -13,6 +13,9 @@
 
 `register(paper_id, *, snapshot_id, extraction_fingerprint, request_id,
 output_language='zh', label='manual')` 返回 ReadTask。
+同 request_id 的完整登记参数与原请求哈希相同则只读返回既有任务，后来的资格变化
+不阻止此回执重放；异参同 ID 返回 request_conflict，先于输入重建和当前资格核验。
+回执重放不登记新事实、不领取或补充预算。新 request_id 仍按当前事实核验。
 extraction_fingerprint 只用来定位已登记 Body 输入；artifact、reading/evidence 哈希和
 expected_identity 均取持久记录，不能由调用方提交投影或裸指纹自证。
 `prepare(task_id)` 返回首次预算配置重建的 PreparedReadInput；
@@ -26,7 +29,7 @@ expected_identity 均取持久记录，不能由调用方提交投影或裸指�
 新配置只在显式 register 时构造新输入，不扫描或重跑已有分析。
 语言是独立输入。当前性与配置两轴由下述[展示查询](#展示查询与两轴)消费。
 
-登记及领取都在短写事务内通过 BodyService.facts_in_connection 重新加载 accepted、
+新登记及领取都在短写事务内通过 BodyService.facts_in_connection 重新加载 accepted、
 决定引用的历史上游成功来源、当前 PDF/正文/质量、根用途和实验样本。
 JGRMetadata.facts_in_connection 在同 Connection 读取真实 metadata 请求、路线结算、
 agency 与当前字段，缺失保持 unknown；不把题名/摘要存在当路线完成。
@@ -39,7 +42,8 @@ PDF 的制品登记和真实字节也在该 Connection 核验。上下文重建�
 `claim(task_id, *, preclaim=None)` 返回 ReadHandle；包含真实本代 ordinal、token、
 600 秒截止时间、历史 CallDescription 和安全 correction。preclaim 在领取短事务内取得
 最新修正，拒绝时没有 attempt。实际模型运行在事务外。每次领取另存当时decision/root/PDF/sample/质量核查/上游来源及
-metadata请求与明确历史修订的引用；历史验证只重放这些依据，不拿后来的当前资格替换。
+metadata请求与明确历史修订的引用；历史验证只重放这些依据，来源 acquisition 的结果
+修订不能晚于所引修订，不拿后来的当前资格替换。
 `renew(handle)` 只允许未过期持有者追加续租，截止时间为续租时刻加 600 秒。
 `fail(handle, failure)` 结算封闭执行失败；output_invalid 只能由权威接收产生，
 outcome_unknown 只能由回收产生。

@@ -80,6 +80,83 @@ def test_changed_decision_is_rechecked_at_claim_before_executor(tmp_path: Path) 
     assert not called and tasks.task(task.task_id).remaining_attempts == 2
 
 
+@pytest.mark.parametrize("changed", ["decision", "pdf", "quality", "sample"])
+def test_exact_registration_replay_survives_later_prerequisite_changes(
+    tmp_path: Path, changed: str
+) -> None:
+    from paper_radar.screening.reasons import (
+        DecisionReason,
+        ScreeningReasonInput,
+        ScreeningResult,
+        ScreeningSource,
+    )
+    from tests.body_support import CHECKS, PDF
+
+    data, body, extraction = ready(tmp_path)
+    tasks = ReadTasks(data.database, data.data_root)
+    params: dict[str, Any] = {
+        "paper_id": data.paper_id,
+        "snapshot_id": data.snapshot_id,
+        "extraction_fingerprint": extraction.fingerprint,
+        "request_id": "read",
+    }
+    task = tasks.register(**params)
+    tasks.fail(tasks.claim(task.task_id), "timeout")
+    if changed == "decision":
+        body.decide(
+            data.paper_id,
+            ScreeningReasonInput(
+                result=ScreeningResult.DENIED,
+                source=ScreeningSource.DIRECT_MANUAL_DECISION,
+                reason=DecisionReason.OUT_OF_SCOPE,
+            ),
+            request_id="deny",
+            actor="human",
+        )
+    elif changed == "quality":
+        assert extraction.identity
+        body.review_layout(
+            extraction.identity,
+            passed=False,
+            checks={**CHECKS, "reading_order": False},
+            note="rejected",
+            actor="human",
+            request_id="reject",
+        )
+    else:
+        pdf = body.attach_pdf(data.paper_id, PDF + b"changed", request_id="new-pdf")
+        if changed == "sample":
+            body.freeze_sample(
+                data.paper_id,
+                feed_id=body.samples(data.paper_id)[0].feed_id,
+                pdf_sha256=pdf.pdf_sha256,
+                reason="different frozen sample",
+                request_id="new-sample",
+            )
+            body.attach_pdf(data.paper_id, PDF, request_id="original-pdf")
+    previous = tasks.task(task.task_id)
+    database_bytes = data.database.read_bytes()
+    assert tasks.register(**params) == previous
+    # 冲突先于重建输入;无效定位参数不能把异参ID降成其他错误。
+    for field, value in (
+        ("paper_id", "missing-paper"),
+        ("snapshot_id", "missing-snapshot"),
+        ("extraction_fingerprint", "0" * 64),
+        ("output_language", "en"),
+        ("label", "changed"),
+    ):
+        with pytest.raises(ReadTaskError, match="request_conflict"):
+            tasks.register(**{**params, field: value})
+    assert data.database.read_bytes() == database_bytes
+    assert tasks.history(data.paper_id) == (previous,)
+    with pytest.raises(ReadTaskError, match="prerequisites_failed"):
+        tasks.register(**{**params, "request_id": "new-read"})
+    with pytest.raises(ReadTaskError, match="prerequisites_failed"):
+        tasks.claim(task.task_id)
+    assert tasks.task(task.task_id) == previous
+    assert previous.remaining_attempts == 1
+
+
 def test_a_b_a_snapshot_language_and_labels_do_not_refill_budget(
     tmp_path: Path,
 ) -> None:

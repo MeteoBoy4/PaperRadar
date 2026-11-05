@@ -520,6 +520,10 @@ class JGRMetadata:
                     acquisition is None
                     or acquisition.version_id != version_id
                     or acquisition.payload_sha256 != route.payload_sha256
+                    or (
+                        acquisition.result_revision_no is not None
+                        and acquisition.result_revision_no > revision_no
+                    )
                 ):
                     raise corrupt()
         return project_metadata(request_key, basis, revision, revision, routes, settled)

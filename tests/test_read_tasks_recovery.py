@@ -336,3 +336,75 @@ def test_backup_rejects_missing_historical_qualification_basis(
     with pytest.raises(BackupError) as caught:
         create_backup(data.database, data.data_root, tmp_path / "backups")
     assert caught.value.reason == "registration_invalid"
+
+
+@pytest.mark.parametrize("consumer", ["validate", "backup"])
+def test_historical_metadata_cannot_borrow_a_later_acquisition(
+    tmp_path: Path, consumer: str
+) -> None:
+    import json
+
+    import httpx
+
+    from paper_radar.feed_metadata import JGRMetadata
+    from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
+    from paper_radar.papers import PaperError, PaperFacts
+
+    data, service, task, _ = registered(tmp_path / "source")
+    # ready 已通过真实 metadata 路线取得完整旧修订;先保存它的合法领取依据。
+    earlier = PaperFacts(data.database).show(data.paper_id).revision_no
+    service.fail(service.claim(task.task_id), "timeout")
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        if "doiRA" in str(request.url):
+            return httpx.Response(200, json=[{"DOI": "10.1234/abc", "RA": "Crossref"}])
+        if request.url.host == "api.crossref.org":
+            return httpx.Response(
+                200,
+                json={
+                    "message": {
+                        "DOI": "10.1234/abc",
+                        "title": ["Later synthetic title"],
+                        "abstract": (
+                            "A later complete atmospheric abstract with changed "
+                            "observations and methods."
+                        ),
+                        "type": "journal-article",
+                    }
+                },
+            )
+        return httpx.Response(403)
+
+    result = JGRMetadata(
+        data.database,
+        data.data_root,
+        http=SourceHTTPExecutor(transport=httpx.MockTransport(respond)),
+    ).enrich(
+        data.paper_id, request_id="later-metadata", contact_email="contact@example.org"
+    )
+    assert result.minimum_complete and result.revision_no > earlier
+    handle = service.claim(task.task_id)
+    # 两个真实完整修订的正常历史与新领取都可验证。
+    service.validate_all()
+    create_backup(data.database, data.data_root, tmp_path / "legal-backups")
+    with sqlite3.connect(data.database) as connection:
+        saved = json.loads(
+            connection.execute(
+                "SELECT metadata_json FROM read_attempts WHERE attempt_id=?",
+                (handle.attempt_id,),
+            ).fetchone()[0]
+        )
+        assert saved["revision_no"] == result.revision_no
+        saved["revision_no"] = earlier
+        connection.execute(
+            "UPDATE read_attempts SET metadata_json=? WHERE attempt_id=?",
+            (json.dumps(saved), handle.attempt_id),
+        )
+    if consumer == "validate":
+        with pytest.raises(PaperError) as caught:
+            service.validate_all()
+        assert caught.value.reason == "corrupt_reference"
+    else:
+        with pytest.raises(BackupError) as caught_backup:
+            create_backup(data.database, data.data_root, tmp_path / "bad-backups")
+        assert caught_backup.value.reason == "registration_invalid"
