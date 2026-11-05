@@ -155,6 +155,8 @@ def test_latest_success_uses_commit_order_and_idempotent_replay_does_not_replace
         tasks.submit_test(handle, valid_candidate()).analysis_id == second.analysis_id
     )
     assert query.current(data.paper_id).analyses[1].analysis_id == second.analysis_id
+    latest = query.current(data.paper_id, snapshot_id=data.snapshot_id).analyses[1]
+    assert latest.config_status == "old" and latest.changed_components == ("profile",)
     assert [a.analysis_id for a in query.history(data.paper_id)] == [
         first.analysis_id,
         second.analysis_id,
