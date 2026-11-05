@@ -63,7 +63,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。批次根及根内任何路径�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 `body01_persistence`，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 `body02_read_tasks`，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -203,7 +203,7 @@ backup verify 一样只给批次 ID、清单 SHA-256 及按 kind 汇总，不逐
 
 ## 版本准入与旧批次
 
-`BACKUP_DATABASE_REVISION` 固定支持 `body01_persistence`，且要求与随包唯一 head
+`BACKUP_DATABASE_REVISION` 固定支持 `body02_read_tasks`，且要求与随包唯一 head
 一致。format 1 不表示任意 revision 兼容：verify／restore 对所有旧 revision（包括 a302、
 a405、a704、a1001 及 feed01–feed06）返回 `unsupported_revision`，不在批次内部迁移。
 保留原批次，用匹配该 revision 的旧程序先 verify／restore，再切回当前程序，对恢复的
@@ -279,6 +279,13 @@ StageInput、两次预算/唯一成功、自动质量和人工核查闭包；损
 不调用 parser、不改变剩余预算或用途；锁载体 .body-docling.lock 不在批次封闭集合，
 恢复不要求存在，误入批次为 unexpected_entry。详细规则见[正文持久化](body-persistence.md)。
 
+Read 业务验证调用 ReadTasks.validate_all，闭包包括每代预算、未结算租约、唯一 retry 边、
+原始候选、历史输入与正文成员、真实接收序号、三规则版本、输出/丢弃/诊断和 evidence 引用。
+未知证据规则返回 unsupported_rule_version，并由 restore 原样传播中文指引；
+已支持规则的重算差异为 registration_invalid。未知数值或限制策略仅保留已记警告，
+不宣称重算等价。v1 历史保持冻结 v1 接收；恢复不调用模型、激活配置或回收租约。
+详见[Read 任务](read-tasks.md)。
+
 ## 不提供／不证明
 
 - 不提供 NAS 增量备份、保留策略或无人值守 timer；本机隔离恢复不证明 NAS 恢复。
@@ -300,7 +307,7 @@ StageInput、两次预算/唯一成功、自动质量和人工核查闭包；损
   这些是固定历史证据，不替代当前程序校验、完整阶段 A 或 live 验收。
 - 实现依据：[备份与校验](../../src/paper_radar/backup/service.py)、
   [清单与原因](../../src/paper_radar/backup/manifest.py)、[恢复](../../src/paper_radar/backup/restore.py)、
-  [当前迁移](../../src/paper_radar/storage/migrations/versions/body01_persistence.py)。
+  [当前迁移](../../src/paper_radar/storage/migrations/versions/body02_read_tasks.py)。
 - 规格与决策依据：[§9.1](../../intent/draft.md#91-本机一致性快照)、
   [ADR-0027](../adr/0027-address-artifacts-by-content.md)、
   [ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)、

@@ -24,7 +24,7 @@ from paper_radar.storage.artifact_contract import (
 from paper_radar.storage.errors import StorageError
 
 BACKUP_FORMAT_VERSION = 1
-BACKUP_DATABASE_REVISION = "body01_persistence"
+BACKUP_DATABASE_REVISION = "body02_read_tasks"
 DATABASE_FILE = "database.sqlite3"
 MANIFEST_FILE = "manifest.json"
 BATCH_ID = re.compile(r"[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}\Z")
@@ -43,6 +43,7 @@ class BackupReason(StrEnum):
     FILE_CORRUPT = "file_corrupt"
     DATABASE_INVALID = "database_invalid"
     REGISTRATION_INVALID = "registration_invalid"
+    UNSUPPORTED_RULE_VERSION = "unsupported_rule_version"
     CONFIG_INVALID = "config_invalid"
     SUPPLY_INVALID = "supply_invalid"
     OUTPUT_INVALID = "output_invalid"
@@ -53,6 +54,9 @@ class BackupReason(StrEnum):
 
 
 _GUIDANCE = {
+    BackupReason.UNSUPPORTED_RULE_VERSION: (
+        "历史Read证据规则不受支持；请使用支持该规则的程序校验和恢复，不会重跑模型。"
+    ),
     BackupReason.SUPPLY_INVALID: (
         "固定供给事实无法完整回放；请检查材料和 D5 引用，不会安装或联网。"
     ),

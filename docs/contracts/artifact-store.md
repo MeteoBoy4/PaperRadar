@@ -126,7 +126,7 @@ chunks 为 bytes 分段 iterable，非 bytes 分段拒绝；members 为角色到
 ## Revision 与原因码
 
 所有制品发布和登记查询均要求数据库处于随包迁移图的唯一 head，当前为
-`body01_persistence`；不会隐式建库或升级。制品三表由
+`body02_read_tasks`；不会隐式建库或升级。制品三表由
 [`a302_artifact_store`](../../src/paper_radar/storage/migrations/versions/a302_artifact_store.py)
 从 `a201_profile_snapshot` 追加 CREATE TABLE/INDEX，不重建既有配置三表；
 `a302_artifact_store` 是历史迁移节点，不是当前可用库的 head。
@@ -187,6 +187,10 @@ extraction 的 `manifest` 成员是上游正文制品原字节，与进入制品
 重试逐个验证后复用。读取先验证登记身份并完整读取全部成员，任一成员
 缺失、同长度损坏、路径链接或成员行篡改都会拒绝整个集合，不向调用方交出部分结果，
 也不能用重新发布输入补写历史。
+
+Read候选复用 model_success_response/payload；分析、接受依据与evidence引用在SQLite原子保存。
+同事务消费者可使用 read_artifact_in_connection 读取登记闭包和真实成员字节，不另开数据库视图。
+完整业务规则见[Read任务](read-tasks.md)。
 
 ## 不提供／不证明
 

@@ -1,0 +1,111 @@
+# 显式 Read 任务与分析
+
+## 用途与范围
+
+`paper_radar.read_tasks.ReadTasks(database, data_root, *, clock=None, sink=None)`
+提供已有 accepted 论文的显式单篇登记、领取、有限尝试、接收、retry 和历史查询。
+它消费 Body 的持久三元组、历史 extraction 配方与明确配置快照，复用唯一的 Read Schema
+及 v2 接收器。默认 NullSink；构造不调用模型或加载 Docling。
+
+## 规则
+
+### 登记与历史输入
+
+`register(paper_id, *, snapshot_id, extraction_fingerprint, request_id,
+output_language='zh', label='manual')` 返回 ReadTask。
+extraction_fingerprint 只用来定位已登记 Body 输入；artifact、reading/evidence 哈希和
+expected_identity 均取持久记录，不能由调用方提交投影或裸指纹自证。
+`prepare(task_id)` 返回首次预算配置重建的 PreparedReadInput；
+`prepare_correction(task_id)` 返回安全修正或 None。两者只读。
+
+预算主体为同库 `(paper, read, fingerprint)`，每个代际最多两次领取。
+同输入重复请求、A→B→A、重启、用途或来源标签均回到原预算；标签不进入指纹。
+新配置只在显式 register 时构造新输入，不扫描或重跑已有分析。
+语言是独立输入。当前性与配置两轴的消费由[查询服务责任](../roadmap.md#module-body)承接。
+
+登记及领取都在短写事务内通过 BodyService.facts_in_connection 重新加载 accepted、
+决定引用的历史上游成功来源、当前 PDF/正文/质量、根用途和实验样本。
+JGRMetadata.facts_in_connection 在同 Connection 读取真实 metadata 请求、路线结算、
+agency 与当前字段，缺失保持 unknown；不把题名/摘要存在当路线完成。
+完整 READ_PREREQUISITES 经共享 eligibility 计算；不建立 manual_read_request 或自动名额。
+PDF 的制品登记和真实字节也在该 Connection 核验。上下文重建和完整帧最坏修正预算
+在领取之前完成；不可预见的文件或数据库损坏仍安全拒绝。
+
+### 领取与所有权
+
+`claim(task_id, *, preclaim=None)` 返回 ReadHandle；包含真实本代 ordinal、token、
+600 秒截止时间、历史 CallDescription 和安全 correction。preclaim 在领取短事务内取得
+最新修正，拒绝时没有 attempt。实际模型运行在事务外。每次领取另存当时decision/root/PDF/sample/质量核查/上游来源及
+metadata请求与明确历史修订的引用；历史验证只重放这些依据，不拿后来的当前资格替换。
+`renew(handle)` 只允许未过期持有者追加续租，截止时间为续租时刻加 600 秒。
+`fail(handle, failure)` 结算封闭执行失败；output_invalid 只能由权威接收产生，
+outcome_unknown 只能由回收产生。
+
+过期不退款，也不在只读查询或下一次 claim 自动结算。`reclaim(task_id)` 显式追加
+outcome_unknown，旧 token 失权；最后一次过期回收后该代失败。
+KeyboardInterrupt/SystemExit 透传并保留已花费但未结算的租约。
+`retry(task_id, *, request_id, reason, actor)` 只允许当前失败终态建立唯一后继；
+重复父边/请求幂等，原因与操作者保留，成功或运行中不能重开预算。新代 ordinal 从 1 开始。
+
+### 外部执行与串行资源
+
+`run_once(task_id, executor)` 的 test 执行器接收 ReadHandle，只能返回原始 bytes；
+`submit_test(handle, raw)` 强制保存 test 来源，没有 executor_kind 或生产审计参数。
+未知执行异常结算 executor_error，中断不伪造失败。
+
+`read_tasks.execution.execution_resource(data_root)` 是本机同根 Read 的独占等待资源，
+载体 `.body-read.lock`，等待发生在领取之前；run_once 自动持有它。
+专用 `run_pi_once(task_id, executor, *, preclaim=None)` 使用独立 PiReadCandidate，
+由 Pi 执行组合在认证和领取前取得该资源，并持有到结算与进程回收完成。
+低层 claim/submit 本身不持有长时间资源锁。Docling 的独立锁含义不变；
+B 的跨阶段调度与自动任务仍须遵守规格资源纪律。
+
+PiReadCandidate 没有可变来源字段。专用端口核验严格 PiRpcAudit、持久 supply/install
+引用、历史 adapter/protocol/channel/provider 和实际报告模型；模型不符为 model_mismatch。
+审计形状和引用不证明实际执行；Pi 组合另行提供准入、真实独立会话和进程组回收。
+本服务不授予 EXP-2 现场准入，test 端口不能提交 PiReadCandidate。
+
+### 权威接收与原子保存
+
+完整原始候选调用 validate_read_output_v2；序号重新读取持久 attempt，不取候选或执行器声明。
+首次坏指针为 output_invalid，下一次修正唯一使用 build_read_correction 与共享 read_limits。
+末次丢弃、评分理由永不降级、Schema 闭集与全空下限见[接收规则](read-validation.md)。
+
+合法成功原子保存 outcome、唯一 analysis、接受输出、原始候选制品、诊断/警告/丢弃清单、
+三规则版本、策略/真实序号、配置/输入、执行来源审计和 evidence 成员引用。
+制品先完整发布，事务故障可留下未引用制品，但没有半条分析；已领取次数不退。
+相同 token、原始字节与审计的精确提交幂等，竞争候选不能覆盖。
+
+### 只读回查与恢复
+
+`task`、`history(paper_id)` 返回失败/尝试/租约和全部代际；retry 原因/操作者不进 repr。
+`analysis(id)`、`analyses(paper_id)` 返回候选、输出、来源、根用途、质量、规则和丢弃标记；
+`evidence(analysis_id, evidence_id)` 仅回查该分析引用的持久正文源切片。
+分析读取重新按已记接收版本验证。ordinary=True 同时拒绝实验根、test 来源和非 formal 质量；
+上游成功来源与 Read 自身来源分别保留，不互相授权。
+
+`validate_all()` 校验代际链、连续 ordinal、租约/续租/结算、历史输入和候选/evidence 闭包，
+以候选与持久 Context、策略、真实序号重算输出/丢弃及支持的诊断策略。
+v1 历史使用冻结 v1 接收器，保留原接收记录；不追溯生成旧失败分析。
+未知证据规则为 unsupported_rule_version；已支持版本重算不符为 registration_invalid。
+未知数值/限制警告策略保留记录，只核对仍支持的部分，不声称重算等价。
+备份和 restore 传播这些原因；冷进程不需要 extra、原根、settings 或配置激活，
+不回收租约、不调用模型、不修改历史。数据库 head 见[备份契约](backup-restore.md)。
+
+## 错误与拒绝
+
+ReadTaskError.reason 为封闭 ReadReason；前置拒绝的 reasons 保留共享资格或 Body 原因。
+常见原因：prerequisites_failed、read_input_over_budget、task_running、budget_exhausted、
+invalid_credential、settlement_conflict、not_failed、request_conflict、corrupt_reference、
+unsupported_rule_version。输入/Context/配置/存储组件的受控错误保持其原边界，均不等同模型失败。
+
+## 不提供／不证明
+
+没有产品 CLI、自动队列、每日 quota、read_requests、pending/denied 原子 accepted、
+通用 map/reduce、正式校准或真实 Pi/Docling 验收。真实产品与现场责任见[路线图](../roadmap.md)。
+
+## 相关
+
+依据：[#161](https://github.com/MeteoBoy4/PaperRadar/issues/161)、[#155 最终裁决](https://github.com/MeteoBoy4/PaperRadar/issues/155)。
+[正文前置](body-persistence.md)、[Read 输入](stage-inputs.md)、[备份恢复](backup-restore.md)、
+[资格](eligibility-visibility.md)、[日志](runtime-logging.md)、[ADR-0045](../adr/0045-persist-explicit-read-generations.md)。

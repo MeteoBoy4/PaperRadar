@@ -47,6 +47,7 @@ from paper_radar.screening.reasons import (
 )
 from paper_radar.screening_tasks.tables import budgets as screening_budgets
 from paper_radar.screening_tasks.tables import successes as screening_successes
+from paper_radar.stage_inputs import StageInput
 from paper_radar.storage.artifacts import ArtifactStore
 
 if TYPE_CHECKING:
@@ -382,6 +383,193 @@ class BodyService:
                 fingerprint=fingerprint,
                 ordinary=ordinary,
             )
+
+    def extraction_input_in_connection(
+        self, connection: Connection, fingerprint: str
+    ) -> "StageInput":
+        """读取首次持久提取配方,供同事务消费者严格回放;不读当前配置。"""
+        from paper_radar.body import tables
+        from paper_radar.stage_inputs import replay_stage_input
+
+        row = (
+            connection.execute(
+                select(tables.inputs).where(tables.inputs.c.fingerprint == fingerprint)
+            )
+            .mappings()
+            .first()
+        )
+        if row is None:
+            raise BodyError("extraction_absent")
+        return replay_stage_input(row["payload"], fingerprint)
+
+    def read_basis_in_connection(
+        self, connection: Connection, facts: "BodyFacts"
+    ) -> dict[str, str | None]:
+        """绑定领取时的真实用途依据,由历史核验口再次解引用。"""
+        from datetime import UTC, datetime
+
+        if (
+            not facts.eligible
+            or facts.extraction is None
+            or facts.extraction.identity is None
+            or facts.pdf is None
+            or facts.decision is None
+        ):
+            raise BodyError("corrupt_reference")
+        identity = facts.extraction.identity
+        review_id = connection.execute(
+            select(tables.reviews.c.review_id)
+            .where(
+                tables.reviews.c.fingerprint == identity.extraction_fingerprint,
+                tables.reviews.c.reading_sha256 == identity.reading_sha256,
+                tables.reviews.c.evidence_map_sha256 == identity.evidence_map_sha256,
+                tables.reviews.c.passed == 1,
+            )
+            .order_by(tables.reviews.c.reviewed_at.desc())
+        ).scalar()
+        result = {
+            "root_id": facts.root.root_id,
+            "purpose": facts.root.purpose.value,
+            "decision_id": facts.decision.fact.reference,
+            "pdf_id": facts.pdf.attachment_id,
+            "sample_id": facts.sample.sample_id if facts.sample else None,
+            "quality_basis": facts.extraction.quality.basis.value,
+            "review_id": review_id,
+            "execution_source": facts.execution_source.value,
+            "recorded_at": datetime.now(UTC).isoformat(),
+        }
+        self.validate_read_basis_in_connection(
+            connection, facts.paper_id, identity, result
+        )
+        return result
+
+    def validate_read_basis_in_connection(
+        self,
+        connection: Connection,
+        paper_id: str,
+        identity: "ExtractionIdentity",
+        basis: dict[str, str | None],
+    ) -> None:
+        """核验历史领取的独立依据;不要求它仍是当前人工决定或当前PDF。"""
+        from datetime import datetime
+
+        from paper_radar.body.extraction import extraction_view
+        from paper_radar.body.facts import execution_source
+        from paper_radar.screening.reasons import ScreeningResult
+
+        keys = {
+            "root_id",
+            "purpose",
+            "decision_id",
+            "pdf_id",
+            "sample_id",
+            "quality_basis",
+            "review_id",
+            "execution_source",
+            "recorded_at",
+        }
+        if (
+            type(basis) is not dict
+            or set(basis) != keys
+            or any(v is not None and type(v) is not str for v in basis.values())
+        ):
+            raise BodyError("corrupt_reference")
+        root = root_fact(connection)
+        decision = next(
+            (
+                d
+                for d in decision_events(connection, paper_id)
+                if d.fact.reference == basis["decision_id"]
+            ),
+            None,
+        )
+        pdf = (
+            connection.execute(
+                select(tables.pdfs).where(
+                    tables.pdfs.c.attachment_id == basis["pdf_id"]
+                )
+            )
+            .mappings()
+            .first()
+        )
+        extraction = extraction_view(connection, identity.extraction_fingerprint)
+        if (
+            (root.root_id, root.purpose.value) != (basis["root_id"], basis["purpose"])
+            or decision is None
+            or decision.fact.record.result is not ScreeningResult.ACCEPTED
+            or execution_source(connection, paper_id, decision).value
+            != basis["execution_source"]
+            or basis["execution_source"] != "production"
+        ):
+            raise BodyError("corrupt_reference")
+        if (
+            pdf is None
+            or pdf["paper_id"] != paper_id
+            or extraction is None
+            or extraction.identity != identity
+            or extraction.pdf_sha256 != pdf["pdf_sha256"]
+        ):
+            raise BodyError("corrupt_reference")
+        raw_pdf = self.store.read_artifact_in_connection(
+            connection, pdf["artifact_id"]
+        )["payload"]
+        if (
+            hashlib.sha256(raw_pdf).hexdigest() != pdf["pdf_sha256"]
+            or not raw_pdf.startswith(b"%PDF-")
+            or len(raw_pdf) < 1024
+        ):
+            raise BodyError("corrupt_reference")
+        if basis["purpose"] == "experiment":
+            sample = (
+                connection.execute(
+                    select(tables.samples).where(
+                        tables.samples.c.sample_id == basis["sample_id"]
+                    )
+                )
+                .mappings()
+                .first()
+            )
+            if sample is None or (
+                sample["paper_id"],
+                sample["version_id"],
+                sample["pdf_sha256"],
+            ) != (paper_id, pdf["version_id"], pdf["pdf_sha256"]):
+                raise BodyError("corrupt_reference")
+        if basis["quality_basis"] == "experiment_document_gate":
+            review = (
+                connection.execute(
+                    select(tables.reviews).where(
+                        tables.reviews.c.review_id == basis["review_id"]
+                    )
+                )
+                .mappings()
+                .first()
+            )
+            if (
+                review is None
+                or review["passed"] != 1
+                or (
+                    review["fingerprint"],
+                    review["reading_sha256"],
+                    review["evidence_map_sha256"],
+                )
+                != (
+                    identity.extraction_fingerprint,
+                    identity.reading_sha256,
+                    identity.evidence_map_sha256,
+                )
+            ):
+                raise BodyError("corrupt_reference")
+            if basis["recorded_at"] is None or datetime.fromisoformat(
+                review["reviewed_at"]
+            ) > datetime.fromisoformat(basis["recorded_at"]):
+                raise BodyError("corrupt_reference")
+        elif (
+            basis["quality_basis"] != "formal_gate"
+            or basis["purpose"] != "production"
+            or extraction.quality.basis != "formal_gate"
+        ):
+            raise BodyError("corrupt_reference")
 
     def validate_all(self) -> None:
         from paper_radar.body.validation import validate_all

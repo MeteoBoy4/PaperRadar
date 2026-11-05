@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
+from sqlalchemy import Connection
+
 from paper_radar.storage.artifact_contract import (
     KIND_ROLES,
     ArtifactError,
@@ -18,6 +20,7 @@ from paper_radar.storage.artifact_repository import (
     check_blob_registration,
     list_registrations,
     read_registration,
+    read_registration_in_connection,
     save_registration,
 )
 from paper_radar.storage.blob_store import BlobStore
@@ -122,6 +125,16 @@ class ArtifactStore:
     def verified_blob_path(self, blob: BlobRecord) -> Path:
         """备份用完整性边界:全量校验后给出受控推导路径;不是流式读取 API。"""
         return self.blobs.verify(blob)
+
+    def read_artifact_in_connection(
+        self, connection: Connection, artifact_id: str
+    ) -> dict[str, bytes]:
+        """同事务读取已登记成员并核对真实字节;不另开数据库视图。"""
+        record, blobs = read_registration_in_connection(connection, artifact_id)
+        return {
+            member.role: self.blobs.read(blob)
+            for member, blob in zip(record.members, blobs, strict=True)
+        }
 
     def read_artifact(self, artifact_id: str) -> dict[str, bytes]:
         record, blobs = self.artifact_blobs(artifact_id)
