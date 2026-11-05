@@ -12,6 +12,7 @@ from paper_radar.body import tables
 from paper_radar.body.models import (
     BodyError,
     BodyReason,
+    CurrentBody,
     DecisionEvent,
     PdfAttachment,
     RootRegistration,
@@ -67,6 +68,19 @@ class BodyService:
     def root(self) -> RootRegistration:
         with transaction(self.database) as connection:
             return root_fact(connection)
+
+    def current_body_in_connection(
+        self, connection: Connection, paper_id: str
+    ) -> CurrentBody:
+        """当前版本最新显式 PDF 的唯一成功正文,与资格共用同一查询。"""
+        from paper_radar.body.queries import current_body
+
+        return current_body(connection, paper_id)
+
+    def current_body(self, paper_id: str) -> CurrentBody:
+        """保留链路缺失与多成功歧义的受控原因,不读取配置或触发提取。"""
+        with transaction(self.database) as connection:
+            return self.current_body_in_connection(connection, paper_id)
 
     def register_root(self, purpose: RootPurpose | str) -> RootRegistration:
         try:

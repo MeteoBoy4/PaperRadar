@@ -301,6 +301,8 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 `paper_radar.read_tasks.ReadTasks` 提供已 accepted 论文的显式登记、有限预算、租约、
 受控修正、retry、v2 分析接收与证据回查。实际前置来自同库 Body 和元数据事实，
 实验分析保留来源/质量/丢弃标记并被普通消费拒绝；备份在无 extra 环境重验完整业务闭包。
+`paper_radar.read_queries.ReadQueries` 提供当前/历史分析、两轴状态、旧配置列表及保留证据回查；
+仅使用明确历史快照，不自动重跑，展示 DTO 不携带原始候选或被丢弃内容。
 公共接口及执行边界见[Read 任务契约](docs/contracts/read-tasks.md)，新增覆盖见
 [独立 D1 台账](docs/verification/issue-161-read-tasks-delivery.md)。产品 CLI 与真实 Pi 接线
 责任见[路线图](docs/roadmap.md#module-body)。

@@ -205,7 +205,10 @@ requested_manual_read 仍为 false，请求事实本身不删除。请求为空�
 
 ReadTasks登记与领取在同一Connection组合Body持久前置、JGRMetadata真实路线事实与共享
 READ_PREREQUISITES。缺失metadata请求保持metadata_unknown，不以字段存在替代路线完成。
-分析ordinary消费另行核验Read自身来源、根用途和formal质量，见[Read任务](read-tasks.md)。
+正文链沿当前版本→最新显式PDF→唯一成功正文三元组装配；同PDF多成功三元组时不能由
+调用方任意指纹选取，新的登记/领取拒绝facts_changed，历史claim依据仍独立核验。
+分析ordinary消费另行核验Read自身来源、根用途和formal质量；展示查询的所有入口实际
+调用共享visibility，配置unknown不进入old列表，见[Read任务](read-tasks.md#展示查询与两轴)。
 
 ## 错误与拒绝
 

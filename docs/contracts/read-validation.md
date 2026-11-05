@@ -408,6 +408,9 @@ v2 独立覆盖与差异矩阵见 [D1 台账](../verification/issue-157-read-v2-
 
 依据：[#157](https://github.com/MeteoBoy4/PaperRadar/issues/157)、[#155](https://github.com/MeteoBoy4/PaperRadar/issues/155)、[#92](https://github.com/MeteoBoy4/PaperRadar/issues/92)、[#93](https://github.com/MeteoBoy4/PaperRadar/issues/93)、[#94](https://github.com/MeteoBoy4/PaperRadar/issues/94)、[#95](https://github.com/MeteoBoy4/PaperRadar/issues/95)、[#96](https://github.com/MeteoBoy4/PaperRadar/issues/96)、[#97](https://github.com/MeteoBoy4/PaperRadar/issues/97)、[#98](https://github.com/MeteoBoy4/PaperRadar/issues/98)、[#99](https://github.com/MeteoBoy4/PaperRadar/issues/99)。
 
+展示查询仅公开接受后的输出、条目级丢弃计数与受限内容警告；原始候选用于低层历史核验，
+不进入展示 DTO。保留内容的证据回查与正文/配置两轴见[Read 展示查询](read-tasks.md#展示查询与两轴)。
+
 目标与判据：[规格 §4.10](../../intent/draft.md#410-read-agent)；
 决策：[ADR-0042](../adr/0042-accept-read-v2-with-final-attempt-degradation.md)、[ADR-0025](../adr/0025-allow-local-formula-candidates-with-source-review.md)、
 [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)；

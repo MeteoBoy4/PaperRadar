@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from uuid import uuid4
 
-from sqlalchemy import Connection, insert, select
+from sqlalchemy import Connection, insert, literal_column, select
 from sqlalchemy.engine import RowMapping
 
 from paper_radar.body import BodyService
@@ -645,9 +645,24 @@ class ReadTasks:
                 audit=json.loads(row["audit_json"]),
             )
 
-    def analyses(
-        self, paper_id: str, *, ordinary: bool = False
-    ) -> tuple[ReadAnalysis, ...]:
+    def analysis_papers(self) -> tuple[str, ...]:
+        """仅列出有成功分析的论文,不查询配置或任务资格。"""
+        with transaction(self.database) as connection:
+            return tuple(
+                connection.execute(
+                    select(t.budgets.c.paper_id)
+                    .select_from(
+                        t.analyses.join(
+                            t.tasks, t.analyses.c.task_id == t.tasks.c.task_id
+                        ).join(t.budgets, t.tasks.c.budget_id == t.budgets.c.budget_id)
+                    )
+                    .distinct()
+                    .order_by(t.budgets.c.paper_id)
+                ).scalars()
+            )
+
+    def analysis_ids(self, paper_id: str) -> tuple[str, ...]:
+        """成功事务的追加序;不依赖调用方时间或attempt序号。"""
         with transaction(self.database) as connection:
             keys = (
                 connection.execute(
@@ -658,12 +673,19 @@ class ReadTasks:
                         ).join(t.budgets, t.tasks.c.budget_id == t.budgets.c.budget_id)
                     )
                     .where(t.budgets.c.paper_id == paper_id)
-                    .order_by(t.analyses.c.settled_at)
+                    .order_by(literal_column("read_analyses.rowid"))
                 )
                 .scalars()
                 .all()
             )
-        return tuple(self.analysis(key, ordinary=ordinary) for key in keys)
+        return tuple(keys)
+
+    def analyses(
+        self, paper_id: str, *, ordinary: bool = False
+    ) -> tuple[ReadAnalysis, ...]:
+        return tuple(
+            self.analysis(key, ordinary=ordinary) for key in self.analysis_ids(paper_id)
+        )
 
     def evidence(
         self, analysis_id: str, evidence_id: str, *, ordinary: bool = False
