@@ -10,6 +10,7 @@ from paper_radar.config import load_config_snapshot
 from paper_radar.config.compile import StageName, StageStatus
 from paper_radar.config.diff import compare_config_snapshots
 from paper_radar.config.errors import ConfigError
+from paper_radar.eligibility import RootPurpose
 from paper_radar.read_queries.models import (
     AnalysisView,
     CurrentRead,
@@ -19,6 +20,7 @@ from paper_radar.read_queries.models import (
     ReadConfigComponent,
 )
 from paper_radar.read_tasks import ReadAnalysis, ReadTaskError, ReadTasks
+from paper_radar.reading.acceptance_v2 import ReadV2DiagnosticReason
 from paper_radar.reading.context import SourceSlice
 
 
@@ -35,7 +37,7 @@ class ReadQueries:
             is not visibility.VisibilityPermission.ALLOWED
         ):
             raise ReadTaskError("visibility_denied")
-        if ordinary and self.body.root().purpose != "production":
+        if ordinary and self.body.root().purpose is not RootPurpose.PRODUCTION:
             raise ReadTaskError("ordinary_consumption_denied")
 
     def _config(
@@ -105,7 +107,7 @@ class ReadQueries:
             bool(analysis.discards),
             counts,
             any(
-                d.get("reason") != "evidence_item_discarded"
+                d.get("reason") != ReadV2DiagnosticReason.EVIDENCE_ITEM_DISCARDED
                 for d in analysis.diagnostics
             ),
         )

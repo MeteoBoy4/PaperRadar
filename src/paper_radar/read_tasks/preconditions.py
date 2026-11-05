@@ -4,6 +4,7 @@ from sqlalchemy import Connection
 
 from paper_radar.body import BodyService
 from paper_radar.body.models import BodyFacts
+from paper_radar.body.pdf import valid_pdf_bytes
 from paper_radar.calibration.visibility import evaluate_visibility
 from paper_radar.eligibility import (
     ArtifactFact,
@@ -12,6 +13,7 @@ from paper_radar.eligibility import (
     ExtractionState,
     PaperProjection,
     Presence,
+    QualityFact,
     evaluate_paper,
 )
 from paper_radar.papers.queries import load_trace
@@ -27,16 +29,10 @@ def require_facts(
 ) -> BodyFacts:
     facts = body.facts_in_connection(connection, paper_id, identity=identity)
     if facts.pdf is not None:
-        from paper_radar.read_tasks.repository import sha
-
         raw = body.store.read_artifact_in_connection(connection, facts.pdf.artifact_id)[
             "payload"
         ]
-        if (
-            sha(raw) != facts.pdf.pdf_sha256
-            or not raw.startswith(b"%PDF-")
-            or len(raw) < 1024
-        ):
+        if not valid_pdf_bytes(raw, facts.pdf.pdf_sha256):
             raise ReadTaskError("facts_changed")
     trace = load_trace(connection, paper_id)
     current = trace.current
@@ -65,9 +61,7 @@ def require_facts(
         )
         if extraction and extraction.artifact_id and pdf
         else ExtractionFact(ExtractionState.ABSENT),
-        quality=extraction.quality
-        if extraction
-        else PaperProjection(paper_id, current.version_id, current.version_id).quality,
+        quality=extraction.quality if extraction else QualityFact(),
         root_purpose=facts.root.purpose,
         execution_source=facts.execution_source,
         visibility=evaluate_visibility(frozenset()),

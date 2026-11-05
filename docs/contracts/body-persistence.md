@@ -57,6 +57,8 @@ version 缺省冻结为首次附加时当前版本，显式 version 必须属于
 `convert(pdf: bytes, semantics) -> ParserResult` 只接收 PDF 与 extraction 语义，
 返回 canonical、可选审计 JSON、峰值与警告；不提供题名/DOI/摘要。
 `ParserFailure(ExtractionFailure, peak_memory_bytes=0)` 表达受控失败。
+convert 抛出受控 FulltextError 时按永久质量门槛失败结算；尚无 ParserResult 时峰值
+记 0（无可用测量），发布阶段拒绝则保留已经返回的峰值。两者均保留已花费尝试。
 生产 SDK、进程限额和模型文件核验由[Docling 执行器](docling-execution.md)提供；
 Body 复用其准备对象，不在进程内加载 SDK。
 规范化、自动质量和四角色定义见[规范正文](fulltext-extraction.md)。

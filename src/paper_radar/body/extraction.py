@@ -1,7 +1,6 @@
 """根锁包围持久领取与结算;解析期间没有数据库事务。"""
 
 import fcntl
-import hashlib
 import json
 import os
 import stat
@@ -23,6 +22,7 @@ from paper_radar.body.models import (
     ExtractionView,
     ParserFailure,
 )
+from paper_radar.body.pdf import valid_pdf_bytes
 from paper_radar.body.repository import digest, now, replay, required, transaction
 from paper_radar.config import StageName, load_config_snapshot
 from paper_radar.eligibility import QualityBasis, QualityFact, QualityFailure
@@ -223,11 +223,7 @@ def extract(
         if pdf is None:
             raise BodyError("pdf_absent")
     raw_pdf = store.read_artifact(pdf.artifact_id)["payload"]
-    if (
-        len(raw_pdf) < 1024
-        or not raw_pdf.startswith(b"%PDF-")
-        or hashlib.sha256(raw_pdf).hexdigest() != pdf.pdf_sha256
-    ):
+    if not valid_pdf_bytes(raw_pdf, pdf.pdf_sha256):
         raise BodyError("corrupt_reference")
     stage_input = build_stage_input(
         snapshot, StageName.EXTRACTION, ExtractionFacts(pdf_sha256=pdf.pdf_sha256)
@@ -303,8 +299,10 @@ def extract(
                 )
             )
         start = monotonic()
+        peak_memory_bytes = 0
         try:
             result = executor.convert(raw_pdf, semantics)
+            peak_memory_bytes = result.peak_memory_bytes
             published = FulltextArtifacts(store).publish(
                 result.document,
                 extraction_fingerprint=fingerprint,
@@ -323,7 +321,7 @@ def extract(
                     attempt_id,
                     ExtractionFailure.QUALITY_GATE,
                     max(0, monotonic() - start),
-                    result.peak_memory_bytes,
+                    peak_memory_bytes,
                 )
         except ParserFailure as error:
             with transaction(database, write=True) as connection:

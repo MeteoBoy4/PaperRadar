@@ -117,6 +117,14 @@ HF 离线变量及原生文本信号。崩溃后的 outcome_unknown 仍能回查
 SDK 内部 timeout 可能产生 PARTIAL_SUCCESS，仍按永久质量失败；只有父侧 hard timeout
 记可重试 timeout。执行器内部不重试；跨请求两次预算由 Body 持久管理。
 中文预检错误只给原因码与修复方向，不回显模型路径、正文、原始异常或 stderr。
+`DoclingPreflightError.reason` 是 `DoclingPreflightReason` 闭集：
+`dependency_missing`、`dependency_inconsistent`、`dependency_version_mismatch`、
+`platform_unknown`、`platform_unsupported`、`selection_invalid`、
+`runtime_selection_invalid`、`model_deployment_invalid`。
+前五类来自运行环境 probe；两类 selection 原因要求先 check/compile 所选配置；
+部署、文件核验或快照空间错误归 model_deployment_invalid。
+运行参数非法由 DoclingRun 的 Pydantic 校验拒绝，不新增预检原因。
+直接构造未知原因以安全 ValueError 拒绝，不回显传入值，也不进入提取领取。
 
 ## 不提供／不证明
 

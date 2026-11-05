@@ -149,7 +149,26 @@ class FulltextError(ValueError):
     def __init__(self, reason: str, quality: AutomaticQuality | None = None) -> None:
         self.reason = FulltextReason(reason)
         self.quality = quality
-        super().__init__(f"正文制品拒绝：{reason}")
+        guidance = {
+            FulltextReason.CONVERSION_INCOMPLETE: "请核对 PDF 与解析配置后重新提取",
+            FulltextReason.AMBIGUOUS_READING_ORDER: (
+                "请核对 PDF 阅读顺序与解析配置后重新提取"
+            ),
+            FulltextReason.UNKNOWN_PARENT: "请核对正文层级与解析配置后重新提取",
+            FulltextReason.INVALID_HIERARCHY: "请核对正文层级与解析配置后重新提取",
+            FulltextReason.INVALID_ENCODING: "请核对原 PDF 字符与解析配置后重新提取",
+            FulltextReason.INVALID_MEMBERS: "请从完整备份恢复正文制品后重试",
+            FulltextReason.IDENTITY_MISMATCH: (
+                "请核对引用的正文身份或从完整备份恢复后重试"
+            ),
+            FulltextReason.QUALITY_FAILED: (
+                "请人工核对 PDF 与质量诊断,修正输入或解析配置后重新提取"
+            ),
+            FulltextReason.UNKNOWN_EVIDENCE: (
+                "请使用该分析保留的合法 evidence ID 回查"
+            ),
+        }[self.reason]
+        super().__init__(f"正文制品拒绝：{self.reason}；{guidance}。")
 
 
 def manifest_payload(manifest: ExtractionManifest) -> dict[str, object]:

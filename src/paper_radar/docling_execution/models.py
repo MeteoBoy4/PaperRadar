@@ -43,9 +43,7 @@ class WorkerResponse(CanonicalModel):
     document: CanonicalDocument | None = Field(default=None, repr=False)
     document_json: str | None = Field(default=None, repr=False)
     peak_memory_bytes: int = Field(default=0, ge=0)
-    warnings: tuple[
-        Literal["formula_candidate_unavailable", "table_source_unavailable"], ...
-    ] = Field(default=(), max_length=2)
+    warnings: tuple[WorkerWarning, ...] = Field(default=(), max_length=2)
 
     @model_validator(mode="after")
     def complete_response(self) -> Self:

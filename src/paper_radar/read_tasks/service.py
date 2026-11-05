@@ -13,6 +13,7 @@ from sqlalchemy.engine import RowMapping
 
 from paper_radar.body import BodyService
 from paper_radar.config import load_config_snapshot
+from paper_radar.eligibility import QualityBasis, RootPurpose
 from paper_radar.fulltext.artifacts import FulltextArtifacts
 from paper_radar.read_tasks import tables as t
 from paper_radar.read_tasks.models import (
@@ -279,7 +280,7 @@ class ReadTasks:
             budget, audit_snapshot_id=audit_snapshot_id, check_budget=False
         )
 
-    def correction(self, task_id: str) -> str | None:
+    def prepare_correction(self, task_id: str) -> str | None:
         from paper_radar.read_inputs import build_read_correction
 
         view = self.task(task_id)
@@ -492,9 +493,6 @@ class ReadTasks:
         )
         return result
 
-    def prepare_correction(self, task_id: str) -> str | None:
-        return self.correction(task_id)
-
     def run_pi_once(
         self,
         task_id: str,
@@ -624,10 +622,10 @@ class ReadTasks:
                 ordinary=ordinary,
             )
             if ordinary and (
-                facts.root.purpose != "production"
+                facts.root.purpose is not RootPurpose.PRODUCTION
                 or row["executor_kind"] != "pi_rpc"
                 or facts.extraction is None
-                or facts.extraction.quality.basis != "formal_gate"
+                or facts.extraction.quality.basis is not QualityBasis.FORMAL_GATE
             ):
                 raise ReadTaskError("ordinary_consumption_denied")
             raw = self.artifacts.store.read_artifact(row["candidate_artifact_id"])[

@@ -50,12 +50,43 @@ from paper_radar.fixture_audit.source_http import (
 from paper_radar.fixture_audit.source_validation import inspect_source
 from paper_radar.papers import PaperFacts
 from paper_radar.papers.errors import PaperError, PaperReason
-from paper_radar.papers.models import AbstractValue, CandidateInput
+from paper_radar.papers.models import AbstractValue, AcquisitionFact, CandidateInput
 from paper_radar.runtime_logging import RuntimeLog, Sink
 from paper_radar.runtime_logging.events import Clock, MonotonicClock
 from paper_radar.sources.errors import controlled
 from paper_radar.sources.feeds import endpoint
 from paper_radar.storage.artifacts import ArtifactStore
+
+
+def _verify_route_closure(
+    basis: MetadataBasis,
+    routes: tuple[MetadataRoute, ...],
+    acquisitions: tuple[AcquisitionFact, ...],
+    *,
+    revision_no: int | None = None,
+) -> None:
+    for route in routes:
+        if (
+            route.request.doi != basis.doi
+            or route.abstract_rules_version != basis.abstract_rules_version
+        ):
+            raise corrupt()
+        if route.acquisition_id:
+            acquisition = next(
+                (a for a in acquisitions if a.acquisition_id == route.acquisition_id),
+                None,
+            )
+            if (
+                acquisition is None
+                or acquisition.version_id != basis.version_id
+                or acquisition.payload_sha256 != route.payload_sha256
+                or (
+                    revision_no is not None
+                    and acquisition.result_revision_no is not None
+                    and acquisition.result_revision_no > revision_no
+                )
+            ):
+                raise corrupt()
 
 
 class JGRMetadata:
@@ -437,27 +468,7 @@ class JGRMetadata:
                     revision_no=settled_revision or basis.revision_no,
                 )
             )
-            for route in routes:
-                if (
-                    route.request.doi != basis.doi
-                    or route.abstract_rules_version != basis.abstract_rules_version
-                ):
-                    raise corrupt()
-                if route.acquisition_id:
-                    acquisition = next(
-                        (
-                            v
-                            for v in trace.acquisitions
-                            if v.acquisition_id == route.acquisition_id
-                        ),
-                        None,
-                    )
-                    if (
-                        acquisition is None
-                        or acquisition.version_id != basis.version_id
-                        or acquisition.payload_sha256 != route.payload_sha256
-                    ):
-                        raise corrupt()
+            _verify_route_closure(basis, routes, trace.acquisitions)
             result = project_metadata(
                 key, basis, revision, trace.current, routes, settled_revision
             )
@@ -501,31 +512,9 @@ class JGRMetadata:
             raise corrupt()
         routes = load_routes(connection, request_key)
         trace = load_trace(connection, paper_id)
-        for route in routes:
-            if (
-                route.request.doi != basis.doi
-                or route.abstract_rules_version != basis.abstract_rules_version
-            ):
-                raise corrupt()
-            if route.acquisition_id:
-                acquisition = next(
-                    (
-                        a
-                        for a in trace.acquisitions
-                        if a.acquisition_id == route.acquisition_id
-                    ),
-                    None,
-                )
-                if (
-                    acquisition is None
-                    or acquisition.version_id != version_id
-                    or acquisition.payload_sha256 != route.payload_sha256
-                    or (
-                        acquisition.result_revision_no is not None
-                        and acquisition.result_revision_no > revision_no
-                    )
-                ):
-                    raise corrupt()
+        _verify_route_closure(
+            basis, routes, trace.acquisitions, revision_no=revision_no
+        )
         return project_metadata(request_key, basis, revision, revision, routes, settled)
 
     def _verify_route(

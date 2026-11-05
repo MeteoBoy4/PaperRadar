@@ -1,6 +1,5 @@
 """仅从持久事实与制品验证 Body 闭包;备份/恢复共享,无执行副作用。"""
 
-import hashlib
 import json
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +10,7 @@ from paper_radar.body import tables
 from paper_radar.body.extraction import LAYOUT_CHECKS, PERMANENT, extraction_view
 from paper_radar.body.facts import execution_source
 from paper_radar.body.models import BodyError
+from paper_radar.body.pdf import valid_pdf_bytes
 from paper_radar.body.repository import digest, required, transaction
 from paper_radar.config import load_config_snapshot
 from paper_radar.eligibility import QualityBasis, RootPurpose
@@ -102,11 +102,7 @@ def validate_all(database: Path, root: Path) -> None:
                 record = store.get_artifact(row["artifact_id"])
                 require(record.kind == "original_pdf")
                 raw = store.read_artifact(row["artifact_id"])["payload"]
-                require(
-                    len(raw) >= 1024
-                    and raw.startswith(b"%PDF-")
-                    and hashlib.sha256(raw).hexdigest() == row["pdf_sha256"]
-                )
+                require(valid_pdf_bytes(raw, row["pdf_sha256"]))
                 require(
                     row["request_hash"]
                     == digest(

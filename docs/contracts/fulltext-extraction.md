@@ -129,6 +129,11 @@ display/inline 总数为零的类别记为「未覆盖」，不计算百分比�
 
 ## 错误与拒绝
 
+FulltextError 保留封闭原因与受控中文下一步：转换、顺序、层级或字符问题提示核对 PDF
+与解析配置后重新提取；成员或身份损坏提示核对引用或从完整备份恢复；质量失败提示
+人工核对质量诊断；未知 evidence 提示使用该分析保留的合法 ID。异常不附正文、路径
+或 parser 原异常。
+
 - `conversion_incomplete`、`ambiguous_reading_order`、`unknown_parent`、`invalid_hierarchy`：未产生可评估的完整制品。
 - `invalid_members`、`invalid_encoding`：Schema 或固定编码不符。
 - `identity_mismatch`：三元组、manifest 或 document 审计成员哈希不符。

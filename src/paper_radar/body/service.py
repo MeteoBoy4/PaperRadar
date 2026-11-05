@@ -18,6 +18,7 @@ from paper_radar.body.models import (
     RootRegistration,
     SampleAdmission,
 )
+from paper_radar.body.pdf import valid_pdf_bytes
 from paper_radar.body.queries import (
     current_pdf,
     decision_events,
@@ -25,6 +26,7 @@ from paper_radar.body.queries import (
     root_fact,
     sample_record,
 )
+from paper_radar.body.read_basis import ReadBasis
 from paper_radar.body.repository import (
     digest,
     now,
@@ -38,7 +40,7 @@ from paper_radar.calibration.visibility import (
     VisibilityPermission,
     evaluate_visibility,
 )
-from paper_radar.eligibility import RootPurpose
+from paper_radar.eligibility import ExecutionSource, QualityBasis, RootPurpose
 from paper_radar.papers.queries import load_trace
 from paper_radar.runtime_logging import RuntimeLog, Sink
 from paper_radar.screening.reasons import (
@@ -441,17 +443,17 @@ class BodyService:
             )
             .order_by(tables.reviews.c.reviewed_at.desc())
         ).scalar()
-        result = {
-            "root_id": facts.root.root_id,
-            "purpose": facts.root.purpose.value,
-            "decision_id": facts.decision.fact.reference,
-            "pdf_id": facts.pdf.attachment_id,
-            "sample_id": facts.sample.sample_id if facts.sample else None,
-            "quality_basis": facts.extraction.quality.basis.value,
-            "review_id": review_id,
-            "execution_source": facts.execution_source.value,
-            "recorded_at": datetime.now(UTC).isoformat(),
-        }
+        result = ReadBasis(
+            root_id=facts.root.root_id,
+            purpose=facts.root.purpose.value,
+            decision_id=facts.decision.fact.reference,
+            pdf_id=facts.pdf.attachment_id,
+            sample_id=facts.sample.sample_id if facts.sample else None,
+            quality_basis=facts.extraction.quality.basis.value,
+            review_id=review_id,
+            execution_source=facts.execution_source.value,
+            recorded_at=datetime.now(UTC).isoformat(),
+        ).encode()
         self.validate_read_basis_in_connection(
             connection, facts.paper_id, identity, result
         )
@@ -471,49 +473,31 @@ class BodyService:
         from paper_radar.body.facts import execution_source
         from paper_radar.screening.reasons import ScreeningResult
 
-        keys = {
-            "root_id",
-            "purpose",
-            "decision_id",
-            "pdf_id",
-            "sample_id",
-            "quality_basis",
-            "review_id",
-            "execution_source",
-            "recorded_at",
-        }
-        if (
-            type(basis) is not dict
-            or set(basis) != keys
-            or any(v is not None and type(v) is not str for v in basis.values())
-        ):
-            raise BodyError("corrupt_reference")
+        record = ReadBasis.decode(basis)
         root = root_fact(connection)
         decision = next(
             (
                 d
                 for d in decision_events(connection, paper_id)
-                if d.fact.reference == basis["decision_id"]
+                if d.fact.reference == record.decision_id
             ),
             None,
         )
         pdf = (
             connection.execute(
-                select(tables.pdfs).where(
-                    tables.pdfs.c.attachment_id == basis["pdf_id"]
-                )
+                select(tables.pdfs).where(tables.pdfs.c.attachment_id == record.pdf_id)
             )
             .mappings()
             .first()
         )
         extraction = extraction_view(connection, identity.extraction_fingerprint)
         if (
-            (root.root_id, root.purpose.value) != (basis["root_id"], basis["purpose"])
+            (root.root_id, root.purpose.value) != (record.root_id, record.purpose)
             or decision is None
             or decision.fact.record.result is not ScreeningResult.ACCEPTED
             or execution_source(connection, paper_id, decision).value
-            != basis["execution_source"]
-            or basis["execution_source"] != "production"
+            != record.execution_source
+            or record.execution_source != ExecutionSource.PRODUCTION
         ):
             raise BodyError("corrupt_reference")
         if (
@@ -527,17 +511,13 @@ class BodyService:
         raw_pdf = self.store.read_artifact_in_connection(
             connection, pdf["artifact_id"]
         )["payload"]
-        if (
-            hashlib.sha256(raw_pdf).hexdigest() != pdf["pdf_sha256"]
-            or not raw_pdf.startswith(b"%PDF-")
-            or len(raw_pdf) < 1024
-        ):
+        if not valid_pdf_bytes(raw_pdf, pdf["pdf_sha256"]):
             raise BodyError("corrupt_reference")
-        if basis["purpose"] == "experiment":
+        if record.purpose == RootPurpose.EXPERIMENT:
             sample = (
                 connection.execute(
                     select(tables.samples).where(
-                        tables.samples.c.sample_id == basis["sample_id"]
+                        tables.samples.c.sample_id == record.sample_id
                     )
                 )
                 .mappings()
@@ -549,11 +529,11 @@ class BodyService:
                 sample["pdf_sha256"],
             ) != (paper_id, pdf["version_id"], pdf["pdf_sha256"]):
                 raise BodyError("corrupt_reference")
-        if basis["quality_basis"] == "experiment_document_gate":
+        if record.quality_basis == QualityBasis.EXPERIMENT_DOCUMENT_GATE:
             review = (
                 connection.execute(
                     select(tables.reviews).where(
-                        tables.reviews.c.review_id == basis["review_id"]
+                        tables.reviews.c.review_id == record.review_id
                     )
                 )
                 .mappings()
@@ -574,14 +554,14 @@ class BodyService:
                 )
             ):
                 raise BodyError("corrupt_reference")
-            if basis["recorded_at"] is None or datetime.fromisoformat(
+            if record.recorded_at is None or datetime.fromisoformat(
                 review["reviewed_at"]
-            ) > datetime.fromisoformat(basis["recorded_at"]):
+            ) > datetime.fromisoformat(record.recorded_at):
                 raise BodyError("corrupt_reference")
         elif (
-            basis["quality_basis"] != "formal_gate"
-            or basis["purpose"] != "production"
-            or extraction.quality.basis != "formal_gate"
+            record.quality_basis != QualityBasis.FORMAL_GATE
+            or record.purpose != RootPurpose.PRODUCTION
+            or extraction.quality.basis is not QualityBasis.FORMAL_GATE
         ):
             raise BodyError("corrupt_reference")
 

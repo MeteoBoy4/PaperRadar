@@ -237,7 +237,9 @@ Fig./Figure/Table/Eq./Section 前缀交叉引用编号排除。单位采用封�
 英文交叉引用前缀须具有左侧拉丁词元边界，stable 或 intersection 的后缀不构成
 Table/Section。未知相邻词不当单位。
 
-v1 历史常量仍为 `read-numeric-v1` / `read-evidence-v1`。v2 自持
+v1 历史常量仍为 `read-numeric-v1` / `read-evidence-v1`；其持久分析的
+`limitation_rule_version="none"` 表示没有独立的受限内容警告策略版本，按冻结 v1
+接收器重放，不补造 v2 诊断或改写历史记录。v2 自持
 `NUMERIC_RULE_VERSION="read-numeric-v2"`、`EVIDENCE_RULE_VERSION="read-evidence-v2"`、
 `CONTENT_LIMITATION_RULE_VERSION="read-content-limitation-v1"`。三版本均不进入
 StageInput/模型指纹，不自动触发模型重跑或刷新预算。单位与记法闭集两版共用，大小写保持

@@ -142,6 +142,11 @@ unknown 不属于 old，不进入旧配置列表。配置变旧不使正文分�
 拒绝本次 Read 的 test 来源及非 formal 质量；上游来源不能代替 Read 自身来源。
 AnalysisView 只含安全标识、两轴及受控原因、来源/质量、接受后的输出、has_discards、
 main_findings/reusable_points/key_limitations 的逐类别丢弃条数、restricted_content_warning。
+`restricted_content_warning` 为兼容字段名：存在任何非 `evidence_item_discarded` 的程序
+降级诊断即为 true，包含普通文本的数值支持不足和受限源内容风险（见
+[降级诊断规则](read-validation.md#数值与警告)）；它不声称数值或源内容已经核对。
+只有丢弃诊断、只有模型自述警告或没有诊断时为 false。丢弃状态独立由 has_discards
+及逐类别计数表示，模型自述警告不会被提升为程序诊断。
 受限内容的原有警告保留在 output.degraded_content_warnings，不声称已人工核对。
 它不透传低层 ReadAnalysis.raw_candidate、候选制品、执行审计、丢弃原文或坏 ID。
 旧配置列表仅含 paper_id/analysis_id/output_language/changed_components；证据回查不复活

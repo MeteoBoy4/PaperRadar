@@ -26,6 +26,10 @@ from paper_radar.reading.acceptance_v2 import (
     ReadV2Result,
     validate_read_output_v2,
 )
+from paper_radar.reading.context import (
+    EVIDENCE_RULE_VERSION as V1_EVIDENCE_RULE_VERSION,
+)
+from paper_radar.reading.numbers import NUMERIC_RULE_VERSION as V1_NUMERIC_RULE_VERSION
 from paper_radar.reading.result import ReadValidationResult
 
 
@@ -99,12 +103,12 @@ def replay_analysis(
         limitation_known = (
             row["limitation_rule_version"] == CONTENT_LIMITATION_RULE_VERSION
         )
-    elif version == "read-evidence-v1":
+    elif version == V1_EVIDENCE_RULE_VERSION:
         if row["degrade_policy"] != "none" or row["discards_json"] != "[]":
             invalid()
         result = validate_read_output(raw, prepared.context)
         discards = "[]"
-        numeric_known = row["numeric_rule_version"] == "read-numeric-v1"
+        numeric_known = row["numeric_rule_version"] == V1_NUMERIC_RULE_VERSION
         limitation_known = row["limitation_rule_version"] == "none"
     else:
         raise ReadTaskError("unsupported_rule_version")
