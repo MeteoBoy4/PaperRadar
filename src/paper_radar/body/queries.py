@@ -6,6 +6,7 @@ from sqlalchemy.engine import RowMapping
 from paper_radar.body import tables
 from paper_radar.body.models import (
     BodyError,
+    CurrentBody,
     DecisionEvent,
     PdfAttachment,
     RootRegistration,
@@ -111,3 +112,35 @@ def decision_events(connection: Connection, paper_id: str) -> tuple[DecisionEven
     if len({item.fact.sequence for item in result}) != len(result):
         raise BodyError("corrupt_reference")
     return tuple(result)
+
+
+def current_body(connection: Connection, paper_id: str) -> CurrentBody:
+    """只使用当前版本、显式 PDF 选择及唯一成功提取事实。"""
+    from paper_radar.body.extraction import extraction_view
+
+    trace = load_trace(connection, paper_id)
+    pdf = current_pdf(connection, paper_id, trace.current.version_id)
+    if pdf is None:
+        return CurrentBody(None, "pdf_absent")
+    keys = (
+        connection.execute(
+            select(tables.successes.c.fingerprint)
+            .select_from(
+                tables.successes.join(
+                    tables.inputs,
+                    tables.successes.c.fingerprint == tables.inputs.c.fingerprint,
+                )
+            )
+            .where(tables.inputs.c.pdf_sha256 == pdf.pdf_sha256)
+        )
+        .scalars()
+        .all()
+    )
+    if not keys:
+        return CurrentBody(None, "extraction_absent")
+    if len(keys) != 1:
+        return CurrentBody(None, "ambiguous_extractions")
+    extraction = extraction_view(connection, keys[0])
+    if extraction is None or extraction.identity is None:
+        raise BodyError("corrupt_reference")
+    return CurrentBody(extraction.identity)

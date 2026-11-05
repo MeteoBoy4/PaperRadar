@@ -1,22 +1,19 @@
 """显式单篇Read:短事务领取,事务外模型,有限预算和追加历史。"""
 
+from __future__ import annotations
+
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from uuid import uuid4
 
-from sqlalchemy import Connection, insert, select
+from sqlalchemy import Connection, insert, literal_column, select
 from sqlalchemy.engine import RowMapping
 
 from paper_radar.body import BodyService
 from paper_radar.config import load_config_snapshot
 from paper_radar.fulltext.artifacts import FulltextArtifacts
-from paper_radar.read_inputs import (
-    PreparedReadInput,
-    build_read_correction,
-    prepare_read_input,
-)
 from paper_radar.read_tasks import tables as t
 from paper_radar.read_tasks.models import (
     ReadAnalysis,
@@ -38,6 +35,7 @@ from paper_radar.runtime_logging import RuntimeLog, Sink
 from paper_radar.storage.artifacts import ArtifactStore
 
 if TYPE_CHECKING:
+    from paper_radar.read_inputs import PreparedReadInput
     from paper_radar.read_tasks.pi_rpc import PiReadCandidate
 
 LEASE_SECONDS = 600
@@ -69,6 +67,8 @@ class ReadTasks:
         return value
 
     def _prepare(self, budget: RowMapping) -> PreparedReadInput:
+        from paper_radar.read_inputs import prepare_read_input
+
         with transaction(self.database) as connection:
             extraction = self.body.extraction_input_in_connection(
                 connection, budget["extraction_fingerprint"]
@@ -105,6 +105,8 @@ class ReadTasks:
         required(paper_id, snapshot_id, extraction_fingerprint, request_id, label)
         if output_language not in ("zh", "en"):
             raise ReadTaskError("invalid_request")
+        from paper_radar.read_inputs import prepare_read_input
+
         snapshot = load_config_snapshot(self.database, snapshot_id)
         with transaction(self.database) as connection:
             extraction = self.body.extraction_input_in_connection(
@@ -234,6 +236,8 @@ class ReadTasks:
         return self._prepare(budget)
 
     def correction(self, task_id: str) -> str | None:
+        from paper_radar.read_inputs import build_read_correction
+
         view = self.task(task_id)
         return (
             build_read_correction(view.attempts[-1].issues)
@@ -247,6 +251,8 @@ class ReadTasks:
         *,
         preclaim: Callable[[PreparedReadInput, str | None], None] | None = None,
     ) -> ReadHandle:
+        from paper_radar.read_inputs import build_read_correction
+
         prepared = self.prepare(task_id)
         with transaction(self.database, write=True) as connection:
             budget = budget_for(connection, task_id)
@@ -448,7 +454,7 @@ class ReadTasks:
     def run_pi_once(
         self,
         task_id: str,
-        executor: Callable[[ReadHandle], "PiReadCandidate"],
+        executor: Callable[[ReadHandle], PiReadCandidate],
         *,
         preclaim: Callable[[PreparedReadInput, str | None], None] | None = None,
     ) -> ReadAnalysis | ReadTask:
@@ -606,9 +612,24 @@ class ReadTasks:
                 audit=json.loads(row["audit_json"]),
             )
 
-    def analyses(
-        self, paper_id: str, *, ordinary: bool = False
-    ) -> tuple[ReadAnalysis, ...]:
+    def analysis_papers(self) -> tuple[str, ...]:
+        """仅列出有成功分析的论文,不查询配置或任务资格。"""
+        with transaction(self.database) as connection:
+            return tuple(
+                connection.execute(
+                    select(t.budgets.c.paper_id)
+                    .select_from(
+                        t.analyses.join(
+                            t.tasks, t.analyses.c.task_id == t.tasks.c.task_id
+                        ).join(t.budgets, t.tasks.c.budget_id == t.budgets.c.budget_id)
+                    )
+                    .distinct()
+                    .order_by(t.budgets.c.paper_id)
+                ).scalars()
+            )
+
+    def analysis_ids(self, paper_id: str) -> tuple[str, ...]:
+        """成功事务的追加序;不依赖调用方时间或attempt序号。"""
         with transaction(self.database) as connection:
             keys = (
                 connection.execute(
@@ -619,12 +640,19 @@ class ReadTasks:
                         ).join(t.budgets, t.tasks.c.budget_id == t.budgets.c.budget_id)
                     )
                     .where(t.budgets.c.paper_id == paper_id)
-                    .order_by(t.analyses.c.settled_at)
+                    .order_by(literal_column("read_analyses.rowid"))
                 )
                 .scalars()
                 .all()
             )
-        return tuple(self.analysis(key, ordinary=ordinary) for key in keys)
+        return tuple(keys)
+
+    def analyses(
+        self, paper_id: str, *, ordinary: bool = False
+    ) -> tuple[ReadAnalysis, ...]:
+        return tuple(
+            self.analysis(key, ordinary=ordinary) for key in self.analysis_ids(paper_id)
+        )
 
     def evidence(
         self, analysis_id: str, evidence_id: str, *, ordinary: bool = False

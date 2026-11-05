@@ -752,8 +752,17 @@ Read 只处理：
 - 当前生效决定为 accepted；
 - 当前 PDF 已验证；
 - 当前 Docling 制品通过质量门槛；
-- 当前 Read 输入指纹没有成功分析；
-- 或用户显式请求重跑。
+- 当前正文消费身份和输出语言没有成功分析；
+- 或用户显式以新输入指纹请求重跑。
+
+正文当前性沿当前版本→该版本最新显式附加选择的 PDF→唯一成功提取的正文三元组判定；
+链路缺失或正文歧义为 undeterminable，正文可判定但尚无成功分析须单独表示。
+每个 paper/当前正文/语言按成功提交序保留当前分析，zh/en 共存；同指纹幂等回放不改变最新位置。
+配置轴独立比较调用方明确提供且可核对的历史快照 Read 投影，为 current/old/unknown。
+Profile、模型、Prompt、Contract、adapter、chunking 差异只标配置已旧，不使当前正文分析失效，
+不自动重跑、不刷新预算；缺失、未就绪或不可核对为 unknown，不能归入配置已旧列表。
+列表只返回安全 paper/analysis/语言/组件类别；历史分析与证据仍可回查。
+书目卷期页补全不改变正文轴，PDF 字节更换按新正文判定。（#155、#163）
 
 `paper-radar reading request` 是一次有审计记录的人工筛选决定，而不是绕过筛选门禁的后门。对当前 pending 或 denied 论文，命令必须原子追加 `accepted(source=user, reason=manual_read_request)` 和精读请求；若任一步失败则两者都不提交。已经 accepted 的论文只新增精读请求。随后用户若再明确改为 denied，尚未开始的下游任务不再取得资格，历史请求和决定仍保留。
 

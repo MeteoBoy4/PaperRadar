@@ -56,6 +56,7 @@ def assemble_facts(
     ordinary: bool = False,
 ) -> BodyFacts:
     from paper_radar.body.queries import (
+        current_body,
         current_pdf,
         decision_events,
         root_fact,
@@ -114,6 +115,11 @@ def assemble_facts(
         reasons.add(BodyReason.EXTRACTION_ABSENT)
         reasons.add(BodyReason.QUALITY_ABSENT)
     else:
+        if (
+            extraction.identity is not None
+            and current_body(connection, paper_id).identity != extraction.identity
+        ):
+            reasons.add(BodyReason.FACTS_CHANGED)
         if identity is not None and extraction.identity != identity:
             reasons.add(BodyReason.FACTS_CHANGED)
         if pdf is None or pdf.pdf_sha256 != extraction.pdf_sha256:

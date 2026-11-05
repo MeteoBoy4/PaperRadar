@@ -79,7 +79,8 @@ PiReadCandidate 没有可变来源字段。专用端口核验严格 PiRpcAudit�
 ### 只读回查与恢复
 
 `task`、`history(paper_id)` 返回失败/尝试/租约和全部代际；retry 原因/操作者不进 repr。
-`analysis(id)`、`analyses(paper_id)` 返回候选、输出、来源、根用途、质量、规则和丢弃标记；
+`analysis_ids(paper_id)` 按成功事务追加顺序返回 ID，`analysis_papers()` 返回有成功分析的论文。
+`analysis(id)`、`analyses(paper_id)` 是低层历史核验接口，返回候选、输出、来源、根用途、质量、规则和丢弃标记；
 `evidence(analysis_id, evidence_id)` 仅回查该分析引用的持久正文源切片。
 分析读取重新按已记接收版本验证。ordinary=True 同时拒绝实验根、test 来源和非 formal 质量；
 上游成功来源与 Read 自身来源分别保留，不互相授权。
@@ -91,6 +92,53 @@ v1 历史使用冻结 v1 接收器，保留原接收记录；不追溯生成旧�
 未知数值/限制警告策略保留记录，只核对仍支持的部分，不声称重算等价。
 备份和 restore 传播这些原因；冷进程不需要 extra、原根、settings 或配置激活，
 不回收租约、不调用模型、不修改历史。数据库 head 见[备份契约](backup-restore.md)。
+
+### 展示查询与两轴
+
+`paper_radar.read_queries.ReadQueries(database, data_root)` 提供安全只读展示：
+
+- `current(paper_id, *, snapshot_id=None, ordinary=False)` 返回 CurrentRead。
+- `analysis(analysis_id, *, snapshot_id=None, ordinary=False)` 返回 AnalysisView；
+  `history(paper_id, ...)` 按成功事务追加顺序返回全部 AnalysisView。
+- `old_configurations(paper_ids=None, *, snapshot_id=None, ordinary=False)` 仅列出当前
+  正文上每种语言的当前分析中配置为 old 的条目。省略 paper_ids 时查询全部有分析的论文。
+- `evidence(analysis_id, evidence_id, *, ordinary=False)` 只回放保留条目实际引用的合法源切片。
+
+正文轴不读取配置：沿版本表的当前版本、该版本最新一次显式 PDF 附加选择、该 PDF
+唯一成功提取的正文三元组判断 current/historical/undeterminable。没有 PDF、没有成功提取
+或同 PDF 有多个不同成功三元组均不能猜测当前正文；CurrentRead.state 为 undeterminable，
+identity_reason 分别为 pdf_absent/extraction_absent/ambiguous_extractions。
+后者等待显式正文选择能力，不能按最新配置或任意传入指纹选取；产品责任见路线图 B/F。
+同一依据同时进入 Body 当前资格装配：不能唯一确定时新登记/领取带 facts_changed 拒绝。
+历史 claim 引用核验保持独立，歧义、后来决定/样本/元数据/质量变化不抹除合法历史。
+
+正文可判定但没有成功分析时 state 为 no_analysis；有成功分析为 available。每个
+paper/正文三元组/输出语言选最后成功提交，zh/en 并列；任务序号、候选时间和 wall-clock
+时间不替代提交序。相同指纹重复登记或相同提交幂等回放不改变最后成功位置；显式新指纹
+成功才替换该正文/语言的当前分析，新任务登记或失败不替换。PDF 更换与当前版本选择改变
+正文轴；volume/pages 等书目补全不改变它。换回旧 PDF 可重新命中其保留的正文/分析。
+
+配置轴只比较调用方明确给出的、同库可经 load_config_snapshot 核对的历史快照。
+不读取 settings、不选择最新快照、不接收调用方自证的投影 ID。双方 Read 均 ready 后，
+compare_config_snapshots 的 Read 投影相同为 current、不同为 old；缺省、未就绪、缺失
+或不可核对均为 unknown。其他 Screening 配置或仅版本标签变化而 Read 语义相同仍为 current。
+变化类别闭集是 profile/model/prompt/contract/adapter/chunking；不输出 Profile 或 Prompt。
+unknown 不属于 old，不进入旧配置列表。配置变旧不使正文分析失效、不登记任务、不授予
+重跑资格、不刷新预算。当前支持的版本保持原语义，查询不创设未来 Contract/chunking 版本。
+
+所有展示入口先实际调用共享 visibility（目前隐藏集合为空）。默认是带明确 test/pi_rpc、
+根用途与当前质量标记的历史/实验回查；ordinary=True 拒绝实验/unknown 根，分析消费还
+拒绝本次 Read 的 test 来源及非 formal 质量；上游来源不能代替 Read 自身来源。
+AnalysisView 只含安全标识、两轴及受控原因、来源/质量、接受后的输出、has_discards、
+main_findings/reusable_points/key_limitations 的逐类别丢弃条数、restricted_content_warning。
+受限内容的原有警告保留在 output.degraded_content_warnings，不声称已人工核对。
+它不透传低层 ReadAnalysis.raw_candidate、候选制品、执行审计、丢弃原文或坏 ID。
+旧配置列表仅含 paper_id/analysis_id/output_language/changed_components；证据回查不复活
+整条被丢弃项，即使该项中另一个引用本身有效。
+
+数据库查询使用 mode=ro 连接，只从已有持久事实计算，不建投影缓存、不回收租约、
+不写决定、不消费预算、不导入 SDK/模型或调用执行器。恢复后使用同一查询与规则。
+B/H 负责报告文案与显著警告，Body 没有日报或产品 CLI。
 
 ## 错误与拒绝
 

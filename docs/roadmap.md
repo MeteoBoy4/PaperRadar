@@ -109,6 +109,9 @@ flowchart TD
 - F/Abstract：I09、I14、I15、T01、T10、T20、T26；F 另承接 [Docling 本轮未覆盖范围](verification/exp-3-docling-probe.md#移交与仍未验范围)的四刊/中文/其他版式、正式 fixture、摘录与资源阈值，不复用两份同论文材料作为四刊通过证据；与 C 共同承接[新规则实测的未完成项](verification/exp-1-http-audit-v2.md#b-前进方向与后续责任)：AIES Feed 202、dqkx 第 2 位协议重定向、Wiley 出版者 403 与 QJRMS `10.1002/qj.70349` 缺摘要。用户确认本轮不再处理 AIES/dqkx，后续阶段遇到时另拟方案；保留两个 partial 计划、成员/失败与暂停位置，不盲目 resume。v2 字段误取已修复且有该轮来源证据，不再把缺摘要与旧误取混为一事；完成适用新计划后才登记 acquired fixture，最迟 D 正式预热冻结/首批校准前逐刊收口。
 - D：I03、I06、I09、I12、I15、T04、T07–T10、T14–T17、T19、T20、T23、T24、T26。
 - G：I03、I09、T04、T07–T10、T13、T17–T20、T24；长文 reduce 的允许集合适用 v2 相同末次降级，评分理由始终整体拒绝；本轮 Body 仅 single 编排。
+- B/F：当前正文查询遇到同一 PDF 的多个成功正文三元组时安全保留 undeterminable；
+  后续如需选定正文，须提供显式选择事实并与新领取资格共用，不能靠当前配置或传入指纹猜测。
+  规则见[Read 两轴查询](contracts/read-tasks.md#展示查询与两轴)。
 - B/H：按 [ADR-0042](adr/0042-accept-read-v2-with-final-attempt-degradation.md) 显著展示受限内容未核对警告及丢弃标记/每类计数，不把降级结果展示为已核对或已支撑。
 - H：I06、I12、T15–T17、T23、T24；另承接 A3 历史证明未含的报告重建（[规格 §9.1](../intent/draft.md#91-本机一致性快照)）；E 沿用 I07、T02、T03、T11、T24 的共同约束。
 - I：I13、T06、T17、T25、D02、D04；聚合各阶段验收，另承接 A3 历史证明未含的任务续跑、NAS 及最终恢复。

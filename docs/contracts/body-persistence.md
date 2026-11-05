@@ -103,6 +103,11 @@ accepted、根、PDF、样本、人工质量核查及上游来源；保留旧决
 extraction_input_in_connection(connection, fingerprint) 只读回放首次持久提取配方，
 供Read消费者在明确历史快照下构造输入，不读当前settings或接受裸指纹自证。
 
+`current_body(paper_id)` 与 `current_body_in_connection(connection, paper_id)` 返回
+CurrentBody，保留当前正文三元组或 pdf_absent/extraction_absent/ambiguous_extractions 原因。
+它们与当前资格共用当前版本→最新显式 PDF→唯一成功正文的依据；不选择配置，不触发提取，
+多成功歧义不能由传入指纹覆盖。完整正文/配置两轴及展示边界见[Read 查询](read-tasks.md#展示查询与两轴)。
+
 ## 错误与拒绝
 
 `BodyError.reason` 为 `BodyReason` 闭集，异常只含受控中文指引，不附路径、PDF 或原异常。

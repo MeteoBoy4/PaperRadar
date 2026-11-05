@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Protocol
+from typing import Literal, Protocol
 
 from paper_radar.config.extraction import ExtractionSemantics
 from paper_radar.eligibility import (
@@ -182,3 +182,14 @@ class BodyFacts:
     @property
     def eligible(self) -> bool:
         return not self.reasons
+
+
+BodyIdentityReason = Literal["pdf_absent", "extraction_absent", "ambiguous_extractions"]
+
+
+@dataclass(frozen=True)
+class CurrentBody:
+    """当前正文链的只读结论;歧义不猜测配置或最新提取。"""
+
+    identity: ExtractionIdentity | None
+    reason: BodyIdentityReason | None = None
