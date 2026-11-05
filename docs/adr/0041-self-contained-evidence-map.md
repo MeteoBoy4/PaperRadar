@@ -1,6 +1,6 @@
 # 以自包含 evidence-map 覆盖源字符并恢复正文消费上下文
 
-状态：已接受；依据：[#155 评论 2](https://github.com/MeteoBoy4/PaperRadar/issues/155#issuecomment-6631023698)、[评论 3](https://github.com/MeteoBoy4/PaperRadar/issues/155#issuecomment-6631829133)、[评论 5](https://github.com/MeteoBoy4/PaperRadar/issues/155#issuecomment-6632720328)、[#156 补充](https://github.com/MeteoBoy4/PaperRadar/issues/156#issuecomment-6634181256)；日期：2026-11-04；补充：[ADR-0027](0027-address-artifacts-by-content.md)、[ADR-0036](0036-isolate-stage-b-read-experiment.md)。
+状态：已接受；依据：[#155 评论 2](https://github.com/MeteoBoy4/PaperRadar/issues/155#issuecomment-6631023698)、[评论 3](https://github.com/MeteoBoy4/PaperRadar/issues/155#issuecomment-6631829133)、[评论 5](https://github.com/MeteoBoy4/PaperRadar/issues/155#issuecomment-6632720328)、[#156 补充](https://github.com/MeteoBoy4/PaperRadar/issues/156#issuecomment-6634181256)；日期：2026-11-04；补充：[ADR-0027](0027-address-artifacts-by-content.md)、[ADR-0036](0036-isolate-stage-b-read-experiment.md)；验证依据：[真实 SDK 来源、未知类别公式父源块与无 extra 隔离回查](../verification/issue-164-docling-smoke.md)。
 
 ## 背景
 

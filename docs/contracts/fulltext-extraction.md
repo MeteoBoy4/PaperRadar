@@ -117,9 +117,15 @@ JSON 转义先解码再检查，不能用 `\u0064ata:...` 或 `\ufffd` 绕过检
 `statistics.formula` 按 display/inline/unknown 返回 total、with_parent_source、placeholder_only。
 with_parent_source 要求 `label=formula` 的源 orig 非空，且页码/bbox/charspan 全部合法、
 切片非空、非空白 orig 全覆盖；其余计入 placeholder_only（含损坏定位）。
-inline 总数为零只表示 canonical 未给独立 inline item，不代表不存在行内公式。
+display/inline 总数为零的类别记为「未覆盖」，不计算百分比；unknown 保持未知，
+不能根据候选形状或所在位置改标 display/inline。inline 总数为零只表示 canonical
+未给独立 inline item，不代表 PDF 不存在行内公式；行内是否独立成 item 单独报告。
 `statistics.member_bytes` 返回四成员各自 UTF-8 字节体积；这些计数可由重新读取制品重现。
-合成材料只验证统计接口，不证明真实覆盖；真实分类/覆盖率及 SDK 保真由 smoke 和 F 验收。
+有父源块的公式可以受限源引用，仍须附未核对警告；仅候选或占位不能取得 evidence。
+部分覆盖按类别记录缺口；完全无父源块时能力上限为不能提供公式源引用，
+不增加角色、改变三元组或以生成字符补源。合成材料只验证统计接口，不证明真实覆盖；
+真实样本的分类、来源保真与冷回查见[工程核验](../verification/issue-164-docling-smoke.md)，
+四刊及类别补齐由 [F](../roadmap.md#module-f) 验收。
 
 ## 错误与拒绝
 
