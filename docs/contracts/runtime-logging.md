@@ -19,6 +19,7 @@ SQLite 任务、审计执行事实和成功制品仍是 trace 的依据；日志
 | `FixtureAudit.run_audit/resume_audit/acquire_source` | `sink=`；入口事件与独立路线结算，内部取得服务共用同一汇 |
 | `JGRFeed.check/resume` | `sink=`；入口事件与 Feed HTTP 路线结算 |
 | `JGRMetadata.enrich/resume` | `sink=`；入口事件与各元数据路线结算 |
+| `BodyService.extract` | `sink=`；component=body，入口及提交后安全 succeeded/failed 事件，只带安全标识与截短指纹 |
 | `FeedPipeline` | 将同一显式 `sink`、`clock`、`monotonic` 传给 Feed、元数据与任务服务 |
 | `audit run/resume` | 已交付执行 CLI 各自构造 `FileSink(data_root)`；`--data-root` 是显式所选根 |
 

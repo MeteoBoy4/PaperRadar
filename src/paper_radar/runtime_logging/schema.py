@@ -20,7 +20,7 @@ EVENTS = frozenset(
         "route_settled",
     }
 )
-COMPONENTS = frozenset({"screening", "audit", "feed", "metadata"})
+COMPONENTS = frozenset({"screening", "audit", "feed", "metadata", "body"})
 ROUTES = frozenset(
     {"feed", "doi_ra", "registry_crossref", "registry_datacite", "publisher"}
 )

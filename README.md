@@ -279,6 +279,14 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 接口与上下文、受控错误、词汇及示例见
 [Screening 输出验证契约](docs/contracts/screening-validation.md)。
 
+## PDF 与正文持久提取
+
+`paper_radar.body.BodyService` 提供人工 PDF 附加、不可变根用途、直接人工决定、
+冻结样本、持久提取预算及独立版式核查。外部 canonical parser 通过显式参数注入，
+只读事实可在调用者事务内核验；备份会重验正文业务闭包。
+接口、拒绝与限制见[正文持久化契约](docs/contracts/body-persistence.md)，
+产品入口和真实核查责任见[路线图 B](docs/roadmap.md#module-b)。
+
 ## Read 输出与证据校验
 
 `paper_radar.reading.acceptance_v2.validate_read_output_v2` 接收完整 Read 候选与消费上下文，

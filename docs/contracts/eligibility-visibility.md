@@ -141,7 +141,12 @@ Read。production 只是执行来源，不授予生产消费资格，不提升�
 质量和其他前置满足的 experiment + production 来源 + document gate 可满足通用 Read 前置，
 显式单篇执行不以人工请求存在为条件；
 实验路径不扫描自动队列，eligible_for_auto_read 固定附 experiment_no_auto_queue。
-正常消费与实验结果隔离仍由 B/Body 的根装配和消费者验证。
+正常消费与实验结果隔离由消费者核验。
+[BodyService](body-persistence.md) 已持久装配根用途、直接人工决定、当前 PDF、提取、
+实验样本与质量；上游 ExecutionSource 取生效决定引用的 Screening 成功，任一 test 优先、
+全部 pi_rpc 为 production、无引用为 unknown，不要求其仍 current。
+其 facts_in_connection 只核对 Body 所持有前置，继续由任务消费者装配最低元数据、
+共享完整 Read 前置与执行准入；不能将 BodyFacts.eligible 直接当作领取许可。
 
 `read_prerequisites` 表达通用 Read 前置，要求 canonical/current、最低元数据、有效
 accepted、当前 PDF/成功提取、质量、用途、执行来源与动作许可。显式单篇执行可直接消费

@@ -12,6 +12,20 @@
 默认选择 pypdfium2、Egret medium、TableFormer accurate，以及 CodeFormulaV2 局部公式候选。
 配置就绪不证明四刊 fixture、重复确定性、资源检查或运行就绪。
 
+## 根级并发与等待
+
+`BodyService.extract` 使用数据根固定 `.body-docling.lock`，以 `O_NOFOLLOW` 打开并核验
+普通文件，作为本机同根 Docling 转换的排他 flock 载体。数据库可以位于数据根外。
+取得锁后重核 PDF、同指纹唯一成功、永久失败和预算；锁跨领取、转换到结算，
+数据库只在领取和结算两端持短事务。parser 的 probe/模型预检在锁和领取前运行。
+
+竞争时等待，一次 stderr 中文提示不带路径或论文；等待不占 attempt、转换超时、耗时或峰值，
+不另设等待超时。等待中断无事实；持有者退出由内核释放锁，下次持锁者将未结算领取
+追加为 outcome_unknown，不退预算。已有成功不重复转换。
+锁文件不登记制品、不进备份，恢复无需存在；它出现在批次中为 unexpected_entry。
+此锁不承诺跨机、跨数据根或恶意替换防护，不改变 paper_execution=serial 的语义声明。
+提取预算、失败与人工核查详见[正文持久化](body-persistence.md)。
+
 ## 顶层字段
 
 | 字段 | 必填性、默认值与约束 |

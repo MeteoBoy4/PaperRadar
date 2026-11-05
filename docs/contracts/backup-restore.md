@@ -63,7 +63,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。批次根及根内任何路径�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 `feed07_parser_versions`，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 `body01_persistence`，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -203,7 +203,7 @@ backup verify 一样只给批次 ID、清单 SHA-256 及按 kind 汇总，不逐
 
 ## 版本准入与旧批次
 
-`BACKUP_DATABASE_REVISION` 固定支持 `feed07_parser_versions`，且要求与随包唯一 head
+`BACKUP_DATABASE_REVISION` 固定支持 `body01_persistence`，且要求与随包唯一 head
 一致。format 1 不表示任意 revision 兼容：verify／restore 对所有旧 revision（包括 a302、
 a405、a704、a1001 及 feed01–feed06）返回 `unsupported_revision`，不在批次内部迁移。
 保留原批次，用匹配该 revision 的旧程序先 verify／restore，再切回当前程序，对恢复的
@@ -272,8 +272,12 @@ attempt，源库与副本独立继续时，不承诺追回丢失次数、跨恢�
 
 规范正文 extraction 的四成员随通用制品闭包保留；恢复后
 [正文读取服务](fulltext-extraction.md)依据明确三元组校验成员、重建 ReadContext 并逐字回查，
-无需原运行目录或 SDK。通用 backup verify 仍只核验已登记成员，不把任意 extraction
-自动解释为具消费资格的规范正文；后续业务事实的接线责任见[Body](../roadmap.md#module-body)。
+无需原运行目录或 SDK。backup verify 在完整副本上经 BodyService.validate_all 重验
+已登记的根用途、决定及 Screening 引用、PDF 原字节/选择历史、冻结样本、extraction
+StageInput、两次预算/唯一成功、自动质量和人工核查闭包；损坏为 registration_invalid。
+未被业务事实引用的任意 extraction 不自动取得消费资格。核验不回收未结算 attempt，
+不调用 parser、不改变剩余预算或用途；锁载体 .body-docling.lock 不在批次封闭集合，
+恢复不要求存在，误入批次为 unexpected_entry。详细规则见[正文持久化](body-persistence.md)。
 
 ## 不提供／不证明
 
@@ -296,7 +300,7 @@ attempt，源库与副本独立继续时，不承诺追回丢失次数、跨恢�
   这些是固定历史证据，不替代当前程序校验、完整阶段 A 或 live 验收。
 - 实现依据：[备份与校验](../../src/paper_radar/backup/service.py)、
   [清单与原因](../../src/paper_radar/backup/manifest.py)、[恢复](../../src/paper_radar/backup/restore.py)、
-  [当前迁移](../../src/paper_radar/storage/migrations/versions/feed07_parser_versions.py)。
+  [当前迁移](../../src/paper_radar/storage/migrations/versions/body01_persistence.py)。
 - 规格与决策依据：[§9.1](../../intent/draft.md#91-本机一致性快照)、
   [ADR-0027](../adr/0027-address-artifacts-by-content.md)、
   [ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)、
