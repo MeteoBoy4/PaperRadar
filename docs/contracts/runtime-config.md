@@ -478,7 +478,7 @@ CLI 接受数据库内唯一的小写十六进制短前缀，至少 8 位；完�
 Read 分块或业务任务，不消耗自动配额；不提供校准分级、门禁启用或流水线执行授权。
 配置完整性和历史快照完整性不证明真实输入、fixture、供应商参数、模型质量、正式校准、
 自动精读或生产执行就绪。Pi 生产准入与现场验证由[Pi](../roadmap.md#module-pi)、
-[Cwd](../roadmap.md#module-cwd)、[Live](../roadmap.md#module-live)承接；正文生产与
+[Live](../roadmap.md#module-live)统一承接；正文生产与
 最小 Read 由[Body](../roadmap.md#module-body)、[B](../roadmap.md#module-b)承接，
 正式校准由[D](../roadmap.md#module-d)承接。备份恢复规则见[备份恢复](backup-restore.md)，
 NAS 与最终恢复验收由[I](../roadmap.md#module-i)承接。

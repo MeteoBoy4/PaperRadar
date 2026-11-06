@@ -114,7 +114,7 @@ uv run --offline --locked paper-radar doctor --scope pi-exec \
   --credentials-dir /path/to/owner-provisioned-credentials
 ```
 
-它仅检查凭据元数据，不刷新、不解析 token；Cwd/Live 产品证据仍缺失，单项通过不代表可执行。
+它仅检查凭据元数据，不刷新、不解析 token；Live 产品准入证据仍缺失，单项通过不代表可执行。
 
 `docling-runtime` 恰选 settings 或 snapshot，检查当前平台与所选依赖；模型、native ABI、
 fixture/质量与资源仍为 not_assessed，详情见[公共探测契约](docs/contracts/docling-runtime.md)。
@@ -441,8 +441,9 @@ uv run --offline --locked paper-radar pi supply gc --execute <plan_id> \
 `paper_radar.pi_execution` 提供固定安装保护、宿主专用 OAuth 刷新、独立 attempt 资源与
 Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接口与权限见
 [Pi 执行资源契约](docs/contracts/pi-execution.md)，独立测试范围见
-[#140 独立组合台账](docs/verification/issue-140-pi-delivery.md)。真实 cwd、订阅认证、TLS/DNS、参数和
-Pi 1.4.0 兼容仍未验证；缺少 Cwd/Live 证据时产品执行保持阻断。
+[#140 独立组合台账](docs/verification/issue-140-pi-delivery.md)。现场隔离与固定 Pi 的剩余验收由 Live 统一承担；
+产品准入证据未被接收时继续阻断。有限合成实验的适用范围见
+[EXP-2 证据与承接](docs/verification/exp-2-pi-live-probe.md)，不据此授予生产执行。
 真实执行接线的承接入口见[路线图承接索引](docs/roadmap.md#模块承接索引)。
 
 ## 论文事实与 Feed 发现的本地查询
@@ -476,7 +477,7 @@ value 通过 `register` 登记时由调用方提供语言事实，`register_feed
 来源政策见[ADR-0035](docs/adr/0035-feed-derived-original-title-language-fact.md)。
 
 Pi 一次执行的离线组合已支持 models-v2 采样声明、领取前纯证据门禁、受保护隔离启动、
-pi_rpc 权威成功与 Feed value 登记/恢复。产品仍缺 Cwd/Live 证据，真实执行保持阻断；
+pi_rpc 权威成功与 Feed value 登记/恢复。产品仍缺 Live 接收的现场隔离/模型能力证据，真实执行保持阻断；
 合成对端通过不代表真实认证、参数或 RPC 兼容。见 [执行契约](docs/contracts/pi-execution.md#一次任务执行组合)。
 后续产品入口与实验用途由 [B](docs/roadmap.md#module-b) 承接。
 

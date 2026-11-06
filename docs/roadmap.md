@@ -10,21 +10,21 @@ Body 的完成记录随 #155 收口生效；闭票前为冻结待验的发布材
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-当前没有满足上述条件的前沿模块；Cwd/Live 仍待探索，B 仍未成形且受 Live 依赖限制。
+当前没有满足上述条件的前沿模块；Live 的状态与前置见模块表，B 仍受 Live 依赖限制。
 
 to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 
 ## 模块图
 
-节点 ID 和边逐字沿用基线 §11；同名 ID 映射，无重命名。图中着色只标是否完成，模块状态以下表为准。
+节点 ID 保持稳定；职责与依赖按[规格 §11](../intent/draft.md#十一九阶段实施与验收)和 [ADR-0046](adr/0046-consolidate-pi-readiness-under-live.md)维护。图中着色只标是否完成，模块状态以下表为准。
 
 ```mermaid
 flowchart TD
   J[JGR 判据固定] --> Audit[四刊首轮 HTTP 审计]
   Audit --> Source[JGR 达标或用户新裁决]
   A[A 窄收口：日志、doctor、纯规则] --> B[B 实验根内纵向闭环]
-  Pi[Pi 离线启动器、权限资源、生产成功来源] --> Live[固定 1.4.0 安装与 RPC 实测]
-  Cwd["/srv/pi-cwd 已确认；现场隔离验收"] --> Live
+  Pi[Pi 离线启动器、权限资源、生产成功来源] --> Live[固定 1.4.0、现场隔离与 RPC 准入]
+  Cwd["/srv/pi-cwd 现场隔离"]
   Live --> B
   Extra[Docling extra 安装与兼容探测] --> Body[正文生产切片、Read 身份与预算]
   Body --> B
@@ -56,8 +56,8 @@ flowchart TD
 | <a id="module-source"></a>Source | JGR 达标或用户新裁决 | 已完成（[冻结判据 5/5](verification/exp-1-http-audit.md#jgr-逐成员核查)；仅此来源条件） | Audit | HITL |
 | <a id="module-a"></a>A | A 窄收口：日志、doctor、纯规则 | 已完成（[#120](https://github.com/MeteoBoy4/PaperRadar/issues/120)；[窄范围证据](verification/a-narrow-delivery.md)） | 无 | AFK |
 | <a id="module-pi"></a>Pi | Pi 离线启动器、权限资源、生产成功来源 | 已完成（[#140](https://github.com/MeteoBoy4/PaperRadar/issues/140)；[独立工程覆盖与同次门禁判据](verification/issue-140-gate-followup.md)） | 无 | AFK |
-| <a id="module-cwd"></a>Cwd | /srv/pi-cwd 现场隔离验收 | 待探索 | 无 | HITL |
-| <a id="module-live"></a>Live | 固定 1.4.0 安装与 RPC 实测 | 待探索 | Pi、Cwd | HITL |
+| <a id="module-cwd"></a>Cwd | /srv/pi-cwd 现场隔离验收 | 已取消（[职责并入 Live](adr/0046-consolidate-pi-readiness-under-live.md)，非验收通过） | 无 | HITL |
+| <a id="module-live"></a>Live | 固定 1.4.0、现场隔离与 RPC 准入 | 待探索 | Pi | HITL |
 | <a id="module-extra"></a>Extra | Docling extra 安装与兼容探测 | 已完成（[#150](https://github.com/MeteoBoy4/PaperRadar/issues/150)；[工程覆盖与最终门禁判据](verification/issue-150-extra-delivery.md)；[历史收口回帖](https://github.com/MeteoBoy4/PaperRadar/issues/150#issuecomment-6611646055)） | 无 | AFK |
 | <a id="module-body"></a>Body | 正文生产切片、Read 身份与预算 | 已完成（[#155](https://github.com/MeteoBoy4/PaperRadar/issues/155)；[工程覆盖与最终门禁判据](verification/issue-165-body-read-closure.md)） | Extra | AFK |
 | <a id="module-feed"></a>Feed | 强冲突持久化、JGR 元数据与语言事实 | 已完成（[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)；[离线工程证据](verification/issue-114-feed-delivery.md)） | 无 | AFK |
@@ -79,7 +79,7 @@ flowchart TD
 | --- | --- | --- | --- |
 | J/Audit/Source | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0036](adr/0036-isolate-stage-b-read-experiment.md) | [fixture-audit](contracts/fixture-audit.md) |
 | A | [§11 A](../intent/draft.md#阶段-a契约与可恢复数据底座) | [ADR-0006](adr/0006-model-processing-as-independent-facts.md)、[ADR-0037](adr/0037-allow-task-details-during-blind-calibration.md) | [doctor](contracts/doctor.md)、[运行日志](contracts/runtime-logging.md)、[共享规则](contracts/eligibility-visibility.md) |
-| Pi/Cwd/Live | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0026](adr/0026-control-pi-through-a-bounded-rpc-adapter.md) | [pi-execution](contracts/pi-execution.md)、[pi-rpc](contracts/pi-rpc.md)、[doctor](contracts/doctor.md) |
+| Pi/Live | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0026](adr/0026-control-pi-through-a-bounded-rpc-adapter.md) | [pi-execution](contracts/pi-execution.md)、[pi-rpc](contracts/pi-rpc.md)、[doctor](contracts/doctor.md) |
 | Extra | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0010](adr/0010-use-docling-as-the-only-body-parser.md) | [stage-inputs](contracts/stage-inputs.md)、[Docling 依赖探测](contracts/docling-runtime.md) |
 | Body | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0036](adr/0036-isolate-stage-b-read-experiment.md) | [read-validation](contracts/read-validation.md)、[正文持久化](contracts/body-persistence.md)、[Read 任务](contracts/read-tasks.md)、[Read 执行](contracts/read-execution.md) |
 | Feed | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0035](adr/0035-feed-derived-original-title-language-fact.md) | [paper-facts](contracts/paper-facts.md) |
@@ -99,8 +99,9 @@ flowchart TD
 
 - A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04 的窄范围处置见[覆盖台账](verification/a-narrow-delivery.md)；完整阶段 A 结论与下游消费仍受收口安排约束。
 - Extra：I02；CPU 单锁、v2 身份、历史回放、显式安装/依赖诊断、三解释器与无 extra 组合见[工程覆盖及最终门禁判据](verification/issue-150-extra-delivery.md)。完整验收仍以最终冻结树中 extra + dev 的同次 `check-offline` 退出 0、查询 `passed/verified/same` 及树外前后库存/回执为准；定向组合与探索转换不替代门禁，最终 run_id 不回写身份材料。
-- Pi/Cwd/Live：I04、I05、T05、T07、T08、T12；Pi 工程切片与同次最终门禁判据见[独立台账](verification/issue-140-gate-followup.md)；Pi 另承接[生产启动器准入](../intent/draft.md#pi-生产启动器准入)，Live 另承接[首次 Pi 生产接线](../intent/draft.md#b-首次-pi-生产接线)（首次实际供给/RPC 与预检），依据 [pi-rpc](contracts/pi-rpc.md)。
-- Cwd/Live：承接 Pi 的主机级出站、cwd 祖先资源/现场隔离、DERIVED-01…11（尤其 02 cwd 包装）、订阅凭据刷新与 token 通道/前缀启发式、计划模型权限与限额、采样映射、TLS/DNS 白名单充分性；工程证据与未验范围见[Pi 台账](verification/issue-140-gate-followup.md)。B 仍负责真实产品入口、实验根、所选根安全日志与用途资格，Pi 工程通过不使 B 自动进入前沿。
+- Pi/Live：I04、I05、T05、T07、T08、T12；Pi 工程切片与同次最终门禁判据见[独立台账](verification/issue-140-gate-followup.md)；Pi 另承接[生产启动器准入](../intent/draft.md#pi-生产启动器准入)，Live 另承接[首次 Pi 生产接线](../intent/draft.md#b-首次-pi-生产接线)（首次实际供给/RPC 与预检），依据 [pi-rpc](contracts/pi-rpc.md)。
+- Live：I04、I05、T05、T07、T08、T12；统一核对部署机 cwd/祖先资源、文件与主机级出站、UDP/DNS、端点漂移及 core 隐私边界，补完整会话写入历史与额外请求的受控观测方法；不能迁移本机证据或把临时全机 core 丢弃当作无人值守方案。补最小无秘密公共元数据接缝，对同一固定绑定补测 Pi attempt 终态文件集合、目录删除独立事实；终态清单不得替代历史零写入证明。实现产品证据接收、完整绑定校验及变更失效，继续核查 DERIVED 未观测部分、供应商参数效力、日期模型/限额、订阅刷新及额外请求独立计数、外部中断与真实超时/供应商错误；准入缺证据继续阻断，不接受任意 JSON/Markdown 自证。范围见 [EXP-2 承接表](verification/exp-2-pi-live-probe.md#明确承接与产品闸门)；原工程范围见 [Pi 台账](verification/issue-140-gate-followup.md)。
+- B（Pi 消费）：I04、I05、T05、T07、T08、T12；独立落实真实产品入口、实验根、所选根安全日志、任务预算及用途/正文质量资格。消费 [EXP-2 证据](verification/exp-2-pi-live-probe.md)时保留目录独立观察与其他 not_assessed，不把真实 RPC、公共 terminate 返回或合成 Read 接收提升为对应生产许可；Live 前置未满足不得开始，依赖沿模块表。
 - Audit/Source：I14、I15、T01、T26 的首轮结论见[实测证据](verification/exp-1-http-audit.md)，v2 适用证据与暂停移交见[新计划报告](verification/exp-1-http-audit-v2.md)；两个计划均保留 partial，未完成的四刊材料与完成计划 fixture 引用由 C/F 承接，不回写历史离线结论。
 - Feed：I07，以及[强冲突与语言事实](../intent/draft.md#阶段-c四刊发现身份版本与来源)。
 - Body：正文生产切片、Read 身份/预算、持久执行与两轴查询的工程覆盖及未验边界见[台账](verification/issue-165-body-read-closure.md)；产品接线与真实来源、四刊质量、通用长文编排及完整报告分别由 B/F/G/H 承接。
@@ -124,7 +125,7 @@ B 的 Screening 执行、Feed 导入、实验及 run-due 新入口须给所选�
 逐个加入已有执行入口守卫；实验根自带日志，库服务继续默认 NullSink。B 首次让
 show/trace/最小日报调用 visibility（隐藏集合为空也调用），普通动作在事务写入前守卫；
 trace 消费 eligibility，并组合最低元数据、人工 accepted、PDF/Read 前置与当前性，
-通过前置不等于获得名额。Pi/Cwd/Live 在 doctor 九类骨架填真实 readiness 证据；
+通过前置不等于获得名额。Pi/Live 在 doctor 九类骨架填真实 readiness 证据；
 Audit 首轮 live 沿用已有日志接线。D 负责未揭晓/揭晓、review/evaluation、新展示面；
 H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 deferred 概念与真实组合验收。
 依据：[运行日志](contracts/runtime-logging.md)、[共享规则](contracts/eligibility-visibility.md)、
@@ -139,15 +140,16 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 
 ## 待探索
 
+Live 的现场适用性、未观测行为、参数/额度与准入事实等剩余问题，统一按[模块承接索引](#模块承接索引)及[证据承接边界](verification/exp-2-pi-live-probe.md#明确承接与产品闸门)执行受控补测和必要工程；职责依据 [ADR-0046](adr/0046-consolidate-pi-readiness-under-live.md)，不另设独立 Cwd 或 EXP-2 前置。
+
 | 编号 | 问题 | 阻塞的模块 | 解决方式与出处 |
 | --- | --- | --- | --- |
-| EXP-2 | cwd 无资源/权限隔离、1.4.0 DERIVED 假设及实际参数 | Cwd、Live、B | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
 | EXP-4 | 四刊正文/摘录及 TDM/渲染/授权通道 | F、Abstract、D | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
 | EXP-5 | 正式校准与 NAS 恢复 | D、I | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
 
 ## 用户须提供
 
-配置清单仅见[规格 §14](../intent/draft.md#十四上线前必须由用户提供的配置)。`/srv/pi-cwd` 已确认，现场隔离仍未验；依据[收口未决项](verification/stage-a-closure.md#收口责任与未决项)。EXP-1 的临时 HTTP 联系标识与无代理选择分别只适用于明确确认的[首轮审计](verification/exp-1-http-audit.md)和[新规则补跑](verification/exp-1-http-audit-v2.md)，后续 live 仍显式提供。其他配置的就绪状态未记录，不从历史工程验收推定已提供。
+配置清单仅见[规格 §14](../intent/draft.md#十四上线前必须由用户提供的配置)。`/srv/pi-cwd` 为已裁决唯一常量；执行前须按 [Live 绑定与未验边界](verification/exp-2-pi-live-probe.md#明确承接与产品闸门)复核当前部署、专用认证/模型与外发授权，合成实验许可不外推真实资料。EXP-1 的临时 HTTP 联系标识与无代理选择分别只适用于明确确认的[首轮审计](verification/exp-1-http-audit.md)和[新规则补跑](verification/exp-1-http-audit-v2.md)，后续 live 仍显式提供。其他配置的就绪状态未记录，不从历史工程验收推定已提供。
 
 ## 未成形
 
@@ -173,11 +175,13 @@ B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各自入�
 | A10 | [#100](https://github.com/MeteoBoy4/PaperRadar/issues/100) | [验收证据](verification/a10-requirements.md)、[范围索引 E10](verification/stage-a-closure.md#证据索引与范围) |
 | Feed | [#114](https://github.com/MeteoBoy4/PaperRadar/issues/114) | [离线工程证据](verification/issue-114-feed-delivery.md) |
 | A 窄收口 | [#120](https://github.com/MeteoBoy4/PaperRadar/issues/120) | [独立工程覆盖与同次门禁判据](verification/a-narrow-delivery.md)；不等于完整阶段 A |
-| Pi | [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) | [独立工程覆盖与同次门禁判据](verification/issue-140-gate-followup.md)；Cwd/Live 仍未验 |
+| Pi | [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) | [独立工程覆盖与同次门禁判据](verification/issue-140-gate-followup.md)；Live 继续独立验收 |
 | Extra | [#150](https://github.com/MeteoBoy4/PaperRadar/issues/150) | [独立工程覆盖与最终门禁判据](verification/issue-150-extra-delivery.md)；Body/B/F 继续独立验收 |
 | Body | [#155](https://github.com/MeteoBoy4/PaperRadar/issues/155) | [#165 工程覆盖与最终门禁判据](verification/issue-165-body-read-closure.md)；B/F/G/H 继续独立承接，真实单样本仍限 #164 |
 
 ## 已取消
+
+- [Cwd](#module-cwd)：独立交付职责由 Live 统一承担，节点 ID 保留；不是现场验收通过，依据 [ADR-0046](adr/0046-consolidate-pi-readiness-under-live.md)。
 
 [#46](https://github.com/MeteoBoy4/PaperRadar/issues/46) 以 NOT_PLANNED 关闭；#36 已关闭；Windows 安全导出当前无交付计划，未实现/未验证 Windows 后端。原边界仍见[规格 §7.8](../intent/draft.md#78-pi-固定版本供给)。
 

@@ -362,7 +362,7 @@ Schema、业务与模型匹配接收。测试正例只证明受控工程接线�
 系统补丁形状、空 commands 和 state 回读只核对可观察记录，不证明 cwd 无项目资源、
 未加载个人设置、关闭持久化、自动外发抑制或 OS 文件/进程/网络权限隔离。
 常量 cwd、资源/权限与受控执行组合见 [Pi 执行](pi-execution.md)；
-现场隔离验收由 [Cwd](../roadmap.md#module-cwd) 承接，固定安装/激活另见 [Pi 供给](pi-supply.md)。
+现场隔离验收由 [Live](../roadmap.md#module-live) 统一承接，固定安装/激活另见 [Pi 供给](pi-supply.md)。
 
 源码推导与合成字节流不是实际 Pi、供应商、参数生效、用量或模型兼容性观测。
 三态来源及 DERIVED-01…11 的固定依据由

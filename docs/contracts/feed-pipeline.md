@@ -43,7 +43,7 @@ JGR Feed 取得、当前版本最低元数据结果、语言依据及 value 任�
   `ValueRegistration`：用途、任务回执、元数据请求、boundary 成功和冻结语言依据；
   `scope` 明确声明仅登记任务。`Preparation.scope` 同样不表示真实来源或执行资格通过。
 - 任务成功接收已支持 `test | pi_rpc`，受控一次执行可提供生产来源 boundary。
-  合成对端已验证登记/value/恢复接线，产品仍缺 Cwd/Live 证据，不能真实执行。
+  合成对端已验证登记/value/恢复接线，产品仍缺 Live 接收的现场隔离与模型能力证据，不能真实执行。
   组合服务不生成 boundary 成功、不发送模型请求。
 - 新登记在现有任务写事务中复核预读论文版本/修订及 boundary 指纹；任务、预算、
   语言依据和组合前置引用一起提交。事实并发变化返回 `facts_changed`，事务故障不留下

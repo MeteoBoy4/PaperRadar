@@ -1,6 +1,6 @@
 # Pi 执行资源与隔离
 
-本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。没有执行 CLI，也不保存准入证据。产品缺少 Cwd/Live 证据时在领取前阻断；这里的合成对端通过不产生兼容 passed。
+本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。没有执行 CLI，也不保存准入证据。产品缺少现场隔离/模型能力准入证据时在领取前阻断；这里的合成对端通过不产生兼容 passed。
 
 ## 用途与范围
 
@@ -17,7 +17,7 @@
 不走 PATH、个人 Pi、供给或激活 fallback。
 
 返回值 `PreparedLaunch` 是只读身份与一次 `SessionFactory` 的接口；实现和 token 构造均私有。
-调用它之前，上层仍须完成调用描述、请求帧上限、采样、外发与全部 Cwd/Live 证据判定，随后领取一次任务。
+调用它之前，上层仍须完成调用描述、请求帧上限、采样、外发与全部由 Live 接收的执行证据判定，随后领取一次任务。
 `prepared(description)` 只允许与准备时完全相同的描述、只启动一次，返回 `ByteSession`。
 再次调用返回 RPC `startup_error`；领取后沿既有 `executor_error` 消耗预算，
 没有独立的 `launch_reused` 执行原因。
@@ -36,7 +36,7 @@ Popen 成功而 PipeSession 拒绝接管时，启动器仍负责有界组回收�
 
 领取前只读检查：
 
-- `check_cwd()`：唯一权威常量 `/srv/pi-cwd`，没有公开 cwd 参数或默认回退；lstat 是真实目录、每个路径组件无符号链接、目录为空。测试只能私有替换模块常量。`/srv`、`/` 等祖先的现场 context 检查由 Cwd 承接。
+- `check_cwd()`：唯一权威常量 `/srv/pi-cwd`，没有公开 cwd 参数或默认回退；lstat 是真实目录、每个路径组件无符号链接、目录为空。测试只能私有替换模块常量。`/srv`、`/` 等祖先的现场 context 检查由 Live 统一承接。
 - `check_system_prompt(bytes)`：精确 UTF-8 文本，拒绝空值、NUL、绝对路径或首个路径组件为 `.`/`..`。每个 argv 的字节长度含末尾 NUL 不超过 131072；超限在模型启动之前拒绝。
 - `check_credentials_directory`：只查元数据，不读 auth 内容，不执行刷新，执行服务另核对显式四根；doctor 复用其中 `check_credentials_metadata` 的路径/owner/类型规则，
   根隔离有意标为 not_assessed。
@@ -64,7 +64,7 @@ pre-exec 中再次核对 cwd 的无链接与为空条件；低于隔离能力要
 不传 `--model`、`--provider`、`--thinking` 或凭据参数。模型与档位仍由 RPC 控制；
 `set_auto_retry(false)` 与 `set_auto_compaction(false)` 继续由既有协议执行。
 `expected_cwd_section()` 输出启动策略定义的 `<cwd>\n/srv/pi-cwd\n</cwd>`，供上层选择严格 RPC cwd 核对。
-这里固定的是构造和拒绝规则，旗标是否在真实 1.4.0 中实现目标仍由 EXP-2/Live 验证。
+这里固定的是构造和拒绝规则，旗标是否在真实 1.4.0 中实现目标仍须由 Live 绑定现场证据验证。
 
 每次调用在 `/tmp` 中用 mkdtemp 建立独有的 0700 所有权单元，必须与显式
 `data_root/config_root/material_root/install_root` 各根互不包含。
@@ -140,9 +140,9 @@ TCP bind/connect 均默认拒绝，只给指定端口 connect 权限。
 | TCP 443 与显式代理端口 | 仅 connect |
 
 文件规则没有开放业务 DB/blob、出版方凭据、宿主认证目录、个人 Pi 或其他用户文件。
-运行文件是否存在、符号链接目标是否还需要额外白名单，以及 Node 的 TLS/DNS 是否足够，由 Cwd/Live 实测；
+运行文件是否存在、符号链接目标是否还需要额外白名单，以及 Node 的 TLS/DNS 是否足够，由 Live 统一实测；
 不能为“跑通”扩大白名单而不更新隔离策略。
-Landlock 端口规则不限制主机，也不覆盖 UDP/DNS；主机级出站缺口由 Cwd/Live 承接。
+Landlock 端口规则不限制主机，也不覆盖 UDP/DNS；主机级出站缺口由 Live 统一承接。
 本机 ABI 与可观察拒绝测试仅证明本次工程环境，不能迁移成部署机隔离事实。
 
 ### 一次任务执行组合
@@ -199,7 +199,7 @@ RPC 四类映射和任务业务拒绝仍由各自权威处理，不新增失败�
 
 ## 不提供／不证明
 
-本模块不解决 EXP-2。实际 cwd/祖先目录、固定 1.4.0 入口、订阅刷新、模型权限、参数能力、
+本模块不接收现场准入事实；剩余执行验收责任由 Live 统一承担。实际 cwd/祖先目录、固定 1.4.0 入口、订阅刷新、模型权限、参数能力、
 TLS/DNS、主机级出站、旗标/settings 的自动网络抑制和 RPC 兼容均未验。
 `provider_default` 不能当作 `temperature=0`，采样声明与校准取舍以 runtime-config 契约与[ADR-0040](../adr/0040-declare-provider-default-sampling.md) 为准；
 本模块不删除或注入 sampling 参数。

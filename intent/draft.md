@@ -1748,6 +1748,11 @@ B 的显式入口见下文；A 首轮审计不足可移交 C/F 补跑，A 仍未
 
 依赖图、模块状态与当前前沿见[路线图](../docs/roadmap.md#模块图)。
 
+Pi 的 cwd/祖先资源、文件与主机级出站/core 隔离、协议/模型参数和未完成探测条件，
+由 Live 在同一执行绑定下统一验收并负责产品证据接收与失效；独立 Cwd 不作为 Live
+的额外交付前置。Live 依赖 Pi 工程边界，B 继续依赖完整 Live 准入，不能因职责归并
+豁免任何适用条件或把未观察项变成 passed（[ADR-0046](../docs/adr/0046-consolidate-pi-readiness-under-live.md)）。
+
 日志须先于首次真实生产执行，基础 doctor
 须先于 Pi readiness doctor，eligibility/visibility 纯规则须先于 B 首个消费者。
 联网审计需邮箱、网络和独立审计库/制品根；任何发送 prompt 的 Pi live 探测都需已确认 cwd

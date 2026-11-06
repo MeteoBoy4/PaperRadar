@@ -68,7 +68,7 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 
 `scope=pi-exec result=failed executable=false` 汇总所有必要项；任何必要项
 missing、invalid 或 not_assessed 都退出 2。它不采用 config 对阶段缺项的宽松汇总。
-当前产品没有 Cwd/Live 证据来源，且认证/计划能力有意不观测，因此始终不可执行。
+当前产品没有现场隔离与模型能力准入证据来源，且认证/计划能力有意不观测，因此始终不可执行。
 单项 passed 只证明那项离线检查通过，不能推出真实兼容、认证或可运行。
 
 `paper_radar.doctor.pi_exec.execution_checks` 先复用基础只读检查和历史快照加载，
@@ -84,15 +84,15 @@ StageInput，不调用生产 preflight、prepare_launch 或 dry_run。
 | selection | 历史快照有效为 passed/configuration_valid；缺失/损坏引用保留 ConfigReason，invalid。 |
 | supply | 无选择/安装/adapter 为 missing；树、版本或登记不符为 invalid；供给必要项通过为 passed/supply_valid。 |
 | admission | 缺 Screening 配置为 missing/screening_configuration_missing；缺当前准入证据为 missing/evidence_missing；未支持采样、版本或认证模式为 invalid，复用执行受控原因。当前始终非 passed，没有 admitted token。screening_configuration_missing 属于本诊断项的公共词汇，不属于 ExecutionReason。 |
-| cwd | 缺常量目录为 missing/cwd_missing；复用执行路径形状/无链接/为空规则，非法为 invalid，满足为 passed/cwd_metadata_valid。祖先现场资源仍交 Cwd。 |
+| cwd | 缺常量目录为 missing/cwd_missing；复用执行路径形状/无链接/为空规则，非法为 invalid，满足为 passed/cwd_metadata_valid。祖先现场资源由 Live 统一验收。 |
 | credentials_metadata | 缺目录/auth.json 为 missing/credentials_missing；复用 owner、0700、无链接、普通文件检查，非法为 invalid/credentials_invalid，否则 passed/metadata_valid。不读取 auth.json。 |
 | isolation | 内核能力满足为 passed/isolation_capability；不足为 invalid/isolation_unavailable；不证明实际 Pi/TLS/DNS 运行可行。 |
 | credential_roots | not_assessed/credential_roots_not_assessed；该 CLI 没有执行服务的显式四根，不猜测路径或把元数据通过冒称根隔离通过。执行时仍检查真实四根。 |
 | authentication | not_assessed/authentication_not_assessed；不检查 token 内容、前缀或有效期，不刷新。 |
 | model_parameters | not_assessed/model_parameters_not_assessed；不探测计划模型权限、订阅额度或参数能力。 |
 
-下一步与事实配对：cwd、祖先资源和现场隔离交 Cwd；RPC/DERIVED、订阅刷新、token
-通道/前缀启发式、计划模型权限与额度、参数映射、TLS/DNS 和主机级出站交 Live。
+下一步与事实配对：cwd、祖先资源、现场隔离、RPC/DERIVED、订阅刷新、token
+通道/前缀启发式、计划模型权限与额度、参数映射、TLS/DNS 和主机级出站统一交 Live。
 供给元数据、历史成功或旧诊断都不能替代当前准入，执行仍须独立复核并持保护。
 
 ### 九类与数据边界
@@ -101,11 +101,11 @@ StageInput，不调用生产 preflight、prepare_launch 或 dry_run。
 backup/restore、unattended automation。basic/config 中基础/选择/阶段项由 A 检查，其余能力均为 `not_assessed`；
 pi-exec 专门展开 Pi adapter 的检查项；docling-runtime 展开 Docling 安装依赖子项，
 两者均不推定其他类别就绪。
-Feed 承接 Audit/Source；Pi adapter 承接 Pi/Cwd/Live；校准承接 D；自动精读承接 D/G；
+Feed 承接 Audit/Source；Pi adapter 承接 Pi/Live；校准承接 D；自动精读承接 D/G；
 全文凭证承接 F；Docling 承接 Extra/Body/F；恢复承接 I；无人值守承接 H/I。
 
 config 仅提示另用 `--scope pi-supply` 或 `--scope pi-exec`，不遍历安装树、不查询供给或审计事实、不计算 JGR 判据。
-受控执行资源已提供，cwd 现场隔离与 Cwd/Live 准入单列未验，不在 doctor 复制 cwd 白名单字面常量。
+受控执行资源已提供，cwd 现场隔离与 Live 产品准入证据单列缺项，不在 doctor 复制 cwd 白名单字面常量。
 
 config 范围的外发说明只取本次验证的显式 settings/snapshot，分别显示 Screening（boundary/value）、reuse、Read
 的 provider/model；缺槽显示 null，不补齐。终端字符串使用 JSON 编码，控制字符不成为新诊断行。

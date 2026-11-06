@@ -1,6 +1,6 @@
 # 用 Landlock 与 no_new_privs 约束 Pi 执行资源
 
-状态：已接受；日期：2026-11-01；依据：[#140 B1–B9/N1–N7](https://github.com/MeteoBoy4/PaperRadar/issues/140#issuecomment-6559173126)、[C/D 确认](https://github.com/MeteoBoy4/PaperRadar/issues/140#issuecomment-6559284609)、[#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。补充 [ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md) 和 [ADR-0029](0029-protect-installations-through-inherited-flock.md)，不改变其 RPC 接收权威与安装保护规则。 验证责任与当前证明边界见[Pi 当前覆盖摘要](../verification/issue-140-external-review-followup.md)，正文保留接受时上下文。
+状态：已接受；日期：2026-11-01；依据：[#140 B1–B9/N1–N7](https://github.com/MeteoBoy4/PaperRadar/issues/140#issuecomment-6559173126)、[C/D 确认](https://github.com/MeteoBoy4/PaperRadar/issues/140#issuecomment-6559284609)、[#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。补充 [ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md) 和 [ADR-0029](0029-protect-installations-through-inherited-flock.md)，不改变其 RPC 接收权威与安装保护规则。 验证责任与当前证明边界见[Pi 当前覆盖摘要](../verification/issue-140-external-review-followup.md)，正文保留接受时上下文。责任模块归并由 [ADR-0046](0046-consolidate-pi-readiness-under-live.md) 补充，权限与缺证据阻断不变。
 
 Pi 的空工具列表、禁发现旗标和隔离 settings 不能阻止 Node 或扩展访问业务文件，chmod 和进程组也不能提供文件权限边界。
 V1 需要实际可观察的最小权限，同时不引入固定供给之外的另一套命令运行平台。

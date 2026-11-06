@@ -175,7 +175,7 @@ models-v2 的采样字段规则由 [运行配置 Contract](runtime-config.md#mod
 唯一维护。声明进入实际消费者的 model 分量，属于适配器语义；不改写旧
 AdapterSemantics 序列化或 Pi 执行审计身份。provider_default 不代表 temperature=0，
 显式参数合法也不代表已支持执行映射。当前显式映射为空；订阅通道准入仍需绑定该声明
-的 Cwd/Live 模型能力证据。参见 [ADR-0040](../adr/0040-declare-provider-default-sampling.md)。
+的现场隔离与模型能力证据。参见 [ADR-0040](../adr/0040-declare-provider-default-sampling.md)。
 
 ## 不提供／不证明
 
@@ -186,7 +186,7 @@ AdapterSemantics 序列化或 Pi 执行审计身份。provider_default 不代表
   Pi 1.4.0 的有效指令另含强制追加的 cwd 段，本配置不选择或核验它。
   `/srv/pi-cwd` 的显式提供、唯一白名单及首次 prompt 前现场隔离门槛见
   [规格准入要求](../../intent/draft.md#pi-生产启动器准入)；离线协议档案不能代替现场隔离。
-  现场验证由[Cwd](../roadmap.md#module-cwd)与 [Live](../roadmap.md#module-live)承接。
+  现场验证由 [Live](../roadmap.md#module-live) 统一承接。
 - 配置就绪、离线协议版本准入和语义比较不授予生产 `rpc_compatibility`、模型执行或
   自动精读资格。配置与比较不产生 `minor/major`、`enable` 或 calibration evaluation 事件；
   校准审计与门禁由 [D](../roadmap.md#module-d)承接。

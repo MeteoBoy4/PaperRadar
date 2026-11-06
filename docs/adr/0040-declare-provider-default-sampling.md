@@ -1,6 +1,6 @@
 # 显式声明供应商缺省采样并保留校准语义
 
-状态：已接受；日期：2026-11-01；依据：[#140 最终裁决](https://github.com/MeteoBoy4/PaperRadar/issues/140) 与 [#143](https://github.com/MeteoBoy4/PaperRadar/issues/143)。本记录补充 [ADR-0020](0020-let-the-user-classify-calibration-impacting-changes.md)、[ADR-0023](0023-separate-runtime-config-snapshots-from-calibration-baselines.md) 和 [ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md)。
+状态：已接受；日期：2026-11-01；依据：[#140 最终裁决](https://github.com/MeteoBoy4/PaperRadar/issues/140) 与 [#143](https://github.com/MeteoBoy4/PaperRadar/issues/143)。本记录补充 [ADR-0020](0020-let-the-user-classify-calibration-impacting-changes.md)、[ADR-0023](0023-separate-runtime-config-snapshots-from-calibration-baselines.md) 和 [ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md)；责任模块归并由 [ADR-0046](0046-consolidate-pi-readiness-under-live.md) 补充，采样语义与证据门槛不变。
 
 订阅通道不能通过静默删掉已有采样参数得到执行资格。models-v2 要求用户显式选择
 采样声明，区分完整显式参数与接受供应商缺省。格式、字段和验证细则唯一由
