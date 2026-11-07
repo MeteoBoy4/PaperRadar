@@ -142,6 +142,10 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 
 Live 的现场适用性、未观测行为、参数/额度与准入事实等剩余问题，统一按[模块承接索引](#模块承接索引)及[证据承接边界](verification/exp-2-pi-live-probe.md#明确承接与产品闸门)执行受控补测和必要工程；职责依据 [ADR-0046](adr/0046-consolidate-pi-readiness-under-live.md)，不另设独立 Cwd 或 EXP-2 前置。
 
+Live 首批计划限定本机 Linux、固定 Pi 1.4.0 与 `/srv/pi-cwd`，采用 `openai / gpt-6.1-sol / prompt_only / provider_default / chatgpt_subscription`；Screening、Read 分别覆盖显式选择的 `low`、`high`，逐项取证，不自动升降档。补测使用合成 Profile、摘要与正文；真实研究资料和论文的首次外发由 B 承接。部署与准入判据见[生产启动器准入](../intent/draft.md#pi-生产启动器准入)，生命周期决策见 [ADR-0047](adr/0047-expire-and-explicitly-activate-live-evidence.md)。
+
+Live 继续探索项目专用持久配置、core 隔离与最小请求观测的可行性，并实现完整绑定的证据接收与失效。具体补测计划须先明确案例、请求上限与停止条件；若方案需要修改固定供给、启动策略或引入解密代理，先提交相应取舍供用户裁决。
+
 | 编号 | 问题 | 阻塞的模块 | 解决方式与出处 |
 | --- | --- | --- | --- |
 | EXP-4 | 四刊正文/摘录及 TDM/渲染/授权通道 | F、Abstract、D | live 探测；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
