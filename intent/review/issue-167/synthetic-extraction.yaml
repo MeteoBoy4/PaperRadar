@@ -1,0 +1,24 @@
+version: issue167-synthetic-extraction-v1
+toolchain: docling-2.135.0-cpu-v2
+pdf_backend: pypdfium2
+normalization_version: v1
+models:
+  layout:
+    commit_sha: 77ede7cc7bed96d853c58f319734803d6ea2ea5c
+    files:
+    - path: config.json
+      sha256: e099589367b56b77d4cfce99b0b0d0b610a66866da1b8c9c291b6de82b21007c
+    - path: model.safetensors
+      sha256: e7fc5b9a353826c123c5d03efc230909ac02b93e26293ec7cb4db8978fe9e3af
+    - path: preprocessor_config.json
+      sha256: cd38cd59999e7a95d68e487fbe5132df3d4e5c32a0836add57e6126ba0c4eaf1
+  table:
+    commit_sha: fc0f2d45e2218ea24bce5045f58a389aed16dc23
+    files:
+    - path: model_artifacts/tableformer/accurate/tableformer_accurate.safetensors
+      sha256: 2a7d6c924b3cd12fb99a09280ca9c33a89c5d60b93253617d2e088c1a40374d9
+    - path: model_artifacts/tableformer/accurate/tm_config.json
+      sha256: 984e122ceb8ccf84d84c9d2882f6f2302a44b4f1e577babd6289892c36f3cffd
+  formula: null
+policy:
+  do_formula_enrichment: false

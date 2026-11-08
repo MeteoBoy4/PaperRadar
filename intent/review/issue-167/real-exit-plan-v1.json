@@ -1,0 +1,208 @@
+{
+  "accepted_policy": {
+    "allow": [
+      {
+        "destination": "28.0.0.0/8",
+        "family": "ipv4",
+        "ports": [
+          443
+        ],
+        "transport": "tcp"
+      },
+      {
+        "destination": "192.168.44.1",
+        "family": "ipv4",
+        "ports": [
+          53
+        ],
+        "transport": "udp"
+      },
+      {
+        "destination": "192.168.44.1",
+        "family": "ipv4",
+        "ports": [
+          53
+        ],
+        "transport": "tcp"
+      }
+    ],
+    "api_auth_separation_claim": false,
+    "before_execution": "owner_confirmation_of_frozen_configuration_via_external_authorization",
+    "configuration_installed": false,
+    "decision": "A",
+    "exit_identity_claim": false,
+    "ipv6": "not_assessed",
+    "ipv6_probe_limit": 0,
+    "on_missing_confirmation_or_known_configuration_change": "unknown_stop",
+    "pool_cidr": "28.0.0.0/8",
+    "reported_A_is_allowlist": false,
+    "router_configuration_live_verification": "not_authorized_not_performed",
+    "scope": "project_exact_cgroup_only_pending_H1",
+    "upstream_mapping_verified": false
+  },
+  "candidate_probe": {
+    "cleanup_deadline_seconds": 10,
+    "collector_cannot_prove_os_acl": true,
+    "collector_subprocess_max_wait_seconds": 56,
+    "completion_requires_launcher_exit_zero": true,
+    "deploys_allow_rules": false,
+    "dns_acceptance": {
+      "UDP_TCP_must_agree": true,
+      "all_A_in_frozen_pool": true,
+      "cname": "unknown_stop",
+      "max_response_bytes": 4096,
+      "positive_TTL": true,
+      "qclass": "IN",
+      "qtype": "A",
+      "question_match": true,
+      "rcode": "NOERROR",
+      "single_A_only": true,
+      "source_resolver_match": true,
+      "transaction_match": true,
+      "truncation": "unknown_stop"
+    },
+    "external_watchdog_seconds": 55,
+    "host_configuration_changes": false,
+    "limits": {
+      "auth_cli": 0,
+      "dns_queries": 4,
+      "dns_tcp_connections": 2,
+      "dns_udp_sends": 2,
+      "fallbacks": 0,
+      "http_requests": 0,
+      "implicit_dns_queries": 0,
+      "ipv6_probes": 0,
+      "model_prompts": 0,
+      "retries": 0,
+      "tls_handshakes": 2,
+      "tls_tcp_connections": 2
+    },
+    "on_any_failure_or_unknown": "stop_without_retry_or_refund",
+    "resolver": "192.168.44.1",
+    "resolver_port": 53,
+    "retention": {
+      "certificate_body": false,
+      "controlled_metadata_only": true,
+      "credentials_or_token_derived_values": false,
+      "external_exception_text": false,
+      "full_stream": false,
+      "headers_body": false,
+      "raw_dns": false
+    },
+    "root_required": false,
+    "router_configuration_changes": false,
+    "scope": "ordinary_user_predeployment_metadata_only",
+    "state": "awaiting_implementation_review_and_separate_approval",
+    "steps": [
+      {
+        "category": "dns_A",
+        "deadline_seconds": 5,
+        "hostname": "api.openai.com",
+        "query_limit": 1,
+        "sequence": 1,
+        "transport": "udp"
+      },
+      {
+        "category": "dns_A",
+        "deadline_seconds": 5,
+        "hostname": "api.openai.com",
+        "query_limit": 1,
+        "sequence": 2,
+        "transport": "tcp"
+      },
+      {
+        "address_source": "same_run_UDP_TCP_agreed_single_A",
+        "category": "tls_handshake",
+        "certificate_chain_check": true,
+        "connect_limit": 1,
+        "deadline_seconds": 10,
+        "handshake_limit": 1,
+        "hostname": "api.openai.com",
+        "hostname_check": true,
+        "minimum_tls": "1.2",
+        "port": 443,
+        "sequence": 3,
+        "sni": "api.openai.com",
+        "transport": "tcp"
+      },
+      {
+        "category": "dns_A",
+        "deadline_seconds": 5,
+        "hostname": "auth.openai.com",
+        "query_limit": 1,
+        "sequence": 4,
+        "transport": "udp"
+      },
+      {
+        "category": "dns_A",
+        "deadline_seconds": 5,
+        "hostname": "auth.openai.com",
+        "query_limit": 1,
+        "sequence": 5,
+        "transport": "tcp"
+      },
+      {
+        "address_source": "same_run_UDP_TCP_agreed_single_A",
+        "category": "tls_handshake",
+        "certificate_chain_check": true,
+        "connect_limit": 1,
+        "deadline_seconds": 10,
+        "handshake_limit": 1,
+        "hostname": "auth.openai.com",
+        "hostname_check": true,
+        "minimum_tls": "1.2",
+        "port": 443,
+        "sequence": 6,
+        "sni": "auth.openai.com",
+        "transport": "tcp"
+      }
+    ],
+    "termination_grace_seconds": 1,
+    "tls_deadline_includes_tcp": true,
+    "tls_start_and_finish_before_both_DNS_TTL_expire": true,
+    "tls_trust": {
+      "ca_bundle": "/etc/ssl/certs/ca-certificates.crt",
+      "client_certificate": false,
+      "client_private_key": false,
+      "environment_CA_override": false,
+      "sha256": "235b718f4be20cac6880259e4668813550ba1255b35c03ccc66c24b2e0f87b2f",
+      "source": "public_system_CA_bundle"
+    },
+    "tls_uses_no_system_resolver": true,
+    "wall_deadline_seconds": 45
+  },
+  "execution_authorization": {
+    "authentication": "not_granted",
+    "dns": "not_granted",
+    "host_change": "not_granted",
+    "model": "not_granted",
+    "node_pi": "not_granted",
+    "router_change": "not_granted",
+    "tls": "not_granted"
+  },
+  "kind": "issue167_real_exit_review_plan",
+  "owner_report": {
+    "dns_hijack_target": "router",
+    "forwarded_tcp_redirect_port": 7892,
+    "lan_dns_hijack_transports": [
+      "tcp",
+      "udp"
+    ],
+    "mode": "fake-ip",
+    "pool_config_raw": "28.0.0.1/8",
+    "reported_A": {
+      "api.openai.com": "28.0.5.94",
+      "auth.openai.com": "28.0.5.167"
+    },
+    "reported_TTL": null,
+    "router": "192.168.44.1",
+    "sniffer_override_destination": true,
+    "software": "OpenClash",
+    "tls_intermediary_absent": true
+  },
+  "provenance": {
+    "agent_remeasurement": false,
+    "measurement_timestamp": null,
+    "source": "owner_measured_report_in_issue167_H4"
+  }
+}
