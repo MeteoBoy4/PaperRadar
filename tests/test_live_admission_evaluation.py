@@ -5,6 +5,7 @@ from dataclasses import replace
 import pytest
 
 from paper_radar.live_evidence.evaluator import evaluate_admission
+from paper_radar.live_evidence.evidence import Applicability, ExecutionBinding
 from paper_radar.live_evidence.registry import INITIAL_REGISTRY
 from paper_radar.live_evidence.types import BindingComponent, Capability, EvidenceStatus
 from tests.live_admission_support import BINDING, NOW, USE, item, records
@@ -214,6 +215,10 @@ def test_registry_upgrade_and_material_binding_do_not_expand_activation() -> Non
     )
     assert denied.executable is False
     assert {reason.token for reason in denied.reasons} == {"registry_version_mismatch"}
+    assert all(
+        assessment.applicability is Applicability.APPLICABLE
+        for assessment in denied.capabilities
+    )
     ordinary = evaluate_admission(
         INITIAL_REGISTRY,
         USE,
@@ -321,8 +326,6 @@ def test_other_consumer_cells_are_not_borrowed_and_do_not_hide_the_matching_cell
 def test_each_execution_component_drift_is_controlled_and_keeps_original_claims(
     component: BindingComponent,
 ) -> None:
-    from paper_radar.live_evidence.evidence import ExecutionBinding
-
     evidence = records()
     changed = ExecutionBinding(
         tuple(
@@ -350,6 +353,15 @@ def test_each_execution_component_drift_is_controlled_and_keeps_original_claims(
         if component not in rule.dependencies and rule.requirement.value == "required"
     )
     assert result.for_capability(unaffected.capability).qualified is True
+    for rule in INITIAL_REGISTRY.requirements_for(USE):
+        assessment = result.for_capability(rule.capability)
+        if component in rule.dependencies:
+            assert assessment.applicability is Applicability.NOT_APPLICABLE
+        else:
+            assert (
+                assessment.applicability
+                is item(evidence, rule.capability).applicability
+            )
 
 
 @pytest.mark.parametrize(
@@ -388,13 +400,12 @@ def test_qualification_dimensions_do_not_rewrite_verified_history(
     assert result.claim == current.claim
     assert result.claim is not None
     assert result.claim.status is EvidenceStatus.VERIFIED
+    assert result.applicability is Applicability.APPLICABLE
 
 
 def test_unknown_applicability_and_missing_required_fact_refuse_without_inference() -> (
     None
 ):
-    from paper_radar.live_evidence.evidence import Applicability
-
     current = item(records(), Capability.IPV4_EGRESS)
     evidence = tuple(
         replace(record, applicability=Applicability.UNKNOWN)
@@ -430,7 +441,6 @@ def test_unknown_applicability_and_missing_required_fact_refuse_without_inferenc
 
 
 def test_disclosed_verified_fact_keeps_its_binding_without_blocking() -> None:
-    from paper_radar.live_evidence.evidence import ExecutionBinding
     from tests.live_admission_support import VERIFIED_AT
 
     evidence = records()
@@ -502,3 +512,125 @@ def test_future_times_are_invalid_input_even_for_nonrequired_capabilities(
     )
     assert result.executable is False
     assert [reason.token for reason in result.reasons] == ["evidence_time_future"]
+
+
+@pytest.mark.parametrize(
+    ("capability", "component"),
+    [
+        (Capability.CWD_ANCESTORS, BindingComponent.CWD_ANCESTORS),
+        (Capability.DATE_ALIAS, BindingComponent.MODEL_TUPLE),
+    ],
+)
+@pytest.mark.parametrize(
+    ("original", "drifted", "expected"),
+    [
+        (Applicability.APPLICABLE, False, Applicability.APPLICABLE),
+        (Applicability.APPLICABLE, True, Applicability.NOT_APPLICABLE),
+        (Applicability.UNKNOWN, False, Applicability.UNKNOWN),
+        (Applicability.UNKNOWN, True, Applicability.NOT_APPLICABLE),
+        (Applicability.NOT_APPLICABLE, False, Applicability.NOT_APPLICABLE),
+        (Applicability.NOT_APPLICABLE, True, Applicability.NOT_APPLICABLE),
+    ],
+)
+def test_current_applicability_accounts_for_drift_without_changing_source_facts(
+    capability: Capability,
+    component: BindingComponent,
+    original: Applicability,
+    drifted: bool,
+    expected: Applicability,
+) -> None:
+    changed = ExecutionBinding(
+        tuple(
+            (name, "changed" if drifted and name is component else value)
+            for name, value in BINDING.components
+        )
+    )
+    evidence = tuple(
+        replace(record, applicability=original, binding=changed)
+        if record.capability is capability
+        else record
+        for record in records()
+    )
+    decision = evaluate_admission(
+        INITIAL_REGISTRY,
+        USE,
+        evidence,
+        binding=BINDING,
+        now=NOW,
+        checked_components=frozenset(BindingComponent),
+    )
+    assessment = decision.for_capability(capability)
+    source = item(evidence, capability)
+    assert assessment.applicability is expected
+    assert source.applicability is original
+    assert assessment.claim == source.claim
+    assert assessment.received is True
+    assert assessment.evidence_active is True
+    assert assessment.revoked is False
+    if drifted:
+        assert f"binding_drift:{component.value}" in {
+            reason.token for reason in assessment.reasons
+        }
+        assert assessment.qualified is False
+        if capability is Capability.CWD_ANCESTORS:
+            assert decision.executable is False
+        else:
+            assert decision.executable is True
+            assert assessment.disclosure_unknown is True
+    unaffected = decision.for_capability(Capability.AUTH_CACHE_CURRENT)
+    assert unaffected.applicability is Applicability.APPLICABLE
+    assert unaffected.claim == item(evidence, Capability.AUTH_CACHE_CURRENT).claim
+    assert unaffected.qualified is True
+
+
+@pytest.mark.parametrize(
+    ("material_identity", "expected", "reason"),
+    [
+        (None, Applicability.NOT_APPLICABLE, "material_mismatch"),
+        ("other-material", Applicability.NOT_APPLICABLE, "material_mismatch"),
+        ("bound-material", Applicability.APPLICABLE, None),
+    ],
+)
+def test_material_dependent_current_applicability_uses_material_identity(
+    material_identity: str | None,
+    expected: Applicability,
+    reason: str | None,
+) -> None:
+    entry = INITIAL_REGISTRY.uses[0]
+    registry = replace(
+        INITIAL_REGISTRY,
+        uses=(
+            replace(
+                entry,
+                requirements=tuple(
+                    replace(rule, material_dependent=True)
+                    if rule.capability is Capability.MODEL_IDENTITY
+                    else rule
+                    for rule in entry.requirements
+                ),
+            ),
+        ),
+    )
+    evidence = tuple(
+        replace(record, material_identity="bound-material") for record in records()
+    )
+    decision = evaluate_admission(
+        registry,
+        USE,
+        evidence,
+        binding=BINDING,
+        now=NOW,
+        material_identity=material_identity,
+        checked_components=frozenset(BindingComponent),
+    )
+    assessment = decision.for_capability(Capability.MODEL_IDENTITY)
+    assert assessment.applicability is expected
+    assert [r.token for r in assessment.reasons] == ([] if reason is None else [reason])
+    assert assessment.claim == item(evidence, Capability.MODEL_IDENTITY).claim
+    assert (
+        item(evidence, Capability.MODEL_IDENTITY).applicability
+        is Applicability.APPLICABLE
+    )
+    unaffected = decision.for_capability(Capability.CWD_ANCESTORS)
+    assert unaffected.applicability is Applicability.APPLICABLE
+    assert unaffected.qualified is True

@@ -25,6 +25,9 @@
 `CapabilityClaim` 保存原始 verified／not_assessed／unknown、依据、范围、原验证时间和可选观察时点；
 `CapabilityEvidence` 另保存 received、evidence_active、revoked、当前适用性、登记版本与执行绑定。
 `CapabilityAssessment` 分字段输出这些维度及 expires_at、expired、结构化 reasons；不回写原主张。
+其中 applicability 是本次判定的当前适用性：已知执行依赖漂移，或 material_dependent 能力的材料身份缺失／不匹配时，
+输出 not_applicable；其他情况保留输入适用性，缺记录为 unknown。输入记录及其原主张不变，未受影响能力的适用性、状态与时间保持。
+登记版本、接收、证据激活、到期和撤销仍为独立维度，不单因这些资格缺口改写 applicability。
 必需项全部 qualified 才可能 executable；不强制最终 executable=false，也不从站点证据推定整体可执行。
 披露型缺证据或资格缺口输出 `disclosure_unknown=true` 和原主张，渲染方必须提示 unknown 及下一动作。
 不适用项保持原状态，不单独输出资格阻断；它不表示对应历史 unknown 已处理或已验。

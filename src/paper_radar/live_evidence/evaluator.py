@@ -106,6 +106,7 @@ def evaluate_admission(
         reasons: list[AdmissionReason] = []
         expires_at: datetime | None = None
         expired: bool | None = None
+        applicability = record.applicability if record else Applicability.UNKNOWN
         if record is None:
             reasons.append(
                 AdmissionReason(ReasonCode.EVIDENCE_MISSING, rule.capability)
@@ -168,11 +169,13 @@ def evaluate_admission(
             if rule.material_dependent and (
                 not material_identity or record.material_identity != material_identity
             ):
+                applicability = Applicability.NOT_APPLICABLE
                 reasons.append(
                     AdmissionReason(ReasonCode.MATERIAL_MISMATCH, rule.capability)
                 )
             for component in sorted(rule.dependencies):
                 if record.binding.value(component) != binding.value(component):
+                    applicability = Applicability.NOT_APPLICABLE
                     reasons.append(
                         AdmissionReason(ReasonCode.BINDING_DRIFT, component=component)
                     )
@@ -185,7 +188,7 @@ def evaluate_admission(
             record.received if record else False,
             record.evidence_active if record else False,
             record.revoked if record else False,
-            record.applicability if record else Applicability.UNKNOWN,
+            applicability,
             expires_at,
             expired,
             tuple(reasons),
