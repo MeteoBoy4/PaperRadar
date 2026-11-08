@@ -1,0 +1,187 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "json_schema_version": 1,
+        "release_name": "Commodore Bullmoose #7",
+        "version": "1.1.6"
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "handle": 23,
+        "name": "paperradar167_a840c6d21e97"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "handle": 3,
+        "hook": "output",
+        "name": "out",
+        "policy": "accept",
+        "prio": 10,
+        "table": "paperradar167_a840c6d21e97",
+        "type": "filter"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "handle": 4,
+        "name": "phase",
+        "table": "paperradar167_a840c6d21e97"
+      }
+    },
+    {
+      "counter": {
+        "bytes": 512,
+        "family": "inet",
+        "handle": 1,
+        "name": "allowed",
+        "packets": 8,
+        "table": "paperradar167_a840c6d21e97"
+      }
+    },
+    {
+      "counter": {
+        "bytes": 140,
+        "family": "inet",
+        "handle": 2,
+        "name": "rejected",
+        "packets": 2,
+        "table": "paperradar167_a840c6d21e97"
+      }
+    },
+    {
+      "rule": {
+        "chain": "out",
+        "comment": "issue167:a840c6d21e97:scope",
+        "expr": [
+          {
+            "match": {
+              "left": {
+                "socket": {
+                  "key": "cgroupv2"
+                }
+              },
+              "op": "==",
+              "right": "844648"
+            }
+          },
+          {
+            "jump": {
+              "target": "phase"
+            }
+          }
+        ],
+        "family": "inet",
+        "handle": 5,
+        "table": "paperradar167_a840c6d21e97"
+      }
+    },
+    {
+      "rule": {
+        "chain": "phase",
+        "comment": "issue167:a840c6d21e97:a:ipv4",
+        "expr": [
+          {
+            "match": {
+              "left": {
+                "payload": {
+                  "field": "daddr",
+                  "protocol": "ip"
+                }
+              },
+              "op": "==",
+              "right": "127.0.0.1"
+            }
+          },
+          {
+            "match": {
+              "left": {
+                "payload": {
+                  "field": "dport",
+                  "protocol": "tcp"
+                }
+              },
+              "op": "==",
+              "right": 38167
+            }
+          },
+          {
+            "counter": "allowed"
+          },
+          {
+            "accept": null
+          }
+        ],
+        "family": "inet",
+        "handle": 7,
+        "table": "paperradar167_a840c6d21e97"
+      }
+    },
+    {
+      "rule": {
+        "chain": "phase",
+        "comment": "issue167:a840c6d21e97:a:ipv6",
+        "expr": [
+          {
+            "match": {
+              "left": {
+                "payload": {
+                  "field": "daddr",
+                  "protocol": "ip6"
+                }
+              },
+              "op": "==",
+              "right": "::1"
+            }
+          },
+          {
+            "match": {
+              "left": {
+                "payload": {
+                  "field": "dport",
+                  "protocol": "tcp"
+                }
+              },
+              "op": "==",
+              "right": 38167
+            }
+          },
+          {
+            "counter": "allowed"
+          },
+          {
+            "accept": null
+          }
+        ],
+        "family": "inet",
+        "handle": 8,
+        "table": "paperradar167_a840c6d21e97"
+      }
+    },
+    {
+      "rule": {
+        "chain": "phase",
+        "comment": "issue167:a840c6d21e97:reject",
+        "expr": [
+          {
+            "counter": "rejected"
+          },
+          {
+            "reject": {
+              "expr": "admin-prohibited",
+              "type": "icmpx"
+            }
+          }
+        ],
+        "family": "inet",
+        "handle": 9,
+        "table": "paperradar167_a840c6d21e97"
+      }
+    }
+  ]
+}
