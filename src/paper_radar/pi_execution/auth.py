@@ -6,6 +6,7 @@ from time import monotonic
 
 from paper_radar.llm.rpc_pipes import PipeSession
 from paper_radar.llm.rpc_types import RpcProblem
+from paper_radar.pi_execution import isolation
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.process import adopt_process
 from paper_radar.pi_supply.protection import InstallUse
@@ -51,6 +52,7 @@ def credential_token(
             start_new_session=True,
             pass_fds=install.pass_fds,
             umask=0o077,
+            preexec_fn=isolation.disable_core_dumps,
         )
         session = adopt_process(child)
         session.close_stdin()

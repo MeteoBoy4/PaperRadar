@@ -440,7 +440,7 @@ uv run --offline --locked paper-radar pi supply gc --execute <plan_id> \
 [ADR-0026](docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。
 `paper_radar.pi_execution` 提供固定安装保护、宿主专用 OAuth 刷新、独立 attempt 资源与
 Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接口与权限见
-[Pi 执行资源契约](docs/contracts/pi-execution.md)，独立测试范围见
+[Pi 执行资源契约](docs/contracts/pi-execution.md)；认证和模型子进程在 exec 前显式设置并核验零 core 软硬限额，服务与现场适用性仍需独立验证。独立测试范围见
 [#140 独立组合台账](docs/verification/issue-140-pi-delivery.md)。现场隔离与固定 Pi 的剩余验收由 Live 统一承担；
 产品准入证据未被接收时继续阻断。有限合成实验的适用范围见
 [EXP-2 证据与承接](docs/verification/exp-2-pi-live-probe.md)，不据此授予生产执行。

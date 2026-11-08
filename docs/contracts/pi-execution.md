@@ -52,6 +52,21 @@ Popen 成功而 PipeSession 拒绝接管时，启动器仍负责有界组回收�
 pre-exec 中再次核对 cwd 的无链接与为空条件；低于隔离能力要求或建立失败均不能无隔离降级。
 预检不是未来 I/O 成功的保证。
 
+### 子进程零 core 限额
+
+宿主认证子进程和模型隔离子进程均在exec前显式设置 `RLIMIT_CORE` 软硬限额为0，
+并回读核对有效值。设置失败或回读不为(0,0)时不得继续exec；认证沿既有 `auth_failed`
+拒绝，模型沿 `startup_error` 交上层结算，不以继承的默认软限额替代。限额仅在子进程
+pre-exec中更改，不修改调用方进程限额。
+
+该行为不更改固定argv/env、`LAUNCH_POLICY_VERSION`、协议注册或注入loader。
+它不证明持有短期token的宿主controller已受服务限额保护，也不自动安装项目服务。
+部署仍须配置 `LimitCORE=0` 并核对所选Apport版本/配置、uid与非打包路径适用性；
+允许root内存瞬时采集而不落盘及后续doctor漂移检查的目标见
+[ADR-0049](../adr/0049-bound-core-persistence-with-explicit-zero-limit.md)。
+缺少现场证据时普通执行仍阻断，合成Python对端不构成真实Pi/Node准入。
+
+
 ### 启动策略 `pi-launch-1.4.0-v1`
 
 模型进程固定 argv：

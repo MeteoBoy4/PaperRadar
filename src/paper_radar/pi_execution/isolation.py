@@ -3,6 +3,7 @@
 import ctypes
 import os
 import platform
+import resource
 from pathlib import Path
 
 from paper_radar.pi_execution.errors import ExecutionError
@@ -79,6 +80,13 @@ def isolation_capability() -> int:
     return abi
 
 
+def disable_core_dumps() -> None:
+    """仅在子进程 pre-exec 调用;软硬限额都为零,失败不得继续 exec。"""
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    if resource.getrlimit(resource.RLIMIT_CORE) != (0, 0):
+        raise ExecutionError("isolation_unavailable")
+
+
 class IsolationBoundary:
     """仅启动器构造的 pre-exec 边界;每个进程重新取得自身 /proc 视图。"""
 
@@ -92,6 +100,7 @@ class IsolationBoundary:
         self._runtime: tuple[Path, ...] = _RUNTIME_PATHS
 
     def __call__(self) -> None:
+        disable_core_dumps()
         if (
             self._cwd.is_symlink()
             or not self._cwd.is_dir()
