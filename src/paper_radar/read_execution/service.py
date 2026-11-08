@@ -19,7 +19,7 @@ from paper_radar.pi_execution.admission import (
     EvidenceBinding,
     admit,
     bind_description,
-    read_evidence,
+    load_admission_evidence,
 )
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.launcher import LaunchIdentity, prepare_launch
@@ -44,8 +44,8 @@ from paper_radar.runtime_logging import Sink
 from paper_radar.runtime_logging.events import Clock
 from paper_radar.screening_tasks.pi_rpc_audit import PiRpcExecutionAudit
 
-# 私有离线工程接缝;产品read_evidence恒None,没有公开证据或factory参数。
-_evidence_for = read_evidence
+# 私有离线工程接缝;产品load_admission_evidence恒None,没有公开证据或factory参数。
+_evidence_for = load_admission_evidence
 _FAILURES = {
     RpcCategory.TIMEOUT: ReadFailure.TIMEOUT,
     RpcCategory.CANCELLED: ReadFailure.CANCELLED,

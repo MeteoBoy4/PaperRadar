@@ -59,7 +59,7 @@ def bind_description(
     )
 
 
-def read_evidence(binding: EvidenceBinding) -> AdmissionEvidence | None:
+def load_admission_evidence(binding: EvidenceBinding) -> AdmissionEvidence | None:
     """当前无经过 Cwd/Live 接收的事实来源;不从配置/JSON 接收通过声明。"""
     return None
 

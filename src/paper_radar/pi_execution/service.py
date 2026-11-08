@@ -27,7 +27,7 @@ from paper_radar.pi_execution.admission import (
     EvidenceBinding,
     admit,
     bind_description,
-    read_evidence,
+    load_admission_evidence,
 )
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.launcher import LaunchIdentity, prepare_launch
@@ -59,7 +59,7 @@ _FAILURE_KINDS = {
     RpcCategory.PROTOCOL: FailureKind.PROTOCOL_ERROR,
 }
 # 唯一测试私有接缝;产品不接收任意 evidence/factory 参数。
-_evidence_for = read_evidence
+_evidence_for = load_admission_evidence
 
 
 def prepare_call(tasks: ScreeningTasks, receipt_id: str) -> CallDescription:
