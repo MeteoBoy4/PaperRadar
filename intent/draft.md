@@ -1377,11 +1377,28 @@ Read 专用变化保持既有范围。无自动门禁继承，订阅取舍见
   （[ADR-0050](../docs/adr/0050-bind-egress-to-owner-visible-addresses.md)）。
 - 执行准入证据须经受信接收权威核验来源、完整性及完整执行绑定，绑定缺项不接收。
   能力主张逐项保存verified / not_assessed / unknown及依据、范围和原验证时间，
-  与接收、激活、到期、撤销和当前适用性分别判定。Live规格须显式规定各用途所需能力集合；
-  所需项均verified、仍有效且当前适用，并经所有者审阅脱敏回执后显式激活，才可授予
-  对应用途资格。不得以总布尔值、其他项通过或H4/H5签收补齐未测项；有限探索接收
+  与接收、证据激活、到期、撤销和当前适用性分别判定。准入用途按带版本的代码登记明确
+  Screening `PiExecution.run_attempt` 的 boundary/value × low/high 与 Read `read_execution`
+  的 read × low/high 六格；根用途独立判断，未定义用途、空必需集合须拒绝，升版不扩大已有激活。
+  必需项均verified、仍有效且当前适用，并经所有者审阅脱敏回执后显式证据激活，才可授予
+  对应准入用途资格。不得以总布尔值、其他项通过或H4/H5签收补齐未测项；有限探索接收
   不能自行删减用途的必要条件，历史失败保持（[ADR-0051](../docs/adr/0051-separate-live-binding-capabilities-and-activation.md)）。
+- 各用途必需能力包括认证／缓存当前属主、权限、无符号链接及自接收基线以来成员未变，
+  cwd／祖先、文件隔离、IPv4应用可见出站、零core与Apport身份、RPC完成／EOF／terminate、
+  实际模型身份、单次显式派发及无额外回合、供给／实例整树与Pi版本、启动／隔离策略及
+  host／boot／kernel／Landlock ABI。实际Pi公共300秒、自然供应商迟延和真实错误、参数
+  效力／日期alias、账号集合／限额、精确请求计数及认证／缓存全写史与writer为披露型；
+  未证实时须展示unknown及原状态、依据、范围、证据时点和下一动作，不单独阻断。
+  监督退出、外部中断、IPv6／新平台／无人值守／NAS在本绑定下不适用，不单独产生阻断，
+  不改写历史未知；IPv6与无人值守仍由I另行评估（[#168 D-3裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[ADR-0052](../docs/adr/0052-version-admission-uses-and-capability-requirements.md)）。
+- 执行身份及相关依赖须精确匹配；Prompt、Profile、Stage投影和系统指令等材料只逐调用核形状、
+  路径与上限，只有确实依赖材料内容的能力才另绑定材料身份。内容无关的合成材料能力证据
+  可支持真实资料用途，不能替代§2.4／§14外发确认或模型质量验收（[#168 D-5裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[ADR-0054](../docs/adr/0054-separate-execution-binding-from-call-materials.md)）。
 - 供应商能力证据自原验证完成起30天硬到期；接收、H4/H5签收和人工激活均不重新计时。
+  按能力×消费者格×档位取各自原验证时间，聚合取最早时点；未分类也按30天，格与档不互借。
+  使用UTC精确timedelta，等于到期即拒绝；无时区、未来原验证／观察时间及低于账本水位线的
+  当前时间须拒绝。站点／工程类只有完整逐调用覆盖或特权证明时才只按漂移失效，否则须有
+  有限期限；E01属工程类。接收与激活不续期（[#168 D-4裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[ADR-0053](../docs/adr/0053-expire-capabilities-by-evidence-class-and-coverage.md)）。
   到期尚未激活时须先另批重验，不得激活或沿用旧事实；第29天激活也仅剩原期限内的1天。
   到期阻断受影响的新模型任务，不改写历史核验状态或时间。每次调用仍核验当前绑定
   与现场隔离条件，已检测到的变化立即按影响范围使证据失效。首次验收覆盖完整支持

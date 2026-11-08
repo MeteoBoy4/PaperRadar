@@ -12,7 +12,7 @@ from paper_radar.pi_execution.admission import (
     AdmissionEvidence,
     EvidenceBinding,
     admit,
-    read_evidence,
+    load_admission_evidence,
 )
 
 
@@ -60,7 +60,7 @@ def test_evidence_cannot_be_reused_for_another_binding(field: str, value: Any) -
 
 def test_product_has_no_evidence_source_and_explicit_mapping_is_unavailable() -> None:
     expected = binding()
-    assert read_evidence(expected) is None
+    assert load_admission_evidence(expected) is None
     assert admit(expected, None) == "evidence_missing"
     explicit = replace(expected, sampling="explicit", temperature=0.0, top_p=1.0)
     assert (

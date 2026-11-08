@@ -442,7 +442,8 @@ uv run --offline --locked paper-radar pi supply gc --execute <plan_id> \
 Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接口与权限见
 [Pi 执行资源契约](docs/contracts/pi-execution.md)；认证和模型子进程在 exec 前显式设置并核验零 core 软硬限额，服务与现场适用性仍需独立验证。独立测试范围见
 [#140 独立组合台账](docs/verification/issue-140-pi-delivery.md)。现场隔离与固定 Pi 的剩余验收由 Live 统一承担；
-产品准入证据未被接收时继续阻断。有限合成实验的适用范围见
+产品准入证据未被接收时继续阻断。
+带版本的六格登记与纯分项判定见 [Live evidence](docs/contracts/live-evidence.md)；该纯层不接收或激活证据。有限合成实验的适用范围见
 [EXP-2 证据与承接](docs/verification/exp-2-pi-live-probe.md)，不据此授予生产执行。
 真实执行接线的承接入口见[路线图承接索引](docs/roadmap.md#模块承接索引)。
 

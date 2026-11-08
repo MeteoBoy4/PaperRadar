@@ -176,7 +176,7 @@ B 后续产品入口承担所选根的文件日志与入口守卫。
 界限、采样映射与当前激活供给事实。修正文案及脱敏字段路径由任务服务唯一构造。
 `admission.EvidenceBinding` 把 supply/install、启动/隔离策略、cwd 段、provider/model/
 thinking、sampling/两参数、protocol_profile、auth_mode 绑定到同一证据。
-纯 `admit(binding, evidence)` 返回封闭原因或 None，`read_evidence` 产品恒为 None。
+纯 `admit(binding, evidence)` 返回封闭原因或 None，`load_admission_evidence` 产品恒为 None。独立的[分项登记与纯判定](live-evidence.md)不接入本产品读取路径。
 缺失、错配以及 cwd_isolation/rpc_compatibility/model_parameters 任一未通过均拒绝；
 当前 explicit 映射为空。没有证据表、migration、产品文件/JSON/布尔导入或自动兼容探测。
 合成正例仅由测试私有 `_evidence_for` 注入内存事实。

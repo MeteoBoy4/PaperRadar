@@ -23,7 +23,7 @@ Read 的任务权威独立于 ScreeningTasks，使用同一个 Read Schema 与 v
    默认审计配置为预算首次快照；显式 audit_snapshot_id 必须是该任务已登记的快照。
    语义仍取预算首次配置，本次审计取明确快照，两者 Read 投影必须相等，不读当前 settings。
 3. 读取本次激活供给/安装，用 LaunchIdentity、固定 cwd 与历史描述绑定执行准入。
-   当前 read_evidence 恒为 None；没有产品证据 JSON、布尔声明、导入、自动探测或模拟生产开关。
+   当前 load_admission_evidence 恒为 None；独立的[分项登记与纯判定](live-evidence.md)不接入本产品读取路径。没有产品证据 JSON、布尔声明、导入、自动探测或模拟生产开关。
    缺失、不匹配、cwd/RPC/模型参数未实测均领取前拒绝；显式采样无已验证映射也拒绝。
 4. **准入优先于完整帧预算**。两者同时失败首先报告准入原因。准入通过后才拒绝
    read_input_over_budget；完整首次帧及最坏修正槽均须符合 #160 的边界。
