@@ -1,7 +1,11 @@
 """只消费普通值的执行证据判定;无认证、保护或资源创建依赖。"""
 
 from dataclasses import dataclass, field
-from typing import Literal
+from datetime import datetime
+from typing import TYPE_CHECKING, Literal, overload
+
+if TYPE_CHECKING:
+    from paper_radar.live_evidence.service import AdmissionProjection, AdmissionRequest
 
 from paper_radar.llm.models import CallDescription
 from paper_radar.pi_execution.errors import ExecutionReason
@@ -59,9 +63,32 @@ def bind_description(
     )
 
 
-def load_admission_evidence(binding: EvidenceBinding) -> AdmissionEvidence | None:
-    """当前无经过 Cwd/Live 接收的事实来源;不从配置/JSON 接收通过声明。"""
-    return None
+@overload
+def load_admission_evidence(binding: EvidenceBinding) -> AdmissionEvidence | None: ...
+
+
+@overload
+def load_admission_evidence(
+    binding: AdmissionRequest, *, now: datetime
+) -> AdmissionProjection: ...
+
+
+def load_admission_evidence(
+    binding: EvidenceBinding | AdmissionRequest, *, now: datetime | None = None
+) -> AdmissionEvidence | AdmissionProjection | None:
+    """完整请求延迟加载受保护账本;旧的不完整绑定继续安全拒绝。"""
+    if isinstance(binding, EvidenceBinding):
+        return None
+    from paper_radar.live_evidence.service import (
+        AdmissionRequest,
+    )
+    from paper_radar.live_evidence.service import (
+        load_admission_evidence as load_projection,
+    )
+
+    if type(binding) is not AdmissionRequest or now is None:
+        raise ValueError("admission_request_invalid")
+    return load_projection(binding, now=now)
 
 
 def admit(

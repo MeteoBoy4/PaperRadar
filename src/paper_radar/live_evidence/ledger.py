@@ -9,9 +9,12 @@ import stat
 from collections.abc import Iterator
 from contextlib import closing, contextmanager
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from paper_radar.live_evidence.reasons import ReasonCode
 
 from pydantic import ValidationError
 
@@ -29,6 +32,16 @@ MAX_SOURCE_BYTES = 1024 * 1024
 
 LedgerCategory = Literal[
     "ledger_untrusted",
+    "clock_rollback",
+    "evidence_time_invalid",
+    "admission_use_undefined",
+    "activation_confirmation_mismatch",
+    "activation_empty",
+    "observation_stale",
+    "observation_invalid",
+    "observation_changed",
+    "pending_revocation_unavailable",
+    "binding_observation_unavailable",
     "ledger_schema_unsupported",
     "protected_entry_required",
     "source_untrusted",
@@ -60,6 +73,18 @@ class LedgerError(ValueError):
             else category
         )
         super().__init__(category)
+
+    @classmethod
+    def clock(cls, reason: ReasonCode) -> LedgerError:
+        from paper_radar.live_evidence.reasons import ReasonCode
+
+        if reason is ReasonCode.CLOCK_ROLLBACK:
+            return cls("clock_rollback")
+        if reason is ReasonCode.TIME_INVALID:
+            return cls("evidence_time_invalid")
+        if reason is ReasonCode.TIME_FUTURE:
+            return cls("evidence_time_future")
+        return cls("ledger_untrusted")
 
 
 @dataclass(frozen=True, slots=True)
@@ -225,8 +250,7 @@ class EvidenceLedger:
                 "FROM events LIMIT 0"
             )
             with connection:
-                if writable:
-                    connection.execute("BEGIN IMMEDIATE")
+                connection.execute("BEGIN IMMEDIATE" if writable else "BEGIN")
                 yield connection
         except sqlite3.Error as error:
             raise LedgerError("ledger_untrusted") from error
@@ -242,12 +266,32 @@ class EvidenceLedger:
         now: datetime,
         reason: str | None = None,
     ) -> None:
-        if now.tzinfo is None:
-            raise LedgerError("evidence_time_future")
+        from paper_radar.live_evidence.time_policy import clock_reason
+
+        invalid = clock_reason(now, EvidenceLedger.watermark(connection))
+        if invalid is not None:
+            raise LedgerError.clock(invalid)
         connection.execute(
             "INSERT INTO events(action,subject_id,recorded_at,reason) VALUES(?,?,?,?)",
-            (action, subject, now.isoformat(), reason),
+            (action, subject, now.astimezone(UTC).isoformat(), reason),
         )
+
+    @staticmethod
+    def watermark(connection: sqlite3.Connection) -> datetime | None:
+        from paper_radar.live_evidence.time_policy import aware_utc
+
+        latest: datetime | None = None
+        for (raw,) in connection.execute(
+            "SELECT recorded_at FROM events ORDER BY sequence"
+        ):
+            try:
+                timestamp = aware_utc(datetime.fromisoformat(raw))
+            except (ValueError, TypeError) as error:
+                raise LedgerError("ledger_untrusted") from error
+            if timestamp is None or (latest is not None and timestamp < latest):
+                raise LedgerError("ledger_untrusted")
+            latest = timestamp
+        return latest
 
     def approve_plan_source(self, source: Path, *, now: datetime) -> None:
         self._writer()
@@ -377,7 +421,12 @@ class EvidenceLedger:
                 or receipt.plan_sha256 != plan_row[0]
             ):
                 raise LedgerError("ledger_untrusted")
-            return ReceivedEvidence(receipt_id, receipt, datetime.fromisoformat(row[4]))
+            from paper_radar.live_evidence.time_policy import aware_utc
+
+            received_at = aware_utc(datetime.fromisoformat(row[4]))
+            if received_at is None or received_at < receipt.completed_at:
+                raise LedgerError("ledger_untrusted")
+            return ReceivedEvidence(receipt_id, receipt, received_at)
         except (ValidationError, TypeError, ValueError) as error:
             if isinstance(error, LedgerError):
                 raise
@@ -402,12 +451,18 @@ class EvidenceLedger:
         with self.connection() as connection:
             return self._verified_receipt(connection, receipt_id)
 
+    def received_in(
+        self, connection: sqlite3.Connection
+    ) -> tuple[ReceivedEvidence, ...]:
+        """在调用者的同一受保护读取快照中验证来源与回执。"""
+        ids = connection.execute(
+            "SELECT receipt_id FROM receipts ORDER BY received_at,receipt_id"
+        ).fetchall()
+        return tuple(self._verified_receipt(connection, row[0]) for row in ids)
+
     def list_received(self) -> tuple[ReceivedEvidence, ...]:
         with self.connection() as connection:
-            ids = connection.execute(
-                "SELECT receipt_id FROM receipts ORDER BY received_at,receipt_id"
-            ).fetchall()
-            return tuple(self._verified_receipt(connection, row[0]) for row in ids)
+            return self.received_in(connection)
 
     def audit(self) -> tuple[AuditEvent, ...]:
         with self.connection() as connection:
