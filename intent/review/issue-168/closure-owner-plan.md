@@ -1,9 +1,9 @@
 # 最终所有者方案：v4 cutover、新证据与持久收紧演练
 
 本次所有者已完成已审v4部署及独立after-backup续行，保护安全回执与正式只读采样的有限事实见
-[现场安全验证](../../docs/verification/issue-168-176-owner-safety-verification.md)。最终12项站点资格不补齐模型／RPC缺口，精确登记／compat／S3／G4仍待完成。
+[现场安全验证](../../../docs/verification/issue-168-176-owner-safety-verification.md)。最终12项站点资格不补齐模型／RPC缺口。精确登记与兼容组合见[登记验证](../../../docs/verification/issue-168-176-scope-registration.md)；正式收口须最终合入身份逐组S3及冻结树同run完整门禁passed／verified／same。
 下文保留各起始状态下的操作与中断边界；不是要求再次执行已经完成的升级或复用旧候选。
-任何后续新root字节仍须按准确主树重建／owner审阅执行；代码／离线授权与ADR-0056接受不授权代理实际root动作或完整门禁。
+任何后续新root字节仍须按准确主树重建／owner审阅执行；代码／离线授权与ADR-0056接受不授权代理实际root动作；完整门禁按另获明确授权的最终冻结身份执行。
 旧v3、旧G2／owner候选及各阶段检查点原字节保留。
 
 ## 构建与审阅
@@ -87,7 +87,7 @@ NNP仅作用子进程，不改root或sudoers；全流程无认证／模型／网
 原流程仍会核账本／锁／用途／状态，按原计划真实刷新当前观察，并要求三次本人完整审阅和手输ID。
 原终端的输入回显不是证据激活事实，不能复用为自动确认。原verified_at、停止条件和预算均不刷新。
 若任何前提不同，或已有部分激活／撤销／phase目录，停止并另审实际检查点，不删除文件、清空日志或自动回滚。
-终端模型及外部sudo-rs限制见[诊断台账](../../docs/verification/issue-168-176-owner-terminal-recovery.md)；
+终端模型及外部sudo-rs限制见[诊断台账](../../../docs/verification/issue-168-176-owner-terminal-recovery.md)；
 诊断模型不证明现场已恢复成功，仍以新的root安全回执和最终人工激活事实为准。
 
 ## 已到backup之后的精确续行
@@ -114,4 +114,4 @@ uv run --offline --locked python scripts/issue176_resume_after_backup.py \
 保留原前两次人工授权；原4文件和backup全过程只读并在结束复核SHA。最后核非空原分项集合active/qualified、临时格仍撤销、预算不变，才写新root安全回执。
 每阶段输出受控stage／reason，失败仅新增本恢复工具下的failure检查点，不自动回滚、卸载或继续grant。
 新uninstall.sh仅原样归档本次恢复工具，不触碰原runtime／39源码／v4／phase／backup／log／ledger／预算。
-全部新root字节和SHA仍须所有者审阅，代理不执行。具体模型及覆盖见[续行台账](../../docs/verification/issue-168-176-resume-after-backup.md)。
+全部新root字节和SHA仍须所有者审阅，代理不执行。具体模型及覆盖见[续行台账](../../../docs/verification/issue-168-176-resume-after-backup.md)。
