@@ -89,6 +89,28 @@ def _append_pending(record: PendingRevocation) -> None:
         raise LedgerError("pending_revocation_unavailable") from error
 
 
+def unavailable_projection(
+    use: AdmissionUse, error: LedgerError, *, pending_revocation: bool = False
+) -> AdmissionProjection:
+    """来源/观察失败的共享拒绝投影;不接收授予事实。"""
+    reason = (
+        ReasonCode.CLOCK_ROLLBACK
+        if error.category == "clock_rollback"
+        else ReasonCode.TIME_INVALID
+        if error.category == "evidence_time_invalid"
+        else ReasonCode.TIME_FUTURE
+        if error.category == "evidence_time_future"
+        else ReasonCode.LEDGER_UNTRUSTED
+    )
+    return AdmissionProjection(
+        AdmissionDecision(
+            use, INITIAL_REGISTRY.version, (), (AdmissionReason(reason),)
+        ),
+        None,
+        pending_revocation or error.category == "pending_revocation_unavailable",
+    )
+
+
 def load_admission_evidence(
     request: AdmissionRequest, *, now: datetime
 ) -> AdmissionProjection:
@@ -144,20 +166,8 @@ def load_admission_evidence(
             selected,
         )
     except LedgerError as error:
-        reason = (
-            ReasonCode.CLOCK_ROLLBACK
-            if error.category == "clock_rollback"
-            else ReasonCode.TIME_INVALID
-            if error.category == "evidence_time_invalid"
-            else ReasonCode.LEDGER_UNTRUSTED
-        )
-        decision = AdmissionDecision(
-            request.use, INITIAL_REGISTRY.version, (), (AdmissionReason(reason),)
-        )
-        return AdmissionProjection(
-            decision,
-            None,
-            bool(pending) or error.category == "pending_revocation_unavailable",
+        return unavailable_projection(
+            request.use, error, pending_revocation=bool(pending)
         )
 
 

@@ -1,12 +1,21 @@
 """领取前准备与一次受控执行;任务预算/成功接收仍由 ScreeningTasks 拥有。"""
 
 import math
+from collections.abc import Callable
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic
 
 from paper_radar.config import ConfigError, load_config_snapshot
+from paper_radar.live_evidence.ledger import LedgerError
+from paper_radar.live_evidence.service import AdmissionRequest, request_time_tick
+from paper_radar.live_evidence.types import (
+    AdmissionUse,
+    CallSite,
+    Consumer,
+    ThinkingLevel,
+)
 from paper_radar.llm import (
     CallDescription,
     CallDescriptionError,
@@ -25,9 +34,13 @@ from paper_radar.llm.rpc_types import (
 )
 from paper_radar.pi_execution.admission import (
     EvidenceBinding,
-    admit,
     bind_description,
     load_admission_evidence,
+)
+from paper_radar.pi_execution.admission_guard import AdmissionGuard
+from paper_radar.pi_execution.current_binding import (
+    build_admission_request,
+    recheck_admission_request,
 )
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.launcher import LaunchIdentity, prepare_launch
@@ -58,8 +71,12 @@ _FAILURE_KINDS = {
     RpcCategory.ENVIRONMENT: FailureKind.EXECUTOR_ERROR,
     RpcCategory.PROTOCOL: FailureKind.PROTOCOL_ERROR,
 }
-# 唯一测试私有接缝;产品不接收任意 evidence/factory 参数。
+# 历史工程别名保留给不可达回归;正式入口只调用完整请求/共享权威。
 _evidence_for = load_admission_evidence
+
+
+class _PreclaimAdmissionDenied(Exception):
+    """穿过业务事务的拒绝信号;避免 ValueError 被误分类为档案库损坏。"""
 
 
 def prepare_call(tasks: ScreeningTasks, receipt_id: str) -> CallDescription:
@@ -98,6 +115,7 @@ class PiExecution:
         )
         self.roots, self.credentials_dir = roots, credentials_dir
         self.auth_mode, self.proxy = auth_mode, proxy
+        self._now = clock or (lambda: datetime.now(UTC))
 
     def _binding(
         self, description: CallDescription, identity: LaunchIdentity
@@ -110,6 +128,7 @@ class PiExecution:
             isolation_policy_version=identity.isolation_policy_version,
             cwd_section=expected_cwd_section(),
             auth_mode=identity.auth_mode,
+            proxy=self.proxy,
         )
 
     def run_attempt(
@@ -146,7 +165,7 @@ class PiExecution:
             raise ExecutionError("timeout_invalid")
         description = prepare_call(self.tasks, receipt_id)
 
-        def preclaim(correction: str | None) -> None:
+        def validate_frame(correction: str | None) -> None:
             try:
                 message = render_request(description, correction)
             except CallDescriptionError:
@@ -154,7 +173,7 @@ class PiExecution:
             if validate_request(message) is not None:
                 raise TaskError(TaskReason.INVALID_CONTEXT)
 
-        preclaim(self.tasks.prepare_correction(receipt_id))
+        validate_frame(self.tasks.prepare_correction(receipt_id))
         check_system_prompt(description.system_prompt)
         if description.sampling != "provider_default":
             raise ExecutionError("sampling_mapping_unavailable")
@@ -171,13 +190,60 @@ class PiExecution:
                 selected.install_id,
                 record.manifest,
                 auth_mode=self.auth_mode,
+                proxy=self.proxy,
             )
         except SupplyError:
             raise ExecutionError("install_unavailable") from None
         binding = self._binding(description, identity)
-        reason = admit(binding, _evidence_for(binding))
-        if reason is not None:
-            raise ExecutionError(reason)
+        try:
+            use = AdmissionUse(
+                CallSite.SCREENING,
+                Consumer(description.stage),
+                ThinkingLevel(description.thinking_level),
+            )
+        except ValueError:
+            raise ExecutionError("evidence_missing") from None
+        guard = AdmissionGuard(use)
+        try:
+            return self._run_admitted(
+                receipt_id,
+                description,
+                binding,
+                guard,
+                validate_frame,
+                limits,
+                cancelled,
+                clock,
+            )
+        except (ExecutionError, LedgerError, SupplyError):
+            guard.tighten(now=self._now())
+            raise
+
+    def _run_admitted(
+        self,
+        receipt_id: str,
+        description: CallDescription,
+        binding: EvidenceBinding,
+        guard: AdmissionGuard,
+        validate_frame: Callable[[str | None], None],
+        limits: RpcLimits,
+        cancelled: Cancellation,
+        clock: MonotonicClock,
+    ) -> SuccessReceipt | FailureReceipt:
+        def current(identity_binding: EvidenceBinding) -> AdmissionRequest:
+            try:
+                return build_admission_request(
+                    self.database,
+                    identity_binding,
+                    use=guard.use,
+                    credentials_dir=self.credentials_dir,
+                    now=self._now(),
+                )
+            except (LedgerError, SupplyError):
+                raise ExecutionError("evidence_missing") from None
+
+        request = current(binding)
+        guard.check(request, now=self._now())
         with prepare_launch(
             self.tasks.database,
             description,
@@ -189,6 +255,22 @@ class PiExecution:
         ) as prepared:
             if self._binding(description, prepared.identity) != binding:
                 raise ExecutionError("evidence_mismatch")
+            rebound = current(self._binding(description, prepared.identity))
+            if rebound.binding != request.binding:
+                guard.check(rebound, now=self._now())
+                raise ExecutionError("evidence_mismatch")
+            guard.check(rebound, now=self._now())
+            if not request_time_tick():
+                raise ExecutionError("evidence_missing")
+
+            def preclaim(correction: str | None) -> None:
+                validate_frame(correction)
+                try:
+                    recheck_admission_request(rebound, now=self._now())
+                    guard.check(rebound, now=self._now())
+                except (ExecutionError, LedgerError):
+                    raise _PreclaimAdmissionDenied from None
+
             audit = PiRpcExecutionAudit.model_validate(
                 {
                     **asdict(prepared.identity),
@@ -230,6 +312,10 @@ class PiExecution:
                         output_tokens=result.output_tokens,
                         execution_audit=audit,
                     )
+                guard.tighten(now=self._now())
                 return FailureReport(_FAILURE_KINDS[result.category])
 
-            return self.tasks.run_once(receipt_id, executor, preclaim=preclaim)
+            try:
+                return self.tasks.run_once(receipt_id, executor, preclaim=preclaim)
+            except _PreclaimAdmissionDenied:
+                raise ExecutionError("evidence_missing") from None

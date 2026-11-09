@@ -157,7 +157,9 @@ def test_bound_evidence_failures_never_refresh_or_claim(
             evidence_kind != "model",
         )
 
-    monkeypatch.setattr("paper_radar.pi_execution.service._evidence_for", evidence)
+    from tests.pi_execution_service_support import allow_synthetic
+
+    allow_synthetic(monkeypatch, evidence)
     with pytest.raises(ExecutionError, match=expected):
         service.run_attempt(receipt.receipt_id)
     assert service.tasks.status(receipt.receipt_id).used_attempts == 0

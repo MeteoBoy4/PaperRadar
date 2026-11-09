@@ -69,8 +69,8 @@ def test_restored_real_peer_history_survives_missing_install_but_new_attempt_doe
             paper_id=receipt.paper_id, stage="boundary", snapshot_id=receipt.snapshot_id
         )
     ) == (success,)
-    monkeypatch.setattr(
-        "paper_radar.pi_execution.service._evidence_for",
+    allow_synthetic(
+        monkeypatch,
         lambda binding: AdmissionEvidence(
             replace(binding, isolation_policy_version="obsolete-policy"),
             True,
