@@ -17,7 +17,7 @@
 | `tests/test_live_admission_source_guard.py` | 4 | 33 文件显式清单与策略一致；同策略源码改动及仅重绑清单反例仍失败；新增旧策略清单原字节归档守卫。原三节点与断言保留，本次追加一节点 |
 | 合计 | 63 | 独立未绑定覆盖，不进入旧分母 |
 
-collect-only 核对独立分母；Read 53 + 一致性 6 + D7 4，共 63 节点；预期数为人工登记，
+collect-only 已核对独立分母：Read 53 + 一致性 6 + D7 4，共 63 节点；预期数为人工登记，
 收集只核对，不从产品登记或实际输出反填。
 真实临时受保护账本/receive/activate、固定观察和模型能力来自 #173 的
 `tests/screening_live_admission_support.py`；只在测试侧替换 OS 来源、时间与 helper 进程。
@@ -55,9 +55,14 @@ pytest 检测、合成授予开关或公开证据参数。
 功能组合：197 passed in 441.37s（退出 0），覆盖新增模块、全部旧 Read 执行、
 Read 前置/租约/恢复、Screening 三检查点、完整绑定及共享 loader。
 随后新增事务外 helper 写锁回归单节点 1 passed in 3.45s（退出 0）。
-两次均无 skip/deselect/incomplete。合入当前 integration 后另核对共享 doctor 与最终独立分母。
+两次均无 skip/deselect/incomplete。
+合入 #175 当前 integration `bd1598e759e9ffcd8d14fe938e76e19dfb994b32` 后，
+Read/D7 最终独立 63 节点 + doctor 独立 17 节点 + 旧 doctor 31 节点组合
+为 111 passed in 197.61s（退出 0），无 skip/deselect/incomplete；
+合并树 collect-only 再核对独立 63 节点，退出 0。
 
-CLI compatibility：59 passed in 128.48s（退出 0），入口含 uv 总耗时 129.33s。
+CLI compatibility：首次 59 passed in 128.48s（退出 0），入口含 uv 总耗时 129.33s；
+合入 #175 当前 integration 后，59 passed in 123.51s（退出 0），总耗时 124.29s。
 局部 Ruff 通过，8 文件格式检查通过，strict mypy 8 文件通过，git diff --check 通过。
 未运行完整 check-offline，未写正式回执/run_id。
 
@@ -84,6 +89,10 @@ Read guarded service 已接入正式权威，因此准入策略显式升为 `pi-
 以 integration `8a1c1941fac9919479855611ff68f0cab539f485` 为显式 base/target 的
 只读 scope 审计退出 1，baseline_issues 为空，仅有 #170 的 cli.py 与 contracts/schema.py
 两条 source_support baseline_drift；本票无已登记 current_change 漂移。
+合入 #175 后以当前 integration `bd1598e759e9ffcd8d14fe938e76e19dfb994b32`
+为显式 base/target 再审计，退出 1，baseline_issues 仍为空；另有上游 #175 的
+`pi_supply/cli.py` 一条 source_support baseline_drift，共三条，均交 #176 收口。
+本票仍无已登记 current_change 漂移。
 旧 scope、中央哈希、回执格式、业务 migration、正文 evidence 表和历史回执不变。
 本票 Read Contract 未列旧活文档，新增测试/清单/台账与完整消费闭包交 #176 显式分类审阅。
 
