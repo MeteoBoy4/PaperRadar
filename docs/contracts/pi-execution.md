@@ -1,6 +1,6 @@
 # Pi 执行资源与隔离
 
-本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。没有执行 CLI，也不保存准入证据。产品缺少现场隔离/模型能力准入证据时在领取前阻断；这里的合成对端通过不产生兼容 passed。
+本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。没有执行 CLI；准入事实由独立[受保护账本](live-evidence.md)保存，本模块只读消费。产品缺少现场隔离/模型能力准入证据时在领取前阻断；这里的合成对端通过不产生兼容 passed。
 
 ## 用途与范围
 
