@@ -8,7 +8,7 @@ import sqlite3
 import stat
 from contextlib import closing
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
@@ -232,8 +232,17 @@ class EvidenceLifecycle:
             for item in decision.capabilities
             if item.requirement is Requirement.REQUIRED and item.qualified
         )
+        restore_barrier = max(
+            (
+                event.sequence
+                for event in self.ledger.audit()
+                if event.action == "evidence_restored"
+            ),
+            default=0,
+        )
         lines = [
             record.receipt.model_dump_json(indent=2),
+            f"restore_barrier={restore_barrier}",
             f"receipt_id={receipt_id} use={use_id} "
             f"registry_version={INITIAL_REGISTRY.version}",
         ]
@@ -271,8 +280,6 @@ class EvidenceLifecycle:
         invalid = clock_reason(now, review.reviewed_at)
         if invalid is not None:
             raise LedgerError.clock(invalid)
-        if now - review.reviewed_at > timedelta(seconds=60):
-            raise LedgerError("observation_stale")
         with self.ledger.connection(writable=True) as connection:
             current = self.review(
                 review.receipt_id,
@@ -283,6 +290,8 @@ class EvidenceLifecycle:
             )
             if not current.eligible:
                 raise LedgerError("activation_empty")
+            if current.summary != review.summary or current.eligible != review.eligible:
+                raise LedgerError("observation_changed")
             snapshot = self.snapshot(now=now)
             existing = {
                 item.capability

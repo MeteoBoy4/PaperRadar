@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
@@ -130,6 +131,26 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+def _refresh_current_observation() -> None:
+    """只调用已部署的固定root冻结采集器,不接收路径或自由参数。"""
+    from paper_radar.live_evidence.ledger import LedgerError
+
+    try:
+        result = subprocess.run(
+            ["/usr/libexec/paperradar/live-evidence-collect"],
+            env={},
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=120,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise LedgerError("binding_observation_unavailable") from error
+    if result.returncode != 0:
+        raise LedgerError("binding_observation_unavailable")
+
+
 @live_evidence_app.command(
     help="""所有者审阅回执并显式证据激活。
 
@@ -137,7 +158,8 @@ def _now() -> datetime:
 参数与选项：--receipt-id 回执短 ID，--use-id 六格准入用途之一。
 副作用：仅经所有者输密码授权的封印 sudo 入口追加激活；产品不能自行激活。
 确认前展示完整脱敏回执、绑定、原时点与期限，要求输入回执短 ID。
-自动配额：0；不认证、不联网、不调用模型。缺少或过期现场观察时请重采后重试。
+确认后调用固定封印采集器刷新当前观察，同一审核内容才写入；阅读不受60秒限制。
+自动配额：0；不认证、不联网、不调用模型。采集失败或事实改变时拒绝，请重新审阅。
 """
 )
 def activate(
@@ -172,10 +194,23 @@ def activate(
         if not review.eligible:
             raise LedgerError("activation_empty")
         confirmation = typer.prompt("请审阅上方脱敏回执，输入回执短 ID 确认证据激活")
+        if confirmation != review.receipt_id:
+            raise LedgerError("activation_confirmation_mismatch")
+        refresh_started = _now()
+        _refresh_current_observation()
         current = load_current_observation(ledger, now=_now())
-        if current != observation:
+        if (
+            current.observed_at < refresh_started
+            or current.binding != observation.binding
+            or frozenset(current.checked_components)
+            != frozenset(observation.checked_components)
+        ):
             raise LedgerError("observation_changed")
-        result = lifecycle.activate(review, confirmation=confirmation, now=_now())
+        activation_now = _now()
+        current.validate_time(now=activation_now)
+        result = lifecycle.activate(
+            review, confirmation=confirmation, now=activation_now
+        )
     except LedgerError as error:
         _failure(error.category)
     typer.echo(
