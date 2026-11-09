@@ -447,6 +447,9 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 入口输出冻结 Python/依赖/源码、零请求批准计划、部署/卸载脚本、SHA256 与私有审阅说明。
 所有者审阅确切字节后从 root 冻结副本部署，默认卸载保留账本与回执；不自动证据激活。
 采集只观察当前站点和认证/cache stat 元数据，不读秘密正文、不认证、不调用模型、不联网。
+三项SHA OK后仍须核对部署/采集/接收终态；拒绝诊断给出受控原因与阶段。
+所有者审阅新包后只运行REVIEW中的run-g2.sh，输入一次sudo密码，脚本自动预配固定空cwd并完成G2。
+普通部署不接管用户目录；G3证据激活仍由所有者另行确认。
 模型、RPC、IPv4 出站和 observer 缺项保持 unknown；规则见 [Live 证据契约](docs/contracts/live-evidence.md#β-站点采集与封印部署)。
 
 ## Pi RPC
