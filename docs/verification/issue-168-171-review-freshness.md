@@ -10,6 +10,7 @@
 | --- | ---: | --- |
 | `tests/test_live_evidence_review_freshness.py` | 17 | 实际 owner CLI、临时受信账本、假钟推进完整审阅超过60秒；同事实新观察成功；binding/coverage漂移、旧/未刷新/未来观察、部分撤销、恢复屏障、来源丢失、时钟回退、原能力到期、采集失败及错误短 ID 拒绝；固定零参数冻结 collector 的OS边界 |
 | `tests/test_live_admission_source_guard.py` | 5 | 原四节点保持，追加 v2 清单原字节归档保护；当前 v3 显式33文件与策略摘要锚 |
+| `tests/test_site_runtime_upgrade.py` | 27 | 原7项红模型扩展：旧SHA/manifest/完整成员/权限/硬链/入口/policy/cwd/中断态；新包身份及语法；一次sudo替身到新payload部署/合成采集接收，篡改与失败保留历史、不激活 |
 
 测试只替换当前时钟、临时 OS 信任根、人工输入与固定 collector 的系统调用边界。
 不执行真实 sudo、collect、receive、revoke、activate、认证、模型或网络。
@@ -40,6 +41,12 @@ CurrentObservation与site collector。没有skip/deselect/incomplete。
 CLI兼容59 passed in119.86s，入口退出0、含uv总耗时120.49s。
 只读scope审计退出1，baseline_issues为空，仅继承cli.py/contracts/schema.py/pi_supply/cli.py
 三项baseline_drift/mechanical，本次没有current_change候选；未重绑旧材料，消费闭包交#176。
+升级最终相关组合89 passed in26.65s，覆盖新升级当时26节点、旧部署/单入口/保护链、
+collector、owner freshness与D7；随后追加构建CLI缺少配对摘要在读site前拒绝的冷进程回归。
+最终独立升级模块27 passed in18.67s，三个变更文件Ruff、格式与strict mypy通过。
+新增模块人工预期27节点，与参数化和实测输出核对，不从生产登记反填。
+本轮升级只触及非特权构建CLI与生成脚本，既有product CLI导入/注册未改，
+已通过CLI59不重复；构建冷help、缺项、空环境导入和脚本语法由相关测试直接覆盖。
 完整离线门禁、真实root与G3均未执行。
 
 ## 策略与现场承接
@@ -53,6 +60,18 @@ v3清单SHA256为`78c7e3f27768e138a9137395cefb71cb0058005020cf3a4d1ac4ad9fc5726f
 现场已部署旧root runtime，不允许直接覆盖或声称旧回执已由新代码核验。
 新的root字节须所有者重新审阅；正式推进须保留旧账本/回执/撤销/stopped/历史/预算，
 按明确旧payload/manifest核验后安全归档升级，再新计划采集/接收与人工G3。
-升级代码生成机制的exec被自动批准审查拒绝，理由为高影响root升级机制缺明确授权；
-尚未写入升级实现或执行现场操作。独立升级模型仍为明确红，不能算交付通过。
-本阻塞不影响上述最小CLI/lifecycle离线结果，完整交付仍需解决安全升级路径。
+升级代码生成机制起初被自动批准审查拒绝，理由为高影响root升级机制缺明确授权。
+所有者随后针对“仅编写并离线验证旧SHA/manifest核验、归档旧runtime、替换已核入口/sudoers，
+完整保留账本历史预算，实际sudo/采集/激活仍本人审阅后执行”明确回复“授权”。
+据此重新请求自动审批并获准，只实现代码与无root离线验证，没有执行现场操作。
+
+原7项升级模型先因缺render_upgrade全部红，再绿；完整受控原因回归捕获shell管道子进程
+丢失拒绝原因，已改为主shell循环。额外payload标记换行、特殊权限位与非空cwd分别先红后绿：
+旧标记改为规范字节SHA，成员/入口/policy模式精确校验，cwd先决提前到归档前。
+单入口模型先普通用户核SHA，再一次sudo替身复制并重核，归档原runtime，安装不同新payload，
+调用合成collector/receive并输出新实际短ID。用户包篡改、复制前竞态篡改、旧源码变化在归档前拒绝；
+采集失败不receive，旧账本/inbox/stopped/失败历史逐字节保留。成功后重复运行同包安全拒绝，
+中断不自动恢复或清除归档。真实sudo/冻结保护/站点采集/接收/G3仍全部留给所有者。
+
+升级详细公共规则仅见[live-evidence Contract](../contracts/live-evidence.md#β-站点采集与封印部署)。
+新包必须从最终合并后的主工作树非特权重建，旧G2包原字节保持；新的root字节仍需所有者重审。

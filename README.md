@@ -449,7 +449,9 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 采集只观察当前站点和认证/cache stat 元数据，不读秘密正文、不认证、不调用模型、不联网。
 三项SHA OK后仍须核对部署/采集/接收终态；拒绝诊断给出受控原因与阶段。
 所有者审阅新包后只运行REVIEW中的run-g2.sh，输入一次sudo密码，脚本自动预配固定空cwd并完成G2。
-普通部署不接管用户目录；G3证据激活仍由所有者另行确认。
+普通部署不接管用户目录。更新既有冻结runtime可明确提供旧payload与manifest SHA，
+构建单入口升级包，核旧字节后原样归档，保留账本与历史；新字节须所有者重新审阅。
+G3证据激活仍由所有者另行完整审阅并手输实际短ID，详见上述契约。
 模型、RPC、IPv4 出站和 observer 缺项保持 unknown；规则见 [Live 证据契约](docs/contracts/live-evidence.md#β-站点采集与封印部署)。
 
 ## Pi RPC

@@ -272,7 +272,28 @@ owner预配cwd不算本包创建，默认卸载保留。全部执行代码来自
 拒绝保持原退出码，stderr输出受控原因、固定stage/resource及所有者下一步。
 SHA OK只证明对应复制校验，不能证明部署/采集/接收完成。
 run-g2仅自动化G2，不包含activate或G3短ID确认，不使产品executable=true。
-已存在的 runtime 仅接受相同 payload 身份，文件清单每次启动复核；不同字节须重新审阅并卸载重装。
+普通 deploy 对已存在 runtime 仅接受相同 payload 身份，文件清单每次启动复核；不同字节拒绝。
+非特权构建可同时指定 `--upgrade-from-payload <旧payload SHA256>` 与
+`--upgrade-from-manifest <旧manifest.sha256文件SHA256>`，生成单独 `run-upgrade.sh`／`upgrade.sh`。
+两个值必须成对且为小写64 hex，校验在创建输出目录前完成；普通包保持原入口及行为。
+升级包的 build-identity.json 另记录两个旧身份，REVIEW.md展示归档、失败与独立G3边界。
+新root字节仍须所有者重新完整审阅，旧包批准不能迁移。
+
+run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k复制到root所有staging并核相同SHA，
+只从root冻结upgrade运行。它先核现有ledger/inbox保护及root所有0755空cwd，
+再核旧payload标记规范字节、旧manifest文件SHA、完整文件与目录闭包及逐文件哈希。
+所有成员须root所有、无链接，文件单链接且为0644/0755、目录0755；额外空目录也拒绝。
+三个旧入口须root所有、单链接、0755且逐字节等于旧wrappers，sudoers须0440且等于旧副本。
+任何旧身份、成员、保护或字节变化，以及已有归档／runtime.new，均在归档前拒绝。
+
+通过后只将旧runtime原样移动到同级 `live-evidence-runtime.archive-<旧payload SHA256>`，
+不覆盖任何已有对象；只移除刚核对过的旧入口／sudoers，其原字节仍完整保存在归档中。
+随后调用新冻结deploy安装不同的新runtime，并按新collector身份的新计划真实零请求采集与接收。
+旧账本/inbox/回执/计划/撤销/stopped/失败历史和业务预算均保留；不重装Pi、不compile或写业务库。
+升级输出实际新receipt_id，不声称旧回执已由新代码核验，不自动激活或扩大能力。
+G3仍由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
+升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
+所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
 源代码准入策略为 `pi-admission-v3`；v1/v2 的 D7 向量与摘要锚原字节保留，新策略不继承旧绑定资格。
 
 固定零参数 `/usr/libexec/paperradar/live-evidence-collect` 与仅收紧的 `live-evidence-tighten`
