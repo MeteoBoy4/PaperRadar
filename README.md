@@ -461,6 +461,9 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 它复用已部署冻结 runtime，输出待审 owner 工作流；构建不执行 sudo 或操作账本。
 真实恢复会失效全部旧激活，成功出口要求所有者重新手动激活非空最终分项，详见
 [收口覆盖与待验边界](docs/verification/issue-168-176-live-admission-closure.md)。
+所有者已完成本次站点收紧／恢复与最后人工再活，保护检查点核非空12项active且qualified；
+三格正式只读采样仍均不可执行，模型／RPC等必要缺口保持，详见[现场安全验证](docs/verification/issue-168-176-owner-safety-verification.md)。
+精确登记、兼容及最终完整门禁尚未完成，这不表示Live或B已完成。
 
 ## Pi RPC
 

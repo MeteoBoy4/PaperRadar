@@ -419,8 +419,9 @@ immutable连接只读主文件并跳过锁／变化检测，不是并发保证�
 `scripts/issue176_closure.py` 仍可为已经部署并明确新人工激活的v4构建独立包；
 它核目标payload／manifest、当前准入策略并内嵌字节，不能拿现场v3执行新工作流或替代首次cutover。
 部分／中断状态只保留root检查点，不自动回滚、清理、恢复资格或重新初始化日志。
-具体流程与尚未执行边界见[owner方案](../../intent/review/issue-168/closure-owner-plan.md)及
-[收口台账](../verification/issue-168-176-live-admission-closure.md)。
+具体状态前提见[owner方案](../../intent/review/issue-168/closure-owner-plan.md)；
+本次已完成的保护现场验证、正式只读资格及仍未证明的边界见[现场安全验证](../verification/issue-168-176-owner-safety-verification.md)。
+该现场结论不替代精确登记、兼容检查或最终完整离线门禁。
 
 ## 错误与拒绝
 
