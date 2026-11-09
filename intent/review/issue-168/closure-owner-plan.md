@@ -59,3 +59,57 @@ NNP仅作用子进程，不改root或sudoers；全流程无认证／模型／网
 恢复屏障之后未最终激活时保持无资格，必须本人重新完整审阅有效新证据，不能用旧短ID或旧active报告翻转撤销。
 默认卸载／重装保留否定日志、账本、回执与runtime归档；不通过清文件“修复”准入。
 最终实际部署／权限／激活及G4完整门禁仍由主代理按各自授权串行完成，未执行时不关闭#176/#168。
+
+## 已部署同SHA流程的终端中断后恢复
+
+停止不等于长I/O。若Python为T且存在本人已请求的SIGINT，必须先由所有者按精确进程组处置，
+让待处理的中断完成并退出；不能承诺CONT后继续原激活，也不由代理发送信号。
+随后只读核验旧链全部退出、closure.lock无持有者，不能重跑已完成的run-upgrade.sh。
+
+仅在这些条件全部满足时，使用已经核过的**同SHA root冻结脚本**复跑：
+
+- payload、manifest、owner-closure.py及完整运行树保护和摘要仍精确匹配本次owner审阅记录。
+- 原config的policy、plan、receipt、run_name一致；plan有效且未stopped，新receipt最新、未激活、未撤销，无其他active。
+- 当前deny log及cutover身份受信且无阻断该新receipt的意图，保护账本无journal/WAL/SHM，closure.lock空闲。
+- 原phase目录尚不存在，业务任务与其他写入继续暂停，当前业务预算采样前提仍满足。
+
+所有者从有正常交互TTY的新终端显式使用已核的经典sudo入口，不改变全局alternatives、sudoers或安装包：
+
+```sh
+/usr/bin/sudo.ws -k -- /usr/bin/env -i \
+  /usr/libexec/paperradar/live-evidence-runtime/python/bin/python3 -I -S -B \
+  /usr/libexec/paperradar/live-evidence-runtime/owner-closure.py
+```
+
+该入口只复跑原冻结owner流程，使用原config；不再部署、cutover或接收新证据。
+原流程仍会核账本／锁／用途／状态，按原计划真实刷新当前观察，并要求三次本人完整审阅和手输ID。
+原终端的输入回显不是证据激活事实，不能复用为自动确认。原verified_at、停止条件和预算均不刷新。
+若任何前提不同，或已有部分激活／撤销／phase目录，停止并另审实际检查点，不删除文件、清空日志或自动回滚。
+终端模型及外部sudo-rs限制见[诊断台账](../../docs/verification/issue-168-176-owner-terminal-recovery.md)；
+诊断模型不证明现场已恢复成功，仍以新的root安全回执和最终人工激活事实为准。
+
+## 已到backup之后的精确续行
+
+若原phase已包含initial.json、business-before.json、drill-active.json和before-revoke.sqlite3，
+两格都已本人激活，则禁止重跑前一节入口、前两次激活、backup、部署、cutover或receive。
+必须按新root约束记录构建独立待审包：
+
+```sh
+uv run --offline --locked python scripts/issue176_resume_after_backup.py \
+  --inputs OWNER_ROOT_CONSTRAINTS_JSON --output NEW_REVIEW_DIR
+```
+
+普通JSON只声明约束，不自证许可。新包以sudo.ws一次密码从内嵌字节冻结，核完整原runtime／manifest／入口／sudoers及原owner脚本/config，
+原phase须exact4文件及全部SHA一致、root所有／只读保护／单链接；plan有效且两种stopped来源都不存在。
+原RID最新、两格raw active集合须与原保护检查点完全一致，无其他active、pending或revocation；预算须与business-before全部一致，原锁非阻塞取得。
+任何新phase、预算／配置／绑定或保护变化均停，不覆盖、删除或“修正”原文件。
+
+跨设备EXDEV不是权限保护通过。新包只在明确核验/var/tmp为root:root1777、与日志相同device及fdinfo mnt_id后，
+作用域设标准库cached tempfile.tempdir，调用同SHA原v4 product_log_probe；子进程清env不改变已缓存位置，finally恢复原值。
+不改原probe／NNP／EACCES或EPERM断言，不放开日志任何祖先，不把EXDEV或unknown算合格。
+
+仅执行：同盘probe及NNP helper失败持久性→新检查点→原root helper撤销临时格→原backup恢复→最后boundary本人审阅／手输ID一次。
+保留原前两次人工授权；原4文件和backup全过程只读并在结束复核SHA。最后核非空原分项集合active/qualified、临时格仍撤销、预算不变，才写新root安全回执。
+每阶段输出受控stage／reason，失败仅新增本恢复工具下的failure检查点，不自动回滚、卸载或继续grant。
+新uninstall.sh仅原样归档本次恢复工具，不触碰原runtime／39源码／v4／phase／backup／log／ledger／预算。
+全部新root字节和SHA仍须所有者审阅，代理不执行。具体模型及覆盖见[续行台账](../../docs/verification/issue-168-176-resume-after-backup.md)。
