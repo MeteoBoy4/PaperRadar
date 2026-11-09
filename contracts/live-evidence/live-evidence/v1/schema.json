@@ -1,0 +1,331 @@
+{
+  "$defs": {
+    "BindingComponent": {
+      "enum": [
+        "supply",
+        "instance",
+        "supply_tree",
+        "instance_tree",
+        "pi_version",
+        "node_platform",
+        "launch_policy",
+        "isolation_policy",
+        "host",
+        "boot",
+        "kernel",
+        "landlock_abi",
+        "cwd_ancestors",
+        "file_isolation",
+        "ipv4_egress",
+        "core_limits",
+        "apport",
+        "observer",
+        "model_tuple",
+        "auth_cache_current",
+        "auth_cache_baseline"
+      ],
+      "title": "BindingComponent",
+      "type": "string"
+    },
+    "Capability": {
+      "enum": [
+        "auth_cache_current",
+        "auth_cache_baseline",
+        "cwd_ancestors",
+        "file_isolation",
+        "ipv4_egress",
+        "zero_core",
+        "apport_identity",
+        "rpc_completion",
+        "rpc_eof",
+        "rpc_terminate",
+        "model_identity",
+        "single_dispatch",
+        "no_extra_turns",
+        "supply_tree",
+        "instance_tree",
+        "pi_version",
+        "launch_policy",
+        "isolation_policy",
+        "host_runtime",
+        "pi_public_300_seconds",
+        "provider_latency",
+        "provider_errors",
+        "thinking_effect",
+        "date_alias",
+        "account_models",
+        "account_limits",
+        "exact_request_count",
+        "auth_cache_history",
+        "auth_cache_writer",
+        "supervisor_exit",
+        "external_interrupt",
+        "ipv6",
+        "new_platform",
+        "unattended",
+        "nas"
+      ],
+      "title": "Capability",
+      "type": "string"
+    },
+    "CaseResult": {
+      "additionalProperties": false,
+      "properties": {
+        "auth_calls": {
+          "minimum": 0,
+          "title": "Auth Calls",
+          "type": "integer"
+        },
+        "case_id": {
+          "pattern": "^[a-z][a-z0-9-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "model_calls": {
+          "minimum": 0,
+          "title": "Model Calls",
+          "type": "integer"
+        },
+        "network_requests": {
+          "minimum": 0,
+          "title": "Network Requests",
+          "type": "integer"
+        },
+        "outcome": {
+          "enum": [
+            "passed",
+            "failed",
+            "not_assessed"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "outcome",
+        "auth_calls",
+        "model_calls",
+        "network_requests"
+      ],
+      "title": "CaseResult",
+      "type": "object"
+    },
+    "EvidenceStatus": {
+      "enum": [
+        "verified",
+        "not_assessed",
+        "unknown"
+      ],
+      "title": "EvidenceStatus",
+      "type": "string"
+    },
+    "FailureRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[a-z][a-z0-9-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "isolation_failed",
+            "identity_mismatch",
+            "protocol_failed",
+            "resource_unavailable",
+            "collector_failed",
+            "interrupted"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "reason"
+      ],
+      "title": "FailureRecord",
+      "type": "object"
+    },
+    "ReceiptClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "enum": [
+            "site_probe",
+            "rpc_probe",
+            "engineering_test",
+            "not_observed"
+          ],
+          "title": "Basis",
+          "type": "string"
+        },
+        "capability": {
+          "$ref": "#/$defs/Capability"
+        },
+        "case_id": {
+          "pattern": "^[a-z][a-z0-9-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "evidence_at": {
+          "format": "date-time",
+          "title": "Evidence At",
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "current_site",
+            "single_case",
+            "not_observed"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/EvidenceStatus"
+        },
+        "use_id": {
+          "enum": [
+            "boundary-low",
+            "boundary-high",
+            "value-low",
+            "value-high",
+            "read-low",
+            "read-high"
+          ],
+          "title": "Use Id",
+          "type": "string"
+        },
+        "verified_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Verified At"
+        }
+      },
+      "required": [
+        "capability",
+        "use_id",
+        "case_id",
+        "status",
+        "basis",
+        "scope",
+        "verified_at",
+        "evidence_at"
+      ],
+      "title": "ReceiptClaim",
+      "type": "object"
+    }
+  },
+  "$id": "urn:paper-radar:contracts:live-evidence:live-evidence:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "binding": {
+      "additionalProperties": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/BindingComponent"
+      },
+      "title": "Binding",
+      "type": "object"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/CaseResult"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Cases",
+      "type": "array"
+    },
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/ReceiptClaim"
+      },
+      "maxItems": 210,
+      "minItems": 1,
+      "title": "Claims",
+      "type": "array"
+    },
+    "collector_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Collector Sha256",
+      "type": "string"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "failure_history": {
+      "items": {
+        "$ref": "#/$defs/FailureRecord"
+      },
+      "maxItems": 128,
+      "title": "Failure History",
+      "type": "array"
+    },
+    "format_version": {
+      "const": "v1",
+      "title": "Format Version",
+      "type": "string"
+    },
+    "plan_id": {
+      "pattern": "^[a-z][a-z0-9-]{0,63}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "registry_version": {
+      "const": "live-admission-v1",
+      "title": "Registry Version",
+      "type": "string"
+    },
+    "round_number": {
+      "maximum": 20,
+      "minimum": 1,
+      "title": "Round Number",
+      "type": "integer"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "format_version",
+    "registry_version",
+    "plan_id",
+    "plan_sha256",
+    "collector_sha256",
+    "round_number",
+    "started_at",
+    "completed_at",
+    "binding",
+    "cases",
+    "failure_history",
+    "claims"
+  ],
+  "title": "EvidenceReceipt",
+  "type": "object",
+  "x-paper-radar-contract": {
+    "name": "live-evidence",
+    "version": "v1"
+  }
+}

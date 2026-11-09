@@ -10,6 +10,7 @@ from enum import StrEnum
 from functools import partial
 from typing import Any
 
+from paper_radar.live_evidence.receipt import EvidenceReceipt
 from paper_radar.reading.schema import ReadAnalysisOutput
 from paper_radar.screening.reasons import screening_reason_json_schema
 from paper_radar.screening.schema import (
@@ -39,6 +40,7 @@ class ContractName(StrEnum):
     REUSE_ASSESSMENT = "reuse-assessment"
     DECISION_REASONS = "decision-reasons"
     READ = "read"
+    LIVE_EVIDENCE = "live-evidence"
 
 
 class ContractVersion(StrEnum):
@@ -97,6 +99,10 @@ _CONTRACTS: dict[
         schema_builder=partial(ReadAnalysisOutput.model_json_schema, mode="validation"),
         area="read",
     ),
+    (ContractName.LIVE_EVIDENCE, ContractVersion.V1): _ContractDefinition(
+        schema_builder=partial(EvidenceReceipt.model_json_schema, mode="validation"),
+        area="live-evidence",
+    ),
 }
 
 _SUPPORTED_CONTRACT_NAMES = "、".join(
@@ -133,7 +139,8 @@ def build_selected_contract(
         controlled_name = ContractName(name)
     except ValueError as error:
         raise ContractSelectionError(
-            f"未知契约；当前支持：{_SUPPORTED_CONTRACT_NAMES}。"
+            "未知契约；当前支持：boundary、value-prediction、reuse-assessment、"
+            "decision-reasons、read。另支持：live-evidence。"
         ) from error
 
     try:

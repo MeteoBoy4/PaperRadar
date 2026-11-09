@@ -1383,6 +1383,10 @@ Read 专用变化保持既有范围。无自动门禁继承，订阅取舍见
   必需项均verified、仍有效且当前适用，并经所有者审阅脱敏回执后显式证据激活，才可授予
   对应准入用途资格。不得以总布尔值、其他项通过或H4/H5签收补齐未测项；有限探索接收
   不能自行删减用途的必要条件，历史失败保持（[ADR-0051](../docs/adr/0051-separate-live-binding-capabilities-and-activation.md)）。
+- 准入事实保存在独立root所有的账本，使用rollback journal，产品uid只读且无写入通道；
+  与业务库分开备份。账本恢复只回历史，全部激活失效并须重新人工激活；业务attempt、
+  每日配额与retry预算仍由业务库计数，批准计划不承担原子预占。账本schema版本与
+  回执格式版本分别管理，不推进业务库migration（[ADR-0055](../docs/adr/0055-separate-protected-admission-ledger-from-business-facts.md)）。
 - 各用途必需能力包括认证／缓存当前属主、权限、无符号链接及自接收基线以来成员未变，
   cwd／祖先、文件隔离、IPv4应用可见出站、零core与Apport身份、RPC完成／EOF／terminate、
   实际模型身份、单次显式派发及无额外回合、供给／实例整树与Pi版本、启动／隔离策略及
