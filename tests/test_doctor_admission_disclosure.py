@@ -204,3 +204,41 @@ def test_global_ledger_failure_is_invalid_instead_of_not_assessed() -> None:
     assert checks[0].required
     assert checks[1].detail is not None
     assert "executable=false reason=ledger_untrusted" in checks[1].detail
+
+
+def test_read_fragment_keeps_its_own_scope_and_does_not_borrow_screening() -> None:
+    from paper_radar.doctor.admission import admission_rows, render_admission_fragment
+    from paper_radar.live_evidence.evidence import CapabilityClaim, CapabilityEvidence
+    from paper_radar.live_evidence.types import Capability, EvidenceStatus
+
+    binding = ExecutionBinding(tuple((part, "synthetic") for part in BindingComponent))
+    screening_evidence = CapabilityEvidence(
+        Capability.CWD_ANCESTORS,
+        use_for_id("boundary-low"),
+        "live-admission-v1",
+        binding,
+        CapabilityClaim(EvidenceStatus.VERIFIED, "合成站点观察", "boundary-low", NOW),
+        True,
+        True,
+        False,
+    )
+    decision = evaluate_admission(
+        INITIAL_REGISTRY,
+        use_for_id("read-low"),
+        (screening_evidence,),
+        binding=binding,
+        now=NOW,
+        checked_components=frozenset(BindingComponent),
+    )
+    projection = AdmissionProjection(decision, NOW, False)
+    row = next(
+        row
+        for row in admission_rows(projection)
+        if row.capability is Capability.CWD_ANCESTORS
+    )
+    assert row.original_state is None
+    assert row.result.value == "missing"
+    assert row.reasons == ("evidence_missing",)
+    assert "use=read-low call_site=read_execution" in render_admission_fragment(
+        projection
+    )
