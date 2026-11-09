@@ -56,6 +56,11 @@
 
 所有者已执行经审阅部署/采集/受信接收，并完成新的非空站点分项证据激活。
 本票以正式 `EvidenceLedger`/`EvidenceLifecycle.snapshot` 只读复核受保护属主与非空 active，未写账本。
+主代理随后按已审固定collector的零参数P6权限刷新，并立即执行本票只读正式资格采样，整段退出0。
+选定已激活格保留非空active且当前qualified，未激活的其他消费者格保持无资格；
+三者正式recheck均通过，仍因必需IPv4/RPC/模型身份/单次派发/额外回合缺证据或覆盖不足而不可执行，不借格。
+该采样仅调用正式构造、共享guard/loader与同一doctor投影，不prepare_launch/auth/模型/tighten/tick或写业务库。
+私有采样输出只作观察索引，正式root账本与来源仍是授予权威，不把普通JSON提升为grant。
 这一事实只说明站点分项激活存在；模型、RPC、IPv4 和 observer 仍有缺项，不表示整体可执行。
 宿主绑定、短 ID、UID/组能力、路径清单及指纹不写公共台账。
 
