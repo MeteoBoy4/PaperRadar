@@ -1,6 +1,6 @@
 # 冻结契约导出与检查
 
-当前提供五份可单独或批量选择的 `v1` 磁盘冻结契约。`contracts export` 可在一次
+当前提供六份可单独或批量选择的 `v1` 磁盘冻结契约。`contracts export` 可在一次
 命令中处理多份；`contracts check` 也可在一次命令中逐项检查多份并汇总退出码。
 
 | CLI 受控名 | 权威定义 | 固定目录 |
@@ -10,10 +10,12 @@
 | `reuse-assessment` | `ReuseAssessmentOutput` | `screening/reuse-assessment/v1/` |
 | `decision-reasons` | `screening_reason_json_schema()` 使用的权威 Pydantic 组合类型 | `screening/decision-reasons/v1/` |
 | `read` | `paper_radar.reading.ReadAnalysisOutput` | `read/read/v1/` |
+| `live-evidence` | `paper_radar.live_evidence.receipt.EvidenceReceipt` | `live-evidence/live-evidence/v1/` |
 
 本契约定义快照生成、磁盘发布和只读检查；Screening 的结构与上下文接收规则见
 [Screening Contract](screening-validation.md)，Read 的结构、独立价值词汇与证据业务
-校验见[Read Contract](read-validation.md)。Schema 通过不等于业务接收成功。
+校验见[Read Contract](read-validation.md)。Schema 通过不等于业务接收成功。Live 回执的来源、批准计划与独立准入账本规则见
+[Live evidence](live-evidence.md#回执与批准计划)；格式版本升级不代表旧账本可读。
 
 配置 check/compile 复用冻结契约检查后，还重新读取 Schema 与清单，分别逐字节
 核对当前权威输出；历史 load 核对已登记原始材料与引用，不重新生成当前 Schema。

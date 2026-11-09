@@ -330,6 +330,7 @@ uv run --offline --locked paper-radar contracts check \
   --contract decision-reasons --contract read --version v1 --target contracts
 ```
 
+`live-evidence/v1` 回执可通过 `--contract live-evidence` 单独导出或检查。
 `export` 安全发布快照，`check` 只读检查漂移。契约选择、目录布局、不可覆盖规则与
 部分失败后的重试见[冻结契约 Contract](docs/contracts/frozen-contracts.md)。
 
@@ -443,7 +444,10 @@ Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接
 [Pi 执行资源契约](docs/contracts/pi-execution.md)；认证和模型子进程在 exec 前显式设置并核验零 core 软硬限额，服务与现场适用性仍需独立验证。独立测试范围见
 [#140 独立组合台账](docs/verification/issue-140-pi-delivery.md)。现场隔离与固定 Pi 的剩余验收由 Live 统一承担；
 产品准入证据未被接收时继续阻断。
-带版本的六格登记与纯分项判定见 [Live evidence](docs/contracts/live-evidence.md)；该纯层不接收或激活证据。有限合成实验的适用范围见
+带版本的六格登记、纯分项判定，以及独立受保护账本的回执接收与只读查询见
+[Live evidence](docs/contracts/live-evidence.md)。所有者入口为 `paper-radar live-evidence receive`，
+`paper-radar live-evidence show` 查询回执，`show --plan-id <ID>` 查询批准计划；帮助纯本地。
+接收不激活，产品执行仍缺准入接线；受保护部署与实际激活另由所有者完成。有限合成实验的适用范围见
 [EXP-2 证据与承接](docs/verification/exp-2-pi-live-probe.md)，不据此授予生产执行。
 真实执行接线的承接入口见[路线图承接索引](docs/roadmap.md#模块承接索引)。
 

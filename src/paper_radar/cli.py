@@ -27,6 +27,7 @@ from paper_radar.contracts import (
 from paper_radar.contracts.schema import _SUPPORTED_CONTRACT_VERSIONS
 from paper_radar.fixture_audit.audit_cli import audit_app
 from paper_radar.fixture_audit.cli import fixture_app
+from paper_radar.live_evidence.cli import live_evidence_app
 from paper_radar.papers.cli import paper_app
 from paper_radar.pi_supply.cli import DOCTOR_HELP, DoctorCommand, doctor_command, pi_app
 
@@ -100,7 +101,7 @@ CONTRACTS_HELP = f"""\
 {_CONTRACT_CHOICES_HELP}
 
 参数与选项：export 和 check 都可重复提供 `--contract`，并按上方声明顺序处理。
-当前可选五份契约；A1 历史离线计划仍显式选择四份契约。
+当前可选六份契约；A1 历史离线计划仍显式选择四份契约。
 两者都必须明确提供声明版本和目标目录。
 
 副作用：查看帮助只输出文本；export 先预检全部已选目标，再逐份创建不可覆盖的
@@ -150,7 +151,7 @@ EXPORT_HELP = f"""\
 CHECK_HELP = f"""\
 只读比较一份或多份既有冻结契约与当前权威定义，逐项报告一致或失败原因。
 
-当前用途：重复 `--contract` 可检查多份契约；当前可选五份契约，
+当前用途：重复 `--contract` 可检查多份契约；当前可选六份契约，
 A1 历史离线计划仍显式选择四份。单份失败不会中断其余检查。
 
 当前支持的契约与声明版本：
@@ -198,6 +199,7 @@ app.add_typer(config_app, name="config")
 app.add_typer(backup_app, name="backup")
 app.add_typer(restore_app, name="restore")
 app.add_typer(pi_app, name="pi")
+app.add_typer(live_evidence_app, name="live-evidence")
 app.command("doctor", cls=DoctorCommand, help=DOCTOR_HELP)(doctor_command)
 
 

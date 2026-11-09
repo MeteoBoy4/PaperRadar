@@ -1,10 +1,12 @@
-# Live 分项证据与纯准入判定
+# Live 分项证据、受保护接收与纯准入判定
 
 ## 用途与范围
 
 `paper_radar.live_evidence` 提供带版本的能力登记、普通值领域模型与纯判定函数。
 `evaluate_admission` 只消费显式输入，不读墙钟、主机、业务库或账本，不接收或激活证据。
-产品 `load_admission_evidence` 仍返回 None；Screening／Read 的现有缺证据拒绝保持。
+`receipt` 提供 Pydantic 权威回执与批准计划；`EvidenceLedger` 提供受保护接收与只读查询，
+`live-evidence receive/show` 暴露所有者入口。产品 `load_admission_evidence` 仍返回 None；
+Screening／Read 的现有缺证据拒绝保持。
 
 ## 规则
 
@@ -84,6 +86,57 @@ verified 缺原时间、not_assessed／unknown 带 verified_at、无时区或未
 初始登记的能力均与材料内容无关；合成材料证明可用于真实资料，但调用方仍须执行现有材料形状、路径和完整帧上限检查。
 外发确认、校准与质量资格独立判断。
 
+### 回执与批准计划
+
+回执格式 `v1` 的唯一 Schema 来源为 `receipt.EvidenceReceipt`，冻结名为 `live-evidence/v1`，
+目录为 `contracts/live-evidence/live-evidence/v1/`。字段包括登记版本、批准计划身份与摘要、
+采集器摘要、轮次、起止时间、完整执行绑定、案例结果／观测计数、失败历史和逐格分项主张。
+所有执行组件仅保存 64 hex 身份摘要，模型元组等明文构造由采集方负责；无敏感路径、
+Prompt／Profile、token、凭据正文、完整流或错误正文。依据、范围及失败原因使用封闭枚举，
+不接受自由描述、额外字段或配置 passed。案例与能力／格不能重复；verified 必须引用成功案例和原时点，
+unknown／not_assessed 不带 verified_at；全部观察与原验证时点位于有时区的本轮时间窗口。
+
+批准计划由 `ApprovedPlan` 定义，保存所有者批准的案例顺序、采集器身份、有效窗口、
+认证／模型／网络请求上限、轮数及首失败即停条件。计划通过所有者保护入口独立批准，
+不从回执自行批准；同 plan_id 同字节幂等，换字节拒绝。`site_beta` 三类请求上限均为零，
+只允许现场能力的 site_probe/current_site verified 主张，不能自造供应商或真实 RPC 观察。
+接收检查计划摘要、采集器、案例顺序、计数、轮次、窗口和失败历史一致性；
+中途停止须最后案例为失败，失败后不能继续本轮或接受计划后续轮。轮次连续且唯一。
+这些计数是回执内部观测值，不证明供应商隐藏请求不存在，不代替业务库的 attempt／配额原子预占。
+
+规范回执为 UTF-8 JSON，键排序、紧凑分隔、结尾换行；输入必须已是该规范字节，
+因此重复 JSON 键或不同排版不能成为另一种等价来源。完整 SHA-256 绑定规范字节，
+其前 16 hex 为 `receipt_id`，接收幂等与后继激活确认共用。重复 ID 且同完整摘要返回既有记录，
+追加 receive_duplicate 审计；前缀碰撞或计划同轮不同回执拒绝。接收不激活、不安装、不认证或调用模型。
+回执格式版本与账本 schema 版本各自独立；升级回执格式不代表旧账本可读。
+
+### 账本信任与查询
+
+默认位置为 `/var/lib/paperradar/live-evidence/ledger.sqlite3`，受保护来源留存在相邻 `inbox/`。
+`EvidenceLedger.initialize` 只在已受保护的 root 目录与 inbox 内建空库；不创建或修复部署。
+写连接要求 euid 为受信属主，产品入口使用固定 root 策略，不提供 uid、路径或信任策略 CLI 覆盖。
+源码 API 的 `LedgerTrust` 可替换 OS fixture，离线测试使用临时锚与模拟不同产品 uid；
+它不是产品接受外来账本的授权入口。同 uid 修改源码仍在本权限威胁模型之外。
+
+账本、来源及通向 `/` 的全部祖先必须 root 所有，无符号链接，无组／其他用户写权限。
+来源必须是固定 inbox 的普通单链接 `.json` 文件，最多 1 MiB，读取使用 NOFOLLOW；
+数据库也须普通单链接文件。读写前发现任意 journal/WAL/SHM 残留均保守拒绝，不尝试热恢复。
+数据库要求 DELETE rollback journal、quick_check 通过且包含必需表列；不使用业务 Alembic。
+账本 schema 当前为 1，与回执 `v1` 分开管理；只接受明确支持的账本版本，
+更高版本既不写也不读，兼容升级须由特权维护者另行实现，回执格式升版不推断账本兼容。
+
+`approve_plan`、`approve_plan_source` 与 `receive` 使用保护写事务，成功与重复接收和受控拒绝均追加审计，
+事实不被覆盖；账本自身不可信时不补写失败事件。`show`、`show_plan`、`list_received`、`audit` 只读打开，
+不创建文件。回执查询重新核对原来源存在、权限与精确字节，以及计划／回执摘要；来源丢失或改变即拒绝。
+`connection(writable=False)` 是后继服务复用的受保护连接边界；写连接仍检查特权身份。
+账本与受保护回执需单独备份；恢复失效与重新激活规则见 ADR-0055，执行入口由后继激活／恢复服务负责。
+
+`paper-radar live-evidence show [--receipt-id <ID>]` 显示回执脱敏摘要，
+`show --plan-id <ID>` 只读查询批准计划；两种选择互斥。
+`receive --source <固定inbox回执> [--plan <受保护计划>]` 只经所有者 sudo 的封印入口使用，
+可先显式批准计划再接收；不能从用户可写仓库或虚拟环境执行 sudo Python。
+未部署封印入口时不能将当前仓库命令当成受保护入口。所有 `--help` 不打开账本、不联网。
+
 ## 错误与拒绝
 
 `AdmissionReason` 使用闭合 ReasonCode，能力参数为 Capability，组件参数为 BindingComponent；
@@ -92,20 +145,26 @@ verified 缺原时间、not_assessed／unknown 带 verified_at、无时区或未
 evidence_expired、evidence_not_applicable、evidence_applicability_unknown、registry_version_mismatch、
 admission_use_undefined、evidence_scope_mismatch、evidence_conflict、material_mismatch、coverage_incomplete、
 evidence_time_invalid、evidence_time_future、clock_rollback、ledger_untrusted。
-ledger_untrusted 在词表中预留给真实账本读取；纯层不认证账本。
+账本以 `LedgerError.category` 报告 ledger_untrusted、ledger_schema_unsupported、protected_entry_required、
+source_untrusted、source_integrity、receipt_invalid、plan_missing／conflict／mismatch／round_conflict／stopped、
+receipt_conflict／missing 等受控原因，错误不包含输入或敏感路径。来源与版本失信的 `reason` 映射为 ledger_untrusted；
+纯层不认证账本。CLI 失败返回 2，提示所有者检查受保护部署、计划与来源。
 该词表与现有闭合 ExecutionReason 分开，任务结算映射由消费者接线维护，不改写旧 token。
 
 ## 不提供／不证明
 
-不提供受信回执、计划预算实体、接收／证据激活／撤销账本、特权证明验证、站点采集、CLI 或 doctor／日报接线。
-这些责任由 [Live 前置任务](https://github.com/MeteoBoy4/PaperRadar/issues/168) 的 #170–#175 承接，消费闭包由 #176 收口。
+不提供证据激活／撤销／恢复／时钟水位线服务、产品账本加载、特权证明验证、站点采集或封印部署，
+也不提供 doctor／日报接线。这些责任由 [Live 前置任务](https://github.com/MeteoBoy4/PaperRadar/issues/168)
+的 #171–#175 承接，消费闭包由 #176 收口。
+接收权威只核来源、完整性与内部一致性，不能独立证明没有遗漏的失败；失败历史完备性由采集器与 sudoers 边界承担。
 不提供真实 root、供应商或模型实测，不替代所有者激活、真实材料外发确认、根用途或校准资格。
 威胁模型防范同 uid 产品进程、测试、Agent 工具伪造或篡改受保护证据及激活记录和配置 passed 自证；
-纯层本身没有写入或授予路径。不防范同 uid 直接修改源码，该边界由代码审阅与策略版本守卫承担。
+纯层本身没有写入或授予路径，接收／计划批准也不产生激活资格。不防范同 uid 直接修改源码，该边界由代码审阅与策略版本守卫承担。
 真实 OS 信任根与抗回滚保证不由这些普通值或离线测试建立。
 
 ## 相关
 
 依据：[父票裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#169](https://github.com/MeteoBoy4/PaperRadar/issues/169)、[ADR-0051](../adr/0051-separate-live-binding-capabilities-and-activation.md)。
 补充决策：[ADR-0052](../adr/0052-version-admission-uses-and-capability-requirements.md)、[ADR-0053](../adr/0053-expire-capabilities-by-evidence-class-and-coverage.md)、[ADR-0054](../adr/0054-separate-execution-binding-from-call-materials.md)。
+独立账本决策：[ADR-0055](../adr/0055-separate-protected-admission-ledger-from-business-facts.md)。
 现有产品边界：[Pi 执行](pi-execution.md)、[Read 执行](read-execution.md)。
