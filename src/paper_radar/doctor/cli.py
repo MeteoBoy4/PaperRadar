@@ -59,6 +59,9 @@ CAPABILITIES = (
 
 
 def _show(check: Check) -> None:
+    if check.detail is not None:
+        typer.echo(check.detail)
+        return
     typer.echo(
         f"check={check.name} result={check.result.value} reason={check.reason} "
         f"下一步：{check.next_step}"
