@@ -88,7 +88,7 @@ def test_restore_and_irreversible_revoke_never_resurrect_old_grants(
 
     from paper_radar.live_evidence.ledger import LedgerError
 
-    with pytest.raises(LedgerError, match="activation_empty"):
+    with pytest.raises(LedgerError, match="evidence_activation_empty"):
         restarted.activate(review, confirmation=receipt().receipt_id, now=NOW)
 
 
@@ -201,8 +201,8 @@ def test_clock_watermark_protects_all_read_and_write_paths(
 @pytest.mark.parametrize(
     "confirmation,use_id,reason",
     [
-        ("bad", "boundary-low", "activation_confirmation_mismatch"),
-        ("correct", "read-low", "activation_empty"),
+        ("bad", "boundary-low", "evidence_activation_confirmation_mismatch"),
+        ("correct", "read-low", "evidence_activation_empty"),
     ],
 )
 def test_activation_cannot_grant_another_use_or_bypass_confirmation(

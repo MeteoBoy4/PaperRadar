@@ -102,7 +102,7 @@ def test_owner_reviews_complete_receipt_and_confirms_exact_short_id(
     assert result.output.index('"binding"') < result.output.index("输入回执短 ID")
     assert "verified_at=" in result.output and "expires_at=" in result.output
     if expected:
-        assert "activation_confirmation_mismatch" in result.output
+        assert "evidence_activation_confirmation_mismatch" in result.output
     else:
         assert "capabilities=cwd_ancestors" in result.output
 

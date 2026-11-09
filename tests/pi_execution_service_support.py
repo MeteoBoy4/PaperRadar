@@ -82,7 +82,8 @@ def allow_synthetic(
         )
 
     monkeypatch.setattr(
-        "paper_radar.pi_execution.service.build_admission_request", request
+        "paper_radar.pi_execution.admission_checkpoints.build_admission_request",
+        request,
     )
     monkeypatch.setattr(
         "paper_radar.pi_execution.admission_guard.load_admission_evidence",
@@ -91,10 +92,10 @@ def allow_synthetic(
         ),
     )
     monkeypatch.setattr(
-        "paper_radar.pi_execution.service.request_time_tick", lambda: True
+        "paper_radar.pi_execution.admission_checkpoints.request_time_tick", lambda: True
     )
     monkeypatch.setattr(
-        "paper_radar.pi_execution.service.recheck_admission_request",
+        "paper_radar.pi_execution.admission_checkpoints.recheck_admission_request",
         lambda request, *, now: None,
     )
 

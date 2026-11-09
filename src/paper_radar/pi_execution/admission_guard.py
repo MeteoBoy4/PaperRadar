@@ -4,8 +4,8 @@ from contextlib import suppress
 from datetime import datetime
 
 from paper_radar.live_evidence.ledger import LedgerError
+from paper_radar.live_evidence.lifecycle import use_id_for
 from paper_radar.live_evidence.reasons import ReasonCode
-from paper_radar.live_evidence.receipt import UseId
 from paper_radar.live_evidence.service import (
     AdmissionProjection,
     AdmissionRequest,
@@ -88,9 +88,10 @@ class AdmissionGuard:
         failed: set[Capability] = set(failed_capabilities or ())
         if projection is not None and failed_capabilities is None:
             for assessment in projection.decision.capabilities:
-                if (
-                    assessment.requirement is Requirement.REQUIRED
-                    and assessment.reasons
+                if assessment.requirement is Requirement.REQUIRED and any(
+                    reason.code
+                    in {ReasonCode.BINDING_DRIFT, ReasonCode.MATERIAL_MISMATCH}
+                    for reason in assessment.reasons
                 ):
                     failed.add(assessment.capability)
                 for reason in assessment.reasons:
@@ -103,18 +104,7 @@ class AdmissionGuard:
         for capability, source in self.sources.items():
             if not failed or capability in failed:
                 grouped.setdefault(source, set()).add(capability)
-        # UseId 是闭合格名,不接受产品提供的自由参数。
-        use_id: UseId
-        key = (self.use.consumer.value, self.use.thinking_level.value)
-        uses: dict[tuple[str, str], UseId] = {
-            ("boundary", "low"): "boundary-low",
-            ("boundary", "high"): "boundary-high",
-            ("value", "low"): "value-low",
-            ("value", "high"): "value-high",
-            ("read", "low"): "read-low",
-            ("read", "high"): "read-high",
-        }
-        use_id = uses[key]
+        use_id = use_id_for(self.use)
         if not grouped:
             with suppress(LedgerError, OSError):
                 request_use_revocation(use_id, now=now)

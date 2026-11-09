@@ -1,7 +1,11 @@
 """带版本的六格能力登记;变更版本不继承旧证据激活。"""
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
+from typing import get_args
 
+from paper_radar.live_evidence.receipt import UseId
 from paper_radar.live_evidence.types import (
     AdmissionUse,
     CallSite,
@@ -33,6 +37,8 @@ class AdmissionRegistry:
     def __post_init__(self) -> None:
         if not self.version.strip():
             raise RegistryError("registry_version_invalid")
+        if not self.uses:
+            raise RegistryError("admission_use_undefined")
         seen: set[AdmissionUse] = set()
         for entry in self.uses:
             if entry.use in seen:
@@ -139,3 +145,35 @@ INITIAL_REGISTRY = AdmissionRegistry(
         for level in (ThinkingLevel.LOW, ThinkingLevel.HIGH)
     ),
 )
+
+
+def _use_ids() -> Mapping[AdmissionUse, UseId]:
+    # wire Literal 保持冻结;当前登记必须与它一一闭合,不借内部事件载荷铸造用途。
+    wire_ids: tuple[UseId, ...] = get_args(UseId)
+    indexed = {value: value for value in wire_ids}
+    result: dict[AdmissionUse, UseId] = {}
+    for entry in INITIAL_REGISTRY.uses:
+        identifier = f"{entry.use.consumer.value}-{entry.use.thinking_level.value}"
+        if identifier not in indexed:
+            raise RegistryError("admission_use_undefined")
+        result[entry.use] = indexed[identifier]
+    if set(result.values()) != set(wire_ids) or len(result) != len(wire_ids):
+        raise RegistryError("registry_incomplete")
+    return MappingProxyType(result)
+
+
+USE_IDS = _use_ids()
+
+
+def use_id_for(use: AdmissionUse) -> UseId:
+    try:
+        return USE_IDS[use]
+    except KeyError:
+        raise RegistryError("admission_use_undefined") from None
+
+
+def use_for_id(identifier: str) -> AdmissionUse:
+    for use, use_id in USE_IDS.items():
+        if identifier == use_id:
+            return use
+    raise RegistryError("admission_use_undefined")

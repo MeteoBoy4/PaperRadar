@@ -116,7 +116,7 @@ Apport/core 只展示共享投影的当次绑定结论，不另做长期漂移�
 `paper_radar.doctor.admission.admission_rows` 提供结构化行；
 `render_admission_fragment` 提供供 B/H 嵌入的中文片段，二者消费同一个 AdmissionProjection，
 不重判能力或改写原始事实。接口也接受 Read 格的共享投影，但不使本 CLI 自动诊断 Read。
-片段不计入每日五项/全文三项论文容量；B 首个日报票验收最小日报、健康和空日报嵌入，H 承接完整日报。
+片段不计入每日五项/全文三项论文容量；日报嵌入的后继工作见[路线图](../roadmap.md)。
 本接口不实现整套日报或论文筛选排版。
 `UsageDisclosure` 保留请求可证下界及观察层/来源/窗口、精确请求数 unknown 与 Pi 自报 token；
 隐藏重试、预热、刷新可能不可见，缺失或 totalTokens=0 不代表零成本，不推算供应商独立账单。

@@ -181,7 +181,7 @@ def test_cutover_permanently_revokes_old_receipts_and_requires_fresh_owner_activ
         item.revoked and not item.evidence_active
         for item in lifecycle.snapshot(now=NOW).evidence
     )
-    with pytest.raises(LedgerError, match="activation_empty"):
+    with pytest.raises(LedgerError, match="evidence_activation_empty"):
         lifecycle.activate(
             lifecycle.review(
                 old.receipt_id,
@@ -366,7 +366,7 @@ def test_integrated_owner_bundle_freezes_cutover_and_new_plan_drill(
         config["plan_id"]
         == json.loads((output / "approved-plan.json").read_bytes())["plan_id"]
     )
-    assert config["initial_activation"] == "required"
+    assert config["initial_evidence_activation"] == "required"
     assert config["protected_log_probe"] == "required"
     assert "receipt_id" not in config
     assert "PR_SET_NO_NEW_PRIVS" in source

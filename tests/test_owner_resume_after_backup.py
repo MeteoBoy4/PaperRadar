@@ -75,6 +75,11 @@ def after_backup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SimpleNames
     from tests.live_evidence_ledger_support import NOW
     from tests.screening_live_admission_support import protected_admission
 
+    # 此 fixture 模拟专用续行器实际导入的冻结 v4 runtime,不把目标改为当前开发版。
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.current_binding.ADMISSION_POLICY_VERSION",
+        "pi-admission-v4",
+    )
     ledger, receipt, components = protected_admission(
         tmp_path / "evidence",
         monkeypatch,

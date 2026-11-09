@@ -316,7 +316,10 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v4`；v1/v2/v3 的 D7 向量与摘要锚原字节保留，新策略不继承旧绑定资格。
+源代码准入策略为 `pi-admission-v5`；v1–v4 的 D7 向量与摘要锚原字节保留。
+v5 显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
+新代码与已部署 v4 的策略身份不同，不能继承其执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
+源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。
 
 固定零参数 `/usr/libexec/paperradar/live-evidence-collect` 与仅收紧的 `live-evidence-tighten`
 是 sudoers 唯一 NOPASSWD 命令；后者由有限解析器核对 revoke/mark/revoke-use/tick。
@@ -362,7 +365,7 @@ core 设置仅作用于合成子进程，不修改其他程序或全局 Apport/c
 未观察组件用带组件名的 unobserved 摘要占位以保持完整绑定，其 checked_components 为空缺，
 相应主张始终 unknown；占位不是合成健康值。所有分项都经过既有 receive 规范和 show 回查。
 同轮可对六格分别记录全部35能力共210条主张，只复用内容无关的站点测量，不增加认证/模型或探针次数。
-CurrentObservation保持当前activation/snapshot的low声明上下文；高档本地消费者重算自身MODEL_TUPLE，
+CurrentObservation保持当前供给选择/snapshot的low声明上下文；高档本地消费者重算自身MODEL_TUPLE，
 站点能力仅按本能力依赖适用，高档模型/RPC/observer没有verified主张，不表示六格完整可执行。
 
 AUTH_CACHE_BASELINE递归专用credentials全根：auth.json、exp2-installation-id、models-store.json、
@@ -416,12 +419,15 @@ immutable连接只读主文件并跳过锁／变化检测，不是并发保证�
 这些条件仅适用于业务预算采样，受保护准入账本的journal／WAL／SHM拒绝规则不变。
 原验证时点不续、stopped不重启，不认证／模型／网络、不compile或重装Pi；新进程重读不证明主机重启。
 
-`scripts/issue176_closure.py` 仍可为已经部署并明确新人工激活的v4构建独立包；
-它核目标payload／manifest、当前准入策略并内嵌字节，不能拿现场v3执行新工作流或替代首次cutover。
+`scripts/issue176_closure.py` 为已经部署并明确人工证据激活的当前同策略 runtime 构建独立包；
+它核目标payload／manifest、当前准入策略并内嵌字节，不能拿旧策略现场执行新工作流或替代首次cutover。
+v5 新发 owner 配置使用 `initial_evidence_activation`；`initial_activation` 仅作为冻结 v4 配置的只读兼容键。
+专用 `issue176_resume_after_backup*.py` 仍只针对其冻结 v4 runtime 与原检查点，不接受当前 v5 runtime 代替旧恢复目标。
+旧配置、事件与安全回执字段不迁移，旧部署包原字节保留。
 部分／中断状态只保留root检查点，不自动回滚、清理、恢复资格或重新初始化日志。
 具体状态前提见[owner方案](../../intent/review/issue-168/closure-owner-plan.md)；
-本次已完成的保护现场验证、正式只读资格及仍未证明的边界见[现场安全验证](../verification/issue-168-176-owner-safety-verification.md)。
-该现场结论不替代精确登记、兼容检查或最终完整离线门禁。
+现场验证与正式只读采样的证据归属见[现场安全验证](../verification/issue-168-176-owner-safety-verification.md)。
+各次现场结论仅约束其记录的身份与范围，不替代当前树的离线验证。
 
 ## 错误与拒绝
 
@@ -433,14 +439,14 @@ admission_use_undefined、evidence_scope_mismatch、evidence_conflict、material
 evidence_time_invalid、evidence_time_future、clock_rollback、ledger_untrusted。
 账本以 `LedgerError.category` 报告 ledger_untrusted、ledger_schema_unsupported、protected_entry_required、
 source_untrusted、source_integrity、receipt_invalid、plan_missing／conflict／mismatch／round_conflict／stopped、
-receipt_conflict／missing、activation_empty、activation_confirmation_mismatch、
+receipt_conflict／missing、evidence_activation_empty、evidence_activation_confirmation_mismatch、
 observation_invalid／stale／changed、binding_observation_unavailable、pending_revocation_unavailable 等受控原因，错误不包含输入或敏感路径。来源与版本失信的 `reason` 映射为 ledger_untrusted；
 纯层不认证账本。CLI 失败返回 2，提示所有者检查受保护部署、计划与来源。
 该词表与现有闭合 ExecutionReason 分开，任务结算映射由消费者接线维护，不改写旧 token。
 
 ## 不提供／不证明
 
-不提供模型 collector、项目 unit/CG/nft/observer 产品化、特权持续观察或产品部署；这些由 Live 承接。
+不提供模型 collector、项目 unit/CG/nft/observer 产品化、特权持续观察或产品部署；后继工作见[路线图](../roadmap.md#module-live)。
 真实 OS 特权证明与所有者激活不由离线构建提供；消费闭包与当前待验边界见[收口台账](../verification/issue-168-176-live-admission-closure.md)。旧不完整调用不能自动升级成完整请求。
 接收权威只核来源、完整性与内部一致性，不能独立证明没有遗漏的失败；失败历史完备性由采集器与 sudoers 边界承担。
 离线构建与合成覆盖不证明真实 root、供应商或模型行为，不替代所有者激活、真实材料外发确认、根用途或校准资格。

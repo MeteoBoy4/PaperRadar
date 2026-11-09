@@ -24,7 +24,9 @@ def test_product_never_calls_legacy_synthetic_evidence_alias(
         calls.append(binding)
         raise AssertionError("产品触及工程授予接缝")
 
-    monkeypatch.setattr("paper_radar.pi_execution.service._evidence_for", synthetic)
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.service._evidence_for", synthetic, raising=False
+    )
     with pytest.raises(ExecutionError, match="evidence_missing"):
         service.run_attempt(receipt.receipt_id)
     assert calls == []
@@ -296,18 +298,10 @@ def test_runtime_failure_tightens_and_retry_does_not_refill_budget(
 
 
 def test_product_service_has_no_legacy_alias_read() -> None:
-    import ast
-    import inspect
+    from tests.live_admission_source_support import legacy_alias_reads
 
-    from paper_radar.pi_execution import service
-
-    tree = ast.parse(inspect.getsource(service))
-    assert not any(
-        isinstance(node, ast.Name)
-        and node.id == "_evidence_for"
-        and isinstance(node.ctx, ast.Load)
-        for node in ast.walk(tree)
-    )
+    root = Path(__file__).resolve().parents[1] / "src/paper_radar"
+    assert legacy_alias_reads(root) == ()
 
 
 @pytest.mark.parametrize(

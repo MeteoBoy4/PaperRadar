@@ -192,10 +192,10 @@ def activate(
         )
         typer.echo(review.summary)
         if not review.eligible:
-            raise LedgerError("activation_empty")
+            raise LedgerError("evidence_activation_empty")
         confirmation = typer.prompt("请审阅上方脱敏回执，输入回执短 ID 确认证据激活")
         if confirmation != review.receipt_id:
-            raise LedgerError("activation_confirmation_mismatch")
+            raise LedgerError("evidence_activation_confirmation_mismatch")
         refresh_started = _now()
         _refresh_current_observation()
         current = load_current_observation(ledger, now=_now())
@@ -206,10 +206,10 @@ def activate(
             != frozenset(observation.checked_components)
         ):
             raise LedgerError("observation_changed")
-        activation_now = _now()
-        current.validate_time(now=activation_now)
+        evidence_activation_now = _now()
+        current.validate_time(now=evidence_activation_now)
         result = lifecycle.activate(
-            review, confirmation=confirmation, now=activation_now
+            review, confirmation=confirmation, now=evidence_activation_now
         )
     except LedgerError as error:
         _failure(error.category)

@@ -25,8 +25,11 @@ from paper_radar.live_evidence.types import (
     ThinkingLevel,
 )
 from paper_radar.llm.models import PROTOCOL_PROFILES
-from paper_radar.pi_execution.admission import EvidenceBinding, admit
-from paper_radar.pi_execution.admission_guard import AdmissionGuard
+from paper_radar.pi_execution.admission import (
+    EvidenceBinding,
+    load_admission_evidence,
+    sampling_mapping_reason,
+)
 from paper_radar.pi_execution.current_binding import (
     build_admission_request,
     recheck_admission_request,
@@ -93,10 +96,9 @@ def _utc_now() -> datetime:
 def _admission_checks(
     database: Path, binding: EvidenceBinding, credentials_dir: Path
 ) -> tuple[Check, ...]:
-    # 仅复用既有采样结构规则;缺证据不是最终准入结论。
-    sampling_reason = admit(binding, None)
-    if sampling_reason != "evidence_missing":
-        raise ExecutionError(sampling_reason or "sampling_mapping_unavailable")
+    sampling_reason = sampling_mapping_reason(binding)
+    if sampling_reason is not None:
+        raise ExecutionError(sampling_reason)
     try:
         level = ThinkingLevel(binding.thinking_level)
     except ValueError:
@@ -111,7 +113,6 @@ def _admission_checks(
     checks: list[Check] = []
     for consumer in (Consumer.BOUNDARY, Consumer.VALUE):
         use = AdmissionUse(CallSite.SCREENING, consumer, level)
-        guard = AdmissionGuard(use)
         try:
             request = build_admission_request(
                 database,
@@ -120,13 +121,7 @@ def _admission_checks(
                 credentials_dir=credentials_dir,
                 now=_utc_now(),
             )
-            try:
-                projection = guard.check(request, now=_utc_now())
-            except ExecutionError:
-                # 只展示 guard 保留的权威投影;doctor 不调用 tighten 或时间打点。
-                if guard.projection is None:
-                    raise
-                projection = guard.projection
+            projection = load_admission_evidence(request, now=_utc_now())
             if projection.decision.executable:
                 recheck_admission_request(request, now=_utc_now())
         except LedgerError as error:
