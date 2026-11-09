@@ -438,6 +438,17 @@ uv run --offline --locked paper-radar pi supply gc --execute <plan_id> \
 [安装清理计划](docs/contracts/pi-supply.md#不可变安装清理计划)。
 供给检查和激活不代表 RPC、模型或校准就绪。
 
+β 站点封印包由非特权入口显式构建：
+
+```bash
+uv run --offline --locked python scripts/seal_site_evidence.py --help
+```
+
+入口输出冻结 Python/依赖/源码、零请求批准计划、部署/卸载脚本、SHA256 与私有审阅说明。
+所有者审阅确切字节后从 root 冻结副本部署，默认卸载保留账本与回执；不自动证据激活。
+采集只观察当前站点和认证/cache stat 元数据，不读秘密正文、不认证、不调用模型、不联网。
+模型、RPC、IPv4 出站和 observer 缺项保持 unknown；规则见 [Live 证据契约](docs/contracts/live-evidence.md#β-站点采集与封印部署)。
+
 ## Pi RPC
 
 `paper_radar.llm` 提供冻结调用描述，`paper_radar.llm.rpc.run_call` 提供显式注入会话的
