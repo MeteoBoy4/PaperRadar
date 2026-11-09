@@ -454,6 +454,11 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 G3证据激活仍由所有者另行完整审阅并手输实际短ID，详见上述契约。
 模型、RPC、IPv4 出站和 observer 缺项保持 unknown；规则见 [Live 证据契约](docs/contracts/live-evidence.md#β-站点采集与封印部署)。
 
+单次收口审阅包可用 `uv run --offline --locked python scripts/issue176_closure.py --help` 显式构建。
+它复用已部署冻结 runtime，输出待审 owner 工作流；构建不执行 sudo 或操作账本。
+真实恢复会失效全部旧激活，成功出口要求所有者重新手动激活非空最终分项，详见
+[收口覆盖与待验边界](docs/verification/issue-168-176-live-admission-closure.md)。
+
 ## Pi RPC
 
 `paper_radar.llm` 提供冻结调用描述，`paper_radar.llm.rpc.run_call` 提供显式注入会话的

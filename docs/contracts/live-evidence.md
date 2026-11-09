@@ -372,6 +372,20 @@ schema1 的 plans／receipts／events 表定义与 receipt v1 原字节保持；
 新动作的 events.reason 使用 LifecyclePayload 封闭载荷，旧事件 reason 的既有含义保持。
 恢复历史事件以 history_ 动作保留原时点，不能被当作新授予。
 
+### 所有者单次收口审阅包
+
+`scripts/issue176_closure.py` 只在非特权构建期按显式 payload/manifest SHA 和回执短 ID
+生成独立 owner 审阅包，不读取站点、不执行 sudo。所有者审阅确切字节后运行唯一入口；
+root 核部署完整成员、摘要、保护链、入口与 sudoers，再从已审入口内嵌精确字节冻结新脚本及配置并重核摘要；root不读取用户可写来源。
+不替换已部署 runtime、不新增 sudoers 或产品写入接口。
+工作流只复用既有 owner 激活、只收紧 helper 和 Lifecycle backup/restore：临时独立格由本人手动确认激活，
+备份后撤销，独立解释器重读，再合并恢复并核对全部旧激活失效；最终格须本人重新完整审阅/手动确认，
+最终非空原能力集合当前适用才产生受保护安全回执。每次激活仍真实刷新并核对60秒观察。
+业务库只读查询必要预算标识、代际与 attempt 计数，前后不变才记完成；不查询 payload/token/正文或刷新预算。
+任务须暂停且无 WAL/SHM/journal，随后用 immutable 只读连接避免生成 sidecar；条件不满足直接拒绝。
+中断只保留检查点，不自动回滚、覆盖、清理或授予；新进程重读不证明实际主机/服务重启。
+具体待审范围与真实执行状态见[收口台账](../verification/issue-168-176-live-admission-closure.md)。
+
 ## 错误与拒绝
 
 `AdmissionReason` 使用闭合 ReasonCode，能力参数为 Capability，组件参数为 BindingComponent；
@@ -390,9 +404,9 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 ## 不提供／不证明
 
 不提供模型 collector、项目 unit/CG/nft/observer 产品化、特权持续观察或产品部署；这些由 Live 承接。
-真实 OS 特权证明与所有者激活不由离线构建提供；消费闭包由 #176 收口。旧不完整调用不能自动升级成完整请求。
+真实 OS 特权证明与所有者激活不由离线构建提供；消费闭包与当前待验边界见[收口台账](../verification/issue-168-176-live-admission-closure.md)。旧不完整调用不能自动升级成完整请求。
 接收权威只核来源、完整性与内部一致性，不能独立证明没有遗漏的失败；失败历史完备性由采集器与 sudoers 边界承担。
-不提供真实 root、供应商或模型实测，不替代所有者激活、真实材料外发确认、根用途或校准资格。
+离线构建与合成覆盖不证明真实 root、供应商或模型行为，不替代所有者激活、真实材料外发确认、根用途或校准资格。
 威胁模型防范同 uid 产品进程、测试、Agent 工具伪造或篡改受保护证据及激活记录和配置 passed 自证；
 纯层本身没有写入或授予路径，接收／计划批准也不产生激活资格。不防范同 uid 直接修改源码，该边界由代码审阅与策略版本守卫承担。
 真实 OS 信任根与抗回滚保证不由这些普通值或离线测试建立。
