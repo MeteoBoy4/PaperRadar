@@ -1,12 +1,14 @@
-# Live 分项证据、受保护接收与纯准入判定
+# Live 分项证据、受保护账本与共享准入判定
 
 ## 用途与范围
 
 `paper_radar.live_evidence` 提供带版本的能力登记、普通值领域模型与纯判定函数。
 `evaluate_admission` 只消费显式输入，不读墙钟、主机、业务库或账本，不接收或激活证据。
 `receipt` 提供 Pydantic 权威回执与批准计划；`EvidenceLedger` 提供受保护接收与只读查询，
-`live-evidence receive/show` 暴露所有者入口。产品 `load_admission_evidence` 仍返回 None；
-Screening／Read 的现有缺证据拒绝保持。
+`live-evidence receive/show/activate/revoke` 暴露所有者入口。
+`service.load_admission_evidence` 对完整请求加载受保护事实并调用同一纯判定，返回结构化投影；
+`pi_execution.admission.load_admission_evidence` 延迟转交该完整请求，旧的不完整 EvidenceBinding 仍返回 None。
+Screening／Read 正式三检查点接线与 doctor 展示分别由消费票承接。
 
 ## 规则
 
@@ -21,7 +23,8 @@ Screening／Read 的现有缺证据拒绝保持。
 
 准入用途不包含或推导根用途。未定义用途被拒绝；登记拒绝空必需集合、重复用途、重复能力、缺少能力分类与必需项空依赖。
 版本经引用后冻结，版本变更须创建新版本；旧版本的证据激活不满足新版本。
-每个能力 × 准入用途只能输入一条事实；重复输入不论顺序或状态均拒绝，真实历史的唯一事实由后续账本读取权威选择。
+每个能力 × 准入用途只能输入一条事实；重复输入不论顺序或状态均拒绝，真实历史的唯一事实由账本读取权威按原接收时点与原接收事件序选择。
+同格同能力的新失败／unknown 不回退到旧 verified，即使之后合并恢复旧快照也保持。
 缺本格记录返回 `evidence_missing` 与 `claim=None`，其他消费者格或档位的状态、时间不填入本格投影。
 
 `CapabilityClaim` 保存原始 verified／not_assessed／unknown、依据、范围、原验证时间和可选观察时点；
@@ -129,13 +132,100 @@ unknown／not_assessed 不带 verified_at；全部观察与原验证时点位于
 事实不被覆盖；账本自身不可信时不补写失败事件。`show`、`show_plan`、`list_received`、`audit` 只读打开，
 不创建文件。回执查询重新核对原来源存在、权限与精确字节，以及计划／回执摘要；来源丢失或改变即拒绝。
 `connection(writable=False)` 是后继服务复用的受保护连接边界；写连接仍检查特权身份。
-账本与受保护回执需单独备份；恢复失效与重新激活规则见 ADR-0055，执行入口由后继激活／恢复服务负责。
+账本与受保护回执需单独备份；恢复失效与重新激活规则见 ADR-0055 及下文。
+`received_in(connection)` 供共享读取在同一 SQLite 快照中核验来源；只读连接显式开启读取事务。
 
 `paper-radar live-evidence show [--receipt-id <ID>]` 显示回执脱敏摘要，
 `show --plan-id <ID>` 只读查询批准计划；两种选择互斥。
 `receive --source <固定inbox回执> [--plan <受保护计划>]` 只经所有者 sudo 的封印入口使用，
 可先显式批准计划再接收；不能从用户可写仓库或虚拟环境执行 sudo Python。
 未部署封印入口时不能将当前仓库命令当成受保护入口。所有 `--help` 不打开账本、不联网。
+
+### 证据激活与不可逆撤销
+
+`EvidenceLifecycle.review` 展示完整脱敏回执 JSON、全部绑定摘要、准入用途、登记版本、
+分项原状态／原 verified_at／expires_at 及本次 eligible 原因。
+`activate` 要求准确输入回执的 16 hex 短 ID，写入前在保护事务内重新判定；
+激活范围只等于本回执当前仍为最新事实、有效且适用的 verified 分项与本格 required 集合的交集。
+空集合拒绝，unknown、披露型和缺失模型能力不会因此取得资格。接收、审阅与激活均不续期。
+同一有效范围重复激活返回 existing，不追加授予；恢复屏障后必须重新审阅确认。
+记录绑定回执、准入用途、登记版本与具体能力，登记升版不会扩大既有范围。
+
+`EvidenceLifecycle.tighten` 按登记依赖撤销受影响能力；传入未知影响时保守撤销本格全部主张，
+指定失败能力同样只能收紧。重复撤销保持同一资格结果并追加审计，原主张与时点不变。
+撤销不可逆，被撤销旧回执不能重新激活；须以新的有效证据和新回执取得资格。
+`mark` 追加待撤销事实并同时拒绝相关资格，合并前后保留待撤销披露。
+产品不写账本；所有者 CLI 与 helper 均只使用固定 root 信任策略，写连接检查特权身份。
+
+`live-evidence activate --receipt-id <ID> --use-id boundary-low` 在完整摘要后提示短 ID；
+只有所有者输密码授权的封印 sudo 入口可以授予。`revoke` 接受相同选择，撤销整格回执资格。
+NOPASSWD helper 的固定安装入口为 `/usr/libexec/paperradar/live-evidence-tighten`，
+模块入口 `paper_radar.live_evidence.tightening.tightening_main` 仅接受：
+
+- `tick`：用 helper 自己的 UTC 墙钟打点，不接受外部时间；
+- `revoke|mark <16hex回执ID> <准入用途> <逗号分隔组件或unknown> <逗号分隔失败能力>`。
+
+组件与能力均使用闭合枚举；未知动作、自由路径、自由时间、接收、激活与恢复参数全部拒绝。
+这个模块仅是供 #172 冻结部署的入口，仓库／venv 中的代码不能作为 sudo 执行来源。
+
+### 当前观察与认证/cache 基线
+
+所有者 activate 固定读取 `/var/lib/paperradar/live-evidence/inbox/current-observation.json`，
+由封印采集器产生规范 UTF-8 JSON（同 canonical_bytes 的排序、紧凑分隔与末换行规则）。
+内部 `CurrentObservation` 只有 `observed_at`、`binding`、`checked_components`：
+前者为有时区的 UTC 时点；binding 完整覆盖全部 BindingComponent，值为 64 hex 摘要；
+checked_components 无重复，只列本次确实覆盖的组件，不是 passed／verified 或激活声明。
+`load_current_observation` 重新验证来源保护与规范字节，拒绝 naive、未来时点及超过 60 秒的观察。
+等于 60 秒仍可读取。短 ID 确认后再次读同一来源并检查时效和观察完全相同，
+过期或改变则重采并重新审阅；60 秒是观察接口新鲜度，不改变任何能力原始期限。
+普通产品请求不能自行声明特权证明；未观测组件不能填入 checked_components。
+
+`baseline.metadata_digest` 是 #172 接收基线与消费者当次比较共用的 `auth-cache-stat-v1` 算法。
+输入为消费方固定顺序的认证／cache 根；只打开目录 fd，stat 成员，不打开或读取成员内容。
+清单按根索引和目录内成员名排序，路径为相对名，包含目录与普通单链接文件；
+每项记录 dev、ino、mode、uid、gid、nlink、size、mtime_ns、ctime_ns。
+规范对象为 format 与 members，UTF-8、键排序、紧凑 JSON、末换行后 SHA-256；绝对路径不进入摘要输入或错误。
+最多 4096 项、32 层；软链、特殊节点、读取失败和观察到的并发变化拒绝。
+新增／删除／改名／替换／权限或成员元数据变化改变基线摘要；
+当前根／祖先属主权限与隔离仍由对应独立检查负责，不由这个摘要推导。
+
+### 单一加载与投影
+
+`AdmissionRequest(use, binding, checked_components)` 只描述当次身份与观察范围，不接收证据或授予参数。
+`service.load_admission_evidence(request, now=...)` 使用固定受保护账本，加载原主张与独立资格维度，
+再调用 evaluate_admission；不联网、不认证、不调用 helper、不写任何事实。
+返回 `AdmissionProjection(decision, watermark, pending_revocation, sources)`：
+sources 是本格每个能力选中的回执 ID；decision 的原状态、依据、范围、时间、到期与原因均来自共享判定。
+Screening、Read 与 doctor 应消费这个投影，不能各自重述能力要求。
+完整当前执行绑定的宿主采集由消费方集中构造，doctor 复用相同只读构造入口；
+本接口不把回执自身 binding 当作当前身份，不把短时观察或普通请求当作证据授予。
+
+`request_revocation` 先将闭合 ID／用途／受影响能力／时点追加到
+`~/.local/state/paperradar/live-evidence-pending.jsonl` 并 fsync，再调用固定 sudo -n helper。
+即使账本不可读也可记录意图；helper 失败返回 false，相关分项当场拒绝且跨重启显示待撤销。
+成功也不清空意图：同一旧回执只能被继续收紧，新有效回执不借用旧资格。
+损坏、不可读或链接形式的意图文件使加载整体拒绝；意图文件只能用于拒绝，不能授予。
+意图持久化失败返回 pending_revocation_unavailable，调用者必须保持拒绝；
+若磁盘本身无法落盘，不能声称存在跨重启的持久意图。
+`request_time_tick` 只请求固定 helper 用自身时间打点；失败必须由执行消费者拒绝，不能当作已记录。
+
+### 时钟与独立恢复
+
+水位线取所有 events 中接收、批准、重复／拒绝、激活、撤销、mark、tick 与恢复时间的单调最大值。
+每笔追加均检查下限，读取也检查显式 now；naive 或倒退时间拒绝且写事务回滚。
+原验证时间仍由纯规则与接收窗口检查，最大已记录时间不为其续期。
+
+`EvidenceLifecycle.backup` 仅在受保护位置建立独立 SQLite 快照；inbox 原来源必须另行保存。
+`restore` 是受保护历史合并入口：在保护事务内核验快照版本、完整性、两个时间下限、来源与摘要，
+不覆盖当前尾部接收／撤销事实，保存原接收排序和历史审计，并追加 evidence_restored 屏障。
+全部屏障之前的激活失效，不能导入旧激活来放行；有效且未撤销的证据须重新人工审阅激活。
+恢复失败整体回滚。损坏在线账本拒绝自动覆盖、修复或重建，需所有者另行恢复受保护部署。
+业务库不参与此备份／恢复，账本操作不连接业务库、不修改 attempt、重试代际或预算。
+直接由 root 用旧文件替换整个信任根属于 root 篡改边界，不能由用户态水位线防范。
+
+schema1 的 plans／receipts／events 表定义与 receipt v1 原字节保持；生命周期只追加新的受控事件动作，
+新动作的 events.reason 使用 LifecyclePayload 封闭载荷，旧事件 reason 的既有含义保持。
+恢复历史事件以 history_ 动作保留原时点，不能被当作新授予。
 
 ## 错误与拒绝
 
@@ -147,15 +237,16 @@ admission_use_undefined、evidence_scope_mismatch、evidence_conflict、material
 evidence_time_invalid、evidence_time_future、clock_rollback、ledger_untrusted。
 账本以 `LedgerError.category` 报告 ledger_untrusted、ledger_schema_unsupported、protected_entry_required、
 source_untrusted、source_integrity、receipt_invalid、plan_missing／conflict／mismatch／round_conflict／stopped、
-receipt_conflict／missing 等受控原因，错误不包含输入或敏感路径。来源与版本失信的 `reason` 映射为 ledger_untrusted；
+receipt_conflict／missing、activation_empty、activation_confirmation_mismatch、
+observation_invalid／stale／changed、binding_observation_unavailable、pending_revocation_unavailable 等受控原因，错误不包含输入或敏感路径。来源与版本失信的 `reason` 映射为 ledger_untrusted；
 纯层不认证账本。CLI 失败返回 2，提示所有者检查受保护部署、计划与来源。
 该词表与现有闭合 ExecutionReason 分开，任务结算映射由消费者接线维护，不改写旧 token。
 
 ## 不提供／不证明
 
-不提供证据激活／撤销／恢复／时钟水位线服务、产品账本加载、特权证明验证、站点采集或封印部署，
-也不提供 doctor／日报接线。这些责任由 [Live 前置任务](https://github.com/MeteoBoy4/PaperRadar/issues/168)
-的 #171–#175 承接，消费闭包由 #176 收口。
+不提供站点采集、封印部署、真实 OS 特权证明、Screening／Read 正式三检查点或 doctor／日报接线。
+这些责任由 [Live 前置任务](https://github.com/MeteoBoy4/PaperRadar/issues/168) 的 #172–#175 承接，
+消费闭包由 #176 收口。旧不完整调用不能自动升级成完整请求。
 接收权威只核来源、完整性与内部一致性，不能独立证明没有遗漏的失败；失败历史完备性由采集器与 sudoers 边界承担。
 不提供真实 root、供应商或模型实测，不替代所有者激活、真实材料外发确认、根用途或校准资格。
 威胁模型防范同 uid 产品进程、测试、Agent 工具伪造或篡改受保护证据及激活记录和配置 passed 自证；

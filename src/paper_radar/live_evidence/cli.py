@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
+
+if TYPE_CHECKING:
+    from paper_radar.live_evidence.ledger import EvidenceLedger
 
 import typer
 
@@ -14,8 +17,8 @@ live_evidence_app = typer.Typer(
     no_args_is_help=True,
     help="""管理独立准入账本中的分项证据。
 
-当前用途：所有者接收受保护站点回执，或只读查询脱敏摘要。
-参数与选项：使用 show/receive --help 查看明确选择。
+当前用途：接收、审阅并显式证据激活，或撤销、只读查询脱敏摘要。
+参数与选项：使用 show/receive/activate/revoke --help 查看明确选择。
 副作用：show 只读打开账本；receive 仅经所有者 sudo 入口写入，不激活证据。
 帮助纯本地，不打开账本，不联网、不认证、不调用模型。
 自动配额：0 次模型调用；不修改业务 attempt 或预算。
@@ -58,12 +61,26 @@ def show(
             typer.echo(selected_plan.model_dump_json())
             return
         records = (ledger.show(receipt_id),) if receipt_id else ledger.list_received()
+        from paper_radar.live_evidence.lifecycle import EvidenceLifecycle
+
+        snapshot = EvidenceLifecycle(ledger).snapshot(now=_now())
+        sources = {
+            (use, capability): identifier
+            for use, capability, identifier in snapshot.sources
+        }
+        active = {
+            (item.use, item.capability)
+            for item in snapshot.evidence
+            if item.evidence_active and not item.revoked
+        }
     except LedgerError as error:
         _failure(error.category)
     for record in records:
+        evidence_active = any(sources.get(key) == record.receipt_id for key in active)
         typer.echo(
             f"receipt_id={record.receipt_id} "
-            f"received_at={record.received_at.isoformat()} evidence_active=false"
+            f"received_at={record.received_at.isoformat()} "
+            f"evidence_active={str(evidence_active).lower()}"
         )
         for claim in record.receipt.claims:
             typer.echo(
@@ -101,3 +118,100 @@ def receive(
         _failure(error.category)
     outcome = "existing" if result.duplicate else "received"
     typer.echo(f"receipt_id={result.receipt_id} result={outcome} evidence_active=false")
+
+
+def _owner_ledger() -> EvidenceLedger:
+    from paper_radar.live_evidence.ledger import EvidenceLedger
+
+    return EvidenceLedger()
+
+
+def _now() -> datetime:
+    return datetime.now(UTC)
+
+
+@live_evidence_app.command(
+    help="""所有者审阅回执并显式证据激活。
+
+当前用途：只激活已接收、本格 verified、有效且当前适用的必需分项。
+参数与选项：--receipt-id 回执短 ID，--use-id 六格准入用途之一。
+副作用：仅经所有者输密码授权的封印 sudo 入口追加激活；产品不能自行激活。
+确认前展示完整脱敏回执、绑定、原时点与期限，要求输入回执短 ID。
+自动配额：0；不认证、不联网、不调用模型。缺少或过期现场观察时请重采后重试。
+"""
+)
+def activate(
+    receipt_id: Annotated[str, typer.Option(help="要审阅的 16 位回执短 ID。")],
+    use_id: Annotated[
+        str, typer.Option(help="boundary/value/read 与 low/high 的准入用途。")
+    ],
+) -> None:
+    from paper_radar.live_evidence.evidence import ExecutionBinding
+    from paper_radar.live_evidence.ledger import LedgerError
+    from paper_radar.live_evidence.lifecycle import (
+        EvidenceLifecycle,
+        use_for_id,
+        use_id_for,
+    )
+    from paper_radar.live_evidence.observation import load_current_observation
+
+    try:
+        ledger = _owner_ledger()
+        ledger._writer()
+        selected_use = use_id_for(use_for_id(use_id))
+        observation = load_current_observation(ledger, now=_now())
+        lifecycle = EvidenceLifecycle(ledger)
+        review = lifecycle.review(
+            receipt_id,
+            selected_use,
+            binding=ExecutionBinding(tuple(observation.binding.items())),
+            checked_components=frozenset(observation.checked_components),
+            now=_now(),
+        )
+        typer.echo(review.summary)
+        if not review.eligible:
+            raise LedgerError("activation_empty")
+        confirmation = typer.prompt("请审阅上方脱敏回执，输入回执短 ID 确认证据激活")
+        current = load_current_observation(ledger, now=_now())
+        if current != observation:
+            raise LedgerError("observation_changed")
+        result = lifecycle.activate(review, confirmation=confirmation, now=_now())
+    except LedgerError as error:
+        _failure(error.category)
+    typer.echo(
+        f"receipt_id={result.receipt_id} "
+        f"result={'existing' if result.duplicate else 'activated'} "
+        f"capabilities={','.join(item.value for item in result.capabilities)}"
+    )
+
+
+@live_evidence_app.command(
+    help="""不可逆地撤销本格证据资格。
+
+当前用途：所有者通过封印 sudo 入口撤销指定回执、本准入用途的全部分项。
+参数与选项：--receipt-id 回执短 ID，--use-id 准入用途。
+副作用：追加持久收紧事实；不会授予、恢复或延长任何资格。
+自动配额：0；输出去向：标准输出；失败请检查账本信任根。
+"""
+)
+def revoke(
+    receipt_id: Annotated[str, typer.Option(help="要撤销的回执短 ID。")],
+    use_id: Annotated[str, typer.Option(help="要撤销的准入用途。")],
+) -> None:
+    from paper_radar.live_evidence.ledger import LedgerError
+    from paper_radar.live_evidence.lifecycle import (
+        EvidenceLifecycle,
+        use_for_id,
+        use_id_for,
+    )
+
+    try:
+        result = EvidenceLifecycle(_owner_ledger()).tighten(
+            receipt_id, use_id_for(use_for_id(use_id)), now=_now()
+        )
+    except LedgerError as error:
+        _failure(error.category)
+    typer.echo(
+        f"receipt_id={receipt_id} evidence_revoked=true "
+        f"capabilities={','.join(item.value for item in result)}"
+    )
