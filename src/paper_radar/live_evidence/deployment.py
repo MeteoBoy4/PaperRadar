@@ -845,7 +845,10 @@ def render_integrated_review(
 必须观察helper失败；新进程共享投影须拒绝。
 随后root固定helper撤销value-low，合并恢复备份核旧活全部失效、日志拒绝保留；最后本人重新审阅/手输ID激活boundary-low。
 每次激活前/确认后真实刷新60秒观察，不能续原verified_at。最终非空站点分项active+qualified才写root安全回执。
-业务库仅必要预算ID/代际/计数只读元数据，拒sidecar，不读payload/auth/cache正文，不compile/重装Pi。
+业务库仅必要预算ID/指纹/代际/计数只读元数据；任务/其他写入须暂停。
+无sidecar或可信空WAL(+可选SHM)且主库/侧文件metadata稳定才读主文件；journal/非空/失信/变化拒绝。
+不读侧文件正文、不删除/checkpoint/切模式；immutable不锁库，不能代替显式稳定性复核。
+不读payload/auth/cache正文，不compile/重装Pi。
 每阶段root检查点持久保留；任何失败停止，不自动清理、回滚或授予。NNP仅子进程，不改变root/sudoers配置。
 收口包只作当前现场OS和生命周期验证；模型/RPC/IPv4/observer缺口仍阻断，不表示Live/B完成。
 默认卸载保留账本/回执/原runtime归档/日志/失败/停止/预算；新权限字节仍P5本人审阅执行。

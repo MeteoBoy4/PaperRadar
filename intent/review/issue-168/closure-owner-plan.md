@@ -43,7 +43,12 @@ root只从内嵌字节冻结并复核执行，大payload由stdin传输；本人�
 
 安全回执记录原主张／时点、绑定摘要、用途／登记／到期依据、激活事件、产品权限拒绝与helper失败持久性结果。
 原始active与当前资格分开；模型／RPC／IPv4／observer缺项仍阻断，不把部分站点激活写成整体可执行。
-预算仅稳定只读主文件的必要ID／指纹／代际／attempt计数，已有WAL／SHM／journal即拒绝，不读payload/token/全文/auth/cache正文。
+预算仅稳定只读主文件的必要ID／指纹／代际／attempt计数，保留全部前后比较，不读payload/token/全文/auth/cache正文。
+业务任务与其他写入须先暂停；允许无侧文件或可信0字节WAL＋可选可信SHM，journal／非空WAL／单独SHM及失信仍拒绝。
+只lstat侧文件，不读其正文，不删除／checkpoint／切journal模式；路径和fd的inode、类型、链接、权限、uid/gid、
+大小及纳秒mtime/ctime在打开、各查询前和结束核稳定。atime可受自身只读访问影响，不作内容变化判据。
+immutable跳过锁与变化检测，只用于读取主文件；它不保证并发安全，不能代替暂停和显式稳定性复核。
+保护账本的hot-journal及其他sidecar拒绝不放宽。
 NNP仅作用子进程，不改root或sudoers；全流程无认证／模型／网络，不刷新预算，进程重读不证明主机重启。
 
 ## 中断与恢复边界

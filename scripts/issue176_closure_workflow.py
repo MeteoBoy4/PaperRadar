@@ -170,22 +170,80 @@ def checkpoint(config: dict[str, str], destination: Path) -> dict[str, Any]:
     return json.loads(destination.read_bytes())  # type: ignore[no-any-return]
 
 
+def _business_file_identity(info: os.stat_result) -> tuple[int, ...]:
+    # atime可由本次只读访问改变;内容/替换判定用纳秒mtime/ctime及inode/权限。
+    return (
+        info.st_dev,
+        info.st_ino,
+        info.st_mode,
+        info.st_nlink,
+        info.st_uid,
+        info.st_gid,
+        info.st_size,
+        info.st_mtime_ns,
+        info.st_ctime_ns,
+    )
+
+
+def _business_file_state(
+    database: Path, product_uid: int
+) -> dict[str, tuple[int, ...] | None]:
+    states: dict[str, os.stat_result | None] = {}
+    for suffix in ("", "-wal", "-shm", "-journal"):
+        try:
+            info = Path(str(database) + suffix).lstat()
+        except FileNotFoundError:
+            states[suffix] = None
+            continue
+        except OSError:
+            raise ValueError("closure_business_database_untrusted") from None
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_uid != product_uid
+            or info.st_nlink != 1
+        ):
+            raise ValueError("closure_business_database_untrusted")
+        states[suffix] = info
+    wal = states["-wal"]
+    if states[""] is None:
+        raise ValueError("closure_business_database_untrusted")
+    if (
+        states["-journal"] is not None
+        or (wal is not None and wal.st_size != 0)
+        or (states["-shm"] is not None and wal is None)
+    ):
+        raise ValueError("closure_business_sidecars_present")
+    return {
+        suffix: _business_file_identity(info) if info is not None else None
+        for suffix, info in states.items()
+    }
+
+
 def budget_inventory() -> dict[str, dict[str, int | str]]:
-    # 任务暂停且无sidecar时读取稳定主文件;immutable禁止SQLite创建WAL/SHM。
+    # 任务必须暂停;仅允许无sidecar或可信空WAL(+可选SHM),不读取侧文件正文。
+    # immutable跳锁/变化检测,稳定性由本函数显式检查,不能据此保证并发安全。
     # 仅必要预算ID/指纹、代际、attempt序号和每日领取标识,不选payload/token/正文。
     from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 
     site = SiteConfiguration.model_validate_json((RUNTIME / "site.json").read_bytes())
-    if any(
-        os.path.lexists(str(site.database) + suffix)
-        for suffix in ("-wal", "-shm", "-journal")
-    ):
-        raise ValueError("closure_business_sidecars_present")
-    descriptor = os.open(site.database, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    before = _business_file_state(site.database, site.product_uid)
+
+    def unchanged() -> None:
+        try:
+            current = _business_file_state(site.database, site.product_uid)
+        except ValueError:
+            raise ValueError("closure_business_database_changed") from None
+        if current != before:
+            raise ValueError("closure_business_database_changed")
+
     try:
-        before = os.fstat(descriptor)
-        if not stat.S_ISREG(before.st_mode) or before.st_uid != site.product_uid:
-            raise ValueError("closure_business_database_untrusted")
+        descriptor = os.open(site.database, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except OSError:
+        raise ValueError("closure_business_database_changed") from None
+    try:
+        if _business_file_identity(os.fstat(descriptor)) != before[""]:
+            raise ValueError("closure_business_database_changed")
+        unchanged()
         queries = {
             "screening_budgets": "budget_id,fingerprint",
             "screening_tasks": "task_id,budget_id,generation",
@@ -201,6 +259,7 @@ def budget_inventory() -> dict[str, dict[str, int | str]]:
             connection.execute("PRAGMA query_only=ON")
             connection.execute("PRAGMA trusted_schema=OFF")
             for table, columns in queries.items():
+                unchanged()
                 rows = connection.execute(
                     f"SELECT {columns} FROM {table} ORDER BY 1,2"
                 ).fetchall()
@@ -210,10 +269,8 @@ def budget_inventory() -> dict[str, dict[str, int | str]]:
                         json.dumps(rows, separators=(",", ":")).encode()
                     ).hexdigest(),
                 }
-        if os.fstat(descriptor) != before or any(
-            os.path.lexists(str(site.database) + suffix)
-            for suffix in ("-wal", "-shm", "-journal")
-        ):
+        unchanged()
+        if _business_file_identity(os.fstat(descriptor)) != before[""]:
             raise ValueError("closure_business_database_changed")
         return result
     finally:
