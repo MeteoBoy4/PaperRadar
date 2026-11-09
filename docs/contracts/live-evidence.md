@@ -145,11 +145,14 @@ unknown／not_assessed 不带 verified_at；全部观察与原验证时点位于
 ### 证据激活与不可逆撤销
 
 `EvidenceLifecycle.review` 展示完整脱敏回执 JSON、全部绑定摘要、准入用途、登记版本、
-分项原状态／原 verified_at／expires_at 及本次 eligible 原因。
+分项原状态／原 verified_at／expires_at、本次 eligible 原因及恢复屏障序号。
 `activate` 要求准确输入回执的 16 hex 短 ID，写入前在保护事务内重新判定；
 激活范围只等于本回执当前仍为最新事实、有效且适用的 verified 分项与本格 required 集合的交集。
 空集合拒绝，unknown、披露型和缺失模型能力不会因此取得资格。接收、审阅与激活均不续期。
-同一有效范围重复激活返回 existing，不追加授予；恢复屏障后必须重新审阅确认。
+写入前重新生成的完整审核摘要与 eligible 集合必须和所有者确认的内容相同；
+来源、登记、主张、期限、撤销、最新事实或恢复屏障改变时拒绝，不能静默激活剩余子集。
+阅读耗时不作为能力或观察期限；同一有效范围重复激活返回 existing，不追加授予。
+恢复屏障后必须重新审阅确认。
 记录绑定回执、准入用途、登记版本与具体能力，登记升版不会扩大既有范围。
 
 `EvidenceLifecycle.tighten` 按登记依赖撤销受影响能力；传入未知影响时保守撤销本格全部主张，
@@ -177,8 +180,13 @@ NOPASSWD helper 的固定安装入口为 `/usr/libexec/paperradar/live-evidence-
 前者为有时区的 UTC 时点；binding 完整覆盖全部 BindingComponent，值为 64 hex 摘要；
 checked_components 无重复，只列本次确实覆盖的组件，不是 passed／verified 或激活声明。
 `load_current_observation` 重新验证来源保护与规范字节，拒绝 naive、未来时点及超过 60 秒的观察。
-等于 60 秒仍可读取。短 ID 确认后再次读同一来源并检查时效和观察完全相同，
-过期或改变则重采并重新审阅；60 秒是观察接口新鲜度，不改变任何能力原始期限。
+等于 60 秒仍可读取。所有者手动输入准确短 ID 后，入口调用已部署的固定零参数
+`/usr/libexec/paperradar/live-evidence-collect`，清空环境且不传入自由路径或参数；
+失败、超时或不可用均拒绝。入口重新读取同一保护来源，要求观察时点不早于本次刷新开始，
+完整 binding 与 checked_components 集合和已审核观察相同；新的 observed_at 本身不视为事实漂移。
+最后用真实当前时间再次核观察的 60 秒时效，再在保护事务内核同一审核内容并追加激活。
+阅读可超过 60 秒；60 秒仅约束执行前的当前观察，不改变能力原 verified_at 或期限。
+事实变化、原证据到期、时钟回退或当前覆盖撤回均拒绝，须所有者重新审阅。
 普通产品请求不能自行声明特权证明；未观测组件不能填入 checked_components。
 
 `baseline.metadata_digest` 是 #172 接收基线与消费者当次比较共用的 `auth-cache-stat-v1` 算法。
@@ -264,8 +272,29 @@ owner预配cwd不算本包创建，默认卸载保留。全部执行代码来自
 拒绝保持原退出码，stderr输出受控原因、固定stage/resource及所有者下一步。
 SHA OK只证明对应复制校验，不能证明部署/采集/接收完成。
 run-g2仅自动化G2，不包含activate或G3短ID确认，不使产品executable=true。
-已存在的 runtime 仅接受相同 payload 身份，文件清单每次启动复核；不同字节须重新审阅并卸载重装。
-源代码准入策略仍为 `pi-admission-v2`，不改现有 D7 向量或任何旧策略身份。
+普通 deploy 对已存在 runtime 仅接受相同 payload 身份，文件清单每次启动复核；不同字节拒绝。
+非特权构建可同时指定 `--upgrade-from-payload <旧payload SHA256>` 与
+`--upgrade-from-manifest <旧manifest.sha256文件SHA256>`，生成单独 `run-upgrade.sh`／`upgrade.sh`。
+两个值必须成对且为小写64 hex，校验在创建输出目录前完成；普通包保持原入口及行为。
+升级包的 build-identity.json 另记录两个旧身份，REVIEW.md展示归档、失败与独立G3边界。
+新root字节仍须所有者重新完整审阅，旧包批准不能迁移。
+
+run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k复制到root所有staging并核相同SHA，
+只从root冻结upgrade运行。它先核现有ledger/inbox保护及root所有0755空cwd，
+再核旧payload标记规范字节、旧manifest文件SHA、完整文件与目录闭包及逐文件哈希。
+所有成员须root所有、无链接，文件单链接且为0644/0755、目录0755；额外空目录也拒绝。
+三个旧入口须root所有、单链接、0755且逐字节等于旧wrappers，sudoers须0440且等于旧副本。
+任何旧身份、成员、保护或字节变化，以及已有归档／runtime.new，均在归档前拒绝。
+
+通过后只将旧runtime原样移动到同级 `live-evidence-runtime.archive-<旧payload SHA256>`，
+不覆盖任何已有对象；只移除刚核对过的旧入口／sudoers，其原字节仍完整保存在归档中。
+随后调用新冻结deploy安装不同的新runtime，并按新collector身份的新计划真实零请求采集与接收。
+旧账本/inbox/回执/计划/撤销/stopped/失败历史和业务预算均保留；不重装Pi、不compile或写业务库。
+升级输出实际新receipt_id，不声称旧回执已由新代码核验，不自动激活或扩大能力。
+G3仍由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
+升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
+所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
+源代码准入策略为 `pi-admission-v3`；v1/v2 的 D7 向量与摘要锚原字节保留，新策略不继承旧绑定资格。
 
 固定零参数 `/usr/libexec/paperradar/live-evidence-collect` 与仅收紧的 `live-evidence-tighten`
 是 sudoers 唯一 NOPASSWD 命令；后者仍由既有有限解析器核对 revoke/mark/tick。

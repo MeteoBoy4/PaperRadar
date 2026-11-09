@@ -235,6 +235,92 @@ $exec_root/live-evidence-owner receive --plan "$plan" --source "$source"
     )
 
 
+def render_upgrade(old_payload_sha256: str, old_manifest_sha256: str) -> str:
+    """仅归档明确审阅的旧字节;不删除历史或自动覆盖中断状态。"""
+    for digest in (old_payload_sha256, old_manifest_sha256):
+        if not re.fullmatch(r"[0-9a-f]{64}", digest):
+            raise ValueError("upgrade_identity_invalid")
+    marker_sha256 = hashlib.sha256((old_payload_sha256 + "\n").encode()).hexdigest()
+    return (
+        _guard("upgrade")
+        + f"""
+stage=upgrade_preflight
+resource=deployment_path
+protected "$staging/deploy.sh"
+for path in "$ledger" "$ledger/inbox" /srv/pi-cwd; do
+    protected "$path"
+    [ -d "$path" ] || refuse protected_directory
+done
+resource=cwd
+[ "$(/usr/bin/stat -c %a /srv/pi-cwd)" = 755 ] || refuse cwd_state_unexpected
+[ -z "$(/usr/bin/find /srv/pi-cwd -mindepth 1 -maxdepth 1 -print -quit)" ] ||
+    refuse cwd_not_empty
+resource=old_runtime
+protected "$runtime"
+protected "$runtime/payload.sha256"
+protected "$runtime/manifest.sha256"
+digest=$(/usr/bin/sha256sum "$runtime/payload.sha256" | /usr/bin/cut -d ' ' -f 1)
+[ "$digest" = '{marker_sha256}' ] || refuse old_payload_identity
+digest=$(/usr/bin/sha256sum "$runtime/manifest.sha256" | /usr/bin/cut -d ' ' -f 1)
+[ "$digest" = '{old_manifest_sha256}' ] || refuse old_manifest_identity
+# 完整成员集合须等于原manifest及其目录闭包,不能忽略额外文件/目录。
+invalid=$(/usr/bin/find "$runtime" ! '(' -type f -o -type d ')' -print -quit)
+[ -z "$invalid" ] || refuse old_runtime_node
+expected=$(/usr/bin/awk '
+    {{path=substr($0,67); print "f " path;
+      while (sub("/[^/]+$", "", path)) print "d " path}}
+    END {{print "d "; print "f manifest.sha256"; print "f payload.sha256"}}
+    ' "$runtime/manifest.sha256" | LC_ALL=C /usr/bin/sort -u)
+actual=$(cd "$runtime" &&
+    /usr/bin/find . -printf '%y %P\\n' | LC_ALL=C /usr/bin/sort -u)
+[ "$expected" = "$actual" ] || refuse old_runtime_members
+members=$(/usr/bin/find "$runtime" -print)
+while IFS= read -r member; do
+    protected "$member"
+    member_mode=$(/usr/bin/stat -c %a "$member")
+    case "$member_mode" in 644|755) ;; *) refuse old_runtime_mode;; esac
+    if [ -d "$member" ]; then
+        [ "$member_mode" = 755 ] || refuse old_runtime_mode
+    fi
+    if [ -f "$member" ]; then
+        [ "$(/usr/bin/stat -c %h "$member")" -eq 1 ] || refuse old_runtime_hardlink
+    fi
+done <<MEMBERS
+$members
+MEMBERS
+(cd "$runtime" && /usr/bin/sha256sum --strict -c manifest.sha256 >/dev/null) ||
+    refuse old_runtime_integrity
+for entry in collect tighten owner; do
+    target=$exec_root/live-evidence-$entry
+    protected "$target"
+    [ -f "$target" ] && [ "$(/usr/bin/stat -c %h "$target")" -eq 1 ] ||
+        refuse entry_type
+    [ "$(/usr/bin/stat -c %a "$target")" = 755 ] || refuse entry_mode
+    /usr/bin/cmp "$target" "$runtime/wrappers/$entry" || refuse entry_conflict
+done
+policy=/etc/sudoers.d/paperradar-live-evidence
+protected "$policy"
+[ "$(/usr/bin/stat -c %a "$policy")" = 440 ] || refuse policy_mode
+[ -f "$policy" ] && [ "$(/usr/bin/stat -c %h "$policy")" -eq 1 ] || refuse policy_type
+/usr/bin/cmp "$policy" "$runtime/sudoers" || refuse policy_conflict
+archive="$runtime.archive-{old_payload_sha256}"
+[ ! -e "$archive" ] && [ ! -L "$archive" ] || refuse archive_exists
+[ ! -e "$runtime.new" ] && [ ! -L "$runtime.new" ] || refuse runtime_pending
+stage=upgrade_archive
+/usr/bin/mv "$runtime" "$archive"
+# 仅移除刚与旧冻结副本逐字节核过的入口/策略;原字节完整留在archive。
+for entry in collect tighten owner; do
+    /usr/bin/rm "$exec_root/live-evidence-$entry"
+done
+/usr/bin/rm "$policy"
+stage=upgrade_deploy
+/bin/sh "$staging/deploy.sh"
+message='封印升级完成：旧runtime已归档，新计划已采集接收；G3证据激活未执行。'
+/usr/bin/printf '%s\\n' "$message"
+"""
+    )
+
+
 def render_uninstall() -> str:
     return (
         _guard("uninstall")
@@ -427,15 +513,21 @@ resource=deployment
 
 
 def render_bootstrap(
-    digests: dict[str, str], *, owner_workflow: bool = True, progress: bool = True
+    digests: dict[str, str],
+    *,
+    owner_workflow: bool = True,
+    progress: bool = True,
+    upgrade: bool = False,
 ) -> str:
     names = (
         G2_ROOT_FILES
         if owner_workflow
         else ("deploy.sh", "uninstall.sh", "payload.tar")
     )
+    if upgrade:
+        names = (*names, "upgrade.sh")
     checks = "\n".join(f"{digests[name]}  {STAGING}/{name}" for name in names)
-    entry = "owner-workflow" if owner_workflow else "deploy"
+    entry = "upgrade" if upgrade else "owner-workflow" if owner_workflow else "deploy"
     announce = "/usr/bin/printf '%s\\n' 'G2 stage=root_copy'\n" if progress else ""
     return f"""set -eu
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
@@ -468,9 +560,15 @@ exec /bin/sh "$staging/{entry}.sh"
 """
 
 
-def render_g2_runner(digests: dict[str, str]) -> str:
-    checks = "\n".join(f"{digests[name]}  {name}" for name in G2_ROOT_FILES)
-    bootstrap = render_bootstrap(digests)
+def render_g2_runner(digests: dict[str, str], *, upgrade: bool = False) -> str:
+    names = (*G2_ROOT_FILES, "upgrade.sh") if upgrade else G2_ROOT_FILES
+    checks = "\n".join(f"{digests[name]}  {name}" for name in names)
+    bootstrap = render_bootstrap(digests, upgrade=upgrade)
+    announcement = (
+        "封印升级：只请求一次sudo密码，核旧身份并归档后部署；不执行G3。"
+        if upgrade
+        else "G2：只请求一次sudo密码，自动预配空cwd并部署；不执行G3。"
+    )
     return f"""#!/bin/sh
 set -eu
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
@@ -482,7 +580,7 @@ package=$(CDPATH= cd -- "$(/usr/bin/dirname -- "$0")" && /usr/bin/pwd -P)
 /usr/bin/printf '%s\\n' 'G2 stage=package_check'
 (cd "$package" &&
     /usr/bin/printf '%s\\n' {shlex.quote(checks)} | /usr/bin/sha256sum -c -)
-/usr/bin/printf '%s\\n' 'G2：只请求一次sudo密码，自动预配空cwd并部署；不执行G3。'
+/usr/bin/printf '%s\\n' {shlex.quote(announcement)}
 exec /usr/bin/sudo -k /bin/sh -c {shlex.quote(bootstrap)} sh "$package"
 """
 
@@ -559,6 +657,69 @@ sudo /bin/sh {STAGING}/uninstall.sh
 """
 
 
+def render_upgrade_review(
+    target: Path,
+    digests: dict[str, str],
+    site: SiteConfiguration,
+    plan: ApprovedPlan,
+    upgrade_from: tuple[str, str],
+) -> str:
+    checks = "".join(f"{digest}  {name}\n" for name, digest in digests.items())
+    return f"""# 所有者封印升级审阅
+
+这是新的root字节批准，旧G2批准不迁移。本目录含私有站点路径，请勿公开。
+请完整审阅run-upgrade.sh、upgrade.sh、deploy.sh、owner-workflow.sh、uninstall.sh、
+payload中的Python/依赖/源码、entry/wrappers、site/plan/sudoers/manifest和SHA256SUMS。
+build-identity.json绑定本次HEAD/tree/dirty、Python/lock/source/payload及旧身份。
+
+- 旧payload必须为{upgrade_from[0]}。
+- 旧manifest.sha256文件的SHA256必须为{upgrade_from[1]}。
+- 完整保护链、文件/目录集合、每个旧文件哈希、属主、权限、无链接/硬链均核验，
+  三个旧入口和sudoers也分别校验。
+- 旧runtime原样移动到同级live-evidence-runtime.archive-旧payloadSHA；不覆盖已有归档。
+- 只移除已与旧冻结副本核过的入口/sudoers，原字节仍留在归档中，再执行新冻结deploy。
+- 不改变cwd属主，不重装Pi，不compile或写EXP2业务库。保留ledger/inbox/旧回执/计划、
+  撤销、stopped、失败历史及预算；新collector/plan不复活旧资格。
+- 未知/篡改/不完整状态拒绝，中断不自动回滚、删除归档或重试。
+  升级成功后再次运行同包也安全拒绝；
+  owner先核现场再决定恢复，不得盲删runtime或归档。普通deploy仍拒不同payload。
+- sudoers仍只允许固定零参数collect和收紧tighten；owner放宽入口不在NOPASSWD中。
+  所有者仍须确认产品用户没有等价root组/能力/任意sudo通道。
+
+新计划{plan.plan_id}，窗口{plan.starts_at.isoformat()} → {plan.ends_at.isoformat()}；
+独立主张{", ".join(site.claim_uses or (site.use_id,))}；
+单轮/首失败停/认证模型网络预算全0。
+新runtime来自本次root冻结副本，执行会采集并接收新的实际回执，绝不自动激活。
+旧回执仍保留旧原时点，不假称旧回执已由新代码核验。模型/RPC/IPv4/observer仍unknown。
+
+完整审阅上述新字节后，只运行下面普通用户入口并输入一次sudo密码；其余复制/核验/升级/采集/接收由脚本完成：
+
+```sh
+{shlex.quote(str(target / "run-upgrade.sh"))}
+```
+
+入口先核包内固定SHA，再一次sudo -k复制到root所有staging并复核，只从root冻结upgrade运行。
+不从repo/.venv导入或执行root代码，不调用旧runtime代码。只有升级成功终态及新receipt_id才表示本步完成。
+
+G3仍由所有者另行执行。采用上一步实际返回的新receipt_id，完整审阅并本人手动输入短ID：
+
+```sh
+sudo /usr/libexec/paperradar/live-evidence-collect
+owner=/usr/libexec/paperradar/live-evidence-owner
+sudo -k "$owner" activate --receipt-id ACTUAL_RECEIPT_ID --use-id {site.use_id}
+```
+
+手动确认后固定collector真实刷新观察，同一绑定、覆盖与审核内容才写入；阅读可以超过60秒，
+当前观察TTL仍60秒，刷新不续原verified_at或期限。事实改变/撤销/到期/时钟回退仍拒绝。
+credentials全根含node-compile-cache全部stat，无正常写入例外；不得删除必要项或把unknown当通过。
+默认新uninstall保留归档、账本/回执/计划/失败/stopped/撤销历史。G3与完整门禁仍未由离线包完成。
+本包生成未执行真实sudo/collect/receive/revoke/activate、认证、模型或网络。
+
+```text
+{checks}```
+"""
+
+
 def build_deployment(
     target: Path,
     site: SiteConfiguration,
@@ -566,10 +727,13 @@ def build_deployment(
     starts_at: datetime,
     ends_at: datetime,
     source_root: Path,
+    upgrade_from: tuple[str, str] | None = None,
 ) -> dict[str, str]:
     """新目录输出确切review artifacts;窗口与现场身份由所有者入口提供。"""
     if starts_at.tzinfo is None or ends_at.tzinfo is None or starts_at >= ends_at:
         raise ValueError("plan_window_invalid")
+    if upgrade_from is not None:
+        render_upgrade(*upgrade_from)
     starts_at = starts_at.astimezone(UTC)
     ends_at = ends_at.astimezone(UTC)
     target.mkdir(mode=0o700, parents=True, exist_ok=False)
@@ -630,8 +794,13 @@ def build_deployment(
     (target / "owner-workflow.sh").write_text(
         render_owner_workflow(site.product_uid, site.product_gid)
     )
-    (target / "run-g2.sh").write_text(render_g2_runner(file_digests(target)))
-    (target / "run-g2.sh").chmod(0o755)
+    if upgrade_from is not None:
+        (target / "upgrade.sh").write_text(render_upgrade(*upgrade_from))
+    runner = "run-upgrade.sh" if upgrade_from is not None else "run-g2.sh"
+    (target / runner).write_text(
+        render_g2_runner(file_digests(target), upgrade=upgrade_from is not None)
+    )
+    (target / runner).chmod(0o755)
 
     def git_identity(*args: str) -> str:
         return subprocess.run(
@@ -661,11 +830,21 @@ def build_deployment(
         "collector_sha256": collector_digest,
         "payload_sha256": payload_digest,
     }
+    if upgrade_from is not None:
+        identity["upgrade_from"] = {
+            "payload_sha256": upgrade_from[0],
+            "manifest_sha256": upgrade_from[1],
+        }
     (target / "build-identity.json").write_text(
         json.dumps(identity, sort_keys=True, indent=2) + "\n"
     )
     digests = file_digests(target)
-    (target / "REVIEW.md").write_text(render_review(target, digests, site, plan))
+    review_text = (
+        render_review(target, digests, site, plan)
+        if upgrade_from is None
+        else render_upgrade_review(target, digests, site, plan, upgrade_from)
+    )
+    (target / "REVIEW.md").write_text(review_text)
     digests = file_digests(target)
     (target / "SHA256SUMS").write_text(
         "".join(f"{digest}  {name}\n" for name, digest in digests.items())

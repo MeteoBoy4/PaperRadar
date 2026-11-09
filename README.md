@@ -449,7 +449,9 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 采集只观察当前站点和认证/cache stat 元数据，不读秘密正文、不认证、不调用模型、不联网。
 三项SHA OK后仍须核对部署/采集/接收终态；拒绝诊断给出受控原因与阶段。
 所有者审阅新包后只运行REVIEW中的run-g2.sh，输入一次sudo密码，脚本自动预配固定空cwd并完成G2。
-普通部署不接管用户目录；G3证据激活仍由所有者另行确认。
+普通部署不接管用户目录。更新既有冻结runtime可明确提供旧payload与manifest SHA，
+构建单入口升级包，核旧字节后原样归档，保留账本与历史；新字节须所有者重新审阅。
+G3证据激活仍由所有者另行完整审阅并手输实际短ID，详见上述契约。
 模型、RPC、IPv4 出站和 observer 缺项保持 unknown；规则见 [Live 证据契约](docs/contracts/live-evidence.md#β-站点采集与封印部署)。
 
 ## Pi RPC
@@ -466,7 +468,8 @@ Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接
 带版本的六格登记、共享分项投影，以及独立受保护账本的接收、证据激活、不可逆撤销与恢复见
 [Live evidence](docs/contracts/live-evidence.md)。所有者入口为 `paper-radar live-evidence receive/activate/revoke`，
 `show` 查询回执，`show --plan-id <ID>` 查询批准计划；帮助纯本地。
-activate 展示脱敏回执并要求短 ID，当前观察过期或缺项继续拒绝；接收不激活，原期限不延长。
+activate 展示完整脱敏回执并要求手输短 ID；确认后由固定封印采集器刷新观察，审核内容相同才激活。
+阅读可超过60秒，执行前观察仍受60秒时效约束；事实改变或能力到期继续拒绝，原期限不延长。
 Screening 正式入口在刷新前、准备后和领取事务内读取同一分项权威；缺口拒绝并持久收紧。
 Read 执行边界见[Read 执行契约](docs/contracts/read-execution.md)；受保护部署与实际证据激活由所有者完成。有限合成实验的适用范围见
 [EXP-2 证据与承接](docs/verification/exp-2-pi-live-probe.md)，不据此授予生产执行。

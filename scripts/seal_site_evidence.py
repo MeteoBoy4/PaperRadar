@@ -22,7 +22,14 @@ def main() -> int:
     parser.add_argument(
         "--output", type=Path, required=True, help="尚不存在的私有审阅目录。"
     )
+    parser.add_argument("--upgrade-from-payload", help="明确审阅的旧payload SHA256。")
+    parser.add_argument(
+        "--upgrade-from-manifest",
+        help="明确审阅的旧manifest文件SHA256；必须与旧payload配对。",
+    )
     args = parser.parse_args()
+    if bool(args.upgrade_from_payload) != bool(args.upgrade_from_manifest):
+        parser.error("升级必须同时提供旧payload与manifest SHA256。")
     from paper_radar.live_evidence.deployment import build_deployment
     from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 
@@ -34,6 +41,9 @@ def main() -> int:
             starts_at=datetime.fromisoformat(args.starts_at),
             ends_at=datetime.fromisoformat(args.ends_at),
             source_root=Path(__file__).resolve().parents[1],
+            upgrade_from=(args.upgrade_from_payload, args.upgrade_from_manifest)
+            if args.upgrade_from_payload
+            else None,
         )
     except (ValueError, OSError):
         parser.exit(

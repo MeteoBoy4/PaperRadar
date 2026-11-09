@@ -43,6 +43,7 @@ def test_owner_cli_reviews_before_confirmation_and_refuses_expired_observation(
     )
     (root / "inbox" / "current-observation.json").chmod(0o644)
     monkeypatch.setattr(cli, "_owner_ledger", lambda: ledger)
+    monkeypatch.setattr(cli, "_refresh_current_observation", lambda: None)
     monkeypatch.setattr(cli, "_now", lambda: NOW)
     result = CliRunner().invoke(
         app,
@@ -83,6 +84,7 @@ def test_owner_reviews_complete_receipt_and_confirms_exact_short_id(
     target.write_bytes(canonical_bytes(observation))
     target.chmod(0o644)
     monkeypatch.setattr(cli, "_owner_ledger", lambda: ledger)
+    monkeypatch.setattr(cli, "_refresh_current_observation", lambda: None)
     monkeypatch.setattr(cli, "_now", lambda: NOW)
     result = CliRunner().invoke(
         app,
@@ -126,8 +128,9 @@ def test_confirmation_wait_cannot_outlive_current_observation(
         )
     )
     target.chmod(0o644)
-    times = iter([NOW, NOW, NOW + timedelta(seconds=61)])
+    times = iter([NOW, NOW, NOW + timedelta(seconds=61), NOW + timedelta(seconds=61)])
     monkeypatch.setattr(cli, "_owner_ledger", lambda: ledger)
+    monkeypatch.setattr(cli, "_refresh_current_observation", lambda: None)
     monkeypatch.setattr(cli, "_now", lambda: next(times))
     result = CliRunner().invoke(
         app,
