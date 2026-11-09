@@ -8,7 +8,8 @@
 `live-evidence receive/show/activate/revoke` 暴露所有者入口。
 `service.load_admission_evidence` 对完整请求加载受保护事实并调用同一纯判定，返回结构化投影；
 `pi_execution.admission.load_admission_evidence` 延迟转交该完整请求，旧的不完整 EvidenceBinding 仍返回 None。
-Screening／Read 正式三检查点接线与 doctor 展示分别由消费票承接。
+Screening／Read 正式三检查点与 doctor 消费共享判定，分别见所属 Contract。
+`collector`、`sealed_runtime` 与 `deployment` 提供零请求 β 采集、冻结构建与封印脚本；实际 root 权限和证据激活由所有者现场验证。
 
 ## 规则
 
@@ -232,6 +233,76 @@ Screening 正式三检查点消费这个投影；Read 与 doctor 的消费者现
 若磁盘本身无法落盘，不能声称存在跨重启的持久意图。
 `request_time_tick` 只请求固定 helper 用自身时间打点；失败必须由执行消费者拒绝，不能当作已记录。
 
+### β 站点采集与封印部署
+
+非特权构建入口为 `uv run --offline --locked python scripts/seal_site_evidence.py`，
+显式接收 `--site`、含时区的 `--starts-at/--ends-at` 和不存在的 `--output`。
+`--help` 纯本地，不读站点、凭据或数据库。`SiteConfiguration` 保存所有者选择的产品 uid/gid、
+业务数据库和当前snapshot、固定安装路径、四根、专用凭据目录、完整声明绑定与主张准入用途；它是私有部署配置，不进入回执或公开输出。
+构建输出固定的部署/卸载脚本、无链接 payload、批准计划、站点配置、REVIEW.md 与 SHA256SUMS。
+Python 解释器、标准库、锁定依赖、PaperRadar 源码和入口一起复制；部署后不从仓库、`.venv`、
+PYTHONPATH、用户 site、`.pth` 或环境读取运行代码。宿主系统动态链接器/系统共享库仍属于受信 OS 边界。
+collector_sha256 是 site/plan 之前的冻结运行闭包逐文件摘要清单身份；脚本另绑定 payload 的完整 SHA256。
+
+所有者审阅确切字节后，REVIEW.md 的一次 sudo 命令只用系统工具将字节复制到 root 所有的固定
+`/var/lib/paperradar/live-evidence-staging/`，逐个核对固定摘要，再执行冻结 deploy.sh。
+脚本拒绝参数、非 root、错误执行位置、软链、非 root 属主或组/其他可写的完整路径链；
+既有目标在任何 chown/install 前核对，不将不受信旧目录转换成信任根。
+已存在的 runtime 仅接受相同 payload 身份，文件清单每次启动复核；不同字节须重新审阅并卸载重装。
+源代码准入策略仍为 `pi-admission-v2`，不改现有 D7 向量或任何旧策略身份。
+
+固定零参数 `/usr/libexec/paperradar/live-evidence-collect` 与仅收紧的 `live-evidence-tighten`
+是 sudoers 唯一 NOPASSWD 命令；后者仍由既有有限解析器核对 revoke/mark/tick。
+`live-evidence-owner` 不在 NOPASSWD 中，接收/批准/激活/恢复等放宽动作均须所有者明确授权。
+部署脚本的固定计划批准及 receive 属于该次所有者审阅命令的一部分，不自动激活。
+真实安装时，所有者须私下确认产品用户没有等价 root 的组成员资格、能力或任意 sudo 通道。
+
+采集 root 父进程只管理固定受保护输出和冻结代码。现场观察 fork 后清空环境与补充组、不可逆
+降到产品 uid/gid 并禁 ptrace，不在降权与观察之间执行用户环境；业务库、整树与认证/cache 元数据
+均以产品身份只读复核冻结的snapshot/供给/安装仍为当前选择，再复用 `local_binding_components`、`site_binding_components` 和 `auth-cache-stat-v1`。
+需要合成子进程的隔离检查也保持产品 uid：只读取合成外部文件，只尝试匿名临时写入，
+通过标准严格为 EACCES/EPERM 拒绝；另证实 attempt 写入允许与软/硬 core 限额都为0。
+Node 只以产品 uid 执行 `--version`，比对声明版本；不执行认证、Pi prompt 或网络请求。
+固定私有配置另记录当前安装绝对目录。root 使用独立 fd/O_NOFOLLOW 读取器从实际文件重算 tree-v1，
+不从业务库取得 root 观测值；逐文件拒绝非产品属主、硬链接、特殊文件、外部软链或扫描中元数据变化，
+实际摘要必须与产品 uid 的 acquire_install 核验结果一致，否则整轮失败。
+后者自身也在返回 expected_tree 前重算实际实例树；root 独立观测进一步避免把库声明当作特权事实。
+core 设置仅作用于合成子进程，不修改其他程序或全局 Apport/core 配置。
+
+| β 案例／观察 | 必需能力对齐 | 回执与当前覆盖 |
+| --- | --- | --- |
+| cwd 与全部祖先元数据 | cwd_ancestors | 成功时 verified；规范组件逐调用复核 |
+| 已登记供给与实例整树、版本、Node/平台 | supply_tree、instance_tree、pi_version | 整树与实际 Node 版本均成功才给相应 verified |
+| host/boot/kernel/Landlock ABI | host_runtime | 当前公开身份摘要，失败不补值 |
+| outside-read/cwd-write/install-write 拒绝与 attempt-write 允许 | file_isolation、isolation_policy | 每个拒绝标准是独立 CaseResult；全通过才给隔离 verified |
+| 子进程软/硬零 core | zero_core | 实测通过才 checked；不制造真实 core |
+| core_pattern、Apport 版本及配置身份 | apport_identity | 公开身份观察；不读崩溃/日志正文 |
+| 专用凭据单根当前元数据与成员 stat 清单 | auth_cache_current、auth_cache_baseline | 不打开成员内容，与逐调用算法相同 |
+| 固定启动及隔离策略 | launch_policy、isolation_policy | 仅当前冻结代码/策略身份，不声称真实 Pi 行为 |
+| IPv4、observer | ipv4_egress、single_dispatch、no_extra_turns 的相关依赖 | unknown，组件不列 checked；部署工程留 Live |
+| RPC、模型真实身份与供应商行为 | rpc_completion/eof/terminate、model_identity 等 | unknown，无认证/模型调用，格/档不互借 |
+
+批准计划为独立 ID、单轮、0认证/模型/网络预算，案例按固定顺序，首失败停止。
+采集先持久追加受保护 collector-history.jsonl 的时间/有限案例/摘要，再发布规范回执与当前观察。
+首轮回执和原 verified_at 不覆盖；相同成功计划重跑只刷新60秒观察，不能续能力期限或生成新授予。
+任何首失败使该计划持久 stopped，后续不借刷新重试探针；新计划须重新封印并由所有者明确批准。
+未观察组件用带组件名的 unobserved 摘要占位以保持完整绑定，其 checked_components 为空缺，
+相应主张始终 unknown；占位不是合成健康值。所有分项都经过既有 receive 规范和 show 回查。
+同轮可对六格分别记录全部35能力共210条主张，只复用内容无关的站点测量，不增加认证/模型或探针次数。
+CurrentObservation保持当前activation/snapshot的low声明上下文；高档本地消费者重算自身MODEL_TUPLE，
+站点能力仅按本能力依赖适用，高档模型/RPC/observer没有verified主张，不表示六格完整可执行。
+
+AUTH_CACHE_BASELINE递归专用credentials全根：auth.json、exp2-installation-id、models-store.json、
+node-compile-cache及其成员均无排除，目录与regular文件的dev/ino/mode/uid/gid/nlink/size/mtime/ctime均参与。
+宿主认证helper的HOME/TMPDIR为credentials，当前Pi入口启用Node compile cache；RPC子进程的TMPDIR则为attempt临时根。
+正常认证cache写入或auth.json刷新同样改变基线，准备后检查拒绝且不领取attempt，不能静默视为安全例外。
+更新基线需要新受信计划采集/重新审阅封印字节/人工激活；支持连续运行的缓存布局与允许演进保护留Live后继裁定。
+
+默认 uninstall.sh 移除本包 sudoers、三个入口与冻结 runtime；保留账本、inbox 回执/计划、
+失败历史、stopped 标记和 staging。若 cwd 由本部署创建，只在仍为空且受保护时移除；原有 cwd 不动。
+同 SHA 可重复卸载/部署恢复，历史与撤销事实不清空；清理账本需要所有者另行显式选择。
+中断留下的 runtime.new 不自动删除，须所有者核对后处理，避免覆盖未知部署物。
+
 ### 时钟与独立恢复
 
 水位线取所有 events 中接收、批准、重复／拒绝、激活、撤销、mark、tick 与恢复时间的单调最大值。
@@ -267,9 +338,8 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 
 ## 不提供／不证明
 
-不提供站点采集、封印部署、真实 OS 特权证明、Screening／Read 正式三检查点或 doctor／日报接线。
-这些责任由 [Live 前置任务](https://github.com/MeteoBoy4/PaperRadar/issues/168) 的 #172–#175 承接，
-消费闭包由 #176 收口。旧不完整调用不能自动升级成完整请求。
+不提供模型 collector、项目 unit/CG/nft/observer 产品化、特权持续观察或产品部署；这些由 Live 承接。
+真实 OS 特权证明与所有者激活不由离线构建提供；消费闭包由 #176 收口。旧不完整调用不能自动升级成完整请求。
 接收权威只核来源、完整性与内部一致性，不能独立证明没有遗漏的失败；失败历史完备性由采集器与 sudoers 边界承担。
 不提供真实 root、供应商或模型实测，不替代所有者激活、真实材料外发确认、根用途或校准资格。
 威胁模型防范同 uid 产品进程、测试、Agent 工具伪造或篡改受保护证据及激活记录和配置 passed 自证；
@@ -278,6 +348,7 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 
 ## 相关
 
+采集与部署依据：[#172](https://github.com/MeteoBoy4/PaperRadar/issues/172)；独立覆盖见 [β 采集台账](../verification/issue-168-172-site-collector.md)。
 依据：[父票裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#169](https://github.com/MeteoBoy4/PaperRadar/issues/169)、[ADR-0051](../adr/0051-separate-live-binding-capabilities-and-activation.md)。
 补充决策：[ADR-0052](../adr/0052-version-admission-uses-and-capability-requirements.md)、[ADR-0053](../adr/0053-expire-capabilities-by-evidence-class-and-coverage.md)、[ADR-0054](../adr/0054-separate-execution-binding-from-call-materials.md)。
 独立账本决策：[ADR-0055](../adr/0055-separate-protected-admission-ledger-from-business-facts.md)。
