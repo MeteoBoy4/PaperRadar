@@ -59,3 +59,31 @@ NNP仅作用子进程，不改root或sudoers；全流程无认证／模型／网
 恢复屏障之后未最终激活时保持无资格，必须本人重新完整审阅有效新证据，不能用旧短ID或旧active报告翻转撤销。
 默认卸载／重装保留否定日志、账本、回执与runtime归档；不通过清文件“修复”准入。
 最终实际部署／权限／激活及G4完整门禁仍由主代理按各自授权串行完成，未执行时不关闭#176/#168。
+
+## 已部署同SHA流程的终端中断后恢复
+
+停止不等于长I/O。若Python为T且存在本人已请求的SIGINT，必须先由所有者按精确进程组处置，
+让待处理的中断完成并退出；不能承诺CONT后继续原激活，也不由代理发送信号。
+随后只读核验旧链全部退出、closure.lock无持有者，不能重跑已完成的run-upgrade.sh。
+
+仅在这些条件全部满足时，使用已经核过的**同SHA root冻结脚本**复跑：
+
+- payload、manifest、owner-closure.py及完整运行树保护和摘要仍精确匹配本次owner审阅记录。
+- 原config的policy、plan、receipt、run_name一致；plan有效且未stopped，新receipt最新、未激活、未撤销，无其他active。
+- 当前deny log及cutover身份受信且无阻断该新receipt的意图，保护账本无journal/WAL/SHM，closure.lock空闲。
+- 原phase目录尚不存在，业务任务与其他写入继续暂停，当前业务预算采样前提仍满足。
+
+所有者从有正常交互TTY的新终端显式使用已核的经典sudo入口，不改变全局alternatives、sudoers或安装包：
+
+```sh
+/usr/bin/sudo.ws -k -- /usr/bin/env -i \
+  /usr/libexec/paperradar/live-evidence-runtime/python/bin/python3 -I -S -B \
+  /usr/libexec/paperradar/live-evidence-runtime/owner-closure.py
+```
+
+该入口只复跑原冻结owner流程，使用原config；不再部署、cutover或接收新证据。
+原流程仍会核账本／锁／用途／状态，按原计划真实刷新当前观察，并要求三次本人完整审阅和手输ID。
+原终端的输入回显不是证据激活事实，不能复用为自动确认。原verified_at、停止条件和预算均不刷新。
+若任何前提不同，或已有部分激活／撤销／phase目录，停止并另审实际检查点，不删除文件、清空日志或自动回滚。
+终端模型及外部sudo-rs限制见[诊断台账](../../docs/verification/issue-168-176-owner-terminal-recovery.md)；
+诊断模型不证明现场已恢复成功，仍以新的root安全回执和最终人工激活事实为准。
