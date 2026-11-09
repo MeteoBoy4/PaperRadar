@@ -57,9 +57,12 @@ def test_frozen_bundle_executes_with_empty_environment_and_has_no_links(
         "uninstall.sh",
         "REVIEW.md",
         "build-identity.json",
+        "owner-workflow.sh",
+        "run-g2.sh",
     }
     review = (output / "REVIEW.md").read_text()
-    assert "sudo /bin/sh -c" in review
+    assert str(output / "run-g2.sh") in review
+    assert "sudo -k" in (output / "run-g2.sh").read_text()
     assert hashes["deploy.sh"] in review
     assert hashes["uninstall.sh"] in review
     assert "sudo -k" in review

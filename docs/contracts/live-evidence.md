@@ -239,15 +239,31 @@ Screening 正式三检查点消费这个投影；Read 与 doctor 的消费者现
 显式接收 `--site`、含时区的 `--starts-at/--ends-at` 和不存在的 `--output`。
 `--help` 纯本地，不读站点、凭据或数据库。`SiteConfiguration` 保存所有者选择的产品 uid/gid、
 业务数据库和当前snapshot、固定安装路径、四根、专用凭据目录、完整声明绑定与主张准入用途；它是私有部署配置，不进入回执或公开输出。
-构建输出固定的部署/卸载脚本、无链接 payload、批准计划、站点配置、REVIEW.md 与 SHA256SUMS。
+构建输出固定的部署/卸载脚本、单个普通用户入口run-g2.sh、封印owner-workflow.sh、
+无链接payload、批准计划、站点配置、REVIEW.md与SHA256SUMS。
 Python 解释器、标准库、锁定依赖、PaperRadar 源码和入口一起复制；部署后不从仓库、`.venv`、
 PYTHONPATH、用户 site、`.pth` 或环境读取运行代码。宿主系统动态链接器/系统共享库仍属于受信 OS 边界。
 collector_sha256 是 site/plan 之前的冻结运行闭包逐文件摘要清单身份；脚本另绑定 payload 的完整 SHA256。
 
-所有者审阅确切字节后，REVIEW.md 的一次 sudo 命令只用系统工具将字节复制到 root 所有的固定
-`/var/lib/paperradar/live-evidence-staging/`，逐个核对固定摘要，再执行冻结 deploy.sh。
-脚本拒绝参数、非 root、错误执行位置、软链、非 root 属主或组/其他可写的完整路径链；
-既有目标在任何 chown/install 前核对，不将不受信旧目录转换成信任根。
+所有者审阅确切字节后，只运行REVIEW所列run-g2.sh，输入一次sudo密码，其他G2步骤由脚本执行；
+没有其他read确认或手动chown/复制步骤。入口先核包内四件固定SHA，再一次sudo -k只用系统工具
+复制owner-workflow/deploy/uninstall/payload到root所有的固定`/var/lib/paperradar/live-evidence-staging/`，
+核对同四SHA，再执行root冻结owner-workflow。脚本拒绝参数、非root、错误执行位置、软链、
+非root属主或组/其他可写的完整路径链。普通deploy在任何chown/install前核对既有目标，
+不将不受信旧目录转换成信任根。
+
+owner-workflow是该次所有者审阅的显式空cwd预配，不由普通deploy或NOPASSWD入口调用。
+它只接受固定`/srv/pi-cwd`为所选产品uid/gid、0700的无链接空目录，或已预配root:root0755空目录；
+完整祖先链须root所有且组/其他不可写。将目录chown root:root、chmod0755后，
+重新核对属主、权限与空目录，再走原deploy/collect/receive链。非空、链接或其他状态拒绝，
+不读取、删除或移动成员；后检失败保留竞态写入数据，不自动回滚权限。
+owner预配cwd不算本包创建，默认卸载保留。全部执行代码来自root冻结副本，
+不从repo/.venv执行root代码；run-g2只以普通用户运行。新入口/workflow字节均须重新审阅。
+
+阶段与结果持续输出，receive返回实际receipt_id；成功末行明确G3证据激活未执行。
+拒绝保持原退出码，stderr输出受控原因、固定stage/resource及所有者下一步。
+SHA OK只证明对应复制校验，不能证明部署/采集/接收完成。
+run-g2仅自动化G2，不包含activate或G3短ID确认，不使产品executable=true。
 已存在的 runtime 仅接受相同 payload 身份，文件清单每次启动复核；不同字节须重新审阅并卸载重装。
 源代码准入策略仍为 `pi-admission-v2`，不改现有 D7 向量或任何旧策略身份。
 
