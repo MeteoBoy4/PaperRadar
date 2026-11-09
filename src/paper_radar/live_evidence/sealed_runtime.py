@@ -262,10 +262,12 @@ def _read_configuration(root: Path) -> SiteConfiguration:
     return SiteConfiguration.model_validate_json((root / "site.json").read_bytes())
 
 
-def _publish(path: Path, data: bytes, *, replace: bool = False) -> None:
+def _publish(
+    path: Path, data: bytes, *, replace: bool = False, mode: int = 0o644
+) -> None:
     temporary = path.with_suffix(".new")
     descriptor = os.open(
-        temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644
+        temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, mode
     )
     try:
         with os.fdopen(descriptor, "wb") as stream:
@@ -284,6 +286,33 @@ def _publish(path: Path, data: bytes, *, replace: bool = False) -> None:
             os.close(directory)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def _reconcile_collector_tightening(ledger: EvidenceLedger) -> None:
+    from paper_radar.live_evidence.lifecycle import EvidenceLifecycle
+
+    lifecycle = EvidenceLifecycle(ledger)
+    for pending in sorted(ledger.root.glob("*.tighten-pending")):
+        ledger._protected(pending)
+        instance = pending.read_text().strip()
+        if len(instance) != 64 or any(
+            value not in "0123456789abcdef" for value in instance
+        ):
+            raise LedgerError("ledger_untrusted")
+        for received in ledger.list_received():
+            if received.receipt.binding[B.INSTANCE] != instance:
+                continue
+            for use_id in sorted({claim.use_id for claim in received.receipt.claims}):
+                lifecycle.tighten(
+                    received.receipt_id, use_id, now=datetime.now(UTC), components=None
+                )
+        # 只有全部落账后解除待收紧标记;失败时观察仍不可读,不声称已撤销。
+        pending.unlink()
+        descriptor = os.open(ledger.root, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
 
 
 def collect_once(root: Path, ledger: EvidenceLedger) -> str:
@@ -307,6 +336,7 @@ def collect_once(root: Path, ledger: EvidenceLedger) -> str:
     with (ledger.root / "collector.lock").open("a+b") as lock:
         os.chmod(lock.name, 0o644)
         fcntl.flock(lock, fcntl.LOCK_EX)
+        _reconcile_collector_tightening(ledger)
         stopped = ledger.root / f"{plan.plan_id}.stopped"
         if stopped.exists():
             ledger._protected(stopped)
@@ -339,6 +369,21 @@ def collect_once(root: Path, ledger: EvidenceLedger) -> str:
             use_ids=site.claim_uses or (site.use_id,),
         )
         source = ledger.root / "inbox" / f"{plan.plan_id}-round-1.json"
+        if receipt.failure_history:
+            # 先封闭观察,使任何旧grant不能被local checked集合重新启用。
+            _publish(
+                ledger.root / "inbox/current-observation.json",
+                canonical_bytes(current),
+                replace=True,
+                mode=0,
+            )
+            _publish(stopped, b"plan_stopped\n")
+            from paper_radar.pi_execution.site_binding import component_digest
+
+            _publish(
+                ledger.root / f"{plan.plan_id}.tighten-pending",
+                (component_digest(site.binding.install_id) + "\n").encode(),
+            )
         # 每次调用都留下受保护失败/成功历史;只追加摘要,不记录子进程输出。
         event = {
             "at": completed.isoformat(),
@@ -350,17 +395,18 @@ def collect_once(root: Path, ledger: EvidenceLedger) -> str:
             history.write((json.dumps(event, sort_keys=True) + "\n").encode())
             history.flush()
             os.fsync(history.fileno())
-        if receipt.failure_history:
-            _publish(stopped, b"plan_stopped\n")
         if not source.exists():
             _publish(source, canonical_bytes(receipt))
         else:
             ledger._read_source(source)
-        _publish(
-            ledger.root / "inbox/current-observation.json",
-            canonical_bytes(current),
-            replace=True,
-        )
+        if receipt.failure_history:
+            _reconcile_collector_tightening(ledger)
+        else:
+            _publish(
+                ledger.root / "inbox/current-observation.json",
+                canonical_bytes(current),
+                replace=True,
+            )
         return source.name
 
 

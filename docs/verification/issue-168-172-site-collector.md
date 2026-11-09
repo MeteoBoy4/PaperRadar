@@ -9,10 +9,10 @@
 
 | 独立新增模块 | 人工预期节点数 | 责任 |
 | --- | ---: | --- |
-| `tests/test_site_collector.py` | 12 | receive兼容回执、首失败/unknown、零参数、来源receive/show与原时点保持、合成隔离逐项标准、失败计划持久停止、三项配置负例、产品uid先决、六格210主张、root实树拒绝伪造expected |
+| `tests/test_site_collector.py` | 14 | receive兼容回执、首失败/unknown、零参数、来源receive/show与原时点保持、合成隔离逐项标准、失败计划持久停止、三项配置负例、产品uid先决、六格210主张、root实树拒绝伪造expected、失败刷新撤销与SQLite写失败/观察屏障 |
 | `tests/test_site_deployment.py` | 8 | sudoers最小授权、脚本位置/零参数/保留账本、冻结Python污染环境冷启动/无链接包/脚本语法、无root部署卸载恢复幂等、篡改包/软链/可写目标拒绝、纯本地构建帮助 |
 | `tests/test_site_tree_identity.py` | 5 | 实际文件tree-v1同值/内容改变漂移、外链/硬链/错误属主拒绝、扫描时换链不跟随 |
-| 合计 | 25 | 独立未绑定工程覆盖 |
+| 合计 | 27 | 独立未绑定工程覆盖 |
 
 两个新增support只提供私有临时fixture与无root文件系统模型，不是当前站点值。
 脚本模型仅替换固定宿主路径、uid/chown/install/visudo这些OS边界；实际执行生成的shell逻辑，
@@ -52,9 +52,14 @@ auth.json、exp2-installation-id、models-store.json、node-compile-cache及全�
 
 按AC公共边界垂直推进，缺collector/runtime/deployment/root-tree模块、缺受保护计划来源、
 缺G2 REVIEW材料及失败计划可重试均先红后绿；没有改旧冻结测试来弱化预期。
-新增25节点最终实测通过；与既有current-binding、D7、receipt、ledger、CurrentObservation、
+新增25节点首次实测通过；与既有current-binding、D7、receipt、ledger、CurrentObservation、
 stat基线与tightening组合为81 passed in5.38s，退出0。后续新增源收紧后的25节点复跑也通过，
-没有skip/deselect/incomplete。collect-only用于核对上述人工分母，不从生产登记或实际结果反填预期。
+没有skip/deselect/incomplete。收尾自查补充两个失败刷新回归：先激活成功站点证据，再令刷新失败，
+先红后绿证明mode000观察当场拒绝、同安装所有已接收用途经既有tighten持久收紧，
+原receipt/verified_at保持。只读SQLite模拟实际落账失败，未落账时不声称revoked；
+观察仍不可读、待收紧保留，后续重放落账后仍stopped，不自动重试探针，普通产品入口不能解封。
+最终独立分母为27；与共享loader和CurrentObservation的最终组合为38 passed in4.23s，退出0。
+相关3个变更Python文件的Ruff/格式与strict mypy再次通过。collect-only用于核对上述人工分母，不从生产登记或实际结果反填预期。
 CLI compatibility为59 passed in72.08s，入口总耗时72.72s，退出0。
 新增10个Python文件的Ruff、格式与strict mypy通过；新入口帮助与冻结Python隔离导入在独立模块覆盖。
 本票不运行完整check-offline、不写正式run_id，不发布A1–A10结论。

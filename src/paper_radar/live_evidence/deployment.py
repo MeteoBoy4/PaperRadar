@@ -375,7 +375,11 @@ build-identity.json记录HEAD、tree、dirty状态、绝对源worktree、Python/
 {command}
 ```
 
-命令返回receipt_id，须现场核对回执分项与failure_history。失败时停止，不凭unknown补齐通过；固定inbox和collector-history.jsonl保留所有已开始采集的结果。
+命令返回receipt_id，须现场核对回执分项与failure_history。失败时停止，不凭unknown补齐通过。
+失败刷新先把当前观察置为mode000，普通产品不能解封；root只读用于受控诊断。
+随后按当前安装对已接收的全部用途保守tighten，原回执/原时点不变；mode000本身不表示撤销落账成功。
+落账失败返回拒绝并保留tighten-pending；后续仅重放收紧，stopped计划不重试探针。
+固定inbox和collector-history.jsonl保留所有已开始采集的结果。
 隔离合成检查只接受EACCES/EPERM拒绝，逐项记录outside-read、cwd-write、install-write、
 attempt-write与soft/hard零core；Node只执行--version，已降权产品uid。
 Apport只采版本/配置身份与core_pattern；不修改全机core策略，不制造真实core。
