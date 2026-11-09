@@ -341,3 +341,113 @@ def test_root_tree_recomputation_refuses_fabricated_product_expected_tree(
     receipt = EvidenceReceipt.model_validate_json(source.read_bytes())
     assert receipt.failure_history[0].reason == "resource_unavailable"
     assert all(claim.status is S.UNKNOWN for claim in receipt.claims)
+
+
+@pytest.mark.parametrize("write_fails", [False, True])
+def test_failed_refresh_blacks_out_observation_and_revokes_received_instance_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, write_fails: bool
+) -> None:
+    import os
+    from datetime import UTC, datetime, timedelta
+
+    from paper_radar.live_evidence.collector import SITE_CASES, SiteObservation
+    from paper_radar.live_evidence.evidence import ExecutionBinding
+    from paper_radar.live_evidence.ledger import (
+        EvidenceLedger,
+        LedgerError,
+        LedgerTrust,
+    )
+    from paper_radar.live_evidence.lifecycle import EvidenceLifecycle
+    from paper_radar.live_evidence.receipt import canonical_bytes
+    from paper_radar.live_evidence.sealed_runtime import collect_once
+    from paper_radar.pi_execution.site_binding import component_digest
+    from tests.site_collector_support import site_configuration
+
+    site = site_configuration(tmp_path)
+    sealed = tmp_path / "runtime"
+    sealed.mkdir(mode=0o755)
+    (sealed / "site.json").write_bytes(canonical_bytes(site))
+    approved = plan().model_copy(
+        update={
+            "cases": SITE_CASES,
+            "starts_at": NOW - timedelta(days=100),
+            "ends_at": NOW + timedelta(days=100),
+        }
+    )
+    (sealed / "plan.json").write_bytes(canonical_bytes(approved))
+    ledger_root = tmp_path / "ledger"
+    ledger_root.mkdir(mode=0o755)
+    (ledger_root / "inbox").mkdir(mode=0o755)
+    ledger = EvidenceLedger(
+        ledger_root,
+        trust=LedgerTrust(owner_uid=os.getuid(), product_uid=999999, anchor=tmp_path),
+    )
+    components = {
+        component: "b" * 64
+        for component in B
+        if component not in {B.IPV4_EGRESS, B.OBSERVER}
+    }
+    components[B.INSTANCE] = component_digest(site.binding.install_id)
+    monkeypatch.setattr(
+        "paper_radar.live_evidence.sealed_runtime.product_observation",
+        lambda site: SiteObservation(
+            components, tuple((case, True) for case in SITE_CASES)
+        ),
+    )
+    monkeypatch.setattr(
+        "paper_radar.live_evidence.site_tree.observe_tree",
+        lambda root, *, product_uid: "b" * 64,
+    )
+    source = ledger_root / "inbox" / collect_once(sealed, ledger)
+    ledger.approve_plan(approved, now=datetime.now(UTC))
+    received = ledger.receive(source, now=datetime.now(UTC))
+    lifecycle = EvidenceLifecycle(ledger)
+    review = lifecycle.review(
+        received.receipt_id,
+        "boundary-low",
+        binding=ExecutionBinding(
+            tuple(ledger.show(received.receipt_id).receipt.binding.items())
+        ),
+        checked_components=frozenset(components),
+        now=datetime.now(UTC),
+    )
+    lifecycle.activate(review, confirmation=received.receipt_id, now=datetime.now(UTC))
+    original = source.read_bytes()
+    original_times = [
+        (claim.capability, claim.verified_at)
+        for claim in ledger.show(received.receipt_id).receipt.claims
+    ]
+    monkeypatch.setattr(
+        "paper_radar.live_evidence.sealed_runtime.product_observation",
+        lambda site: SiteObservation({}, (("metadata", False),)),
+    )
+    if write_fails:
+        ledger.database.chmod(0o444)
+        with pytest.raises(LedgerError, match="ledger_untrusted"):
+            collect_once(sealed, ledger)
+        assert (ledger_root / f"{approved.plan_id}.tighten-pending").exists()
+        assert not all(
+            item.revoked for item in lifecycle.snapshot(now=datetime.now(UTC)).evidence
+        )
+        ledger.database.chmod(0o644)
+    else:
+        collect_once(sealed, ledger)
+    assert (ledger_root / "inbox/current-observation.json").stat().st_mode & 0o777 == 0
+    from paper_radar.live_evidence.observation import load_current_observation
+
+    with pytest.raises(LedgerError, match="source_untrusted"):
+        load_current_observation(ledger, now=datetime.now(UTC))
+    with pytest.raises(LedgerError, match="protected_entry_required"):
+        collect_once(sealed, EvidenceLedger(ledger_root))
+    assert source.read_bytes() == original
+    assert [
+        (claim.capability, claim.verified_at)
+        for claim in ledger.show(received.receipt_id).receipt.claims
+    ] == original_times
+    with pytest.raises(ValueError, match="plan_stopped"):
+        collect_once(sealed, ledger)
+    assert all(
+        item.revoked for item in lifecycle.snapshot(now=datetime.now(UTC)).evidence
+    )
+    assert not (ledger_root / f"{approved.plan_id}.tighten-pending").exists()
+    assert (ledger_root / "inbox/current-observation.json").stat().st_mode & 0o777 == 0
