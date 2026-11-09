@@ -2,6 +2,8 @@
 
 import shutil
 import sys
+from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -20,13 +22,58 @@ from tests.pi_rpc_source_support import RpcSupplyRun
 from tests.read_tasks_support import ready
 
 
-def allow_engineering_path(monkeypatch: pytest.MonkeyPatch) -> None:
-    """只到达后续协议路径;不构成EXP-2事实或生产准入。"""
+def allow_engineering_path(
+    monkeypatch: pytest.MonkeyPatch,
+    evidence: Callable[[EvidenceBinding], AdmissionEvidence | None] | None = None,
+) -> None:
+    """工程测试显式替换准入边界;没有产品可调用的合成证据入口。"""
+    from paper_radar.live_evidence.evaluator import AdmissionDecision
+    from paper_radar.live_evidence.evidence import ExecutionBinding
+    from paper_radar.live_evidence.service import AdmissionProjection, AdmissionRequest
+    from paper_radar.live_evidence.types import AdmissionUse, BindingComponent
+    from paper_radar.pi_execution.admission import admit
+    from paper_radar.pi_execution.errors import ExecutionError
 
-    def evidence(binding: EvidenceBinding) -> AdmissionEvidence:
-        return AdmissionEvidence(binding, True, True, True)
+    def request(
+        database: Path,
+        binding: EvidenceBinding,
+        *,
+        use: AdmissionUse,
+        credentials_dir: Path,
+        now: datetime,
+    ) -> AdmissionRequest:
+        result = (
+            evidence(binding)
+            if evidence is not None
+            else AdmissionEvidence(binding, True, True, True)
+        )
+        reason = admit(binding, result)
+        if reason is not None:
+            raise ExecutionError(reason)
+        return AdmissionRequest(
+            use,
+            ExecutionBinding(
+                tuple((component, "b" * 64) for component in BindingComponent)
+            ),
+            frozenset(BindingComponent),
+        )
 
-    monkeypatch.setattr("paper_radar.read_execution.service._evidence_for", evidence)
+    monkeypatch.setattr(
+        "paper_radar.read_execution.service.build_admission_request", request
+    )
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.admission_guard.load_admission_evidence",
+        lambda request, *, now: AdmissionProjection(
+            AdmissionDecision(request.use, "live-admission-v1", (), ()), now, False
+        ),
+    )
+    monkeypatch.setattr(
+        "paper_radar.read_execution.service.request_time_tick", lambda: True
+    )
+    monkeypatch.setattr(
+        "paper_radar.read_execution.service.recheck_admission_request",
+        lambda request, *, now: None,
+    )
 
 
 def setup(

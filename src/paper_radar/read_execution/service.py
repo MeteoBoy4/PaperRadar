@@ -2,9 +2,18 @@
 
 import math
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic
 
+from paper_radar.live_evidence.ledger import LedgerError
+from paper_radar.live_evidence.service import AdmissionRequest, request_time_tick
+from paper_radar.live_evidence.types import (
+    AdmissionUse,
+    CallSite,
+    Consumer,
+    ThinkingLevel,
+)
 from paper_radar.llm import CallDescription, CallDescriptionError, render_request
 from paper_radar.llm.rpc import run_call, validate_request
 from paper_radar.llm.rpc_types import (
@@ -17,9 +26,13 @@ from paper_radar.llm.rpc_types import (
 )
 from paper_radar.pi_execution.admission import (
     EvidenceBinding,
-    admit,
     bind_description,
     load_admission_evidence,
+)
+from paper_radar.pi_execution.admission_guard import AdmissionGuard
+from paper_radar.pi_execution.current_binding import (
+    build_admission_request,
+    recheck_admission_request,
 )
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.launcher import LaunchIdentity, prepare_launch
@@ -44,7 +57,7 @@ from paper_radar.runtime_logging import Sink
 from paper_radar.runtime_logging.events import Clock
 from paper_radar.screening_tasks.pi_rpc_audit import PiRpcExecutionAudit
 
-# 私有离线工程接缝;产品load_admission_evidence恒None,没有公开证据或factory参数。
+# 历史工程别名仅保留给不可达守卫;正式路径只消费完整请求与共享权威。
 _evidence_for = load_admission_evidence
 _FAILURES = {
     RpcCategory.TIMEOUT: ReadFailure.TIMEOUT,
@@ -52,6 +65,10 @@ _FAILURES = {
     RpcCategory.ENVIRONMENT: ReadFailure.EXECUTOR_ERROR,
     RpcCategory.PROTOCOL: ReadFailure.PROTOCOL_ERROR,
 }
+
+
+class _PreclaimAdmissionDenied(Exception):
+    """穿过业务事务的拒绝信号;避免 ValueError 被映射为损坏引用。"""
 
 
 def _limits(limits: RpcLimits) -> None:
@@ -98,6 +115,7 @@ class ReadExecution:
         self.tasks = ReadTasks(database, data_root, sink=sink, clock=clock)
         self.roots, self.credentials_dir = roots, credentials_dir
         self.auth_mode, self.proxy = auth_mode, proxy
+        self._now = clock or (lambda: datetime.now(UTC))
 
     def _binding(
         self, description: CallDescription, identity: LaunchIdentity
@@ -110,6 +128,7 @@ class ReadExecution:
             isolation_policy_version=identity.isolation_policy_version,
             cwd_section=expected_cwd_section(),
             auth_mode=identity.auth_mode,
+            proxy=self.proxy,
         )
 
     def run_attempt(
@@ -148,78 +167,147 @@ class ReadExecution:
             except SupplyError:
                 raise ExecutionError("install_unavailable") from None
             binding = self._binding(description, identity)
-            reason = admit(binding, _evidence_for(binding))
-            if reason is not None:
-                raise ExecutionError(reason)
-            # 同时失败必须优先准入;这里只在准入后检查完整最坏修正帧。
-            if not prepared_input.budget.accepted:
+            if description.sampling != "provider_default":
+                raise ExecutionError("sampling_mapping_unavailable")
+            try:
+                use = AdmissionUse(
+                    CallSite.READ,
+                    Consumer(description.stage),
+                    ThinkingLevel(description.thinking_level),
+                )
+            except ValueError:
+                raise ExecutionError("evidence_missing") from None
+            guard = AdmissionGuard(use)
+            try:
+                return self._run_admitted(
+                    task_id, prepared_input, binding, guard, limits, cancelled, clock
+                )
+            except (ExecutionError, LedgerError, SupplyError):
+                guard.tighten(now=self._now())
+                raise
+
+    def _run_admitted(
+        self,
+        task_id: str,
+        prepared_input: PreparedReadInput,
+        binding: EvidenceBinding,
+        guard: AdmissionGuard,
+        limits: RpcLimits,
+        cancelled: Cancellation,
+        clock: MonotonicClock,
+    ) -> ReadAnalysis | ReadTask:
+        description = prepared_input.description
+
+        def current(identity_binding: EvidenceBinding) -> AdmissionRequest:
+            try:
+                return build_admission_request(
+                    self.database,
+                    identity_binding,
+                    use=guard.use,
+                    credentials_dir=self.credentials_dir,
+                    now=self._now(),
+                )
+            except (LedgerError, SupplyError):
+                raise ExecutionError("evidence_missing") from None
+
+        request = current(binding)
+        guard.check(request, now=self._now())
+        # 同时失败必须优先准入;这里只在准入后检查完整最坏修正帧。
+        if not prepared_input.budget.accepted:
+            raise ReadTaskError("read_input_over_budget")
+
+        def validate_frame(current: PreparedReadInput, correction: str | None) -> None:
+            if (
+                current.stage_input != prepared_input.stage_input
+                or current.context != prepared_input.context
+            ):
+                raise ReadTaskError("corrupt_reference")
+            try:
+                message = render_request(description, correction)
+            except CallDescriptionError:
+                raise ReadTaskError("corrupt_reference") from None
+            if validate_request(message) is not None:
                 raise ReadTaskError("read_input_over_budget")
 
+        validate_frame(prepared_input, self.tasks.prepare_correction(task_id))
+        check_system_prompt(description.system_prompt)
+        with prepare_launch(
+            self.database,
+            description,
+            roots=self.roots,
+            credentials_dir=self.credentials_dir,
+            auth_mode=self.auth_mode,
+            proxy=self.proxy,
+            attempt_timeout=limits.total + limits.terminate + limits.close,
+        ) as prepared:
+            if self._binding(description, prepared.identity) != binding:
+                raise ExecutionError("evidence_mismatch")
+            rebound = current(self._binding(description, prepared.identity))
+            if rebound.binding != request.binding:
+                guard.check(rebound, now=self._now())
+                raise ExecutionError("evidence_mismatch")
+            guard.check(rebound, now=self._now())
+            if not request_time_tick():
+                raise ExecutionError("evidence_missing")
+
             def preclaim(current: PreparedReadInput, correction: str | None) -> None:
-                if (
-                    current.stage_input != prepared_input.stage_input
-                    or current.context != prepared_input.context
-                ):
-                    raise ReadTaskError("corrupt_reference")
+                validate_frame(current, correction)
                 try:
-                    message = render_request(description, correction)
-                except CallDescriptionError:
-                    raise ReadTaskError("corrupt_reference") from None
-                if validate_request(message) is not None:
-                    raise ReadTaskError("read_input_over_budget")
+                    recheck_admission_request(rebound, now=self._now())
+                    guard.check(rebound, now=self._now())
+                except (ExecutionError, LedgerError):
+                    raise _PreclaimAdmissionDenied from None
 
-            preclaim(prepared_input, self.tasks.prepare_correction(task_id))
-            check_system_prompt(description.system_prompt)
-            with prepare_launch(
-                self.database,
-                description,
-                roots=self.roots,
-                credentials_dir=self.credentials_dir,
-                auth_mode=self.auth_mode,
-                proxy=self.proxy,
-                attempt_timeout=limits.total + limits.terminate + limits.close,
-            ) as prepared:
-                if self._binding(description, prepared.identity) != binding:
-                    raise ExecutionError("evidence_mismatch")
-                audit = PiRpcExecutionAudit.model_validate(
-                    {
-                        **asdict(prepared.identity),
-                        "adapter_version": description.adapter_version,
-                        "protocol_profile": description.protocol_profile,
-                        "channel": description.protocol,
-                    }
+            audit = PiRpcExecutionAudit.model_validate(
+                {
+                    **asdict(prepared.identity),
+                    "adapter_version": description.adapter_version,
+                    "protocol_profile": description.protocol_profile,
+                    "channel": description.protocol,
+                }
+            )
+
+            def executor(handle: ReadHandle) -> PiReadCandidate | PiReadFailure:
+                if (
+                    handle.description.fingerprint,
+                    handle.description.stage_input_payload,
+                    handle.description.stage,
+                ) != (
+                    description.fingerprint,
+                    description.stage_input_payload,
+                    "read",
+                ):
+                    return PiReadFailure(ReadFailure.PROTOCOL_ERROR)
+                result = run_call(
+                    description,
+                    render_request(description, handle.correction),
+                    prepared,
+                    clock=clock,
+                    cancelled=cancelled,
+                    limits=limits,
+                    expected_cwd_section=expected_cwd_section(),
                 )
-
-                def executor(handle: ReadHandle) -> PiReadCandidate | PiReadFailure:
-                    if (
-                        handle.description.fingerprint,
-                        handle.description.stage_input_payload,
-                        handle.description.stage,
-                    ) != (
-                        description.fingerprint,
-                        description.stage_input_payload,
-                        "read",
-                    ):
-                        return PiReadFailure(ReadFailure.PROTOCOL_ERROR)
-                    result = run_call(
-                        description,
-                        render_request(description, handle.correction),
-                        prepared,
-                        clock=clock,
-                        cancelled=cancelled,
-                        limits=limits,
-                        expected_cwd_section=expected_cwd_section(),
+                if isinstance(result, RpcCandidate):
+                    return PiReadCandidate(
+                        result.raw_response,
+                        audit,
+                        result.provider,
+                        result.model,
+                        result.input_tokens,
+                        result.output_tokens,
+                        audit_snapshot_id=description.audit_snapshot_id,
                     )
-                    if isinstance(result, RpcCandidate):
-                        return PiReadCandidate(
-                            result.raw_response,
-                            audit,
-                            result.provider,
-                            result.model,
-                            result.input_tokens,
-                            result.output_tokens,
-                            audit_snapshot_id=description.audit_snapshot_id,
-                        )
-                    return PiReadFailure(_FAILURES[result.category])
+                guard.tighten(now=self._now())
+                return PiReadFailure(_FAILURES[result.category])
 
-                return self.tasks.run_pi_once(task_id, executor, preclaim=preclaim)
+            try:
+                result = self.tasks.run_pi_once(task_id, executor, preclaim=preclaim)
+                if (
+                    isinstance(result, ReadTask)
+                    and result.attempts
+                    and result.attempts[-1].failure is ReadFailure.MODEL_MISMATCH
+                ):
+                    guard.tighten(now=self._now())
+                return result
+            except _PreclaimAdmissionDenied:
+                raise ExecutionError("evidence_missing") from None

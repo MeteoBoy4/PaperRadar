@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from paper_radar.pi_execution import ExecutionError
-from tests.read_execution_support import setup
+from tests.read_execution_support import allow_engineering_path, setup
 
 
 def test_missing_evidence_does_not_authenticate_claim_or_log(
@@ -46,7 +46,7 @@ def test_inapplicable_or_unmeasured_evidence_does_not_claim(
             kind != "model",
         )
 
-    monkeypatch.setattr("paper_radar.read_execution.service._evidence_for", evidence)
+    allow_engineering_path(monkeypatch, evidence)
     with pytest.raises(ExecutionError, match=expected):
         service.run_attempt(task.task_id)
     assert service.tasks.task(task.task_id).attempts == ()
