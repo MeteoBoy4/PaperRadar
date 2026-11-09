@@ -408,7 +408,8 @@ pi-supply 仅接受 --snapshot；pi-exec 必须显式
 --snapshot 与 --credentials-dir。无默认 scope 或隐式最新。
 副作用：basic/config 只读迁移与显式配置；
 pi-supply/pi-exec 读取供给引用闭包与现场全树哈希。
-pi-exec 只查凭据元数据和本机隔离能力；Cwd/Live 证据缺失或必要项未验即退出 2。
+pi-exec 只读诊断 Screening 当前档位两格的 Cwd/Live 分项；Read 此命令未诊断。
+必要项缺失或未验退出 2；全部通过退出 0，披露型 unknown 和原状态仍逐项展示。
 不运行程序、不联网、不读取凭据内容、不保存快照、不创建日志或目录。
 输出去向：终端分别显示当前匹配、配置缺项、历史现场、保留保护与未验证能力。
 基础或选择层失败返回 2；basic/config 的阶段 missing 不改变退出码；

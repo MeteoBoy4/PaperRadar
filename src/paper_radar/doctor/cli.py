@@ -29,7 +29,7 @@ CAPABILITIES = (
         "pi_adapter",
         "Pi 适配器就绪检查",
         "Pi/Cwd/Live",
-        "执行资源已提供；现场隔离与 Cwd/Live 准入证据未验。"
+        "本范围未检查现场隔离与 Cwd/Live 分项资格。"
         "另用 doctor --scope pi-supply "
         "--database <库> --snapshot <引用> 诊断供给；"
         "用 --scope pi-exec 加显式 --credentials-dir 诊断执行阻断。",
@@ -59,6 +59,9 @@ CAPABILITIES = (
 
 
 def _show(check: Check) -> None:
+    if check.detail is not None:
+        typer.echo(check.detail)
+        return
     typer.echo(
         f"check={check.name} result={check.result.value} reason={check.reason} "
         f"下一步：{check.next_step}"

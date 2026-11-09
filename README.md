@@ -114,7 +114,10 @@ uv run --offline --locked paper-radar doctor --scope pi-exec \
   --credentials-dir /path/to/owner-provisioned-credentials
 ```
 
-它仅检查凭据元数据，不刷新、不解析 token；Live 产品准入证据仍缺失，单项通过不代表可执行。
+它只读核对 Screening 当前档位 boundary/value 两格的完整绑定与共享准入事实，
+按必要项计算 executable 和退出码；披露型 unknown 保留原状态、原因与下一步，退出成功也逐项展示。
+Read 此命令未选择、未诊断。它仅检查凭据元数据，不刷新、不解析 token。
+共享结构化行与中文片段供 B/H 日报嵌入，不计入论文容量，见 [doctor Contract](docs/contracts/doctor.md#pi-执行诊断)。
 
 `docling-runtime` 恰选 settings 或 snapshot，检查当前平台与所选依赖；模型、native ABI、
 fixture/质量与资源仍为 not_assessed，详情见[公共探测契约](docs/contracts/docling-runtime.md)。
