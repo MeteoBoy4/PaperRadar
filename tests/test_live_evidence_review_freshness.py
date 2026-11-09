@@ -81,9 +81,9 @@ def test_owner_can_finish_review_after_sixty_seconds_with_fresh_observation(
         ("restore", "observation_changed"),
         ("source_missing", "source_untrusted"),
         ("clock_rollback", "clock_rollback"),
-        ("expired", "activation_empty"),
+        ("expired", "evidence_activation_empty"),
         ("collector_failed", "binding_observation_unavailable"),
-        ("wrong_confirmation", "activation_confirmation_mismatch"),
+        ("wrong_confirmation", "evidence_activation_confirmation_mismatch"),
     ],
 )
 def test_owner_refuses_changed_or_unavailable_review_facts(

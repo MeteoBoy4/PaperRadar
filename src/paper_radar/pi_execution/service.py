@@ -9,7 +9,6 @@ from time import monotonic
 
 from paper_radar.config import ConfigError, load_config_snapshot
 from paper_radar.live_evidence.ledger import LedgerError
-from paper_radar.live_evidence.service import AdmissionRequest, request_time_tick
 from paper_radar.live_evidence.types import (
     AdmissionUse,
     CallSite,
@@ -36,13 +35,12 @@ from paper_radar.llm.rpc_types import (
 from paper_radar.pi_execution.admission import (
     EvidenceBinding,
     bind_description,
-    load_admission_evidence,
+)
+from paper_radar.pi_execution.admission_checkpoints import (
+    AdmissionCheckpoints,
+    PreclaimAdmissionDenied,
 )
 from paper_radar.pi_execution.admission_guard import AdmissionGuard
-from paper_radar.pi_execution.current_binding import (
-    build_admission_request,
-    recheck_admission_request,
-)
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.launcher import LaunchIdentity, prepare_launch
 from paper_radar.pi_execution.resources import (
@@ -72,12 +70,6 @@ _FAILURE_KINDS = {
     RpcCategory.ENVIRONMENT: FailureKind.EXECUTOR_ERROR,
     RpcCategory.PROTOCOL: FailureKind.PROTOCOL_ERROR,
 }
-# 历史工程别名保留给不可达回归;正式入口只调用完整请求/共享权威。
-_evidence_for = load_admission_evidence
-
-
-class _PreclaimAdmissionDenied(Exception):
-    """穿过业务事务的拒绝信号;避免 ValueError 被误分类为档案库损坏。"""
 
 
 def prepare_call(tasks: ScreeningTasks, receipt_id: str) -> CallDescription:
@@ -231,23 +223,10 @@ class PiExecution:
         cancelled: Cancellation,
         clock: MonotonicClock,
     ) -> SuccessReceipt | FailureReceipt:
-        def current(identity_binding: EvidenceBinding) -> AdmissionRequest:
-            try:
-                return build_admission_request(
-                    self.database,
-                    identity_binding,
-                    use=guard.use,
-                    credentials_dir=self.credentials_dir,
-                    now=self._now(),
-                )
-            except LedgerError as error:
-                guard.note_observation_failure(error)
-                raise ExecutionError("evidence_missing") from None
-            except SupplyError:
-                raise ExecutionError("evidence_missing") from None
-
-        request = current(binding)
-        guard.check(request, now=self._now())
+        checkpoints = AdmissionCheckpoints(
+            self.database, self.credentials_dir, guard, self._now
+        )
+        request = checkpoints.before_prepare(binding)
         with prepare_launch(
             self.tasks.database,
             description,
@@ -259,24 +238,13 @@ class PiExecution:
         ) as prepared:
             if self._binding(description, prepared.identity) != binding:
                 raise ExecutionError("evidence_mismatch")
-            rebound = current(self._binding(description, prepared.identity))
-            if rebound.binding != request.binding:
-                guard.check(rebound, now=self._now())
-                raise ExecutionError("evidence_mismatch")
-            guard.check(rebound, now=self._now())
-            if not request_time_tick():
-                raise ExecutionError("evidence_missing")
+            rebound = checkpoints.after_prepare(
+                request, self._binding(description, prepared.identity)
+            )
 
             def preclaim(correction: str | None) -> None:
                 validate_frame(correction)
-                try:
-                    recheck_admission_request(rebound, now=self._now())
-                    guard.check(rebound, now=self._now())
-                except LedgerError as error:
-                    guard.note_observation_failure(error)
-                    raise _PreclaimAdmissionDenied from None
-                except ExecutionError:
-                    raise _PreclaimAdmissionDenied from None
+                checkpoints.preclaim(rebound)
 
             audit = PiRpcExecutionAudit.model_validate(
                 {
@@ -333,5 +301,5 @@ class PiExecution:
                         failed_capabilities=frozenset({Capability.MODEL_IDENTITY}),
                     )
                 return result
-            except _PreclaimAdmissionDenied:
+            except PreclaimAdmissionDenied:
                 raise ExecutionError("evidence_missing") from None

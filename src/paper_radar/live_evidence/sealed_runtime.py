@@ -123,6 +123,7 @@ def isolation_probe(
         if pid == 0:
             os.close(read_fd)
             result: list[tuple[str, bool]] = []
+            name = "outside-read-denied"
             try:
                 IsolationBoundary(install, cwd, attempt, proxy_port(proxy))()
                 for name, path in (
@@ -138,18 +139,19 @@ def isolation_probe(
                     if not passed:
                         break
                 if len(result) == 3 and all(passed for _, passed in result):
+                    name = "attempt-write-allowed"
                     (attempt / "allowed").write_bytes(b"synthetic")
-                    result.append(("attempt-write-allowed", True))
+                    result.append((name, True))
+                    name = "core-zero"
                     result.append(
                         (
-                            "core-zero",
+                            name,
                             resource.getrlimit(resource.RLIMIT_CORE) == (0, 0),
                         )
                     )
             except Exception:
                 # 不输出异常文本、路径或数据;父进程只接收有限标准。
                 if not result or all(passed for _, passed in result):
-                    name = SITE_CASES[1 + len(result)]
                     result.append((name, False))
             try:
                 os.write(write_fd, json.dumps(result).encode())

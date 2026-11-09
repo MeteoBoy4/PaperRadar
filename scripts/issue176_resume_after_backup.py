@@ -82,7 +82,9 @@ PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export PATH
 umask 022
 refuse() {{
- /usr/bin/printf 'owner-resume refused stage=bootstrap reason=%s\\n' "$1" >&2
+ /usr/bin/printf '%s reason=%s；%s\\n' \\
+  '封印操作拒绝 stage=bootstrap' "$1" \\
+  '冻结身份或保护条件不符，请所有者核对审阅包与检查点后重试。' >&2
  exit 2
 }}
 [ "$(/usr/bin/id -u)" -eq 0 ] || refuse root_required
@@ -159,7 +161,9 @@ set -eu
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export PATH
 refuse() {{
- /usr/bin/printf 'owner-resume refused stage=user_preflight reason=%s\n' "$1" >&2
+ /usr/bin/printf '%s reason=%s；%s\n' \\
+  '封印操作拒绝 stage=user_preflight' "$1" \\
+  '入口条件不符，请核对审阅说明并使用零参数交互入口。' >&2
  exit 2
 }}
 [ "$#" -eq 0 ] || refuse arguments_invalid

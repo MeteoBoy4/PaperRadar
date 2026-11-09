@@ -445,7 +445,11 @@ def exercise(config: dict[str, str], output: Path) -> None:
     lifecycle = EvidenceLifecycle(ledger)
     run_entry([str(COLLECT)])
     initial = selected_state(config)
-    if config.get("initial_activation") == "required":
+    # v5 新配置只写限定键;旧 v4 配置仅只读兼容,不回写历史。
+    if (
+        config.get("initial_evidence_activation", config.get("initial_activation"))
+        == "required"
+    ):
         if initial["active_groups"] or any(
             item["revoked"] for item in initial["selected"]
         ):

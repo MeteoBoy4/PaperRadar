@@ -60,6 +60,7 @@ def protected_admission(
     components: dict[BindingComponent, str] | None = None,
     uses: tuple[UseId, ...] = ("boundary-low",),
     activate: bool = True,
+    claim_overrides: dict[str, dict[str, object]] | None = None,
 ) -> tuple[EvidenceLedger, EvidenceReceipt, dict[BindingComponent, str]]:
     from paper_radar.live_evidence import service
     from paper_radar.live_evidence.evidence import ExecutionBinding
@@ -101,6 +102,7 @@ def protected_admission(
             "basis": "rpc_probe",
             "scope": "single_case",
         }
+        | (claim_overrides or {}).get(cap, {})
         for use in uses
         for cap in capabilities
     ]

@@ -7,7 +7,6 @@ from pathlib import Path
 from time import monotonic
 
 from paper_radar.live_evidence.ledger import LedgerError
-from paper_radar.live_evidence.service import AdmissionRequest, request_time_tick
 from paper_radar.live_evidence.types import (
     AdmissionUse,
     CallSite,
@@ -28,13 +27,12 @@ from paper_radar.llm.rpc_types import (
 from paper_radar.pi_execution.admission import (
     EvidenceBinding,
     bind_description,
-    load_admission_evidence,
+)
+from paper_radar.pi_execution.admission_checkpoints import (
+    AdmissionCheckpoints,
+    PreclaimAdmissionDenied,
 )
 from paper_radar.pi_execution.admission_guard import AdmissionGuard
-from paper_radar.pi_execution.current_binding import (
-    build_admission_request,
-    recheck_admission_request,
-)
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.launcher import LaunchIdentity, prepare_launch
 from paper_radar.pi_execution.resources import (
@@ -58,18 +56,12 @@ from paper_radar.runtime_logging import Sink
 from paper_radar.runtime_logging.events import Clock
 from paper_radar.screening_tasks.pi_rpc_audit import PiRpcExecutionAudit
 
-# 历史工程别名仅保留给不可达守卫;正式路径只消费完整请求与共享权威。
-_evidence_for = load_admission_evidence
 _FAILURES = {
     RpcCategory.TIMEOUT: ReadFailure.TIMEOUT,
     RpcCategory.CANCELLED: ReadFailure.CANCELLED,
     RpcCategory.ENVIRONMENT: ReadFailure.EXECUTOR_ERROR,
     RpcCategory.PROTOCOL: ReadFailure.PROTOCOL_ERROR,
 }
-
-
-class _PreclaimAdmissionDenied(Exception):
-    """穿过业务事务的拒绝信号;避免 ValueError 被映射为损坏引用。"""
 
 
 def _limits(limits: RpcLimits) -> None:
@@ -199,31 +191,20 @@ class ReadExecution:
     ) -> ReadAnalysis | ReadTask:
         description = prepared_input.description
 
-        def current(identity_binding: EvidenceBinding) -> AdmissionRequest:
-            try:
-                return build_admission_request(
-                    self.database,
-                    identity_binding,
-                    use=guard.use,
-                    credentials_dir=self.credentials_dir,
-                    now=self._now(),
-                )
-            except LedgerError as error:
-                guard.note_observation_failure(error)
-                raise ExecutionError("evidence_missing") from None
-            except SupplyError:
-                raise ExecutionError("evidence_missing") from None
-
-        request = current(binding)
-        guard.check(request, now=self._now())
+        checkpoints = AdmissionCheckpoints(
+            self.database, self.credentials_dir, guard, self._now
+        )
+        request = checkpoints.before_prepare(binding)
         # 同时失败必须优先准入;这里只在准入后检查完整最坏修正帧。
         if not prepared_input.budget.accepted:
             raise ReadTaskError("read_input_over_budget")
 
-        def validate_frame(current: PreparedReadInput, correction: str | None) -> None:
+        def validate_frame(
+            candidate: PreparedReadInput, correction: str | None
+        ) -> None:
             if (
-                current.stage_input != prepared_input.stage_input
-                or current.context != prepared_input.context
+                candidate.stage_input != prepared_input.stage_input
+                or candidate.context != prepared_input.context
             ):
                 raise ReadTaskError("corrupt_reference")
             try:
@@ -246,24 +227,13 @@ class ReadExecution:
         ) as prepared:
             if self._binding(description, prepared.identity) != binding:
                 raise ExecutionError("evidence_mismatch")
-            rebound = current(self._binding(description, prepared.identity))
-            if rebound.binding != request.binding:
-                guard.check(rebound, now=self._now())
-                raise ExecutionError("evidence_mismatch")
-            guard.check(rebound, now=self._now())
-            if not request_time_tick():
-                raise ExecutionError("evidence_missing")
+            rebound = checkpoints.after_prepare(
+                request, self._binding(description, prepared.identity)
+            )
 
-            def preclaim(current: PreparedReadInput, correction: str | None) -> None:
-                validate_frame(current, correction)
-                try:
-                    recheck_admission_request(rebound, now=self._now())
-                    guard.check(rebound, now=self._now())
-                except LedgerError as error:
-                    guard.note_observation_failure(error)
-                    raise _PreclaimAdmissionDenied from None
-                except ExecutionError:
-                    raise _PreclaimAdmissionDenied from None
+            def preclaim(candidate: PreparedReadInput, correction: str | None) -> None:
+                validate_frame(candidate, correction)
+                checkpoints.preclaim(rebound)
 
             audit = PiRpcExecutionAudit.model_validate(
                 {
@@ -319,5 +289,5 @@ class ReadExecution:
                         failed_capabilities=frozenset({Capability.MODEL_IDENTITY}),
                     )
                 return result
-            except _PreclaimAdmissionDenied:
+            except PreclaimAdmissionDenied:
                 raise ExecutionError("evidence_missing") from None

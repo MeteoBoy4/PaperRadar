@@ -23,11 +23,14 @@ from paper_radar.live_evidence.evidence import (
 from paper_radar.live_evidence.ledger import AuditEvent, EvidenceLedger, LedgerError
 from paper_radar.live_evidence.receipt import UseId, WireModel
 from paper_radar.live_evidence.registry import INITIAL_REGISTRY
+from paper_radar.live_evidence.registry import use_for_id as registered_use
+from paper_radar.live_evidence.registry import use_id_for as registered_use_id
 from paper_radar.live_evidence.time_policy import clock_reason
 from paper_radar.live_evidence.types import (
     AdmissionUse,
     BindingComponent,
     Capability,
+    RegistryError,
     Requirement,
 )
 
@@ -69,33 +72,17 @@ class ActivationResult:
 
 
 def use_for_id(use_id: str) -> AdmissionUse:
-    for entry in INITIAL_REGISTRY.uses:
-        use = entry.use
-        if f"{use.consumer.value}-{use.thinking_level.value}" == use_id:
-            return use
-    raise LedgerError("admission_use_undefined")
+    try:
+        return registered_use(use_id)
+    except RegistryError:
+        raise LedgerError("admission_use_undefined") from None
 
 
 def use_id_for(use: AdmissionUse) -> UseId:
-    for value in (
-        "boundary-low",
-        "boundary-high",
-        "value-low",
-        "value-high",
-        "read-low",
-        "read-high",
-    ):
-        if use_for_id(value) == use:
-            # Literal 校验由同一个内部 wire model 完成。
-            return LifecyclePayload.model_validate(
-                {
-                    "use_id": value,
-                    "registry_version": INITIAL_REGISTRY.version,
-                    "capabilities": [],
-                    "cause": "owner",
-                }
-            ).use_id
-    raise LedgerError("admission_use_undefined")
+    try:
+        return registered_use_id(use)
+    except RegistryError:
+        raise LedgerError("admission_use_undefined") from None
 
 
 class EvidenceLifecycle:
@@ -278,7 +265,7 @@ class EvidenceLifecycle:
     ) -> ActivationResult:
         self.ledger._writer()
         if confirmation != review.receipt_id:
-            raise LedgerError("activation_confirmation_mismatch")
+            raise LedgerError("evidence_activation_confirmation_mismatch")
         invalid = clock_reason(now, review.reviewed_at)
         if invalid is not None:
             raise LedgerError.clock(invalid)
@@ -291,7 +278,7 @@ class EvidenceLifecycle:
                 now=now,
             )
             if not current.eligible:
-                raise LedgerError("activation_empty")
+                raise LedgerError("evidence_activation_empty")
             if current.summary != review.summary or current.eligible != review.eligible:
                 raise LedgerError("observation_changed")
             snapshot = self.snapshot(now=now)

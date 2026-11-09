@@ -230,7 +230,7 @@ SHARED_MATERIALS = {
         "81f7b5fc17df7d89f7617ad5bf2ed79792f5bbda4af336c3aedba86e24f0299e"
     ),
     "src/paper_radar/contracts/schema.py": (
-        "ab0cdf935f5ed2a0b194dac9fcf7972dbad400166f49c692d0c8ca6f1aa951bd"
+        "14da1777bf404336d698f39f538d0823c32f0be98e9d53cd0814d2a2597be3d8"
     ),
     "src/paper_radar/contracts/snapshot.py": (
         "a52553e700aa7a06f69c45c90052ffb813db6319c90d4a9fd39173767af3b9d9"

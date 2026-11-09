@@ -13,7 +13,7 @@ from paper_radar.pi_execution.resources import LAUNCH_POLICY_VERSION
 from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v4.json"
+MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v5.json"
 ARCHIVED_MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
 # 显式清单;不能由目录扫描或生产依赖图动态扩大/缩小。
 ARCHIVED_SOURCE_FILES = (
@@ -61,6 +61,13 @@ SOURCE_FILES = (
     "scripts/issue176_closure_workflow.py",
     "scripts/issue176_closure.py",
     "scripts/seal_site_evidence.py",
+    "scripts/issue176_resume_after_backup.py",
+    "scripts/issue176_resume_after_backup_workflow.py",
+    "src/paper_radar/pi_execution/admission_checkpoints.py",
+    "src/paper_radar/live_evidence/collector.py",
+    "src/paper_radar/live_evidence/site_tree.py",
+    "src/paper_radar/live_evidence/cli.py",
+    "src/paper_radar/pi_supply/filesystem.py",
 )
 
 
@@ -77,6 +84,9 @@ REVIEWED_POLICY_MANIFESTS = {
     ),
     "pi-admission-v4": (
         "ff8a37321ea097d9d444d4840212f249431d36d2b364f275f7ca1253db7cefc1"
+    ),
+    "pi-admission-v5": (
+        "5b298801df891e8284def2327e26b9a12c7db9a41554481c387c4ca915d1f03f"
     ),
 }
 
@@ -161,3 +171,11 @@ def test_third_policy_manifest_retains_original_bytes() -> None:
     manifest = json.loads(data)
     assert manifest["policies"]["admission"] == "pi-admission-v3"
     assert set(manifest["files"]) == set(ARCHIVED_SOURCE_FILES)
+
+
+def test_fourth_policy_manifest_retains_deployed_bytes() -> None:
+    data = (ROOT / "tests/fixtures/live-admission-source-guard-v4.json").read_bytes()
+    assert (
+        hashlib.sha256(data).hexdigest() == REVIEWED_POLICY_MANIFESTS["pi-admission-v4"]
+    )
+    assert json.loads(data)["policies"]["admission"] == "pi-admission-v4"

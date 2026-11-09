@@ -94,16 +94,24 @@ def load_admission_evidence(
     return load_projection(binding, now=now)
 
 
-def admit(
-    binding: EvidenceBinding, evidence: AdmissionEvidence | None
-) -> ExecutionReason | None:
-    """结构合法、可回放和本次可执行分别判断。当前显式映射表为空。"""
+def sampling_mapping_reason(binding: EvidenceBinding) -> ExecutionReason | None:
+    """仅判断采样映射结构,不读取证据或触发账本操作。"""
     if (
         binding.sampling != "provider_default"
         or binding.temperature is not None
         or binding.top_p is not None
     ):
         return "sampling_mapping_unavailable"
+    return None
+
+
+def admit(
+    binding: EvidenceBinding, evidence: AdmissionEvidence | None
+) -> ExecutionReason | None:
+    """结构合法、可回放和本次可执行分别判断。当前显式映射表为空。"""
+    sampling_reason = sampling_mapping_reason(binding)
+    if sampling_reason is not None:
+        return sampling_reason
     if evidence is None:
         return "evidence_missing"
     if type(evidence) is not AdmissionEvidence or evidence.binding != binding:

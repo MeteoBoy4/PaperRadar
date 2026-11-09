@@ -105,9 +105,6 @@ _CONTRACTS: dict[
     ),
 }
 
-_SUPPORTED_CONTRACT_NAMES = "、".join(
-    dict.fromkeys(name.value for name, _version in _CONTRACTS)
-)
 _SUPPORTED_CONTRACT_VERSIONS = "、".join(
     dict.fromkeys(version.value for _name, version in _CONTRACTS)
 )
@@ -138,6 +135,7 @@ def build_selected_contract(
     try:
         controlled_name = ContractName(name)
     except ValueError as error:
+        # 旧错误文本由冻结 CLI 断言约束;新增契约保留追加说明以兼容原字节。
         raise ContractSelectionError(
             "未知契约；当前支持：boundary、value-prediction、reuse-assessment、"
             "decision-reasons、read。另支持：live-evidence。"

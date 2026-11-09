@@ -30,7 +30,7 @@ def build_bundle(
         "receipt_id": receipt_id,
         "drill_use": "value-low",
         "protected_log_probe": "required",
-        "admission_policy": "pi-admission-v4",
+        "admission_policy": "pi-admission-v5",
         "final_use": "boundary-low",
         "run_name": "closure-"
         + hashlib.sha256(
@@ -60,7 +60,12 @@ def build_bundle(
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export PATH
 umask 022
-refuse() {{ /usr/bin/printf 'closure refused [%s]\\n' "$1" >&2; exit 2; }}
+refuse() {{
+ /usr/bin/printf '%s reason=%s；%s\\n' \\
+  '封印操作拒绝 stage=bootstrap' "$1" \\
+  '冻结身份或保护条件不符，请所有者核对审阅包与检查点后重试。' >&2
+ exit 2
+}}
 [ "$(/usr/bin/id -u)" -eq 0 ] || refuse root_required
 runtime={RUNTIME}
 staging={stage}
@@ -128,7 +133,13 @@ exec /usr/bin/env -i "$runtime/python/bin/python3" -I -S -B "$staging/workflow.p
 """
     runner = f"""#!/bin/sh
 set -eu
-[ "$#" -eq 0 ] || exit 2
+refuse() {{
+ /usr/bin/printf '%s reason=%s；%s\\n' \\
+  '封印操作拒绝 stage=user_preflight' "$1" \\
+  '参数不符，请核对审阅说明并使用零参数入口。' >&2
+ exit 2
+}}
+[ "$#" -eq 0 ] || refuse arguments_invalid
 package=$(CDPATH= cd -- "$(/usr/bin/dirname -- "$0")" && /usr/bin/pwd -P)
 (cd "$package" &&
  /usr/bin/printf '%s\\n' {shlex.quote(checks)} | /usr/bin/sha256sum -c -)

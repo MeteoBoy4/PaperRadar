@@ -37,6 +37,60 @@ PROTECTION = {
 }
 
 
+# 仅输出封闭操作原因,未知异常文本即使形似 token 也不回显。
+CONTROLLED_FAILURE_REASONS = frozenset(
+    {
+        "closure_active_scope_changed",
+        "closure_admission_policy_mismatch",
+        "closure_arguments_invalid",
+        "closure_business_database_changed",
+        "closure_business_database_untrusted",
+        "closure_business_sidecars_present",
+        "closure_checkpoint_path_invalid",
+        "closure_current_plan_receipt_missing",
+        "closure_drill_activation_missing",
+        "closure_entry_failed",
+        "closure_final_activation_missing",
+        "closure_final_not_applicable",
+        "closure_initial_scope_changed",
+        "closure_not_eligible",
+        "closure_pending_intent_ignored",
+        "closure_product_probe_failed",
+        "closure_restore_resurrected",
+        "closure_revocation_missing",
+        "closure_revocation_resurrected",
+        "resume_active_scope_changed",
+        "resume_backup_untrusted",
+        "resume_business_budget_changed",
+        "resume_checkpoint_state_changed",
+        "resume_current_not_applicable",
+        "resume_final_not_applicable",
+        "resume_inputs_invalid",
+        "resume_lock_busy",
+        "resume_lock_untrusted",
+        "resume_original_config_changed",
+        "resume_owner_unavailable",
+        "resume_pending_intent_ignored",
+        "resume_pending_revocation",
+        "resume_phase_changed",
+        "resume_plan_invalid",
+        "resume_policy_changed",
+        "resume_product_probe_incomplete",
+        "resume_protected_entry_required",
+        "resume_receipt_changed",
+        "resume_restore_resurrected",
+        "resume_revocation_changed",
+        "resume_revocation_missing",
+        "resume_source_integrity",
+        "resume_source_untrusted",
+        "resume_temp_device_mismatch",
+        "resume_temp_mount_mismatch",
+        "resume_temp_mount_unknown",
+        "resume_temp_untrusted",
+    }
+)
+
+
 def validate_inputs(data: dict[str, Any]) -> None:
     required = {
         "constraints_only_not_grant_authority",
@@ -509,12 +563,12 @@ def main() -> int:
         category = (
             str(error)
             if isinstance(error, ValueError)
-            and re.fullmatch("[a-z][a-z0-9_]{1,100}", str(error))
+            and str(error) in CONTROLLED_FAILURE_REASONS
             else "resume_operation_failed"
         )
         print(
-            f"owner-resume refused stage={current_stage} reason={category}; "
-            "保留全部检查点，不自动回滚或重建。",
+            f"封印操作拒绝 stage={current_stage} reason={category}；"
+            "当前阶段条件不符；请保留全部检查点，由所有者核对后准备新审阅包。",
             file=sys.stderr,
             flush=True,
         )
