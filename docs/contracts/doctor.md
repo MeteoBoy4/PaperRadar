@@ -66,34 +66,60 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 
 ### Pi 执行诊断
 
-`scope=pi-exec result=failed executable=false` 汇总所有必要项；任何必要项
-missing、invalid 或 not_assessed 都退出 2。它不采用 config 对阶段缺项的宽松汇总。
-当前产品没有现场隔离与模型能力准入证据来源，且认证/计划能力有意不观测，因此始终不可执行。
-单项 passed 只证明那项离线检查通过，不能推出真实兼容、认证或可运行。
+`scope=pi-exec result=passed|failed executable=true|false` 汇总必要工程项与共享准入结论；
+必要项 missing、invalid 或 not_assessed 时退出 2，全部通过退出 0。
+披露型 unknown 独立显示，不改变退出码，也不因整体 passed 而成为已验证。
+该范围只诊断显式快照的 **Screening 当前档位 boundary/value 两格**，两格均须通过；
+输出始终注明 Read 此命令未选择、未诊断，不借用 Screening 证据，也不生成 Read 原状态。
+这里的 executable 不替代执行服务领取前的真实四根、外发授权、质量或逐调用复核。
 
-`paper_radar.doctor.pi_exec.execution_checks` 先复用基础只读检查和历史快照加载，
-再复用 `doctor_supply` 的供给/版本/树/保护事实，不安装、不激活、不持执行生命周期保护。
-从已验证 snapshot 的 Screening 模型槽、adapter 和当前供给构造普通
-`EvidenceBinding`，复用纯 `admit` 判定且当前证据固定缺失；
-产品没有证据读取来源，doctor 不接收执行服务测试私有的正例注入；不创建任务、回执或
-StageInput，不调用生产 preflight、prepare_launch 或 dry_run。
-模型与采样字段仍由[运行配置](runtime-config.md)唯一定义，绑定与执行判定见[执行组合](pi-execution.md)。
+`paper_radar.doctor.pi_exec.execution_checks` 复用基础只读检查、历史快照加载和
+`doctor_supply` 的供给/版本/树/保护事实，不安装、不激活、不持执行生命周期保护。
+从已验证 snapshot 的 Screening 模型槽、adapter 与当前供给投影 `EvidenceBinding`，
+使用执行服务共用的只读 `build_admission_request` 构造完整当次请求，再调用唯一
+`load_admission_evidence` 取得 `AdmissionProjection`。账本、待撤销意图与受保护观察均只读；
+不可读或失信为 invalid/ledger_untrusted，不降级为 not_assessed。
+不创建任务、回执或 StageInput，不调用生产 preflight、prepare_launch、认证刷新或 dry_run。
+模型与采样字段仍由[运行配置](runtime-config.md)唯一定义；完整绑定与准入规则见
+[Live evidence](live-evidence.md)和[执行组合](pi-execution.md)。
 
 | 检查项 | 四态与边界 |
 | --- | --- |
 | selection | 历史快照有效为 passed/configuration_valid；缺失/损坏引用保留 ConfigReason，invalid。 |
-| supply | 无选择/安装/adapter 为 missing；树、版本或登记不符为 invalid；供给必要项通过为 passed/supply_valid。 |
-| admission | 缺 Screening 配置为 missing/screening_configuration_missing；缺当前准入证据为 missing/evidence_missing；未支持采样、版本或认证模式为 invalid，复用执行受控原因。当前始终非 passed，没有 admitted token。screening_configuration_missing 属于本诊断项的公共词汇，不属于 ExecutionReason。 |
-| cwd | 缺常量目录为 missing/cwd_missing；复用执行路径形状/无链接/为空规则，非法为 invalid，满足为 passed/cwd_metadata_valid。祖先现场资源由 Live 统一验收。 |
-| credentials_metadata | 缺目录/auth.json 为 missing/credentials_missing；复用 owner、0700、无链接、普通文件检查，非法为 invalid/credentials_invalid，否则 passed/metadata_valid。不读取 auth.json。 |
-| isolation | 内核能力满足为 passed/isolation_capability；不足为 invalid/isolation_unavailable；不证明实际 Pi/TLS/DNS 运行可行。 |
-| credential_roots | not_assessed/credential_roots_not_assessed；该 CLI 没有执行服务的显式四根，不猜测路径或把元数据通过冒称根隔离通过。执行时仍检查真实四根。 |
-| authentication | not_assessed/authentication_not_assessed；不检查 token 内容、前缀或有效期，不刷新。 |
-| model_parameters | not_assessed/model_parameters_not_assessed；不探测计划模型权限、订阅额度或参数能力。 |
+| supply | 无选择/安装/adapter 为 missing；树、版本或登记不符为 invalid；必要项通过为 passed/supply_valid。 |
+| admission | 按两格各自的共享 decision 计算；可执行为 passed/admitted；全部缺证据为 missing/evidence_missing；其他分项或全局拒绝为 invalid，保留 ledger_untrusted、clock_rollback、evidence_expired 等受控原因。缺 Screening 配置为 missing/screening_configuration_missing；未支持采样、版本、认证模式或用途继续受控拒绝。 |
+| cwd | 缺常量目录为 missing/cwd_missing；复用路径形状、无链接、为空规则；非法为 invalid，通过为 passed/cwd_metadata_valid。 |
+| credentials_metadata | 缺目录/auth.json 为 missing/credentials_missing；owner、0700、无链接、普通文件检查非法为 invalid/credentials_invalid，否则 passed/metadata_valid。不读取 auth.json 内容。 |
+| isolation | 最低内核能力通过为 passed/isolation_capability；不足为 invalid/isolation_unavailable；不证明实际 Pi/TLS/DNS 可行。 |
+| credential_roots | 非必要上下文披露 not_assessed/credential_roots_not_assessed；此 CLI 未选择真实业务/配置/材料四根，执行时仍须独立检查。 |
+| authentication | 非必要上下文披露 not_assessed/authentication_not_assessed；不解析 token、不验证有效期、不刷新。所需能力资格由共享准入分项独立决定。 |
+| model_parameters | 非必要上下文披露 not_assessed/model_parameters_not_assessed；不调用模型或探测额度，参数与账号能力的必需/披露分类只取共享登记。 |
 
-下一步与事实配对：cwd、祖先资源、现场隔离、RPC/DERIVED、订阅刷新、token
-通道/前缀启发式、计划模型权限与额度、参数映射、TLS/DNS 和主机级出站统一交 Live。
-供给元数据、历史成功或旧诊断都不能替代当前准入，执行仍须独立复核并持保护。
+诊断 result 与证据字段采用以下固定映射，不合并枚举：
+
+| 权威分项 | result | evidence | original_state |
+| --- | --- | --- | --- |
+| 必需且 qualified | passed | verified | 原 verified |
+| 必需且无原记录 | missing | unknown | absent |
+| 必需且有记录但不合资格 | invalid | unknown | 原 verified/not_assessed/unknown |
+| 披露型且 qualified | passed | verified | 原 verified |
+| 披露型且不合资格 | passed | unknown | 原 verified/not_assessed/unknown，缺记录为 absent |
+| 登记为不适用 | passed，不独立阻断 | unknown | 原状态或 absent，不提升历史状态 |
+
+每行还保留 requirement、原依据与范围、未测/未触发原因、evidence_at、原 verified_at、
+expires_at/expired、received、evidence_active、revoked、当前 applicability/qualified、来源及下一动作。
+全局账本/时钟拒绝保留原原因和水位线，不编造不可读的历史分项。
+字符串用 JSON 编码，控制字符不能伪造诊断行。待撤销单列显示；原激活和原 verified
+仍可同时存在，但不会据此继续获得资格。健康汇总和空论文报告均保留披露行。
+Apport/core 只展示共享投影的当次绑定结论，不另做长期漂移诊断。
+
+`paper_radar.doctor.admission.admission_rows` 提供结构化行；
+`render_admission_fragment` 提供供 B/H 嵌入的中文片段，二者消费同一个 AdmissionProjection，
+不重判能力或改写原始事实。接口也接受 Read 格的共享投影，但不使本 CLI 自动诊断 Read。
+片段不计入每日五项/全文三项论文容量；B 首个日报票验收最小日报、健康和空日报嵌入，H 承接完整日报。
+本接口不实现整套日报或论文筛选排版。
+`UsageDisclosure` 保留请求可证下界及观察层/来源/窗口、精确请求数 unknown 与 Pi 自报 token；
+隐藏重试、预热、刷新可能不可见，缺失或 totalTokens=0 不代表零成本，不推算供应商独立账单。
 
 ### 九类与数据边界
 
@@ -130,7 +156,7 @@ Docling fixture/内存、NAS 或无人值守就绪；上述承接见[路线图](
 
 ## 相关
 
-依据：#144、#140 最终 B/N/C/D；#124、#120 最终 D1–D7；规格 §2.4、§14，ADR-0023、ADR-0026、ADR-0031。
+依据：#168、#175、ADR-0052–0055；#144、#140 最终 B/N/C/D；#124、#120 最终 D1–D7；规格 §2.4、§14，ADR-0023、ADR-0026、ADR-0031。
 
 - [运行配置](runtime-config.md)、[历史快照](config-snapshots.md)、[Pi 供给](pi-supply.md)
 - [运行日志](runtime-logging.md)、[共享资格／可见性](eligibility-visibility.md)、[组合覆盖台账](../verification/a-narrow-delivery.md)

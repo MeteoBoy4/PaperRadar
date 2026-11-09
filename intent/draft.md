@@ -2548,7 +2548,7 @@ doctor 分别报告：
 
 - 基础工程 readiness；
 - Feed readiness；
-- Pi adapter readiness（固定供给与实际 Node/Pi 安装身份、固定模型/认证、所选协议与隔离策略，不执行自动供给，也不等同于校准通过）；分别披露可证请求下界/unknown、隐藏重试/预热/刷新不可见和 Pi token 用量口径，不能输出底层精确请求数已通过（ADR-0048）； 同时逐项展示能力verified / not_assessed / unknown及激活、到期和当前适用性，对本阶段保留的300秒、供应商错误、参数/日期映射等明确提示unknown并保留原状态原因，不以诊断passed或命令退出成功盖过（ADR-0051）；
+- Pi adapter readiness（固定供给与实际 Node/Pi 安装身份、固定模型/认证、所选协议与隔离策略，不执行自动供给，也不等同于校准通过）；分别披露可证请求下界/unknown、隐藏重试/预热/刷新不可见和 Pi token 用量口径，不能输出底层精确请求数已通过（ADR-0048）； 同时分字段展示诊断 result 四态与 evidence 三态，逐项保留原状态、依据、未测/未触发原因、范围、证据时点/期限、接收、激活/撤销、当前适用性及下一动作；披露型缺口显示 unknown，必要项决定 executable 与退出码，不适用能力不独立阻断，不以诊断 passed 或命令退出成功盖过 unknown（ADR-0051、ADR-0052）；doctor 与 B/H 日报消费同一准入投影，空日报仍保留披露，片段不计入每日五项/全文三项论文容量，B 首个日报票验收最小/健康/空日报嵌入，H 承接完整日报；
 - 校准 readiness；
 - 自动精读 gate；
 - 全文凭证 gate（Wiley TDM token 存在/有效/失效）；
