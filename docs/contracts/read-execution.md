@@ -23,19 +23,32 @@ Read 的任务权威独立于 ScreeningTasks，使用同一个 Read Schema 与 v
    默认审计配置为预算首次快照；显式 audit_snapshot_id 必须是该任务已登记的快照。
    语义仍取预算首次配置，本次审计取明确快照，两者 Read 投影必须相等，不读当前 settings。
 3. 读取本次激活供给/安装，用 LaunchIdentity、固定 cwd 与历史描述绑定执行准入。
-   当前 load_admission_evidence 恒为 None；独立的[分项登记与纯判定](live-evidence.md)不接入本产品读取路径。没有产品证据 JSON、布尔声明、导入、自动探测或模拟生产开关。
-   缺失、不匹配、cwd/RPC/模型参数未实测均领取前拒绝；显式采样无已验证映射也拒绝。
+   以 Read 消费者格和历史档位构造完整 `AdmissionRequest`，通过与 Screening 共用的
+   `AdmissionGuard` / `load_admission_evidence` 消费[受保护账本与分项权威](live-evidence.md)。
+   凭据刷新前完整核对当前绑定、原验证时点、证据激活、来源、水位线和分项资格；
+   格与档之间不借证据。没有产品证据 JSON、布尔声明或模拟生产放行开关；
+   旧工程别名 `_evidence_for` 不在产品读取路径。显式采样无已验证映射仍拒绝。
 4. **准入优先于完整帧预算**。两者同时失败首先报告准入原因。准入通过后才拒绝
    read_input_over_budget；完整首次帧及最坏修正槽均须符合 #160 的边界。
    再检查安全修正的实际完整帧、系统指令及 argv 上限；不截全文、不省 evidence、不转 map/reduce。
 5. prepare_launch 获取安装保护并准备认证，保护包住领取、协议、结算和进程清理。
-   准备后的 identity 重新绑定，供给/安装/策略/认证身份变化为 evidence_mismatch，不领取。
+   准备后重新构造完整当次绑定并再次调用同一权威；供给/安装/策略/认证身份变化
+   为 evidence_mismatch，其余分项退化映射既有 evidence_missing，不领取。
+   领取前请求只允许收紧的固定 helper 推进时间水位线；失败仍拒绝。
 6. run_pi_once 的短事务重新核对最新资格、唯一成功、租约、代际预算和 ordinal。
-   preclaim 使用事务内最新安全 correction 复核实际帧，拒绝没有新 attempt。
+   preclaim 使用事务内最新安全 correction 复核实际帧，并廉价重读当前受保护小观察、
+   时钟、水位线、账本和来源，再调用同一分项判定；不在短事务重扫安装、宿主或认证树。
+   拒绝信号穿过回滚后映射 evidence_missing，不新增 attempt、预算消耗或失败行。
    认证等待期间其他执行者的结算不能使本次沿用旧修正。
 7. 执行器核对冻结 Read 输入身份，一次调用 run_call。候选携严格审计进入同一个 v2 权威；
    超时/cancelled/environment/protocol 分别进入 timeout/cancelled/executor_error/protocol_error。
    最终报告模型不符由 ReadTasks 判 model_mismatch。没有隐式二次调用。
+
+正文质量、根用途、Read 安全输入预算、任务代际、租约、两次尝试与显式 retry
+均由既有 Read 权威独立核对，证据激活不授予这些资格。已派发 attempt 不因跨过
+证据到期时刻新增中止路径；下一次领取重新准入。发现漂移、来源退化或执行协议失败时
+在业务事务外请求持久收紧；实际模型不符先保持原 model_mismatch 结算，再请求收紧，
+内容 output_invalid 不自动撤销能力。helper 失败保留待撤销意图，重启或业务恢复不复活资格、不退款。
 
 配置、正文或持久引用损坏仍由原组件安全拒绝；有限正数超时及显式四根约束也保持。
 roots.data_root 必须与服务的数据根相同。调用上限最多为 RPC 默认值，完整执行和回收预算
@@ -80,7 +93,7 @@ prompt、Profile、正文、候选、坏 evidence ID、修正、认证及环境�
 
 ## 不提供／不证明
 
-离线协议/进程替身只验证工程路径；准入离线测试只证明缺失、不符或未实测时拒绝。
+离线协议/进程替身只验证工程路径；准入离线测试使用临时受保护账本与合成对端，仅证明分项消费、拒绝及工程结算。
 **任何替身运行成功都不得解释为 EXP-2 或真实执行准入已成立。**
 现场 cwd/祖先资源与主机出站、认证刷新、实际 1.4.0 RPC/模型参数与权限的准入事实由 Live 统一负责；B 负责真实产品组合、用途与质量资格，固定供给/安装保护仍消费既有公共边界。
 合成 PDF→正文→Pi 工程进程→隔离恢复的独立组合见[组合覆盖](../verification/issue-165-body-read-closure.md)；
@@ -93,4 +106,5 @@ prompt、Profile、正文、候选、坏 evidence ID、修正、认证及环境�
 [ADR-0044](../adr/0044-freeze-read-input-rendering-and-preclaim-budget.md)、
 [ADR-0045](../adr/0045-persist-explicit-read-generations.md)。
 [Pi 资源](pi-execution.md)、[RPC](pi-rpc.md)、[Read 任务](read-tasks.md)、
-[Read 权威接收](read-validation.md)、[D1 覆盖](../verification/issue-162-read-execution-delivery.md)。
+[Read 权威接收](read-validation.md)、[既有 D1 覆盖](../verification/issue-162-read-execution-delivery.md)、
+[分项准入覆盖](../verification/issue-168-174-read-admission.md)。

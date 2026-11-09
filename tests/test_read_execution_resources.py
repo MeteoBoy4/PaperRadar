@@ -169,7 +169,7 @@ def test_activation_change_after_prebinding_is_rejected_before_claim(
         activate_supply(service.database, selected.supply_id, task.snapshot_id)
         return AdmissionEvidence(binding, True, True, True)
 
-    monkeypatch.setattr("paper_radar.read_execution.service._evidence_for", evidence)
+    allow_engineering_path(monkeypatch, evidence)
     with pytest.raises(ExecutionError, match="evidence_mismatch"):
         service.run_attempt(task.task_id)
     assert service.tasks.task(task.task_id).attempts == ()

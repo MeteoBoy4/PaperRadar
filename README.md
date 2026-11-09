@@ -304,7 +304,9 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 `paper_radar.read_queries.ReadQueries` 提供当前/历史分析、两轴状态、旧配置列表及保留证据回查；
 仅使用明确历史快照，不自动重跑，展示 DTO 不携带原始候选或被丢弃内容。
 `paper_radar.read_execution.ReadExecution.run_attempt` 组合单篇 Pi 执行、领取和权威接收；
-当前产品执行准入缺失时在领取前拒绝。公共边界见[Read 任务](docs/contracts/read-tasks.md)及
+在凭据刷新前、准备完成后和领取事务内复用 Screening 的分项证据权威；
+各消费者格/档位不借证据，正文质量、根用途、输入预算及任务资格仍独立判断，
+必需证据缺失或退化时在领取前拒绝。公共边界见[Read 任务](docs/contracts/read-tasks.md)及
 [执行契约](docs/contracts/read-execution.md)，跨消费者组合与恢复候选见
 [独立 D1 台账](docs/verification/issue-165-body-read-closure.md)。产品 CLI 与真实 Pi 接线
 责任见[路线图 B](docs/roadmap.md#module-b)。

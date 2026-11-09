@@ -218,8 +218,9 @@ KeyboardInterrupt/SystemExit 保留未结算租约；显式过期恢复记 outco
 
 纯 admission 模块及包导入不连接 auth/launcher/安装保护；完整只读构造入口不导入 auth、
 launcher 或执行 service，不刷新、不创建会话或写账本，供诊断复用。
-开发期 [D7 显式源码/策略清单](../../tests/fixtures/live-admission-source-guard-v1.json)
+开发期 [D7 显式源码/策略清单](../../tests/fixtures/live-admission-source-guard-v2.json)
 绑定准入/RPC 相关源码和准入、启动、隔离、协议版本。源码变化须显式更新策略并审阅清单；
+当前准入策略为 `pi-admission-v2`；旧 v1 清单与摘要锚保留为归档向量，清单格式仍为 1。
 运行时只绑定策略版本，不对 PaperRadar 源码求哈希，不改变 Pi argv 或协议档案。
 覆盖与未验边界见 [#143 台账](../verification/issue-143-pi-execution.md)。
 

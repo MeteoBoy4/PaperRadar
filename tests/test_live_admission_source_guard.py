@@ -13,7 +13,8 @@ from paper_radar.pi_execution.resources import LAUNCH_POLICY_VERSION
 from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
+MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v2.json"
+ARCHIVED_MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
 # 显式清单;不能由目录扫描或生产依赖图动态扩大/缩小。
 SOURCE_FILES = (
     "src/paper_radar/pi_execution/admission.py",
@@ -56,7 +57,10 @@ SOURCE_FILES = (
 REVIEWED_POLICY_MANIFESTS = {
     "pi-admission-v1": (
         "695c4e9bc933b06bb211663796bb1dd89db52d000881c8590e82ac4e57e1a2f0"
-    )
+    ),
+    "pi-admission-v2": (
+        "aa3cb3836b4072a8e6d66b6c99f3181f901f90aa8015e59dc24a3c82d8244ac4"
+    ),
 }
 
 
@@ -111,3 +115,14 @@ def test_manifest_rebinding_without_policy_change_fails() -> None:
     rebound = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
     with pytest.raises(AssertionError, match="policy_version_must_change"):
         _reviewed_manifest(rebound)
+
+
+def test_previous_policy_manifest_retains_original_bytes() -> None:
+    data = ARCHIVED_MANIFEST.read_bytes()
+    assert (
+        hashlib.sha256(data).hexdigest() == REVIEWED_POLICY_MANIFESTS["pi-admission-v1"]
+    )
+    manifest = json.loads(data)
+    assert manifest["policies"]["admission"] == "pi-admission-v1"
+    assert manifest["format_version"] == 1
+    assert set(manifest["files"]) == set(SOURCE_FILES)
