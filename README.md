@@ -448,10 +448,13 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 所有者审阅确切字节后从 root 冻结副本部署，默认卸载保留账本与回执；不自动证据激活。
 采集只观察当前站点和认证/cache stat 元数据，不读秘密正文、不认证、不调用模型、不联网。
 三项SHA OK后仍须核对部署/采集/接收终态；拒绝诊断给出受控原因与阶段。
-所有者审阅新包后只运行REVIEW中的run-g2.sh，输入一次sudo密码，脚本自动预配固定空cwd并完成G2。
+所有者审阅新包后只运行REVIEW中的run-g2.sh，输入一次sudo密码，脚本从入口内嵌字节冻结部署材料，
+不让root读取用户可换链来源，再自动预配固定空cwd并完成G2。
 普通部署不接管用户目录。更新既有冻结runtime可明确提供旧payload与manifest SHA，
 构建单入口升级包，核旧字节后原样归档，保留账本与历史；新字节须所有者重新审阅。
-G3证据激活仍由所有者另行完整审阅并手输实际短ID，详见上述契约。
+首次升级的cutover会永久撤销旧资格，再采集新计划；root只追加收紧日志在helper失败时仍阻断，缺失或不支持则拒绝。
+`--owner-closure` 可冻结集成演练：三次本人手输实际短ID、产品uid权限负例、helper失败持久性和恢复后再活；
+实际新root字节及所有操作仍须所有者审阅执行，详见上述契约。
 模型、RPC、IPv4 出站和 observer 缺项保持 unknown；规则见 [Live 证据契约](docs/contracts/live-evidence.md#β-站点采集与封印部署)。
 
 单次收口审阅包可用 `uv run --offline --locked python scripts/issue176_closure.py --help` 显式构建。

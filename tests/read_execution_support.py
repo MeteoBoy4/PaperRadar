@@ -84,6 +84,9 @@ def setup(
     sink: Sink | None = None,
     clock: Clock | None = None,
 ) -> tuple[ReadExecution, ReadTask, Path]:
+    from tests.pi_execution_service_support import deny_default_live_io
+
+    deny_default_live_io(root, monkeypatch)
     import json
 
     peer = Path(__file__).with_name("read_execution_peer.py").read_text()

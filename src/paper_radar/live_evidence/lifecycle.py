@@ -20,7 +20,7 @@ from paper_radar.live_evidence.evidence import (
     CapabilityEvidence,
     ExecutionBinding,
 )
-from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
+from paper_radar.live_evidence.ledger import AuditEvent, EvidenceLedger, LedgerError
 from paper_radar.live_evidence.receipt import UseId, WireModel
 from paper_radar.live_evidence.registry import INITIAL_REGISTRY
 from paper_radar.live_evidence.time_policy import clock_reason
@@ -47,6 +47,7 @@ class EvidenceSnapshot:
     watermark: datetime | None
     pending_revocation: bool
     sources: tuple[tuple[AdmissionUse, Capability, str], ...]
+    received_at: tuple[tuple[str, datetime], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -195,6 +196,7 @@ class EvidenceLifecycle:
             watermark,
             pending,
             tuple((use, cap, value) for (use, cap), value in sources.items()),
+            tuple((record.receipt_id, record.received_at) for record in received),
         )
 
     def review(
@@ -366,6 +368,78 @@ class EvidenceLifecycle:
                 payload.model_dump_json(),
             )
             return affected
+
+    def tighten_use(self, use_id: UseId, *, now: datetime) -> None:
+        """来源不可读也可收紧本格已有回执;不读inbox、不授予或复活。"""
+        use = use_for_id(use_id)
+        payload = LifecyclePayload(
+            use_id=use_id,
+            registry_version=INITIAL_REGISTRY.version,
+            capabilities=tuple(
+                rule.capability for rule in INITIAL_REGISTRY.requirements_for(use)
+            ),
+            cause="unknown_impact",
+        )
+        with self.ledger.connection(writable=True) as connection:
+            invalid = clock_reason(now, self.ledger.watermark(connection))
+            if invalid is not None:
+                raise LedgerError.clock(invalid)
+            # 受保护登记决定已有receipt范围;无需信任产品提供短ID或读取丢失来源。
+            for (receipt_id,) in connection.execute(
+                "SELECT receipt_id FROM receipts"
+            ).fetchall():
+                self.ledger._event(
+                    connection,
+                    "evidence_revoked",
+                    receipt_id,
+                    now,
+                    payload.model_dump_json(),
+                )
+
+    def cutover_intents(self, *, now: datetime) -> AuditEvent:
+        """owner一次性切换拒绝来源;不验证或改写旧主张,永久撤销全部旧格。"""
+        from paper_radar.live_evidence.intents import CUTOVER_REASON
+
+        with self.ledger.connection(writable=True) as connection:
+            if (
+                connection.execute(
+                    "SELECT 1 FROM events WHERE action='evidence_intent_cutover'"
+                ).fetchone()
+                is not None
+            ):
+                raise LedgerError("pending_revocation_unavailable")
+            receipts = connection.execute("SELECT receipt_id FROM receipts").fetchall()
+            for (receipt_id,) in receipts:
+                for entry in INITIAL_REGISTRY.uses:
+                    payload = LifecyclePayload(
+                        use_id=use_id_for(entry.use),
+                        registry_version=INITIAL_REGISTRY.version,
+                        capabilities=tuple(
+                            rule.capability for rule in entry.requirements
+                        ),
+                        cause="unknown_impact",
+                    )
+                    self.ledger._event(
+                        connection,
+                        "evidence_revoked",
+                        receipt_id,
+                        now,
+                        payload.model_dump_json(),
+                    )
+            self.ledger._event(connection, "evidence_restored", "ledger", now)
+            self.ledger._event(
+                connection, "evidence_intent_cutover", "ledger", now, CUTOVER_REASON
+            )
+            row = connection.execute(
+                "SELECT sequence,recorded_at FROM events ORDER BY sequence DESC LIMIT 1"
+            ).fetchone()
+            return AuditEvent(
+                row[0],
+                "evidence_intent_cutover",
+                "ledger",
+                datetime.fromisoformat(row[1]),
+                CUTOVER_REASON,
+            )
 
     def record_restore(self, *, now: datetime) -> None:
         """只能在特权恢复入口调用;追加屏障,历史及撤销保持。"""

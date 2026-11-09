@@ -23,6 +23,7 @@ from tests.live_evidence_ledger_support import NOW, owner_uid, plan, protected_r
 from tests.live_evidence_ledger_support import receipt as receipt_template
 
 if TYPE_CHECKING:
+    from paper_radar.live_evidence.service import AdmissionProjection
     from paper_radar.pi_execution.service import PiExecution
     from paper_radar.screening_tasks import RequestReceipt
 
@@ -69,6 +70,9 @@ def protected_admission(
         sealed, trust=LedgerTrust(owner_uid(), owner_uid() + 1, sealed)
     )
     ledger.initialize()
+    from tests.protected_intents_support import intent_log
+
+    intent_log(ledger, monkeypatch)
     approved = ApprovedPlan.model_validate(
         plan().model_dump()
         | {
@@ -133,7 +137,6 @@ def protected_admission(
         lambda *a, **kw: components.copy(),
     )
     monkeypatch.setattr(service, "_ledger", lambda: ledger)
-    monkeypatch.setattr(service, "_pending_path", lambda: root / "pending.jsonl")
     monkeypatch.setattr(service, "_run_helper", lambda arguments: True)
     return ledger, receipt, components
 
@@ -144,3 +147,24 @@ def product_inputs(
     from tests.pi_execution_service_support import service_inputs
 
     return service_inputs(root, monkeypatch, thinking_level="low")
+
+
+def projected_admission(
+    components: dict[BindingComponent, str], use_id: UseId
+) -> AdmissionProjection:
+    """通过公开loader核对资格,不以日志文件存在性代替收紧事实。"""
+    from paper_radar.live_evidence.evidence import ExecutionBinding
+    from paper_radar.live_evidence.lifecycle import use_for_id
+    from paper_radar.live_evidence.service import (
+        AdmissionRequest,
+        load_admission_evidence,
+    )
+
+    return load_admission_evidence(
+        AdmissionRequest(
+            use_for_id(use_id),
+            ExecutionBinding(tuple(components.items())),
+            frozenset(BindingComponent),
+        ),
+        now=NOW,
+    )

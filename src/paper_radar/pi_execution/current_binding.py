@@ -19,7 +19,7 @@ from paper_radar.pi_execution.site_binding import (
 )
 from paper_radar.pi_supply.protection import acquire_install
 
-ADMISSION_POLICY_VERSION = "pi-admission-v3"
+ADMISSION_POLICY_VERSION = "pi-admission-v4"
 PROTECTED_COMPONENTS = frozenset(
     {BindingComponent.IPV4_EGRESS, BindingComponent.OBSERVER}
 )

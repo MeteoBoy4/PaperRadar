@@ -6,7 +6,6 @@ import pytest
 
 from paper_radar.live_evidence import service, tightening
 from paper_radar.live_evidence.evidence import ExecutionBinding
-from paper_radar.live_evidence.ledger import EvidenceLedger
 from paper_radar.live_evidence.lifecycle import use_for_id
 from paper_radar.live_evidence.types import BindingComponent
 from tests.live_evidence_ledger_support import NOW, receipt
@@ -41,10 +40,10 @@ def test_missing_ledger_still_persists_pending_revocation_across_restart(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        service, "_ledger", lambda: EvidenceLedger(tmp_path / "missing")
-    )
-    monkeypatch.setattr(service, "_pending_path", lambda: tmp_path / "pending.jsonl")
+    from tests.screening_live_admission_support import protected_admission
+
+    ledger, _, _ = protected_admission(tmp_path / "evidence", monkeypatch)
+    ledger.database.unlink()
     monkeypatch.setattr(service, "_run_helper", lambda args: False)
     assert (
         service.request_revocation(receipt().receipt_id, "boundary-low", now=NOW)

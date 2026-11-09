@@ -29,6 +29,8 @@ def build_bundle(
         "manifest_sha256": manifest_sha256,
         "receipt_id": receipt_id,
         "drill_use": "value-low",
+        "protected_log_probe": "required",
+        "admission_policy": "pi-admission-v4",
         "final_use": "boundary-low",
         "run_name": "closure-"
         + hashlib.sha256(

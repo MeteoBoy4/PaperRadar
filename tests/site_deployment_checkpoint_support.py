@@ -41,7 +41,12 @@ def bootstrap_command(
         path.name: hashlib.sha256(path.read_bytes()).hexdigest()
         for path in package.iterdir()
     }
-    source = render_bootstrap(hashes, owner_workflow=owner_repair, progress=False)
+    source = render_bootstrap(
+        hashes,
+        sealed_files={p.name: p.read_bytes() for p in package.iterdir()},
+        owner_workflow=owner_repair,
+        progress=False,
+    )
     source = model_bootstrap(source, root)
     return ["/bin/sh", "-c", source, "sh", str(package)]
 

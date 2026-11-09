@@ -1,6 +1,6 @@
 # 用独立受保护账本保存执行准入事实
 
-状态：已接受；日期：2026-11-09；依据：[#168 D-6 所有者裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#170 正文对本 ADR 免另行审阅的特批](https://github.com/MeteoBoy4/PaperRadar/issues/170)；补充 [ADR-0051](0051-separate-live-binding-capabilities-and-activation.md)，关联 [ADR-0052](0052-version-admission-uses-and-capability-requirements.md)、[ADR-0053](0053-expire-capabilities-by-evidence-class-and-coverage.md)、[ADR-0054](0054-separate-execution-binding-from-call-materials.md)。
+状态：已接受；日期：2026-11-09；依据：[#168 D-6 所有者裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#170 正文对本 ADR 免另行审阅的特批](https://github.com/MeteoBoy4/PaperRadar/issues/170)；补充 [ADR-0051](0051-separate-live-binding-capabilities-and-activation.md)，关联 [ADR-0052](0052-version-admission-uses-and-capability-requirements.md)、[ADR-0053](0053-expire-capabilities-by-evidence-class-and-coverage.md)、[ADR-0054](0054-separate-execution-binding-from-call-materials.md)。 只追加收紧日志例外由 [ADR-0056](0056-protect-pending-revocations-with-an-append-only-log.md) 补充。
 
 产品 uid 可写的业务库不能同时证明该 uid 无法伪造的执行许可。准入账本位于独立 root 所有的 `/var/lib/paperradar/live-evidence/`，使用 SQLite rollback journal；产品 uid 只读，无写入通道。证据接收、人工激活及放宽资格的操作只通过所有者授权的受保护入口；只允许收紧的 helper 可以追加撤销与时间打点，不能授予或恢复资格。入口自身也必须来自 root 所有的冻结副本，不能由 sudo 从用户可写仓库或虚拟环境导入代码。此边界不防范同 uid 直接修改产品源码，也不防范 root 篡改信任根。
 

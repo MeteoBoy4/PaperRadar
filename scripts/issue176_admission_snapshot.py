@@ -143,6 +143,7 @@ def sample(database: Path, credentials_dir: Path) -> dict[str, Any]:
                 recheck_admission_request(request, now=datetime.now(UTC))
             except LedgerError as error:
                 recheck_reason = error.category
+                projection = unavailable_projection(use, error)
         except LedgerError as error:
             projection = unavailable_projection(use, error)
         reports.append(

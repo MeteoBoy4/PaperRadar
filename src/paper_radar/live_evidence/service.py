@@ -2,23 +2,23 @@
 
 from __future__ import annotations
 
-import os
 import re
 import subprocess
 from dataclasses import dataclass, replace
 from datetime import datetime
-from pathlib import Path
+from typing import Literal
 
-from pydantic import ValidationError
+from pydantic import ValidationError, field_validator
 
 from paper_radar.live_evidence.evaluator import AdmissionDecision, evaluate_admission
 from paper_radar.live_evidence.evidence import ExecutionBinding
+from paper_radar.live_evidence.intents import ProtectedIntentLog
 from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
 from paper_radar.live_evidence.lifecycle import EvidenceLifecycle, use_for_id
 from paper_radar.live_evidence.reasons import AdmissionReason, ReasonCode
 from paper_radar.live_evidence.receipt import UseId, WireModel
 from paper_radar.live_evidence.registry import INITIAL_REGISTRY
-from paper_radar.live_evidence.time_policy import clock_reason
+from paper_radar.live_evidence.time_policy import aware_utc, clock_reason
 from paper_radar.live_evidence.types import AdmissionUse, BindingComponent, Capability
 
 TIGHTENING_HELPER = "/usr/libexec/paperradar/live-evidence-tighten"
@@ -40,53 +40,56 @@ class AdmissionProjection:
 
 
 class PendingRevocation(WireModel):
-    receipt_id: str
+    format_version: Literal[1] = 1
+    record_type: Literal["revocation"] = "revocation"
+    receipt_id: str | None
     use_id: UseId
     capabilities: tuple[Capability, ...]
     recorded_at: datetime
+
+    @field_validator("recorded_at")
+    @classmethod
+    def valid_time(cls, value: datetime) -> datetime:
+        result = aware_utc(value)
+        if result is None:
+            raise ValueError("evidence_time_invalid")
+        return result
 
 
 def _ledger() -> EvidenceLedger:
     return EvidenceLedger()
 
 
-def _pending_path() -> Path:
-    # 用户态只追加收紧意图;不读取凭据、配置通过声明或业务预算。
-    return (
-        Path.home() / ".local" / "state" / "paperradar" / "live-evidence-pending.jsonl"
-    )
+def _intents() -> ProtectedIntentLog:
+    return ProtectedIntentLog()
 
 
-def _read_pending() -> tuple[PendingRevocation, ...]:
-    path = _pending_path()
+def _read_pending(
+    ledger: EvidenceLedger | None = None, intents: ProtectedIntentLog | None = None
+) -> tuple[PendingRevocation, ...]:
     try:
-        if not os.path.lexists(path):
-            return ()
-        if path.is_symlink() or not path.is_file() or path.stat().st_size > 1024 * 1024:
-            raise LedgerError("pending_revocation_unavailable")
         return tuple(
             PendingRevocation.model_validate_json(line)
-            for line in path.read_bytes().splitlines()
+            for line in (intents or _intents()).read(ledger or _ledger())
         )
-    except (OSError, ValidationError, ValueError) as error:
+    except (ValidationError, ValueError) as error:
         if isinstance(error, LedgerError):
             raise
         raise LedgerError("pending_revocation_unavailable") from error
 
 
 def _append_pending(record: PendingRevocation) -> None:
-    path = _pending_path()
+    _intents().append(record.model_dump_json().encode())
+
+
+def _persist_or_revoke(record: PendingRevocation, arguments: tuple[str, ...]) -> bool:
     try:
-        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-        fd = os.open(
-            path, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW, 0o600
-        )
-        with os.fdopen(fd, "ab") as stream:
-            stream.write(record.model_dump_json().encode() + b"\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-    except OSError as error:
-        raise LedgerError("pending_revocation_unavailable") from error
+        _append_pending(record)
+    except LedgerError:
+        if _run_helper(arguments):
+            return True  # root事务确已成功;不声称日志已落盘。
+        raise
+    return _run_helper(arguments)
 
 
 def unavailable_projection(
@@ -114,14 +117,40 @@ def unavailable_projection(
 def load_admission_evidence(
     request: AdmissionRequest, *, now: datetime
 ) -> AdmissionProjection:
-    """不接收外来证据/信任根;普通 request 只能描述本次身份与观察范围。"""
+    """产品只从固定OS来源读取;不接受外来信任根或授予。"""
+    return _project_admission(request, now=now, ledger=_ledger(), intents=_intents())
+
+
+def load_owner_admission_evidence(
+    request: AdmissionRequest,
+    *,
+    now: datetime,
+    ledger: EvidenceLedger,
+    intents: ProtectedIntentLog,
+) -> AdmissionProjection:
+    """owner冻结流程复用同一权威;检查root身份但不写任何事实。"""
+    ledger._writer()
+    return _project_admission(request, now=now, ledger=ledger, intents=intents)
+
+
+def _project_admission(
+    request: AdmissionRequest,
+    *,
+    now: datetime,
+    ledger: EvidenceLedger,
+    intents: ProtectedIntentLog,
+) -> AdmissionProjection:
     pending: tuple[PendingRevocation, ...] = ()
     try:
-        pending = _read_pending()
-        snapshot = EvidenceLifecycle(_ledger()).snapshot(now=now)
+        pending = _read_pending(ledger, intents)
+        snapshot = EvidenceLifecycle(ledger).snapshot(now=now)
+        received_at = dict(snapshot.received_at)
         pending_keys = {
-            (item.receipt_id, item.use_id, cap)
+            (identifier, item.use_id, cap)
             for item in pending
+            for _use, _cap, identifier in snapshot.sources
+            if item.receipt_id == identifier
+            or (item.receipt_id is None and received_at[identifier] <= item.recorded_at)
             for cap in item.capabilities
         }
         sources = {(use, cap): identifier for use, cap, identifier in snapshot.sources}
@@ -212,12 +241,10 @@ def request_revocation(
             or bool(rule.dependencies & components)
         )
     )
-    _append_pending(
+    return _persist_or_revoke(
         PendingRevocation(
             receipt_id=receipt_id, use_id=use_id, capabilities=affected, recorded_at=now
-        )
-    )
-    return _run_helper(
+        ),
         (
             "revoke",
             receipt_id,
@@ -226,7 +253,26 @@ def request_revocation(
             if components is None
             else ",".join(sorted(component.value for component in components)),
             ",".join(sorted(cap.value for cap in failed_capabilities)),
-        )
+        ),
+    )
+
+
+def request_use_revocation(use_id: UseId, *, now: datetime) -> bool:
+    """无法辨认来源时持久收紧本格当时已有事实;新接收仍须owner显式激活。"""
+    use = use_for_id(use_id)
+    invalid = clock_reason(now, None)
+    if invalid is not None:
+        raise LedgerError.clock(invalid)
+    return _persist_or_revoke(
+        PendingRevocation(
+            receipt_id=None,
+            use_id=use_id,
+            capabilities=tuple(
+                rule.capability for rule in INITIAL_REGISTRY.requirements_for(use)
+            ),
+            recorded_at=now,
+        ),
+        ("revoke-use", use_id),
     )
 
 

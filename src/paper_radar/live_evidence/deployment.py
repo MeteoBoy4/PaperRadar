@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
@@ -141,7 +142,52 @@ protected "$0"
 '''
 
 
-def render_deploy(payload_sha256: str, plan_id: str = "site-beta") -> str:
+def render_intent_preflight() -> str:
+    """只读支持性预检;不代替实际+a,不修改任何日志或账本。"""
+    return """
+stage=intent_preflight
+resource=intents
+[ "$(/usr/bin/uname -s)" = Linux ] || refuse intent_platform_unknown
+case "$(/usr/bin/uname -m)" in
+    x86_64|aarch64) ;; *) refuse intent_platform_unknown;;
+esac
+caps=$(/usr/bin/awk '$1 == "CapEff:" {print $2}' /proc/self/status)
+case "$caps" in ''|*[!0-9a-fA-F]*) refuse intent_capability_unknown;; esac
+[ "$((0x$caps & 512))" -ne 0 ] || refuse intent_capability_missing
+intent_target=/var/lib/paperradar
+if [ -e /var/lib/paperradar/live-evidence-intents ] ||
+   [ -L /var/lib/paperradar/live-evidence-intents ]; then
+    intent_target=/var/lib/paperradar/live-evidence-intents
+    protected "$intent_target"
+    [ -d "$intent_target" ] || refuse intent_log_untrusted
+    [ "$(/usr/bin/stat -c %a "$intent_target")" = 755 ] || refuse intent_partial
+    intent_file="$intent_target/pending.jsonl"
+    if [ -e "$intent_file" ] || [ -L "$intent_file" ]; then
+        [ ! -L "$intent_file" ] && [ -f "$intent_file" ] || refuse intent_log_untrusted
+        [ "$(/usr/bin/stat -c %u "$intent_file")" -eq 0 ] || refuse intent_log_untrusted
+        [ "$(/usr/bin/stat -c %g "$intent_file")" -ne 0 ] || refuse intent_log_untrusted
+        [ "$(/usr/bin/stat -c %a "$intent_file")" = 660 ] || refuse intent_log_untrusted
+        [ "$(/usr/bin/stat -c %h "$intent_file")" -eq 1 ] || refuse intent_log_untrusted
+        [ "$(/usr/bin/stat -c %s "$intent_file")" -lt 8388608 ] ||
+            refuse intent_log_full
+        attributes=$(/usr/bin/lsattr -d -- "$intent_file" 2>/dev/null |
+            /usr/bin/awk '{print $1}')
+        case "$attributes" in *i*) refuse intent_log_untrusted;; esac
+        case "$attributes" in *a*) ;; *) refuse intent_log_untrusted;; esac
+    fi
+fi
+options=$(
+    /usr/bin/findmnt --raw --noheadings --output VFS-OPTIONS --target "$intent_target"
+) || refuse intent_filesystem_unavailable
+case ",$options," in *,ro,*) refuse intent_filesystem_readonly;; esac
+/usr/bin/lsattr -d -- "$intent_target" >/dev/null 2>&1 ||
+    refuse intent_filesystem_unavailable
+"""
+
+
+def render_deploy(
+    payload_sha256: str, plan_id: str = "site-beta", *, owner_closure: bool = False
+) -> str:
     if len(payload_sha256) != 64 or any(
         c not in "0123456789abcdef" for c in payload_sha256
     ):
@@ -150,6 +196,7 @@ def render_deploy(payload_sha256: str, plan_id: str = "site-beta") -> str:
         raise ValueError("plan_id_invalid")
     return (
         _guard("deploy")
+        + render_intent_preflight()
         + f"""
 stage=payload_check
 resource=payload
@@ -192,6 +239,11 @@ stage=ledger_prepare
 resource=ledger
 /usr/bin/install -d -o root -g root -m 0755 $ledger $ledger/inbox
 protected $ledger/inbox
+stage=intent_prepare
+resource=intents
+/usr/bin/printf '%s\n' 'G2 stage=intent_prepare'
+# 仅owner部署路径,不在NOPASSWD helper中。旧资格先cutover,不读取普通pending。
+/bin/sh "$runtime/wrappers/owner" provision-intents
 stage=cwd_prepare
 resource=cwd
 if [ ! -e /srv/pi-cwd ]; then
@@ -232,6 +284,13 @@ resource=receipt
 /usr/bin/printf '%s\\n' 'G2 stage=receive'
 $exec_root/live-evidence-owner receive --plan "$plan" --source "$source"
 """
+        + (
+            "\nstage=owner_closure\nresource=owner_closure\n"
+            'exec /usr/bin/env -i "$runtime/python/bin/python3" -I -S -B '
+            '"$runtime/owner-closure.py"\n'
+            if owner_closure
+            else ""
+        )
     )
 
 
@@ -243,6 +302,7 @@ def render_upgrade(old_payload_sha256: str, old_manifest_sha256: str) -> str:
     marker_sha256 = hashlib.sha256((old_payload_sha256 + "\n").encode()).hexdigest()
     return (
         _guard("upgrade")
+        + render_intent_preflight()
         + f"""
 stage=upgrade_preflight
 resource=deployment_path
@@ -515,9 +575,11 @@ resource=deployment
 def render_bootstrap(
     digests: dict[str, str],
     *,
+    sealed_files: dict[str, bytes],
     owner_workflow: bool = True,
     progress: bool = True,
     upgrade: bool = False,
+    interactive: bool = False,
 ) -> str:
     names = (
         G2_ROOT_FILES
@@ -526,6 +588,18 @@ def render_bootstrap(
     )
     if upgrade:
         names = (*names, "upgrade.sh")
+    frozen = []
+    for name in names:
+        data = sealed_files[name]
+        if hashlib.sha256(data).hexdigest() != digests[name]:
+            raise ValueError("sealed_source_digest")
+        encoded = base64.encodebytes(data).decode("ascii")
+        frozen.append(
+            f"/usr/bin/base64 --decode > \"$staging/{name}\" <<'FROZEN_BYTES'\n"
+            + encoded
+            + "FROZEN_BYTES\n"
+        )
+    frozen_bytes = "".join(frozen)
     checks = "\n".join(f"{digests[name]}  {STAGING}/{name}" for name in names)
     entry = "upgrade" if upgrade else "owner-workflow" if owner_workflow else "deploy"
     announce = "/usr/bin/printf '%s\\n' 'G2 stage=root_copy'\n" if progress else ""
@@ -551,24 +625,42 @@ done
 /usr/bin/install -d -o root -g root -m 0755 "$staging"
 for name in {" ".join(names)}; do
   [ ! -L "$staging/$name" ] || refuse protected_symlink
-  /usr/bin/install -o root -g root -m 0644 "$1/$name" "$staging/$name"
+  if [ -e "$staging/$name" ]; then
+    protected "$staging/$name"
+    [ -f "$staging/$name" ] || refuse protected_type
+    [ "$(/usr/bin/stat -c %h "$staging/$name")" -eq 1 ] || refuse protected_hardlink
+  fi
 done
+# 字节已冻结在入口的stdin脚本中;root从不打开产品可换链来源。
+{frozen_bytes}
 stage=root_hash
 resource=sealed_files
 /usr/bin/printf '%s\\n' {shlex.quote(checks)} | /usr/bin/sha256sum -c -
-exec /bin/sh "$staging/{entry}.sh"
+exec /bin/sh "$staging/{entry}.sh"{" </dev/tty" if interactive else ""}
 """
 
 
-def render_g2_runner(digests: dict[str, str], *, upgrade: bool = False) -> str:
+def render_g2_runner(
+    digests: dict[str, str],
+    *,
+    sealed_files: dict[str, bytes],
+    upgrade: bool = False,
+    owner_closure: bool = False,
+) -> str:
     names = (*G2_ROOT_FILES, "upgrade.sh") if upgrade else G2_ROOT_FILES
     checks = "\n".join(f"{digests[name]}  {name}" for name in names)
-    bootstrap = render_bootstrap(digests, upgrade=upgrade)
+    bootstrap = render_bootstrap(
+        digests, sealed_files=sealed_files, upgrade=upgrade, interactive=owner_closure
+    )
     announcement = (
         "封印升级：只请求一次sudo密码，核旧身份并归档后部署；不执行G3。"
         if upgrade
         else "G2：只请求一次sudo密码，自动预配空cwd并部署；不执行G3。"
     )
+    if owner_closure:
+        announcement = (
+            "集成所有者流程：一次sudo密码，cutover后新证据需本人手动确认；不自动激活。"
+        )
     return f"""#!/bin/sh
 set -eu
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
@@ -581,7 +673,9 @@ package=$(CDPATH= cd -- "$(/usr/bin/dirname -- "$0")" && /usr/bin/pwd -P)
 (cd "$package" &&
     /usr/bin/printf '%s\\n' {shlex.quote(checks)} | /usr/bin/sha256sum -c -)
 /usr/bin/printf '%s\\n' {shlex.quote(announcement)}
-exec /usr/bin/sudo -k /bin/sh -c {shlex.quote(bootstrap)} sh "$package"
+# heredoc经stdin传输冻结字节,大payload不进入exec argv（单参数上限）。
+exec /usr/bin/sudo -k /bin/sh -s <<'FROZEN_BOOTSTRAP'
+{bootstrap}FROZEN_BOOTSTRAP
 """
 
 
@@ -618,8 +712,10 @@ site/plan、sudoers、manifest.sha256、冻结Python/依赖/源码。所有字�
 {shlex.quote(str(target / "run-g2.sh"))}
 ```
 
-run-g2先核包内四件固定SHA，再一次sudo -k复制四件到root所有staging，复核同四SHA，
-只从root冻结owner-workflow执行。root不从repo、.venv、PYTHONPATH或用户环境运行代码。
+run-g2先核包内四件固定SHA，再一次sudo -k从入口内嵌精确字节冻结到root所有staging，
+复核同四SHA；
+大payload经stdin脚本传输而非exec参数；root不打开用户可换链来源，
+只从root冻结owner-workflow执行，不从repo、.venv、PYTHONPATH或用户环境运行代码。
 owner-workflow先校验自身位置/保护链，再显式预配固定/srv/pi-cwd，随后调用原deploy/collect/receive。
 固定cwd仅接受{site.product_uid}:{site.product_gid}:0700无链接空目录，或已预配root:root0755空目录；
 完整祖先须root所有且组/其他不可写。其他属主、组、模式、链接、非空或不安全祖先均拒绝。
@@ -720,6 +816,45 @@ credentials全根含node-compile-cache全部stat，无正常写入例外；不�
 """
 
 
+def render_integrated_review(
+    target: Path,
+    digests: dict[str, str],
+    site: SiteConfiguration,
+    plan: ApprovedPlan,
+    upgrade_from: tuple[str, str] | None,
+) -> str:
+    runner = "run-upgrade.sh" if upgrade_from else "run-g2.sh"
+    return f"""# 所有者cutover与收口集成审阅包（尚未执行）
+
+审阅全部脚本、入口内嵌字节和payload中的冻结Python/依赖/源码/owner-closure.py/json、site/plan/manifest/sudoers。
+旧runtime要求{upgrade_from or "新部署"}，只核后原样归档；
+未知/部分状态拒绝，不盲删或自动回滚。
+先暂停业务及其他准入写入，确认本产品uid无等价root权限。仅本人审阅确切字节后运行：
+
+`{shlex.quote(str(target / runner))}`
+
+唯一sudo密码边界后root只执行内嵌冻结字节，不打开用户可换链来源。
+先核/准备固定root只追加日志；首次cutover使全部旧激活失效并永久撤销旧回执六格，保历史/原verified_at/预算。
+日志0660/root:产品gid、目录0755、FS_APPEND_FL；缺失/未知/不支持/满/损坏均拒绝，不清空轮转或恢复旧文件。
+新计划{plan.plan_id}窗口{plan.starts_at.isoformat()} → {plan.ends_at.isoformat()}；
+六格独立主张、单轮首失败停、认证/模型/网络全0。
+只按本次新计划唯一受信回执继续，不重启旧stopped计划，不拿旧v3证明新策略。
+本人完整审阅并手输实际短ID激活boundary-low，再本人确认临时value-low；不自动传入或生成确认。
+备份后fork降至产品uid，实际验证删除/截断/覆盖/替换/硬链/清旗标均EACCES或EPERM。
+仅该子进程设置NNP使固定sudo helper不可提权，正式request_revocation持久追加本格意图，
+必须观察helper失败；新进程共享投影须拒绝。
+随后root固定helper撤销value-low，合并恢复备份核旧活全部失效、日志拒绝保留；最后本人重新审阅/手输ID激活boundary-low。
+每次激活前/确认后真实刷新60秒观察，不能续原verified_at。最终非空站点分项active+qualified才写root安全回执。
+业务库仅必要预算ID/代际/计数只读元数据，拒sidecar，不读payload/auth/cache正文，不compile/重装Pi。
+每阶段root检查点持久保留；任何失败停止，不自动清理、回滚或授予。NNP仅子进程，不改变root/sudoers配置。
+收口包只作当前现场OS和生命周期验证；模型/RPC/IPv4/observer缺口仍阻断，不表示Live/B完成。
+默认卸载保留账本/回执/原runtime归档/日志/失败/停止/预算；新权限字节仍P5本人审阅执行。
+
+```text
+{"".join(f"{digest}  {name}\n" for name, digest in digests.items())}```
+"""
+
+
 def build_deployment(
     target: Path,
     site: SiteConfiguration,
@@ -728,18 +863,32 @@ def build_deployment(
     ends_at: datetime,
     source_root: Path,
     upgrade_from: tuple[str, str] | None = None,
+    owner_closure: bool = False,
 ) -> dict[str, str]:
     """新目录输出确切review artifacts;窗口与现场身份由所有者入口提供。"""
     if starts_at.tzinfo is None or ends_at.tzinfo is None or starts_at >= ends_at:
         raise ValueError("plan_window_invalid")
     if upgrade_from is not None:
         render_upgrade(*upgrade_from)
+    if owner_closure and set(site.claim_uses or (site.use_id,)) != {
+        "boundary-low",
+        "boundary-high",
+        "value-low",
+        "value-high",
+        "read-low",
+        "read-high",
+    }:
+        raise ValueError("closure_claim_uses")
     starts_at = starts_at.astimezone(UTC)
     ends_at = ends_at.astimezone(UTC)
     target.mkdir(mode=0o700, parents=True, exist_ok=False)
     with tempfile.TemporaryDirectory(prefix="paperradar-seal-") as temporary:
         frozen = Path(temporary)
         freeze_runtime(frozen, source_root)
+        if owner_closure:
+            (frozen / "owner-closure.py").write_bytes(
+                (source_root / "scripts/issue176_closure_workflow.py").read_bytes()
+            )
         collector_digest = hashlib.sha256(
             json.dumps(
                 file_digests(frozen), sort_keys=True, separators=(",", ":")
@@ -765,6 +914,22 @@ def build_deployment(
             max_rounds=1,
             stop_on_first_failure=True,
         )
+        if owner_closure:
+            (frozen / "owner-closure.json").write_text(
+                json.dumps(
+                    {
+                        "plan_id": plan.plan_id,
+                        "drill_use": "value-low",
+                        "final_use": "boundary-low",
+                        "admission_policy": "pi-admission-v4",
+                        "initial_activation": "required",
+                        "protected_log_probe": "required",
+                        "run_name": "closure-" + plan_key,
+                    },
+                    sort_keys=True,
+                )
+                + "\n"
+            )
         (frozen / "plan.json").write_bytes(canonical_bytes(plan))
         (frozen / "site.json").write_bytes(canonical_bytes(site))
         (frozen / "sudoers").write_text(render_sudoers(site.product_uid))
@@ -789,16 +954,37 @@ def build_deployment(
         (target / "approved-plan.json").write_bytes(canonical_bytes(plan))
         (target / "site.json").write_bytes(canonical_bytes(site))
     payload_digest = hashlib.sha256((target / "payload.tar").read_bytes()).hexdigest()
-    (target / "deploy.sh").write_text(render_deploy(payload_digest, plan.plan_id))
-    (target / "uninstall.sh").write_text(render_uninstall())
-    (target / "owner-workflow.sh").write_text(
-        render_owner_workflow(site.product_uid, site.product_gid)
+    (target / "deploy.sh").write_text(
+        render_deploy(payload_digest, plan.plan_id, owner_closure=owner_closure)
     )
+    (target / "uninstall.sh").write_text(render_uninstall())
+    owner_workflow = render_owner_workflow(site.product_uid, site.product_gid)
+    if owner_closure:
+        owner_workflow = owner_workflow.replace(
+            "G2完成：部署、β采集与接收已返回成功；G3证据激活未执行。",
+            "所有者集成收口流程返回成功；以root安全回执为准。",
+        )
+    (target / "owner-workflow.sh").write_text(owner_workflow)
     if upgrade_from is not None:
-        (target / "upgrade.sh").write_text(render_upgrade(*upgrade_from))
+        upgrade_script = render_upgrade(*upgrade_from)
+        if owner_closure:
+            upgrade_script = upgrade_script.replace(
+                "G3证据激活未执行", "所有者集成收口结果以root安全回执为准"
+            )
+        (target / "upgrade.sh").write_text(upgrade_script)
     runner = "run-upgrade.sh" if upgrade_from is not None else "run-g2.sh"
     (target / runner).write_text(
-        render_g2_runner(file_digests(target), upgrade=upgrade_from is not None)
+        render_g2_runner(
+            file_digests(target),
+            sealed_files={
+                name: (target / name).read_bytes()
+                for name in (
+                    (*G2_ROOT_FILES, "upgrade.sh") if upgrade_from else G2_ROOT_FILES
+                )
+            },
+            upgrade=upgrade_from is not None,
+            owner_closure=owner_closure,
+        )
     )
     (target / runner).chmod(0o755)
 
@@ -844,6 +1030,10 @@ def build_deployment(
         if upgrade_from is None
         else render_upgrade_review(target, digests, site, plan, upgrade_from)
     )
+    if owner_closure:
+        review_text = render_integrated_review(
+            target, digests, site, plan, upgrade_from
+        )
     (target / "REVIEW.md").write_text(review_text)
     digests = file_digests(target)
     (target / "SHA256SUMS").write_text(
