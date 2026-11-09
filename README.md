@@ -463,7 +463,7 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 [收口覆盖与待验边界](docs/verification/issue-168-176-live-admission-closure.md)。
 所有者已完成本次站点收紧／恢复与最后人工再活，保护检查点核非空12项active且qualified；
 三格正式只读采样仍均不可执行，模型／RPC等必要缺口保持，详见[现场安全验证](docs/verification/issue-168-176-owner-safety-verification.md)。
-精确登记、兼容及最终完整门禁尚未完成，这不表示Live或B已完成。
+精确登记与兼容组合见[登记验证](docs/verification/issue-168-176-scope-registration.md)；正式收口仍要求最终合入身份的逐组S3和冻结树同run完整门禁为passed／verified／same，Live与B按各自判据验收。
 
 ## Pi RPC
 

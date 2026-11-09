@@ -79,10 +79,13 @@ def test_classification_distinguishes_authority_from_replacement(
             for path in (baseline_repository / "docs/contracts").glob("*.md")
         ),
     }
-    # #140新增现状Contract的精确分类;旧基线集合保持,不扫描当前目录放行未知文档。
+    # 后续明确授权的精确活路径;冻结基线集合保持,不扫描当前目录放行未知文档。
     authorized_additions = {
         "docs/contracts/pi-execution.md",
         "docs/contracts/offline-pytest-diagnostics.md",
+        "docs/contracts/live-evidence.md",
+        "docs/contracts/read-execution.md",
+        "docs/roadmap.md",
     }
     assert live == expected_live | authorized_additions
     assert all((ROOT / path).is_file() for path in authorized_additions)
