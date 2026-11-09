@@ -12,6 +12,15 @@ from paper_radar.live_evidence.deployment import (
 )
 
 
+def model_intent_preflight(source: str, *, failure: str | None = None) -> str:
+    from paper_radar.live_evidence.deployment import render_intent_preflight
+
+    model = "\nstage=intent_preflight\nresource=intents\n"
+    if failure is not None:
+        model += f"refuse {failure}\n"
+    return source.replace(render_intent_preflight(), model)
+
+
 def deployment_sandbox(tmp_path: Path) -> tuple[Path, Path, Path]:
     root = tmp_path / "host"
     root.mkdir(mode=0o755)
@@ -38,6 +47,7 @@ def deployment_sandbox(tmp_path: Path) -> tuple[Path, Path, Path]:
         ("deploy", render_deploy(digest)),
         ("uninstall", render_uninstall()),
     ):
+        source = model_intent_preflight(source)
         for prefix in ("/usr/libexec", "/var/lib", "/etc/sudoers.d", "/srv"):
             source = source.replace(prefix, str(root) + prefix)
         source = source.replace("$(/usr/bin/id -u)", "0")

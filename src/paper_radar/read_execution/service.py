@@ -11,6 +11,7 @@ from paper_radar.live_evidence.service import AdmissionRequest, request_time_tic
 from paper_radar.live_evidence.types import (
     AdmissionUse,
     CallSite,
+    Capability,
     Consumer,
     ThinkingLevel,
 )
@@ -183,7 +184,7 @@ class ReadExecution:
                     task_id, prepared_input, binding, guard, limits, cancelled, clock
                 )
             except (ExecutionError, LedgerError, SupplyError):
-                guard.tighten(now=self._now())
+                guard.tighten_after_denial(now=self._now())
                 raise
 
     def _run_admitted(
@@ -207,7 +208,10 @@ class ReadExecution:
                     credentials_dir=self.credentials_dir,
                     now=self._now(),
                 )
-            except (LedgerError, SupplyError):
+            except LedgerError as error:
+                guard.note_observation_failure(error)
+                raise ExecutionError("evidence_missing") from None
+            except SupplyError:
                 raise ExecutionError("evidence_missing") from None
 
         request = current(binding)
@@ -255,7 +259,10 @@ class ReadExecution:
                 try:
                     recheck_admission_request(rebound, now=self._now())
                     guard.check(rebound, now=self._now())
-                except (ExecutionError, LedgerError):
+                except LedgerError as error:
+                    guard.note_observation_failure(error)
+                    raise _PreclaimAdmissionDenied from None
+                except ExecutionError:
                     raise _PreclaimAdmissionDenied from None
 
             audit = PiRpcExecutionAudit.model_validate(
@@ -307,7 +314,10 @@ class ReadExecution:
                     and result.attempts
                     and result.attempts[-1].failure is ReadFailure.MODEL_MISMATCH
                 ):
-                    guard.tighten(now=self._now())
+                    guard.tighten(
+                        now=self._now(),
+                        failed_capabilities=frozenset({Capability.MODEL_IDENTITY}),
+                    )
                 return result
             except _PreclaimAdmissionDenied:
                 raise ExecutionError("evidence_missing") from None

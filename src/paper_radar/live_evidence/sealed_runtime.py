@@ -436,6 +436,19 @@ def runtime_main() -> int:
         from paper_radar.live_evidence.tightening import tightening_main
 
         return tightening_main(args[1:])
+    if args == ["owner", "provision-intents"]:
+        from paper_radar.live_evidence.intents import ProtectedIntentLog
+
+        ledger = EvidenceLedger()
+        ledger._writer()
+        ledger._protected(RUNTIME_ROOT)
+        site = _read_configuration(RUNTIME_ROOT)
+        ledger.initialize()
+        ProtectedIntentLog(product_gid=site.product_gid).provision(
+            ledger, now=datetime.now(UTC)
+        )
+        print("受保护收紧日志已核；cutover前旧资格不可恢复，新证据仍须本人显式激活。")
+        return 0
     if args[:1] == ["owner"]:
         from paper_radar.live_evidence.cli import live_evidence_app
 

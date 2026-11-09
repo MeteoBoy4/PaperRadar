@@ -229,16 +229,37 @@ IPv4 出站和 observer 只由当前固定受保护观察补足覆盖。
 sources 是本格每个能力选中的回执 ID；decision 的原状态、依据、范围、时间、到期与原因均来自共享判定。
 Screening 正式三检查点消费这个投影；Read 与 doctor 的消费者现状分别见所属 Contract，不能各自重述能力要求。
 完整当前执行绑定的宿主采集由消费方集中构造，doctor 复用相同只读构造入口；
+只读采样在观察复核失败时也改用同一拒绝投影，同时清除可执行及qualified结论；原因与doctor片段不沿用复核前结果。
 本接口不把回执自身 binding 当作当前身份，不把短时观察或普通请求当作证据授予。
 `unavailable_projection(use, LedgerError)` 为来源/观察失效生成同一受控拒绝投影，避免展示方复制原因映射。
 
-`request_revocation` 先将闭合 ID／用途／受影响能力／时点追加到
-`~/.local/state/paperradar/live-evidence-pending.jsonl` 并 fsync，再调用固定 sudo -n helper。
-即使账本不可读也可记录意图；helper 失败返回 false，相关分项当场拒绝且跨重启显示待撤销。
-成功也不清空意图：同一旧回执只能被继续收紧，新有效回执不借用旧资格。
-损坏、不可读或链接形式的意图文件使加载整体拒绝；意图文件只能用于拒绝，不能授予。
-意图持久化失败返回 pending_revocation_unavailable，调用者必须保持拒绝；
-若磁盘本身无法落盘，不能声称存在跨重启的持久意图。
+`request_revocation` 先把闭合用途、来源／影响和UTC时点追加到固定
+`/var/lib/paperradar/live-evidence-intents/pending.jsonl` 并fsync，再调用固定sudo -n helper。
+账本仍产品零写入；该独立日志是ADR-0056接受的只能追加收紧事实的例外，不存授予。
+目录最终root所有0755，文件root:封印产品gid、0660、regular单链接且必须有FS_APPEND_FL。
+每次读／写核完整祖先、fd属主／组／模式／类型／链接数与ioctl属性，不接受产品创建的日志、
+用户pending、业务快照或来源缺失作为空记录。内核只追加与root父目录阻止同uid删除、截断、
+覆盖、替换、硬链接或清旗标；真实OS效果须owner现场验证，不由离线模型证明。
+
+只有owner冻结部署的 `provision-intents` 可初始化；不在NOPASSWD helper中。
+初始化先持久封闭目录为0700，原子追加恢复屏障并撤销全部cutover前回执的六格资格，
+不读旧用户pending，也不将其缺失当干净。写入绑定账本cutover身份的首记录、0660权限、
+设置只追加属性并fsync／fd复核后，才公布目录0755；任何部分状态保留阻断，不自动补建或修复。
+已有完整日志仅核验，不清空、轮转或复位；卸载、重装、账本恢复与业务恢复均保留。
+旧原主张／verified_at、失败、stopped、预算和归档保持；新受信计划／实际新证据仍须owner手动激活。
+
+即使账本暂不可读，也可向已经封印的日志追加；helper失败返回false但日志拒绝跨进程保留。
+若日志写入/fsync失败仍尝试现有helper，只有root事务成功才返回true；两者都失败则受控错误，
+不能声称已持久。满8MiB、单记录超过16KiB、损坏／残缺、未知版本、失信／缺失或不支持ioctl均拒绝，
+不以普通文件降级。首记录必须匹配同一受保护账本的cutover事件，日志事实只可使旧资格更窄。
+
+`request_use_revocation` 在首次物理来源丢失／失信或已知漂移导致绑定构造失败、尚无sources时收紧本格；
+意图按接收时点截止覆盖当时已有来源，新接收仍须独立核验和owner激活。
+固定helper的 `revoke-use` 只按受保护receipts登记追加本格撤销，不读丢失inbox、不接受自由路径或时间。
+单纯observation_stale、能力自然到期、未测或未激活只拒绝当前执行，不产生不可逆收紧；
+同事实的新鲜观察可恢复适用性，不续原verified_at，不解除真正撤销。
+root冻结owner的 `load_owner_admission_evidence` 复用同一日志／账本判定core并核root身份，
+安全回执把raw_active与当前active／qualified分开，不绕过pending；产品入口仍只用固定OS来源。
 `request_time_tick` 只请求固定 helper 用自身时间打点；失败必须由执行消费者拒绝，不能当作已记录。
 
 ### β 站点采集与封印部署
@@ -255,7 +276,8 @@ collector_sha256 是 site/plan 之前的冻结运行闭包逐文件摘要清单�
 
 所有者审阅确切字节后，只运行REVIEW所列run-g2.sh，输入一次sudo密码，其他G2步骤由脚本执行；
 没有其他read确认或手动chown/复制步骤。入口先核包内四件固定SHA，再一次sudo -k只用系统工具
-复制owner-workflow/deploy/uninstall/payload到root所有的固定`/var/lib/paperradar/live-evidence-staging/`，
+从入口内嵌精确字节冻结owner-workflow/deploy/uninstall/payload到root所有的固定`/var/lib/paperradar/live-evidence-staging/`，
+冻结脚本与大payload经stdin传输，不进入exec参数；root不读取用户可换链来源。
 核对同四SHA，再执行root冻结owner-workflow。脚本拒绝参数、非root、错误执行位置、软链、
 非root属主或组/其他可写的完整路径链。普通deploy在任何chown/install前核对既有目标，
 不将不受信旧目录转换成信任根。
@@ -279,7 +301,7 @@ run-g2仅自动化G2，不包含activate或G3短ID确认，不使产品executabl
 升级包的 build-identity.json 另记录两个旧身份，REVIEW.md展示归档、失败与独立G3边界。
 新root字节仍须所有者重新完整审阅，旧包批准不能迁移。
 
-run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k复制到root所有staging并核相同SHA，
+run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口内嵌字节冻结到root所有staging并核相同SHA，
 只从root冻结upgrade运行。它先核现有ledger/inbox保护及root所有0755空cwd，
 再核旧payload标记规范字节、旧manifest文件SHA、完整文件与目录闭包及逐文件哈希。
 所有成员须root所有、无链接，文件单链接且为0644/0755、目录0755；额外空目录也拒绝。
@@ -291,13 +313,13 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k复制到ro
 随后调用新冻结deploy安装不同的新runtime，并按新collector身份的新计划真实零请求采集与接收。
 旧账本/inbox/回执/计划/撤销/stopped/失败历史和业务预算均保留；不重装Pi、不compile或写业务库。
 升级输出实际新receipt_id，不声称旧回执已由新代码核验，不自动激活或扩大能力。
-G3仍由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
+未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v3`；v1/v2 的 D7 向量与摘要锚原字节保留，新策略不继承旧绑定资格。
+源代码准入策略为 `pi-admission-v4`；v1/v2/v3 的 D7 向量与摘要锚原字节保留，新策略不继承旧绑定资格。
 
 固定零参数 `/usr/libexec/paperradar/live-evidence-collect` 与仅收紧的 `live-evidence-tighten`
-是 sudoers 唯一 NOPASSWD 命令；后者仍由既有有限解析器核对 revoke/mark/tick。
+是 sudoers 唯一 NOPASSWD 命令；后者由有限解析器核对 revoke/mark/revoke-use/tick。
 `live-evidence-owner` 不在 NOPASSWD 中，接收/批准/激活/恢复等放宽动作均须所有者明确授权。
 部署脚本的固定计划批准及 receive 属于该次所有者审阅命令的一部分，不自动激活。
 真实安装时，所有者须私下确认产品用户没有等价 root 的组成员资格、能力或任意 sudo 通道。
@@ -374,17 +396,25 @@ schema1 的 plans／receipts／events 表定义与 receipt v1 原字节保持；
 
 ### 所有者单次收口审阅包
 
-`scripts/issue176_closure.py` 只在非特权构建期按显式 payload/manifest SHA 和回执短 ID
-生成独立 owner 审阅包，不读取站点、不执行 sudo。所有者审阅确切字节后运行唯一入口；
-root 核部署完整成员、摘要、保护链、入口与 sudoers，再从已审入口内嵌精确字节冻结新脚本及配置并重核摘要；root不读取用户可写来源。
-不替换已部署 runtime、不新增 sudoers 或产品写入接口。
-工作流只复用既有 owner 激活、只收紧 helper 和 Lifecycle backup/restore：临时独立格由本人手动确认激活，
-备份后撤销，独立解释器重读，再合并恢复并核对全部旧激活失效；最终格须本人重新完整审阅/手动确认，
-最终非空原能力集合当前适用才产生受保护安全回执。每次激活仍真实刷新并核对60秒观察。
-业务库只读查询必要预算标识、代际与 attempt 计数，前后不变才记完成；不查询 payload/token/正文或刷新预算。
-任务须暂停且无 WAL/SHM/journal，随后用 immutable 只读连接避免生成 sidecar；条件不满足直接拒绝。
-中断只保留检查点，不自动回滚、覆盖、清理或授予；新进程重读不证明实际主机/服务重启。
-具体待审范围与真实执行状态见[收口台账](../verification/issue-168-176-live-admission-closure.md)。
+封印构建 `--owner-closure` 把同源owner工作流与新计划选择冻结进payload，必须显式包含六格主张。
+`run-upgrade.sh` 仍一次sudo密码，root先核旧字节并原样归档，再执行cutover／新采集／接收。
+冻结stdin传输完成后只从 `/dev/tty` 接收本人确认；不能管道传入短ID。没有终端即拒绝。
+按新计划在root账本中选择唯一实际新回执；先本人确认boundary-low，再本人确认临时value-low，
+备份后做产品uid文件操作／helper失败拒绝演练，root撤销、恢复屏障，最后本人再次审阅并手动确认boundary-low。
+
+owner的产品uid子进程只触碰固定日志与合成临时文件，实际验证删除／截断／覆盖／替换／硬链／清旗标拒绝。
+它不可逆降权、清环境／组并设不可dump及no_new_privs，只在该子进程禁止固定sudo helper提权；
+通过正式request_revocation记录value-low后必须观察helper失败，新进程共享投影仍拒绝，才继续root撤销。
+不改变sudoers／部署权限，失败或未知停止，不把模型替身当作本机支持证明。
+恢复保留日志拒绝与root撤销，全部旧激活失效；最终非空站点分项当前适用才写root安全回执。
+业务库只读必要预算ID、代际与attempt计数，前后不变才记完成，拒WAL／SHM／journal，不读取payload／token／正文。
+原验证时点不续、stopped不重启，不认证／模型／网络、不compile或重装Pi；新进程重读不证明主机重启。
+
+`scripts/issue176_closure.py` 仍可为已经部署并明确新人工激活的v4构建独立包；
+它核目标payload／manifest、当前准入策略并内嵌字节，不能拿现场v3执行新工作流或替代首次cutover。
+部分／中断状态只保留root检查点，不自动回滚、清理、恢复资格或重新初始化日志。
+具体流程与尚未执行边界见[owner方案](../../intent/review/issue-168/closure-owner-plan.md)及
+[收口台账](../verification/issue-168-176-live-admission-closure.md)。
 
 ## 错误与拒绝
 
@@ -416,5 +446,6 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 采集与部署依据：[#172](https://github.com/MeteoBoy4/PaperRadar/issues/172)；独立覆盖见 [β 采集台账](../verification/issue-168-172-site-collector.md)。
 依据：[父票裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#169](https://github.com/MeteoBoy4/PaperRadar/issues/169)、[ADR-0051](../adr/0051-separate-live-binding-capabilities-and-activation.md)。
 补充决策：[ADR-0052](../adr/0052-version-admission-uses-and-capability-requirements.md)、[ADR-0053](../adr/0053-expire-capabilities-by-evidence-class-and-coverage.md)、[ADR-0054](../adr/0054-separate-execution-binding-from-call-materials.md)。
-独立账本决策：[ADR-0055](../adr/0055-separate-protected-admission-ledger-from-business-facts.md)。
+独立账本决策：[ADR-0055](../adr/0055-separate-protected-admission-ledger-from-business-facts.md)；
+只追加收紧依据：[ADR-0056](../adr/0056-protect-pending-revocations-with-an-append-only-log.md)。
 现有产品边界：[Pi 执行](pi-execution.md)、[Read 执行](read-execution.md)。

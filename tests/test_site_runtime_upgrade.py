@@ -5,7 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from tests.site_deployment_support import deployment_sandbox, run_script
+from tests.site_deployment_support import (
+    deployment_sandbox,
+    model_intent_preflight,
+    run_script,
+)
 
 
 @pytest.mark.parametrize(
@@ -89,7 +93,7 @@ def test_upgrade_only_archives_the_exact_protected_old_runtime(
         (root / "etc/sudoers.d/paperradar-live-evidence").chmod(0o644)
     if change == "cwd_nonempty":
         (root / "srv/pi-cwd/retained").write_bytes(b"user data")
-    source = render_upgrade(old_payload, old_manifest)
+    source = model_intent_preflight(render_upgrade(old_payload, old_manifest))
     for prefix in ("/usr/libexec", "/var/lib", "/etc/sudoers.d", "/srv"):
         source = source.replace(prefix, str(root) + prefix)
     source = source.replace("$(/usr/bin/id -u)", "0")
@@ -103,7 +107,7 @@ def test_upgrade_only_archives_the_exact_protected_old_runtime(
     assert (
         ledger / "ledger.sqlite3"
     ).read_bytes() == b"history, revocations and budgets"
-    if change == "none":
+    if change in {"none", "source_after_password"}:
         assert (archive / "manifest.sha256").is_file()
         assert runtime.is_dir()
     else:
@@ -180,7 +184,7 @@ def test_upgrade_bundle_binds_old_identity_and_publishes_one_reviewed_entry(
 
 @pytest.mark.parametrize(
     "change",
-    ["none", "user_tamper", "root_copy_tamper", "old_changed", "collector_failed"],
+    ["none", "user_tamper", "source_after_password", "old_changed", "collector_failed"],
 )
 def test_one_upgrade_entry_checks_copies_archives_deploys_and_never_activates(
     tmp_path: Path, change: str
@@ -221,7 +225,8 @@ def test_one_upgrade_entry_checks_copies_archives_deploys_and_never_activates(
         f"exit {2 if change == 'collector_failed' else 0}\n"
     )
     (payload / "wrappers/owner").write_text(
-        f'#!/bin/sh\n/usr/bin/printf "%s\\n" "$*" >> "{events}"\n'
+        '#!/bin/sh\n[ "$1" != provision-intents ] || exit 0\n'
+        f'/usr/bin/printf "%s\\n" "$*" >> "{events}"\n'
         '/usr/bin/printf "receipt_id=fedcba9876543210\\n"\n'
     )
     (payload / "manifest.sha256").unlink()
@@ -235,7 +240,7 @@ def test_one_upgrade_entry_checks_copies_archives_deploys_and_never_activates(
     assert new_digest != old_digest
     deploy = package / "deploy.sh"
     deploy.write_text(deploy.read_text().replace(old_digest, new_digest))
-    upgrade = render_upgrade(old_digest, old_manifest)
+    upgrade = model_intent_preflight(render_upgrade(old_digest, old_manifest))
     for prefix in ("/usr/libexec", "/var/lib", "/etc/sudoers.d", "/srv"):
         upgrade = upgrade.replace(prefix, str(root) + prefix)
     upgrade = upgrade.replace("$(/usr/bin/id -u)", "0")
@@ -246,7 +251,14 @@ def test_one_upgrade_entry_checks_copies_archives_deploys_and_never_activates(
     hashes = {
         p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in package.iterdir()
     }
-    runner_source = model_bootstrap(render_g2_runner(hashes, upgrade=True), root)
+    runner_source = model_bootstrap(
+        render_g2_runner(
+            hashes,
+            sealed_files={p.name: p.read_bytes() for p in package.iterdir()},
+            upgrade=True,
+        ),
+        root,
+    )
     runner = package / "run-upgrade.sh"
     runner.write_text(
         runner_source.replace("/usr/bin/sudo", str(tmp_path / "sudo-model"))
@@ -254,7 +266,7 @@ def test_one_upgrade_entry_checks_copies_archives_deploys_and_never_activates(
     runner.chmod(0o755)
     if change == "user_tamper":
         (package / "upgrade.sh").write_text("tampered\n")
-    if change == "root_copy_tamper":
+    if change == "source_after_password":
         sudo_tool = tmp_path / "sudo-model"
         sudo_tool.write_text(
             sudo_tool.read_text().replace(
@@ -271,16 +283,18 @@ def test_one_upgrade_entry_checks_copies_archives_deploys_and_never_activates(
         assert result.returncode != 0 and not sudo_log.exists()
     else:
         assert sudo_log.read_text() == "-k\n"
-    if change in {"none", "collector_failed"}:
+    if change in {"none", "source_after_password", "collector_failed"}:
         assert archive.is_dir() and runtime.is_dir()
         assert (runtime / "payload.sha256").read_text().strip() == new_digest
         assert events.read_text().splitlines()[0] == "new-collect"
-        if change == "none":
+        if change in {"none", "source_after_password"}:
             assert result.returncode == 0, result.stderr.decode()
             assert events.read_text().splitlines()[1].startswith("receive --plan ")
             assert len(events.read_text().splitlines()) == 2
             assert b"receipt_id=fedcba9876543210" in result.stdout
             assert "G3证据激活未执行" in result.stdout.decode()
+            if change == "source_after_password":
+                (package / "upgrade.sh").write_text(upgrade)
             second = run_bootstrap([str(runner)])
             assert second.returncode == 2
             assert b"[old_payload_identity]" in second.stderr

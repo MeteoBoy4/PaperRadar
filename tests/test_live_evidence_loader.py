@@ -3,14 +3,10 @@ from pathlib import Path
 import pytest
 
 from paper_radar.live_evidence.evidence import ExecutionBinding
-from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerTrust
-from paper_radar.live_evidence.receipt import canonical_bytes
+from paper_radar.live_evidence.ledger import EvidenceLedger
 from paper_radar.live_evidence.types import BindingComponent, Capability
 from tests.live_evidence_ledger_support import (
     NOW,
-    owner_uid,
-    plan,
-    protected_root,
     receipt,
 )
 
@@ -20,28 +16,13 @@ def test_real_loader_projects_protected_activation_and_durable_failed_revocation
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from paper_radar.live_evidence import service
-    from paper_radar.live_evidence.lifecycle import EvidenceLifecycle, use_for_id
+    from paper_radar.live_evidence.lifecycle import use_for_id
+    from tests.screening_live_admission_support import protected_admission
 
-    root = protected_root(tmp_path)
-    ledger = EvidenceLedger(root, trust=LedgerTrust(owner_uid(), owner_uid() + 1, root))
-    ledger.initialize()
-    ledger.approve_plan(plan(), now=NOW)
-    source = root / "inbox" / "site.json"
-    source.write_bytes(canonical_bytes(receipt()))
-    source.chmod(0o644)
-    ledger.receive(source, now=NOW)
-    lifecycle = EvidenceLifecycle(ledger)
-    binding = ExecutionBinding(tuple(receipt().binding.items()))
-    review = lifecycle.review(
-        receipt().receipt_id,
-        "boundary-low",
-        binding=binding,
-        checked_components=frozenset(BindingComponent),
-        now=NOW,
+    _, original, components = protected_admission(
+        tmp_path / "evidence", monkeypatch, capabilities=("cwd_ancestors",)
     )
-    lifecycle.activate(review, confirmation=receipt().receipt_id, now=NOW)
-    monkeypatch.setattr(service, "_ledger", lambda: ledger)
-    monkeypatch.setattr(service, "_pending_path", lambda: tmp_path / "pending.jsonl")
+    binding = ExecutionBinding(tuple(components.items()))
     monkeypatch.setattr(service, "_run_helper", lambda arguments: False)
     request = service.AdmissionRequest(
         use_for_id("boundary-low"), binding, frozenset(BindingComponent)
@@ -51,7 +32,7 @@ def test_real_loader_projects_protected_activation_and_durable_failed_revocation
     assert not before.decision.executable  # 缺模型等必要能力仍拒绝。
     assert (
         service.request_revocation(
-            receipt().receipt_id,
+            original.receipt_id,
             "boundary-low",
             components=frozenset({BindingComponent.CWD_ANCESTORS}),
             now=NOW,
@@ -94,16 +75,20 @@ def test_all_required_receipted_active_qualifications_share_one_projection(
     from paper_radar.live_evidence.lifecycle import use_for_id
     from paper_radar.live_evidence.registry import INITIAL_REGISTRY
     from paper_radar.live_evidence.types import Requirement
-    from tests.live_evidence_lifecycle_support import activated
 
     required = tuple(
         rule.capability
         for rule in INITIAL_REGISTRY.requirements_for(use_for_id("boundary-low"))
         if rule.requirement is Requirement.REQUIRED
     )
-    ledger, _, binding = activated(tmp_path, capabilities=required, provider=True)
-    monkeypatch.setattr(service, "_ledger", lambda: ledger)
-    monkeypatch.setattr(service, "_pending_path", lambda: tmp_path / "pending.jsonl")
+    from tests.screening_live_admission_support import protected_admission
+
+    _, _, components = protected_admission(
+        tmp_path / "evidence",
+        monkeypatch,
+        capabilities=tuple(cap.value for cap in required),
+    )
+    binding = ExecutionBinding(tuple(components.items()))
     projection = service.load_admission_evidence(
         service.AdmissionRequest(
             use_for_id("boundary-low"), binding, frozenset(BindingComponent)
@@ -123,10 +108,11 @@ def test_corrupt_pending_intent_can_only_tighten(
 ) -> None:
     from paper_radar.live_evidence import service
     from paper_radar.live_evidence.lifecycle import use_for_id
+    from tests.screening_live_admission_support import protected_admission
 
-    pending = tmp_path / "pending.jsonl"
+    protected_admission(tmp_path / "evidence", monkeypatch)
+    pending = tmp_path / "evidence/pending.jsonl"
     pending.write_bytes(b"corrupt")
-    monkeypatch.setattr(service, "_pending_path", lambda: pending)
     projection = service.load_admission_evidence(
         service.AdmissionRequest(
             use_for_id("read-low"), ExecutionBinding(tuple(receipt().binding.items()))

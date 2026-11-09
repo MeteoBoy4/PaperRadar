@@ -1411,6 +1411,12 @@ Read 专用变化保持既有范围。无自动门禁继承，订阅取舍见
   有效期（[ADR-0047](../docs/adr/0047-expire-and-explicitly-activate-live-evidence.md)、ADR-0051）。
   Live规格前置票须建好产品证据接收机制，并对适用、仍有效的分项verified证据完成
   新的显式人工激活；探索签收和离线原型不代替该前置，未满足时不得冻结Live规格或放行产品。
+- 准入账本只由root入口写入；产品仅可向root所有、内核强制只追加的独立收紧日志追加否定事实。
+  helper失败不允许同uid删除／截断／改写或回滚该依据；缺失、失信、满或不支持时拒绝，不能自动补建／轮转。
+  首次切换先失效旧激活并永久撤销旧回执，新证据必须受信接收并由本人显式激活；保留历史与预算。
+  单纯当前观察租期结束、自然到期、未测或未激活只当次拒绝，不永久撤销无关已核站点事实
+  （[ADR-0055](../docs/adr/0055-separate-protected-admission-ledger-from-business-facts.md)、
+  [ADR-0056](../docs/adr/0056-protect-pending-revocations-with-an-append-only-log.md)）。
 
 <a id="b-首次-pi-生产接线"></a>
 

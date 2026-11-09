@@ -22,6 +22,12 @@ def tightening_main(arguments: list[str] | None = None) -> int:
         if args == ["tick"]:
             EvidenceLifecycle(EvidenceLedger()).tick(now=datetime.now(UTC))
             return 0
+        if len(args) == 2 and args[0] == "revoke-use":
+            selected_use = use_id_for(use_for_id(args[1]))
+            EvidenceLifecycle(EvidenceLedger()).tighten_use(
+                selected_use, now=datetime.now(UTC)
+            )
+            return 0
         if len(args) != 5 or args[0] not in {"revoke", "mark"}:
             return 2
         action, receipt_id, use_id, raw_components, raw_failures = args

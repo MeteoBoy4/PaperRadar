@@ -18,6 +18,33 @@ from tests.test_paper_mapping import screening_fields
 from tests.test_paper_service import observation
 
 
+def deny_default_live_io(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """未显式替换的真实OS来源必须拒绝;不覆盖已安装的protected fixture。"""
+    from paper_radar.live_evidence import service
+    from paper_radar.live_evidence.intents import ProtectedIntentLog
+    from paper_radar.live_evidence.ledger import EvidenceLedger
+
+    if (
+        getattr(service._run_helper, "__module__", None),
+        getattr(service._run_helper, "__name__", None),
+    ) != (
+        "paper_radar.live_evidence.service",
+        "_run_helper",
+    ):
+        return
+    missing = EvidenceLedger(root / "absent-live-evidence")
+    monkeypatch.setattr(service, "_ledger", lambda: missing)
+    monkeypatch.setattr(
+        service,
+        "_intents",
+        lambda: ProtectedIntentLog(root / "absent-intents/pending.jsonl"),
+    )
+    monkeypatch.setattr(service, "_run_helper", lambda args: False)
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.current_binding.EvidenceLedger", lambda: missing
+    )
+
+
 def allow_synthetic(
     monkeypatch: pytest.MonkeyPatch,
     evidence: Callable[[EvidenceBinding], AdmissionEvidence | None] | None = None,
@@ -80,6 +107,7 @@ def service_inputs(
     legacy: bool = False,
     thinking_level: str = "low",
 ) -> tuple[PiExecution, RequestReceipt, Path]:
+    deny_default_live_io(root, monkeypatch)
     peer = (
         Path(__file__)
         .with_name("pi_execution_rpc_peer.py")

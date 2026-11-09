@@ -71,6 +71,9 @@ def test_owner_workflow_restores_history_without_reviving_revoked_cell_or_budget
     budgets: dict[str, dict[str, int | str]] = {
         "screening_budgets": {"count": 1, "identity_sha256": "unchanged"}
     }
+    from paper_radar.live_evidence import service as evidence_service
+
+    monkeypatch.setattr(workflow, "open_intents", evidence_service._intents)
     monkeypatch.setattr(workflow, "budget_inventory", lambda: budgets.copy())
     config = {
         "receipt_id": receipt.receipt_id,

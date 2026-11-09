@@ -13,10 +13,10 @@ from paper_radar.pi_execution.resources import LAUNCH_POLICY_VERSION
 from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v3.json"
+MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v4.json"
 ARCHIVED_MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
 # 显式清单;不能由目录扫描或生产依赖图动态扩大/缩小。
-SOURCE_FILES = (
+ARCHIVED_SOURCE_FILES = (
     "src/paper_radar/pi_execution/admission.py",
     "src/paper_radar/pi_execution/admission_guard.py",
     "src/paper_radar/pi_execution/current_binding.py",
@@ -53,6 +53,17 @@ SOURCE_FILES = (
 )
 
 
+SOURCE_FILES = (
+    *ARCHIVED_SOURCE_FILES,
+    "src/paper_radar/live_evidence/intents.py",
+    "src/paper_radar/live_evidence/sealed_runtime.py",
+    "src/paper_radar/live_evidence/deployment.py",
+    "scripts/issue176_closure_workflow.py",
+    "scripts/issue176_closure.py",
+    "scripts/seal_site_evidence.py",
+)
+
+
 # 已审阅版本的清单摘要只追加;后继不得以同一策略键重绑该摘要。
 REVIEWED_POLICY_MANIFESTS = {
     "pi-admission-v1": (
@@ -63,6 +74,9 @@ REVIEWED_POLICY_MANIFESTS = {
     ),
     "pi-admission-v3": (
         "78c7e3f27768e138a9137395cefb71cb0058005020cf3a4d1ac4ad9fc5726fc6"
+    ),
+    "pi-admission-v4": (
+        "a155a511f9556c1a346644686e04dd5c88f22ba93b846525b62d9607d3ffe548"
     ),
 }
 
@@ -128,7 +142,7 @@ def test_previous_policy_manifest_retains_original_bytes() -> None:
     manifest = json.loads(data)
     assert manifest["policies"]["admission"] == "pi-admission-v1"
     assert manifest["format_version"] == 1
-    assert set(manifest["files"]) == set(SOURCE_FILES)
+    assert set(manifest["files"]) == set(ARCHIVED_SOURCE_FILES)
 
 
 def test_second_policy_manifest_retains_original_bytes() -> None:
@@ -137,3 +151,13 @@ def test_second_policy_manifest_retains_original_bytes() -> None:
         hashlib.sha256(data).hexdigest() == REVIEWED_POLICY_MANIFESTS["pi-admission-v2"]
     )
     assert json.loads(data)["policies"]["admission"] == "pi-admission-v2"
+
+
+def test_third_policy_manifest_retains_original_bytes() -> None:
+    data = (ROOT / "tests/fixtures/live-admission-source-guard-v3.json").read_bytes()
+    assert (
+        hashlib.sha256(data).hexdigest() == REVIEWED_POLICY_MANIFESTS["pi-admission-v3"]
+    )
+    manifest = json.loads(data)
+    assert manifest["policies"]["admission"] == "pi-admission-v3"
+    assert set(manifest["files"]) == set(ARCHIVED_SOURCE_FILES)

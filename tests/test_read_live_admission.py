@@ -245,14 +245,20 @@ def test_tick_failure_denies_before_claim_and_keeps_durable_intent(
     from tests.screening_live_admission_support import protected_admission
 
     product, task, _ = setup(tmp_path / "product", monkeypatch)
-    protected_admission(tmp_path / "evidence", monkeypatch, uses=("read-low",))
+    _, _, components = protected_admission(
+        tmp_path / "evidence", monkeypatch, uses=("read-low",)
+    )
     product._now = lambda: NOW
     monkeypatch.setattr(
         "paper_radar.live_evidence.service._run_helper", lambda args: False
     )
     with pytest.raises(ExecutionError, match="evidence_missing"):
         product.run_attempt(task.task_id)
-    assert (tmp_path / "evidence/pending.jsonl").is_file()
+    from tests.screening_live_admission_support import projected_admission
+
+    projection = projected_admission(components, "read-low")
+    assert projection.pending_revocation is True
+    assert projection.decision.executable is False
     assert product.tasks.task(task.task_id).attempts == ()
     assert product.tasks.analyses(task.paper_id) == ()
 
@@ -264,7 +270,9 @@ def test_runtime_failure_tightens_and_retry_does_not_refill_budget(
     from tests.screening_live_admission_support import protected_admission
 
     product, task, _ = setup(tmp_path / "product", monkeypatch, mode="protocol")
-    protected_admission(tmp_path / "evidence", monkeypatch, uses=("read-low",))
+    _, _, components = protected_admission(
+        tmp_path / "evidence", monkeypatch, uses=("read-low",)
+    )
     product._now = lambda: NOW
     monkeypatch.setattr(
         "paper_radar.live_evidence.service._run_helper", lambda args: args == ("tick",)
@@ -273,7 +281,11 @@ def test_runtime_failure_tightens_and_retry_does_not_refill_budget(
     assert isinstance(result, ReadTask)
     assert result.attempts[-1].failure == "protocol_error"
     assert product.tasks.task(task.task_id).remaining_attempts == 1
-    assert (tmp_path / "evidence/pending.jsonl").is_file()
+    from tests.screening_live_admission_support import projected_admission
+
+    projection = projected_admission(components, "read-low")
+    assert projection.pending_revocation is True
+    assert projection.decision.executable is False
     with pytest.raises(ExecutionError, match="evidence_missing"):
         product.run_attempt(task.task_id)
     assert product.tasks.task(task.task_id).remaining_attempts == 1
@@ -461,13 +473,19 @@ def test_content_rejection_keeps_capability_and_two_attempt_correction_disciplin
     from tests.screening_live_admission_support import protected_admission
 
     product, task, _ = setup(tmp_path / "product", monkeypatch, mode="degrade")
-    protected_admission(tmp_path / "evidence", monkeypatch, uses=("read-low",))
+    _, _, components = protected_admission(
+        tmp_path / "evidence", monkeypatch, uses=("read-low",)
+    )
     product._now = lambda: NOW
     first = product.run_attempt(task.task_id)
     assert isinstance(first, ReadTask)
     assert first.attempts[-1].failure == "output_invalid"
     assert first.remaining_attempts == 1
-    assert not (tmp_path / "evidence/pending.jsonl").exists()
+    from tests.screening_live_admission_support import projected_admission
+
+    projection = projected_admission(components, "read-low")
+    assert projection.pending_revocation is False
+    assert projection.decision.executable is True
     second = product.run_attempt(task.task_id)
     assert isinstance(second, ReadAnalysis) and second.attempt_ordinal == 2
     assert product.tasks.task(task.task_id).remaining_attempts == 0
@@ -512,13 +530,14 @@ def test_transaction_rejection_requests_tightening_only_after_rollback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import sqlite3
-    from datetime import timedelta
 
     from tests.live_evidence_ledger_support import NOW
     from tests.screening_live_admission_support import protected_admission
 
     product, task, _ = setup(tmp_path / "product", monkeypatch)
-    protected_admission(tmp_path / "evidence", monkeypatch, uses=("read-low",))
+    ledger, _, _ = protected_admission(
+        tmp_path / "evidence", monkeypatch, uses=("read-low",)
+    )
     now = NOW
     product._now = lambda: now
     helper_calls: list[str] = []
@@ -535,8 +554,8 @@ def test_transaction_rejection_requests_tightening_only_after_rollback(
     run = product.tasks.run_pi_once
 
     def before_transaction(*args: Any, **kwargs: Any) -> ReadAnalysis | ReadTask:
-        nonlocal now
-        now += timedelta(days=30)
+        # 物理来源丢失是真实收紧触发;自然到期只拒绝,不永久撤销。
+        (ledger.root / "inbox/site.json").unlink()
         return run(*args, **kwargs)
 
     monkeypatch.setattr(product.tasks, "run_pi_once", before_transaction)

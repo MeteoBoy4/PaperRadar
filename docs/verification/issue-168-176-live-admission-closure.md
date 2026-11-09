@@ -3,7 +3,8 @@
 本台账记录最终收口工程，不替代各票冻结覆盖台账或真实 root 来源。
 既有 scope、中央成员/哈希、required 集合、历史回执及固定分母保持。
 本次新消费闭包仍是独立 D1；其进入正式组的方式须另行审阅，不能凭全量 pytest 退出而扩大旧组结论。
-本票尚未完成真实收紧/恢复演练、唯一最终审阅及 G4 完整门禁，#176/#168 仍未收口。
+唯一最终两轴审阅及统一代码修复见[修复台账](issue-168-176-final-review-fixes.md)；
+真实v4收紧/恢复演练及G4完整门禁尚未完成，#176/#168仍未收口。
 
 ## 独立模块与人工分母
 
@@ -31,7 +32,7 @@
 | `tests/test_site_tree_identity.py` | 5 | root 独立实际整树 |
 | `tests/test_screening_live_admission.py` | 41 | [Screening 正式入口](issue-168-173-screening-admission.md) |
 | `tests/test_current_execution_binding.py` | 1 | 真实临时当前绑定 |
-| `tests/test_live_admission_source_guard.py` | 5 | 最终 v3 清单与 v1/v2 摘要锚 |
+| `tests/test_live_admission_source_guard.py` | 6 | 最终v4显式39源码与v1/v2/v3原摘要锚 |
 | `tests/test_read_live_admission.py` | 53 | [Read 正式入口](issue-168-174-read-admission.md) |
 | `tests/test_consumer_live_admission_consistency.py` | 6 | 两正式入口同一权威/格隔离 |
 | `tests/test_doctor_admission_disclosure.py` | 8 | [结构化披露](issue-168-175-admission-disclosure.md) |
@@ -41,7 +42,9 @@
 | `tests/test_live_evidence_review_freshness.py` | 17 | [审阅与新鲜度](issue-168-171-review-freshness.md) |
 | `tests/test_site_runtime_upgrade.py` | 27 | 保历史受控升级模型 |
 | `tests/test_live_admission_closure.py` | 25 | 本票消费者部分证据组合、owner 演练/中断及封印包篡改模型 |
-| 合计 | 418 | 29 个独立未绑定模块，非旧验收分母 |
+| `tests/test_final_admission_regressions.py` | 20 | 最终两轴修复、独立资格及source丢失 |
+| `tests/test_protected_admission_intents.py` | 39 | ADR0056只追加日志／cutover／新owner集成与OS边界 |
+| 合计 | 478 | 31个独立未绑定模块，非旧验收分母 |
 
 新增支撑 `tests/live_admission_closure_support.py` 只提供无 root 文件系统模型。
 本票新模块的三个组合节点逐一覆盖部分站点 active、持久撤销及恢复屏障；
@@ -54,7 +57,8 @@
 
 ## 实际站点与安全回执
 
-所有者已执行经审阅部署/采集/受信接收，并完成新的非空站点分项证据激活。
+以下为先前v3的实际事实，不证明当前v4；新cutover／新证据再活仍待owner审阅执行。
+所有者已执行经审阅部署/采集/受信接收，并完成当时新的非空站点分项证据激活。
 本票以正式 `EvidenceLedger`/`EvidenceLifecycle.snapshot` 只读复核受保护属主与非空 active，未写账本。
 主代理随后按已审固定collector的零参数P6权限刷新，并立即执行本票只读正式资格采样，整段退出0。
 选定已激活格保留非空active且当前qualified，未激活的其他消费者格保持无资格；
@@ -72,6 +76,7 @@
 
 ## 开发验证
 
+以下开发结果为v3准备阶段的原记录，后续统一修复及最新143／50结果见[修复台账](issue-168-176-final-review-fixes.md)。
 先运行实际消费者功能组合：Screening、Read、同账本一致性、doctor 两模块与 D7 共
 **122 passed in 203.55s**，退出 0，无 skip/deselect/incomplete。
 新增收口包首个回归因构建模块缺失 red，最小实现后转绿。

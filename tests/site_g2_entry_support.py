@@ -23,7 +23,8 @@ def g2_entry_sandbox(
         f"exit {collector_status}\n"
     )
     (payload / "wrappers/owner").write_text(
-        f'#!/bin/sh\n/usr/bin/printf "%s\\n" "$*" >> "{events}"\n'
+        '#!/bin/sh\n[ "$1" != provision-intents ] || exit 0\n'
+        f'/usr/bin/printf "%s\\n" "$*" >> "{events}"\n'
         '/usr/bin/printf "receipt_id=0123456789abcdef\\n"\n'
     )
     (payload / "manifest.sha256").unlink()
@@ -44,11 +45,17 @@ def g2_entry_sandbox(
         for path in package.iterdir()
     }
     runner = package / "run-g2.sh"
-    source = model_bootstrap(render_g2_runner(hashes), root)
+    source = model_bootstrap(
+        render_g2_runner(
+            hashes, sealed_files={p.name: p.read_bytes() for p in package.iterdir()}
+        ),
+        root,
+    )
     sudo_log = tmp_path / "sudo-calls"
     sudo_tool = tmp_path / "sudo-model"
     sudo_tool.write_text(
-        f'#!/bin/sh\n/usr/bin/printf "%s\\n" "$1" >> "{sudo_log}"\n'
+        "#!/bin/sh\n"
+        f'/usr/bin/printf "%s\\n" "$1" >> "{sudo_log}"\n'
         '[ "$1" = -k ] || exit 99\nshift\nexec "$@"\n'
     )
     sudo_tool.chmod(0o755)

@@ -27,6 +27,11 @@ def main() -> int:
         "--upgrade-from-manifest",
         help="明确审阅的旧manifest文件SHA256；必须与旧payload配对。",
     )
+    parser.add_argument(
+        "--owner-closure",
+        action="store_true",
+        help="封印cutover后新证据与本人手动收口流程；仍须审阅执行。",
+    )
     args = parser.parse_args()
     if bool(args.upgrade_from_payload) != bool(args.upgrade_from_manifest):
         parser.error("升级必须同时提供旧payload与manifest SHA256。")
@@ -41,6 +46,7 @@ def main() -> int:
             starts_at=datetime.fromisoformat(args.starts_at),
             ends_at=datetime.fromisoformat(args.ends_at),
             source_root=Path(__file__).resolve().parents[1],
+            owner_closure=args.owner_closure,
             upgrade_from=(args.upgrade_from_payload, args.upgrade_from_manifest)
             if args.upgrade_from_payload
             else None,

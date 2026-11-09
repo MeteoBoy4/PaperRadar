@@ -7,18 +7,17 @@ from tests.site_g2_entry_support import g2_entry_sandbox
 
 
 def test_g2_entry_is_single_sudo_without_interactive_activation() -> None:
+    import hashlib
+
     from paper_radar.live_evidence.deployment import render_g2_runner
 
+    files = {
+        name: b"reviewed"
+        for name in ("deploy.sh", "uninstall.sh", "owner-workflow.sh", "payload.tar")
+    }
     source = render_g2_runner(
-        {
-            name: "a" * 64
-            for name in (
-                "deploy.sh",
-                "uninstall.sh",
-                "owner-workflow.sh",
-                "payload.tar",
-            )
-        }
+        {name: hashlib.sha256(data).hexdigest() for name, data in files.items()},
+        sealed_files=files,
     )
     assert source.count("/usr/bin/sudo ") == 1
     assert "/usr/bin/sudo -k " in source
@@ -116,7 +115,9 @@ def test_collector_failure_stops_before_receive_and_success_summary(
     assert "G2完成" not in result.stdout.decode()
 
 
-def test_root_rechecks_workflow_hash_after_user_check(tmp_path: Path) -> None:
+def test_root_uses_frozen_workflow_despite_source_change_after_user_check(
+    tmp_path: Path,
+) -> None:
     root, runner, sudo_log, events = g2_entry_sandbox(tmp_path)
     sudo_tool = tmp_path / "sudo-model"
     source = sudo_tool.read_text()
@@ -127,7 +128,7 @@ def test_root_rechecks_workflow_hash_after_user_check(tmp_path: Path) -> None:
     )
     sudo_tool.write_text(source)
     result = run_bootstrap([str(runner)])
-    assert result.returncode != 0
+    assert result.returncode == 0
     assert sudo_log.read_text() == "-k\n"
-    assert not events.exists()
-    assert not (root / "cwd-owner-changed").exists()
+    assert events.exists()
+    assert (root / "cwd-owner-changed").exists()

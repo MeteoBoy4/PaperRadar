@@ -250,14 +250,18 @@ def test_tick_failure_denies_before_claim_and_keeps_durable_intent(
     )
 
     product, receipt, _ = product_inputs(tmp_path / "product", monkeypatch)
-    protected_admission(tmp_path / "evidence", monkeypatch)
+    _, _, components = protected_admission(tmp_path / "evidence", monkeypatch)
     product._now = lambda: NOW
     monkeypatch.setattr(
         "paper_radar.live_evidence.service._run_helper", lambda args: False
     )
     with pytest.raises(ExecutionError, match="evidence_missing"):
         product.run_attempt(receipt.receipt_id)
-    assert (tmp_path / "evidence/pending.jsonl").is_file()
+    from tests.screening_live_admission_support import projected_admission
+
+    projection = projected_admission(components, "boundary-low")
+    assert projection.pending_revocation is True
+    assert projection.decision.executable is False
     status = product.tasks.status(receipt.receipt_id)
     assert (status.used_attempts, status.last_failure) == (0, None)
 
@@ -272,7 +276,7 @@ def test_runtime_failure_tightens_and_retry_does_not_refill_budget(
     product, receipt, _ = service_inputs(
         tmp_path / "product", monkeypatch, mode="protocol"
     )
-    protected_admission(tmp_path / "evidence", monkeypatch)
+    _, _, components = protected_admission(tmp_path / "evidence", monkeypatch)
     product._now = lambda: NOW
     monkeypatch.setattr(
         "paper_radar.live_evidence.service._run_helper", lambda args: args == ("tick",)
@@ -281,7 +285,11 @@ def test_runtime_failure_tightens_and_retry_does_not_refill_budget(
     assert isinstance(result, FailureReceipt)
     assert result.kind.value == "protocol_error"
     assert product.tasks.status(receipt.receipt_id).used_attempts == 1
-    assert (tmp_path / "evidence/pending.jsonl").is_file()
+    from tests.screening_live_admission_support import projected_admission
+
+    projection = projected_admission(components, "boundary-low")
+    assert projection.pending_revocation is True
+    assert projection.decision.executable is False
     with pytest.raises(ExecutionError, match="evidence_missing"):
         product.run_attempt(receipt.receipt_id)
     assert product.tasks.status(receipt.receipt_id).used_attempts == 1
