@@ -1,6 +1,6 @@
 # 按版本登记准入用途与分项能力要求
 
-状态：提议，待所有者接受；依据：[#168 所有者 D-3 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#169](https://github.com/MeteoBoy4/PaperRadar/issues/169)；补充 [ADR-0051](0051-separate-live-binding-capabilities-and-activation.md)，关联 [ADR-0053](0053-expire-capabilities-by-evidence-class-and-coverage.md)、[ADR-0054](0054-separate-execution-binding-from-call-materials.md)。
+状态：已接受；日期：2026-11-09；依据：所有者本轮明确接受；原裁决：[#168 所有者 D-3 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#169](https://github.com/MeteoBoy4/PaperRadar/issues/169)；补充 [ADR-0051](0051-separate-live-binding-capabilities-and-activation.md)，关联 [ADR-0053](0053-expire-capabilities-by-evidence-class-and-coverage.md)、[ADR-0054](0054-separate-execution-binding-from-call-materials.md)。
 
 将所有未知能力一律作为阻断会使无法安全取得的供应商观察永久阻断产品；用整体通过值放行又会抹掉安全缺口。准入用途采用带版本的代码登记，显式列出 Screening `PiExecution.run_attempt` 的 boundary/value × low/high 与 Read `read_execution` 的 read × low/high 六格，根用途与准入用途各自判断。未登记用途和必需集合为空的登记均拒绝。证据激活绑定登记版本、消费者格与档位，版本改变不能继承旧激活来扩大资格；旧记录不被重写。
 

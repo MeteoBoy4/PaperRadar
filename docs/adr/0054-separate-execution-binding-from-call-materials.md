@@ -1,6 +1,6 @@
 # 分开执行身份绑定与调用材料校验
 
-状态：提议，待所有者接受；依据：[#168 所有者 D-5／Q4=A 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#169](https://github.com/MeteoBoy4/PaperRadar/issues/169)；补充 [ADR-0051](0051-separate-live-binding-capabilities-and-activation.md)，关联 [ADR-0052](0052-version-admission-uses-and-capability-requirements.md)、[ADR-0053](0053-expire-capabilities-by-evidence-class-and-coverage.md)。
+状态：已接受；日期：2026-11-09；依据：所有者本轮明确接受；原裁决：[#168 所有者 D-5／Q4=A 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#169](https://github.com/MeteoBoy4/PaperRadar/issues/169)；补充 [ADR-0051](0051-separate-live-binding-capabilities-and-activation.md)，关联 [ADR-0052](0052-version-admission-uses-and-capability-requirements.md)、[ADR-0053](0053-expire-capabilities-by-evidence-class-and-coverage.md)。
 
 将 Prompt、Profile、Stage 投影和系统指令的精确字节统一放入能力证据身份，会使校准材料每次变化都迫使隔离／协议重验，并使首次真实资料外发形成循环。执行身份绑定供给与实例及整树、Pi／Node／平台、启动／隔离策略、host／boot／kernel／Landlock、cwd／祖先、文件隔离、应用可见 IPv4 出站、core／Apport、observer、模型元组和认证／缓存当前隔离及接收基线；相关依赖必须精确匹配。模型元组包含 provider、model、thinking、sampling、temperature、top_p、protocol_profile、auth_mode，消费者格与档位另由准入用途精确限定。
 
