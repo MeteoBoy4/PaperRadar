@@ -407,7 +407,13 @@ owner的产品uid子进程只触碰固定日志与合成临时文件，实际验
 通过正式request_revocation记录value-low后必须观察helper失败，新进程共享投影仍拒绝，才继续root撤销。
 不改变sudoers／部署权限，失败或未知停止，不把模型替身当作本机支持证明。
 恢复保留日志拒绝与root撤销，全部旧激活失效；最终非空站点分项当前适用才写root安全回执。
-业务库只读必要预算ID、代际与attempt计数，前后不变才记完成，拒WAL／SHM／journal，不读取payload／token／正文。
+业务库只读必要预算ID、指纹、代际与attempt计数，前后全部比较，不读取payload／token／正文。
+任务及其他写入必须先暂停；journal存在、非空WAL、单独SHM或类型／uid／单链接失信仍拒绝。
+允许无侧文件，或metadata证明WAL为0字节（无frames）并有可选可信SHM；不读取WAL／SHM正文，
+不删除、checkpoint或切换journal模式。主库路径与固定fd的inode／类型／链接／权限／属主／大小及纳秒mtime／ctime
+在打开、每次查询前和结束均复核稳定；自身只读访问可改变的atime不作内容变化证据。
+immutable连接只读主文件并跳过锁／变化检测，不是并发保证；显式稳定性检查与暂停写入前提不能省略。
+这些条件仅适用于业务预算采样，受保护准入账本的journal／WAL／SHM拒绝规则不变。
 原验证时点不续、stopped不重启，不认证／模型／网络、不compile或重装Pi；新进程重读不证明主机重启。
 
 `scripts/issue176_closure.py` 仍可为已经部署并明确新人工激活的v4构建独立包；

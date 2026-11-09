@@ -76,7 +76,7 @@ REVIEWED_POLICY_MANIFESTS = {
         "78c7e3f27768e138a9137395cefb71cb0058005020cf3a4d1ac4ad9fc5726fc6"
     ),
     "pi-admission-v4": (
-        "a155a511f9556c1a346644686e04dd5c88f22ba93b846525b62d9607d3ffe548"
+        "ff8a37321ea097d9d444d4840212f249431d36d2b364f275f7ca1253db7cefc1"
     ),
 }
 
