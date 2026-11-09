@@ -6,13 +6,20 @@ from datetime import datetime
 
 from paper_radar.doctor.service import Check, Result
 from paper_radar.live_evidence.evidence import Applicability
+from paper_radar.live_evidence.reasons import AdmissionReason, ReasonCode
 from paper_radar.live_evidence.service import AdmissionProjection
-from paper_radar.live_evidence.types import Capability, EvidenceStatus, Requirement
+from paper_radar.live_evidence.types import (
+    AdmissionUse,
+    Capability,
+    EvidenceStatus,
+    Requirement,
+)
 
 
 @dataclass(frozen=True, slots=True)
 class AdmissionRow:
     capability: Capability
+    use: AdmissionUse
     requirement: Requirement
     result: Result
     evidence: EvidenceStatus
@@ -51,6 +58,30 @@ class UsageDisclosure:
             raise ValueError("usage_disclosure_invalid")
 
 
+def _action(reasons: tuple[AdmissionReason, ...], fallback: str) -> str:
+    # 仅按权威原因选择用户动作,不从展示文字推导资格。
+    actions = (
+        (
+            ReasonCode.CLOCK_ROLLBACK,
+            "核实 UTC 墙钟与账本水位线；修复回退后重试，不重计原验证时间。",
+        ),
+        (
+            ReasonCode.LEDGER_UNTRUSTED,
+            "请所有者核对受保护账本、观察来源的权限、完整性与新鲜度；禁止自动修复或重建。",
+        ),
+        (
+            ReasonCode.EXPIRED,
+            "由所有者另批重验；接收或再次激活不延长原验证期限，不自动重跑。",
+        ),
+        (
+            ReasonCode.REVOKED,
+            "原撤销保持不可逆；请所有者核对漂移并另取有效证据，不恢复旧激活。",
+        ),
+    )
+    codes = {reason.code for reason in reasons}
+    return next((action for code, action in actions if code in codes), fallback)
+
+
 def admission_rows(projection: AdmissionProjection) -> tuple[AdmissionRow, ...]:
     """只映射权威给出的 requirement/qualified/reasons,不另维护能力清单。"""
     sources = dict(projection.sources)
@@ -79,6 +110,7 @@ def admission_rows(projection: AdmissionProjection) -> tuple[AdmissionRow, ...]:
         rows.append(
             AdmissionRow(
                 item.capability,
+                projection.decision.use,
                 item.requirement,
                 result,
                 EvidenceStatus.VERIFIED if item.qualified else EvidenceStatus.UNKNOWN,
@@ -96,7 +128,7 @@ def admission_rows(projection: AdmissionProjection) -> tuple[AdmissionRow, ...]:
                 item.applicability,
                 item.qualified,
                 sources.get(item.capability),
-                step,
+                _action(item.reasons, step),
             )
         )
     return tuple(rows)
@@ -121,6 +153,8 @@ def render_admission_row(row: AdmissionRow) -> str:
         f"evidence={row.evidence.value} original_state="
         f"{row.original_state.value if row.original_state else 'absent'} "
         f"requirement={row.requirement.value} "
+        f"use={row.use.consumer.value}-{row.use.thinking_level.value} "
+        f"call_site={row.use.call_site.value} "
         f"reason={reason} "
         f"basis={_value(row.basis)} scope={_value(row.scope)} "
         f"evidence_at={_value(row.evidence_at)} verified_at={_value(row.verified_at)} "
@@ -183,7 +217,10 @@ def projection_checks(projection: AdmissionProjection) -> tuple[Check, ...]:
             "admission",
             result,
             ",".join(tokens) or "admitted",
-            "按当前格与绑定核对分项；Live 证据接收和激活由所有者显式执行。",
+            _action(
+                decision.reasons,
+                "按当前格与绑定核对分项；Live 证据接收和激活由所有者显式执行。",
+            ),
         ),
         Check(
             "admission_evidence",

@@ -64,7 +64,7 @@ def test_selected_execution_reports_missing_live_without_side_effects(
         "check=credentials_metadata result=passed reason=metadata_valid"
         in result.stdout
     )
-    assert "check=admission result=missing reason=evidence_missing" in result.stdout
+    assert "check=admission result=invalid reason=ledger_untrusted" in result.stdout
     assert (
         "check=authentication result=not_assessed reason=authentication_not_assessed"
         in result.stdout
@@ -272,7 +272,8 @@ def test_cwd_checks_share_execution_policy_and_do_not_grant_admission(
     selected = {check.name: check for check in checks}
     assert selected["cwd"].result.value == state
     assert selected["cwd"].reason == reason
-    assert selected["admission"].reason == "evidence_missing"
+    assert selected["admission"].result.value == "invalid"
+    assert selected["admission"].reason == "ledger_untrusted"
     assert selected["authentication"].result.value == "not_assessed"
     assert inventory(tmp_path) == before
 

@@ -136,6 +136,7 @@ def test_mixed_gap_keeps_original_verified_and_precise_expiry() -> None:
     assert identity.expires_at == NOW
     assert identity.expired is True
     assert "evidence_expired" in identity.reasons
+    assert "另批重验" in identity.next_step
     assert "executable=false" in render_admission_fragment(projection)
 
 
@@ -236,6 +237,7 @@ def test_read_fragment_keeps_its_own_scope_and_does_not_borrow_screening() -> No
         for row in admission_rows(projection)
         if row.capability is Capability.CWD_ANCESTORS
     )
+    assert row.use == use_for_id("read-low")
     assert row.original_state is None
     assert row.result.value == "missing"
     assert row.reasons == ("evidence_missing",)

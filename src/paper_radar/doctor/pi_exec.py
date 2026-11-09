@@ -1,5 +1,6 @@
 """只读执行事实诊断;不导入执行编排、认证或 attempt 资源。"""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import typer
@@ -12,10 +13,24 @@ from paper_radar.config import (
 )
 from paper_radar.config.adapters import PiAdapter
 from paper_radar.config.compile import MaterialKind, RuntimeConfigSnapshot
+from paper_radar.doctor.admission import projection_checks
 from paper_radar.doctor.cli import _show
 from paper_radar.doctor.service import Check, Result, basic_checks
+from paper_radar.live_evidence.ledger import LedgerError
+from paper_radar.live_evidence.service import unavailable_projection
+from paper_radar.live_evidence.types import (
+    AdmissionUse,
+    CallSite,
+    Consumer,
+    ThinkingLevel,
+)
 from paper_radar.llm.models import PROTOCOL_PROFILES
 from paper_radar.pi_execution.admission import EvidenceBinding, admit
+from paper_radar.pi_execution.admission_guard import AdmissionGuard
+from paper_radar.pi_execution.current_binding import (
+    build_admission_request,
+    recheck_admission_request,
+)
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.isolation import (
     ISOLATION_POLICY_VERSION,
@@ -71,10 +86,59 @@ def _binding(
     )
 
 
+def _utc_now() -> datetime:
+    return datetime.now(UTC)
+
+
+def _admission_checks(
+    database: Path, binding: EvidenceBinding, credentials_dir: Path
+) -> tuple[Check, ...]:
+    # 仅复用既有采样结构规则;缺证据不是最终准入结论。
+    sampling_reason = admit(binding, None)
+    if sampling_reason != "evidence_missing":
+        raise ExecutionError(sampling_reason or "sampling_mapping_unavailable")
+    try:
+        level = ThinkingLevel(binding.thinking_level)
+    except ValueError:
+        return (
+            Check(
+                "admission",
+                Result.INVALID,
+                "admission_use_undefined",
+                "当前档位没有登记用途；请显式选择已登记档位，不借用其他格证据。",
+            ),
+        )
+    checks: list[Check] = []
+    for consumer in (Consumer.BOUNDARY, Consumer.VALUE):
+        use = AdmissionUse(CallSite.SCREENING, consumer, level)
+        guard = AdmissionGuard(use)
+        try:
+            request = build_admission_request(
+                database,
+                binding,
+                use=use,
+                credentials_dir=credentials_dir,
+                now=_utc_now(),
+            )
+            try:
+                projection = guard.check(request, now=_utc_now())
+            except ExecutionError:
+                # 只展示 guard 保留的权威投影;doctor 不调用 tighten 或时间打点。
+                if guard.projection is None:
+                    raise
+                projection = guard.projection
+            if projection.decision.executable:
+                recheck_admission_request(request, now=_utc_now())
+        except LedgerError as error:
+            projection = unavailable_projection(use, error)
+        checks.extend(projection_checks(projection))
+    return tuple(checks)
+
+
 def execution_checks(
     database: Path, snapshot_reference: str, credentials_dir: Path
 ) -> tuple[Check, ...]:
-    """每项独立披露;所有返回项均为必要项,passed 只表示该项离线成立。"""
+    """必要项决定汇总;披露项保留原状态,不创建执行或账本事实。"""
     checks = list(basic_checks(database))
     if any(check.result is not Result.PASSED for check in checks):
         return tuple(checks)
@@ -143,38 +207,33 @@ def execution_checks(
                 binding = _binding(
                     snapshot, report.current.supply_id, report.current.install_id
                 )
-                reason: str = (
-                    admit(binding, None) or "evidence_missing"
-                    if binding is not None
-                    else "screening_configuration_missing"
+                if binding is None:
+                    checks.append(
+                        Check(
+                            "admission",
+                            Result.MISSING,
+                            "screening_configuration_missing",
+                            "先配置显式 Screening 模型槽和 adapter；不推定其他槽资格。",
+                        )
+                    )
+                else:
+                    checks.extend(_admission_checks(database, binding, credentials_dir))
+            except (ExecutionError, SupplyError) as error:
+                checks.append(
+                    Check(
+                        "admission",
+                        Result.INVALID,
+                        error.reason,
+                        "核对模型、采样、协议和本地绑定；修复前保持阻断。",
+                    )
                 )
-            except ExecutionError as error:
-                reason = error.reason
-            state = (
-                Result.MISSING
-                if reason
-                in {
-                    "screening_configuration_missing",
-                    "evidence_missing",
-                }
-                else Result.INVALID
-            )
-            checks.append(
-                Check(
-                    "admission",
-                    state,
-                    reason,
-                    "现场隔离证据交 Cwd；DERIVED、RPC、订阅模型和参数证据交 Live。"
-                    "缺证据保持阻断。",
-                )
-            )
         else:
             checks.append(
                 Check(
                     "admission",
                     Result.MISSING,
                     "evidence_missing",
-                    "先显式激活供给；Cwd/Live 尚无产品证据来源。",
+                    "先显式激活供给；再由共享权威核对当前 Cwd/Live 分项资格。",
                 )
             )
     try:
@@ -298,16 +357,20 @@ def execution_checks(
             "交 Live 核实计划模型权限、采样映射及全部 DERIVED；不调用模型。",
         ),
     ):
-        checks.append(Check(name, Result.NOT_ASSESSED, reason, step))
+        checks.append(Check(name, Result.NOT_ASSESSED, reason, step, required=False))
     return tuple(checks)
 
 
 def diagnose_execution(database: Path, snapshot: str, credentials_dir: Path) -> None:
     checks = execution_checks(database, snapshot, credentials_dir)
-    passed = all(check.result is Result.PASSED for check in checks)
+    passed = all(check.result is Result.PASSED for check in checks if check.required)
     typer.echo(
         f"scope=pi-exec result={'passed' if passed else 'failed'} "
         f"executable={'true' if passed else 'false'}"
+    )
+    typer.echo(
+        "diagnostic_scope=screening_current_thinking_level "
+        "Screening 当前档位 boundary/value 分别诊断；Read 此命令未选择、未诊断。"
     )
     for check in checks:
         _show(check)

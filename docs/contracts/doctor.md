@@ -106,7 +106,7 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 | 披露型且不合资格 | passed | unknown | 原 verified/not_assessed/unknown，缺记录为 absent |
 | 登记为不适用 | passed，不独立阻断 | unknown | 原状态或 absent，不提升历史状态 |
 
-每行还保留 requirement、原依据与范围、未测/未触发原因、evidence_at、原 verified_at、
+每行还保留当前 use/call_site、requirement、原依据与范围、未测/未触发原因、evidence_at、原 verified_at、
 expires_at/expired、received、evidence_active、revoked、当前 applicability/qualified、来源及下一动作。
 全局账本/时钟拒绝保留原原因和水位线，不编造不可读的历史分项。
 字符串用 JSON 编码，控制字符不能伪造诊断行。待撤销单列显示；原激活和原 verified
@@ -131,7 +131,8 @@ Feed 承接 Audit/Source；Pi adapter 承接 Pi/Live；校准承接 D；自动�
 全文凭证承接 F；Docling 承接 Extra/Body/F；恢复承接 I；无人值守承接 H/I。
 
 config 仅提示另用 `--scope pi-supply` 或 `--scope pi-exec`，不遍历安装树、不查询供给或审计事实、不计算 JGR 判据。
-受控执行资源已提供，cwd 现场隔离与 Live 产品准入证据单列缺项，不在 doctor 复制 cwd 白名单字面常量。
+basic/config 不检查 cwd 现场隔离或 Live 分项资格；pi-exec 按当前绑定单列，
+不在 doctor 复制 cwd 白名单字面常量。
 
 config 范围的外发说明只取本次验证的显式 settings/snapshot，分别显示 Screening（boundary/value）、reuse、Read
 的 provider/model；缺槽显示 null，不补齐。终端字符串使用 JSON 编码，控制字符不成为新诊断行。
