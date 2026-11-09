@@ -87,3 +87,29 @@ NNP仅作用子进程，不改root或sudoers；全流程无认证／模型／网
 若任何前提不同，或已有部分激活／撤销／phase目录，停止并另审实际检查点，不删除文件、清空日志或自动回滚。
 终端模型及外部sudo-rs限制见[诊断台账](../../docs/verification/issue-168-176-owner-terminal-recovery.md)；
 诊断模型不证明现场已恢复成功，仍以新的root安全回执和最终人工激活事实为准。
+
+## 已到backup之后的精确续行
+
+若原phase已包含initial.json、business-before.json、drill-active.json和before-revoke.sqlite3，
+两格都已本人激活，则禁止重跑前一节入口、前两次激活、backup、部署、cutover或receive。
+必须按新root约束记录构建独立待审包：
+
+```sh
+uv run --offline --locked python scripts/issue176_resume_after_backup.py \
+  --inputs OWNER_ROOT_CONSTRAINTS_JSON --output NEW_REVIEW_DIR
+```
+
+普通JSON只声明约束，不自证许可。新包以sudo.ws一次密码从内嵌字节冻结，核完整原runtime／manifest／入口／sudoers及原owner脚本/config，
+原phase须exact4文件及全部SHA一致、root所有／只读保护／单链接；plan有效且两种stopped来源都不存在。
+原RID最新、两格raw active集合须与原保护检查点完全一致，无其他active、pending或revocation；预算须与business-before全部一致，原锁非阻塞取得。
+任何新phase、预算／配置／绑定或保护变化均停，不覆盖、删除或“修正”原文件。
+
+跨设备EXDEV不是权限保护通过。新包只在明确核验/var/tmp为root:root1777、与日志相同device及fdinfo mnt_id后，
+作用域设标准库cached tempfile.tempdir，调用同SHA原v4 product_log_probe；子进程清env不改变已缓存位置，finally恢复原值。
+不改原probe／NNP／EACCES或EPERM断言，不放开日志任何祖先，不把EXDEV或unknown算合格。
+
+仅执行：同盘probe及NNP helper失败持久性→新检查点→原root helper撤销临时格→原backup恢复→最后boundary本人审阅／手输ID一次。
+保留原前两次人工授权；原4文件和backup全过程只读并在结束复核SHA。最后核非空原分项集合active/qualified、临时格仍撤销、预算不变，才写新root安全回执。
+每阶段输出受控stage／reason，失败仅新增本恢复工具下的failure检查点，不自动回滚、卸载或继续grant。
+新uninstall.sh仅原样归档本次恢复工具，不触碰原runtime／39源码／v4／phase／backup／log／ledger／预算。
+全部新root字节和SHA仍须所有者审阅，代理不执行。具体模型及覆盖见[续行台账](../../docs/verification/issue-168-176-resume-after-backup.md)。
