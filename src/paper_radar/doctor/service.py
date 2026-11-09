@@ -27,6 +27,8 @@ class Check:
     result: Result
     reason: str
     next_step: str
+    required: bool = True
+    detail: str | None = None
 
 
 def basic_checks(database: Path) -> tuple[Check, ...]:
