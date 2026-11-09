@@ -10,7 +10,7 @@ from paper_radar.backup.restore import restore_backup
 from paper_radar.feed_pipeline import FeedPipeline
 from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
 from paper_radar.pi_execution import ExecutionError
-from paper_radar.pi_execution.admission import read_evidence
+from paper_radar.pi_execution.admission import load_admission_evidence
 from paper_radar.pi_execution.service import PiExecution
 from paper_radar.screening_tasks import SuccessReceipt
 from paper_radar.sources.feeds import endpoint
@@ -121,7 +121,7 @@ def test_local_execution_composes_feed_value_and_restore_still_needs_evidence(
             "scheduled_day": "2026-01-02",
         }
     )
-    monkeypatch.setattr("paper_radar.pi_execution.service._evidence_for", read_evidence)
+    allow_synthetic(monkeypatch, load_admission_evidence)
     with pytest.raises(ExecutionError, match="evidence_missing"):
         resumed.run_attempt(pending.receipt_id)
     assert resumed.tasks.status(pending.receipt_id).used_attempts == 0

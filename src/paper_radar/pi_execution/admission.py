@@ -26,6 +26,7 @@ class EvidenceBinding:
     top_p: float | None = field(repr=False)
     protocol_profile: str
     auth_mode: str
+    proxy: str | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +46,7 @@ def bind_description(
     isolation_policy_version: str,
     cwd_section: str,
     auth_mode: str,
+    proxy: str | None = None,
 ) -> EvidenceBinding:
     return EvidenceBinding(
         supply_id,
@@ -60,6 +62,7 @@ def bind_description(
         description.top_p,
         description.protocol_profile,
         auth_mode,
+        proxy,
     )
 
 

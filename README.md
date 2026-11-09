@@ -451,7 +451,8 @@ Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接
 [Live evidence](docs/contracts/live-evidence.md)。所有者入口为 `paper-radar live-evidence receive/activate/revoke`，
 `show` 查询回执，`show --plan-id <ID>` 查询批准计划；帮助纯本地。
 activate 展示脱敏回执并要求短 ID，当前观察过期或缺项继续拒绝；接收不激活，原期限不延长。
-产品执行仍待正式三检查点接线；受保护部署与实际证据激活由所有者完成。有限合成实验的适用范围见
+Screening 正式入口在刷新前、准备后和领取事务内读取同一分项权威；缺口拒绝并持久收紧。
+Read 执行边界见[Read 执行契约](docs/contracts/read-execution.md)；受保护部署与实际证据激活由所有者完成。有限合成实验的适用范围见
 [EXP-2 证据与承接](docs/verification/exp-2-pi-live-probe.md)，不据此授予生产执行。
 真实执行接线的承接入口见[路线图承接索引](docs/roadmap.md#模块承接索引)。
 
@@ -485,8 +486,8 @@ value 通过 `register` 登记时由调用方提供语言事实，`register_feed
 派生入口见[Feed 原题名语言来源](docs/contracts/screening-tasks.md#feed-原题名语言来源)，
 来源政策见[ADR-0035](docs/adr/0035-feed-derived-original-title-language-fact.md)。
 
-Pi 一次执行的离线组合已支持 models-v2 采样声明、领取前纯证据门禁、受保护隔离启动、
-pi_rpc 权威成功与 Feed value 登记/恢复。产品仍缺 Live 接收的现场隔离/模型能力证据，真实执行保持阻断；
+Pi 一次执行已支持 models-v2 采样声明、共享受保护账本的三检查点准入、完整当前绑定、
+受保护隔离启动、pi_rpc 权威成功与 Feed value 登记/恢复。缺少有效且人工激活的必需证据时拒绝；
 合成对端通过不代表真实认证、参数或 RPC 兼容。见 [执行契约](docs/contracts/pi-execution.md#一次任务执行组合)。
 后续产品入口与实验用途由 [B](docs/roadmap.md#module-b) 承接。
 

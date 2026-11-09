@@ -1,5 +1,7 @@
 """S3 独立档案/生产服务组合;只在测试私有注入 Cwd/Live 合成事实。"""
 
+from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -10,16 +12,64 @@ from paper_radar.papers import PaperFacts
 from paper_radar.pi_execution.admission import AdmissionEvidence, EvidenceBinding
 from paper_radar.pi_execution.service import PiExecution
 from paper_radar.screening_tasks import RequestReceipt
+from tests.config_adapter_support import adapter_inputs
 from tests.pi_execution_support import launch_inputs
 from tests.test_paper_mapping import screening_fields
 from tests.test_paper_service import observation
 
 
-def allow_synthetic(monkeypatch: pytest.MonkeyPatch) -> None:
-    def evidence(binding: EvidenceBinding) -> AdmissionEvidence:
-        return AdmissionEvidence(binding, True, True, True)
+def allow_synthetic(
+    monkeypatch: pytest.MonkeyPatch,
+    evidence: Callable[[EvidenceBinding], AdmissionEvidence | None] | None = None,
+) -> None:
+    """工程测试显式替换准入边界;没有产品可调用的合成证据入口。"""
+    from paper_radar.live_evidence.evaluator import AdmissionDecision
+    from paper_radar.live_evidence.evidence import ExecutionBinding
+    from paper_radar.live_evidence.service import AdmissionProjection, AdmissionRequest
+    from paper_radar.live_evidence.types import AdmissionUse, BindingComponent
+    from paper_radar.pi_execution.admission import admit
+    from paper_radar.pi_execution.errors import ExecutionError
 
-    monkeypatch.setattr("paper_radar.pi_execution.service._evidence_for", evidence)
+    def request(
+        database: Path,
+        binding: EvidenceBinding,
+        *,
+        use: AdmissionUse,
+        credentials_dir: Path,
+        now: datetime,
+    ) -> AdmissionRequest:
+        result = (
+            evidence(binding)
+            if evidence is not None
+            else AdmissionEvidence(binding, True, True, True)
+        )
+        reason = admit(binding, result)
+        if reason is not None:
+            raise ExecutionError(reason)
+        return AdmissionRequest(
+            use,
+            ExecutionBinding(
+                tuple((component, "b" * 64) for component in BindingComponent)
+            ),
+            frozenset(BindingComponent),
+        )
+
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.service.build_admission_request", request
+    )
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.admission_guard.load_admission_evidence",
+        lambda request, *, now: AdmissionProjection(
+            AdmissionDecision(request.use, "live-admission-v1", (), ()), now, False
+        ),
+    )
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.service.request_time_tick", lambda: True
+    )
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.service.recheck_admission_request",
+        lambda request, *, now: None,
+    )
 
 
 def service_inputs(
@@ -28,6 +78,7 @@ def service_inputs(
     *,
     mode: str = "normal",
     legacy: bool = False,
+    thinking_level: str = "low",
 ) -> tuple[PiExecution, RequestReceipt, Path]:
     peer = (
         Path(__file__)
@@ -38,6 +89,18 @@ def service_inputs(
     peer = peer.replace("__DATABASE__", str(root / "db.sqlite3")).replace(
         "__CREDENTIALS__", str(root / "credentials/auth.json")
     )
+    from tests import pi_supply_support
+
+    original_inputs = adapter_inputs
+
+    def registered_tier(path: Path) -> tuple[Path, Path, Path]:
+        settings, adapter, database = original_inputs(path)
+        content = yaml.safe_load(adapter.read_text())
+        content["thinking_level"] = thinking_level
+        adapter.write_text(yaml.safe_dump(content))
+        return settings, adapter, database
+
+    monkeypatch.setattr(pi_supply_support, "adapter_inputs", registered_tier)
     database, _, roots, credentials, _ = launch_inputs(root, monkeypatch, peer=peer)
     settings = root / "config/settings.yaml"
     source = root / "config/models/models-v1.yaml"

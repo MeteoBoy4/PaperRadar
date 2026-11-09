@@ -165,7 +165,7 @@ Landlock 端口规则不限制主机，也不覆盖 UDP/DNS；主机级出站缺
 `paper_radar.pi_execution.service.PiExecution(database, data_root, *, roots,
 credentials_dir, auth_mode, proxy=None, sink=None, clock=None)` 提供显式回执
 `run_attempt(receipt_id, *, limits=DEFAULT_LIMITS, cancelled=..., clock=monotonic)`。
-构造不执行 I/O。wall clock 传给 ScreeningTasks（默认当前 UTC）；run_attempt 的 clock
+构造不执行 I/O。wall clock 同时用于 ScreeningTasks 和准入检查（默认当前 UTC）；run_attempt 的 clock
 是协议有界单调时钟。sink 原样交给任务服务，缺省 NullSink；不新增日志类型或 CLI，
 B 后续产品入口承担所选根的文件日志与入口守卫。
 
@@ -174,20 +174,36 @@ B 后续产品入口承担所选根的文件日志与入口守卫。
 `ScreeningTasks.prepare_correction` 只读取得本次领取的受控修正（含将要发生的过期
 回收），验证包含该修正的实际外层 RPC 帧、系统指令路径和单参数 argv 上限、超时
 界限、采样映射与当前激活供给事实。修正文案及脱敏字段路径由任务服务唯一构造。
-`admission.EvidenceBinding` 把 supply/install、启动/隔离策略、cwd 段、provider/model/
-thinking、sampling/两参数、protocol_profile、auth_mode 绑定到同一证据。
-纯 `admit(binding, evidence)` 返回封闭原因或 None，`load_admission_evidence` 产品恒为 None。独立的[分项登记与纯判定](live-evidence.md)不接入本产品读取路径。
-缺失、错配以及 cwd_isolation/rpc_compatibility/model_parameters 任一未通过均拒绝；
-当前 explicit 映射为空。没有证据表、migration、产品文件/JSON/布尔导入或自动兼容探测。
-合成正例仅由测试私有 `_evidence_for` 注入内存事实。
+`admission.EvidenceBinding` 保留模型元组、供给/安装、启动/隔离策略及显式代理上下文；
+完整请求由 `current_binding.build_admission_request(database, binding, *, use,
+credentials_dir, now)` 只读构造。准入用途从本次 boundary/value 与 low/high 精确取得；
+未登记档位拒绝，不借其他格的资格。`load_admission_evidence(request, now=...)`
+读取[受保护账本和统一分项判定](live-evidence.md)，所有必需项均须当前合格。
+旧的不完整 EvidenceBinding 加载继续返回 None；三布尔 `admit` 只保留独立工程判定，
+产品从不读取 `_evidence_for` 别名，不接收证据、授予 factory 或工程模式参数。
+explicit 的执行映射仍为空。材料保持系统指令形状、argv 与完整 RPC 帧上限检查，
+Prompt/Profile 正文不进入内容无关能力身份。
 
-门禁通过才调用 prepare_launch，避免已知缺证据仍刷新凭据。受保护 identity 必须重新
-匹配同一绑定，防止选择在预检与取得间切换。保护从准备、auth 到 run_once 返回及整组
-回收持续持有。prepare_launch 的只读资源检查和受控 auth 刷新失败仍在领取前；唯一
-宿主副作用仍是专用凭据目录刷新。其余预检失败无任务/预算/失败行/成功/任务日志副作用。
-`run_once(..., preclaim=...)` 在领取事务中用同连接的最新修正再次核验实际帧，先于
-过期回收及预算写入；认证期间前次尝试结算或到期也不能绕过。拒绝不提交回收事实或
-任务日志；已发生的受控认证刷新仍仅属既定宿主例外。
+三检查点依次是：
+
+1. `prepare_launch` 前构造完整当前绑定并判定；缺项、过期、漂移或来源失信不刷新认证。
+2. 准备后重新构造绑定并重新读取账本；选择、策略、认证/cache 成员及站点身份变化拒绝。
+3. 领取写事务内以最新修正复核帧，并廉价重读受保护观察与账本，核到期、时钟水位线、
+   来源完整性、观察新鲜度/覆盖及撤销状态；不重复扫描安装树、宿主或认证/cache。
+
+前两处全树检查均在业务写事务外；安装保护从准备、auth 到 run_once 返回及整组回收持续持有。
+当次只读组件、受保护特权观察和共享 stat 基线规则见 [Live evidence](live-evidence.md#当次完整执行绑定)。
+观察的本地上下文不一致时，不拼接旧特权覆盖；显式代理变化也改变启动上下文身份。
+领取前唯一认证副作用仍为专用凭据刷新；安全侧固定 helper 打点必须成功，
+漂移/失败则在业务事务外先持久追加收紧意图、再请求撤销，helper 失败仍拒绝。
+无法落盘时不宣称已有持久意图，也不会继续执行。来源丢失使用当次先前读取的来源请求保守收紧。
+准入分项原因在执行边界映射回既有 evidence_missing/evidence_mismatch 等封闭原因；
+领取事务内专用拒绝信号在回滚后映射，不会误报 corrupt_reference。
+
+任一检查点拒绝不新增 attempt、预算消耗、失败行、成功或任务日志；
+已发生的有界认证刷新保留既定宿主例外。协议运行失败保持原结算并请求保守收紧；
+retry 是新领取，重新执行三检查点；已经派发的 attempt 不因准入期限跨界新增中止行为。
+独立账本恢复不刷新业务余额或自动激活。
 领取后工厂复核 cwd/树，创建独占资源和隔离，再启动一次会话；这些失败按
 startup_error→executor_error 消耗 attempt。RPC timeout/cancelled/environment/protocol
 分别沿既有 timeout/cancelled/executor_error/protocol_error 结算，不重发或 fallback。
@@ -200,8 +216,11 @@ KeyboardInterrupt/SystemExit 保留未结算租约；显式过期恢复记 outco
 仍独立于 executor_kind。认证 token 的 `sk-` 前缀拒绝是形状启发式，不能证明 token
 确属订阅、有效或具有模型权限；真实认证、额度/用量和参数能力仍交 Live。
 
-纯 admission 模块及包导入不连接 auth/launcher/安装保护；doctor 可从只读快照/供给事实
-构造 EvidenceBinding 并调用同一 admit，不虚构任务、不调用 prepare_launch 或 run_attempt。
+纯 admission 模块及包导入不连接 auth/launcher/安装保护；完整只读构造入口不导入 auth、
+launcher 或执行 service，不刷新、不创建会话或写账本，供诊断复用。
+开发期 [D7 显式源码/策略清单](../../tests/fixtures/live-admission-source-guard-v1.json)
+绑定准入/RPC 相关源码和准入、启动、隔离、协议版本。源码变化须显式更新策略并审阅清单；
+运行时只绑定策略版本，不对 PaperRadar 源码求哈希，不改变 Pi argv 或协议档案。
 覆盖与未验边界见 [#143 台账](../verification/issue-143-pi-execution.md)。
 
 ## 错误与拒绝
@@ -214,7 +233,7 @@ RPC 四类映射和任务业务拒绝仍由各自权威处理，不新增失败�
 
 ## 不提供／不证明
 
-本模块不接收现场准入事实；剩余执行验收责任由 Live 统一承担。实际 cwd/祖先目录、固定 1.4.0 入口、订阅刷新、模型权限、参数能力、
+本模块只消费受保护准入事实，不创建证据资格；真实部署与执行验收责任由 Live 统一承担。实际 cwd/祖先目录、固定 1.4.0 入口、订阅刷新、模型权限、参数能力、
 TLS/DNS、主机级出站、旗标/settings 的自动网络抑制和 RPC 兼容均未验。
 `provider_default` 不能当作 `temperature=0`，采样声明与校准取舍以 runtime-config 契约与[ADR-0040](../adr/0040-declare-provider-default-sampling.md) 为准；
 本模块不删除或注入 sampling 参数。
@@ -227,4 +246,5 @@ TLS/DNS、主机级出站、旗标/settings 的自动网络抑制和 RPC 兼容�
 
 [供给](pi-supply.md)、[RPC](pi-rpc.md)、[Screening任务](screening-tasks.md)、
 [Feed组合](feed-pipeline.md)、[doctor](doctor.md)、
-[独立覆盖与收口判据](../verification/issue-140-pi-delivery.md)。
+[独立覆盖与收口判据](../verification/issue-140-pi-delivery.md)、
+[Screening 分项准入覆盖](../verification/issue-168-173-screening-admission.md)。

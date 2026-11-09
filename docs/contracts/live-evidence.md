@@ -189,6 +189,28 @@ checked_components 无重复，只列本次确实覆盖的组件，不是 passed
 新增／删除／改名／替换／权限或成员元数据变化改变基线摘要；
 当前根／祖先属主权限与隔离仍由对应独立检查负责，不由这个摘要推导。
 
+### 当次完整执行绑定
+
+`pi_execution.current_binding.build_admission_request(database, binding, *, use,
+credentials_dir, now)` 是执行消费者和诊断共用的只读构造入口。
+供给/实例整树经现有只读安装保护复核；当前 manifest、Node/平台、启动/隔离/准入策略、
+模型元组、host/boot/kernel/Landlock、cwd/祖先、文件隔离与零 core 策略均逐次绑定。
+Apport 绑定公开 dpkg 准确包版本、程序和整个 `/etc/apport` 配置目录、
+`/etc/default/apport`、core_pattern 与 suid_dumpable；不运行认证、模型或网络探测。
+模型元组沿 ADR-0054；材料正文不进入该身份。显式代理属于启动上下文，改变即改变摘要。
+组件普通值经规范紧凑 UTF-8 JSON SHA-256；供给/实例树沿既有 tree-v1，
+host/boot 和公开文件按原字节摘要；认证/cache 沿 auth-cache-stat-v1。
+专用凭据目录同时是本通道固定的认证/cache 根，固定输入顺序为单元素 `(credentials_dir,)`；
+不扫描个人 Pi、环境目录，不读取成员内容。
+
+IPv4 出站和 observer 只由当前固定受保护观察补足覆盖。
+只有其完整本地上下文与本次复核一致，才使用该观察声明的覆盖；不匹配时保留当前身份，
+舍弃旧特权覆盖，让共享判定拒绝缺口。观察不是能力证据，不提升 unknown。
+`recheck_admission_request(request, now=...)` 在领取内只重读同一小型保护来源，
+核新鲜度、绑定及特权覆盖未撤回；不重复整树工作。
+`local_binding_components` 与 `site_binding_components` 供封印采集侧复用相同摘要规范，
+它们本身不授予、不接收、不证据激活。
+
 ### 单一加载与投影
 
 `AdmissionRequest(use, binding, checked_components)` 只描述当次身份与观察范围，不接收证据或授予参数。
@@ -196,9 +218,10 @@ checked_components 无重复，只列本次确实覆盖的组件，不是 passed
 再调用 evaluate_admission；不联网、不认证、不调用 helper、不写任何事实。
 返回 `AdmissionProjection(decision, watermark, pending_revocation, sources)`：
 sources 是本格每个能力选中的回执 ID；decision 的原状态、依据、范围、时间、到期与原因均来自共享判定。
-Screening、Read 与 doctor 应消费这个投影，不能各自重述能力要求。
+Screening 正式三检查点消费这个投影；Read 与 doctor 的消费者现状分别见所属 Contract，不能各自重述能力要求。
 完整当前执行绑定的宿主采集由消费方集中构造，doctor 复用相同只读构造入口；
 本接口不把回执自身 binding 当作当前身份，不把短时观察或普通请求当作证据授予。
+`unavailable_projection(use, LedgerError)` 为来源/观察失效生成同一受控拒绝投影，避免展示方复制原因映射。
 
 `request_revocation` 先将闭合 ID／用途／受影响能力／时点追加到
 `~/.local/state/paperradar/live-evidence-pending.jsonl` 并 fsync，再调用固定 sudo -n helper。
