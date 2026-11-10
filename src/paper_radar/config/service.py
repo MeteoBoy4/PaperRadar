@@ -102,7 +102,11 @@ def _contract_materials(
         ) from None
     try:
         contract = build_frozen_contract(name, controlled_version)
-    except (ValueError, KeyError):
+    except KeyError:
+        raise ConfigError(
+            f"contracts.{selector}：所选版本尚无权威契约；请选择已实现的 v1"
+        ) from None
+    except ValueError:
         raise ConfigError(
             f"contracts.{selector}：权威契约构造失败；请检查所选版本"
         ) from None

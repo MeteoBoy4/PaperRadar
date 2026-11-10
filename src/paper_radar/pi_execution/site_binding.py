@@ -101,7 +101,7 @@ def site_binding_components() -> dict[B, str]:
         return {
             B.HOST: _public(Path("/etc/machine-id")),
             B.BOOT: _public(Path("/proc/sys/kernel/random/boot_id")),
-            B.KERNEL: component_digest(tuple(platform.uname())),
+            B.KERNEL: component_digest(tuple(os.uname())),
             B.LANDLOCK_ABI: component_digest(abi),
             B.CWD_ANCESTORS: component_digest(ancestors),
             B.FILE_ISOLATION: component_digest((ISOLATION_POLICY_VERSION, abi)),

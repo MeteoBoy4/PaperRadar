@@ -250,7 +250,9 @@ def test_plan_runs_only_registered_contracts() -> None:
         "reuse-assessment",
         "decision-reasons",
     }
-    assert {version.value for version in ContractVersion} == {CONTRACT_VERSION}
+    assert ContractVersion.V1.value == CONTRACT_VERSION
+    assert command.count("--version") == 1
+    assert ("--version", "v1") in tuple(pairwise(command))
     assert command.count("--contract") == len(CONTRACT_NAMES)
     for name in CONTRACT_NAMES:
         assert ("--contract", name) in tuple(pairwise(command))

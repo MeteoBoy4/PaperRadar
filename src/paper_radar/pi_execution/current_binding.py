@@ -25,7 +25,7 @@ from paper_radar.pi_execution.site_binding import (
 from paper_radar.pi_supply import SupplyError
 from paper_radar.pi_supply.protection import acquire_install
 
-ADMISSION_POLICY_VERSION = "pi-admission-v11"
+ADMISSION_POLICY_VERSION = "pi-admission-v12"
 # site 观察不承诺某一 thinking 档的模型身份;每格请求/模型证据仍完整比较。
 SITE_CONTEXT_EXCLUDED = frozenset({BindingComponent.MODEL_TUPLE})
 PROTECTED_COMPONENTS = frozenset(

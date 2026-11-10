@@ -297,7 +297,9 @@ IPv4 出站和 observer 只由当前固定受保护观察补足覆盖。
 `recheck_admission_request(request, now=...)` 在领取内只重读同一小型保护来源，
 核新鲜度、绑定及特权覆盖未撤回；不重复整树工作。
 `local_binding_components` 与 `site_binding_components` 供封印采集侧复用相同摘要规范，
-它们本身不授予、不接收、不证据激活。
+它们本身不授予、不接收、不证据激活。内核身份使用 `os.uname()` 的五个原生字段
+（system、node、release、version、machine），不调用外部命令查询 processor；
+该摘要随准入策略版本绑定，旧策略的六字段摘要不能取得新策略资格。
 
 ### 单一加载与投影
 
