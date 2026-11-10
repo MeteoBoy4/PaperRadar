@@ -117,7 +117,7 @@ def site_binding_components() -> dict[B, str]:
             ),
         }
     except OSError:
-        raise LedgerError("binding_observation_unavailable") from None
+        raise LedgerError("observation_unavailable") from None
 
 
 def node_platform_component(node_version: str) -> str:

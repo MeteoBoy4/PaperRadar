@@ -357,7 +357,9 @@ def test_pipe_handoff_failure_reaps_each_process_boundary(
     if boundary == "auth":
         monkeypatch.setattr(os, "getpgid", failed_first_observation)
         with (
-            pytest.raises(ExecutionError, match="placement_handshake_invalid") as caught,
+            pytest.raises(
+                ExecutionError, match="placement_handshake_invalid"
+            ) as caught,
             prepare_launch(
                 database,
                 description,

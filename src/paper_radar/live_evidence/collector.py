@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Literal
 
 from paper_radar.live_evidence.observation import CurrentObservation
 from paper_radar.live_evidence.receipt import (
@@ -49,6 +50,9 @@ _SITE_DEPENDENCIES = {
 class SiteObservation:
     components: dict[B, str]
     checks: tuple[tuple[str, bool], ...]
+    failure: (
+        Literal["observation_unavailable", "binding_observation_unavailable"] | None
+    ) = None
 
 
 def build_site_receipt(

@@ -246,7 +246,7 @@ def test_concurrent_refresh_is_rejected_even_for_evolving_fields(
         return original(path, dir_fd=dir_fd, follow_symlinks=follow_symlinks)
 
     monkeypatch.setattr(os, "stat", racing)
-    with pytest.raises(LedgerError, match="binding_observation_unavailable"):
+    with pytest.raises(LedgerError, match="observation_unavailable"):
         metadata_digest((root,))
 
 

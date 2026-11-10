@@ -461,8 +461,8 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v10`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v10.json)
-与源码守卫共同固定相关实现；v1–v9 的 D7 向量与摘要锚原字节保留。
+源代码准入策略为 `pi-admission-v11`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v11.json)
+与源码守卫共同固定相关实现；v1–v10 的 D7 向量与摘要锚原字节保留。
 v7 增加共享用户 scope 双阶段放置、封装、只读 resolver 和只读诊断；保留固定认证基线 v2、helper 临时布局与 v2 额度／回执／账本错误权威，继续显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
 策略身份变化后不能继承旧策略的执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
 源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。
@@ -475,7 +475,8 @@ v7 增加共享用户 scope 双阶段放置、封装、只读 resolver 和只读
 
 采集 root 父进程只管理固定受保护输出和冻结代码。现场观察 fork 后清空环境与补充组、不可逆
 降到产品 uid/gid 并禁 ptrace，不在降权与观察之间执行用户环境；业务库、整树与认证/cache 元数据
-均以产品身份只读复核冻结的snapshot/供给/安装仍为当前选择，再复用 `local_binding_components`、`site_binding_components` 和 `auth-cache-stat-v2`。
+均以产品身份只读复核供给/安装仍为当前选择，再复用 `local_binding_components`、`site_binding_components` 和 `auth-cache-stat-v2`。
+首次 β 与封印模型 collector 另严格复核冻结 snapshot 三元组；例行 metadata-only 观察读取最新有效配置快照，同一供给/安装的材料快照演进不成为执行资格前置。所有本地执行组件、策略及逐调用模型元组仍精确比较，构建器继续要求最新 activation 三元组与封印选择相符。
 需要合成子进程的隔离检查也保持产品 uid：只读取合成外部文件，只尝试匿名临时写入，
 通过标准严格为 EACCES/EPERM 拒绝；另证实 attempt 写入允许与软/硬 core 限额都为0。
 Node 只以产品 uid 执行 `--version`，比对声明版本；不执行认证、Pi prompt 或网络请求。
@@ -511,12 +512,13 @@ core 设置仅作用于合成子进程，不修改其他程序或全局 Apport/c
 未观察组件用带组件名的 unobserved 摘要占位以保持完整绑定，其 checked_components 为空缺，
 相应主张始终 unknown；占位不是合成健康值。所有分项都经过既有 receive 规范和 show 回查。
 同轮可对六格分别记录全部35能力共210条主张，只复用内容无关的站点测量，不增加认证/模型或探针次数。
-CurrentObservation保持当前供给选择/snapshot的low声明上下文；高档本地消费者重算自身MODEL_TUPLE，
+CurrentObservation保持当前供给选择的low声明上下文；高档本地消费者重算自身MODEL_TUPLE，
 站点能力仅按本能力依赖适用，高档模型/RPC/observer没有verified主张，不表示六格完整可执行。
 
 AUTH_CACHE_BASELINE 递归专用 credentials 全根，按[固定基线 v2](#当前观察与认证cache-基线)比较。
 宿主 helper 的 HOME/TMPDIR 为独占临时资源，退出后删除并核验；凭据根出现 `node-compile-cache` 拒绝。
 正常订阅刷新只豁免获准对象的指定字段，不重定基线、不追认成员，也不把 metadata 当作完整写史。
+普通 metadata I/O 故障与本次完整 stat 并发复核不稳定报告 `observation_unavailable`；失败保留上一成功快照字节和 `observed_at`、原证据状态/时点，只拒绝当次，不领取调用、伪造失败轮或撤销。已经确认的非法节点、成员、权限、供给/安装错配仍报告绑定失信或实际摘要漂移；root 刷新与正式 guard 持久收紧，移除异常不能恢复旧资格。产品 uid 与 root 之间仅传这两类受控失败 token，不传异常正文、凭据或敏感路径。
 资源准备可创建临时目录；准备失败不产生任务、attempt、预算或证据激活。
 
 默认 uninstall.sh 移除本包 sudoers、三个入口与冻结 runtime；保留账本、inbox 回执/计划、
@@ -615,7 +617,7 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 
 ## 不提供／不证明
 
-不提供项目 unit/CG/nft／模型采集库存的部署安装、特权持续观察或产品部署；后继工作见[路线图](../roadmap.md#module-live)。
+封印包提供项目 unit/CG/nft／模型采集库存的部署安装及按需受保护观察；不提供常驻特权观察服务或离线现场证明。现场职责见[路线图](../roadmap.md#module-live)。
 真实 OS 特权证明与所有者激活不由离线构建提供；独立覆盖和各次验证范围见[覆盖记录](../verification/issue-168-176-review-r1-r2-fixes.md)。旧不完整调用不能自动升级成完整请求。
 接收权威只核来源、完整性与内部一致性，不能独立证明没有遗漏的失败；失败历史完备性由采集器与 sudoers 边界承担。
 离线构建与合成覆盖不证明真实 root、供应商或模型行为，不替代所有者激活、真实材料外发确认、根用途或校准资格。

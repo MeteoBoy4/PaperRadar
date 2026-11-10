@@ -255,6 +255,7 @@ def refresh_under_lock(
     except ExecutionError as error:
         mismatch = error.reason
     incomplete = False
+    unsafe_metadata = False
     observed_components = {B.OBSERVER: identity}
     try:
         snapshot = read_nft_snapshot()
@@ -267,9 +268,11 @@ def refresh_under_lock(
         )
     try:
         local = product_observation(site, metadata_only=True)
+        unsafe_metadata = local.failure == "binding_observation_unavailable"
         expected_components = set(B) - {B.IPV4_EGRESS, B.OBSERVER}
         if (
-            local.checks != (("metadata", True),)
+            local.failure is not None
+            or local.checks != (("metadata", True),)
             or set(local.components) != expected_components
         ):
             incomplete = True
@@ -291,7 +294,11 @@ def refresh_under_lock(
         return record_refresh(
             ledger,
             candidate=None,
-            failure="observation_drift" if changed else "observation_unavailable",
+            failure="source_untrusted"
+            if unsafe_metadata
+            else "observation_drift"
+            if changed
+            else "observation_unavailable",
             now=at,
             confirmed_components=changed,
             placement_mismatch=mismatch is not None,

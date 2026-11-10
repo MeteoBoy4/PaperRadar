@@ -90,17 +90,19 @@ def test_project_rules_use_actual_depth_four_fixed_counters_and_exact_owner_scop
 
 
 @pytest.mark.parametrize(
-    "tamper",
+    "tamper,reason",
     [
-        "extra_rule",
-        "missing_counter",
-        "target_inode",
-        "allow_udp443",
-        "extra_allow_pool",
-        "duplicate_handle",
+        ("extra_rule", "nft_rule_handle"),
+        ("missing_counter", "nft_structure"),
+        ("target_inode", "nft_target_identity"),
+        ("allow_udp443", "nft_structure"),
+        ("extra_allow_pool", "nft_structure"),
+        ("duplicate_handle", "nft_rule_handle"),
     ],
 )
-def test_actual_nft_structure_refuses_unreviewed_change(tamper: str) -> None:
+def test_actual_nft_structure_refuses_unreviewed_change(
+    tamper: str, reason: str
+) -> None:
     target, network = material()
     snapshot = {
         "nftables": [
@@ -127,7 +129,7 @@ def test_actual_nft_structure_refuses_unreviewed_change(tamper: str) -> None:
         snapshot["nftables"][4]["rule"]["handle"] = snapshot["nftables"][3]["rule"][
             "handle"
         ]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="^" + reason + "$"):
         verify_nft(snapshot, target, network)
 
 
@@ -188,7 +190,14 @@ def test_actual_unit_shadow_dropin_or_execution_drift_refuses(
         }
     )
     validate_unit_identity(paths, slice_values, anchor_values)
-    with pytest.raises(ValueError):
+    reason = (
+        "unit_shadow_or_dropin"
+        if {"FragmentPath", "DropInPaths"} & change.keys()
+        else "anchor_extra_commands"
+        if "ExecStartPost" in change
+        else "anchor_unit_identity"
+    )
+    with pytest.raises(ValueError, match="^" + reason + "$"):
         validate_unit_identity(paths, slice_values, anchor_values | change)
 
 
