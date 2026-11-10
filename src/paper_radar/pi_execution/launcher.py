@@ -18,9 +18,9 @@ from paper_radar.pi_execution.auth import credential_token
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.isolation import (
     ISOLATION_POLICY_VERSION,
-    IsolationBoundary,
     isolation_capability,
 )
+from paper_radar.pi_execution.placement import PlacedProcess
 from paper_radar.pi_execution.process import adopt_process
 from paper_radar.pi_execution.resources import (
     LAUNCH_POLICY_VERSION,
@@ -105,6 +105,8 @@ class PreparedLaunch(Protocol):
 
     def close(self) -> None: ...
 
+    def recheck_placement(self) -> None: ...
+
 
 class _PreparedLaunch:
     """仅 prepare_launch 产生;秘密只存在私有内存中,不进入 repr。"""
@@ -118,6 +120,7 @@ class _PreparedLaunch:
         token: str,
         proxy: str | None,
         auth_mode: str,
+        placement: PlacedProcess,
     ) -> None:
         self._database = database
         self._description = description
@@ -127,6 +130,7 @@ class _PreparedLaunch:
         self._proxy = proxy
         self._used = False
         self._session: _OwnedSession | None = None
+        self._placement = placement
         self._identity = LaunchIdentity.for_install(
             install.supply_id,
             install.install_id,
@@ -139,14 +143,13 @@ class _PreparedLaunch:
     def identity(self) -> LaunchIdentity:
         return self._identity
 
-    def __call__(self, description: CallDescription, /) -> ByteSession:
-        if self._used or description != self._description or self._token is None:
-            raise RpcProblem(RpcReason.STARTUP_ERROR)
-        self._used = True
+    def start(self) -> None:
+        if self._token is None:
+            raise ExecutionError("placement_handshake_invalid")
         resources: AttemptResources | None = None
         try:
             cwd = check_cwd()
-            prompt = check_system_prompt(description.system_prompt)
+            prompt = check_system_prompt(self._description.system_prompt)
             inspect_instance(
                 self._database, self._install.record, self._install.instance
             )
@@ -181,29 +184,21 @@ class _PreparedLaunch:
                 "--system-prompt",
                 prompt,
             )
-            child = subprocess.Popen(
+            child = self._placement.execute(
                 argv,
                 cwd=cwd,
                 env=env,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                start_new_session=True,
-                umask=0o077,
                 pass_fds=self._install.pass_fds,
-                preexec_fn=IsolationBoundary(
-                    self._install.instance.path,
-                    cwd,
-                    resources.root,
-                    self.identity.proxy_port,
-                ),
+                install=self._install.instance.path,
+                attempt=resources.root,
+                proxy_port=self.identity.proxy_port,
             )
             self._session = _OwnedSession(adopt_process(child), resources)
-            return self._session
-        except (OSError, subprocess.SubprocessError, ExecutionError, SupplyError):
+            self._placement.handoff()
+        except (OSError, subprocess.SubprocessError, SupplyError):
             if resources is not None:
                 resources.close()
-            raise RpcProblem(RpcReason.STARTUP_ERROR) from None
+            raise ExecutionError("placement_exec_failed") from None
         except BaseException as error:
             # adopt_process 已确认组回收后才重抛原异常;所有权尚未交给会话。
             if resources is not None:
@@ -217,10 +212,30 @@ class _PreparedLaunch:
         finally:
             self._token = None
 
+    def recheck_placement(self) -> None:
+        self._placement.recheck()
+
+    def __call__(self, description: CallDescription, /) -> ByteSession:
+        if self._used or description != self._description or self._token is None:
+            raise RpcProblem(RpcReason.STARTUP_ERROR)
+        self._used = True
+        try:
+            check_cwd()
+            inspect_instance(
+                self._database, self._install.record, self._install.instance
+            )
+            self.recheck_placement()
+            self.start()
+        except (ExecutionError, SupplyError):
+            raise RpcProblem(RpcReason.STARTUP_ERROR) from None
+        assert self._session is not None
+        return self._session
+
     def close(self) -> None:
         self._token = None
         if self._session is not None:
             self._session.terminate(10)
+        self._placement.close()
 
 
 @contextmanager
@@ -235,7 +250,7 @@ def prepare_launch(
     attempt_timeout: float = 300,
     auth_timeout: float = 30,
 ) -> Iterator[PreparedLaunch]:
-    """领取前刷新是唯一允许的宿主写回;不创建 attempt 或模型会话。"""
+    """领取前准备阻塞模型封装及认证;不创建业务 attempt 或派发模型。"""
     check_auth_mode(description.provider, auth_mode)
     if any(
         type(value) not in (int, float) or not math.isfinite(value) or value <= 0
@@ -256,20 +271,31 @@ def prepare_launch(
         with use_install(database, description.audit_snapshot_id) as install:
             if install.record.manifest.pi_version != description.pi_version:
                 raise ExecutionError("protocol_unsupported")
-            token = credential_token(
-                install,
-                str(credentials_dir),
-                roots=roots,
-                attempt_timeout=attempt_timeout,
-                timeout=auth_timeout,
-            )
-            prepared = _PreparedLaunch(
-                database, description, install, roots, token, proxy, auth_mode
-            )
-            token = ""
+            placement = PlacedProcess()
             try:
-                yield prepared
+                token = credential_token(
+                    install,
+                    str(credentials_dir),
+                    roots=roots,
+                    attempt_timeout=attempt_timeout,
+                    timeout=auth_timeout,
+                )
+                prepared = _PreparedLaunch(
+                    database,
+                    description,
+                    install,
+                    roots,
+                    token,
+                    proxy,
+                    auth_mode,
+                    placement,
+                )
+                token = ""
+                try:
+                    yield prepared
+                finally:
+                    prepared.close()
             finally:
-                prepared.close()
+                placement.close()
     except SupplyError:
         raise ExecutionError("install_unavailable") from None

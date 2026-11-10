@@ -9,11 +9,12 @@ import pytest
 
 from paper_radar.pi_execution.current_binding import ADMISSION_POLICY_VERSION
 from paper_radar.pi_execution.isolation import ISOLATION_POLICY_VERSION
+from paper_radar.pi_execution.placement import PLACEMENT_POLICY_VERSION
 from paper_radar.pi_execution.resources import LAUNCH_POLICY_VERSION
 from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v6.json"
+MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v7.json"
 ARCHIVED_MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
 # 显式清单;不能由目录扫描或生产依赖图动态扩大/缩小。
 ARCHIVED_SOURCE_FILES = (
@@ -72,6 +73,10 @@ SOURCE_FILES = (
     "src/paper_radar/live_evidence/ledger_errors.py",
     "src/paper_radar/live_evidence/receipt_v2.py",
     "src/paper_radar/live_evidence/collection.py",
+    "src/paper_radar/pi_execution/placement.py",
+    "src/paper_radar/pi_execution/placement_wrapper.py",
+    "src/paper_radar/pi_execution/resolver.py",
+    "src/paper_radar/doctor/pi_exec.py",
 )
 
 
@@ -94,6 +99,9 @@ REVIEWED_POLICY_MANIFESTS = {
     ),
     "pi-admission-v6": (
         "df039edfb53f85b526c7828984dda44d51c3300a65a07e833b4a4dffc3916223"
+    ),
+    "pi-admission-v7": (
+        "7d5f59efbc2addb76848bbd6cccdbfa6bb6a9a1172a659ba8667bf08d189075e"
     ),
 }
 
@@ -124,6 +132,7 @@ def test_admission_sources_match_reviewed_policy_manifest() -> None:
     assert manifest["policies"] == {
         "admission": ADMISSION_POLICY_VERSION,
         "launch": LAUNCH_POLICY_VERSION,
+        "placement": PLACEMENT_POLICY_VERSION,
         "isolation": ISOLATION_POLICY_VERSION,
         "protocol_1_4_0": PROTOCOL_PROFILES["1.4.0"],
     }

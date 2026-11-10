@@ -56,17 +56,21 @@ def test_auth_holds_install_protection_and_claim_uses_latest_correction(
     service, task, _ = setup(tmp_path, monkeypatch, mode="require_correction")
     allow_engineering_path(monkeypatch)
     first = service.tasks.claim(task.task_id)
-    popen = subprocess.Popen
+    from paper_radar.pi_execution.placement import PlacedProcess
+
+    execute = PlacedProcess.execute
     selected = activation_history(service.database)[-1]
     observed: list[str] = []
 
-    def spawn(*args: Any, **kwargs: Any) -> subprocess.Popen[bytes]:
+    def spawn(
+        self: PlacedProcess, argv: tuple[str, ...], **kwargs: Any
+    ) -> subprocess.Popen[bytes]:
         observed.append(
             probe_install(
                 service.database, selected.supply_id, selected.install_id
             ).state
         )
-        if "auth" in args[0]:
+        if "auth" in argv:
             raw = valid_candidate(
                 main_findings=[
                     {
@@ -80,9 +84,9 @@ def test_auth_holds_install_protection_and_claim_uses_latest_correction(
                 isinstance(result, ReadTask)
                 and result.attempts[0].failure == "output_invalid"
             )
-        return popen(*args, **kwargs)
+        return execute(self, argv, **kwargs)
 
-    monkeypatch.setattr(subprocess, "Popen", spawn)
+    monkeypatch.setattr(PlacedProcess, "execute", spawn)
     result = service.run_attempt(task.task_id)
     assert isinstance(result, ReadAnalysis) and result.attempt_ordinal == 2
     assert observed == ["in_flight", "in_flight"]
@@ -99,13 +103,17 @@ def test_model_interruption_reaps_entire_group_and_recovers_unknown_without_refu
     now = datetime(2026, 1, 1, tzinfo=UTC)
     service, task, _ = setup(tmp_path, monkeypatch, mode="timeout", clock=lambda: now)
     allow_engineering_path(monkeypatch)
-    popen = subprocess.Popen
+    from paper_radar.pi_execution.placement import PlacedProcess
+
+    execute = PlacedProcess.execute
     children: list[subprocess.Popen[bytes]] = []
     directories: list[Path] = []
 
-    def spawn(*args: Any, **kwargs: Any) -> subprocess.Popen[bytes]:
-        child = popen(*args, **kwargs)
-        if "auth" not in args[0]:
+    def spawn(
+        self: PlacedProcess, argv: tuple[str, ...], **kwargs: Any
+    ) -> subprocess.Popen[bytes]:
+        child = execute(self, argv, **kwargs)
+        if "auth" not in argv:
             children.append(child)
             directories.append(Path(kwargs["env"]["PI_CODING_AGENT_DIR"]).parent)
         return child
@@ -115,7 +123,7 @@ def test_model_interruption_reaps_entire_group_and_recovers_unknown_without_refu
             raise interruption
         return False
 
-    monkeypatch.setattr(subprocess, "Popen", spawn)
+    monkeypatch.setattr(PlacedProcess, "execute", spawn)
     with pytest.raises(interruption):
         service.run_attempt(task.task_id, cancelled=cancelled)
     assert len(children) == 1 and children[0].poll() is not None

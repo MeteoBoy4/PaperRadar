@@ -88,6 +88,9 @@ def setup(
     from tests.pi_execution_service_support import deny_default_live_io
 
     deny_default_live_io(root, monkeypatch)
+    from tests.pi_placement_support import local_placement
+
+    local_placement(monkeypatch)
     import json
 
     peer = Path(__file__).with_name("read_execution_peer.py").read_text()

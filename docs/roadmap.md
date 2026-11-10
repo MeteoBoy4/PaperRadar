@@ -99,6 +99,7 @@ flowchart TD
 - Extra：I02；CPU 单锁、v2 身份、历史回放、显式安装/依赖诊断、三解释器与无 extra 组合见[工程覆盖及最终门禁判据](verification/issue-150-extra-delivery.md)。完整验收仍以最终冻结树中 extra + dev 的同次 `check-offline` 退出 0、查询 `passed/verified/same` 及树外前后库存/回执为准；定向组合与探索转换不替代门禁，最终 run_id 不回写身份材料。
 - Pi/Live：I04、I05、T05、T07、T08、T12；Pi 工程切片与同次最终门禁判据见[独立台账](verification/issue-140-gate-followup.md)；Pi 另承接[生产启动器准入](../intent/draft.md#pi-生产启动器准入)，Live 另承接[首次 Pi 生产接线](../intent/draft.md#b-首次-pi-生产接线)（首次实际供给/RPC 与预检），依据 [pi-rpc](contracts/pi-rpc.md)。
 - Live：I04、I05、T05、T07、T08、T12；在同一执行绑定下验收部署机 cwd／祖先、文件与主机级出站、UDP／DNS、端点漂移及 core 边界。
+  认证/模型共用放置的部署机责任包括 user manager/linger、项目 slice 锚定及核 ID、受保护规则目标、resolver 只读视图与非特权 userns/ptrace 实效；工程边界见[执行契约](contracts/pi-execution.md#用户级放置与双阶段握手)，不得从离线握手取得现场资格。
   v2 采集累计域、40/40 预占、三次／六轮停止及续跑公共边界见 [Live 契约](contracts/live-evidence.md#v2-采集额度失败类与续跑)，
   独立工程覆盖见 [#178 台账](verification/issue-178-live-collection-v2.md)；真实 collector 接线、封印 cutover、现场与最终集成门禁仍由 Live 收口。
   复用受保护准入账本、完整当前绑定、三检查点和共享分项投影；部署与当前代码策略匹配的冻结 runtime，以新受信回执取得所需分项并由所有者显式证据激活，不继承旧策略资格。

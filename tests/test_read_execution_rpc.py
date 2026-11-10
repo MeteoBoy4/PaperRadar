@@ -34,17 +34,20 @@ def test_first_reject_then_last_correction_uses_two_distinct_processes_and_one_a
 
     service, task, _ = setup(tmp_path, monkeypatch, mode="degrade")
     allow_engineering_path(monkeypatch)
-    popen = subprocess.Popen
+    from paper_radar.pi_execution.placement import PlacedProcess
+
+    execute = PlacedProcess.execute
     sessions: list[tuple[int, str]] = []
 
-    def spawn(*args: Any, **kwargs: Any) -> subprocess.Popen[bytes]:
-        child = popen(*args, **kwargs)
-        if "auth" not in args[0]:
-            assert kwargs["start_new_session"] is True
+    def spawn(
+        self: PlacedProcess, argv: tuple[str, ...], **kwargs: Any
+    ) -> subprocess.Popen[bytes]:
+        child = execute(self, argv, **kwargs)
+        if "auth" not in argv:
             sessions.append((child.pid, kwargs["env"]["PI_CODING_AGENT_DIR"]))
         return child
 
-    monkeypatch.setattr(subprocess, "Popen", spawn)
+    monkeypatch.setattr(PlacedProcess, "execute", spawn)
     first = service.run_attempt(task.task_id)
     assert (
         isinstance(first, ReadTask) and first.attempts[-1].failure == "output_invalid"

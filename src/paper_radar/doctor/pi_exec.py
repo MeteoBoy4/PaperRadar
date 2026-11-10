@@ -39,6 +39,7 @@ from paper_radar.pi_execution.isolation import (
     ISOLATION_POLICY_VERSION,
     isolation_capability,
 )
+from paper_radar.pi_execution.placement import check_placement_readiness
 from paper_radar.pi_execution.resources import (
     EXECUTION_CWD,
     LAUNCH_POLICY_VERSION,
@@ -332,6 +333,26 @@ def execution_checks(
                 Result.PASSED,
                 "isolation_capability",
                 "仅本机 Landlock 能力通过；真实 Pi/TLS/DNS 和主机出站交 Cwd/Live。",
+            )
+        )
+    try:
+        check_placement_readiness()
+    except ExecutionError as error:
+        checks.append(
+            Check(
+                "placement",
+                Result.INVALID,
+                error.reason,
+                "放置不可用或不符；核对 user manager/linger、锚定与受保护规则目标。",
+            )
+        )
+    else:
+        checks.append(
+            Check(
+                "placement",
+                Result.PASSED,
+                "placement_ready",
+                "只读锚定检查通过；实际子进程仍须逐调用双阶段核验。",
             )
         )
     for name, reason, step in (
