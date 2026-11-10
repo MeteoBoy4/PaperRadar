@@ -51,6 +51,14 @@ class AdmissionGuard:
         """保留受控原因,避免映射成evidence_missing后混淆租期与来源丢失。"""
         self.observation_failure = error.category
 
+    def note_placement_failure(self, error: ExecutionError) -> None:
+        """握手/manager临时不可用只拒当次;实际漂移与来源失信仍收紧。"""
+        if (
+            error.reason.startswith("placement_")
+            or error.reason == "resolver_unavailable"
+        ):
+            self.observation_failure = getattr(error, "source_reason", error.reason)
+
     def tighten_after_denial(self, *, now: datetime) -> None:
         """资格缺口只拒绝当次;已知漂移/来源失信才持久收紧。"""
         if self.observation_failure in {
@@ -58,6 +66,8 @@ class AdmissionGuard:
             "clock_rollback",
             "evidence_time_invalid",
             "evidence_time_future",
+            "placement_unavailable",
+            "placement_handshake_timeout",
         }:
             return
         projection = self.projection

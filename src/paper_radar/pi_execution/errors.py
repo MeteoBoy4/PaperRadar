@@ -27,6 +27,14 @@ ExecutionReason = Literal[
     "protocol_unsupported",
     "timeout_invalid",
     "cleanup_failed",
+    "placement_unavailable",
+    "placement_mismatch",
+    "placement_anchor_invalid",
+    "placement_handshake_timeout",
+    "placement_peer_exited",
+    "placement_handshake_invalid",
+    "placement_exec_failed",
+    "resolver_unavailable",
 ]
 
 

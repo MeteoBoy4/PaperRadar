@@ -66,7 +66,7 @@ def test_adoption_interruption_reaps_process_and_resources_but_keeps_lease(
 
     def interrupted_adoption(child: subprocess.Popen[bytes]) -> PipeSession:
         assert isinstance(child.args, tuple)
-        if "auth" in child.args:
+        if b"\x00auth\x00" in Path(f"/proc/{child.pid}/cmdline").read_bytes():
             return PipeSession(child)
         children.append(child)
         raise interruption
@@ -152,15 +152,20 @@ def test_correction_overflow_is_rejected_before_claim_without_task_effects(
     events.clear()
     allow_synthetic(monkeypatch)
 
-    popen = subprocess.Popen
+    from paper_radar.pi_execution.placement import PlacedProcess
+
+    execute = PlacedProcess.execute
     auth_calls = 0
 
-    def controlled_auth(*args: Any, **kwargs: Any) -> subprocess.Popen[bytes]:
+    def controlled_auth(
+        self: PlacedProcess, argv: tuple[str, ...], **kwargs: Any
+    ) -> subprocess.Popen[bytes]:
         nonlocal now, before, auth_calls
+        if "auth" not in argv:
+            return execute(self, argv, **kwargs)
         assert state.endswith("_during_auth"), "已知帧超限不应刷新认证"
-        assert "auth" in args[0], "不得创建模型会话"
         auth_calls += 1
-        child = popen(*args, **kwargs)
+        child = execute(self, argv, **kwargs)
         if state == "timeout_during_auth":
             service.tasks.fail(claim, FailureReport(FailureKind.TIMEOUT))
         else:
@@ -171,7 +176,7 @@ def test_correction_overflow_is_rejected_before_claim_without_task_effects(
         events.clear()
         return child
 
-    monkeypatch.setattr(subprocess, "Popen", controlled_auth)
+    monkeypatch.setattr(PlacedProcess, "execute", controlled_auth)
     with pytest.raises(TaskError, match="invalid_context"):
         service.run_attempt(receipt.receipt_id)
     assert (

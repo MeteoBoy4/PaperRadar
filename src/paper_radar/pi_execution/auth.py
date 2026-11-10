@@ -6,8 +6,8 @@ from time import monotonic
 
 from paper_radar.llm.rpc_pipes import PipeSession
 from paper_radar.llm.rpc_types import RpcProblem
-from paper_radar.pi_execution import isolation
 from paper_radar.pi_execution.errors import ExecutionError
+from paper_radar.pi_execution.placement import PlacedProcess
 from paper_radar.pi_execution.process import adopt_process
 from paper_radar.pi_supply.protection import InstallUse
 
@@ -42,19 +42,20 @@ def credential_token(
     session: PipeSession | None = None
     output = bytearray()
     try:
-        child = subprocess.Popen(
+        from pathlib import Path
+
+        placement = PlacedProcess()
+        child = placement.execute(
             argv,
-            cwd=credentials_dir,
+            cwd=Path(credentials_dir),
             env=env,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            start_new_session=True,
+            install=install.instance.path,
+            attempt=None,
+            proxy_port=None,
             pass_fds=install.pass_fds,
-            umask=0o077,
-            preexec_fn=isolation.disable_core_dumps,
         )
         session = adopt_process(child)
+        placement.handoff()
         session.close_stdin()
         deadline = monotonic() + timeout
         total = 0
@@ -92,3 +93,5 @@ def credential_token(
                 session.terminate(10)
             except (OSError, RpcProblem):
                 raise ExecutionError("auth_failed") from None
+        if "placement" in locals():
+            placement.close()

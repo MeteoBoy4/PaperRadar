@@ -44,10 +44,10 @@ Popen 成功而 PipeSession 拒绝接管时，启动器仍负责有界组回收�
 - 代理语法、provider/auth_mode 闭集、协议档案与有限正数超时（不接受 bool、NaN、无穷或非数值）。
 - `use_install` 的供给与安装保护、平台和完整树检查。
 
-启动器内部唯一获准的领取前宿主副作用是专用凭据刷新：可能联网并写回该凭据目录。它不写任务、预算、失败行或成功制品，也不占有 attempt。上层应先完成其余执行证据门禁，再调用 `prepare_launch`，避免在已知不能执行时刷新。
+领取前准备允许创建临时 scope、阻塞封装及其清理资源，并执行专用凭据刷新；刷新可能联网并写回该凭据目录。模型 Pi 仍未 exec，不发送 prompt，不写业务任务、attempt、预算、失败行或成功制品。上层先完成其余执行证据门禁，再调用 `prepare_launch`。
 刷新失败或后续领取前检查拒绝均不占用 attempt；成功取得的短期 token 仅随内存上下文存在，不另存缓存。
 
-领取后复核 cwd、指令与安装整树，然后创建 attempt、建立隔离和 exec。
+领取后复核 cwd、指令、安装整树与已准备封装放置，然后创建临时资源、建立隔离和 exec。
 这些步骤失败经 `RpcProblem(startup_error)` 交给现有任务结算，不重发、不重置预算。
 pre-exec 中再次核对 cwd 的无链接与为空条件；低于隔离能力要求或建立失败均不能无隔离降级。
 预检不是未来 I/O 成功的保证。
@@ -59,7 +59,7 @@ pre-exec 中再次核对 cwd 的无链接与为空条件；低于隔离能力要
 拒绝，模型沿 `startup_error` 交上层结算，不以继承的默认软限额替代。限额仅在子进程
 pre-exec中更改，不修改调用方进程限额。
 
-该行为不更改固定argv/env、`LAUNCH_POLICY_VERSION`、协议注册或注入loader。
+零 core 规则保留固定 Pi argv/env 和协议注册；放置机制另以新版启动策略绑定。
 它不证明持有短期token的宿主controller已受服务限额保护，也不自动安装项目服务。
 部署仍须配置 `LimitCORE=0` 并核对所选Apport版本/配置、uid与非打包路径适用性；
 允许root内存瞬时采集而不落盘及后续doctor漂移检查的目标见
@@ -136,6 +136,42 @@ token 不进入 argv、attempt 文件、DB、审计、日志、repr；也不保�
 Python 内存引用在启动或上下文退出时释放，不承诺对不可变字符串物理清零。
 测试对端的 env/argv 观察只在测试进程内，不提供产品转储能力。
 
+### 用户级放置与双阶段握手
+
+`paper_radar.pi_execution.placement.PlacedProcess` 是认证、模型和 collector 的共同放置边界。
+构造时仅以固定 `systemd-run --user --scope --slice=paperradar.slice` 启动封装；
+要求 user manager 为 running、`Linger=yes`、`paperradar-anchor.service` 为 active。
+manager degraded、缺失或异常均拒绝。封装不继承秘密或业务环境，先设置零 core 和
+`no_new_privs`，通过 0700 临时目录中的 Unix socket 阻塞等待；对端 pid/uid 由
+`SO_PEERCRED` 取得，并核进程组和 `/proc` starttime。
+
+`PlacementTarget` v1 从现有 root 所有 inbox 的 `placement-target-v1.json` 规范字节读取，
+包含完整项目 slice 祖先 `(path,device,inode)`、anchor pid/starttime/cgroup、当前
+`IPV4_EGRESS` 观察摘要及 resolver 视图路径/摘要。逐次读取同时要求现有短租期
+CurrentObservation 的出站摘要匹配且覆盖出站和 observer；不改变历史观察 v1。
+`verify_placement(target,pid,start,unit)` 是 observer/collector 可复用的公开 `/proc`/kernfs
+核验，不读进程环境或内存。准备句柄还固定本次 scope 的核 ID；slice、scope、祖先、
+锚定或受保护目标变化都拒绝，即使路径文本相同。
+
+认证封装先通过同一核验再 exec；模型封装在领取前完成第一阶段、准备后及 preclaim
+复核，领取后才执行第二阶段。`execute(...)` 以有界私有 IPC 交付完整受控 argv/env、
+隔离参数与安装保护 fd（SCM_RIGHTS），封装先施加 resolver 视图和隔离，再 exec。
+普通产品 controller 以 `PTRACE_SEIZE/TRACEEXEC/EXITKILL` 在 exec-stop 核同一
+pid/starttime/cgroup、实际 executable、`NoNewPrivs=1` 和软硬零 core，随后 detach；
+目标尚未执行其第一条指令，因此认证动作或 prompt 不先于核验。没有 root tracer 或
+新的 root Pi 入口；内核、LSM/Yama、userns 或 ptrace 支持不足直接拒绝。
+`handoff()` 仅在 PipeSession 接管后移交整组回收权；所有异常路径有界回收，清理失败
+保持失败。`recheck()` 供正式消费者在 preclaim 使用；`check_placement_readiness()`
+是 doctor 的只读 manager/目标/锚定检查，不创建 scope、不证明未来子进程放置。
+
+`resolver.apply_resolver_view(view,digest)` 是公共只读 resolver 接缝。封印部署提供
+`/run/paper-radar/` 下的 root 所有、产品不可改文件；封装在非特权私有 user/mount
+namespace 内只读绑定到 `/etc/resolv.conf`，不需要宿主 CAP_SYS_ADMIN。已继承同 inode
+视图仅在调用 uid 不可写且摘要相同才复用。非特权 userns、映射、挂载或摘要核验失败
+均不能继续 exec；不授额外 capability。离线替身只复用现有系统 resolver，不证明
+已部署项目挂载或真实 DNS；确切视图、权限、userns/ptrace 组合与真实出站由
+[Live](../roadmap.md#module-live) 封印部署及现场验收确认。模型内层仍不开放 TCP53。
+
 ### 隔离策略 `pi-landlock-v1`
 
 Landlock ABI≥4；ABI≥6 追加 signal 与 abstract Unix socket scope。先设置 `no_new_privs` 再限制自身，
@@ -194,7 +230,7 @@ Prompt/Profile 正文不进入内容无关能力身份。
 前两处全树检查均在业务写事务外；安装保护从准备、auth 到 run_once 返回及整组回收持续持有。
 当次只读组件、受保护特权观察和共享 stat 基线规则见 [Live evidence](live-evidence.md#当次完整执行绑定)。
 观察的本地上下文不一致时，不拼接旧特权覆盖；显式代理变化也改变启动上下文身份。
-领取前唯一认证副作用仍为专用凭据刷新；安全侧固定 helper 打点必须成功，
+领取前认证写回仍仅为专用凭据刷新，另允许阻塞放置封装与清理资源；安全侧固定 helper 打点必须成功，
 物理来源丢失／失信、已知绑定漂移或实际运行失败，在业务事务外先持久追加收紧意图、
 再请求撤销，helper 失败仍拒绝。单纯观察租期结束、能力自然到期、未测或未激活只拒绝本次执行，
 不撤销无关已核事实；同事实的新鲜观察可恢复当前适用性，不续原verified_at或翻转真实撤销。

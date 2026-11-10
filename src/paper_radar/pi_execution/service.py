@@ -208,7 +208,9 @@ class PiExecution:
                 cancelled,
                 clock,
             )
-        except (ExecutionError, LedgerError, SupplyError):
+        except (ExecutionError, LedgerError, SupplyError) as error:
+            if isinstance(error, ExecutionError):
+                guard.note_placement_failure(error)
             guard.tighten_after_denial(now=self._now())
             raise
 
@@ -244,6 +246,11 @@ class PiExecution:
 
             def preclaim(correction: str | None) -> None:
                 validate_frame(correction)
+                try:
+                    prepared.recheck_placement()
+                except ExecutionError as error:
+                    guard.note_placement_failure(error)
+                    raise PreclaimAdmissionDenied from None
                 checkpoints.preclaim(rebound)
 
             audit = PiRpcExecutionAudit.model_validate(

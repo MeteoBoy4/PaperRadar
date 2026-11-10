@@ -133,6 +133,9 @@ def launch_inputs(
     (credentials / "auth.json").write_text(json.dumps({"token": TOKEN}))
     monkeypatch.setattr("paper_radar.pi_execution.resources.EXECUTION_CWD", cwd)
     from paper_radar.pi_execution import isolation
+    from tests.pi_placement_support import local_placement
+
+    local_placement(monkeypatch)
 
     monkeypatch.setattr(
         isolation,

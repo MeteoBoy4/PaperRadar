@@ -175,7 +175,9 @@ class ReadExecution:
                 return self._run_admitted(
                     task_id, prepared_input, binding, guard, limits, cancelled, clock
                 )
-            except (ExecutionError, LedgerError, SupplyError):
+            except (ExecutionError, LedgerError, SupplyError) as error:
+                if isinstance(error, ExecutionError):
+                    guard.note_placement_failure(error)
                 guard.tighten_after_denial(now=self._now())
                 raise
 
@@ -232,6 +234,11 @@ class ReadExecution:
             )
 
             def preclaim(candidate: PreparedReadInput, correction: str | None) -> None:
+                try:
+                    prepared.recheck_placement()
+                except ExecutionError as error:
+                    guard.note_placement_failure(error)
+                    raise PreclaimAdmissionDenied from None
                 validate_frame(candidate, correction)
                 checkpoints.preclaim(rebound)
 
