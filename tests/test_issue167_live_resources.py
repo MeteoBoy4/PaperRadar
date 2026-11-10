@@ -4,16 +4,14 @@ import json
 import os
 import shutil
 import struct
-import subprocess
 import threading
 from pathlib import Path
-from subprocess import Popen
-from typing import Any, cast
+from typing import cast
 
 import pytest
 
 from paper_radar.llm.rpc_types import RpcProblem, RpcReason
-from paper_radar.pi_execution import ExecutionRoots, prepare_launch
+from paper_radar.pi_execution import ExecutionRoots, placement, prepare_launch
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.resources import AttemptResources
 from scripts import issue167_live_resources as adapter
@@ -25,6 +23,7 @@ from scripts.issue167_fork_observation import (
 from scripts.issue167_h1_phase import Plan
 from scripts.issue167_session_observation import ClassifiedSessionObservation
 from tests.pi_execution_support import TOKEN, launch_inputs, observed
+from tests.pi_placement_support import instrument_wrapper
 from tests.test_issue167_fork_observation import ReplayObserver
 from tests.test_issue167_observed_launch_fixture import PEER
 
@@ -103,7 +102,8 @@ def test_kernel_public_launch_arms_before_model_and_keeps_original_fd_only(
     order: list[str] = []
     allocated: list[Path] = []
     real_start = ForkObservation.start
-    real_popen = subprocess.Popen
+    platform = placement.PLACEMENT_PLATFORM
+    real_verify = platform.verify
 
     def arm(window: ForkObservation) -> None:
         real_start(window)
@@ -111,14 +111,17 @@ def test_kernel_public_launch_arms_before_model_and_keeps_original_fd_only(
         allocated.append(window._observer.root)
         order.append("armed")
 
-    def popen(argv: tuple[str, ...], **kwargs: Any) -> Popen[bytes]:
-        if argv[2:4] != ("auth", "print-bearer-token"):
+    def verify(
+        target: placement.PlacementTarget, pid: int, start: int, unit: str
+    ) -> None:
+        real_verify(target, pid, start, unit)
+        # 实际内核 exec-stop 后读目标 argv;阻塞 wrapper 的 Popen 不算模型启动。
+        if b"--mode\x00rpc\x00" in Path(f"/proc/{pid}/cmdline").read_bytes():
             order.append("model")
             assert order[-2:] == ["armed", "model"]
-        return cast(Popen[bytes], real_popen(argv, **kwargs))
 
     monkeypatch.setattr(ForkObservation, "start", arm)
-    monkeypatch.setattr(subprocess, "Popen", popen)
+    monkeypatch.setattr(platform, "verify", verify)
     with adapter.observe_launch_resources(reader, synthetic=True) as observations:
         with prepare_launch(
             database,
@@ -134,6 +137,7 @@ def test_kernel_public_launch_arms_before_model_and_keeps_original_fd_only(
             session.terminate(5)
         observations.assert_complete()
     (receipt,) = observations.receipts
+    assert order == ["armed", "model"]
     assert receipt["result"] == "window_complete"
     assert receipt["history"] == "observed_mutation"
     assert receipt["terminal_regular_files"] == 1
@@ -444,14 +448,20 @@ def test_model_popen_failure_closes_armed_resources_without_new_model(
     database, description, execution_roots, credentials, _cwd = launch_inputs(
         tmp_path, monkeypatch, peer=PEER
     )
-    original_popen = subprocess.Popen
-
-    def fail_model(argv: tuple[str, ...], **kwargs: Any) -> Popen[bytes]:
-        if argv[2:4] == ("auth", "print-bearer-token"):
-            return cast(Popen[bytes], original_popen(argv, **kwargs))
-        raise OSError("synthetic_model_launch_failure")
-
-    monkeypatch.setattr(subprocess, "Popen", fail_model)
+    fault = tmp_path / "model-exec-fault"
+    instrument_wrapper(
+        monkeypatch,
+        f"""
+execve = os.execve
+fault_fd = os.open({str(fault)!r}, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+def fail_model(path, argv, env):
+    if argv[2:4] == ['--mode', 'rpc']:
+        os.write(fault_fd, b'model_execve')
+        raise OSError('synthetic_model_launch_failure')
+    return execve(path, argv, env)
+os.execve = fail_model
+""",
+    )
     with (
         adapter.observe_launch_resources(reader, synthetic=True) as observations,
         prepare_launch(
@@ -465,6 +475,7 @@ def test_model_popen_failure_closes_armed_resources_without_new_model(
         with pytest.raises(RpcProblem) as error:
             prepared(description)
         assert error.value.reason is RpcReason.STARTUP_ERROR
+    assert fault.read_bytes() == b"model_execve"
     assert observations.receipts[0]["result"] == "window_complete"
     assert observations.receipts[0]["directory_deleted"] is True
 

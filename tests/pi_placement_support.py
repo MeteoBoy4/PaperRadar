@@ -54,3 +54,22 @@ def local_placement(monkeypatch: pytest.MonkeyPatch) -> LocalPlacementPlatform:
     monkeypatch.setattr(placement, "PLACEMENT_PLATFORM", platform)
     monkeypatch.setattr(placement, "load_placement_target", lambda **_kwargs: target)
     return platform
+
+
+def instrument_wrapper(monkeypatch: pytest.MonkeyPatch, code: str) -> None:
+    """在独立封装解释器注入 OS 故障;保留真实握手、隔离、ptrace 和 exec。"""
+    platform = placement.PLACEMENT_PLATFORM
+    spawn = platform.spawn
+    bootstrap = (
+        "import os, runpy, sys\n"
+        "sys.argv = sys.argv[1:]\n"
+        + code
+        + "\nrunpy.run_path(sys.argv[0], run_name='__main__')\n"
+    )
+
+    def instrumented(
+        argv: tuple[str, ...], env: dict[str, str]
+    ) -> subprocess.Popen[bytes]:
+        return spawn((*argv[:10], "-c", bootstrap, *argv[10:]), env)
+
+    monkeypatch.setattr(platform, "spawn", instrumented)

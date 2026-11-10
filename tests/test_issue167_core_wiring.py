@@ -9,6 +9,7 @@ import pytest
 from paper_radar.llm.rpc_types import RpcProblem
 from paper_radar.pi_execution import ExecutionError, isolation, prepare_launch
 from tests.pi_execution_support import TOKEN, launch_inputs, observed
+from tests.pi_placement_support import instrument_wrapper
 
 PEER = f"""
 import json, os, resource, sys
@@ -56,13 +57,37 @@ def test_failed_core_setting_refuses_auth_or_model_before_peer_exec(
         tmp_path, monkeypatch, peer=PEER
     )
 
-    def denied(_key: int, _value: tuple[int, int]) -> None:
-        raise PermissionError("sensitive-core-error-text")
-
+    fail_core = tmp_path / "fail-core"
+    fault = tmp_path / "core-fault"
+    exec_log = tmp_path / "peer-exec"
+    instrument_wrapper(
+        monkeypatch,
+        f"""
+import resource
+from pathlib import Path
+setrlimit = resource.setrlimit
+execve = os.execve
+core_calls = 0
+exec_fd = os.open({str(exec_log)!r}, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+def checked_limit(key, value):
+    global core_calls
+    core_calls += 1
+    if core_calls > 1 and Path({str(fail_core)!r}).exists():
+        Path({str(fault)!r}).write_text(str((key, value)))
+        raise PermissionError('sensitive-core-error-text')
+    return setrlimit(key, value)
+def checked_exec(path, argv, env):
+    stage = b'auth\\n' if argv[2:4] == ['auth', 'print-bearer-token'] else b'model\\n'
+    os.write(exec_fd, stage)
+    return execve(path, argv, env)
+resource.setrlimit = checked_limit
+os.execve = checked_exec
+""",
+    )
     if stage == "auth":
-        monkeypatch.setattr(resource, "setrlimit", denied)
+        fail_core.touch()
         with (
-            pytest.raises(ExecutionError, match=r"^auth_failed$"),
+            pytest.raises(ExecutionError, match=r"^placement_exec_failed$"),
             prepare_launch(
                 database,
                 description,
@@ -73,6 +98,7 @@ def test_failed_core_setting_refuses_auth_or_model_before_peer_exec(
         ):
             pytest.fail("auth limit failure must not yield")
         assert not (credentials / "core-observed.json").exists()
+        assert exec_log.read_bytes() == b""
     else:
         with prepare_launch(
             database,
@@ -81,10 +107,12 @@ def test_failed_core_setting_refuses_auth_or_model_before_peer_exec(
             credentials_dir=credentials,
             auth_mode="chatgpt_subscription",
         ) as prepared:
-            monkeypatch.setattr(resource, "setrlimit", denied)
+            fail_core.touch()
             with pytest.raises(RpcProblem) as error:
                 prepared(description)
             assert error.value.reason.value == "startup_error"
+            assert exec_log.read_text() == "auth\n"
+    assert fault.read_text() == str((resource.RLIMIT_CORE, (0, 0)))
     captured = capsys.readouterr()
     assert "sensitive-core-error-text" not in captured.out + captured.err
     assert TOKEN not in captured.out + captured.err

@@ -1,5 +1,6 @@
 """独立 Pi doctor 冷进程守卫;不放松 basic/config 的旧守卫。"""
 
+import errno
 import importlib.abc
 import os
 import sqlite3
@@ -23,6 +24,26 @@ class NoExecution(importlib.abc.MetaPathFinder):
 sys.meta_path.insert(0, NoExecution())
 
 
+# 冷进程不继承父进程 monkeypatch;真实现场源必须在 OS 边界隔离。
+def protected_source(path: object) -> bool:
+    return isinstance(path, (str, bytes, os.PathLike)) and os.fsdecode(path).startswith(
+        "/var/lib/paperradar/"
+    )
+
+
+for name in ("stat", "lstat"):
+    original = getattr(os, name)
+
+    def offline_stat(
+        path: Any, *args: Any, _stat: Any = original, **kwargs: Any
+    ) -> Any:
+        if protected_source(path):
+            raise PermissionError(errno.EACCES, "offline protected source unavailable")
+        return _stat(path, *args, **kwargs)
+
+    setattr(os, name, offline_stat)
+
+
 def guard(event: str, args: tuple[object, ...]) -> None:
     if (
         event.startswith(
@@ -44,6 +65,8 @@ def guard(event: str, args: tuple[object, ...]) -> None:
         or (event == "sqlite3.connect" and os.environ.get("PI_DOCTOR_HELP") == "1")
     ):
         os._exit(97)
+    if event in {"open", "sqlite3.connect"} and args and protected_source(args[0]):
+        raise PermissionError(errno.EACCES, "offline protected source unavailable")
     if event == "open":
         if str(args[0]) == os.environ.get("PI_DOCTOR_CREDENTIAL"):
             os._exit(97)
