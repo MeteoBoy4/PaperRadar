@@ -8,7 +8,7 @@
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-当前前沿为 [Live](#module-live)，其依赖均已完成；B 仍受 Live 依赖限制。
+当前唯一前沿为 [Live](#module-live)，其规格见模块表，依赖均已完成；B 仍受 Live 依赖限制。
 
 to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 
@@ -55,7 +55,7 @@ flowchart TD
 | <a id="module-a"></a>A | A 窄收口：日志、doctor、纯规则 | 已完成（[#120](https://github.com/MeteoBoy4/PaperRadar/issues/120)；[窄范围证据](verification/a-narrow-delivery.md)） | 无 | AFK |
 | <a id="module-pi"></a>Pi | Pi 离线启动器、权限资源、生产成功来源 | 已完成（[#140](https://github.com/MeteoBoy4/PaperRadar/issues/140)；[独立工程覆盖与同次门禁判据](verification/issue-140-gate-followup.md)） | 无 | AFK |
 | <a id="module-cwd"></a>Cwd | /srv/pi-cwd 现场隔离验收 | 已取消（[职责并入 Live](adr/0046-consolidate-pi-readiness-under-live.md)，非验收通过） | 无 | HITL |
-| <a id="module-live"></a>Live | 固定 1.4.0、现场隔离与 RPC 准入 | 可规格化 | Pi | HITL |
+| <a id="module-live"></a>Live | 固定 1.4.0、现场隔离与 RPC 准入 | 已规格化（[#177](https://github.com/MeteoBoy4/PaperRadar/issues/177)） | Pi | HITL |
 | <a id="module-extra"></a>Extra | Docling extra 安装与兼容探测 | 已完成（[#150](https://github.com/MeteoBoy4/PaperRadar/issues/150)；[工程覆盖与最终门禁判据](verification/issue-150-extra-delivery.md)；[历史收口回帖](https://github.com/MeteoBoy4/PaperRadar/issues/150#issuecomment-6611646055)） | 无 | AFK |
 | <a id="module-body"></a>Body | 正文生产切片、Read 身份与预算 | 已完成（[#155](https://github.com/MeteoBoy4/PaperRadar/issues/155)；[工程覆盖与最终门禁判据](verification/issue-165-body-read-closure.md)） | Extra | AFK |
 | <a id="module-feed"></a>Feed | 强冲突持久化、JGR 元数据与语言事实 | 已完成（[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)；[离线工程证据](verification/issue-114-feed-delivery.md)） | 无 | AFK |
