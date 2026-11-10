@@ -17,7 +17,6 @@ from paper_radar.doctor.admission import projection_checks
 from paper_radar.doctor.cli import _show
 from paper_radar.doctor.service import Check, Result, basic_checks
 from paper_radar.live_evidence.ledger import LedgerError
-from paper_radar.live_evidence.service import unavailable_projection
 from paper_radar.live_evidence.types import (
     AdmissionUse,
     CallSite,
@@ -32,6 +31,7 @@ from paper_radar.pi_execution.admission import (
 )
 from paper_radar.pi_execution.current_binding import (
     build_admission_request,
+    diagnose_observation_failure,
     recheck_admission_request,
 )
 from paper_radar.pi_execution.errors import ExecutionError
@@ -126,7 +126,14 @@ def _admission_checks(
             if projection.decision.executable:
                 recheck_admission_request(request, now=_utc_now())
         except LedgerError as error:
-            projection = unavailable_projection(use, error)
+            projection = diagnose_observation_failure(
+                database,
+                binding,
+                use=use,
+                credentials_dir=credentials_dir,
+                now=_utc_now(),
+                error=error,
+            )
         checks.extend(projection_checks(projection))
     return tuple(checks)
 

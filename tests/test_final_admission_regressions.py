@@ -34,9 +34,9 @@ def test_readonly_sample_recheck_failure_replaces_the_shared_projection(
         assert report["recheck_reason"] == "observation_stale"
         assert report["executable"] is False
         assert report["qualified"] == []
-        assert report["reason"] == ["ledger_untrusted"]
+        assert report["reason"] == ["observation_stale"]
         assert "executable=false" in report["doctor_fragment"]
-        assert "ledger_untrusted" in report["doctor_fragment"]
+        assert "observation_stale" in report["doctor_fragment"]
 
 
 def test_screening_settled_model_mismatch_tightens_without_another_attempt(

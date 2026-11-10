@@ -230,13 +230,36 @@ NOPASSWD helper 的固定安装入口为 `/usr/libexec/paperradar/live-evidence-
 checked_components 无重复，只列本次确实覆盖的组件，不是 passed／verified 或激活声明。
 `load_current_observation` 重新验证来源保护与规范字节，拒绝 naive、未来时点及超过 60 秒的观察。
 等于 60 秒仍可读取。所有者手动输入准确短 ID 后，入口调用已部署的固定零参数
-`/usr/libexec/paperradar/live-evidence-collect`，清空环境且不传入自由路径或参数；
+`/usr/libexec/paperradar/live-evidence-refresh`，经固定 sudo -n 入口、清空环境且不传入自由路径或参数；
 失败、超时或不可用均拒绝。入口重新读取同一保护来源，要求观察时点不早于本次刷新开始，
 完整 binding 与 checked_components 集合和已审核观察相同；新的 observed_at 本身不视为事实漂移。
 最后用真实当前时间再次核观察的 60 秒时效，再在保护事务内核同一审核内容并追加激活。
 阅读可超过 60 秒；60 秒仅约束执行前的当前观察，不改变能力原 verified_at 或期限。
 事实变化、原证据到期、时钟回退或当前覆盖撤回均拒绝，须所有者重新审阅。
 普通产品请求不能自行声明特权证明；未观测组件不能填入 checked_components。
+
+例行刷新入口 `protected_observer.refresh_once` 在同一个 `collector.lock` 内核实际固定
+`/usr/sbin/nft -j list table inet paperradar`、受保护 `placement-target-v1.json` 与实际
+`/proc`/cgroup 祖先、锚定身份；本地上下文在不可逆降权的 product uid 子进程内只读重算，
+metadata_only 模式跳过隔离探针及 Node 执行，不重复完整 β。`observer_identity` 哈希 `OBSERVER_MEMBERS` 列出的
+封印运行时观察代码、入口、配置及封印清单；PID/启动时间不构成 observer 身份。
+`egress_identity` 绑定实际规则 JSON 与放置上下文，忽略 metainfo 及计数器 packet/byte 数值。
+封印部署负责安装这些固定来源，入口不接受调用方自报摘要或自由命令。
+
+候选核验后原子发布；`observation-refresh.json` 保存独立 `RefreshStatus` v1（result、
+recorded_at、snapshot_sha256、changed_components、pending_revocation、placement_mismatch），
+`observation-refresh-history.jsonl` 保留受保护追加历史。临时失败只追加不可用结果，保留上次
+成功快照及原 observed_at；即使旧快照在60秒内，当前调用仍拒绝。进程重启保留文件，只有
+新有效快照才恢复新鲜度。规则/目标/绑定漂移按登记依赖持久收紧；来源失信保守收紧六格。
+漂移优先于 stale，落账失败保留拒绝 marker 与待撤销披露。无锁读者跨过原子发布而无法配对
+快照与刷新摘要时只拒绝本次，不把读时配对未知误报为已确认来源失信。后续成功不复活撤销、不更新
+任何案例 verified_at、不领取或重置计划/失败/联网/模型/业务额度，也不形成 verified、
+receive 或 activate。`protected_collection_lock` 与 `refresh_under_lock(lock_fd=...)` 供
+封印 collector 在同一实际锁 fd 内组合，不能持独立 fd 锁再调用自锁入口。
+
+首次严格 β 在实际模型证据前执行；其生成 site-only 观察后，首次实际保护刷新将占位变化
+记录为漂移而保持拒绝，再次独立核验相同事实才可恢复新鲜度。旧收紧和失败不清除，随后
+真实出站/模型证据仍须独立采集、接收及所有者激活；不自动重定真实漂移基线。
 
 `auth_cache_stat.metadata_digest` 是采集与消费者当次比较共用的 `auth-cache-stat-v2` 算法。
 首次 v2 基线来自受保护批准采集，经过既有 receive 与所有者显式证据激活；不从旧 v1 漂移或当前目录自拍建立可信资格。
@@ -268,7 +291,8 @@ host/boot 和公开文件按原字节摘要；认证/cache 沿 auth-cache-stat-v
 不扫描个人 Pi、环境目录，不读取成员内容。
 
 IPv4 出站和 observer 只由当前固定受保护观察补足覆盖。
-只有其完整本地上下文与本次复核一致，才使用该观察声明的覆盖；不匹配时保留当前身份，
+只有其站点本地上下文与本次复核一致，才使用该观察声明的覆盖；仅 MODEL_TUPLE 不属于
+站点保护上下文，每格完整请求及模型证据仍精确比对该组件。其余组件不匹配时保留当前身份，
 舍弃旧特权覆盖，让共享判定拒绝缺口。观察不是能力证据，不提升 unknown。
 `recheck_admission_request(request, now=...)` 在领取内只重读同一小型保护来源，
 核新鲜度、绑定及特权覆盖未撤回；不重复整树工作。
@@ -277,10 +301,11 @@ IPv4 出站和 observer 只由当前固定受保护观察补足覆盖。
 
 ### 单一加载与投影
 
-`AdmissionRequest(use, binding, checked_components)` 只描述当次身份与观察范围，不接收证据或授予参数。
+`AdmissionRequest(use, binding, checked_components, observation=None, refresh=None)` 描述当次身份与观察范围，
+后两项只携带构造时受保护观察的诊断信息，不接收证据或授予参数。
 `service.load_admission_evidence(request, now=...)` 使用固定受保护账本，加载原主张与独立资格维度，
 再调用 evaluate_admission；不联网、不认证、不调用 helper、不写任何事实。
-返回 `AdmissionProjection(decision, watermark, pending_revocation, sources)`：
+返回 `AdmissionProjection(decision, watermark, pending_revocation, sources, observation, refresh)`：
 sources 是本格每个能力选中的回执 ID；decision 的原状态、依据、范围、时间、到期与原因均来自共享判定。
 Screening 正式三检查点消费这个投影；Read 与 doctor 的消费者现状分别见所属 Contract，不能各自重述能力要求。
 完整当前执行绑定的宿主采集由消费方集中构造，doctor 复用相同只读构造入口；
@@ -372,7 +397,7 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v7`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v7.json)
+源代码准入策略为 `pi-admission-v8`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v8.json)
 与源码守卫共同固定相关实现；v1–v6 的 D7 向量与摘要锚原字节保留。
 v7 增加共享用户 scope 双阶段放置、封装、只读 resolver 和只读诊断；保留固定认证基线 v2、helper 临时布局与 v2 额度／回执／账本错误权威，继续显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
 策略身份变化后不能继承旧策略的执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
@@ -413,7 +438,7 @@ core 设置仅作用于合成子进程，不修改其他程序或全局 Apport/c
 每轮持久追加受保护 collector-history.jsonl 的时间/有限案例/摘要，再发布规范回执；失败时先封闭当前观察。
 首轮回执和原 verified_at 不覆盖；相同成功计划重跑只刷新60秒观察，不能续能力期限或生成新授予。
 任何首失败使该计划持久 stopped，后续不借刷新重试探针；新计划须重新封印并由所有者明确批准。
-失败刷新先原子发布mode000观察，普通产品uid无法读取或自行解封；root读取只用于受控诊断，
+首次严格 β 模式失败先原子发布mode000观察，普通产品uid无法读取或自行解封；root读取只用于受控诊断，
 不把此屏障视为账本撤销已经成功。然后记录受保护待收紧意图，按当前安装INSTANCE摘要，
 对所有已接收回执/用途调用既有tighten(components=None)，未知影响保守扩大范围。
 原回执字节、主张及verified_at不变。落账失败返回拒绝、保留待收紧意图与不可读观察，不能声称已持久撤销；
@@ -503,7 +528,7 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 
 ## 不提供／不证明
 
-不提供模型 collector、项目 unit/CG/nft/observer 产品化、特权持续观察或产品部署；后继工作见[路线图](../roadmap.md#module-live)。
+不提供模型 collector、项目 unit/CG/nft 的部署安装、特权持续观察或产品部署；后继工作见[路线图](../roadmap.md#module-live)。
 真实 OS 特权证明与所有者激活不由离线构建提供；独立覆盖和各次验证范围见[覆盖记录](../verification/issue-168-176-review-r1-r2-fixes.md)。旧不完整调用不能自动升级成完整请求。
 接收权威只核来源、完整性与内部一致性，不能独立证明没有遗漏的失败；失败历史完备性由采集器与 sudoers 边界承担。
 离线构建与合成覆盖不证明真实 root、供应商或模型行为，不替代所有者激活、真实材料外发确认、根用途或校准资格。

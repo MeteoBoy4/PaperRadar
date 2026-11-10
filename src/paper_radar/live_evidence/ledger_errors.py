@@ -15,6 +15,8 @@ LedgerCategory = Literal[
     "evidence_activation_confirmation_mismatch",
     "evidence_activation_empty",
     "observation_stale",
+    "observation_unavailable",
+    "observation_drift",
     "observation_invalid",
     "observation_changed",
     "pending_revocation_unavailable",

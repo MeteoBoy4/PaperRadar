@@ -15,6 +15,7 @@ from paper_radar.live_evidence.evidence import ExecutionBinding
 from paper_radar.live_evidence.intents import ProtectedIntentLog
 from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
 from paper_radar.live_evidence.lifecycle import EvidenceLifecycle, use_for_id
+from paper_radar.live_evidence.observation import CurrentObservation, RefreshStatus
 from paper_radar.live_evidence.reasons import AdmissionReason, ReasonCode
 from paper_radar.live_evidence.receipt import UseId, WireModel
 from paper_radar.live_evidence.registry import INITIAL_REGISTRY
@@ -29,6 +30,8 @@ class AdmissionRequest:
     use: AdmissionUse
     binding: ExecutionBinding
     checked_components: frozenset[BindingComponent] = frozenset()
+    observation: CurrentObservation | None = None
+    refresh: RefreshStatus | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +40,8 @@ class AdmissionProjection:
     watermark: datetime | None
     pending_revocation: bool
     sources: tuple[tuple[Capability, str], ...] = ()
+    observation: CurrentObservation | None = None
+    refresh: RefreshStatus | None = None
 
 
 class PendingRevocation(WireModel):
@@ -93,7 +98,13 @@ def _persist_or_revoke(record: PendingRevocation, arguments: tuple[str, ...]) ->
 
 
 def unavailable_projection(
-    use: AdmissionUse, error: LedgerError, *, pending_revocation: bool = False
+    use: AdmissionUse,
+    error: LedgerError,
+    *,
+    pending_revocation: bool = False,
+    previous: AdmissionProjection | None = None,
+    observation: CurrentObservation | None = None,
+    refresh: RefreshStatus | None = None,
 ) -> AdmissionProjection:
     """来源/观察失败的共享拒绝投影;不接收授予事实。"""
     reason = (
@@ -103,14 +114,49 @@ def unavailable_projection(
         if error.category == "evidence_time_invalid"
         else ReasonCode.TIME_FUTURE
         if error.category == "evidence_time_future"
+        else ReasonCode.OBSERVATION_UNAVAILABLE
+        if error.category == "observation_unavailable"
+        else ReasonCode.OBSERVATION_STALE
+        if error.category == "observation_stale"
+        else ReasonCode.OBSERVATION_DRIFT
+        if error.category == "observation_drift"
         else ReasonCode.LEDGER_UNTRUSTED
+    )
+    extra = (AdmissionReason(reason),) + (
+        (AdmissionReason(ReasonCode.PLACEMENT_MISMATCH),)
+        if refresh is not None and refresh.placement_mismatch
+        else ()
     )
     return AdmissionProjection(
         AdmissionDecision(
-            use, INITIAL_REGISTRY.version, (), (AdmissionReason(reason),)
+            use,
+            INITIAL_REGISTRY.version,
+            tuple(
+                replace(
+                    item,
+                    reasons=tuple(dict.fromkeys((*item.reasons, *extra))),
+                )
+                for item in previous.decision.capabilities
+            )
+            if previous
+            else (),
+            tuple(
+                dict.fromkeys(
+                    (
+                        *(previous.decision.reasons if previous else ()),
+                        *extra,
+                    )
+                )
+            ),
         ),
-        None,
-        pending_revocation or error.category == "pending_revocation_unavailable",
+        previous.watermark if previous else None,
+        pending_revocation
+        or error.category == "pending_revocation_unavailable"
+        or bool(previous and previous.pending_revocation)
+        or bool(refresh and refresh.pending_revocation),
+        previous.sources if previous else (),
+        observation,
+        refresh,
     )
 
 
@@ -193,6 +239,8 @@ def _project_admission(
             snapshot.watermark,
             snapshot.pending_revocation or pending_selected,
             selected,
+            request.observation,
+            request.refresh,
         )
     except LedgerError as error:
         return unavailable_projection(

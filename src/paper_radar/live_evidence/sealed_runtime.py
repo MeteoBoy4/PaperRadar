@@ -170,7 +170,9 @@ def isolation_probe(
             return (("outside-read-denied", False),)
 
 
-def observe_site(site: SiteConfiguration) -> SiteObservation:
+def observe_site(
+    site: SiteConfiguration, *, metadata_only: bool = False
+) -> SiteObservation:
     """必须已不可逆降权;数据库/凭据仅以产品身份只读核对。"""
     if os.getuid() != site.product_uid or os.getgid() != site.product_gid:
         raise ValueError("collector_product_identity")
@@ -190,6 +192,8 @@ def observe_site(site: SiteConfiguration) -> SiteObservation:
         components = local_binding_components(
             site.database, site.binding, credentials_dir=site.credentials_dir
         )
+        if metadata_only:
+            return SiteObservation(components, (("metadata", True),))
         with acquire_install(
             site.database, site.binding.supply_id, site.binding.install_id
         ) as install:
@@ -218,7 +222,9 @@ def observe_site(site: SiteConfiguration) -> SiteObservation:
         return SiteObservation({}, (("metadata", False),))
 
 
-def product_observation(site: SiteConfiguration) -> SiteObservation:
+def product_observation(
+    site: SiteConfiguration, *, metadata_only: bool = False
+) -> SiteObservation:
     """fork后不可逆降权且禁ptrace;不在降权与观察之间exec用户环境。"""
     read_fd, write_fd = os.pipe()
     pid = os.fork()
@@ -232,7 +238,11 @@ def product_observation(site: SiteConfiguration) -> SiteObservation:
             libc = ctypes.CDLL(None, use_errno=True)
             if libc.prctl(4, 0, 0, 0, 0) != 0:  # PR_SET_DUMPABLE=0
                 os._exit(2)
-            observed = observe_site(site)
+            observed = (
+                observe_site(site, metadata_only=True)
+                if metadata_only
+                else observe_site(site)
+            )
             payload = json.dumps(
                 {"components": observed.components, "checks": observed.checks}
             ).encode()
@@ -242,7 +252,7 @@ def product_observation(site: SiteConfiguration) -> SiteObservation:
             os._exit(2)
     os.close(write_fd)
     try:
-        if not select.select([read_fd], [], [], 60)[0]:
+        if not select.select([read_fd], [], [], 10 if metadata_only else 60)[0]:
             os.kill(pid, signal.SIGKILL)
             raise ValueError("collector_child_timeout")
         raw = os.read(read_fd, 65537)
@@ -434,6 +444,10 @@ def runtime_main() -> int:
     args = sys.argv[1:]
     if args[:1] == ["collect"]:
         return collector_main(args[1:])
+    if args[:1] == ["refresh"]:
+        from paper_radar.live_evidence.protected_observer import refresh_main
+
+        return refresh_main(args[1:])
     if args[:1] == ["tighten"]:
         from paper_radar.live_evidence.tightening import tightening_main
 

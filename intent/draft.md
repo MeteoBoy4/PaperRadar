@@ -1420,7 +1420,11 @@ Read 专用变化保持既有范围。无自动门禁继承，订阅取舍见
 - 准入账本只由root入口写入；产品仅可向root所有、内核强制只追加的独立收紧日志追加否定事实。
   helper失败不允许同uid删除／截断／改写或回滚该依据；缺失、失信、满或不支持时拒绝，不能自动补建／轮转。
   首次切换先失效旧激活并永久撤销旧回执，新证据必须受信接收并由本人显式激活；保留历史与预算。
-  单纯当前观察租期结束、自然到期、未测或未激活只当次拒绝，不永久撤销无关已核站点事实
+  单纯当前观察租期结束、自然到期、未测或未激活只当次拒绝，不永久撤销无关已核站点事实；
+  observer 为封印观察代码/配置身份加按需特权 nft/cgroup 快照，不建常驻 root 服务。
+  例行刷新候选核验后原子发布，临时失败保留成功快照原 observed_at 并拒绝本次，
+  重启只表现为 stale；真实规则/目标漂移或来源失信先于 stale 按依赖持久收紧，
+  不产生 verified、不续原期限或消耗业务/采集额度（[#177 E-4/E-7/S-1/S-10](https://github.com/MeteoBoy4/PaperRadar/issues/177#issuecomment-6768256547)）
   （[ADR-0055](../docs/adr/0055-separate-protected-admission-ledger-from-business-facts.md)、
   [ADR-0056](../docs/adr/0056-protect-pending-revocations-with-an-append-only-log.md)）。
 

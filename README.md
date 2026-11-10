@@ -464,6 +464,10 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 真实恢复会失效全部旧激活，成功出口要求所有者重新手动激活非空最终分项，详见
 [Live 证据契约](docs/contracts/live-evidence.md#所有者单次收口审阅包)。
 正式消费者按分项证据决定资格，站点分项激活不能代替模型／RPC等必需证据。
+正式 Pi 准入在调用前按需刷新受保护观察；临时不可用拒绝本次并保留原成功快照和证据时点，
+真实漂移继续收紧。doctor 只读同一结果；固定零参数特权入口的实际安装与现场核验仍由封印部署承担。
+详见 [Live 当前观察契约](docs/contracts/live-evidence.md#当前观察与认证cache-基线)。
+
 当前边界见 [Live 证据契约](docs/contracts/live-evidence.md)，后继工作与承接见[路线图](docs/roadmap.md#module-live)。
 
 ## Pi RPC

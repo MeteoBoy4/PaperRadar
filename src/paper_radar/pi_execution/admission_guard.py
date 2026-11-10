@@ -5,6 +5,7 @@ from datetime import datetime
 
 from paper_radar.live_evidence.ledger import LedgerError
 from paper_radar.live_evidence.lifecycle import use_id_for
+from paper_radar.live_evidence.observation import ObservationChanged
 from paper_radar.live_evidence.reasons import ReasonCode
 from paper_radar.live_evidence.service import (
     AdmissionProjection,
@@ -30,6 +31,7 @@ class AdmissionGuard:
         self.projection: AdmissionProjection | None = None
         self.sources: dict[Capability, str] = {}
         self.observation_failure: str | None = None
+        self.observation_components: frozenset[BindingComponent] = frozenset()
 
     def check(self, request: AdmissionRequest, *, now: datetime) -> AdmissionProjection:
         previous = self.projection
@@ -47,9 +49,20 @@ class AdmissionGuard:
             raise ExecutionError("evidence_missing")
         return projection
 
-    def note_observation_failure(self, error: LedgerError) -> None:
+    def note_observation_failure(
+        self, error: LedgerError, projection: AdmissionProjection | None = None
+    ) -> None:
         """保留受控原因,避免映射成evidence_missing后混淆租期与来源丢失。"""
         self.observation_failure = error.category
+        if isinstance(error, ObservationChanged):
+            self.observation_components = error.components
+        if projection is not None:
+            self.projection = projection
+            self.sources.update(projection.sources)
+            if error.category == "observation_drift" and projection.refresh is not None:
+                self.observation_components = frozenset(
+                    projection.refresh.changed_components
+                )
 
     def note_placement_failure(self, error: ExecutionError) -> None:
         """握手/manager临时不可用只拒当次;实际漂移与来源失信仍收紧。"""
@@ -61,8 +74,20 @@ class AdmissionGuard:
 
     def tighten_after_denial(self, *, now: datetime) -> None:
         """资格缺口只拒绝当次;已知漂移/来源失信才持久收紧。"""
-        if self.observation_failure in {
+        projection = self.projection
+        known_drift = projection is not None and any(
+            reason.code
+            in {
+                ReasonCode.LEDGER_UNTRUSTED,
+                ReasonCode.EVIDENCE_CONFLICT,
+                ReasonCode.BINDING_DRIFT,
+                ReasonCode.MATERIAL_MISMATCH,
+            }
+            for reason in projection.decision.reasons
+        )
+        if not known_drift and self.observation_failure in {
             "observation_stale",
+            "observation_unavailable",
             "clock_rollback",
             "evidence_time_invalid",
             "evidence_time_future",
@@ -94,7 +119,7 @@ class AdmissionGuard:
     ) -> None:
         """失去来源时使用先前已读来源;helper/意图失败仍保持调用方拒绝。"""
         projection = self.projection
-        components: set[BindingComponent] = set()
+        components: set[BindingComponent] = set(self.observation_components)
         failed: set[Capability] = set(failed_capabilities or ())
         if projection is not None and failed_capabilities is None:
             for assessment in projection.decision.capabilities:
