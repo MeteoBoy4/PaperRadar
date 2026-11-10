@@ -69,6 +69,10 @@ def allow_engineering_path(
         ),
     )
     monkeypatch.setattr(
+        "paper_radar.pi_execution.admission_checkpoints.request_observation_refresh",
+        lambda: None,
+    )
+    monkeypatch.setattr(
         "paper_radar.pi_execution.admission_checkpoints.request_time_tick", lambda: True
     )
     monkeypatch.setattr(

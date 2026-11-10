@@ -6,7 +6,11 @@ from datetime import datetime
 
 from paper_radar.doctor.service import Check, Result
 from paper_radar.live_evidence.evidence import Applicability
-from paper_radar.live_evidence.reasons import AdmissionReason, ReasonCode
+from paper_radar.live_evidence.reasons import (
+    AdmissionReason,
+    ReasonCode,
+    observation_reason_text,
+)
 from paper_radar.live_evidence.service import AdmissionProjection
 from paper_radar.live_evidence.types import (
     AdmissionUse,
@@ -60,6 +64,10 @@ class UsageDisclosure:
 
 def _action(reasons: tuple[AdmissionReason, ...], fallback: str) -> str:
     # 仅按权威原因选择用户动作,不从展示文字推导资格。
+    for reason in reasons:
+        text = observation_reason_text(reason.code)
+        if text:
+            return text
     actions = (
         (
             ReasonCode.CLOCK_ROLLBACK,
@@ -180,13 +188,26 @@ def render_admission_fragment(
     decision = projection.decision
     use = decision.use
     reasons = ",".join(reason.token for reason in decision.reasons) or "admitted"
+    observed_at = projection.observation.observed_at if projection.observation else None
+    refreshed_at = projection.refresh.recorded_at if projection.refresh else None
+    refresh_result = projection.refresh.result if projection.refresh else "unknown"
     header = (
         "执行能力与证据披露（不计入每日五项/全文三项论文容量）：\n"
         f"use={use.consumer.value}-{use.thinking_level.value} "
         f"call_site={use.call_site.value} registry={decision.registry_version} "
         f"executable={_value(decision.executable)} reason={reasons} "
         f"watermark={_value(projection.watermark)} "
-        f"pending_revocation={_value(projection.pending_revocation)}\n"
+        f"pending_revocation={_value(projection.pending_revocation)} "
+        f"observed_at={_value(observed_at)} "
+        f"refresh_result={refresh_result} "
+        f"refresh_at={_value(refreshed_at)}\n"
+        + " ".join(
+            filter(
+                None,
+                (observation_reason_text(reason.code) for reason in decision.reasons),
+            )
+        )
+        + "\n"
         f"请求可证下界={request_lower_bound} "
         "精确请求数=unknown "
         f"request_layer={_value(usage.request_layer)} "

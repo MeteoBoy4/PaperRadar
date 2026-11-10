@@ -138,6 +138,10 @@ def protected_admission(
         "paper_radar.pi_execution.current_binding.local_binding_components",
         lambda *a, **kw: components.copy(),
     )
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.admission_checkpoints.request_observation_refresh",
+        lambda: None,
+    )
     monkeypatch.setattr(service, "_ledger", lambda: ledger)
     monkeypatch.setattr(service, "_run_helper", lambda arguments: True)
     return ledger, receipt, components

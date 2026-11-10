@@ -427,7 +427,7 @@ def test_formal_readonly_sample_preserves_partial_active_and_rejects_stale_obser
     ]
     assert all(not row["executable"] for row in result["reports"])
     if expired:
-        assert all(row["reason"] == ["ledger_untrusted"] for row in result["reports"])
+        assert all(row["reason"] == ["observation_stale"] for row in result["reports"])
         assert all(not row["active"] for row in result["reports"])
     else:
         assert [row["active"] for row in result["reports"]] == [

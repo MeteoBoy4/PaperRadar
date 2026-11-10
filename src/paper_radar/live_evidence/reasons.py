@@ -26,6 +26,10 @@ class ReasonCode(StrEnum):
     USE_UNDEFINED = "admission_use_undefined"
     SCOPE_MISMATCH = "evidence_scope_mismatch"
     BINDING_DRIFT = "binding_drift"
+    OBSERVATION_UNAVAILABLE = "observation_unavailable"
+    OBSERVATION_STALE = "observation_stale"
+    OBSERVATION_DRIFT = "observation_drift"
+    PLACEMENT_MISMATCH = "placement_mismatch"
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,3 +62,21 @@ class AdmissionReason:
             assert self.capability is not None
             return f"{self.code.value}:{self.capability.value}"
         return self.code.value
+
+
+def observation_reason_text(code: ReasonCode) -> str:
+    """doctor 与正式消费者披露同一受控原因,不从中文反推资格。"""
+    return {
+        ReasonCode.OBSERVATION_UNAVAILABLE: (
+            "观察不可用（临时）；本次拒绝，稍后重新刷新，不续原期限。"
+        ),
+        ReasonCode.OBSERVATION_STALE: (
+            "观察不可用（临时）：观察已旧；重新刷新后重试，不撤销既有证据。"
+        ),
+        ReasonCode.OBSERVATION_DRIFT: (
+            "漂移（已收紧）；核对规则、目标及受保护收紧结果，另取有效证据。"
+        ),
+        ReasonCode.PLACEMENT_MISMATCH: (
+            "放置不符；核对实际 cgroup、规则目标与锚定身份。"
+        ),
+    }.get(code, "")

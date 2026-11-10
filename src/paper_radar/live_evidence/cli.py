@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -152,23 +151,10 @@ def _now() -> datetime:
 
 
 def _refresh_current_observation() -> None:
-    """只调用已部署的固定root冻结采集器,不接收路径或自由参数。"""
-    from paper_radar.live_evidence.ledger import LedgerError
+    """所有者确认后只做例行刷新,不重复首次 β 探针。"""
+    from paper_radar.live_evidence.protected_observer import request_observation_refresh
 
-    try:
-        result = subprocess.run(
-            ["/usr/libexec/paperradar/live-evidence-collect"],
-            env={},
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=120,
-            check=False,
-        )
-    except (OSError, subprocess.SubprocessError) as error:
-        raise LedgerError("binding_observation_unavailable") from error
-    if result.returncode != 0:
-        raise LedgerError("binding_observation_unavailable")
+    request_observation_refresh()
 
 
 @live_evidence_app.command(

@@ -5,11 +5,13 @@ from datetime import datetime
 from pathlib import Path
 
 from paper_radar.live_evidence.ledger import LedgerError
+from paper_radar.live_evidence.protected_observer import request_observation_refresh
 from paper_radar.live_evidence.service import AdmissionRequest, request_time_tick
 from paper_radar.pi_execution.admission import EvidenceBinding
 from paper_radar.pi_execution.admission_guard import AdmissionGuard
 from paper_radar.pi_execution.current_binding import (
     build_admission_request,
+    diagnose_observation_failure,
     recheck_admission_request,
 )
 from paper_radar.pi_execution.errors import ExecutionError
@@ -36,6 +38,7 @@ class AdmissionCheckpoints:
     def before_prepare(self, binding: EvidenceBinding) -> AdmissionRequest:
         """凭据刷新前构造并检查完整身份。"""
         try:
+            request_observation_refresh()
             request = build_admission_request(
                 self.database,
                 binding,
@@ -44,7 +47,17 @@ class AdmissionCheckpoints:
                 now=self.now(),
             )
         except LedgerError as error:
-            self.guard.note_observation_failure(error)
+            self.guard.note_observation_failure(
+                error,
+                diagnose_observation_failure(
+                    self.database,
+                    binding,
+                    use=self.guard.use,
+                    credentials_dir=self.credentials_dir,
+                    now=self.now(),
+                    error=error,
+                ),
+            )
             raise ExecutionError("evidence_missing") from None
         except SupplyError:
             raise ExecutionError("evidence_missing") from None

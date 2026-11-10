@@ -7,6 +7,7 @@ import pytest
 
 from paper_radar.live_evidence.evidence import ExecutionBinding
 from paper_radar.live_evidence.lifecycle import EvidenceLifecycle, use_for_id
+from paper_radar.live_evidence.observation import CurrentObservation
 from paper_radar.live_evidence.receipt import UseId
 from paper_radar.live_evidence.service import AdmissionProjection, AdmissionRequest
 from paper_radar.live_evidence.types import BindingComponent, Consumer
@@ -50,7 +51,16 @@ def test_same_ledger_authority_and_independent_consumer_cells(
     load = load_admission_evidence
     binding = ExecutionBinding(tuple(components.items()))
     requests = tuple(
-        AdmissionRequest(use_for_id(use), binding, frozenset(BindingComponent))
+        AdmissionRequest(
+            use_for_id(use),
+            binding,
+            frozenset(BindingComponent),
+            CurrentObservation(
+                observed_at=NOW,
+                binding=components,
+                checked_components=tuple(BindingComponent),
+            ),
+        )
         for use in ("boundary-low", "read-low")
     )
     frozen = tuple(load(request, now=NOW) for request in requests)

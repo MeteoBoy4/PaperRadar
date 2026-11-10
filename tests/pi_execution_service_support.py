@@ -22,7 +22,7 @@ def deny_default_live_io(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """未显式替换的真实OS来源必须拒绝;不覆盖已安装的protected fixture。"""
     from paper_radar.live_evidence import service
     from paper_radar.live_evidence.intents import ProtectedIntentLog
-    from paper_radar.live_evidence.ledger import EvidenceLedger
+    from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
 
     if (
         getattr(service._run_helper, "__module__", None),
@@ -32,6 +32,14 @@ def deny_default_live_io(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         "_run_helper",
     ):
         return
+
+    def unavailable_refresh() -> None:
+        raise LedgerError("observation_unavailable")
+
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.admission_checkpoints.request_observation_refresh",
+        unavailable_refresh,
+    )
     missing = EvidenceLedger(root / "absent-live-evidence")
     monkeypatch.setattr(service, "_ledger", lambda: missing)
     monkeypatch.setattr(
@@ -90,6 +98,10 @@ def allow_synthetic(
         lambda request, *, now: AdmissionProjection(
             AdmissionDecision(request.use, "live-admission-v1", (), ()), now, False
         ),
+    )
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.admission_checkpoints.request_observation_refresh",
+        lambda: None,
     )
     monkeypatch.setattr(
         "paper_radar.pi_execution.admission_checkpoints.request_time_tick", lambda: True

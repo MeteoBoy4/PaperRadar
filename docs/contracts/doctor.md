@@ -146,6 +146,12 @@ pi-supply 缺快照或带 settings、pi-exec 缺快照/凭据目录或带 settin
 其他 scope 带凭据目录均退出 2。敏感参数不回显；读取错误只显示受控类别与中文修复入口。
 中断退出 130。不可读路径由服务分类，不由参数转换提前降为用法错误。
 
+当前观察诊断只读同一受保护快照与刷新结果，不调用刷新入口或启动守护进程。
+`observation_unavailable`／`observation_stale` 显示「观察不可用（临时）」；实际放置不符
+显示「放置不符」，`observation_drift` 显示「漂移（已收紧）」并独立披露待撤销标记。
+共享中文片段保留原证据三态、verified_at、observed_at、refresh_result、refresh_at 与下一动作；
+临时失败不伪报健康，不把失败前的 qualified 结论沿用到本次。
+
 ## 不提供／不证明
 
 帮助与所有诊断成功/失败分支均不建库、不迁移、不保存快照、不创建配置/数据/日志/报告目录，
