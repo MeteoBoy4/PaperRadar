@@ -137,7 +137,7 @@ SHARED_MATERIALS = {
         "bb9e344c63eb3a8bd448273dbd3e877774d855b0710c661c356b2a44ef8c16ef"
     ),
     "src/paper_radar/cli.py": (
-        "0024f340e5a611e60b01d074ca13f7f5a4e49740cbe15610d7769c515b4714f5"
+        "1a26040550e69858e1230d4122ce38bfab066ec8fd41a79e2f180d8eb61e5abd"
     ),
     "src/paper_radar/config/__init__.py": (
         "183ae92cde48da098849568b1c84aef187d2487370e7117f1447a9f7e1af418b"
@@ -230,7 +230,7 @@ SHARED_MATERIALS = {
         "81f7b5fc17df7d89f7617ad5bf2ed79792f5bbda4af336c3aedba86e24f0299e"
     ),
     "src/paper_radar/contracts/schema.py": (
-        "14da1777bf404336d698f39f538d0823c32f0be98e9d53cd0814d2a2597be3d8"
+        "d16ed437a745f4c0595ca204fd387f8d114f7dbf073ccc11b54f64db1520ea2e"
     ),
     "src/paper_radar/contracts/snapshot.py": (
         "a52553e700aa7a06f69c45c90052ffb813db6319c90d4a9fd39173767af3b9d9"
