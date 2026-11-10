@@ -74,7 +74,7 @@ Screening／Read 正式三检查点与 doctor 消费共享判定，分别见所�
 `earliest_verified_at` 只对显式给定且全部 verified 的主张取最早 UTC 原时点，不生成跨格资格。
 站点／工程类免时限要求全部 dependencies 属于本次 checked_components 或 privileged_components；
 否则必须有登记的有限 maximum_age_days，无上限且覆盖不足返回 coverage_incomplete。
-特权证明的来源与当前有效性由未来账本／检查调用方验证，纯层的集合不是产品授予入口。
+特权证明的来源与当前有效性由外层的受保护账本和逐调用观察校验服务核验；纯判定函数不读取这些来源，集合本身不是产品授予入口。
 
 当前 now 及可选 ledger_watermark 均显式传入。无时区 now／水位线、当前时间低于水位线时拒绝；
 verified 缺原时间、not_assessed／unknown 带 verified_at、无时区或未来验证／观察时点产生受控错误；非法时间输入整体拒绝，不由披露型或不适用分类掩盖。
@@ -85,7 +85,8 @@ verified 缺原时间、not_assessed／unknown 带 verified_at、无时区或未
 `ExecutionBinding` 必须包含全部受控执行组件且每项非空，不接受缺项或重复。
 能力按登记依赖精确匹配；组件漂移输出 binding_drift 参数，其他能力的原状态与时间保持。
 执行身份包括模型元组中的 provider/model/thinking/sampling/temperature/top_p/protocol_profile/auth_mode；
-完整规范身份的可信构造与逐调用主机重采样由后续接线负责。
+完整规范身份由 `current_binding.build_admission_request` 只读构造，
+`recheck_admission_request` 在领取前复核；范围见[当次完整执行绑定](#当次完整执行绑定)。
 材料身份单独传入，仅 material_dependent 的能力要求非空且精确匹配。
 初始登记的能力均与材料内容无关；合成材料证明可用于真实资料，但调用方仍须执行现有材料形状、路径和完整帧上限检查。
 外发确认、校准与质量资格独立判断。
@@ -132,7 +133,7 @@ unknown／not_assessed 不带 verified_at；全部观察与原验证时点位于
 `approve_plan`、`approve_plan_source` 与 `receive` 使用保护写事务，成功与重复接收和受控拒绝均追加审计，
 事实不被覆盖；账本自身不可信时不补写失败事件。`show`、`show_plan`、`list_received`、`audit` 只读打开，
 不创建文件。回执查询重新核对原来源存在、权限与精确字节，以及计划／回执摘要；来源丢失或改变即拒绝。
-`connection(writable=False)` 是后继服务复用的受保护连接边界；写连接仍检查特权身份。
+`connection(writable=False)` 提供受保护只读连接；写连接检查特权身份。
 账本与受保护回执需单独备份；恢复失效与重新激活规则见 ADR-0055 及下文。
 `received_in(connection)` 供共享读取在同一 SQLite 快照中核验来源；只读连接显式开启读取事务。
 
@@ -170,7 +171,7 @@ NOPASSWD helper 的固定安装入口为 `/usr/libexec/paperradar/live-evidence-
 - `revoke|mark <16hex回执ID> <准入用途> <逗号分隔组件或unknown> <逗号分隔失败能力>`。
 
 组件与能力均使用闭合枚举；未知动作、自由路径、自由时间、接收、激活与恢复参数全部拒绝。
-这个模块仅是供 #172 冻结部署的入口，仓库／venv 中的代码不能作为 sudo 执行来源。
+特权操作只使用 root 所有的固定冻结部署入口，仓库／venv 中的代码不能作为 sudo 执行来源。
 
 ### 当前观察与认证/cache 基线
 
@@ -256,7 +257,8 @@ Screening 正式三检查点消费这个投影；Read 与 doctor 的消费者现
 `request_use_revocation` 在首次物理来源丢失／失信或已知漂移导致绑定构造失败、尚无sources时收紧本格；
 意图按接收时点截止覆盖当时已有来源，新接收仍须独立核验和owner激活。
 固定helper的 `revoke-use` 只按受保护receipts登记追加本格撤销，不读丢失inbox、不接受自由路径或时间。
-单纯observation_stale、能力自然到期、未测或未激活只拒绝当前执行，不产生不可逆收紧；
+observation_stale、能力自然到期、未测或未激活只拒绝当前执行，不产生不可逆收紧；
+与已知漂移或明确失败并存时，也不把这些普通资格缺口额外计为失败能力；未知影响仍保守收紧。
 同事实的新鲜观察可恢复适用性，不续原verified_at，不解除真正撤销。
 root冻结owner的 `load_owner_admission_evidence` 复用同一日志／账本判定core并核root身份，
 安全回执把raw_active与当前active／qualified分开，不绕过pending；产品入口仍只用固定OS来源。
@@ -316,9 +318,10 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v5`；v1–v4 的 D7 向量与摘要锚原字节保留。
+源代码准入策略为 `pi-admission-v5`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v5.json)
+与源码守卫共同固定相关实现；v1–v4 的 D7 向量与摘要锚原字节保留。
 v5 显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
-新代码与已部署 v4 的策略身份不同，不能继承其执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
+策略身份变化后不能继承旧策略的执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
 源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。
 
 固定零参数 `/usr/libexec/paperradar/live-evidence-collect` 与仅收紧的 `live-evidence-tighten`
@@ -425,7 +428,7 @@ v5 新发 owner 配置使用 `initial_evidence_activation`；`initial_activation
 专用 `issue176_resume_after_backup*.py` 仍只针对其冻结 v4 runtime 与原检查点，不接受当前 v5 runtime 代替旧恢复目标。
 旧配置、事件与安全回执字段不迁移，旧部署包原字节保留。
 部分／中断状态只保留root检查点，不自动回滚、清理、恢复资格或重新初始化日志。
-具体状态前提见[owner方案](../../intent/review/issue-168/closure-owner-plan.md)；
+原 v4 专项操作与续行前提见[对应 owner 方案](../../intent/review/issue-168/closure-owner-plan.md)，不作为新策略的执行批准。
 现场验证与正式只读采样的证据归属见[现场安全验证](../verification/issue-168-176-owner-safety-verification.md)。
 各次现场结论仅约束其记录的身份与范围，不替代当前树的离线验证。
 
@@ -447,7 +450,7 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 ## 不提供／不证明
 
 不提供模型 collector、项目 unit/CG/nft/observer 产品化、特权持续观察或产品部署；后继工作见[路线图](../roadmap.md#module-live)。
-真实 OS 特权证明与所有者激活不由离线构建提供；消费闭包与当前待验边界见[收口台账](../verification/issue-168-176-live-admission-closure.md)。旧不完整调用不能自动升级成完整请求。
+真实 OS 特权证明与所有者激活不由离线构建提供；独立覆盖和各次验证范围见[覆盖记录](../verification/issue-168-176-review-r1-r2-fixes.md)。旧不完整调用不能自动升级成完整请求。
 接收权威只核来源、完整性与内部一致性，不能独立证明没有遗漏的失败；失败历史完备性由采集器与 sudoers 边界承担。
 离线构建与合成覆盖不证明真实 root、供应商或模型行为，不替代所有者激活、真实材料外发确认、根用途或校准资格。
 威胁模型防范同 uid 产品进程、测试、Agent 工具伪造或篡改受保护证据及激活记录和配置 passed 自证；

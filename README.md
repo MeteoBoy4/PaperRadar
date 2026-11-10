@@ -455,12 +455,12 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 首次升级的cutover会永久撤销旧资格，再采集新计划；root只追加收紧日志在helper失败时仍阻断，缺失或不支持则拒绝。
 `--owner-closure` 可冻结集成演练：三次本人手输实际短ID、产品uid权限负例、helper失败持久性和恢复后再活；
 实际新root字节及所有操作仍须所有者审阅执行，详见上述契约。
-模型、RPC、IPv4 出站和 observer 缺项保持 unknown；规则见 [Live 证据契约](docs/contracts/live-evidence.md#β-站点采集与封印部署)。
+该站点采集器不提供模型、RPC、IPv4 出站或 observer 的能力证明；规则见 [Live 证据契约](docs/contracts/live-evidence.md#β-站点采集与封印部署)。
 
 单次收口审阅包可用 `uv run --offline --locked python scripts/issue176_closure.py --help` 显式构建。
-它复用已部署冻结 runtime，输出待审 owner 工作流；构建不执行 sudo 或操作账本。
+它复用与当前准入策略身份匹配的已部署冻结 runtime，输出待审 owner 工作流；构建不执行 sudo 或操作账本。
 真实恢复会失效全部旧激活，成功出口要求所有者重新手动激活非空最终分项，详见
-[收口覆盖与待验边界](docs/verification/issue-168-176-live-admission-closure.md)。
+[Live 证据契约](docs/contracts/live-evidence.md#所有者单次收口审阅包)。
 正式消费者按分项证据决定资格，站点分项激活不能代替模型／RPC等必需证据。
 当前边界见 [Live 证据契约](docs/contracts/live-evidence.md)，后继工作与承接见[路线图](docs/roadmap.md#module-live)。
 
@@ -480,7 +480,8 @@ Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接
 `show` 查询回执，`show --plan-id <ID>` 查询批准计划；帮助纯本地。
 activate 展示完整脱敏回执并要求手输短 ID；确认后由固定封印采集器刷新观察，审核内容相同才激活。
 阅读可超过60秒，执行前观察仍受60秒时效约束；事实改变或能力到期继续拒绝，原期限不延长。
-Screening 正式入口在刷新前、准备后和领取事务内读取同一分项权威；缺口拒绝并持久收紧。
+Screening 正式入口在刷新前、准备后和领取事务内读取同一分项权威；普通资格缺口只拒绝当次调用，
+已知漂移或明确失败按受影响范围持久收紧。
 Read 执行边界见[Read 执行契约](docs/contracts/read-execution.md)；受保护部署与实际证据激活由所有者完成。有限合成实验的适用范围见
 [EXP-2 证据与承接](docs/verification/exp-2-pi-live-probe.md)，不据此授予生产执行。
 真实执行接线的承接入口见[路线图承接索引](docs/roadmap.md#模块承接索引)。

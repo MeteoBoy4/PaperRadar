@@ -167,7 +167,7 @@ credentials_dir, auth_mode, proxy=None, sink=None, clock=None)` 提供显式回�
 `run_attempt(receipt_id, *, limits=DEFAULT_LIMITS, cancelled=..., clock=monotonic)`。
 构造不执行 I/O。wall clock 同时用于 ScreeningTasks 和准入检查（默认当前 UTC）；run_attempt 的 clock
 是协议有界单调时钟。sink 原样交给任务服务，缺省 NullSink；不新增日志类型或 CLI，
-B 后续产品入口承担所选根的文件日志与入口守卫。
+产品入口的文件日志与入口守卫接线责任见[路线图 B](../roadmap.md#module-b)。
 
 只读 `prepare_call(tasks, receipt_id)` 通过公共 load_input/load_config_snapshot/build_call
 取得预算首次语义与本回执审计；核对同阶段投影而非完整 snapshot ID。通过
@@ -180,7 +180,7 @@ credentials_dir, now)` 只读构造。准入用途从本次 boundary/value 与 l
 未登记档位拒绝，不借其他格的资格。`load_admission_evidence(request, now=...)`
 读取[受保护账本和统一分项判定](live-evidence.md)，所有必需项均须当前合格。
 旧的不完整 EvidenceBinding 加载继续返回 None；三布尔 `admit` 只保留独立工程判定，
-产品从不读取 `_evidence_for` 别名，不接收证据、授予 factory 或工程模式参数。
+产品不保留 `_evidence_for` 证据别名，不接收证据、授予 factory 或工程模式参数。
 explicit 的执行映射仍为空。材料保持系统指令形状、argv 与完整 RPC 帧上限检查，
 Prompt/Profile 正文不进入内容无关能力身份。
 
@@ -222,9 +222,9 @@ KeyboardInterrupt/SystemExit 保留未结算租约；显式过期恢复记 outco
 
 纯 admission 模块及包导入不连接 auth/launcher/安装保护；完整只读构造入口不导入 auth、
 launcher 或执行 service，不刷新、不创建会话或写账本，供诊断复用。
-开发期 [D7 显式源码/策略清单](../../tests/fixtures/live-admission-source-guard-v4.json)
-绑定准入/RPC 相关源码和准入、启动、隔离、协议版本。源码变化须显式更新策略并审阅清单；
-当前准入策略为 `pi-admission-v4`；旧 v1/v2/v3 清单与摘要锚保留为归档向量，清单格式仍为 1。
+开发期 D7 源码守卫绑定准入/RPC 相关源码和准入、启动、隔离、协议版本。
+源码变化须显式升版并审阅清单；当前策略、显式清单及旧版保留规则见
+[Live 证据契约](live-evidence.md#β-站点采集与封印部署)。
 运行时只绑定策略版本，不对 PaperRadar 源码求哈希，不改变 Pi argv 或协议档案。
 覆盖与未验边界见 [#143 台账](../verification/issue-143-pi-execution.md)。
 
