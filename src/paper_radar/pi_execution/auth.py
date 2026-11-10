@@ -2,6 +2,7 @@
 
 import math
 import subprocess
+from pathlib import Path
 from time import monotonic
 
 from paper_radar.llm.rpc_pipes import PipeSession
@@ -9,6 +10,7 @@ from paper_radar.llm.rpc_types import RpcProblem
 from paper_radar.pi_execution import isolation
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.process import adopt_process
+from paper_radar.pi_execution.resources import AuthHelperResources, ExecutionRoots
 from paper_radar.pi_supply.protection import InstallUse
 
 
@@ -16,6 +18,7 @@ def credential_token(
     install: InstallUse,
     credentials_dir: str,
     *,
+    roots: ExecutionRoots,
     attempt_timeout: float,
     timeout: float,
 ) -> str:
@@ -29,12 +32,13 @@ def credential_token(
         "--min-expiry",
         f"{math.ceil(attempt_timeout) + 600}s",
     )
+    resources = AuthHelperResources(roots, Path(credentials_dir))
     env = {
         "PI_CODING_AGENT_DIR": credentials_dir,
         "PI_SKIP_VERSION_CHECK": "1",
         "PI_TELEMETRY": "0",
-        "HOME": credentials_dir,
-        "TMPDIR": credentials_dir,
+        "HOME": str(resources.home),
+        "TMPDIR": str(resources.tmp),
         "LANG": "C.UTF-8",
         "LC_ALL": "C.UTF-8",
         "PATH": str(install.node.parent),
@@ -87,8 +91,11 @@ def credential_token(
         raise ExecutionError("auth_failed") from None
     finally:
         output.clear()
-        if session is not None:
-            try:
-                session.terminate(10)
-            except (OSError, RpcProblem):
-                raise ExecutionError("auth_failed") from None
+        try:
+            if session is not None:
+                try:
+                    session.terminate(10)
+                except (OSError, RpcProblem):
+                    raise ExecutionError("auth_failed") from None
+        finally:
+            resources.close()

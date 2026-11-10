@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 from paper_radar.pi_execution.errors import ExecutionError
 
 EXECUTION_CWD = Path("/srv/pi-cwd")
-LAUNCH_POLICY_VERSION = "pi-launch-1.4.0-v1"
+LAUNCH_POLICY_VERSION = "pi-launch-1.4.0-v6"
 # Default settings bytes are part of LAUNCH_POLICY_VERSION.
 SETTINGS_JSON = (
     b'{"cacheWarming":"off","compaction":{"enabled":false},'
@@ -167,3 +167,41 @@ class AttemptResources:
             return
         except OSError:
             raise ExecutionError("cleanup_failed") from None
+
+
+class AuthHelperResources:
+    """宿主 helper 独占 HOME/TMPDIR;退出后删除并复核,不交给模型。"""
+
+    def __init__(self, roots: ExecutionRoots, credentials_dir: Path) -> None:
+        try:
+            self.root = Path(tempfile.mkdtemp(prefix="paper-radar-auth-", dir="/tmp"))
+        except OSError:
+            raise ExecutionError("resources_invalid") from None
+        try:
+            credentials = credentials_dir.resolve()
+            if (
+                not roots.outside(self.root)
+                or self.root.is_relative_to(credentials)
+                or credentials.is_relative_to(self.root)
+            ):
+                raise ExecutionError("resources_invalid")
+            self.home = self.root / "home"
+            self.tmp = self.root / "tmp"
+            for directory in (self.home, self.tmp):
+                directory.mkdir(mode=0o700)
+        except OSError:
+            self.close()
+            raise ExecutionError("resources_invalid") from None
+        except BaseException:
+            self.close()
+            raise
+
+    def close(self) -> None:
+        try:
+            shutil.rmtree(self.root)
+        except FileNotFoundError:
+            pass
+        except OSError:
+            raise ExecutionError("cleanup_failed") from None
+        if os.path.lexists(self.root):
+            raise ExecutionError("cleanup_failed")

@@ -46,7 +46,7 @@ Screening／Read 正式三检查点与 doctor 消费共享判定，分别见所�
 | 能力 | 要求 | 到期类别 | 依赖组件 |
 | --- | --- | --- | --- |
 | auth_cache_current | 必需 | 站点 | auth_cache_current（当前属主、权限、无符号链接） |
-| auth_cache_baseline | 必需 | 站点 | auth_cache_baseline（自接收基线无新增／变化成员） |
+| auth_cache_baseline | 必需 | 站点 | auth_cache_baseline（固定接收基线成员与不变量相符） |
 | cwd_ancestors | 必需 | 站点 | cwd_ancestors |
 | file_isolation | 必需 | 站点 | file_isolation、isolation_policy |
 | ipv4_egress | 必需 | 站点 | ipv4_egress |
@@ -238,14 +238,20 @@ checked_components 无重复，只列本次确实覆盖的组件，不是 passed
 事实变化、原证据到期、时钟回退或当前覆盖撤回均拒绝，须所有者重新审阅。
 普通产品请求不能自行声明特权证明；未观测组件不能填入 checked_components。
 
-`baseline.metadata_digest` 是 #172 接收基线与消费者当次比较共用的 `auth-cache-stat-v1` 算法。
-输入为消费方固定顺序的认证／cache 根；只打开目录 fd，stat 成员，不打开或读取成员内容。
-清单按根索引和目录内成员名排序，路径为相对名，包含目录与普通单链接文件；
-每项记录 dev、ino、mode、uid、gid、nlink、size、mtime_ns、ctime_ns。
-规范对象为 format 与 members，UTF-8、键排序、紧凑 JSON、末换行后 SHA-256；绝对路径不进入摘要输入或错误。
-最多 4096 项、32 层；软链、特殊节点、读取失败和观察到的并发变化拒绝。
-新增／删除／改名／替换／权限或成员元数据变化改变基线摘要；
-当前根／祖先属主权限与隔离仍由对应独立检查负责，不由这个摘要推导。
+`auth_cache_stat.metadata_digest` 是采集与消费者当次比较共用的 `auth-cache-stat-v2` 算法。
+首次 v2 基线来自受保护批准采集，经过既有 receive 与所有者显式证据激活；不从旧 v1 漂移或当前目录自拍建立可信资格。
+输入固定为单元素 `(credentials_dir,)`，只打开目录 fd 和 stat 成员，不打开成员正文。
+清单按根索引和目录内名称排序，以相对名记录目录和普通单链接文件；成员名、集合、类型、
+dev、mode、uid、gid、nlink 均参与固定摘要。仅根 `.` 和直接成员 `auth.json`、`models-store.json`
+豁免 ino、size、mtime_ns、ctime_ns；其他成员全部九个 stat 字段保持比较，目录 nlink 仍按基线比较。
+对象 format/members 经排序键、紧凑 UTF-8 JSON、末换行后 SHA-256；路径绝对名不进入摘要或错误。
+最多 4096 项、32 层，拒绝软链、普通文件硬链接、特殊节点、`node-compile-cache`、读取失败和采样期间变化。
+遍历期间即使是可演进字段也以完整 stat 复核，根被替换也拒绝；未知目录／成员改变摘要而无法取得既有资格。
+固定基线不随正常刷新、原子替换或失败自动更新，正常演进不刷新 verified_at 或期限。
+当前根／祖先属主权限与隔离另行检查，stat 不证明 `auth_cache_history`／`auth_cache_writer`，两项保持披露型。
+
+`baseline.metadata_digest` 的 `auth-cache-stat-v1` 算法和旧读者保留原字节，仅供历史严格比较；
+v1 未豁免任何字段，其证据不会被转换为 v2 资格。新启动／准入策略变化还会单独阻断旧策略资格。
 
 ### 当次完整执行绑定
 
@@ -257,7 +263,7 @@ Apport 绑定公开 dpkg 准确包版本、程序和整个 `/etc/apport` 配置�
 `/etc/default/apport`、core_pattern 与 suid_dumpable；不运行认证、模型或网络探测。
 模型元组沿 ADR-0054；材料正文不进入该身份。显式代理属于启动上下文，改变即改变摘要。
 组件普通值经规范紧凑 UTF-8 JSON SHA-256；供给/实例树沿既有 tree-v1，
-host/boot 和公开文件按原字节摘要；认证/cache 沿 auth-cache-stat-v1。
+host/boot 和公开文件按原字节摘要；认证/cache 沿 auth-cache-stat-v2。
 专用凭据目录同时是本通道固定的认证/cache 根，固定输入顺序为单元素 `(credentials_dir,)`；
 不扫描个人 Pi、环境目录，不读取成员内容。
 
@@ -366,9 +372,9 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v5`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v5.json)
-与源码守卫共同固定相关实现；v1–v4 的 D7 向量与摘要锚原字节保留。
-v5 显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
+源代码准入策略为 `pi-admission-v6`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v6.json)
+与源码守卫共同固定相关实现；v1–v5 的 D7 向量与摘要锚原字节保留。
+v6 增加固定认证基线 v2、helper 临时布局与 v2 额度／回执／账本错误权威，继续显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
 策略身份变化后不能继承旧策略的执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
 源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。
 
@@ -380,7 +386,7 @@ v5 显式覆盖两份 after-backup 续行工具、共享检查点、站点回执
 
 采集 root 父进程只管理固定受保护输出和冻结代码。现场观察 fork 后清空环境与补充组、不可逆
 降到产品 uid/gid 并禁 ptrace，不在降权与观察之间执行用户环境；业务库、整树与认证/cache 元数据
-均以产品身份只读复核冻结的snapshot/供给/安装仍为当前选择，再复用 `local_binding_components`、`site_binding_components` 和 `auth-cache-stat-v1`。
+均以产品身份只读复核冻结的snapshot/供给/安装仍为当前选择，再复用 `local_binding_components`、`site_binding_components` 和 `auth-cache-stat-v2`。
 需要合成子进程的隔离检查也保持产品 uid：只读取合成外部文件，只尝试匿名临时写入，
 通过标准严格为 EACCES/EPERM 拒绝；另证实 attempt 写入允许与软/硬 core 限额都为0。
 Node 只以产品 uid 执行 `--version`，比对声明版本；不执行认证、Pi prompt 或网络请求。
@@ -419,11 +425,10 @@ core 设置仅作用于合成子进程，不修改其他程序或全局 Apport/c
 CurrentObservation保持当前供给选择/snapshot的low声明上下文；高档本地消费者重算自身MODEL_TUPLE，
 站点能力仅按本能力依赖适用，高档模型/RPC/observer没有verified主张，不表示六格完整可执行。
 
-AUTH_CACHE_BASELINE递归专用credentials全根：auth.json、exp2-installation-id、models-store.json、
-node-compile-cache及其成员均无排除，目录与regular文件的dev/ino/mode/uid/gid/nlink/size/mtime/ctime均参与。
-宿主认证helper的HOME/TMPDIR为credentials，当前Pi入口启用Node compile cache；RPC子进程的TMPDIR则为attempt临时根。
-正常认证cache写入或auth.json刷新同样改变基线，准备后检查拒绝且不领取attempt，不能静默视为安全例外。
-更新基线需要新受信计划采集/重新审阅封印字节/人工激活；支持连续运行的缓存布局与允许演进保护留Live后继裁定。
+AUTH_CACHE_BASELINE 递归专用 credentials 全根，按[固定基线 v2](#当前观察与认证cache-基线)比较。
+宿主 helper 的 HOME/TMPDIR 为独占临时资源，退出后删除并核验；凭据根出现 `node-compile-cache` 拒绝。
+正常订阅刷新只豁免获准对象的指定字段，不重定基线、不追认成员，也不把 metadata 当作完整写史。
+资源准备可创建临时目录；准备失败不产生任务、attempt、预算或证据激活。
 
 默认 uninstall.sh 移除本包 sudoers、三个入口与冻结 runtime；保留账本、inbox 回执/计划、
 失败历史、stopped 标记和 staging。若 cwd 由本部署创建，只在仍为空且受保护时移除；原有 cwd 不动。
