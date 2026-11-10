@@ -438,7 +438,18 @@ uv run --offline --locked paper-radar pi supply gc --execute <plan_id> \
 [安装清理计划](docs/contracts/pi-supply.md#不可变安装清理计划)。
 供给检查和激活不代表 RPC、模型或校准就绪。
 
-β 站点封印包由非特权入口显式构建：
+新的 Live 私有审阅包使用独立入口，派生当前策略/最新 activation 后冻结 strict β、七计划、
+六格合成材料、user slice/静态 anchor、nft/resolver 和精确零参 wrappers：
+
+```bash
+uv run --offline --locked python scripts/seal_live_bundle.py --help
+```
+
+归档及每个成员均有精确 SHA；日期/网络 pending 时安装继续拒绝。新包不自动 receive 或激活，
+升级/同 SHA 重跑/卸载/显式恢复保留历史与累计额度。流程与现场边界见
+[Live 封印审阅包](docs/contracts/live-evidence.md#live-封印审阅包)。
+
+旧 β 站点封印模式保留独立入口：
 
 ```bash
 uv run --offline --locked python scripts/seal_site_evidence.py --help
@@ -484,7 +495,7 @@ Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接
 带版本的六格登记、共享分项投影，以及独立受保护账本的接收、证据激活、不可逆撤销与恢复见
 [Live evidence](docs/contracts/live-evidence.md)。所有者入口为 `paper-radar live-evidence receive/activate/revoke`，
 `show` 查询回执，`show --plan-id <ID>` 查询批准计划；v2 同时展示 root 累计额度、失败链、熔断与下一动作。
-固定零参数模型采集入口执行封印六格与四个 IPv4 对照，只写受保护完成历史／inbox，owner 仍独立 receive／逐格激活。封印安装由后续部署包承接，详见[固定模型采集闭环](docs/contracts/live-evidence.md#固定模型采集闭环)。
+固定零参数模型采集入口执行封印六格与四个 IPv4 对照，只写受保护完成历史／inbox，owner 仍独立 receive／逐格激活。新 Live 封印模式安装这些固定入口，详见[固定模型采集闭环](docs/contracts/live-evidence.md#固定模型采集闭环)。
 Live 采集使用跨计划固定域的 40 次联网／40 次 prompt 预占，不退款；普通失败按三次／六轮规则停止，
 安全失败首次停止。规则与续跑来源见 [v2 契约](docs/contracts/live-evidence.md#v2-采集额度失败类与续跑)。帮助纯本地。
 activate 展示完整脱敏回执并要求手输短 ID；确认后由固定封印采集器刷新观察，审核内容相同才激活。

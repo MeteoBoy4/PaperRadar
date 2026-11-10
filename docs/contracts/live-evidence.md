@@ -343,6 +343,70 @@ root冻结owner的 `load_owner_admission_evidence` 复用同一日志／账本�
 安全回执把raw_active与当前active／qualified分开，不绕过pending；产品入口仍只用固定OS来源。
 `request_time_tick` 只请求固定 helper 用自身时间打点；失败必须由执行消费者拒绝，不能当作已记录。
 
+### Live 封印审阅包
+
+显式新模式为 `uv run --offline --locked python scripts/seal_live_bundle.py derive|build`。
+`derive` 接收所有者选定的私有 baseline 和完整 SHA，仅读最新 activation，保留原根、uid/gid、
+模型元组与用途，仅派生 launch/isolation 当前常量及 snapshot/supply/install 三元组。
+它显示字段 diff、完整私有派生 JSON 和按当日 +08:00 计算的未确认窗口候选；输出文件为 0600。
+`build` 再核派生输入与 baseline 的允许差异，并在临时编译前后各独立检查五字段。
+错误携带已知 expected 字段；空历史、读取失败或任一错配均在创建输出目录前拒绝。
+构建同时核当前源码守卫向量的策略与每个源码 SHA，拒绝旧向量配新 root 代码。
+窗口必须有显式时区、至少七天；strict β、六格和四负对照共用 UTC 窗口。
+日期和网络适用性来源可明确 pending；此时包可审阅，安装入口在资源变更前拒绝。
+
+新模式保留旧 `seal_site_evidence.py` 的 wire、字节生成语义与旧读者，独立输出
+`payload.tar`、`run-live.sh`、`REVIEW.md`、`SHA256SUMS`。归档含冻结 Python/stdlib/依赖/源码、
+原始 source 身份与版本向量、完整成员 SHA、strict β v1 单轮计划、七份 v2 计划、
+六格真实纯编译合成材料、owner 网络适用声明、固定 wrappers/sudoers、管理员 user unit、
+resolver、部署配置和安装/卸载/恢复代码。模型材料和请求由权威编译器重建，合成 snapshot 不写业务库。
+四负对照与模型均消费既有 `live-177` 累计域；新包不清历史、不receive、不激活、不执行模型或认证。
+
+`run-live.sh install|uninstall|recover` 是 owner 密码入口。普通用户先核完整归档 SHA，
+sudo 后只从入口 stdin 内嵌的相同字节建立 root 所有、以 payload SHA 命名的 staging，
+核归档/成员清单 SHA、完整文件/目录库存、无软硬链接和保护链，再以空环境及 `-I -S -B`
+执行冻结安装器。未知 staging、partial copy、额外成员、旧身份不符及归档冲突均拒绝并保留。
+归档和清单不互相包含自身摘要；payload 标记只在 root 已核归档后写入。
+
+Linux x86_64 包含固定汇编构建的静态无 libc anchor；构建依赖本机 `cc`，root 不编译。
+管理员 unit 在 `/etc/systemd/user/`，anchor 使用产品 uid 的 user manager，仅保持项目 slice；
+其 `LimitCORE=0`，静态程序不读用户 manager 环境。安装核 manager=running、linger=yes、
+实际 FragmentPath/DropInPaths、额外执行命令为空、ExecStart/Slice、实际 `/proc` exe/uid/core 限额，
+独立读取 cgroup2 全部祖先 dev/inode，并核 subtree 只有 anchor。degraded 或未知 ABI 拒绝。
+宿主 systemctl/loginctl/nft/visudo 的解析路径与字节 SHA 由包记录并在安装前复核；
+系统动态链接器、共享库和内核仍属于受信 OS 边界。
+
+实际 cgroup 身份部署后确定，以真实层级安装独占 `inet paperradar` 表：四固定 comment 的
+独立 drop counter 在允许项之前，允许 ADR-0050 的池 TCP443 与 router UDP/TCP53，
+其他项目 IPv4/IPv6 流量 drop。全表结构、实际 handle 与独立目标读回复核，
+`egress_identity` 生成受保护 `placement-target-v1.json`；不从规则右值倒推 CG 身份。
+resolver 是 `/run/paper-radar/resolv.conf` 的 root 只读来源，由公共 placement wrapper
+绑定到私有命名空间；不改全机 resolver、上游路由或 host capability。
+
+NOPASSWD 仅包括固定零参数 collect/refresh/model-collect 以及既有有限收紧入口。
+root 只执行冻结代码；持密 auth 和模型由产品 uid 执行，预算、窗口、停止和 inbox 发布
+继续由现有 collector 权威控制。严格 β 内有合成 Landlock 拒绝/允许与零 core 对照，
+负对照仍是实际 socket 与 counter 归属验证，离线结果不授予现场资格。
+首 β 成功后第一次真实 refresh 将 placeholder→实际观察保留为 drift 并收紧；
+第二次独立同事实观察才 available，随后才运行四对照/六格；不得清撤销或用新 plan 绕过。
+
+旧 credentials 下若实际存在 `node-compile-cache`，构建仅读其根 lstat，封印完整 metadata。
+owner 审阅并停止相关调用后，安装器在不可逆降权、关闭 root fd 的产品子进程内，
+按固定 metadata 用同 FS `RENAME_NOREPLACE` 迁到凭据根同级辅助归档；不列目录/读正文、
+不复制、不删、不覆盖。未知来源、目的地已有、权限/跨设备错误均拒绝，初次 v2 β 不豁免旧成员。
+
+`deployment-v2.json` 记录准确 payload/manifest、阶段与 prior journal；它不是准入授予。
+旧格式升级先核旧全树、三个旧入口及 sudoers，再原样归档；后继 v2 升级另保留 prior journal，
+关闭旧观察/dispatch、核空项目范围后退役旧目标再部署。全部 ledger/inbox、intents、失败、
+stopped、撤销、已预占额度和旧 runtime 均保留。同 SHA 已安装重跑只核现状，
+不重跑已通过案例或初始化谱系；已识别的阶段可续行，部分/未知状态不猜测回滚或清理。
+
+卸载先封闭当前观察、移除 dispatch，再停止项目 slice，独立核无活进程后移除本包资源。
+恢复重新核实际资源/CG/规则；重启后的 `/run` 或 CG 丢失需要 owner 显式 `recover`，
+不常驻 root 自愈。不恢复旧激活，不改变旧回执/成功时点；新绑定不符原 strict β 来源时，
+模型继续拒绝，需要新的已审计划/包取得新来源。自然到期/真实 refresh 缺无秘密独立信号，
+保持 unknown/未验及停止 gate，不能以三次调用、stat 演进或成功模型响应替代。
+
 ### β 站点采集与封印部署
 
 非特权构建入口为 `uv run --offline --locked python scripts/seal_site_evidence.py`，
@@ -397,14 +461,14 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v9`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v9.json)
-与源码守卫共同固定相关实现；v1–v8 的 D7 向量与摘要锚原字节保留。
+源代码准入策略为 `pi-admission-v10`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v10.json)
+与源码守卫共同固定相关实现；v1–v9 的 D7 向量与摘要锚原字节保留。
 v7 增加共享用户 scope 双阶段放置、封装、只读 resolver 和只读诊断；保留固定认证基线 v2、helper 临时布局与 v2 额度／回执／账本错误权威，继续显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
 策略身份变化后不能继承旧策略的执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
 源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。
 
 既有部署器仅安装固定零参数 `/usr/libexec/paperradar/live-evidence-collect` 与仅收紧的 `live-evidence-tighten`；后者由有限解析器核对 revoke/mark/revoke-use/tick。
-额外的固定零参数观察刷新和模型采集入口分别路由到 `runtime_main refresh` 与 `runtime_main collect-models`，精确 wrapper/sudoers 和封印库存安装由部署包承接；这两个入口不接受路径、模型或动作参数。
+额外的固定零参数观察刷新和模型采集入口分别路由到 `runtime_main refresh` 与 `runtime_main collect-models`，新 Live 封印模式安装精确 wrapper/sudoers 和完整库存；这两个入口不接受路径、模型或动作参数。
 `live-evidence-owner` 不在 NOPASSWD 中，接收/批准/激活/恢复等放宽动作均须所有者明确授权。
 部署脚本的固定计划批准及 receive 属于该次所有者审阅命令的一部分，不自动激活。
 真实安装时，所有者须私下确认产品用户没有等价 root 的组成员资格、能力或任意 sudo 通道。
