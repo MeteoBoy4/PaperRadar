@@ -477,7 +477,9 @@ Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接
 产品准入证据未被接收时继续阻断。
 带版本的六格登记、共享分项投影，以及独立受保护账本的接收、证据激活、不可逆撤销与恢复见
 [Live evidence](docs/contracts/live-evidence.md)。所有者入口为 `paper-radar live-evidence receive/activate/revoke`，
-`show` 查询回执，`show --plan-id <ID>` 查询批准计划；帮助纯本地。
+`show` 查询回执，`show --plan-id <ID>` 查询批准计划；v2 同时展示 root 累计额度、失败链、熔断与下一动作。
+Live 采集使用跨计划固定域的 40 次联网／40 次 prompt 预占，不退款；普通失败按三次／六轮规则停止，
+安全失败首次停止。规则与续跑来源见 [v2 契约](docs/contracts/live-evidence.md#v2-采集额度失败类与续跑)。帮助纯本地。
 activate 展示完整脱敏回执并要求手输短 ID；确认后由固定封印采集器刷新观察，审核内容相同才激活。
 阅读可超过60秒，执行前观察仍受60秒时效约束；事实改变或能力到期继续拒绝，原期限不延长。
 Screening 正式入口在刷新前、准备后和领取事务内读取同一分项权威；普通资格缺口只拒绝当次调用，

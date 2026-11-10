@@ -1,6 +1,6 @@
 # 冻结契约导出与检查
 
-当前提供六份可单独或批量选择的 `v1` 磁盘冻结契约。`contracts export` 可在一次
+当前提供六份可单独或批量选择的 `v1` 磁盘冻结契约，以及 `live-evidence/v2`。`contracts export` 可在一次
 命令中处理多份；`contracts check` 也可在一次命令中逐项检查多份并汇总退出码。
 
 | CLI 受控名 | 权威定义 | 固定目录 |
@@ -10,7 +10,8 @@
 | `reuse-assessment` | `ReuseAssessmentOutput` | `screening/reuse-assessment/v1/` |
 | `decision-reasons` | `screening_reason_json_schema()` 使用的权威 Pydantic 组合类型 | `screening/decision-reasons/v1/` |
 | `read` | `paper_radar.reading.ReadAnalysisOutput` | `read/read/v1/` |
-| `live-evidence` | `paper_radar.live_evidence.receipt.EvidenceReceipt` | `live-evidence/live-evidence/v1/` |
+| `live-evidence`（v1） | `paper_radar.live_evidence.receipt.EvidenceReceipt` | `live-evidence/live-evidence/v1/` |
+| `live-evidence`（v2） | `paper_radar.live_evidence.receipt_v2.EvidenceReceiptV2` | `live-evidence/live-evidence/v2/` |
 
 本契约定义快照生成、磁盘发布和只读检查；Screening 的结构与上下文接收规则见
 [Screening Contract](screening-validation.md)，Read 的结构、独立价值词汇与证据业务
@@ -26,7 +27,7 @@ Read 选择示例见[Read 配置与分块身份](runtime-config.md#read-配置�
 
 维护者使用真实安装入口重复提供 `--contract`，显式选择契约、声明版本和目标根
 目录。`--contract` 至少一次，`--version`、`--target` 均必须显式提供，三者无默认值；
-只接受上表契约和 `v1`，不提供隐式 `--all`。选择顺序不会改变执行顺序；系统始终按
+只接受上表已实现的契约／版本组合，`v2` 仅用于 `live-evidence`，不提供隐式 `--all`。选择顺序不会改变执行顺序；系统始终按
 上表的 `ContractName` 声明顺序处理：
 
 ```bash

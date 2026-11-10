@@ -474,9 +474,18 @@ class EvidenceLifecycle:
                     historical.execute("PRAGMA quick_check").fetchall() != [("ok",)]
                     or historical.execute("PRAGMA journal_mode").fetchone()
                     != ("delete",)
-                    or historical.execute("PRAGMA user_version").fetchone() != (1,)
+                    or historical.execute("PRAGMA user_version").fetchone()
+                    not in {(1,), (2,)}
                 ):
                     raise LedgerError("ledger_untrusted")
+                historical_facts = None
+                if historical.execute("PRAGMA user_version").fetchone() == (2,):
+                    from paper_radar.live_evidence.collection import ProtectedCollection
+
+                    ProtectedCollection(self.ledger)._replay(historical)
+                    historical_facts = historical.execute(
+                        "SELECT * FROM collection_facts ORDER BY sequence"
+                    ).fetchall()
                 old_watermark = self.ledger.watermark(historical)
                 invalid = clock_reason(now, old_watermark)
                 if invalid is not None:
@@ -489,6 +498,16 @@ class EvidenceLifecycle:
             # 在任何修改前校验当前信任根和两个时间下限;不覆盖损坏的在线库。
             self.snapshot(now=now)
             with self.ledger.connection(writable=True) as connection:
+                if historical_facts is not None:
+                    from paper_radar.live_evidence.collection import ProtectedCollection
+
+                    ProtectedCollection(self.ledger)._replay(connection)
+                    current_facts = connection.execute(
+                        "SELECT * FROM collection_facts ORDER BY sequence"
+                    ).fetchall()
+                    # 恢复只接受当前受保护谱系的前缀;绝不以旧快照替换累计尾部。
+                    if current_facts[: len(historical_facts)] != historical_facts:
+                        raise LedgerError("collection_history_mismatch")
                 for table, rows, key in (
                     ("plans", plans, "plan_id"),
                     ("receipts", receipts, "receipt_id"),
