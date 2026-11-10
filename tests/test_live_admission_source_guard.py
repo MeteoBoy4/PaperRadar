@@ -14,7 +14,7 @@ from paper_radar.pi_execution.resources import LAUNCH_POLICY_VERSION
 from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v9.json"
+MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v10.json"
 ARCHIVED_MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
 # 显式清单;不能由目录扫描或生产依赖图动态扩大/缩小。
 ARCHIVED_SOURCE_FILES = (
@@ -88,11 +88,20 @@ SOURCE_FILES = (
     "src/paper_radar/live_evidence/network_probe.py",
     "src/paper_radar/llm/dispatch.py",
     "src/paper_radar/config/service.py",
+    "src/paper_radar/live_evidence/live_bundle.py",
+    "src/paper_radar/live_evidence/live_bundle_scripts.py",
+    "src/paper_radar/live_evidence/live_host.py",
+    "src/paper_radar/live_evidence/live_install.py",
+    "src/paper_radar/live_evidence/live_materials.py",
+    "scripts/seal_live_bundle.py",
 )
 
 
 # 已审阅版本的清单摘要只追加;后继不得以同一策略键重绑该摘要。
 REVIEWED_POLICY_MANIFESTS = {
+    "pi-admission-v10": (
+        "0636c8c80653df4c62b40c02d27411a4b48c0371318279b35234141113e61e2d"
+    ),
     "pi-admission-v9": (
         "f135a73fa3489a39f05792de3915a4f8f0f4513f8f6902f98c887bc13ae7cc2e"
     ),
@@ -220,3 +229,15 @@ def test_fifth_policy_manifest_retains_original_bytes() -> None:
         hashlib.sha256(data).hexdigest() == REVIEWED_POLICY_MANIFESTS["pi-admission-v5"]
     )
     assert json.loads(data)["policies"]["admission"] == "pi-admission-v5"
+
+
+@pytest.mark.parametrize("version", (6, 7, 8, 9))
+def test_later_archived_policy_vectors_keep_original_bytes(version: int) -> None:
+    data = (
+        ROOT / f"tests/fixtures/live-admission-source-guard-v{version}.json"
+    ).read_bytes()
+    assert (
+        hashlib.sha256(data).hexdigest()
+        == REVIEWED_POLICY_MANIFESTS[f"pi-admission-v{version}"]
+    )
+    assert json.loads(data)["policies"]["admission"] == f"pi-admission-v{version}"
