@@ -444,6 +444,10 @@ def runtime_main() -> int:
     args = sys.argv[1:]
     if args[:1] == ["collect"]:
         return collector_main(args[1:])
+    if args[:1] == ["collect-models"]:
+        from paper_radar.live_evidence.model_collector import model_collector_main
+
+        return model_collector_main(args[1:])
     if args[:1] == ["refresh"]:
         from paper_radar.live_evidence.protected_observer import refresh_main
 

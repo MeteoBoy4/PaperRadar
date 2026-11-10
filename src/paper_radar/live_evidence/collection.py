@@ -573,6 +573,25 @@ class ProtectedCollection:
                 raise LedgerError("collection_history_mismatch")
             self.ledger._verified_receipt(connection, row[0])
 
+    def completed_case(
+        self, case_id: str, *, binding: dict[BindingComponent, str]
+    ) -> EvidenceReceiptV2 | None:
+        """只读重放已完成采集事实;精确绑定,保留原时间,无需 receive。"""
+        with self._connection() as connection:
+            state = self._replay(connection)
+            passed = state.passed.get(case_id)
+            if passed is None or passed[1] != binding:
+                return None
+            for receipt in state.completed.values():
+                if content_sha256(receipt) == passed[0]:
+                    return receipt
+            raise LedgerError("ledger_untrusted")
+
+    def completed_receipts(self) -> tuple[EvidenceReceiptV2, ...]:
+        """受保护完成历史;不含未完成轮或调用方提供的 inbox 候选。"""
+        with self._connection() as connection:
+            return tuple(self._replay(connection).completed.values())
+
     def cancel_round(self, round_id: str, *, now: datetime) -> None:
         with self._connection(writable=True) as connection:
             state = self._replay(connection)

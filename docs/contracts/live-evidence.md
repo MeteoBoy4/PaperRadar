@@ -9,7 +9,7 @@
 `service.load_admission_evidence` 对完整请求加载受保护事实并调用同一纯判定，返回结构化投影；
 `pi_execution.admission.load_admission_evidence` 延迟转交该完整请求，旧的不完整 EvidenceBinding 仍返回 None。
 Screening／Read 正式三检查点与 doctor 消费共享判定，分别见所属 Contract。
-`collector`、`sealed_runtime` 与 `deployment` 提供零请求 β 采集、冻结构建与封印脚本；实际 root 权限和证据激活由所有者现场验证。
+`collector`、`sealed_runtime` 与 `deployment` 提供零请求 β 采集、冻结构建与封印脚本；`model_collector` 提供独立批准的固定合成模型采集闭环。实际 root 权限、封印安装和证据激活由所有者现场验证。
 
 ## 规则
 
@@ -397,14 +397,14 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v8`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v8.json)
-与源码守卫共同固定相关实现；v1–v6 的 D7 向量与摘要锚原字节保留。
+源代码准入策略为 `pi-admission-v9`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v9.json)
+与源码守卫共同固定相关实现；v1–v8 的 D7 向量与摘要锚原字节保留。
 v7 增加共享用户 scope 双阶段放置、封装、只读 resolver 和只读诊断；保留固定认证基线 v2、helper 临时布局与 v2 额度／回执／账本错误权威，继续显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
 策略身份变化后不能继承旧策略的执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
 源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。
 
-固定零参数 `/usr/libexec/paperradar/live-evidence-collect` 与仅收紧的 `live-evidence-tighten`
-是 sudoers 唯一 NOPASSWD 命令；后者由有限解析器核对 revoke/mark/revoke-use/tick。
+既有部署器仅安装固定零参数 `/usr/libexec/paperradar/live-evidence-collect` 与仅收紧的 `live-evidence-tighten`；后者由有限解析器核对 revoke/mark/revoke-use/tick。
+额外的固定零参数观察刷新和模型采集入口分别路由到 `runtime_main refresh` 与 `runtime_main collect-models`，精确 wrapper/sudoers 和封印库存安装由部署包承接；这两个入口不接受路径、模型或动作参数。
 `live-evidence-owner` 不在 NOPASSWD 中，接收/批准/激活/恢复等放宽动作均须所有者明确授权。
 部署脚本的固定计划批准及 receive 属于该次所有者审阅命令的一部分，不自动激活。
 真实安装时，所有者须私下确认产品用户没有等价 root 的组成员资格、能力或任意 sudo 通道。
@@ -459,6 +459,29 @@ AUTH_CACHE_BASELINE 递归专用 credentials 全根，按[固定基线 v2](#当�
 失败历史、stopped 标记和 staging。若 cwd 由本部署创建，只在仍为空且受保护时移除；原有 cwd 不动。
 同 SHA 可重复卸载/部署恢复，历史与撤销事实不清空；清理账本需要所有者另行显式选择。
 中断留下的 runtime.new 不自动删除，须所有者核对后处理，避免覆盖未知部署物。
+
+### 固定模型采集闭环
+
+`runtime_main collect-models` 只接受零参数，读取受保护 `model-manifest.json`、`site.json`、固定材料库存和 `network-owner-confirmation.json`。六格固定顺序为 boundary-low、boundary-high、value-low、value-high、read-low、read-high，各 plan 仅含 `model-<use>` 模板；四对照另用一份 `site_beta` v2 plan，全部共享 `live-177`。所有计划必须已由所有者批准，窗口、collector 摘要、实际 latest activation 三元组、每格可预知静态组件预期、材料／请求 SHA 与确认适用 plan 集合均受检查；入口不初始化账本、不批准、不 receive、不激活。
+
+整组持 `protected_collection_lock` 的同一个 fd，通过 `refresh_under_lock` 复用观察。封印集合只允许供给／实例／版本／策略和模型元组等可预知静态组件预期；不嵌入 observer、IPv4、认证/cache 基线或其他部署后现场值。root 同锁真实刷新后，从严格 β 完成源按每项站点依赖精确核对当前观察，结合受保护 placement target 和固定模型元组组装每格完整真实 binding。`inbox/collection-bindings-<manifestSHA>.json` 固定 manifest、站点完成回执、target、owner 确认摘要及完整六格绑定；后续必须逐字相等，已有完成史时缺该来源不能重新登记。没有 baseline 自拍／忽略漂移，也不要求构建时知道未来 cgroup inode 或把包自身 observer 哈希写回包。站点前置读取受保护已完成 β 来源并按登记依赖核对，可尚未 receive/activate；当前观察本身不替代站点成功。`completed_case` 只读重放完整绑定与原完成回执，按模板继续首个未通过案例，既有成功的原 verified_at 不刷新。完成与 inbox 发布之间用受保护 pending 区分中断：只重发已落账、仍有原 pending 的规范字节；已经发布后丢失的来源继续拒绝，不以恢复发布补造来源。可选 metadata sidecar 丢失保持未观测，不重建用量。一格失败即结束本次组调用，普通／安全停止沿既有 v2 状态机，不跨格补证。
+
+产品 worker 清空环境与补充组、不可逆降权、禁止 dump，并关闭继承的 root fd。仅私有有界 socketpair 传输固定 case、阶段／序号、摘要、受控 RPC／校验／终态事实与 nullable tokens；ACK 在 root 原子 `reserve` 后发送。认证在实际 exec-stop 核验后且 DETACH 前预占 auth；prompt 在严格初始化及无主尾记录检查后、首字节前预占 model。失联和中断保留消耗并安全停止；已知放置组只按原核验 PID/start/group 回收。
+
+封印材料经公共纯 `compile_materials`、`build_stage_input`、`build_call` 和 `render_request`，不保存合成 snapshot。显式 `CollectionExecutionContext` 把合成描述与实际 latest activation 安装分开，正式默认仍使用 `use_install` 与完整 guard。`prepare_launch`／`run_call` 复用正式放置及协议内核；boundary/value 分别经权威 Screening 校验及实际 value context，Read 经规范 evidence map 重建上下文及 `validate_read_output_v2(attempt_ordinal=1)`。ACK、进程退出码、仅 Pydantic 或末次降级均不能代替通过。
+
+模型回执只发本格六项 RPC 能力和实际复合 IPv4 项，不重发站点的其余 unknown。错模型与 WebSocket 为 identity_mismatch 首停；协议／usage 失败不伪造供应商错误。缺 usage 保留原 usage_shape 拒绝；totalTokens=0 的用量为 unknown。终态目录只读有界 lstat 与独立删除检查分别记录；完整会话写史保持 not_assessed。额外 metadata sidecar 披露已预占 CLI／prompt 下界、观察层、精确供应商请求及隐藏调用 unknown，不改变 v2 回执 wire。
+
+四对照模板为池外 TCP443、非 router UDP53、非 router TCP53、UDP443，固定无秘密 socket worker 同样经 `PlacedProcess(attempt=None)`；不依赖模型内层 TCP53 拒绝。四条规则以固定 `paperradar-negative-<case>` comment 唯一标识，root 从当前受保护 nft 快照取得实际 handle，不把未来 handle 或 egress_digest 放入 payload。root 每次在目标释放前预占 network，核实际放置／项目子树无并发污染、前后规则身份和对应 drop/reject counter 精确增加一个 packet，其余规则 counter 保持不变。没有实际 socket 发起、counter 无法归属／倒退／额外增长、并发或规则变化均不通过；意外响应为 isolation_failed 首停。所有四项通过后，每格实际 auth/模型权威成功及最终当前复核，才关联四个完成源、owner 确认 SHA 与 egress 摘要形成该格 ipv4_egress。负对照回执本身仍只记录 IPv4 unknown，不能提前授予复合资格。
+
+| 层 | 事实 | 资格意义 |
+| --- | --- | --- |
+| passed | 固定模板、精确绑定及权威校验已完成，原 verified_at 产生 | collector 成功事实 |
+| received | owner 接收受保护来源 | 不等于证据激活 |
+| activated | owner 明确启用本格非空分项 | 不补齐 unknown 或失败 |
+| qualified | 当前登记、依赖绑定、期限、来源和当前观察均成立 | 正式消费者才可继续完整 guard |
+
+自然到期／真实 refresh 没有无秘密事件时保持未知；metadata 变化、auth 或模型成功不能证明刷新发生或自然到期。本入口只执行六格与四对照，不增独立刷新探测阶段或认证入口。
 
 ### 时钟与独立恢复
 
@@ -528,7 +551,7 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 
 ## 不提供／不证明
 
-不提供模型 collector、项目 unit/CG/nft 的部署安装、特权持续观察或产品部署；后继工作见[路线图](../roadmap.md#module-live)。
+不提供项目 unit/CG/nft／模型采集库存的部署安装、特权持续观察或产品部署；后继工作见[路线图](../roadmap.md#module-live)。
 真实 OS 特权证明与所有者激活不由离线构建提供；独立覆盖和各次验证范围见[覆盖记录](../verification/issue-168-176-review-r1-r2-fixes.md)。旧不完整调用不能自动升级成完整请求。
 接收权威只核来源、完整性与内部一致性，不能独立证明没有遗漏的失败；失败历史完备性由采集器与 sudoers 边界承担。
 离线构建与合成覆盖不证明真实 root、供应商或模型行为，不替代所有者激活、真实材料外发确认、根用途或校准资格。

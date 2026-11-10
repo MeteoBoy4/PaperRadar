@@ -101,9 +101,9 @@ flowchart TD
 - Live：I04、I05、T05、T07、T08、T12；在同一执行绑定下验收部署机 cwd／祖先、文件与主机级出站、UDP／DNS、端点漂移及 core 边界。
   认证/模型共用放置的部署机责任包括 user manager/linger、项目 slice 锚定及核 ID、受保护规则目标、resolver 只读视图与非特权 userns/ptrace 实效；工程边界见[执行契约](contracts/pi-execution.md#用户级放置与双阶段握手)，不得从离线握手取得现场资格。
   v2 采集累计域、40/40 预占、三次／六轮停止及续跑公共边界见 [Live 契约](contracts/live-evidence.md#v2-采集额度失败类与续跑)，
-  独立工程覆盖见 [#178 台账](verification/issue-178-live-collection-v2.md)；真实 collector 接线、封印 cutover、现场与最终集成门禁仍由 Live 收口。
+  独立工程覆盖见 [#178 台账](verification/issue-178-live-collection-v2.md)；固定模型 collector 的公共派发／权威接收与 inbox 闭环见 [Live 契约](contracts/live-evidence.md#固定模型采集闭环)；封印 cutover、现场与最终集成门禁仍由 Live 收口。
   复用受保护准入账本、完整当前绑定、三检查点和共享分项投影；部署与当前代码策略匹配的冻结 runtime，以新受信回执取得所需分项并由所有者显式证据激活，不继承旧策略资格。
-  产品化模型 collector、项目 unit／CG／nft／observer、特权持续观察及无秘密元数据接缝；按[源码检查点](verification/issue-167-live-six-afk.md)与探索索引限定观察范围，核对同一绑定的 attempt 终态文件集合、目录删除与完整会话写入历史，终态清单不能替代历史零写入证明。
+  封印六格单案例计划集合、带 counter 的四负对照规则、owner 网络适用性确认及模型入口精确 sudoers／运行闭包安装；按[源码检查点](verification/issue-167-live-six-afk.md)与探索索引限定观察范围，核对同一绑定的终态文件集合和目录删除；完整会话写史保持未评估。自然到期／真实刷新缺无秘密来源时明确保持未知，不能用 stat 或调用成功推定。
   按 [ADR-0058](adr/0058-allow-bounded-auth-cache-stat-evolution.md) 的固定 v2 不变量基线与独占 helper 临时布局，落实模型侧重验与失观测阻断，验证真实订阅刷新；
   独立工程覆盖见 [#179 台账](verification/issue-179-auth-cache-stat-v2.md)；
   基线能力定义补充 [ADR-0059](adr/0059-clarify-auth-cache-baseline-capability.md) 待所有者评审；正常 metadata 演进不证明写史或 writer，真实自然刷新仍由 Live 现场验收承接。按 [ADR-0049](adr/0049-bound-core-persistence-with-explicit-zero-limit.md) 核验零 core／Apport 适用范围并补长期漂移诊断，保留其已接受残余，不能把全机 core 丢弃当作无人值守方案。

@@ -67,7 +67,7 @@ pre-exec中更改，不修改调用方进程限额。
 缺少现场证据时普通执行仍阻断，合成Python对端不构成真实Pi/Node准入。
 
 
-### 启动策略 `pi-launch-1.4.0-v7`
+### 启动策略 `pi-launch-1.4.0-v8`
 
 模型进程固定 argv：
 
@@ -122,7 +122,7 @@ pre-exec中更改，不修改调用方进程限额。
 --provider openai --min-expiry <ceil(attempt-timeout)+600>s
 ```
 
-这是 `pi-launch-1.4.0-v7` 登记的独立入口形状；供给 Node 身份来自 manifest。
+这是 `pi-launch-1.4.0-v8` 登记的独立入口形状；供给 Node 身份来自 manifest。
 依据 Pi 1.4.0 `docs/cli.md`「Authentication commands」；实际可用性仍需 Live 证据，
 不能由 install_check 或这份源码/文档推导证明。
 宿主 env 仅含 `PI_CODING_AGENT_DIR`、版本检查/遥测关闭、固定 locale/PATH 及独占受控临时根中的 HOME/TMPDIR；
@@ -267,10 +267,13 @@ launcher 或执行 service，不刷新、不创建会话或写账本，供诊断
 运行时只绑定策略版本，不对 PaperRadar 源码求哈希，不改变 Pi argv 或协议档案。
 覆盖与未验边界见 [#143 台账](../verification/issue-143-pi-execution.md)。
 
-当前观察刷新采用 `pi-admission-v8`：正式三检查点在准备前及准备后请求固定零参数
+当前观察刷新采用 `pi-admission-v9`：正式三检查点在准备前及准备后请求固定零参数
 受保护刷新，领取事务内只读核验。临时失败拒绝本次且不领取 attempt/业务预算；
 同一站点观察可用于 low/high，但完整模型身份和每格模型证据继续精确比对。
 失败分级和来源边界见 [Live 当前观察契约](live-evidence.md#当前观察与认证cache-基线)。
+
+
+采集专用上下文只分离封印合成 snapshot 与实际 latest activation 安装，不构造业务 task/attempt 或放宽正式 guard。认证 exec-stop 前释放闸点、prompt 首字节闸点、collector metadata 审计及终态／删除分别核验属于当前启动身份；详细规则见 [固定模型采集闭环](live-evidence.md#固定模型采集闭环)。
 
 ## 错误与拒绝
 
