@@ -187,7 +187,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/rpc.py",
-        "99c6203bf4e02d308d12b2498147fe04c2777d4841308c3e2aed79f27d82adc5",
+        "c0cb3455716ac2147e808190177c9909f6bc9a7bb1015da6d5c0b21e89195ad9",
     ),
     (
         "src/paper_radar/llm/rpc_frames.py",
@@ -195,7 +195,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/rpc_messages.py",
-        "53c244de76943573a7938c8c22a2500c860e5fce63ec0b96ac3f215b6b9600a6",
+        "41d1ea80a219e92c469c4a514472bea951ad7f2405a310255cf407b02f619e21",
     ),
     (
         "src/paper_radar/llm/rpc_pipes.py",
@@ -203,7 +203,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/rpc_types.py",
-        "2b3f15472b6c548854d308a9b20ef566fd52e7cc8e635bf5445f6d356cd4a179",
+        "543f4093141660fb3499327b4f9d822bebac3f6d9a88ece067f7aa026964a163",
     ),
     (
         "tests/a8_acceptance_support.py",

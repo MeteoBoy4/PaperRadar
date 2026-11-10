@@ -200,7 +200,7 @@ SHARED_MATERIALS = {
         "84b5cbcc527c5f291cba50bf4cf83aa652c94040a822d051968811541fb5fb7b"
     ),
     "src/paper_radar/config/service.py": (
-        "4701cf2b828347671ed6ee939ee1f41743860989d3041331ed9ab37a78424aa9"
+        "dc3841724b49d2eab9cfa11adb0905078e314423f7c7f657aea112afa0e68aaf"
     ),
     "src/paper_radar/config/snapshot_cli.py": (
         "b6afba96f094800598419763ef8688bebbe59fd5125dd623e27b404169d19420"
