@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
+from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
@@ -60,6 +62,24 @@ def show(
         if plan_id is not None:
             selected_plan = ledger.show_plan(plan_id)
             typer.echo(selected_plan.model_dump_json())
+            from paper_radar.live_evidence.receipt_v2 import ApprovedPlanV2
+
+            if isinstance(selected_plan, ApprovedPlanV2):
+                from paper_radar.live_evidence.collection import ProtectedCollection
+
+                status = ProtectedCollection(ledger).status(plan_id, now=_now())
+                typer.echo(
+                    json.dumps(asdict(status), ensure_ascii=False, sort_keys=True)
+                )
+                actions = {
+                    "resume": "可从未通过案例继续；仍须核验窗口、绑定与准入。",
+                    "complete": "本计划案例已通过；请所有者审阅、接收并显式激活分项。",
+                    "owner_review_stop": "已持久停止；请所有者审阅失败，禁止绕过。",
+                    "recover_interrupted": "存在未终结轮；持独占锁核对，禁止重放预占。",
+                    "approve_current_window": "窗口不适用；请所有者审阅新的明确窗口。",
+                    "budget_exhausted": "采集额度或计划轮数已耗尽；不得增加调用。",
+                }
+                typer.echo("下一动作：" + actions[status.next_action])
             return
         records = (ledger.show(receipt_id),) if receipt_id else ledger.list_received()
         from paper_radar.live_evidence.lifecycle import EvidenceLifecycle

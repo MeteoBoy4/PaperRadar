@@ -46,8 +46,11 @@ _CHECK_ALL_EXAMPLE = (
     "--contract value-prediction --contract reuse-assessment "
     "--contract decision-reasons --version v1 --target contracts"
 )
-_CONTRACT_CHOICES_HELP = "\n".join(
-    f"- `{name.value}`（`{ContractVersion.V1.value}`）" for name in ContractName
+_CONTRACT_CHOICES_HELP = (
+    "\n".join(
+        f"- `{name.value}`（`{ContractVersion.V1.value}`）" for name in ContractName
+    )
+    + "\n- `live-evidence`（`v2`）"
 )
 
 ROOT_HELP = """\

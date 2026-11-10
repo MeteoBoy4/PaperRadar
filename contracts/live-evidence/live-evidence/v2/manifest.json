@@ -1,0 +1,7 @@
+{
+  "contract": "live-evidence",
+  "format_version": 1,
+  "schema_file": "schema.json",
+  "schema_sha256": "6704d8d1b3e112483cfc0ff3c1dc484add28d0e8b0b709d062d408aa985363b9",
+  "version": "v2"
+}
