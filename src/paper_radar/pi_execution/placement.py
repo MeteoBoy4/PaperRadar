@@ -29,7 +29,7 @@ from paper_radar.live_evidence.types import BindingComponent as B
 from paper_radar.llm.rpc_types import RpcProblem
 from paper_radar.pi_execution import isolation
 from paper_radar.pi_execution.errors import ExecutionError, ExecutionReason
-from paper_radar.pi_execution.process import adopt_process
+from paper_radar.pi_execution.process import cleanup_process
 
 PLACEMENT_POLICY_VERSION = "pi-placement-v1"
 TARGET_FILENAME = "placement-target-v1.json"
@@ -449,12 +449,7 @@ class PlacedProcess:
                     pass
                 self._traced = False
             # Failed group cleanup cannot claim successful resource removal.
-            if self.child.poll() is None:
-                adopt_process(self.child).terminate(10)
-            else:
-                for stream in (self.child.stdin, self.child.stdout, self.child.stderr):
-                    if stream is not None:
-                        stream.close()
+            cleanup_process(self.child)
             self.child = None
         self._temporary.cleanup()
 
