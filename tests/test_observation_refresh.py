@@ -1,16 +1,24 @@
 """Live-04 独立例行观察覆盖;合成 root fixture 不授予现场资格。"""
 
+import subprocess
+from collections.abc import Iterator
 from datetime import timedelta
 from pathlib import Path
+from sqlite3 import Connection
+from typing import BinaryIO
 
 import pytest
 
-from paper_radar.live_evidence.ledger import LedgerError
+from paper_radar.live_evidence.collector import SiteObservation
+from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
 from paper_radar.live_evidence.observation import (
     CurrentObservation,
     load_current_observation,
 )
 from paper_radar.live_evidence.receipt import canonical_bytes
+from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
+from paper_radar.live_evidence.types import BindingComponent
+from paper_radar.pi_execution.admission import EvidenceBinding
 from tests.live_evidence_ledger_support import NOW
 from tests.live_evidence_lifecycle_support import activated
 
@@ -125,7 +133,9 @@ def test_unavailable_projection_keeps_original_evidence_and_shared_chinese_reaso
     assert ledger.show(original.receipt_id).receipt == original
 
 
-def refresh_site(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def refresh_site(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[EvidenceLedger, Path, dict[str, object], CurrentObservation]:
     import json
 
     from paper_radar.live_evidence import protected_observer as observer
@@ -146,7 +156,6 @@ def refresh_site(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         member.chmod(0o644)
     for directory in (runtime, *(path for path in runtime.rglob("*") if path.is_dir())):
         directory.chmod(0o755)
-    from paper_radar.live_evidence.collector import SiteObservation
     from tests.site_collector_support import site_configuration
 
     (runtime / "site.json").write_bytes(canonical_bytes(site_configuration(tmp_path)))
@@ -156,7 +165,9 @@ def refresh_site(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         if component not in {B.IPV4_EGRESS, B.OBSERVER}
     }
 
-    def metadata(site, *, metadata_only=False):
+    def metadata(
+        site: SiteConfiguration, *, metadata_only: bool = False
+    ) -> SiteObservation:
         assert metadata_only
         return SiteObservation(local_components.copy(), (("metadata", True),))
 
@@ -190,7 +201,7 @@ def refresh_site(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         resolver_view="/run/paper-radar/resolv.conf",
         resolver_digest="a" * 64,
     )
-    nft = {
+    nft: dict[str, object] = {
         "nftables": [
             {"table": {"family": "inet", "name": "paperradar", "handle": 7}},
             {
@@ -221,14 +232,16 @@ def refresh_site(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     )
     (ledger.root / "inbox/current-observation.json").chmod(0o644)
 
-    def run(argv, **kwargs):
+    def run(
+        argv: tuple[str, ...], *, stdout: BinaryIO, **kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
         from subprocess import CompletedProcess
 
         assert argv == ("/usr/sbin/nft", "-j", "list", "table", "inet", "paperradar")
-        kwargs["stdout"].write(json.dumps(nft).encode())
+        stdout.write(json.dumps(nft).encode())
         return CompletedProcess(argv, 0)
 
-    monkeypatch.setattr(observer.subprocess, "run", run)
+    monkeypatch.setattr(subprocess, "run", run)
     return ledger, runtime, nft, previous
 
 
@@ -275,14 +288,16 @@ def test_routine_refresh_classifies_failures_without_stale_hiding_drift(
     before = (ledger.root / "inbox/current-observation.json").read_bytes()
     if damage in {"nft_unavailable", "cgroup_drift_and_nft_failure"}:
 
-        def unavailable(*args, **kwargs):
+        def unavailable(*args: object, **kwargs: object) -> None:
             raise OSError("transient synthetic failure")
 
-        monkeypatch.setattr(observer.subprocess, "run", unavailable)
+        monkeypatch.setattr(subprocess, "run", unavailable)
     if damage == "cgroup_drift_and_nft_failure":
         (tmp_path / "proc/4242/cgroup").write_text("0::/different-anchor\n")
     elif damage == "nft_drift":
-        nft["nftables"].append({"rule": {"accept": None}})
+        rows = nft["nftables"]
+        assert isinstance(rows, list)
+        rows.append({"rule": {"accept": None}})
     elif damage == "observer_drift":
         (runtime / "entry.py").write_bytes(b"changed sealed observer\n")
     elif damage == "observer_lost":
@@ -342,7 +357,9 @@ def test_site_snapshot_supports_low_and_high_without_borrowing_model_evidence(
         tmp_path / "evidence", monkeypatch
     )
 
-    def local(_database, selected, **kwargs):
+    def local(
+        _database: Path, selected: EvidenceBinding, **kwargs: object
+    ) -> dict[BindingComponent, str]:
         return {
             key: value
             for key, value in components.items()
@@ -434,16 +451,17 @@ def test_formal_refresh_failure_before_auth_has_no_business_or_evidence_side_eff
     else:
         from tests.read_execution_support import setup
 
-        product, task, credentials = setup(tmp_path / "product", monkeypatch)
-        identifier = task.task_id
-        before = product.tasks.task(identifier)
+        read_product, read_task, credentials = setup(tmp_path / "product", monkeypatch)
+        identifier = read_task.task_id
+        read_before = read_product.tasks.task(identifier)
     ledger, original, _ = protected_admission(
         tmp_path / "evidence", monkeypatch, uses=("boundary-low", "read-low")
     )
-    product._now = lambda: NOW
+    active_product = product if consumer == "screening" else read_product
+    active_product._now = lambda: NOW
     events = ledger.audit()
 
-    def unavailable():
+    def unavailable() -> None:
         raise LedgerError("observation_unavailable")
 
     monkeypatch.setattr(
@@ -451,13 +469,13 @@ def test_formal_refresh_failure_before_auth_has_no_business_or_evidence_side_eff
         unavailable,
     )
     with pytest.raises(ExecutionError, match="evidence_missing"):
-        product.run_attempt(identifier)
+        active_product.run_attempt(identifier)
     after = (
         product.tasks.status(identifier)
         if consumer == "screening"
-        else product.tasks.task(identifier)
+        else read_product.tasks.task(identifier)
     )
-    assert after == before
+    assert after == (before if consumer == "screening" else read_before)
     assert ledger.audit() == events
     assert not (credentials / "auth-observed.json").exists()
     assert evidence._read_pending() == ()
@@ -476,7 +494,7 @@ def test_doctor_reads_failed_refresh_and_preserves_snapshot_time_without_refresh
     record_refresh(ledger, candidate=None, failure="observation_unavailable", now=NOW)
     before = ledger.audit()
 
-    def forbidden():
+    def forbidden() -> None:
         raise AssertionError("doctor must remain read only")
 
     monkeypatch.setattr(
@@ -522,7 +540,9 @@ def test_helper_cannot_reuse_old_fresh_observation_when_refresh_did_not_publish(
     ledger, _runtime, _nft, _previous = refresh_site(tmp_path, monkeypatch)
     monkeypatch.setattr(observer, "EvidenceLedger", lambda: ledger)
 
-    def run(argv, **kwargs):
+    def run(
+        argv: tuple[str, ...], *, stdout: BinaryIO, **kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
         assert argv == (
             "/usr/bin/sudo",
             "-n",
@@ -532,7 +552,7 @@ def test_helper_cannot_reuse_old_fresh_observation_when_refresh_did_not_publish(
         assert kwargs["stdin"] == -3
         return CompletedProcess(argv, returncode)
 
-    monkeypatch.setattr(observer.subprocess, "run", run)
+    monkeypatch.setattr(subprocess, "run", run)
     with pytest.raises(LedgerError, match="observation_unavailable"):
         observer.request_observation_refresh()
 
@@ -542,7 +562,7 @@ def test_refresh_entry_rejects_free_arguments_before_reading_any_source(
 ) -> None:
     from paper_radar.live_evidence import protected_observer as observer
 
-    def forbidden():
+    def forbidden() -> None:
         raise AssertionError("must not open ledger")
 
     monkeypatch.setattr(observer, "EvidenceLedger", forbidden)
@@ -559,11 +579,13 @@ def test_database_failure_keeps_drift_marker_and_pending_disclosure_across_reope
     from paper_radar.live_evidence.protected_observer import refresh_once
 
     ledger, runtime, nft, previous = refresh_site(tmp_path, monkeypatch)
-    nft["nftables"].append({"rule": {"accept": None}})
+    rows = nft["nftables"]
+    assert isinstance(rows, list)
+    rows.append({"rule": {"accept": None}})
     original = ledger.connection
 
     @contextmanager
-    def unavailable(*, writable=False):
+    def unavailable(*, writable: bool = False) -> Iterator[Connection]:
         if writable:
             raise OSError("synthetic database unavailable")
         with original() as connection:
@@ -596,14 +618,16 @@ def test_confirmed_nft_table_loss_is_drift_instead_of_temporary_failure(
 
     ledger, runtime, _nft, _previous = refresh_site(tmp_path, monkeypatch)
 
-    def run(argv, **kwargs):
+    def run(
+        argv: tuple[str, ...], *, stdout: BinaryIO, **kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
         if argv == ("/usr/sbin/nft", "-j", "list", "table", "inet", "paperradar"):
             return CompletedProcess(argv, 2)
         assert argv == ("/usr/sbin/nft", "-j", "list", "tables")
-        kwargs["stdout"].write(b'{"nftables":[]}')
+        stdout.write(b'{"nftables":[]}')
         return CompletedProcess(argv, 0)
 
-    monkeypatch.setattr(observer.subprocess, "run", run)
+    monkeypatch.setattr(subprocess, "run", run)
     assert observer.refresh_once(runtime, ledger, now=NOW) == "observation_drift"
     assert observer.refresh_once(runtime, ledger, now=NOW) == "observation_drift"
 
@@ -657,9 +681,11 @@ def test_only_counter_values_evolve_while_rule_byte_constraints_still_drift(
     from paper_radar.live_evidence import protected_observer as observer
 
     ledger, runtime, nft, _previous = refresh_site(tmp_path, monkeypatch)
-    nft["nftables"][1]["rule"]["expr"][0]["counter"] = {"packets": 3, "bytes": 800}
+    rows = nft["nftables"]
+    assert isinstance(rows, list)
+    rows[1]["rule"]["expr"][0]["counter"] = {"packets": 3, "bytes": 800}
     assert observer.refresh_once(runtime, ledger, now=NOW) == "available"
-    nft["nftables"][1]["rule"]["expr"].append({"quota": {"bytes": 5}})
+    rows[1]["rule"]["expr"].append({"quota": {"bytes": 5}})
     assert observer.refresh_once(runtime, ledger, now=NOW) == "observation_drift"
 
 
@@ -696,15 +722,16 @@ def test_helper_unavailable_does_not_hide_confirmed_missing_observation_source(
     else:
         from tests.read_execution_support import setup
 
-        product, task, _credentials = setup(tmp_path / "product", monkeypatch)
-        identifier = task.task_id
+        read_product, read_task, _credentials = setup(tmp_path / "product", monkeypatch)
+        identifier = read_task.task_id
     ledger, _original, _components = protected_admission(
         tmp_path / "evidence", monkeypatch, uses=("boundary-low", "read-low")
     )
-    product._now = lambda: NOW
+    active_product = product if consumer == "screening" else read_product
+    active_product._now = lambda: NOW
     (ledger.root / "inbox/current-observation.json").unlink()
 
-    def unavailable():
+    def unavailable() -> None:
         raise LedgerError("observation_unavailable")
 
     monkeypatch.setattr(
@@ -713,7 +740,7 @@ def test_helper_unavailable_does_not_hide_confirmed_missing_observation_source(
     )
     monkeypatch.setattr(evidence, "_run_helper", lambda arguments: False)
     with pytest.raises(ExecutionError, match="evidence_missing"):
-        product.run_attempt(identifier)
+        active_product.run_attempt(identifier)
     assert evidence._read_pending()
 
 
@@ -759,17 +786,14 @@ def test_metadata_only_observation_rechecks_context_without_full_beta_or_node(
         use_id="boundary-low",
     )
 
-    def forbidden_probe(*args, **kwargs):
+    def forbidden_probe(*args: object, **kwargs: object) -> None:
         raise AssertionError("routine metadata must not run full beta")
 
-    original_run = runtime.subprocess.run
+    import platform
 
-    def only_platform_query(argv, **kwargs):
-        assert argv == ["uname", "-p"]
-        return original_run(argv, **kwargs)
-
+    platform.processor()  # 先完成公开平台查询;例行观察不得再启动 Node 或 beta。
     monkeypatch.setattr(runtime, "isolation_probe", forbidden_probe)
-    monkeypatch.setattr(runtime.subprocess, "run", only_platform_query)
+    monkeypatch.setattr(subprocess, "run", forbidden_probe)
     observed = runtime.observe_site(site, metadata_only=True)
     assert observed.checks == (("metadata", True),)
     assert set(observed.components) == set(B) - {B.IPV4_EGRESS, B.OBSERVER}
@@ -796,6 +820,15 @@ def test_fresh_snapshot_failed_refresh_is_refused_by_new_python_process(
 import sys
 from datetime import datetime
 from pathlib import Path
+import subprocess
+from typing import BinaryIO
+from collections.abc import Iterator
+from sqlite3 import Connection
+from paper_radar.live_evidence.ledger import EvidenceLedger
+from paper_radar.live_evidence.collector import SiteObservation
+from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
+from paper_radar.live_evidence.types import BindingComponent
+from paper_radar.pi_execution.admission import EvidenceBinding
 from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerTrust, LedgerError
 from paper_radar.live_evidence.observation import load_current_observation
 root = Path(sys.argv[1])
@@ -850,7 +883,7 @@ def test_preclaim_rejects_atomic_publication_between_snapshot_and_status_reads(
     reader = ledger._read_source
     published = False
 
-    def read(source):
+    def read(source: Path) -> bytes:
         nonlocal published
         data = reader(source)
         if source.name == "current-observation.json" and not published:

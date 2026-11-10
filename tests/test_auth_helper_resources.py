@@ -2,6 +2,7 @@
 
 import json
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -71,11 +72,16 @@ def test_helper_cleanup_must_be_verified_before_model_preparation(
     original = shutil.rmtree
     leaked: list[Path] = []
 
-    def incomplete_cleanup(path: str | os.PathLike[str], *args, **kwargs) -> None:
+    def incomplete_cleanup(
+        path: str | os.PathLike[str],
+        *,
+        onexc: Callable[[Callable[..., object], str, BaseException], object]
+        | None = None,
+    ) -> None:
         if Path(path).name.startswith("paper-radar-auth-"):
             leaked.append(Path(path))
             return
-        original(path, *args, **kwargs)
+        original(path, onexc=onexc)
 
     monkeypatch.setattr(shutil, "rmtree", incomplete_cleanup)
     try:
@@ -106,7 +112,11 @@ def test_helper_resource_creation_failure_refuses_before_auth_process(
 
     original = tempfile.mkdtemp
 
-    def unavailable(suffix=None, prefix=None, dir=None) -> str:
+    def unavailable(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | os.PathLike[str] | None = None,
+    ) -> str:
         if prefix == "paper-radar-auth-":
             raise OSError("synthetic unavailable temporary storage")
         return original(suffix=suffix, prefix=prefix, dir=dir)

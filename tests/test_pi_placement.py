@@ -1,12 +1,19 @@
 """Live-03 独立公共放置覆盖,不继承历史现场结论。"""
 
+import os
+import subprocess
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
+from paper_radar.live_evidence.receipt import UseId
+from paper_radar.live_evidence.service import AdmissionRequest
 from paper_radar.pi_execution import ExecutionError, prepare_launch
+from paper_radar.pi_execution.admission import EvidenceBinding
+from paper_radar.pi_execution.placement import PlacementTarget
 from tests.pi_execution_support import launch_inputs
-from tests.pi_placement_support import local_placement
+from tests.pi_placement_support import LocalPlacementPlatform, local_placement
 
 
 def test_scope_is_blocked_until_verified_exec_and_no_target_action_precedes_check(
@@ -20,7 +27,7 @@ def test_scope_is_blocked_until_verified_exec_and_no_target_action_precedes_chec
     marker = tmp_path / "target-started"
     checks: list[str] = []
 
-    def verify(_target, pid: int, _start: int, _unit: str) -> None:
+    def verify(_target: PlacementTarget, pid: int, _start: int, _unit: str) -> None:
         executable = os.readlink(f"/proc/{pid}/exe")
         checks.append(executable)
         assert not marker.exists()
@@ -55,7 +62,7 @@ def test_exec_identity_drift_never_releases_target_action(
     platform = local_placement(monkeypatch)
     marker = tmp_path / "target-started"
 
-    def verify(_target, pid: int, _start: int, _unit: str) -> None:
+    def verify(_target: PlacementTarget, pid: int, _start: int, _unit: str) -> None:
         if os.path.samefile(f"/proc/{pid}/exe", "/usr/bin/touch"):
             raise ExecutionError("placement_mismatch")
 
@@ -119,29 +126,32 @@ def test_placement_drift_at_preclaim_spends_no_business_attempt(
     else:
         from tests.read_execution_support import allow_engineering_path, setup
 
-        service, task, _credentials = setup(tmp_path, monkeypatch)
+        read_service, read_task, _credentials = setup(tmp_path, monkeypatch)
         allow_engineering_path(monkeypatch)
-        task_id = task.task_id
-        before = service.tasks.task(task_id)
+        task_id = read_task.task_id
+        read_before = read_service.tasks.task(task_id)
     from paper_radar.pi_execution import placement
 
     platform = placement.PLACEMENT_PLATFORM
+    assert isinstance(platform, LocalPlacementPlatform)
     original = AdmissionCheckpoints.after_prepare
 
-    def after_prepare(self, *args, **kwargs):
-        result = original(self, *args, **kwargs)
+    def after_prepare(
+        self: AdmissionCheckpoints, request: AdmissionRequest, binding: EvidenceBinding
+    ) -> AdmissionRequest:
+        result = original(self, request, binding)
         platform.refuse = True
         return result
 
     monkeypatch.setattr(AdmissionCheckpoints, "after_prepare", after_prepare)
     with pytest.raises(ExecutionError, match="evidence_missing"):
-        service.run_attempt(task_id)
+        (service if consumer == "screening" else read_service).run_attempt(task_id)
     after = (
         service.tasks.status(task_id)
         if consumer == "screening"
-        else service.tasks.task(task_id)
+        else read_service.tasks.task(task_id)
     )
-    assert after == before
+    assert after == (before if consumer == "screening" else read_before)
 
 
 @pytest.mark.parametrize("damage", ["child", "anchor", "recreated_slice", "ancestor"])
@@ -223,7 +233,9 @@ def test_manager_linger_and_anchor_are_required(
         placement, "PLACEMENT_PLATFORM", placement.LinuxPlacementPlatform()
     )
 
-    def run(argv, **_kwargs):
+    def run(
+        argv: tuple[str, ...], **_kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
         if failure == "unavailable":
             raise OSError("private manager error")
         output = (
@@ -257,7 +269,8 @@ def test_bounded_preparation_distinguishes_peer_exit_timeout_and_protocol(
     platform = local_placement(monkeypatch)
     original = placement.LinuxPlacementPlatform.spawn
 
-    def spawn(argv, env):
+    def spawn(argv: tuple[str, ...], env: dict[str, str]) -> subprocess.Popen[bytes]:
+        command: tuple[str, ...]
         if failure == "exit":
             command = ("/usr/bin/true",)
         elif failure == "timeout":
@@ -297,10 +310,15 @@ def test_scope_id_change_and_cleanup_failure_are_controlled(
         process.recheck()
     original = shutil.rmtree
 
-    def fail_cleanup(path, *args, **kwargs):
+    def fail_cleanup(
+        path: str | os.PathLike[str],
+        *,
+        onexc: Callable[[Callable[..., object], str, BaseException], object]
+        | None = None,
+    ) -> None:
         if str(path).startswith("/tmp/paperradar-placement-"):
             raise PermissionError("private cleanup detail")
-        return original(path, *args, **kwargs)
+        return original(path, onexc=onexc)
 
     monkeypatch.setattr(shutil, "rmtree", fail_cleanup)
     with pytest.raises(ExecutionError, match="cleanup_failed"):
@@ -331,6 +349,7 @@ def test_placement_denial_preserves_temporary_and_durable_admission_distinction(
         protected_admission,
     )
 
+    use_id: UseId
     if consumer == "screening":
         service, task, credentials = product_inputs(tmp_path / "product", monkeypatch)
         task_id = task.receipt_id
@@ -338,16 +357,17 @@ def test_placement_denial_preserves_temporary_and_durable_admission_distinction(
     else:
         from tests.read_execution_support import setup
 
-        service, task, credentials = setup(tmp_path / "product", monkeypatch)
-        task_id = task.task_id
+        read_service, read_task, credentials = setup(tmp_path / "product", monkeypatch)
+        task_id = read_task.task_id
         use_id = "read-low"
     _ledger, _receipt, components = protected_admission(
         tmp_path / "evidence", monkeypatch, uses=(use_id,)
     )
-    service._now = lambda: NOW
+    active_service = service if consumer == "screening" else read_service
+    active_service._now = lambda: NOW
     assert projected_admission(components, use_id).decision.executable
 
-    def reject(*_args, **_kwargs):
+    def reject(*_args: object, **_kwargs: object) -> None:
         if failure in {"stale", "untrusted"}:
             raise placement.PlacementError(
                 "placement_unavailable",
@@ -368,7 +388,7 @@ def test_placement_denial_preserves_temporary_and_durable_admission_distinction(
     with pytest.raises(
         ExecutionError, match=r"placement_unavailable|placement_mismatch"
     ):
-        service.run_attempt(task_id)
+        active_service.run_attempt(task_id)
     assert not (credentials / "auth-observed.json").exists()
     result = projected_admission(components, use_id)
     assert result.pending_revocation == (failure in {"drift", "untrusted"})
@@ -376,7 +396,7 @@ def test_placement_denial_preserves_temporary_and_durable_admission_distinction(
     if consumer == "screening":
         assert service.tasks.status(task_id).used_attempts == 0
     else:
-        assert service.tasks.task(task_id).attempts == ()
+        assert read_service.tasks.task(task_id).attempts == ()
 
 
 @pytest.mark.parametrize("damage", ["egress", "stale", "permission", "noncanonical"])
@@ -430,8 +450,10 @@ def test_protected_target_requires_current_observation_and_unchanged_trusted_byt
     with pytest.raises(ExecutionError, match=reason) as caught:
         placement.load_placement_target(now=now)
     if damage == "stale":
+        assert isinstance(caught.value, placement.PlacementError)
         assert caught.value.source_reason == "observation_stale"
     elif damage == "noncanonical":
+        assert isinstance(caught.value, placement.PlacementError)
         assert caught.value.source_reason == "source_integrity"
 
 

@@ -176,39 +176,67 @@ def test_owner_refuses_changed_or_unavailable_review_facts(
 
 
 @pytest.mark.parametrize("outcome", ["ok", "denied", "timeout", "missing"])
-def test_confirmation_refresh_uses_only_the_fixed_frozen_collector(
-    monkeypatch: pytest.MonkeyPatch, outcome: str
+def test_confirmation_refresh_uses_only_the_fixed_protected_refresh_helper(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, outcome: str
 ) -> None:
     import subprocess
+    from datetime import UTC, datetime
 
+    from paper_radar.live_evidence import protected_observer
     from paper_radar.live_evidence.cli import _refresh_current_observation
     from paper_radar.live_evidence.ledger import LedgerError
+    from paper_radar.live_evidence.refresh import record_refresh
+
+    ledger, original, _ = installed(tmp_path)
+    snapshot = CurrentObservation(
+        observed_at=NOW,
+        binding=original.binding,
+        checked_components=tuple(BindingComponent),
+    )
+    source = ledger.root / "inbox/current-observation.json"
+    source.write_bytes(canonical_bytes(snapshot))
+    source.chmod(0o644)
+    monkeypatch.setattr(protected_observer, "EvidenceLedger", lambda: ledger)
 
     calls = []
 
-    def run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+    def run(
+        args: tuple[str, ...], **kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
         calls.append((args, kwargs))
         if outcome == "timeout":
-            raise subprocess.TimeoutExpired(args, 120)
+            raise subprocess.TimeoutExpired(args, 30)
         if outcome == "missing":
             raise OSError("synthetic-only")
+        if outcome == "ok":
+            at = datetime.now(UTC)
+            record_refresh(
+                ledger,
+                candidate=snapshot.model_copy(update={"observed_at": at}),
+                now=at,
+            )
         return subprocess.CompletedProcess(args, 0 if outcome == "ok" else 2)
 
     monkeypatch.setattr(subprocess, "run", run)
     if outcome == "ok":
         _refresh_current_observation()
     else:
-        with pytest.raises(LedgerError, match="binding_observation_unavailable"):
+        with pytest.raises(LedgerError, match="observation_unavailable"):
             _refresh_current_observation()
     assert calls == [
         (
-            ["/usr/libexec/paperradar/live-evidence-collect"],
+            (
+                "/usr/bin/sudo",
+                "-n",
+                "--",
+                "/usr/libexec/paperradar/live-evidence-refresh",
+            ),
             {
-                "env": {},
+                "env": {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin"},
                 "stdin": subprocess.DEVNULL,
                 "stdout": subprocess.DEVNULL,
                 "stderr": subprocess.DEVNULL,
-                "timeout": 120,
+                "timeout": 30,
                 "check": False,
             },
         )

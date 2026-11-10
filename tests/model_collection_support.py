@@ -224,7 +224,10 @@ def setup_collection(
     monkeypatch.setattr(observer, "refresh_under_lock", refresh)
 
     def metadata(
-        current_site: SiteConfiguration, *, metadata_only: bool
+        current_site: SiteConfiguration,
+        *,
+        metadata_only: bool,
+        require_snapshot: bool = False,
     ) -> SiteObservation:
         components = binding | {
             B.MODEL_TUPLE: model_tuple_component(current_site.binding)

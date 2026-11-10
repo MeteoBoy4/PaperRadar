@@ -338,10 +338,19 @@ def _current(
         observed = product_observation(
             site.model_copy(update={"binding": cell.model, "use_id": cell.use_id}),
             metadata_only=True,
+            require_snapshot=True,
         )
         components = observation.binding | observed.components
-        if not observed.checks or observed.checks[0] != ("metadata", True):
-            raise DispatchDenied("resource_unavailable")
+        if (
+            observed.failure is not None
+            or not observed.checks
+            or observed.checks[0] != ("metadata", True)
+        ):
+            raise DispatchDenied(
+                "identity_mismatch"
+                if observed.failure == "binding_observation_unavailable"
+                else "resource_unavailable"
+            )
         if components != cell.binding or not {B.IPV4_EGRESS, B.OBSERVER} <= set(
             observation.checked_components
         ):
@@ -661,10 +670,7 @@ def _run_negatives(
                 ),
             ),
         )
-        digest = collection.complete_round(receipt, now=now)
-        _publish(
-            ledger.root / "inbox" / f"negative-{digest}.json", canonical_bytes(receipt)
-        )
+        _complete_and_publish(collection, receipt, "negative", now=now)
         return failure is None
     except BaseException:
         _stop_placed(targets)

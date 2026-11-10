@@ -153,9 +153,17 @@ def test_bootstrap_uses_exact_embedded_archive_then_refuses_extra_member(
     assert (deployed / "sitecustomize.py").read_bytes() == b"unknown extra member"
 
 
-@pytest.mark.parametrize("tamper", ["extra", "symlink", "hardlink", "writable"])
+@pytest.mark.parametrize(
+    "tamper,reason",
+    [
+        ("extra", "runtime_member_identity"),
+        ("symlink", "protected_identity"),
+        ("hardlink", "runtime_member_type"),
+        ("writable", "protected_identity"),
+    ],
+)
 def test_runtime_inventory_tampering_refuses_without_cleanup(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, tamper: str
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, tamper: str, reason: str
 ) -> None:
     import os
 
@@ -165,10 +173,11 @@ def test_runtime_inventory_tampering_refuses_without_cleanup(
     staged, paths = bundle_model(tmp_path, monkeypatch)
     host = ModelHost(paths)
     deployment = LiveDeployment(staged, paths=paths, host=host, owner_uid=os.getuid())
-    deployment.install()
+    assert deployment.install() == "installed"
     unknown = paths.runtime / "unknown"
     if tamper == "extra":
         unknown.write_bytes(b"preserve")
+        unknown.chmod(0o644)
     elif tamper == "symlink":
         unknown.symlink_to(tmp_path)
     elif tamper == "hardlink":
@@ -176,7 +185,7 @@ def test_runtime_inventory_tampering_refuses_without_cleanup(
     else:
         (paths.runtime / "site.json").chmod(0o666)
     before = list(host.calls)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="^" + reason + "$"):
         deployment.install()
     assert host.calls == before
     if tamper != "writable":
@@ -287,8 +296,12 @@ def test_interrupted_partial_runtime_is_preserved_and_not_automatically_cleaned(
     deployment = LiveDeployment(
         staged, paths=paths, host=ModelHost(paths), owner_uid=os.getuid()
     )
-    with pytest.raises((ValueError, OSError)):
+    import errno
+
+    with pytest.raises(FileNotFoundError) as caught:
         deployment.install()
+    assert caught.value.errno == errno.ENOENT
+    assert caught.value.filename == str(pending / "manifest.sha256")
     assert (pending / "unknown").read_bytes() == b"partial-copy"
     assert not paths.runtime.exists()
 
@@ -346,8 +359,12 @@ def test_explicit_recovery_rechecks_host_preserving_history(
     history = (paths.ledger / "retained-history").read_bytes()
     paths.resolver.unlink()
     host.installed = False  # 模拟reboot丢失/run与cgroup/nft事实。
-    with pytest.raises(OSError):
+    import errno
+
+    with pytest.raises(FileNotFoundError) as caught:
         deployment.install()
+    assert caught.value.errno == errno.ENOENT
+    assert caught.value.filename == str(paths.resolver)
     assert deployment.install(recover=True) == "installed"
     assert host.calls.count("prepare_recovery") == 1
     assert paths.resolver.exists()

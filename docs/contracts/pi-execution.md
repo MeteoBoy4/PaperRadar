@@ -267,7 +267,7 @@ launcher 或执行 service，不刷新、不创建会话或写账本，供诊断
 运行时只绑定策略版本，不对 PaperRadar 源码求哈希，不改变 Pi argv 或协议档案。
 覆盖与未验边界见 [#143 台账](../verification/issue-143-pi-execution.md)。
 
-当前观察刷新采用 `pi-admission-v9`：正式三检查点在准备前及准备后请求固定零参数
+当前观察刷新采用 `pi-admission-v11`：正式三检查点在准备前及准备后请求固定零参数
 受保护刷新，领取事务内只读核验。临时失败拒绝本次且不领取 attempt/业务预算；
 同一站点观察可用于 low/high，但完整模型身份和每格模型证据继续精确比对。
 失败分级和来源边界见 [Live 当前观察契约](live-evidence.md#当前观察与认证cache-基线)。

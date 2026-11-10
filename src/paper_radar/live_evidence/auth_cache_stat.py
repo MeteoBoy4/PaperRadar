@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -14,6 +15,36 @@ BASELINE_FORMAT = "auth-cache-stat-v2"
 MAX_MEMBERS = 4096
 MAX_DEPTH = 32
 EVOLVING_MEMBERS = frozenset({".", "./auth.json", "./models-store.json"})
+_UNSAFE_METADATA_ERRNOS = frozenset(
+    {errno.EACCES, errno.EPERM, errno.ENOTDIR, errno.ELOOP}
+)
+
+
+def credentials_metadata_digest(directory: Path) -> str:
+    """当前凭据形状与 v2 摘要;未知 I/O 不冒充已确认的安全漂移。"""
+    try:
+        info = directory.lstat()
+        auth = (directory / "auth.json").lstat()
+        if (
+            not directory.is_absolute()
+            or any(
+                stat.S_ISLNK(path.lstat().st_mode)
+                for path in (directory, *directory.parents)
+            )
+            or not stat.S_ISDIR(info.st_mode)
+            or stat.S_IMODE(info.st_mode) != 0o700
+            or info.st_uid != os.getuid()
+            or not stat.S_ISREG(auth.st_mode)
+            or auth.st_uid != os.getuid()
+        ):
+            raise LedgerError("binding_observation_unavailable")
+    except OSError as error:
+        raise LedgerError(
+            "binding_observation_unavailable"
+            if error.errno in _UNSAFE_METADATA_ERRNOS | {errno.ENOENT}
+            else "observation_unavailable"
+        ) from None
+    return metadata_digest((directory,))
 
 
 def _identity(info: os.stat_result) -> tuple[int, ...]:
@@ -62,7 +93,7 @@ def metadata_digest(roots: tuple[Path, ...]) -> str:
                 )
                 try:
                     if _identity(os.fstat(child)) != identity:
-                        raise LedgerError("binding_observation_unavailable")
+                        raise LedgerError("observation_unavailable")
                     walk(child, root_index, child_relative, depth + 1)
                 finally:
                     os.close(child)
@@ -73,9 +104,9 @@ def metadata_digest(roots: tuple[Path, ...]) -> str:
         # 在整棵子树采样后再次核对全部成员,包含获准演进字段。
         for name, identity in observed:
             if _identity(os.stat(name, dir_fd=fd, follow_symlinks=False)) != identity:
-                raise LedgerError("binding_observation_unavailable")
+                raise LedgerError("observation_unavailable")
         if _identity(os.fstat(fd)) != before:
-            raise LedgerError("binding_observation_unavailable")
+            raise LedgerError("observation_unavailable")
 
     try:
         if not roots or len(roots) > MAX_MEMBERS:
@@ -86,11 +117,15 @@ def metadata_digest(roots: tuple[Path, ...]) -> str:
                 before = _identity(os.fstat(fd))
                 walk(fd, root_index, ".", 0)
                 if _identity(root.lstat()) != before:
-                    raise LedgerError("binding_observation_unavailable")
+                    raise LedgerError("observation_unavailable")
             finally:
                 os.close(fd)
     except OSError as error:
-        raise LedgerError("binding_observation_unavailable") from error
+        raise LedgerError(
+            "binding_observation_unavailable"
+            if error.errno in _UNSAFE_METADATA_ERRNOS
+            else "observation_unavailable"
+        ) from error
     invariant_rows = [
         (
             index,

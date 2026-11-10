@@ -39,6 +39,7 @@ from paper_radar.live_evidence.receipt import (
 from paper_radar.live_evidence.types import BindingComponent as B
 from paper_radar.pi_execution.admission import EvidenceBinding
 from paper_radar.pi_execution.current_binding import local_binding_components
+from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.isolation import IsolationBoundary
 from paper_radar.pi_execution.resources import (
     ExecutionRoots,
@@ -46,6 +47,7 @@ from paper_radar.pi_execution.resources import (
     check_cwd,
     proxy_port,
 )
+from paper_radar.pi_supply import SupplyError
 from paper_radar.pi_supply.protection import acquire_install
 
 RUNTIME_ROOT = Path("/usr/libexec/paperradar/live-evidence-runtime")
@@ -171,7 +173,10 @@ def isolation_probe(
 
 
 def observe_site(
-    site: SiteConfiguration, *, metadata_only: bool = False
+    site: SiteConfiguration,
+    *,
+    metadata_only: bool = False,
+    require_snapshot: bool = False,
 ) -> SiteObservation:
     """必须已不可逆降权;数据库/凭据仅以产品身份只读核对。"""
     if os.getuid() != site.product_uid or os.getgid() != site.product_gid:
@@ -181,14 +186,30 @@ def observe_site(
         from paper_radar.pi_supply import activation_history
 
         history = activation_history(site.database)
-        if not history or (
-            history[-1].snapshot_id,
-            history[-1].supply_id,
-            history[-1].install_id,
-        ) != (site.snapshot_id, site.binding.supply_id, site.binding.install_id):
-            return SiteObservation({}, (("metadata", False),))
-        load_config_snapshot(site.database, site.snapshot_id)
-        check_credentials_directory(site.credentials_dir, site.roots)
+        if (
+            not history
+            or (
+                history[-1].supply_id,
+                history[-1].install_id,
+            )
+            != (site.binding.supply_id, site.binding.install_id)
+            or (
+                (not metadata_only or require_snapshot)
+                and history[-1].snapshot_id != site.snapshot_id
+            )
+        ):
+            return SiteObservation(
+                {}, (("metadata", False),), "binding_observation_unavailable"
+            )
+        load_config_snapshot(
+            site.database,
+            history[-1].snapshot_id if metadata_only else site.snapshot_id,
+        )
+        if metadata_only:
+            if not site.roots.outside(site.credentials_dir):
+                raise LedgerError("binding_observation_unavailable")
+        else:
+            check_credentials_directory(site.credentials_dir, site.roots)
         components = local_binding_components(
             site.database, site.binding, credentials_dir=site.credentials_dir
         )
@@ -218,12 +239,27 @@ def observe_site(
                     matches = False
                 checks += (("node-version", matches),)
         return SiteObservation(components, (("metadata", True), *checks))
+    except LedgerError as error:
+        return SiteObservation(
+            {},
+            (("metadata", False),),
+            "observation_unavailable"
+            if error.category == "observation_unavailable"
+            else "binding_observation_unavailable",
+        )
+    except (ExecutionError, SupplyError):
+        return SiteObservation(
+            {}, (("metadata", False),), "binding_observation_unavailable"
+        )
     except Exception:
-        return SiteObservation({}, (("metadata", False),))
+        return SiteObservation({}, (("metadata", False),), "observation_unavailable")
 
 
 def product_observation(
-    site: SiteConfiguration, *, metadata_only: bool = False
+    site: SiteConfiguration,
+    *,
+    metadata_only: bool = False,
+    require_snapshot: bool = False,
 ) -> SiteObservation:
     """fork后不可逆降权且禁ptrace;不在降权与观察之间exec用户环境。"""
     read_fd, write_fd = os.pipe()
@@ -239,12 +275,18 @@ def product_observation(
             if libc.prctl(4, 0, 0, 0, 0) != 0:  # PR_SET_DUMPABLE=0
                 os._exit(2)
             observed = (
-                observe_site(site, metadata_only=True)
+                observe_site(
+                    site, metadata_only=True, require_snapshot=require_snapshot
+                )
                 if metadata_only
                 else observe_site(site)
             )
             payload = json.dumps(
-                {"components": observed.components, "checks": observed.checks}
+                {
+                    "components": observed.components,
+                    "checks": observed.checks,
+                    "failure": observed.failure,
+                }
             ).encode()
             os.write(write_fd, payload)
             os._exit(0)
@@ -260,9 +302,17 @@ def product_observation(
         if status != 0 or len(raw) > 65536:
             raise ValueError("collector_child_failed")
         result = json.loads(raw)
+        failure = result.get("failure")
+        if failure not in {
+            None,
+            "observation_unavailable",
+            "binding_observation_unavailable",
+        }:
+            raise ValueError("collector_child_failed")
         return SiteObservation(
             {B(key): value for key, value in result["components"].items()},
             tuple((str(key), value is True) for key, value in result["checks"]),
+            failure,
         )
     finally:
         os.close(read_fd)
