@@ -23,6 +23,8 @@ def build_bundle(
         for digest in (payload_sha256, manifest_sha256)
     ) or not re.fullmatch("[0-9a-f]{16}", receipt_id):
         raise ValueError("closure_identity_invalid")
+    from paper_radar.pi_execution.current_binding import ADMISSION_POLICY_VERSION
+
     workflow = Path(__file__).with_name("issue176_closure_workflow.py").read_bytes()
     config = {
         "payload_sha256": payload_sha256,
@@ -30,7 +32,7 @@ def build_bundle(
         "receipt_id": receipt_id,
         "drill_use": "value-low",
         "protected_log_probe": "required",
-        "admission_policy": "pi-admission-v5",
+        "admission_policy": ADMISSION_POLICY_VERSION,
         "final_use": "boundary-low",
         "run_name": "closure-"
         + hashlib.sha256(

@@ -65,7 +65,7 @@ def test_disk_source_change_is_rejected_by_a_cold_guard_process(
     copied_test = tmp_path / "tests/test_live_admission_source_guard.py"
     copied_test.parent.mkdir(parents=True)
     shutil.copyfile(Path(guard.__file__), copied_test)
-    manifest_path = tmp_path / "tests/fixtures/live-admission-source-guard-v5.json"
+    manifest_path = tmp_path / "tests/fixtures" / guard.MANIFEST.name
     manifest_path.parent.mkdir(parents=True)
     shutil.copyfile(guard.MANIFEST, manifest_path)
     changed_relative = "scripts/issue176_resume_after_backup_workflow.py"
