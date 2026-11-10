@@ -11,13 +11,11 @@ from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
-
-if TYPE_CHECKING:
-    from paper_radar.live_evidence.reasons import ReasonCode
 
 from pydantic import ValidationError
 
+from paper_radar.live_evidence.ledger_errors import LedgerCategory as LedgerCategory
+from paper_radar.live_evidence.ledger_errors import LedgerError as LedgerError
 from paper_radar.live_evidence.receipt import (
     ApprovedPlan,
     EvidenceReceipt,
@@ -25,66 +23,19 @@ from paper_radar.live_evidence.receipt import (
     content_sha256,
     validate_against_plan,
 )
+from paper_radar.live_evidence.receipt_v2 import (
+    ApprovedPlanV2,
+    EvidenceReceiptV2,
+    Plan,
+    Receipt,
+    read_plan,
+    read_receipt,
+    validate_v2_plan,
+)
 
 LEDGER_ROOT = Path("/var/lib/paperradar/live-evidence")
 LEDGER_SCHEMA_VERSION = 1
 MAX_SOURCE_BYTES = 1024 * 1024
-
-LedgerCategory = Literal[
-    "ledger_untrusted",
-    "clock_rollback",
-    "evidence_time_invalid",
-    "admission_use_undefined",
-    "evidence_activation_confirmation_mismatch",
-    "evidence_activation_empty",
-    "observation_stale",
-    "observation_invalid",
-    "observation_changed",
-    "pending_revocation_unavailable",
-    "binding_observation_unavailable",
-    "ledger_schema_unsupported",
-    "protected_entry_required",
-    "source_untrusted",
-    "source_integrity",
-    "receipt_invalid",
-    "plan_missing",
-    "plan_conflict",
-    "plan_mismatch",
-    "plan_budget_exceeded",
-    "plan_round_conflict",
-    "plan_stopped",
-    "receipt_conflict",
-    "receipt_missing",
-    "evidence_time_future",
-]
-
-
-class LedgerError(ValueError):
-    def __init__(self, category: LedgerCategory) -> None:
-        self.category = category
-        self.reason = (
-            "ledger_untrusted"
-            if category
-            in {
-                "source_untrusted",
-                "source_integrity",
-                "ledger_schema_unsupported",
-            }
-            else category
-        )
-        super().__init__(category)
-
-    @classmethod
-    def clock(cls, reason: ReasonCode) -> LedgerError:
-        from paper_radar.live_evidence.reasons import ReasonCode
-
-        if reason is ReasonCode.CLOCK_ROLLBACK:
-            return cls("clock_rollback")
-        if reason is ReasonCode.TIME_INVALID:
-            return cls("evidence_time_invalid")
-        if reason is ReasonCode.TIME_FUTURE:
-            return cls("evidence_time_future")
-        return cls("ledger_untrusted")
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,7 +56,7 @@ class ReceiveResult:
 @dataclass(frozen=True, slots=True)
 class ReceivedEvidence:
     receipt_id: str
-    receipt: EvidenceReceipt
+    receipt: Receipt
     received_at: datetime
     evidence_active: bool = False
 
@@ -233,8 +184,14 @@ class EvidenceLedger:
                 connection.execute("PRAGMA query_only=ON")
             if connection.execute("PRAGMA journal_mode").fetchone() != ("delete",):
                 raise LedgerError("ledger_untrusted")
-            if connection.execute("PRAGMA user_version").fetchone() != (
-                LEDGER_SCHEMA_VERSION,
+            if connection.execute("PRAGMA user_version").fetchone() not in {(1,), (2,)}:
+                raise LedgerError("ledger_schema_unsupported")
+            if (
+                connection.execute("PRAGMA user_version").fetchone() == (2,)
+                and not connection.execute(
+                    "SELECT 1 FROM sqlite_master "
+                    "WHERE type='table' AND name='collection_facts'"
+                ).fetchone()
             ):
                 raise LedgerError("ledger_schema_unsupported")
             if connection.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
@@ -297,16 +254,20 @@ class EvidenceLedger:
         self._writer()
         data = self._read_source(source.absolute())
         try:
-            plan = ApprovedPlan.model_validate_json(data)
+            plan = read_plan(data)
         except ValidationError as error:
             raise LedgerError("receipt_invalid") from error
         if canonical_bytes(plan) != data:
             raise LedgerError("source_integrity")
         self.approve_plan(plan, now=now)
 
-    def approve_plan(self, plan: ApprovedPlan, *, now: datetime) -> None:
+    def approve_plan(self, plan: Plan, *, now: datetime) -> None:
         """所有者保护入口登记批准计划;不从回执自行批准计划。"""
         with self.connection(writable=True) as connection:
+            if isinstance(plan, ApprovedPlanV2):
+                from paper_radar.live_evidence.collection import ProtectedCollection
+
+                ProtectedCollection(self)._replay(connection)
             row = connection.execute(
                 "SELECT digest FROM plans WHERE plan_id=?", (plan.plan_id,)
             ).fetchone()
@@ -325,7 +286,7 @@ class EvidenceLedger:
         try:
             data = self._read_source(source.absolute())
             try:
-                receipt = EvidenceReceipt.model_validate_json(data)
+                receipt = read_receipt(data)
             except ValidationError as error:
                 raise LedgerError("receipt_invalid") from error
             if canonical_bytes(receipt) != data:
@@ -350,20 +311,38 @@ class EvidenceLedger:
                 if plan_row is None:
                     raise LedgerError("plan_missing")
                 try:
-                    plan = ApprovedPlan.model_validate_json(plan_row[0])
-                    validate_against_plan(receipt, plan, now=now)
+                    plan = read_plan(plan_row[0])
+                    if isinstance(receipt, EvidenceReceiptV2) and isinstance(
+                        plan, ApprovedPlanV2
+                    ):
+                        validate_v2_plan(receipt, plan, now=now)
+                        from paper_radar.live_evidence.collection import (
+                            ProtectedCollection,
+                        )
+
+                        ProtectedCollection(self).verify_completed(connection, receipt)
+                    elif isinstance(receipt, EvidenceReceipt) and isinstance(
+                        plan, ApprovedPlan
+                    ):
+                        validate_against_plan(receipt, plan, now=now)
+                    else:
+                        raise LedgerError("plan_mismatch")
                 except (ValueError, ValidationError) as error:
+                    if isinstance(error, LedgerError):
+                        raise
                     raise LedgerError("plan_mismatch") from error
                 previous = connection.execute(
                     "SELECT payload FROM receipts WHERE plan_id=? "
                     "ORDER BY round_number",
                     (plan.plan_id,),
                 ).fetchall()
-                if receipt.round_number != len(previous) + 1:
+                if (
+                    isinstance(receipt, EvidenceReceipt)
+                    and receipt.round_number != len(previous) + 1
+                ):
                     raise LedgerError("plan_round_conflict")
-                if any(
-                    EvidenceReceipt.model_validate_json(row[0]).failure_history
-                    for row in previous
+                if isinstance(receipt, EvidenceReceipt) and any(
+                    read_receipt(row[0]).failure_history for row in previous
                 ):
                     raise LedgerError("plan_stopped")
                 connection.execute(
@@ -401,7 +380,7 @@ class EvidenceLedger:
         if row is None:
             raise LedgerError("receipt_missing")
         try:
-            receipt = EvidenceReceipt.model_validate_json(row[1])
+            receipt = read_receipt(row[1])
             source = self._read_source(self.root / "inbox" / row[2])
             if (
                 content_sha256(receipt) != row[0]
@@ -415,12 +394,16 @@ class EvidenceLedger:
             ).fetchone()
             if plan_row is None:
                 raise LedgerError("ledger_untrusted")
-            plan = ApprovedPlan.model_validate_json(plan_row[1])
+            plan = read_plan(plan_row[1])
             if (
                 content_sha256(plan) != plan_row[0]
                 or receipt.plan_sha256 != plan_row[0]
             ):
                 raise LedgerError("ledger_untrusted")
+            if isinstance(receipt, EvidenceReceiptV2):
+                from paper_radar.live_evidence.collection import ProtectedCollection
+
+                ProtectedCollection(self).verify_completed(connection, receipt)
             from paper_radar.live_evidence.time_policy import aware_utc
 
             received_at = aware_utc(datetime.fromisoformat(row[4]))
@@ -432,7 +415,7 @@ class EvidenceLedger:
                 raise
             raise LedgerError("ledger_untrusted") from error
 
-    def show_plan(self, plan_id: str) -> ApprovedPlan:
+    def show_plan(self, plan_id: str) -> Plan:
         with self.connection() as connection:
             row = connection.execute(
                 "SELECT digest,payload FROM plans WHERE plan_id=?", (plan_id,)
@@ -440,7 +423,7 @@ class EvidenceLedger:
             if row is None:
                 raise LedgerError("plan_missing")
             try:
-                plan = ApprovedPlan.model_validate_json(row[1])
+                plan = read_plan(row[1])
             except ValidationError as error:
                 raise LedgerError("ledger_untrusted") from error
             if plan.plan_id != plan_id or content_sha256(plan) != row[0]:

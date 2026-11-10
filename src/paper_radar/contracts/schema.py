@@ -11,6 +11,7 @@ from functools import partial
 from typing import Any
 
 from paper_radar.live_evidence.receipt import EvidenceReceipt
+from paper_radar.live_evidence.receipt_v2 import EvidenceReceiptV2
 from paper_radar.reading.schema import ReadAnalysisOutput
 from paper_radar.screening.reasons import screening_reason_json_schema
 from paper_radar.screening.schema import (
@@ -47,6 +48,7 @@ class ContractVersion(StrEnum):
     """当前代码能够生成的声明版本。"""
 
     V1 = "v1"
+    V2 = "v2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,6 +103,10 @@ _CONTRACTS: dict[
     ),
     (ContractName.LIVE_EVIDENCE, ContractVersion.V1): _ContractDefinition(
         schema_builder=partial(EvidenceReceipt.model_json_schema, mode="validation"),
+        area="live-evidence",
+    ),
+    (ContractName.LIVE_EVIDENCE, ContractVersion.V2): _ContractDefinition(
+        schema_builder=partial(EvidenceReceiptV2.model_json_schema, mode="validation"),
         area="live-evidence",
     ),
 }

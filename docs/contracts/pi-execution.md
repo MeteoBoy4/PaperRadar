@@ -44,7 +44,7 @@ Popen 成功而 PipeSession 拒绝接管时，启动器仍负责有界组回收�
 - 代理语法、provider/auth_mode 闭集、协议档案与有限正数超时（不接受 bool、NaN、无穷或非数值）。
 - `use_install` 的供给与安装保护、平台和完整树检查。
 
-领取前准备允许创建临时 scope、阻塞封装及其清理资源，并执行专用凭据刷新；刷新可能联网并写回该凭据目录。模型 Pi 仍未 exec，不发送 prompt，不写业务任务、attempt、预算、失败行或成功制品。上层先完成其余执行证据门禁，再调用 `prepare_launch`。
+领取前准备允许创建临时 scope、阻塞封装、独占认证 HOME/TMPDIR 及其清理资源，并执行专用凭据刷新；刷新可能联网并写回该凭据目录。模型 Pi 仍未 exec，不发送 prompt，不写业务任务、attempt、预算、失败行或成功制品。上层先完成其余执行证据门禁，再调用 `prepare_launch`。
 刷新失败或后续领取前检查拒绝均不占用 attempt；成功取得的短期 token 仅随内存上下文存在，不另存缓存。
 
 领取后复核 cwd、指令、安装整树与已准备封装放置，然后创建临时资源、建立隔离和 exec。
@@ -67,7 +67,7 @@ pre-exec中更改，不修改调用方进程限额。
 缺少现场证据时普通执行仍阻断，合成Python对端不构成真实Pi/Node准入。
 
 
-### 启动策略 `pi-launch-1.4.0-v1`
+### 启动策略 `pi-launch-1.4.0-v7`
 
 模型进程固定 argv：
 
@@ -122,10 +122,13 @@ pre-exec中更改，不修改调用方进程限额。
 --provider openai --min-expiry <ceil(attempt-timeout)+600>s
 ```
 
-这是 `pi-launch-1.4.0-v1` 登记的独立入口形状；供给 Node 身份来自 manifest。
+这是 `pi-launch-1.4.0-v7` 登记的独立入口形状；供给 Node 身份来自 manifest。
 依据 Pi 1.4.0 `docs/cli.md`「Authentication commands」；实际可用性仍需 Live 证据，
 不能由 install_check 或这份源码/文档推导证明。
-宿主 env 仅含 `PI_CODING_AGENT_DIR`、版本检查/遥测关闭、固定 locale/PATH 及指向专用凭据目录的 HOME/TMPDIR；
+宿主 env 仅含 `PI_CODING_AGENT_DIR`、版本检查/遥测关闭、固定 locale/PATH 及独占受控临时根中的 HOME/TMPDIR；
+临时根为 `/tmp/paper-radar-auth-*`，根与 home/tmp 均 0700，位于业务／配置／材料／安装和持久凭据根之外。
+helper 成功、拒绝、超时或异常退出后先终止进程，再删除并核验整个临时根；删除不完整以 `cleanup_failed` 拒绝模型准备。
+compile cache 因此落在临时资源中，模型不会继承 helper 的 HOME/TMPDIR，持久认证根仍不可读。
 不传 `--offline` 或 `PI_OFFLINE`，不继承宿主 provider/代理变量，不启动模型会话。
 stdout 仅解析 token，stderr 原文丢弃；合计输出上限 64 KiB，刷新有限超时，所有退出路径有界清组。
 非零、超时、空值、非法字符、多行或 `sk-` 前缀均领取前拒绝；声明决定模式，不能嗅探后改选认证模式。
@@ -223,7 +226,7 @@ Prompt/Profile 正文不进入内容无关能力身份。
 三检查点依次是：
 
 1. `prepare_launch` 前构造完整当前绑定并判定；缺项、过期、漂移或来源失信不刷新认证。
-2. 准备后重新构造绑定并重新读取账本；选择、策略、认证/cache 成员及站点身份变化拒绝。
+2. 准备后重新构造绑定并重新读取账本；选择、策略、认证/cache 不变量及站点身份变化拒绝；获准演进字段按共享 v2 基线比较。
 3. 领取写事务内以最新修正复核帧，并廉价重读受保护观察与账本，核到期、时钟水位线、
    来源完整性、观察新鲜度/覆盖及撤销状态；不重复扫描安装树、宿主或认证/cache。
 

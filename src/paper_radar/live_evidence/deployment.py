@@ -20,6 +20,7 @@ from pathlib import Path
 from paper_radar.live_evidence.collector import SITE_CASES
 from paper_radar.live_evidence.receipt import ApprovedPlan, canonical_bytes
 from paper_radar.live_evidence.sealed_runtime import RUNTIME_ROOT, SiteConfiguration
+from paper_radar.pi_execution.current_binding import ADMISSION_POLICY_VERSION
 
 STAGING = "/var/lib/paperradar/live-evidence-staging"
 EXEC = "/usr/libexec/paperradar"
@@ -924,7 +925,7 @@ def build_deployment(
                         "plan_id": plan.plan_id,
                         "drill_use": "value-low",
                         "final_use": "boundary-low",
-                        "admission_policy": "pi-admission-v5",
+                        "admission_policy": ADMISSION_POLICY_VERSION,
                         "initial_evidence_activation": "required",
                         "protected_log_probe": "required",
                         "run_name": "closure-" + plan_key,

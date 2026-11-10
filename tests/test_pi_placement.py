@@ -433,3 +433,12 @@ def test_protected_target_requires_current_observation_and_unchanged_trusted_byt
         assert caught.value.source_reason == "observation_stale"
     elif damage == "noncanonical":
         assert caught.value.source_reason == "source_integrity"
+
+
+def test_previous_auth_policy_manifest_keeps_exact_frozen_bytes() -> None:
+    import hashlib
+
+    source = Path(__file__).parent / "fixtures/live-admission-source-guard-v6.json"
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == (
+        "df039edfb53f85b526c7828984dda44d51c3300a65a07e833b4a4dffc3916223"
+    )

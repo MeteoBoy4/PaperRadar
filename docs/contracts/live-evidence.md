@@ -4,7 +4,7 @@
 
 `paper_radar.live_evidence` 提供带版本的能力登记、普通值领域模型与纯判定函数。
 `evaluate_admission` 只消费显式输入，不读墙钟、主机、业务库或账本，不接收或激活证据。
-`receipt` 提供 Pydantic 权威回执与批准计划；`EvidenceLedger` 提供受保护接收与只读查询，
+`receipt` 与 `receipt_v2` 提供 Pydantic 权威回执与批准计划；`EvidenceLedger` 提供受保护接收与只读查询，
 `live-evidence receive/show/activate/revoke` 暴露所有者入口。
 `service.load_admission_evidence` 对完整请求加载受保护事实并调用同一纯判定，返回结构化投影；
 `pi_execution.admission.load_admission_evidence` 延迟转交该完整请求，旧的不完整 EvidenceBinding 仍返回 None。
@@ -46,7 +46,7 @@ Screening／Read 正式三检查点与 doctor 消费共享判定，分别见所�
 | 能力 | 要求 | 到期类别 | 依赖组件 |
 | --- | --- | --- | --- |
 | auth_cache_current | 必需 | 站点 | auth_cache_current（当前属主、权限、无符号链接） |
-| auth_cache_baseline | 必需 | 站点 | auth_cache_baseline（自接收基线无新增／变化成员） |
+| auth_cache_baseline | 必需 | 站点 | auth_cache_baseline（固定接收基线成员与不变量相符） |
 | cwd_ancestors | 必需 | 站点 | cwd_ancestors |
 | file_isolation | 必需 | 站点 | file_isolation、isolation_policy |
 | ipv4_egress | 必需 | 站点 | ipv4_egress |
@@ -101,12 +101,12 @@ Prompt／Profile、token、凭据正文、完整流或错误正文。依据、�
 不接受自由描述、额外字段或配置 passed。案例与能力／格不能重复；verified 必须引用成功案例和原时点，
 unknown／not_assessed 不带 verified_at；全部观察与原验证时点位于有时区的本轮时间窗口。
 
-批准计划由 `ApprovedPlan` 定义，保存所有者批准的案例顺序、采集器身份、有效窗口、
+v1 批准计划由 `ApprovedPlan` 定义，保存所有者批准的案例顺序、采集器身份、有效窗口、
 认证／模型／网络请求上限、轮数及首失败即停条件。计划通过所有者保护入口独立批准，
 不从回执自行批准；同 plan_id 同字节幂等，换字节拒绝。`site_beta` 三类请求上限均为零，
 只允许现场能力的 site_probe/current_site verified 主张，不能自造供应商或真实 RPC 观察。
 接收检查计划摘要、采集器、案例顺序、计数、轮次、窗口和失败历史一致性；
-中途停止须最后案例为失败，失败后不能继续本轮或接受计划后续轮。轮次连续且唯一。
+中途停止须最后案例为失败，v1 失败后不能继续本轮或接受计划后续轮。轮次连续且唯一。
 这些计数是回执内部观测值，不证明供应商隐藏请求不存在，不代替业务库的 attempt／配额原子预占。
 
 规范回执为 UTF-8 JSON，键排序、紧凑分隔、结尾换行；输入必须已是该规范字节，
@@ -114,6 +114,51 @@ unknown／not_assessed 不带 verified_at；全部观察与原验证时点位于
 其前 16 hex 为 `receipt_id`，接收幂等与后继激活确认共用。重复 ID 且同完整摘要返回既有记录，
 追加 receive_duplicate 审计；前缀碰撞或计划同轮不同回执拒绝。接收不激活、不安装、不认证或调用模型。
 回执格式版本与账本 schema 版本各自独立；升级回执格式不代表旧账本可读。
+
+### v2 采集额度、失败类与续跑
+
+`receipt_v2.ApprovedPlanV2` 与 `EvidenceReceiptV2` 定义 v2；冻结回执为
+`contracts/live-evidence/live-evidence/v2/`。v1 原模型、Schema、规范字节及旧读者保持，
+新版按 `format_version` 显式分派，未知版本拒绝。v2 增加固定 `domain_id=live-177`、
+`round_id`、`history_sha256`、`prior_receipts` 与 `reservation_ids`。
+`cases` 只包含本轮实际执行的未通过模板后缀，最后一项失败时恰好有对应失败记录。
+原轮与续跑轮分别保存分项主张；先前主张的原 verified_at 不进入新时间窗口，不被刷新。
+
+`collection.ProtectedCollection` 是封印 root collector 的公共边界。所有者先对既有受保护
+账本显式调用 `initialize`，从 schema 1 增量建立 schema 2 的 `collection_facts` 和固定域；
+既有计划、回执及事件不改写。重复初始化只核验既有谱系，不建新域、不清历史；缺失表、
+缺失事实、未知版本、摘要链／独立审计不一致均拒绝。域的授权来源是 #177 的 Live 40/40
+裁决和这次所有者 cutover，计划没有创建其他域的接口。重部署沿用同一个 root 账本，
+collector 不能因库或谱系缺失重新建立零余额。这里的额度不属于业务 task/attempt 预算。
+
+每次宿主 auth CLI 计 `auth` 1，每次独立 network 操作（含出站负对照）计 `network` 1，
+联网总额度为两者之和、累计最多 40；每次向 Pi stdin 写 prompt 前计 `model` 1、累计最多 40。
+auth CLI 内部往返不重复计；模型自身 DNS/TLS、开发工具、所有者操作及 loopback 不计独立
+联网操作。`start_round` 绑定当前完整执行身份和首个未通过案例；`reserve` 每次创建新的
+单次操作预占，在 root 保护事务中核全域与计划余额并持久化，再由受信调用方派发一次。
+预占不能重放、退回或跨轮复用；预占后崩溃和结果未知仍消费。派发前准入拒绝不预占，
+空轮可 `cancel_round`，不伪造成失败轮；已有预占的轮不能取消。
+
+同模板同失败原因连续递增，原因变化建立当前新类、从 1 开始；只有本模板成功清零，
+其他模板成功不影响它。类键是模板 ID × `FailureRecordV2.reason`，不含计划、轮、文件名。
+第三次同类失败持久停止整个域；安全类首次停止；第六个累计失败轮全局熔断。
+安全原因是 `isolation_failed`、`identity_mismatch`、`sensitive_output`、`permission_failed`、
+`ledger_untrusted`、`source_untrusted`、`interrupted`；协议／资源／collector 普通故障不能
+用来改写安全事实。凭据成员意外变化、core/report 和出站意外放行归 isolation；WS 归 identity。
+成功不清累计失败轮数、消耗或停止事实。
+
+`complete_round` 在同一受保护事实中核本轮案例顺序、完整绑定、预占 ID 与逐案例计数、
+跨轮来源和历史摘要，再保存结果、通过模板和失败状态；它不接收或激活证据。
+所有者 `receive` 另核精确 root 完成事实，并要求 `prior_receipts` 的原来源已经受信接收且
+完整存在，故先接收早轮，再接收依赖它的续跑轮。未知完成结果不能凭普通 JSON 补成成功。
+续跑核当前窗口、类停止、熔断、剩余额度和计划轮数；仅相同完整绑定的通过模板跳过。
+`recover_interrupted` 仅在调用者已持有 collector 独占锁并确认旧进程结束后使用，未终结轮
+按 interrupted 持久停止；不会重新派发旧预占。
+
+三个例子：A/protocol 失败，随后 B 成功，再 A/protocol 失败，A 的当前链为 2；
+预占 auth 后进程崩溃，用量仍为 1，恢复后 interrupted 首停；计划 P 已通过 A、在 B 失败，
+所有者批准 Q 的同模板顺序后，Q 仍共享原消耗和失败链，只重试 B，并引用 P 的原回执。
+改名计划不增加余额或消除停止。业务预算、接收和显式激活仍分别判断。
 
 ### 账本信任与查询
 
@@ -127,8 +172,9 @@ unknown／not_assessed 不带 verified_at；全部观察与原验证时点位于
 来源必须是固定 inbox 的普通单链接 `.json` 文件，最多 1 MiB，读取使用 NOFOLLOW；
 数据库也须普通单链接文件。读写前发现任意 journal/WAL/SHM 残留均保守拒绝，不尝试热恢复。
 数据库要求 DELETE rollback journal、quick_check 通过且包含必需表列；不使用业务 Alembic。
-账本 schema 当前为 1，与回执 `v1` 分开管理；只接受明确支持的账本版本，
-更高版本既不写也不读，兼容升级须由特权维护者另行实现，回执格式升版不推断账本兼容。
+账本初建为 schema 1；显式采集 cutover 后为 schema 2，与回执版本分开管理。新版支持这两种
+已知布局，schema 2 必须有采集事实表；旧版拒绝 schema 2，未知更高版本既不写也不读。
+兼容演进不使用业务 Alembic，回执格式升版不推断账本兼容。
 
 `approve_plan`、`approve_plan_source` 与 `receive` 使用保护写事务，成功与重复接收和受控拒绝均追加审计，
 事实不被覆盖；账本自身不可信时不补写失败事件。`show`、`show_plan`、`list_received`、`audit` 只读打开，
@@ -138,7 +184,9 @@ unknown／not_assessed 不带 verified_at；全部观察与原验证时点位于
 `received_in(connection)` 供共享读取在同一 SQLite 快照中核验来源；只读连接显式开启读取事务。
 
 `paper-radar live-evidence show [--receipt-id <ID>]` 显示回执脱敏摘要，
-`show --plan-id <ID>` 只读查询批准计划；两种选择互斥。
+`show --plan-id <ID>` 只读查询批准计划；v2 另从权威事实显示 auth／独立 network／联网合计／模型
+已用与剩余、各模板当前失败原因和连续数、累计失败轮数、停止／熔断与下一动作，两种选择互斥。
+查询不初始化账本或采集域、不创建文件、不联网。
 `receive --source <固定inbox回执> [--plan <受保护计划>]` 只经所有者 sudo 的封印入口使用，
 可先显式批准计划再接收；不能从用户可写仓库或虚拟环境执行 sudo Python。
 未部署封印入口时不能将当前仓库命令当成受保护入口。所有 `--help` 不打开账本、不联网。
@@ -190,14 +238,20 @@ checked_components 无重复，只列本次确实覆盖的组件，不是 passed
 事实变化、原证据到期、时钟回退或当前覆盖撤回均拒绝，须所有者重新审阅。
 普通产品请求不能自行声明特权证明；未观测组件不能填入 checked_components。
 
-`baseline.metadata_digest` 是 #172 接收基线与消费者当次比较共用的 `auth-cache-stat-v1` 算法。
-输入为消费方固定顺序的认证／cache 根；只打开目录 fd，stat 成员，不打开或读取成员内容。
-清单按根索引和目录内成员名排序，路径为相对名，包含目录与普通单链接文件；
-每项记录 dev、ino、mode、uid、gid、nlink、size、mtime_ns、ctime_ns。
-规范对象为 format 与 members，UTF-8、键排序、紧凑 JSON、末换行后 SHA-256；绝对路径不进入摘要输入或错误。
-最多 4096 项、32 层；软链、特殊节点、读取失败和观察到的并发变化拒绝。
-新增／删除／改名／替换／权限或成员元数据变化改变基线摘要；
-当前根／祖先属主权限与隔离仍由对应独立检查负责，不由这个摘要推导。
+`auth_cache_stat.metadata_digest` 是采集与消费者当次比较共用的 `auth-cache-stat-v2` 算法。
+首次 v2 基线来自受保护批准采集，经过既有 receive 与所有者显式证据激活；不从旧 v1 漂移或当前目录自拍建立可信资格。
+输入固定为单元素 `(credentials_dir,)`，只打开目录 fd 和 stat 成员，不打开成员正文。
+清单按根索引和目录内名称排序，以相对名记录目录和普通单链接文件；成员名、集合、类型、
+dev、mode、uid、gid、nlink 均参与固定摘要。仅根 `.` 和直接成员 `auth.json`、`models-store.json`
+豁免 ino、size、mtime_ns、ctime_ns；其他成员全部九个 stat 字段保持比较，目录 nlink 仍按基线比较。
+对象 format/members 经排序键、紧凑 UTF-8 JSON、末换行后 SHA-256；路径绝对名不进入摘要或错误。
+最多 4096 项、32 层，拒绝软链、普通文件硬链接、特殊节点、`node-compile-cache`、读取失败和采样期间变化。
+遍历期间即使是可演进字段也以完整 stat 复核，根被替换也拒绝；未知目录／成员改变摘要而无法取得既有资格。
+固定基线不随正常刷新、原子替换或失败自动更新，正常演进不刷新 verified_at 或期限。
+当前根／祖先属主权限与隔离另行检查，stat 不证明 `auth_cache_history`／`auth_cache_writer`，两项保持披露型。
+
+`baseline.metadata_digest` 的 `auth-cache-stat-v1` 算法和旧读者保留原字节，仅供历史严格比较；
+v1 未豁免任何字段，其证据不会被转换为 v2 资格。新启动／准入策略变化还会单独阻断旧策略资格。
 
 ### 当次完整执行绑定
 
@@ -209,7 +263,7 @@ Apport 绑定公开 dpkg 准确包版本、程序和整个 `/etc/apport` 配置�
 `/etc/default/apport`、core_pattern 与 suid_dumpable；不运行认证、模型或网络探测。
 模型元组沿 ADR-0054；材料正文不进入该身份。显式代理属于启动上下文，改变即改变摘要。
 组件普通值经规范紧凑 UTF-8 JSON SHA-256；供给/实例树沿既有 tree-v1，
-host/boot 和公开文件按原字节摘要；认证/cache 沿 auth-cache-stat-v1。
+host/boot 和公开文件按原字节摘要；认证/cache 沿 auth-cache-stat-v2。
 专用凭据目录同时是本通道固定的认证/cache 根，固定输入顺序为单元素 `(credentials_dir,)`；
 不扫描个人 Pi、环境目录，不读取成员内容。
 
@@ -318,9 +372,9 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v5`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v5.json)
-与源码守卫共同固定相关实现；v1–v4 的 D7 向量与摘要锚原字节保留。
-v5 显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
+源代码准入策略为 `pi-admission-v7`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v7.json)
+与源码守卫共同固定相关实现；v1–v6 的 D7 向量与摘要锚原字节保留。
+v7 增加共享用户 scope 双阶段放置、封装、只读 resolver 和只读诊断；保留固定认证基线 v2、helper 临时布局与 v2 额度／回执／账本错误权威，继续显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
 策略身份变化后不能继承旧策略的执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
 源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。
 
@@ -332,7 +386,7 @@ v5 显式覆盖两份 after-backup 续行工具、共享检查点、站点回执
 
 采集 root 父进程只管理固定受保护输出和冻结代码。现场观察 fork 后清空环境与补充组、不可逆
 降到产品 uid/gid 并禁 ptrace，不在降权与观察之间执行用户环境；业务库、整树与认证/cache 元数据
-均以产品身份只读复核冻结的snapshot/供给/安装仍为当前选择，再复用 `local_binding_components`、`site_binding_components` 和 `auth-cache-stat-v1`。
+均以产品身份只读复核冻结的snapshot/供给/安装仍为当前选择，再复用 `local_binding_components`、`site_binding_components` 和 `auth-cache-stat-v2`。
 需要合成子进程的隔离检查也保持产品 uid：只读取合成外部文件，只尝试匿名临时写入，
 通过标准严格为 EACCES/EPERM 拒绝；另证实 attempt 写入允许与软/硬 core 限额都为0。
 Node 只以产品 uid 执行 `--version`，比对声明版本；不执行认证、Pi prompt 或网络请求。
@@ -371,11 +425,10 @@ core 设置仅作用于合成子进程，不修改其他程序或全局 Apport/c
 CurrentObservation保持当前供给选择/snapshot的low声明上下文；高档本地消费者重算自身MODEL_TUPLE，
 站点能力仅按本能力依赖适用，高档模型/RPC/observer没有verified主张，不表示六格完整可执行。
 
-AUTH_CACHE_BASELINE递归专用credentials全根：auth.json、exp2-installation-id、models-store.json、
-node-compile-cache及其成员均无排除，目录与regular文件的dev/ino/mode/uid/gid/nlink/size/mtime/ctime均参与。
-宿主认证helper的HOME/TMPDIR为credentials，当前Pi入口启用Node compile cache；RPC子进程的TMPDIR则为attempt临时根。
-正常认证cache写入或auth.json刷新同样改变基线，准备后检查拒绝且不领取attempt，不能静默视为安全例外。
-更新基线需要新受信计划采集/重新审阅封印字节/人工激活；支持连续运行的缓存布局与允许演进保护留Live后继裁定。
+AUTH_CACHE_BASELINE 递归专用 credentials 全根，按[固定基线 v2](#当前观察与认证cache-基线)比较。
+宿主 helper 的 HOME/TMPDIR 为独占临时资源，退出后删除并核验；凭据根出现 `node-compile-cache` 拒绝。
+正常订阅刷新只豁免获准对象的指定字段，不重定基线、不追认成员，也不把 metadata 当作完整写史。
+资源准备可创建临时目录；准备失败不产生任务、attempt、预算或证据激活。
 
 默认 uninstall.sh 移除本包 sudoers、三个入口与冻结 runtime；保留账本、inbox 回执/计划、
 失败历史、stopped 标记和 staging。若 cwd 由本部署创建，只在仍为空且受保护时移除；原有 cwd 不动。
@@ -393,6 +446,7 @@ node-compile-cache及其成员均无排除，目录与regular文件的dev/ino/mo
 不覆盖当前尾部接收／撤销事实，保存原接收排序和历史审计，并追加 evidence_restored 屏障。
 全部屏障之前的激活失效，不能导入旧激活来放行；有效且未撤销的证据须重新人工审阅激活。
 恢复失败整体回滚。损坏在线账本拒绝自动覆盖、修复或重建，需所有者另行恢复受保护部署。
+采集 schema 2 的备份包含完整采集事实。恢复旧快照只接受当前谱系的前缀，保留当前预占、失败和停止尾部；不能以备份替换累计历史。谱系分叉或尝试从未知零状态导入另一份域时拒绝。
 业务库不参与此备份／恢复，账本操作不连接业务库、不修改 attempt、重试代际或预算。
 直接由 root 用旧文件替换整个信任根属于 root 篡改边界，不能由用户态水位线防范。
 
@@ -442,7 +496,7 @@ admission_use_undefined、evidence_scope_mismatch、evidence_conflict、material
 evidence_time_invalid、evidence_time_future、clock_rollback、ledger_untrusted。
 账本以 `LedgerError.category` 报告 ledger_untrusted、ledger_schema_unsupported、protected_entry_required、
 source_untrusted、source_integrity、receipt_invalid、plan_missing／conflict／mismatch／round_conflict／stopped、
-receipt_conflict／missing、evidence_activation_empty、evidence_activation_confirmation_mismatch、
+receipt_conflict／missing、plan_complete、reservation_invalid、collection_history_mismatch、evidence_activation_empty、evidence_activation_confirmation_mismatch、
 observation_invalid／stale／changed、binding_observation_unavailable、pending_revocation_unavailable 等受控原因，错误不包含输入或敏感路径。来源与版本失信的 `reason` 映射为 ledger_untrusted；
 纯层不认证账本。CLI 失败返回 2，提示所有者检查受保护部署、计划与来源。
 该词表与现有闭合 ExecutionReason 分开，任务结算映射由消费者接线维护，不改写旧 token。
@@ -464,4 +518,5 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 补充决策：[ADR-0052](../adr/0052-version-admission-uses-and-capability-requirements.md)、[ADR-0053](../adr/0053-expire-capabilities-by-evidence-class-and-coverage.md)、[ADR-0054](../adr/0054-separate-execution-binding-from-call-materials.md)。
 独立账本决策：[ADR-0055](../adr/0055-separate-protected-admission-ledger-from-business-facts.md)；
 只追加收紧依据：[ADR-0056](../adr/0056-protect-pending-revocations-with-an-append-only-log.md)。
+采集额度与停止依据：[#177 最终裁决](https://github.com/MeteoBoy4/PaperRadar/issues/177#issuecomment-6768256547)、[#178](https://github.com/MeteoBoy4/PaperRadar/issues/178)；补充决策草案：[ADR-0057](../adr/0057-reserve-live-collection-quotas-and-persist-stop-history.md)。
 现有产品边界：[Pi 执行](pi-execution.md)、[Read 执行](read-execution.md)。

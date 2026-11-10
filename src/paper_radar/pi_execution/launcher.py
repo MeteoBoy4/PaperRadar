@@ -276,6 +276,7 @@ def prepare_launch(
                 token = credential_token(
                     install,
                     str(credentials_dir),
+                    roots=roots,
                     attempt_timeout=attempt_timeout,
                     timeout=auth_timeout,
                 )

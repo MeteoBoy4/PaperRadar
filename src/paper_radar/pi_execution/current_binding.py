@@ -4,7 +4,7 @@ from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
-from paper_radar.live_evidence.baseline import metadata_digest
+from paper_radar.live_evidence.auth_cache_stat import metadata_digest
 from paper_radar.live_evidence.evidence import ExecutionBinding
 from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
 from paper_radar.live_evidence.observation import load_current_observation
@@ -19,7 +19,7 @@ from paper_radar.pi_execution.site_binding import (
 )
 from paper_radar.pi_supply.protection import acquire_install
 
-ADMISSION_POLICY_VERSION = "pi-admission-v5"
+ADMISSION_POLICY_VERSION = "pi-admission-v7"
 PROTECTED_COMPONENTS = frozenset(
     {BindingComponent.IPV4_EGRESS, BindingComponent.OBSERVER}
 )

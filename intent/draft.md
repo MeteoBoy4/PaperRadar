@@ -1348,7 +1348,13 @@ Read 专用变化保持既有范围。无自动门禁继承，订阅取舍见
 - --offline --no-session -ne -ns -np -nc -nt，PI_SKIP_VERSION_CHECK=1、PI_TELEMETRY=0；
   验证模型沙箱禁止自动网络活动（目录刷新、版本检查、遥测、缓存预热、隐含 provider retry）；
   唯一宿主例外为领取前一次有界订阅凭据刷新，可联网并写回专用凭据目录，
-  对任务、预算、失败和成功制品保持零副作用（ADR-0039）。配置关闭与可观察行为分别核验；
+  对任务、预算、失败和成功制品保持零副作用（ADR-0039）。helper 的 HOME/TMPDIR 使用独占受控临时根，
+  成功、拒绝、异常均删除并核验；模型仅获短期凭据且不能读取持久认证根。
+  认证/cache 采用固定批准基线 `auth-cache-stat-v2`：成员集合／名称、类型、属主／组、权限、链接数不变，
+  仅 auth.json、models-store.json 和根自身允许 size/mtime/ctime/inode 演进；其他 stat 字段继续比较。
+  软链、普通文件硬链接、特殊节点、未知成员／目录及凭据根 node-compile-cache 拒绝；有界无跟链采样不读正文。
+  首次 v2 基线须受保护批准采集，不从漂移自拍、自动重定基线或把 v1 证据转成 v2 资格，
+  auth_cache_history/writer 保持披露型；布局改变升级执行策略身份（ADR-0058）。配置关闭与可观察行为分别核验；
   隐藏请求的独立计数缺口按 §8.6 披露，不以配置、ACK或未观察到请求推定零次（ADR-0048）。
 - 通过 --system-prompt 精确传入声明系统指令；防止参数被当成文件路径。确认无默认
   prompt、个人设置、项目资源、skills/extensions/MCP、AGENTS.md/CLAUDE.md 等注入。
