@@ -731,7 +731,7 @@ SHARED_MATERIALS = {
         "ddd5b955b9654de8945518a2d0e4229544104bca3f3d2f79fa16f601c475a77a"
     ),
     "tests/test_offline_evidence.py": (
-        "843308e18b62b0115ba149fc8ad6db1db15a5d01679086e91802b5f153dc5d49"
+        "4ad550638171513903050c053c5eadfede3f600475c6a515ca52aaea3f6fc28f"
     ),
     "tests/test_paper_mapping.py": (
         "8cf3de3591cbc9b2a19cccc8ac93ea9a16909e44121a32f231838b045f956ea0"
