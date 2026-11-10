@@ -97,6 +97,39 @@ class RpcCandidate:
     output_tokens: int | None
 
 
+@dataclass(slots=True)
+class RpcAudit:
+    """可选采集观察,仅保留有限协议事实,不保留消息正文。"""
+
+    initialized: bool = False
+    prompt_started: bool = False
+    settled: bool = False
+    eof: bool = False
+    terminated: bool = False
+    cleanup_failed: bool = False
+    identity_mismatch: bool = False
+    websocket_seen: bool = False
+
+    def check_assistant(
+        self, message: dict[str, object], description: CallDescription
+    ) -> None:
+        api = str(message.get("api", "")).lower()
+        transport = str(message.get("transport", "")).lower()
+        self.websocket_seen |= (
+            "websocket" in api
+            or api.endswith("-ws")
+            or transport in {"ws", "websocket"}
+        )
+        self.identity_mismatch |= (
+            self.websocket_seen
+            or message.get("provider") != description.provider
+            or message.get("model") != description.model
+            or message.get("responseModel", description.model) != description.model
+        )
+        if self.identity_mismatch:
+            raise RpcProblem(RpcReason.MODEL_STATE)
+
+
 @dataclass(frozen=True, slots=True)
 class RpcLimits:
     initialization: float = INITIALIZATION_SECONDS

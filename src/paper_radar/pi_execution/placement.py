@@ -13,6 +13,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
@@ -354,6 +355,7 @@ class PlacedProcess:
         proxy_port: int | None,
         pass_fds: tuple[int, ...],
         timeout: float = 10,
+        before_release: Callable[[], None] | None = None,
     ) -> subprocess.Popen[bytes]:
         if (
             type(timeout) not in (int, float)
@@ -410,6 +412,8 @@ class PlacedProcess:
                 for line in limits
             ):
                 raise ExecutionError("placement_exec_failed")
+            if before_release is not None:
+                before_release()
             _ptrace(
                 17, self.pid
             )  # DETACH: no target instruction ran before verification.

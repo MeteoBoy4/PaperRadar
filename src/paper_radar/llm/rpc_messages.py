@@ -7,6 +7,7 @@ from typing import Any
 from paper_radar.llm.models import THINKING_LEVELS, CallDescription
 from paper_radar.llm.rpc_types import (
     MAX_CANDIDATE_BYTES,
+    RpcAudit,
     RpcCandidate,
     RpcProblem,
     RpcReason,
@@ -107,7 +108,9 @@ class RunEvents:
         description: CallDescription,
         user_message: str,
         expected_cwd_section: str | None = None,
+        audit: RpcAudit | None = None,
     ) -> None:
+        self._audit = audit
         self._expected_cwd_section = expected_cwd_section
         self._description = description
         self._user_message = user_message
@@ -204,6 +207,8 @@ class RunEvents:
 
     def _assistant_message(self, record: dict[str, Any]) -> None:
         message = self._message(record, "assistant")
+        if self._audit is not None:
+            self._audit.check_assistant(message, self._description)
         if any(not _string(message.get(name)) for name in ("api", "provider", "model")):
             raise RpcProblem(RpcReason.MESSAGE_SHAPE)
         if (

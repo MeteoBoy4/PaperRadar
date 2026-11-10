@@ -3,10 +3,12 @@
 import math
 import sys
 from collections import deque
+from collections.abc import Callable
 from contextlib import suppress
 from time import monotonic
 from typing import Any
 
+from paper_radar.llm.dispatch import DispatchDenied
 from paper_radar.llm.models import (
     MAX_REQUEST_BYTES,
     PROTOCOL_PROFILES,
@@ -22,6 +24,7 @@ from paper_radar.llm.rpc_types import (
     ByteSession,
     Cancellation,
     MonotonicClock,
+    RpcAudit,
     RpcCandidate,
     RpcFailure,
     RpcLimits,
@@ -292,11 +295,19 @@ def _run(
     description: CallDescription,
     user_message: bytes,
     expected_cwd_section: str | None,
+    before_prompt: Callable[[], None] | None,
+    audit: RpcAudit | None,
 ) -> RpcCandidate:
-    events = RunEvents(description, user_message.decode("utf-8"), expected_cwd_section)
+    events = RunEvents(
+        description, user_message.decode("utf-8"), expected_cwd_section, audit
+    )
     connection.before_command(connection.total_deadline)
+    if before_prompt is not None:
+        before_prompt()
     connection.command_no = _PROMPT_COMMAND_NO
     connection.awaiting = (_PROMPT_COMMAND_ID, _PROMPT_COMMAND_NAME)
+    if audit is not None:
+        audit.prompt_started = True
     connection.send(_prompt_frame(user_message), connection.total_deadline)
     acked = False
     closed = False
@@ -331,6 +342,8 @@ def _run(
         connection.pump(b"", deadline, closing=True)
     if events.candidate is None:
         raise RpcProblem(RpcReason.EVENT_SEQUENCE)
+    if audit is not None:
+        audit.settled = audit.eof = True
     return events.candidate
 
 
@@ -407,6 +420,8 @@ def run_call(
     cancelled: Cancellation = lambda: False,
     limits: RpcLimits = DEFAULT_LIMITS,
     expected_cwd_section: str | None = None,
+    before_prompt: Callable[[], None] | None = None,
+    audit: RpcAudit | None = None,
 ) -> RpcCandidate | RpcFailure:
     """一次调用仅一个显式会话/一条prompt,失败不携原文或自动重发。"""
     session: ByteSession | None = None
@@ -462,6 +477,8 @@ def run_call(
             raise RpcProblem(RpcReason.CANCELLED)
         try:
             session = factory(description)
+        except DispatchDenied:
+            raise
         except Exception:
             raise RpcProblem(RpcReason.STARTUP_ERROR) from None
         connection = _Connection(session, clock, cancelled, limits, started)
@@ -470,19 +487,34 @@ def run_call(
         if connection.records or connection.decoder.has_tail:
             raise RpcProblem(RpcReason.EARLY_RECORD)
         _initialize(connection, description, initialization)
-        result = _run(connection, description, user_message, expected_cwd_section)
+        if audit is not None:
+            audit.initialized = True
+        result = _run(
+            connection,
+            description,
+            user_message,
+            expected_cwd_section,
+            before_prompt,
+            audit,
+        )
         connection.check(connection.total_deadline, closing=True)
         cleanup_deadline = clock() + limits.terminate
         _cleanup(session, clock, cleanup_deadline)
         cleanup_finished = True
+        if audit is not None:
+            audit.terminated = True
         connection.check(connection.total_deadline, closing=True)
         return result
+    except DispatchDenied:
+        raise
     except RpcProblem as error:
         if error.reason is RpcReason.CANCELLED and connection is not None:
             with suppress(Exception):
                 _cancel(connection)
         return RpcFailure(error.reason)
     except Exception:
+        if audit is not None and cleanup_deadline is not None and not cleanup_finished:
+            audit.cleanup_failed = True
         return RpcFailure(RpcReason.TRANSPORT_ERROR)
     finally:
         if session is not None and not cleanup_finished:

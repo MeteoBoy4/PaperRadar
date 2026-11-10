@@ -184,6 +184,11 @@ def _selected_materials(settings_path: Path) -> SelectedMaterials:
     return assembly.finish(tuple(additional), adapters)
 
 
+def compile_materials(settings_path: Path) -> RuntimeConfigSnapshot:
+    """验证固定目录材料后纯编译;不打开数据库或持久化快照。"""
+    return compile_snapshot(_selected_materials(settings_path))
+
+
 def _records(materials: SelectedMaterials) -> tuple[VersionRecord, ...]:
     items = (
         [materials.profile_material] if materials.profile_material is not None else []

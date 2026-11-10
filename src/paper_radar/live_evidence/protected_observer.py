@@ -126,34 +126,35 @@ def read_nft_snapshot() -> dict[str, object]:
     raise LedgerError("observation_unavailable")
 
 
+def stable_nft_snapshot(value: object) -> object:
+    if isinstance(value, dict):
+        return {
+            key: (
+                {
+                    field: stable_nft_snapshot(content)
+                    for field, content in item.items()
+                    if field not in {"packets", "bytes"}
+                }
+                if key == "counter" and isinstance(item, dict)
+                else stable_nft_snapshot(item)
+            )
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [
+            stable_nft_snapshot(item)
+            for item in value
+            if not (isinstance(item, dict) and set(item) == {"metainfo"})
+        ]
+    return value
+
+
 def egress_identity(snapshot: dict[str, object], target: PlacementTarget) -> str:
     """部署和刷新共用的规范规则/目标身份;计数器数值不是规则身份。"""
 
-    def stable(value: object) -> object:
-        if isinstance(value, dict):
-            return {
-                key: (
-                    {
-                        field: stable(content)
-                        for field, content in item.items()
-                        if field not in {"packets", "bytes"}
-                    }
-                    if key == "counter" and isinstance(item, dict)
-                    else stable(item)
-                )
-                for key, item in value.items()
-            }
-        if isinstance(value, list):
-            return [
-                stable(item)
-                for item in value
-                if not (isinstance(item, dict) and set(item) == {"metainfo"})
-            ]
-        return value
-
     return component_digest(
         {
-            "nft": stable(snapshot),
+            "nft": stable_nft_snapshot(snapshot),
             "placement": target.model_dump(mode="json", exclude={"egress_digest"}),
         }
     )

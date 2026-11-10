@@ -2,11 +2,13 @@
 
 import hashlib
 import os
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from paper_radar.pi_execution import placement
+from paper_radar.pi_execution.errors import ExecutionError
 
 
 class LocalPlacementPlatform(placement.LinuxPlacementPlatform):
@@ -15,7 +17,9 @@ class LocalPlacementPlatform(placement.LinuxPlacementPlatform):
     def manager_environment(self) -> dict[str, str]:
         return {}
 
-    def spawn(self, argv: tuple[str, ...], env: dict[str, str]):
+    def spawn(
+        self, argv: tuple[str, ...], env: dict[str, str]
+    ) -> subprocess.Popen[bytes]:
         return super().spawn(argv[8:], env)
 
     def scope_identity(
@@ -27,7 +31,7 @@ class LocalPlacementPlatform(placement.LinuxPlacementPlatform):
         self, target: placement.PlacementTarget, pid: int, start: int, unit: str
     ) -> None:
         if self.refuse:
-            raise placement.ExecutionError("placement_mismatch")
+            raise ExecutionError("placement_mismatch")
         if self.process_identity(pid)[0] != start:
             raise AssertionError("peer identity changed")
 

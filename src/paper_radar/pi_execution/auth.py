@@ -2,6 +2,7 @@
 
 import math
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from time import monotonic
 
@@ -10,7 +11,11 @@ from paper_radar.llm.rpc_types import RpcProblem
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.placement import PlacedProcess
 from paper_radar.pi_execution.process import adopt_process
-from paper_radar.pi_execution.resources import AuthHelperResources, ExecutionRoots
+from paper_radar.pi_execution.resources import (
+    AuthHelperResources,
+    CleanupAudit,
+    ExecutionRoots,
+)
 from paper_radar.pi_supply.protection import InstallUse
 
 
@@ -21,6 +26,8 @@ def credential_token(
     roots: ExecutionRoots,
     attempt_timeout: float,
     timeout: float,
+    before_release: Callable[[int, int, str], None] | None = None,
+    cleanup_audit: CleanupAudit | None = None,
 ) -> str:
     argv = (
         str(install.node),
@@ -32,7 +39,11 @@ def credential_token(
         "--min-expiry",
         f"{math.ceil(attempt_timeout) + 600}s",
     )
-    resources = AuthHelperResources(roots, Path(credentials_dir))
+    resources = AuthHelperResources(
+        roots,
+        Path(credentials_dir),
+        **({"audit": cleanup_audit} if cleanup_audit else {}),
+    )
     env = {
         "PI_CODING_AGENT_DIR": credentials_dir,
         "PI_SKIP_VERSION_CHECK": "1",
@@ -55,6 +66,11 @@ def credential_token(
             attempt=None,
             proxy_port=None,
             pass_fds=install.pass_fds,
+            before_release=(
+                lambda: before_release(placement.pid, placement.start, placement.unit)
+            )
+            if before_release
+            else None,
         )
         session = adopt_process(child)
         placement.handoff()

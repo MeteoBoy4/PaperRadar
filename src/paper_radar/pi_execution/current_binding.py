@@ -25,12 +25,33 @@ from paper_radar.pi_execution.site_binding import (
 from paper_radar.pi_supply import SupplyError
 from paper_radar.pi_supply.protection import acquire_install
 
-ADMISSION_POLICY_VERSION = "pi-admission-v8"
+ADMISSION_POLICY_VERSION = "pi-admission-v9"
 # site 观察不承诺某一 thinking 档的模型身份;每格请求/模型证据仍完整比较。
 SITE_CONTEXT_EXCLUDED = frozenset({BindingComponent.MODEL_TUPLE})
 PROTECTED_COMPONENTS = frozenset(
     {BindingComponent.IPV4_EGRESS, BindingComponent.OBSERVER}
 )
+
+
+def model_tuple_component(binding: EvidenceBinding) -> str:
+    """固定模型元组的纯摘要;正式消费者与封印采集共用。"""
+    return component_digest(
+        {
+            key: value
+            for key, value in asdict(binding).items()
+            if key
+            in {
+                "provider",
+                "model",
+                "thinking_level",
+                "sampling",
+                "temperature",
+                "top_p",
+                "protocol_profile",
+                "auth_mode",
+            }
+        }
+    )
 
 
 def local_binding_components(
@@ -58,23 +79,7 @@ def local_binding_components(
             BindingComponent.ISOLATION_POLICY: component_digest(
                 binding.isolation_policy_version
             ),
-            BindingComponent.MODEL_TUPLE: component_digest(
-                {
-                    key: value
-                    for key, value in asdict(binding).items()
-                    if key
-                    in {
-                        "provider",
-                        "model",
-                        "thinking_level",
-                        "sampling",
-                        "temperature",
-                        "top_p",
-                        "protocol_profile",
-                        "auth_mode",
-                    }
-                }
-            ),
+            BindingComponent.MODEL_TUPLE: model_tuple_component(binding),
             BindingComponent.AUTH_CACHE_CURRENT: component_digest(
                 "credentials-metadata-valid-v1"
             ),

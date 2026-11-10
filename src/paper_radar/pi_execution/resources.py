@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 from paper_radar.pi_execution.errors import ExecutionError
 
 EXECUTION_CWD = Path("/srv/pi-cwd")
-LAUNCH_POLICY_VERSION = "pi-launch-1.4.0-v7"
+LAUNCH_POLICY_VERSION = "pi-launch-1.4.0-v8"
 # Default settings bytes are part of LAUNCH_POLICY_VERSION.
 SETTINGS_JSON = (
     b'{"cacheWarming":"off","compaction":{"enabled":false},'
@@ -136,10 +136,65 @@ def proxy_port(proxy: str | None) -> int | None:
         raise ExecutionError("proxy_invalid") from None
 
 
+@dataclass(slots=True)
+class CleanupAudit:
+    auth_terminal: bool = False
+    auth_deleted: bool = False
+    model_terminal: bool = False
+    model_deleted: bool = False
+
+
+def terminal_metadata_clean(root: Path, *, model: bool) -> bool:
+    """终态有界 lstat,独立于删除;不读文件正文或推断完整写史。"""
+    try:
+        if not root.is_dir() or root.is_symlink():
+            return False
+        pending = [root]
+        count = 0
+        while pending:
+            directory = pending.pop()
+            for member in directory.iterdir():
+                count += 1
+                info = member.lstat()
+                if (
+                    count > 4096
+                    or len(member.relative_to(root).parts) > 12
+                    or member.name.lower().startswith(("core", "report", "session"))
+                ):
+                    return False
+                if stat.S_ISDIR(info.st_mode):
+                    pending.append(member)
+                elif not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                    return False
+                if (
+                    model
+                    and len(member.relative_to(root).parts) > 1
+                    and member.relative_to(root).parts[0] in {"home", "tmp"}
+                ):
+                    return False
+                if (
+                    model
+                    and len(member.relative_to(root).parts) > 1
+                    and member.relative_to(root).parts[0] == "agent"
+                    and member != root / "agent/settings.json"
+                ):
+                    return False
+        return True
+    except OSError:
+        return False
+
+
 class AttemptResources:
     """只删除自己 mkdtemp 登记的所有权单元。"""
 
-    def __init__(self, roots: ExecutionRoots, proxy: str | None) -> None:
+    def __init__(
+        self,
+        roots: ExecutionRoots,
+        proxy: str | None,
+        *,
+        audit: CleanupAudit | None = None,
+    ) -> None:
+        self._audit = audit
         self.root = Path(tempfile.mkdtemp(prefix="paper-radar-pi-", dir="/tmp"))
         try:
             if not roots.outside(self.root):
@@ -161,18 +216,31 @@ class AttemptResources:
             raise
 
     def close(self) -> None:
+        if self._audit is not None and os.path.lexists(self.root):
+            self._audit.model_terminal = terminal_metadata_clean(self.root, model=True)
         try:
             shutil.rmtree(self.root)
         except FileNotFoundError:
             return
         except OSError:
             raise ExecutionError("cleanup_failed") from None
+        if self._audit is not None:
+            self._audit.model_deleted = not os.path.lexists(self.root)
+        if os.path.lexists(self.root):
+            raise ExecutionError("cleanup_failed")
 
 
 class AuthHelperResources:
     """宿主 helper 独占 HOME/TMPDIR;退出后删除并复核,不交给模型。"""
 
-    def __init__(self, roots: ExecutionRoots, credentials_dir: Path) -> None:
+    def __init__(
+        self,
+        roots: ExecutionRoots,
+        credentials_dir: Path,
+        *,
+        audit: CleanupAudit | None = None,
+    ) -> None:
+        self._audit = audit
         try:
             self.root = Path(tempfile.mkdtemp(prefix="paper-radar-auth-", dir="/tmp"))
         except OSError:
@@ -197,11 +265,15 @@ class AuthHelperResources:
             raise
 
     def close(self) -> None:
+        if self._audit is not None and os.path.lexists(self.root):
+            self._audit.auth_terminal = terminal_metadata_clean(self.root, model=False)
         try:
             shutil.rmtree(self.root)
         except FileNotFoundError:
             pass
         except OSError:
             raise ExecutionError("cleanup_failed") from None
+        if self._audit is not None:
+            self._audit.auth_deleted = not os.path.lexists(self.root)
         if os.path.lexists(self.root):
             raise ExecutionError("cleanup_failed")

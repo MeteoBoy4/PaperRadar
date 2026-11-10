@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 import re
 import subprocess
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Protocol
 
+from paper_radar.llm import render_request
+from paper_radar.llm.dispatch import DispatchDenied
 from paper_radar.llm.models import PROTOCOL_PROFILES, CallDescription
 from paper_radar.llm.rpc_pipes import PipeSession
 from paper_radar.llm.rpc_types import ByteSession, RpcProblem, RpcReason, SessionEvent
@@ -25,6 +28,7 @@ from paper_radar.pi_execution.process import adopt_process
 from paper_radar.pi_execution.resources import (
     LAUNCH_POLICY_VERSION,
     AttemptResources,
+    CleanupAudit,
     ExecutionRoots,
     check_auth_mode,
     check_credentials_directory,
@@ -32,9 +36,51 @@ from paper_radar.pi_execution.resources import (
     check_system_prompt,
     proxy_port,
 )
+from paper_radar.pi_supply import activation_history
 from paper_radar.pi_supply.errors import SupplyError
 from paper_radar.pi_supply.models import SupplyManifest
-from paper_radar.pi_supply.protection import InstallUse, inspect_instance, use_install
+from paper_radar.pi_supply.protection import (
+    InstallUse,
+    acquire_install,
+    inspect_instance,
+    use_install,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class CollectionExecutionContext:
+    """仅封印合成材料的安装选择;不是正式业务准入许可。"""
+
+    use_id: str
+    synthetic_snapshot_id: str
+    request_sha256: str
+    actual_snapshot_id: str
+    supply_id: str
+    install_id: str
+
+    def recheck(self, database: Path, description: CallDescription) -> None:
+        history = activation_history(database)
+        if (
+            self.use_id
+            not in {
+                "boundary-low",
+                "boundary-high",
+                "value-low",
+                "value-high",
+                "read-low",
+                "read-high",
+            }
+            or description.stage != self.use_id.rsplit("-", 1)[0]
+            or description.thinking_level != self.use_id.rsplit("-", 1)[1]
+            or description.semantic_snapshot_id != self.synthetic_snapshot_id
+            or description.audit_snapshot_id != self.synthetic_snapshot_id
+            or hashlib.sha256(render_request(description)).hexdigest()
+            != self.request_sha256
+            or not history
+            or (history[-1].snapshot_id, history[-1].supply_id, history[-1].install_id)
+            != (self.actual_snapshot_id, self.supply_id, self.install_id)
+        ):
+            raise ExecutionError("snapshot_invalid")
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +153,8 @@ class PreparedLaunch(Protocol):
 
     def recheck_placement(self) -> None: ...
 
+    def placement_metadata(self) -> tuple[int, int, str]: ...
+
 
 class _PreparedLaunch:
     """仅 prepare_launch 产生;秘密只存在私有内存中,不进入 repr。"""
@@ -121,7 +169,11 @@ class _PreparedLaunch:
         proxy: str | None,
         auth_mode: str,
         placement: PlacedProcess,
+        cleanup_audit: CleanupAudit | None = None,
+        collection_context: CollectionExecutionContext | None = None,
     ) -> None:
+        self._collection_context = collection_context
+        self._cleanup_audit = cleanup_audit
         self._database = database
         self._description = description
         self._install = install
@@ -153,7 +205,11 @@ class _PreparedLaunch:
             inspect_instance(
                 self._database, self._install.record, self._install.instance
             )
-            resources = AttemptResources(self._roots, self._proxy)
+            resources = AttemptResources(
+                self._roots,
+                self._proxy,
+                **({"audit": self._cleanup_audit} if self._cleanup_audit else {}),
+            )
             env = {
                 "PI_CODING_AGENT_DIR": str(resources.agent),
                 "PI_SKIP_VERSION_CHECK": "1",
@@ -212,6 +268,9 @@ class _PreparedLaunch:
         finally:
             self._token = None
 
+    def placement_metadata(self) -> tuple[int, int, str]:
+        return self._placement.pid, self._placement.start, self._placement.unit
+
     def recheck_placement(self) -> None:
         self._placement.recheck()
 
@@ -225,8 +284,18 @@ class _PreparedLaunch:
                 self._database, self._install.record, self._install.instance
             )
             self.recheck_placement()
+            if self._collection_context is not None:
+                self._collection_context.recheck(self._database, description)
             self.start()
-        except (ExecutionError, SupplyError):
+        except (ExecutionError, SupplyError) as error:
+            if self._collection_context is not None:
+                raise DispatchDenied(
+                    "identity_mismatch"
+                    if isinstance(error, ExecutionError)
+                    and error.reason
+                    in {"placement_mismatch", "placement_anchor_invalid"}
+                    else "resource_unavailable"
+                ) from None
             raise RpcProblem(RpcReason.STARTUP_ERROR) from None
         assert self._session is not None
         return self._session
@@ -249,6 +318,9 @@ def prepare_launch(
     proxy: str | None = None,
     attempt_timeout: float = 300,
     auth_timeout: float = 30,
+    before_auth: Callable[[int, int, str], None] | None = None,
+    collection: CollectionExecutionContext | None = None,
+    cleanup_audit: CleanupAudit | None = None,
 ) -> Iterator[PreparedLaunch]:
     """领取前准备阻塞模型封装及认证;不创建业务 attempt 或派发模型。"""
     check_auth_mode(description.provider, auth_mode)
@@ -268,7 +340,14 @@ def prepare_launch(
     isolation_capability()
     prepared: PreparedLaunch | None = None
     try:
-        with use_install(database, description.audit_snapshot_id) as install:
+        if collection is not None:
+            collection.recheck(database, description)
+        installation = (
+            use_install(database, description.audit_snapshot_id)
+            if collection is None
+            else acquire_install(database, collection.supply_id, collection.install_id)
+        )
+        with installation as install:
             if install.record.manifest.pi_version != description.pi_version:
                 raise ExecutionError("protocol_unsupported")
             placement = PlacedProcess()
@@ -279,6 +358,8 @@ def prepare_launch(
                     roots=roots,
                     attempt_timeout=attempt_timeout,
                     timeout=auth_timeout,
+                    before_release=before_auth,
+                    cleanup_audit=cleanup_audit,
                 )
                 prepared = _PreparedLaunch(
                     database,
@@ -289,9 +370,13 @@ def prepare_launch(
                     proxy,
                     auth_mode,
                     placement,
+                    cleanup_audit,
+                    collection,
                 )
                 token = ""
                 try:
+                    if collection is not None:
+                        collection.recheck(database, description)
                     yield prepared
                 finally:
                     prepared.close()
