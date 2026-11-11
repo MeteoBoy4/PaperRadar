@@ -605,6 +605,10 @@ resources、target、已安装恢复和卸载按同一精确策略接缝核验�
 
 `verify_installed` 和 root observer 都核同一 loaded policy 的精确身份；root observer 读取全部新成员前先核完整保护链并用 O_NOFOLLOW 的受保护 fd，失信 symlink 不产生目标预读，非法工具描述在封印读取层受控拒绝。新封印成员、工具、sysctl/namespace 和 loaded policy 状态纳入原 `observer` 动态组件，不扩 BindingComponent wire；旧 runtime 的原 observer 闭包保持。稳定缺失/异字节属于 `observation_drift`，持久按依赖收紧；跨读 revision 变化、权限/接口暂不可用只报告 `observation_unavailable`，保留上次快照字节、observed_at 和原证据时点。不能把 temporarily unavailable 当来源失信。
 
+已存在的 prepared 策略只有在完整封印身份和实际 kernel blob 仍精确相同时只读复用原阶段记录，仍重新运行无秘密预检并回读核验；预检失败保留原 prepared 字节。新策略、缺失、partial 或未知 marker 继续原 preparing/recover 拒绝边界。
+
+resources replacement 的旧 history 已发布而主 journal 尚未切换时，先认证旧来源、资源、host 和 archive 冲突，再核 history 的保护链、正规单链接及原 state 的规范字节，只读复用并按原接缝准备策略。installed 升级的同一中断窗口只在显式 recover 时复用完全相同的原 installed state history；普通重试继续拒绝。仅在 history 不存在时发布，不覆盖未知 history/archive，也不删除或接受未知 `.new`，不为任意旧 runtime 补造历史。
+
 同 SHA 恢复要求全部封印身份和可识别阶段仍成立；若实际 initial namespace 身份改变，需新封印审阅，不能照抄旧 audit 绕过。真实 reboot、profile attach、userns/mount/cap/seccomp、scope/ptrace、认证/模型仍未由离线替身证明。[独立 D1 覆盖](../verification/issue-184-apparmor-lifecycle.md) 不增加既有验收分母。
 
 ### 时钟与独立恢复

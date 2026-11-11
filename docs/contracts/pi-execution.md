@@ -146,21 +146,37 @@ Python 内存引用在启动或上下文退出时释放，不承诺对不可变�
 `paper_radar.pi_execution.placement.PlacedProcess` 是认证、模型和 collector 的共同放置边界。
 构造时仅以固定 `systemd-run --user --scope --slice=paperradar.slice` 启动封装；
 要求 user manager 为 running、`Linger=yes`、`paperradar-anchor.service` 为 active。
-manager degraded、缺失或异常均拒绝。封装不继承秘密或业务环境，先设置零 core 和
-`no_new_privs`，通过 0700 临时目录中的 Unix socket 阻塞等待；对端 pid/uid 由
+manager degraded、缺失或异常均拒绝。固定静态 `placement-pre` 不继承秘密或业务环境，
+在 Python 与握手之前核 initial namespace、封印配置和 root 保护链，建立产品非零同
+UID/GID 映射的私有 user/mount namespace，只读挂载固定 resolver 视图，清除
+capabilities/bounding/ambient 并固定 securebits。它强制以替换型 `Px` 进入静态
+`placement-post`；post 的策略禁止新 userns、挂载、capability 和 profile 切换，
+并在动态代码前设置零 core、`no_new_privs` 与不可逆 seccomp。随后 Python 封装通过
+0700 临时目录中的 Unix socket 阻塞等待；对端 pid/uid 由
 `SO_PEERCRED` 取得，并核进程组和 `/proc` starttime。
 
 `PlacementTarget` v1 从现有 root 所有 inbox 的 `placement-target-v1.json` 规范字节读取，
 包含完整项目 slice 祖先 `(path,device,inode)`、anchor pid/starttime/cgroup、当前
 `IPV4_EGRESS` 观察摘要及 resolver 视图路径/摘要。逐次读取同时要求现有短租期
 CurrentObservation 的出站摘要匹配且覆盖出站和 observer；不改变历史观察 v1。
+native pre 在 initial userns 核 root 所有的固定 program、resolver 和 inbox 目录，
+向 post 传递固定的只读 program/resolver FD 与 inbox 目录 FD；post 再核配置原字节、
+固定路径 inode 及 resolver 挂载，关闭 resolver FD 后才进入 Python。Python 只继承
+只读配置 FD 与 inbox 目录 FD。产品映射后 root 所有者
+显示为 overflow UID，不能把该 UID 当 root 证明。封装通过原受信目录 FD 按固定名称
+fresh 读取 target、CurrentObservation 与 RefreshStatus，在 R 与 pre-exec 分别重核
+规范字节、配对、租期、目录/文件 inode 与实际放置，不能复用过期快照。
 `verify_placement(target,pid,start,unit)` 是 observer/collector 可复用的公开 `/proc`/kernfs
 核验，不读进程环境或内存。准备句柄还固定本次 scope 的核 ID；slice、scope、祖先、
 锚定或受保护目标变化都拒绝，即使路径文本相同。
 
 认证封装先通过同一核验再 exec；模型封装在领取前完成第一阶段、准备后及 preclaim
-复核，领取后才执行第二阶段。`execute(...)` 以有界私有 IPC 交付完整受控 argv/env、
-隔离参数与安装保护 fd（SCM_RIGHTS），封装先施加 resolver 视图和隔离，再 exec。
+复核，领取后才执行第二阶段。`execute(...)` 以有界私有 IPC 只交付闭合的
+auth/model/negative operation：auth 的临时资源与超时，model 的临时资源、token 与
+受控 system prompt，negative 无附加参数。安装保护 FD 与 auth metadata pipe 经
+SCM_RIGHTS 传递，数量、类型、权限和 inode 逐项核验；封装从封印 program 重建唯一
+argv/env/cwd，验证临时资源，重核当前 target/观察，再施加模型文件/网络隔离并 exec。
+协议不接收任意程序、argv/env、cwd、runtime 或 resolver 参数。
 普通产品 controller 以 `PTRACE_SEIZE/TRACEEXEC/EXITKILL` 在 exec-stop 核同一
 pid/starttime/cgroup、实际 executable、`NoNewPrivs=1` 和软硬零 core，随后 detach；
 目标尚未执行其第一条指令，因此认证动作或 prompt 不先于核验。没有 root tracer 或
@@ -169,13 +185,18 @@ pid/starttime/cgroup、实际 executable、`NoNewPrivs=1` 和软硬零 core，�
 保持失败。`recheck()` 供正式消费者在 preclaim 使用；`check_placement_readiness()`
 是 doctor 的只读 manager/目标/锚定检查，不创建 scope、不证明未来子进程放置。
 
-`resolver.apply_resolver_view(view,digest)` 是公共只读 resolver 接缝。封印部署提供
-`/run/paper-radar/` 下的 root 所有、产品不可改文件；封装在非特权私有 user/mount
-namespace 内只读绑定到 `/etc/resolv.conf`，不需要宿主 CAP_SYS_ADMIN。已继承同 inode
-视图仅在调用 uid 不可写且摘要相同才复用。非特权 userns、映射、挂载或摘要核验失败
-均不能继续 exec；不授额外 capability。离线替身只复用现有系统 resolver，不证明
-已部署项目挂载或真实 DNS；确切视图、权限、userns/ptrace 组合与真实出站由
-[Live](../roadmap.md#module-live) 封印部署及现场验收确认。模型内层仍不开放 TCP53。
+当前执行链由静态 pre 完成固定 resolver 视图，不调用 Python
+`resolver.apply_resolver_view(view,digest)`。该历史公共 API 保留原语义：在非特权私有
+user/mount namespace 内只读绑定视图，或在 uid 不可写且同 inode、同摘要时复用。
+封印部署提供 `/run/paper-radar/` 下 root 所有、产品不可改的文件，并要求站点已有
+`apparmor_restrict_unprivileged_userns=1` 与
+`apparmor_restrict_unprivileged_unconfined=1`。实际加载策略的 kernel
+raw_data/raw_sha256、wire ABI、enforce、attachment 和完整 profile 集合必须与封印
+身份精确相等；不修改全机 sysctl、resolver 或默认策略。策略准备及旧 target 完整无秘密
+traced 预检必须先于旧资源首写，详细规则见
+[Live 策略生命周期](live-evidence.md#封印放置策略生命周期)。离线替身不证明真实
+挂载、scope/ptrace 或 DNS；现场责任见 [Live](../roadmap.md#module-live)。
+模型内层仍不开放 TCP53。
 
 ### 隔离策略 `pi-landlock-v1`
 

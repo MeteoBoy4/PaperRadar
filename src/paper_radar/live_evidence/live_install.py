@@ -255,6 +255,24 @@ class LiveDeployment:
             self.paths.journal, json_bytes(state), replace=self.paths.journal.exists()
         )
 
+    def _history_exists(
+        self, history: Path, state: dict[str, Any], *, reason: str
+    ) -> bool:
+        # An unfinished publication is not proof of a completed, single-link history.
+        if os.path.lexists(history.with_name(history.name + ".new")):
+            raise ValueError(reason)
+        if not os.path.lexists(history):
+            return False
+        protected(history, self.owner_uid, anchor=self.paths.anchor)
+        info = history.lstat()
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_nlink != 1
+            or history.read_bytes() != json_bytes(state)
+        ):
+            raise ValueError(reason)
+        return True
+
     def _resources(self) -> dict[Path, bytes]:
         result = {
             self.paths.executables / ("live-evidence-" + name): (
@@ -637,18 +655,12 @@ class LiveDeployment:
                     history = self.paths.journal.with_name(
                         "deployment-v2-history-" + state["payload"] + ".json"
                     )
-                    if os.path.lexists(history):
-                        protected(history, self.owner_uid, anchor=self.paths.anchor)
-                        if (
-                            not stat.S_ISREG(history.lstat().st_mode)
-                            or history.lstat().st_nlink != 1
-                            or history.read_bytes() != json_bytes(state)
-                        ):
-                            raise ValueError("resources_history_identity")
-                    else:
-                        host.prepare_placement(self.staged, site, recover=recover)
-                        host.prepare_placement(self.staged, site, recover=recover)
-                    publish(history, json_bytes(state))
+                    history_exists = self._history_exists(
+                        history, state, reason="resources_history_identity"
+                    )
+                    host.prepare_placement(self.staged, site, recover=recover)
+                    if not history_exists:
+                        publish(history, json_bytes(state))
                     identity["previous"] = state
                     state = identity
                     self._checkpoint(state, "replacing_resources")
@@ -686,9 +698,16 @@ class LiveDeployment:
                     history = self.paths.journal.with_name(
                         "deployment-v2-history-" + state["payload"] + ".json"
                     )
-                    if os.path.lexists(archive) or os.path.lexists(history):
+                    if os.path.lexists(archive) or (
+                        os.path.lexists(history) and not recover
+                    ):
                         raise ValueError("archive_conflict")
-                    publish(history, json_bytes(state))
+                    history_exists = self._history_exists(
+                        history, state, reason="archive_conflict"
+                    )
+                    host.prepare_placement(self.staged, site, recover=recover)
+                    if not history_exists:
+                        publish(history, json_bytes(state))
                     identity["previous"] = state
                     state = identity
                     self._checkpoint(state, "retiring")
