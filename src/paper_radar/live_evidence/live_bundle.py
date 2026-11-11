@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from paper_radar.live_evidence.epoch_lineage import EpochUpgrade
 from paper_radar.live_evidence.sealed_runtime import RUNTIME_ROOT, SiteConfiguration
 
 
@@ -148,6 +149,7 @@ def build_live_bundle(
     source_root: Path,
     network_input: dict[str, Any],
     upgrade_from: tuple[str, str] | None = None,
+    epoch_upgrade: EpochUpgrade | None = None,
 ) -> dict[str, str]:
     """独立Live模式;拒绝在任何输出前检查策略/activation/窗口与输入形状。"""
     import hashlib
@@ -215,6 +217,11 @@ def build_live_bundle(
         raise ValueError("owner_network_input")
     if upgrade_from is not None:
         deployment.render_upgrade(*upgrade_from)
+    if epoch_upgrade is not None and upgrade_from != (
+        epoch_upgrade.payload_sha256,
+        epoch_upgrade.runtime_manifest_sha256,
+    ):
+        raise ValueError("epoch_upgrade_source")
     if set(site.claim_uses) != set(USES) or site.use_id != "boundary-low":
         raise ValueError("bundle_claim_uses")
     assert_source_guard(source_root)
@@ -389,6 +396,10 @@ def build_live_bundle(
             (frozen / "plans" / (item.plan_id + ".json")).write_bytes(
                 canonical_bytes(item)
             )
+        if epoch_upgrade is not None:
+            from paper_radar.live_evidence.epoch_lineage import verify_upgrade_candidate
+
+            verify_upgrade_candidate(frozen, epoch_upgrade)
         cache_path = site.credentials_dir / "node-compile-cache"
         cache = cache_metadata(cache_path) if os.path.lexists(cache_path) else None
         (frozen / "deployment.json").write_bytes(
@@ -396,6 +407,11 @@ def build_live_bundle(
                 {
                     "format_version": 2,
                     "upgrade_from": upgrade_from,
+                    "epoch_upgrade": (
+                        epoch_upgrade.model_dump(mode="json")
+                        if epoch_upgrade is not None
+                        else None
+                    ),
                     "cache_migration": cache,
                     "host_machine": platform.machine(),
                     "host_tools": {
