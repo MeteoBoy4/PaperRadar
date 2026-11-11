@@ -239,11 +239,26 @@ checked_components 无重复，只列本次确实覆盖的组件，不是 passed
 普通产品请求不能自行声明特权证明；未观测组件不能填入 checked_components。
 
 例行刷新入口 `protected_observer.refresh_once` 在同一个 `collector.lock` 内核实际固定
-`/usr/sbin/nft -j list table inet paperradar`、受保护 `placement-target-v1.json` 与实际
+固定 nft JSON/native/JSON 三视图、受保护 `placement-target-v1.json` 与实际
 `/proc`/cgroup 祖先、锚定身份；本地上下文在不可逆降权的 product uid 子进程内只读重算，
 metadata_only 模式跳过隔离探针及 Node 执行，不重复完整 β。`observer_identity` 哈希 `OBSERVER_MEMBERS` 列出的
 封印运行时观察代码、入口、配置及封印清单；PID/启动时间不构成 observer 身份。
-`egress_identity` 绑定实际规则 JSON 与放置上下文，忽略 metainfo 及计数器 packet/byte 数值。
+`egress_identity` 绑定实际规则与放置上下文，忽略 metainfo 及计数器 packet/byte 数值。
+nftables 1.1.6 的 JSON 输出遗漏 socket cgroupv2 level；固定读取同时查询带 handle 的
+native 文本，并逐 table/chain/rule handle、comment、顺序与 RHS 关联，仅从实际 native
+规则补齐 level。完整读取前后分别用固定只读 Netlink GETGEN 核相同非零 u32 generation；
+包络、来源、代际未知或改变均拒绝。这是有限宽度代际一致性检查，不宣称排除无界完整回绕。
+代际稳定且两实际视图库存一致时，表丢失、selector 缺失/变更、额外 chain/表达式等已确认
+实际结构变化仍返回实际快照，由例行刷新判为漂移并持久收紧；不因找不到预期 selector
+改报临时不可用。generation 失败或双视图不一致则保持本次观察不可用，不冒充已确认漂移。
+generation 不进入稳定 egress 身份；其他表在两次独立采集之间的变更不改变相同项目规则身份。
+实际 level 进入 egress 摘要和负对照前后 counter 结构比较。规则核验只对完整正确的
+IPv4 地址与 TCP/UDP 端口固定签名约简可由 payload 协议蕴含的 nfproto/l4proto 依赖；
+对应同版官方 golden 的两 payload 回读形式，地址、端口、协议、顺序与其余表达式仍精确比较，
+额外或错误 meta、缺少限制均拒绝。所有安装、观察及 counter
+消费者共用此固定读取，不从预期规则补造缺失字段。
+封印清单传递绑定 nft 模块字节，入口在导入前逐成员验 SHA；`OBSERVER_MEMBERS` 清单保持
+既有成员，历史 runtime 的 observer 身份仍按原字节计算，不要求旧树含后继新增模块。
 封印部署负责安装这些固定来源，入口不接受调用方自报摘要或自由命令。
 
 候选核验后原子发布；`observation-refresh.json` 保存独立 `RefreshStatus` v1（result、
@@ -410,13 +425,22 @@ stopped、撤销、已预占额度和旧 runtime 均保留。同 SHA 已安装�
 Slice 与软硬 LimitCORE 继续独立核对；`busctl` 纳入封印 `host_tools` 的解析路径与 SHA。
 
 更换字节的 `recover` 仅另接受明确的 `resources` 中断：新包的 `upgrade_from` 精确指向
-pending payload/manifest，原 journal 的 `previous=null`，原 legacy 升级归档、pending
-runtime 和全部已发布资源均逐字核验。旧新 strict β 与七计划均不得有计划登记、回执、
+pending payload/manifest；原 journal 可以是至多 16 层、无重复 payload 的完整
+`resources` 链，每层必须为准确 canonical journal，phase、payload/manifest、
+`upgrade_from`、封印 deployment 声明、独立 ancestor archive 与原 history 字节逐项一致，
+链末的 `previous=null` 仍精确绑定原 legacy 升级归档。pending runtime 和全部已发布资源
+均逐字核验。所有待替换 resources 祖先及新包的 strict β 与七计划均不得有计划登记、回执、
 事件、计划来源、停止标记、部署 epoch 或 target；其他 plan ID 的登记/回执/inbox
 若属于旧新 collector 也拒绝。schema1 只读核原三表及无 v2 事件，
 schema2 重放已有谱系，不在预检初始化或升级。其他 legacy 历史允许保留；旧观察若属于
 pending/新包 observer 则拒绝。普通安装、更早/更晚中断阶段及未知来源不取得此能力。
 固定宿主检查要求无项目 nft 表、管理员 anchor 身份正确且项目 subtree 只有该 anchor。
+首次替换的任何旧资源变更及新 history/journal 发布前，先用完整固定 native nft 程序在
+root 子进程的独立网络 namespace 内提交、双实际视图回读并校验，确认子 namespace 与宿主
+不同才允许临时提交；随后以相同程序对宿主执行 `nft --check`。没有网络流量、宿主规则
+修改或其他 namespace 设置，预检失败保留原资源与 journal。实际配置时再次检查同一程序，
+由固定 native 批次原子提交；仍使用实际 cgroupv2 level 与独立 dev/ino，四 counter、
+原三允许及剩余 drop 不变。工具拒绝只公开固定 stage reason，不输出 raw stderr。
 核对完成后保留原 journal，记录 `replacing_resources`，封闭旧观察并仅停止已核 anchor；
 核空 subtree 后记录 `resources_stopped`，精确移除已核资源并原样归档 pending runtime，
 随后进入原 `archived` 安装路径。各已记录断点按旧新身份重核后续行，未知字节和其他进程
@@ -481,8 +505,8 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v11`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v11.json)
-与源码守卫共同固定相关实现；v1–v10 的 D7 向量与摘要锚原字节保留。
+源代码准入策略为 `pi-admission-v15`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v15.json)
+与源码守卫共同固定相关实现；v1–v14 的 D7 向量与摘要锚原字节保留。
 v7 增加共享用户 scope 双阶段放置、封装、只读 resolver 和只读诊断；保留固定认证基线 v2、helper 临时布局与 v2 额度／回执／账本错误权威，继续显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
 策略身份变化后不能继承旧策略的执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
 源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。

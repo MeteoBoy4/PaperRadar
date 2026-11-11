@@ -16,15 +16,23 @@ from typing import Any
 
 from paper_radar.live_evidence.live_install import (
     InstallationPaths,
-    json_bytes,
     protected,
     publish,
 )
 from paper_radar.live_evidence.model_manifest import (
-    NEGATIVES,
     ModelManifest,
-    NetworkConfiguration,
     parse_manifest,
+)
+from paper_radar.live_evidence.nft_rules import (
+    check_nft_namespace,
+    nft_program,
+    read_nft_snapshot,
+)
+from paper_radar.live_evidence.nft_rules import (
+    nft_document as nft_document,
+)
+from paper_radar.live_evidence.nft_rules import (
+    verify_nft as verify_nft,
 )
 from paper_radar.live_evidence.receipt import ApprovedPlan, canonical_bytes
 from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
@@ -33,158 +41,6 @@ from paper_radar.pi_execution.placement import (
     PlacementTarget,
     verify_placement,
 )
-
-
-def nft_document(
-    target: PlacementTarget, network: NetworkConfiguration
-) -> dict[str, Any]:
-    """固定JSON规则,四个独立drop counter先于三个允许;IPv6落入末尾drop。"""
-    base = {"family": "inet", "table": "paperradar"}
-    rules: list[dict[str, Any]] = []
-
-    def match(left: object, right: object) -> dict[str, Any]:
-        return {"match": {"op": "==", "left": left, "right": right}}
-
-    def destination(address: object, protocol: str, port: int) -> list[dict[str, Any]]:
-        return [
-            match({"meta": {"key": "nfproto"}}, "ipv4"),
-            match({"payload": {"protocol": "ip", "field": "daddr"}}, address),
-            match({"meta": {"key": "l4proto"}}, protocol),
-            match({"payload": {"protocol": protocol, "field": "dport"}}, port),
-        ]
-
-    level = len(PurePosixPath(target.ancestors[0].path).parts) - 1
-    rules.append(
-        {
-            "chain": "output",
-            "expr": [
-                match(
-                    {"socket": {"key": "cgroupv2", "level": level}},
-                    target.ancestors[0].path.lstrip("/"),
-                ),
-                {"jump": {"target": "project"}},
-            ],
-            "comment": "paperradar-placement-v1",
-        }
-    )
-    for _case, address, protocol, port, comment in zip(
-        NEGATIVES,
-        (
-            str(network.outside),
-            str(network.nonrouter),
-            str(network.nonrouter),
-            str(network.udp443),
-        ),
-        ("tcp", "udp", "tcp", "udp"),
-        (443, 53, 53, 443),
-        network.rule_comments,
-        strict=True,
-    ):
-        rules.append(
-            {
-                "chain": "project",
-                "expr": [
-                    *destination(address, protocol, port),
-                    {"counter": {"packets": 0, "bytes": 0}},
-                    {"drop": None},
-                ],
-                "comment": comment,
-            }
-        )
-    from ipaddress import IPv4Network
-
-    pool = IPv4Network(network.pool)
-    for allow_address, protocol, port, label in (
-        (
-            {"prefix": {"addr": str(pool.network_address), "len": pool.prefixlen}},
-            "tcp",
-            443,
-            "pool-tls",
-        ),
-        (str(network.router), "udp", 53, "router-udp53"),
-        (str(network.router), "tcp", 53, "router-tcp53"),
-    ):
-        rules.append(
-            {
-                "chain": "project",
-                "expr": [*destination(allow_address, protocol, port), {"accept": None}],
-                "comment": "paperradar-" + label,
-            }
-        )
-    rules.append(
-        {
-            "chain": "project",
-            "expr": [{"drop": None}],
-            "comment": "paperradar-deny-remainder",
-        }
-    )
-    return {
-        "nftables": [
-            {"add": {"table": {"family": "inet", "name": "paperradar"}}},
-            {
-                "add": {
-                    "chain": {
-                        **base,
-                        "name": "output",
-                        "type": "filter",
-                        "hook": "output",
-                        "prio": -10,
-                        "policy": "accept",
-                    }
-                }
-            },
-            {"add": {"chain": {**base, "name": "project"}}},
-            *({"add": {"rule": {**base, **rule}}} for rule in rules),
-        ]
-    }
-
-
-def verify_nft(
-    snapshot: dict[str, Any], target: PlacementTarget, network: NetworkConfiguration
-) -> None:
-    expected = [item["add"] for item in nft_document(target, network)["nftables"]]
-    actual = []
-    handles: set[int] = set()
-    for item in snapshot.get("nftables", []):
-        if set(item) == {"metainfo"}:
-            continue
-        if len(item) != 1 or next(iter(item)) not in {"table", "chain", "rule"}:
-            raise ValueError("nft_inventory")
-        kind, value = next(iter(item.items()))
-        row = {
-            key: content
-            for key, content in value.items()
-            if key not in {"handle", "use", "index"}
-        }
-        if kind == "rule":
-            handle = value.get("handle")
-            if type(handle) is not int or handle <= 0 or handle in handles:
-                raise ValueError("nft_rule_handle")
-            handles.add(handle)
-            from copy import deepcopy
-
-            row = deepcopy(row)
-            for expression in row.get("expr", []):
-                if "counter" in expression:
-                    if set(expression["counter"]) != {"packets", "bytes"} or any(
-                        type(value) is not int or value < 0
-                        for value in expression["counter"].values()
-                    ):
-                        raise ValueError("nft_counter")
-                    expression["counter"] = {"packets": 0, "bytes": 0}
-                match = expression.get("match", {})
-                if match.get("left", {}).get("socket", {}).get("key") == "cgroupv2":
-                    right = match.get("right")
-                    if right not in (
-                        target.ancestors[0].path,
-                        target.ancestors[0].path.lstrip("/"),
-                        target.ancestors[0].inode,
-                    ):
-                        raise ValueError("nft_target_identity")
-                    match["right"] = target.ancestors[0].path.lstrip("/")
-        actual.append({kind: row})
-    if actual != expected:
-        raise ValueError("nft_structure")
 
 
 def process_identity(pid: int) -> tuple[int, str]:
@@ -255,7 +111,12 @@ class LinuxLiveHost:
             **options,
         )
         if result.returncode != 0 or len(result.stdout) > 1024 * 1024:
-            raise ValueError("host_command_refused")
+            reason = {
+                ("/usr/sbin/nft", "--check", "-f", "-"): "host_nft_check_refused",
+                ("/usr/sbin/nft", "-f", "-"): "host_nft_apply_refused",
+                ("/usr/sbin/nft", "-j", "list", "tables"): "host_nft_inventory_refused",
+            }.get(argv, "host_command_refused")
+            raise ValueError(reason)
         return result.stdout
 
     def preflight(self, site: SiteConfiguration) -> None:
@@ -309,12 +170,22 @@ class LinuxLiveHost:
                 continue
 
     def _snapshot(self) -> dict[str, Any]:
-        value = json.loads(
-            self._run(("/usr/sbin/nft", "-j", "list", "table", "inet", "paperradar"))
+        return read_nft_snapshot()
+
+    def preflight_nft(self, site: SiteConfiguration, manifest: ModelManifest) -> None:
+        """旧 anchor 仍完好时先核新固定规则;此方法没有宿主资源写入。"""
+        self.site, self.manifest = site, manifest
+        self.ensure_no_table()
+        self._check_nft_program(self._anchor_target(), manifest)
+
+    def _check_nft_program(
+        self, target: PlacementTarget, manifest: ModelManifest
+    ) -> None:
+        check_nft_namespace(target, manifest.network)
+        self._run(
+            ("/usr/sbin/nft", "--check", "-f", "-"),
+            data=nft_program(target, manifest.network),
         )
-        if not isinstance(value, dict):
-            raise ValueError("nft_snapshot_invalid")
-        return value
 
     def ensure_no_table(self) -> None:
         tables = json.loads(self._run(("/usr/sbin/nft", "-j", "list", "tables")))
@@ -479,9 +350,10 @@ class LinuxLiveHost:
                 raise ValueError("placement_identity_drift")
         else:
             self.ensure_no_table()
+            self._check_nft_program(target, manifest)
             self._run(
-                ("/usr/sbin/nft", "-j", "-f", "-"),
-                data=json_bytes(nft_document(target, manifest.network)),
+                ("/usr/sbin/nft", "-f", "-"),
+                data=nft_program(target, manifest.network),
             )
             snapshot = self._snapshot()
         verify_nft(snapshot, target, manifest.network)

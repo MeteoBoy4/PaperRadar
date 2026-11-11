@@ -19,6 +19,9 @@ from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 class LiveHost(Protocol):
     def preflight(self, site: SiteConfiguration) -> None: ...
     def ensure_no_table(self) -> None: ...
+    def preflight_nft(
+        self, site: SiteConfiguration, manifest: ModelManifest
+    ) -> None: ...
     def validate_sudoers(self, path: Path) -> None: ...
     def configure(self, site: SiteConfiguration, manifest: ModelManifest) -> None: ...
     def verify_installed(
@@ -381,50 +384,109 @@ class LiveDeployment:
     def _pending_resources(
         self, old: dict[str, Any], root: Path, *, absent_ok: bool = False
     ) -> LiveDeployment:
-        if (
-            old.get("format_version") != 2
-            or old["phase"] != "resources"
-            or old["previous"] is not None
-        ):
-            raise ValueError("resources_interruption_unknown")
-        legacy = old["upgrade_from"]
-        if (
-            not isinstance(legacy, list)
-            or len(legacy) != 2
-            or any(
+        # 每层是既有 root 发布的 resources journal;只接受有限、无重复的完整链。
+        # previous 非空从不单独成为授权。
+        # pair、封印声明、原 history 与 archive 必须一致。
+        current: object = old
+        selected = root
+        roots: list[Path] = []
+        seen: set[str] = set()
+        for _depth in range(16):
+            if (
+                not isinstance(current, dict)
+                or set(current)
+                != {
+                    "format_version",
+                    "payload",
+                    "manifest",
+                    "phase",
+                    "upgrade_from",
+                    "previous",
+                }
+                or type(current["format_version"]) is not int
+                or current["format_version"] != 2
+                or current["phase"] != "resources"
+            ):
+                raise ValueError("resources_interruption_unknown")
+            pair = [current["payload"], current["manifest"]]
+            legacy = current["upgrade_from"]
+            if any(
                 not isinstance(value, str)
                 or len(value) != 64
                 or any(char not in "0123456789abcdef" for char in value)
-                for value in legacy
+                for value in pair
+            ):
+                raise ValueError("resources_interruption_unknown")
+            if current["payload"] in seen:
+                raise ValueError("resources_interruption_unknown")
+            seen.add(current["payload"])
+            if (
+                not isinstance(legacy, list)
+                or len(legacy) != 2
+                or any(
+                    not isinstance(value, str)
+                    or len(value) != 64
+                    or any(char not in "0123456789abcdef" for char in value)
+                    for value in legacy
+                )
+                or legacy[0] in seen
+            ):
+                raise ValueError("resources_legacy_identity")
+            verify_tree(
+                selected,
+                owner_uid=self.owner_uid,
+                anchor=self.paths.anchor,
+                payload=pair[0],
+                manifest_digest=pair[1],
             )
-        ):
-            raise ValueError("resources_legacy_identity")
-        verify_tree(
-            self.paths.runtime.with_name(
+            if (
+                json.loads((selected / "deployment.json").read_bytes()).get(
+                    "upgrade_from"
+                )
+                != legacy
+            ):
+                raise ValueError("resources_interruption_unknown")
+            roots.append(selected)
+            archive = self.paths.runtime.with_name(
                 self.paths.runtime.name + ".archive-" + legacy[0]
-            ),
-            owner_uid=self.owner_uid,
-            anchor=self.paths.anchor,
-            payload=legacy[0],
-            manifest_digest=legacy[1],
-        )
-        verify_tree(
-            root,
-            owner_uid=self.owner_uid,
-            anchor=self.paths.anchor,
-            payload=old["payload"],
-            manifest_digest=old["manifest"],
-        )
-        if (
-            json.loads((root / "deployment.json").read_bytes()).get("upgrade_from")
-            != legacy
-        ):
+            )
+            verify_tree(
+                archive,
+                owner_uid=self.owner_uid,
+                anchor=self.paths.anchor,
+                payload=legacy[0],
+                manifest_digest=legacy[1],
+            )
+            ancestor = current["previous"]
+            if ancestor is None:
+                break
+            if not isinstance(ancestor, dict) or legacy != [
+                ancestor.get("payload"),
+                ancestor.get("manifest"),
+            ]:
+                raise ValueError("resources_interruption_unknown")
+            history = self.paths.journal.with_name(
+                "deployment-v2-history-" + legacy[0] + ".json"
+            )
+            if not os.path.lexists(history):
+                raise ValueError("resources_history_identity")
+            protected(history, self.owner_uid, anchor=self.paths.anchor)
+            info = history.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+                or info.st_size > 65536
+                or history.read_bytes() != json_bytes(ancestor)
+            ):
+                raise ValueError("resources_history_identity")
+            current, selected = ancestor, archive
+        else:
             raise ValueError("resources_interruption_unknown")
         previous = LiveDeployment(
             root, paths=self.paths, host=self.host, owner_uid=self.owner_uid
         )
         previous._check_resources(absent_ok=absent_ok)
-        self._unexecuted_resources((root, self.staged))
+        self._unexecuted_resources((*roots, self.staged))
         return previous
 
     def _replace_resources(self, state: dict[str, Any]) -> None:
@@ -547,6 +609,7 @@ class LiveDeployment:
                     )
                     host.preflight(site)
                     host.check_resources_interruption(old_site, old_manifest)
+                    host.preflight_nft(site, manifest)
                     archive = self.paths.runtime.with_name(
                         self.paths.runtime.name + ".archive-" + state["payload"]
                     )

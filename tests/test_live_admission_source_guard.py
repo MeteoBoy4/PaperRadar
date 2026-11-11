@@ -14,7 +14,7 @@ from paper_radar.pi_execution.resources import LAUNCH_POLICY_VERSION
 from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v14.json"
+MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v15.json"
 ARCHIVED_MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
 # 显式清单;不能由目录扫描或生产依赖图动态扩大/缩小。
 ARCHIVED_SOURCE_FILES = (
@@ -97,11 +97,16 @@ SOURCE_FILES = (
     "src/paper_radar/pi_execution/auth_helper.mjs",
     "src/paper_radar/pi_execution/auth_metadata.py",
     "src/paper_radar/live_evidence/normal_auth_refresh.py",
+    "src/paper_radar/live_evidence/nft_rules.py",
+    "src/paper_radar/live_evidence/nft_generation.py",
 )
 
 
 # 已审阅版本的清单摘要只追加;后继不得以同一策略键重绑该摘要。
 REVIEWED_POLICY_MANIFESTS = {
+    "pi-admission-v15": (
+        "dce441bec96f6a40bf6f3cd15f108f863d0c9836d219a27ac8478aa6e4224139"
+    ),
     "pi-admission-v14": (
         "c98ddf0850df467e0073002c3c29c32d8f9ead8c5aa28996308e9c427b71208b"
     ),
@@ -246,7 +251,7 @@ def test_fifth_policy_manifest_retains_original_bytes() -> None:
     assert json.loads(data)["policies"]["admission"] == "pi-admission-v5"
 
 
-@pytest.mark.parametrize("version", (6, 7, 8, 9, 10, 11, 12, 13))
+@pytest.mark.parametrize("version", (6, 7, 8, 9, 10, 11, 12, 13, 14))
 def test_later_archived_policy_vectors_keep_original_bytes(version: int) -> None:
     data = (
         ROOT / f"tests/fixtures/live-admission-source-guard-v{version}.json"

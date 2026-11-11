@@ -102,6 +102,9 @@ class ModelHost:
     def preflight(self, site: SiteConfiguration) -> None:
         self._call("preflight")
 
+    def preflight_nft(self, site: SiteConfiguration, manifest: ModelManifest) -> None:
+        self._call("preflight_nft")
+
     def ensure_no_table(self) -> None:
         self._call("ensure_no_table")
 

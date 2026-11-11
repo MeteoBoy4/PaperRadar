@@ -1,0 +1,16 @@
+table inet paperradar { # handle 1
+    chain output { # handle 2
+        type filter hook output priority -10; policy accept;
+        socket cgroupv2 level 4 "user.slice/user-1000.slice/user@1000.service/paperradar.slice" jump project comment "paperradar-placement-v1" # handle 4
+    }
+    chain project { # handle 3
+        ip daddr 192.0.2.1 tcp dport 443 counter packets 0 bytes 0 drop comment "paperradar-negative-outside-tcp443" # handle 5
+        ip daddr 192.0.2.2 udp dport 53 counter packets 0 bytes 0 drop comment "paperradar-negative-nonrouter-udp53" # handle 6
+        ip daddr 192.0.2.2 tcp dport 53 counter packets 0 bytes 0 drop comment "paperradar-negative-nonrouter-tcp53" # handle 7
+        ip daddr 192.0.2.1 udp dport 443 counter packets 0 bytes 0 drop comment "paperradar-negative-udp443" # handle 8
+        ip daddr 28.0.0.0/8 tcp dport 443 accept comment "paperradar-pool-tls" # handle 9
+        ip daddr 192.168.44.1 udp dport 53 accept comment "paperradar-router-udp53" # handle 10
+        ip daddr 192.168.44.1 tcp dport 53 accept comment "paperradar-router-tcp53" # handle 11
+        drop comment "paperradar-deny-remainder" # handle 12
+    }
+}

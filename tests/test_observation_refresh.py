@@ -205,8 +205,21 @@ def refresh_site(
         "nftables": [
             {"table": {"family": "inet", "name": "paperradar", "handle": 7}},
             {
+                "chain": {
+                    "family": "inet",
+                    "table": "paperradar",
+                    "name": "project",
+                    "handle": 8,
+                }
+            },
+            {
                 "rule": {
-                    "expr": [{"counter": {"packets": 0, "bytes": 0}}, {"drop": None}]
+                    "family": "inet",
+                    "table": "paperradar",
+                    "chain": "project",
+                    "handle": 9,
+                    "comment": "paperradar-synthetic",
+                    "expr": [{"counter": {"packets": 0, "bytes": 0}}, {"drop": None}],
                 }
             },
         ]
@@ -237,11 +250,40 @@ def refresh_site(
     ) -> subprocess.CompletedProcess[bytes]:
         from subprocess import CompletedProcess
 
-        assert argv == ("/usr/sbin/nft", "-j", "list", "table", "inet", "paperradar")
-        stdout.write(json.dumps(nft).encode())
+        if argv == ("/usr/sbin/nft", "-a", "-n", "list", "table", "inet", "paperradar"):
+            # Synchronized synthetic tool views for lifecycle tests. Independent
+            # source-derived printer/level cases live in test_live_nft_rules.py.
+            native = [
+                "table inet paperradar { # handle 7",
+                "chain project { # handle 8",
+            ]
+            rows = nft["nftables"]
+            assert isinstance(rows, list)
+            for row in rows:
+                if "rule" not in row:
+                    continue
+                rule = row["rule"]
+                body = "accept" if {"accept": None} in rule["expr"] else "drop"
+                native.append(
+                    f'{body} comment "{rule["comment"]}" # handle {rule["handle"]}'
+                )
+            stdout.write(("\n".join([*native, "}", "}"]) + "\n").encode())
+        else:
+            assert argv == (
+                "/usr/sbin/nft",
+                "-j",
+                "list",
+                "table",
+                "inet",
+                "paperradar",
+            )
+            stdout.write(json.dumps(nft).encode())
         return CompletedProcess(argv, 0)
 
     monkeypatch.setattr(subprocess, "run", run)
+    monkeypatch.setattr(
+        "paper_radar.live_evidence.nft_rules.nft_generation", lambda: 42
+    )
     return ledger, runtime, nft, previous
 
 
@@ -297,7 +339,18 @@ def test_routine_refresh_classifies_failures_without_stale_hiding_drift(
     elif damage == "nft_drift":
         rows = nft["nftables"]
         assert isinstance(rows, list)
-        rows.append({"rule": {"accept": None}})
+        rows.append(
+            {
+                "rule": {
+                    "family": "inet",
+                    "table": "paperradar",
+                    "chain": "project",
+                    "handle": 10,
+                    "comment": "paperradar-unreviewed",
+                    "expr": [{"accept": None}],
+                }
+            }
+        )
     elif damage == "observer_drift":
         (runtime / "entry.py").write_bytes(b"changed sealed observer\n")
     elif damage == "observer_lost":
@@ -581,7 +634,18 @@ def test_database_failure_keeps_drift_marker_and_pending_disclosure_across_reope
     ledger, runtime, nft, previous = refresh_site(tmp_path, monkeypatch)
     rows = nft["nftables"]
     assert isinstance(rows, list)
-    rows.append({"rule": {"accept": None}})
+    rows.append(
+        {
+            "rule": {
+                "family": "inet",
+                "table": "paperradar",
+                "chain": "project",
+                "handle": 10,
+                "comment": "paperradar-unreviewed",
+                "expr": [{"accept": None}],
+            }
+        }
+    )
     original = ledger.connection
 
     @contextmanager
@@ -683,9 +747,9 @@ def test_only_counter_values_evolve_while_rule_byte_constraints_still_drift(
     ledger, runtime, nft, _previous = refresh_site(tmp_path, monkeypatch)
     rows = nft["nftables"]
     assert isinstance(rows, list)
-    rows[1]["rule"]["expr"][0]["counter"] = {"packets": 3, "bytes": 800}
+    rows[2]["rule"]["expr"][0]["counter"] = {"packets": 3, "bytes": 800}
     assert observer.refresh_once(runtime, ledger, now=NOW) == "available"
-    rows[1]["rule"]["expr"].append({"quota": {"bytes": 5}})
+    rows[2]["rule"]["expr"].append({"quota": {"bytes": 5}})
     assert observer.refresh_once(runtime, ledger, now=NOW) == "observation_drift"
 
 
