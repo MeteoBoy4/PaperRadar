@@ -313,7 +313,12 @@ def test_explicit_successive_v2_upgrade_preserves_prior_runtime_and_journal(
     import os
 
     from paper_radar.live_evidence.deployment import file_digests
+    from paper_radar.live_evidence.epoch_lineage import describe_epoch_upgrade
+    from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerTrust
     from paper_radar.live_evidence.live_install import LiveDeployment
+    from paper_radar.live_evidence.model_manifest import parse_manifest
+    from paper_radar.live_evidence.normal_auth_refresh import epoch_path
+    from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
     from tests.live_bundle_support import ModelHost, bundle_model
 
     first, paths = bundle_model(tmp_path, monkeypatch)
@@ -326,10 +331,29 @@ def test_explicit_successive_v2_upgrade_preserves_prior_runtime_and_journal(
         (paths.runtime / "manifest.sha256").read_bytes()
     ).hexdigest()
     journal = paths.journal.read_bytes()
+    old_manifest_model = parse_manifest(
+        (paths.runtime / "model-manifest.json").read_bytes()
+    )
+    ledger = EvidenceLedger(
+        paths.ledger, trust=LedgerTrust(owner_uid=os.getuid(), anchor=tmp_path)
+    )
+    descriptor = describe_epoch_upgrade(
+        paths.runtime, epoch_path(ledger, old_manifest_model).read_bytes()
+    )
     next_root = tmp_path / "next-build"
     next_root.mkdir(mode=0o755)
     staged, _ = bundle_model(
-        next_root, monkeypatch, upgrade_from=(old_payload, old_manifest)
+        next_root,
+        monkeypatch,
+        upgrade_from=(old_payload, old_manifest),
+        epoch_upgrade=descriptor,
+        site_override=SiteConfiguration.model_validate_json(
+            (paths.runtime / "site.json").read_bytes()
+        ),
+        window=(
+            old_manifest_model.network.starts_at,
+            old_manifest_model.network.ends_at,
+        ),
     )
     changed = LiveDeployment(staged, paths=paths, host=host, owner_uid=os.getuid())
     assert changed.install() == "installed"

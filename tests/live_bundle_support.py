@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from paper_radar.live_evidence.epoch_lineage import EpochUpgrade
 from paper_radar.live_evidence.live_bundle import build_live_bundle, derive_site
 from paper_radar.live_evidence.live_install import InstallationPaths
 from paper_radar.live_evidence.model_manifest import USES, ModelManifest
@@ -20,8 +21,14 @@ def bundle_model(
     *,
     real_freeze: bool = False,
     upgrade_from: tuple[str, str] | None = None,
+    source_root: Path | None = None,
+    epoch_upgrade: EpochUpgrade | None = None,
+    site_override: SiteConfiguration | None = None,
+    window: tuple[datetime, datetime] | None = None,
 ) -> tuple[Path, InstallationPaths]:
-    site = site_configuration(tmp_path).model_copy(update={"claim_uses": USES})
+    site = site_override or site_configuration(tmp_path).model_copy(
+        update={"claim_uses": USES}
+    )
     monkeypatch.setattr(
         "paper_radar.pi_supply.activation_history",
         lambda database: [
@@ -45,14 +52,16 @@ def bundle_model(
             "paper_radar.live_evidence.deployment.freeze_runtime", freeze
         )
     start = datetime.now(UTC) - timedelta(days=1)
+    start, end = window or (start, start + timedelta(days=14))
     output = tmp_path / "review"
     hashes = build_live_bundle(
         output,
         site,
         starts_at=start,
-        ends_at=start + timedelta(days=14),
-        source_root=Path(__file__).resolve().parents[1],
+        ends_at=end,
+        source_root=source_root or Path(__file__).resolve().parents[1],
         upgrade_from=upgrade_from,
+        epoch_upgrade=epoch_upgrade,
         network_input={
             "pool": "28.0.0.0/8",
             "router": "192.168.44.1",

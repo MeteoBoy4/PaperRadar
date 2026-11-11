@@ -1,0 +1,135 @@
+{
+  "$defs": {
+    "EpochUpgrade": {
+      "additionalProperties": false,
+      "description": "从原封印树与原epoch原字节派生;构建候选不赋予root信任。",
+      "properties": {
+        "collector_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Collector Sha256",
+          "type": "string"
+        },
+        "continuity_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Continuity Sha256",
+          "type": "string"
+        },
+        "deployed_at": {
+          "format": "date-time",
+          "title": "Deployed At",
+          "type": "string"
+        },
+        "ends_at": {
+          "format": "date-time",
+          "title": "Ends At",
+          "type": "string"
+        },
+        "epoch_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Epoch Sha256",
+          "type": "string"
+        },
+        "first_plan_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "First Plan Sha256",
+          "type": "string"
+        },
+        "format_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Format Version",
+          "type": "integer"
+        },
+        "model_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Sha256",
+          "type": "string"
+        },
+        "owner_input_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Owner Input Sha256",
+          "type": "string"
+        },
+        "payload_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Payload Sha256",
+          "type": "string"
+        },
+        "plan_ids": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 7,
+          "minItems": 7,
+          "title": "Plan Ids",
+          "type": "array"
+        },
+        "runtime_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Runtime Manifest Sha256",
+          "type": "string"
+        },
+        "starts_at": {
+          "format": "date-time",
+          "title": "Starts At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "payload_sha256",
+        "runtime_manifest_sha256",
+        "model_manifest_sha256",
+        "first_plan_sha256",
+        "epoch_sha256",
+        "collector_sha256",
+        "plan_ids",
+        "deployed_at",
+        "starts_at",
+        "ends_at",
+        "owner_input_sha256",
+        "continuity_sha256"
+      ],
+      "title": "EpochUpgrade",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "collector_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Collector Sha256",
+      "type": "string"
+    },
+    "deployed_at": {
+      "format": "date-time",
+      "title": "Deployed At",
+      "type": "string"
+    },
+    "format_version": {
+      "const": 2,
+      "default": 2,
+      "title": "Format Version",
+      "type": "integer"
+    },
+    "inherited_from": {
+      "$ref": "#/$defs/EpochUpgrade"
+    },
+    "plan_ids": {
+      "items": {
+        "pattern": "^[a-z][a-z0-9-]{0,63}$",
+        "type": "string"
+      },
+      "title": "Plan Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "collector_sha256",
+    "plan_ids",
+    "deployed_at",
+    "inherited_from"
+  ],
+  "title": "InheritedAuthEpoch",
+  "type": "object"
+}

@@ -7,6 +7,7 @@ from typing import Literal, Self
 from pydantic import Field, model_validator
 
 from paper_radar.live_evidence.collection import ProtectedCollection
+from paper_radar.live_evidence.epoch_lineage import EpochUpgrade
 from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
 from paper_radar.live_evidence.model_manifest import ModelManifest, ModelManifestV2
 from paper_radar.live_evidence.receipt import (
@@ -38,6 +39,20 @@ class NormalAuthEpoch(WireModel):
     deployed_at: datetime
 
 
+class InheritedAuthEpoch(NormalAuthEpoch):
+    format_version: Literal[2] = 2  # type: ignore[assignment]
+    inherited_from: EpochUpgrade
+
+
+def parse_epoch(raw: bytes) -> NormalAuthEpoch:
+    import json
+
+    version = json.loads(raw).get("format_version")
+    if version == 2:
+        return InheritedAuthEpoch.model_validate_json(raw)
+    return NormalAuthEpoch.model_validate_json(raw)
+
+
 def _plan_ids(manifest: ModelManifest) -> tuple[str, ...]:
     return (
         *tuple(cell.plan.plan_id for cell in manifest.cells),
@@ -53,10 +68,11 @@ def epoch_path(ledger: EvidenceLedger, manifest: ModelManifest) -> Path:
     )
 
 
-def read_epoch(ledger: EvidenceLedger, manifest: ModelManifest) -> NormalAuthEpoch:
-    epoch = NormalAuthEpoch.model_validate_json(
-        ledger._read_source(epoch_path(ledger, manifest))
-    )
+def _verify_epoch_chain(
+    ledger: EvidenceLedger, manifest: ModelManifest, epoch: NormalAuthEpoch
+) -> None:
+    import hashlib
+
     if (
         epoch.collector_sha256 != manifest.collector_sha256
         or epoch.plan_ids != _plan_ids(manifest)
@@ -66,15 +82,96 @@ def read_epoch(ledger: EvidenceLedger, manifest: ModelManifest) -> NormalAuthEpo
         <= manifest.network.ends_at
     ):
         raise LedgerError("source_untrusted")
+    current = epoch
+    seen = {epoch_path(ledger, manifest)}
+    for _depth in range(16):
+        if not isinstance(current, InheritedAuthEpoch):
+            return
+        source = current.inherited_from
+        path = (
+            ledger.root
+            / "inbox"
+            / ("normal-auth-epoch-v1-" + source.first_plan_sha256 + ".json")
+        )
+        if path in seen:
+            raise LedgerError("source_untrusted")
+        seen.add(path)
+        raw = ledger._read_source(path)
+        ancestor = parse_epoch(raw)
+        if (
+            hashlib.sha256(raw).hexdigest() != source.epoch_sha256
+            or ancestor.collector_sha256 != source.collector_sha256
+            or ancestor.plan_ids != source.plan_ids
+            or ancestor.deployed_at != source.deployed_at
+            or current.deployed_at != source.deployed_at
+            or source.starts_at != manifest.network.starts_at
+            or source.ends_at != manifest.network.ends_at
+        ):
+            raise LedgerError("source_untrusted")
+        current = ancestor
+    raise LedgerError("source_untrusted")
+
+
+def read_epoch(ledger: EvidenceLedger, manifest: ModelManifest) -> NormalAuthEpoch:
+    epoch = parse_epoch(ledger._read_source(epoch_path(ledger, manifest)))
+    _verify_epoch_chain(ledger, manifest, epoch)
     return epoch
 
 
+def validate_epoch_inheritance(
+    ledger: EvidenceLedger, manifest: ModelManifest, source: EpochUpgrade
+) -> NormalAuthEpoch:
+    """只读预验;与最终发布共享规则,不因推进安装阶段而放过冲突或缺史。"""
+    import hashlib
+
+    existing_path = epoch_path(ledger, manifest)
+    source_path = (
+        ledger.root
+        / "inbox"
+        / ("normal-auth-epoch-v1-" + source.first_plan_sha256 + ".json")
+    )
+    if source_path == existing_path:
+        raw = ledger._read_source(existing_path)
+        existing = read_epoch(ledger, manifest)
+        if (
+            hashlib.sha256(raw).hexdigest() != source.epoch_sha256
+            or existing.deployed_at != source.deployed_at
+            or existing.collector_sha256 != source.collector_sha256
+            or existing.plan_ids != source.plan_ids
+        ):
+            raise LedgerError("source_untrusted")
+        return existing
+    expected = InheritedAuthEpoch(
+        collector_sha256=manifest.collector_sha256,
+        plan_ids=_plan_ids(manifest),
+        deployed_at=source.deployed_at,
+        inherited_from=source,
+    )
+    _verify_epoch_chain(ledger, manifest, expected)
+    if existing_path.exists():
+        if ledger._read_source(existing_path) != canonical_bytes(expected):
+            raise LedgerError("source_untrusted")
+        read_epoch(ledger, manifest)
+    elif ProtectedCollection(ledger).has_plan_history(frozenset(_plan_ids(manifest))):
+        raise LedgerError("source_untrusted")
+    return expected
+
+
 def initialize_epoch(
-    ledger: EvidenceLedger, manifest: ModelManifest, *, now: datetime
+    ledger: EvidenceLedger,
+    manifest: ModelManifest,
+    *,
+    now: datetime,
+    inherited_from: EpochUpgrade | None = None,
 ) -> None:
     from paper_radar.live_evidence.sealed_runtime import _publish
 
     if not isinstance(manifest, ModelManifestV2):
+        return
+    if inherited_from is not None:
+        epoch = validate_epoch_inheritance(ledger, manifest, inherited_from)
+        if not epoch_path(ledger, manifest).exists():
+            _publish(epoch_path(ledger, manifest), canonical_bytes(epoch))
         return
     if epoch_path(ledger, manifest).exists():
         read_epoch(ledger, manifest)
@@ -87,6 +184,7 @@ def initialize_epoch(
         plan_ids=_plan_ids(manifest),
         deployed_at=now,
     )
+    _verify_epoch_chain(ledger, manifest, epoch)
     _publish(epoch_path(ledger, manifest), canonical_bytes(epoch))
 
 

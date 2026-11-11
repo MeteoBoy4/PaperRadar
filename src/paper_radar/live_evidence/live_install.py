@@ -590,6 +590,15 @@ class LiveDeployment:
             "upgrade_from": specification["upgrade_from"],
             "previous": None,
         }
+        from paper_radar.live_evidence.epoch_lineage import verify_installed_upgrade
+
+        inherited_epoch = verify_installed_upgrade(
+            self.staged,
+            paths=self.paths,
+            state=state,
+            identity=identity,
+            owner_uid=self.owner_uid,
+        )
         if state is not None:
             if any(
                 state[key] != identity[key]
@@ -903,6 +912,7 @@ class LiveDeployment:
                 ),
                 manifest,
                 now=datetime.now(UTC),
+                inherited_from=inherited_epoch,
             )
             self._checkpoint(state, "installed")
         return "installed"

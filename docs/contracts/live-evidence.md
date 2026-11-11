@@ -688,6 +688,10 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 
 受保护 `normal-auth-refresh-v1-<firstPlanSHA>.json` 只重放原完成源：A 成功，随后 B 成功且其本次 `need_refresh/refresh_called/refresh_succeeded/store_committed` 全 true，再随后 C 首格成功并有另一更晚真实刷新提交。比较跨格完整站点绑定时只排除各自模型元组，不能把一格模型证据转授另一格。源缺失、提交未知、重复／逆序事件或事件不足均不通过；B 或 C 首格已成功但事件不足时持久 `unknown/stopped`，后续入口只返回原已通过事实，不能继续花额度寻找事件。没有现场来源初值为 `not_assessed`，不预置 passed。C 首格成立后才在同批继续剩余三格，六格资格仍分别接收、激活与判定；本评审不授予准入能力。
 
-`normal-auth-epoch-v1-<firstPlanSHA>.json` 记录首次可信部署完成 UTC、固定 collector 及七 plan IDs；同 SHA 重跑、卸载／恢复不更改时点。既有安装或执行历史缺该来源时拒绝，不能用 now 补造。部署后72小时是六格目标，评审分开披露目标时点、是否逾期及六格目标结果；不新增准入停止条件，不自动补跑或延长共同授权窗口。原部署 journal／SQLite schema 不变。
+`normal-auth-epoch-v1-<firstPlanSHA>.json` 记录首次可信部署完成 UTC、固定 collector 及七 plan IDs；路径名称保留，读取兼容原 format 1 和独立继承 format 2。同 SHA 重跑、卸载／恢复不更改时点。既有安装或执行历史缺该来源时拒绝，不能用 now 补造。部署后72小时是六格目标，评审分开披露目标时点、是否逾期及六格目标结果；不新增准入停止条件，不自动补跑或延长共同授权窗口。原部署 journal／SQLite schema 不变。
+
+已 installed 的升版包须在受封印 `deployment.json.epoch_upgrade` 携带 `EpochUpgrade`：由原 runtime、原 model manifest／首 plan 和原 epoch 原字节派生 SHA、原 UTC、共同窗口、owner 输入和连续身份。`describe_epoch_upgrade` 仅派生候选；安装器在同一 collector 锁内、首次 history／journal／资源写入之前重验旧 runtime、所有 previous／history／archive 祖先、原 epoch、七计划／严格计划窗口、owner 原文及产品／站点／供给／材料身份。只允许启动策略及其派生 collector／plan 身份变化；缺源、冲突或窗口变化拒绝，resources 的无执行史恢复不承担已 installed 升级。
+
+新计划的 format 2 epoch 将已验证原 UTC 与完整 `inherited_from` 放在单个原子来源中发布；原 epoch 保留原路径和原字节。读取沿有限、无循环谱系逐字核对每代源 SHA、collector、七 plan IDs、UTC 与共同窗口；同字节发布幂等，不同来源／时点拒绝。retiring、archive、runtime、target 中断后每次恢复重新认证相同来源。旧 received、累计额度、失败／stopped、撤销及 intents 只读重放并保留；有 intent cutover 事件而日志缺失时拒绝，不能新 provision。继承时钟不继承资格、认证刷新事件、verified_at 或通过格。[独立部署 metadata Schema](../schemas/live-epoch-upgrade-v1.json) 与 [epoch format 2 Schema](../schemas/normal-auth-epoch-v2.json) 从权威 Pydantic 生成，不加入 receipt v1/v2 的 Frozen Contract。
 
 正常提前刷新符合 [ADR-0063](../adr/0063-observe-normal-oauth-refresh-in-product-process.md) 已决验收语义。`was_expired_by_pi` 只是回调 UTC 时越过 Pi 存储阈值；供应商真实有效期到点始终 `unknown`。stat、调用成功、旧到期时点、另一进程提交、通用 store 的 best-effort 注释都不替代这次固定具体 backend 的事件与成功返回。文件写调用完成不承诺 fsync／断电耐久，认证全写史／writer、完整会话写史和隐藏请求数继续按既有边界披露。
