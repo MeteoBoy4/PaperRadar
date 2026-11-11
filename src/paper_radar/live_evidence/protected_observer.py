@@ -70,10 +70,27 @@ def _protected_bytes(ledger: EvidenceLedger, source: Path) -> bytes:
 
 def observer_identity(root: Path, ledger: EvidenceLedger) -> str:
     """实际受保护观察字节身份;不接受产品自报摘要。"""
+    from paper_radar.live_evidence.placement_policy import (
+        MEMBERS,
+        read_placement_policy,
+    )
+
+    members: tuple[str, ...] = OBSERVER_MEMBERS
+    if (
+        read_placement_policy(
+            root, reader=lambda source: _protected_bytes(ledger, source)
+        )
+        is not None
+    ):
+        members += (
+            *MEMBERS,
+            "site-packages/paper_radar/live_evidence/placement_policy.py",
+            "site-packages/paper_radar/live_evidence/live_apparmor_kernel.py",
+        )
     return component_digest(
         {
             name: hashlib.sha256(_protected_bytes(ledger, root / name)).hexdigest()
-            for name in OBSERVER_MEMBERS
+            for name in members
         }
     )
 
@@ -196,6 +213,52 @@ def refresh_under_lock(
     incomplete = False
     unsafe_metadata = False
     observed_components = {B.OBSERVER: identity}
+    from paper_radar.live_evidence.live_apparmor_kernel import AppArmorPolicyError
+    from paper_radar.live_evidence.placement_policy import (
+        read_placement_policy,
+        verify_host_security,
+    )
+
+    try:
+        sealed = read_placement_policy(
+            root, reader=lambda source: _protected_bytes(ledger, source)
+        )
+        if sealed is not None:
+            verify_host_security(sealed)
+            sealed.kernel().verify(sealed.policy)
+    except AppArmorPolicyError as error:
+        if error.kind == "unavailable":
+            incomplete = True
+        else:
+            observed_components[B.OBSERVER] = component_digest(
+                {"sealed": identity, "policy_drift": error.reason}
+            )
+    except LedgerError:
+        return record_refresh(
+            ledger, candidate=None, failure="source_untrusted", now=at
+        ).result
+    except ValueError as error:
+        if str(error) in {
+            "placement_sysctl_identity",
+            "placement_namespace_identity",
+            "placement_resolver_target",
+            "placement_parser_identity",
+            "placement_tool_identity",
+        }:
+            observed_components[B.OBSERVER] = component_digest(
+                {"sealed": identity, "host_drift": str(error)}
+            )
+        elif str(error) in {
+            "placement_sysctl_unavailable",
+            "placement_host_unavailable",
+        }:
+            incomplete = True
+        else:
+            return record_refresh(
+                ledger, candidate=None, failure="source_untrusted", now=at
+            ).result
+    except OSError:
+        incomplete = True
     try:
         snapshot = read_nft_snapshot()
         observed_components[B.IPV4_EGRESS] = egress_identity(snapshot, target)

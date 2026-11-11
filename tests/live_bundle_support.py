@@ -4,6 +4,7 @@ import tarfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -13,6 +14,9 @@ from paper_radar.live_evidence.live_install import InstallationPaths
 from paper_radar.live_evidence.model_manifest import USES, ModelManifest
 from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 from tests.site_collector_support import site_configuration
+
+if TYPE_CHECKING:
+    from paper_radar.live_evidence.placement_policy import PlacementPolicyLifecycle
 
 
 def bundle_model(
@@ -102,6 +106,9 @@ class ModelHost:
         self.fail = fail
         self.calls: list[str] = []
         self.installed = False
+        from tests.live_apparmor_support import PolicyOS
+
+        self.policy_os = PolicyOS()
 
     def _call(self, name: str) -> None:
         self.calls.append(name)
@@ -110,6 +117,51 @@ class ModelHost:
 
     def preflight(self, site: SiteConfiguration) -> None:
         self._call("preflight")
+
+    def placement_lifecycle(self, root: Path) -> PlacementPolicyLifecycle:
+        import os
+
+        from paper_radar.live_evidence.live_apparmor_kernel import AppArmorKernel
+        from paper_radar.live_evidence.placement_policy import (
+            PlacementPolicyLifecycle,
+            read_placement_policy,
+        )
+
+        sealed = read_placement_policy(root)
+        kernel = None
+        if sealed is not None:
+            self.policy_os.expected = sealed.policy
+            self.policy_os.parser = sealed.parser
+            kernel = AppArmorKernel(self.policy_os, sealed.parser)
+        return PlacementPolicyLifecycle(
+            root,
+            self.paths.ledger,
+            owner_uid=os.getuid(),
+            anchor=self.paths.anchor,
+            kernel=kernel,
+        )
+
+    def preflight_placement(self, root: Path, *, recover: bool = False) -> None:
+        self.placement_lifecycle(root).check(recover=recover)
+
+    def prepare_placement(
+        self, root: Path, site: SiteConfiguration, *, recover: bool = False
+    ) -> None:
+        lifecycle = self.placement_lifecycle(root)
+        if lifecycle.sealed is not None:
+            lifecycle.prepare(lambda: self._call("native_preflight"), recover=recover)
+
+    def verify_target_preflight(self, root: Path, site: SiteConfiguration) -> None:
+        lifecycle = self.placement_lifecycle(root)
+        if lifecycle.sealed is not None:
+            lifecycle.verify()
+            self._call("traced_preflight")
+
+    def retire_placement(self, root: Path, *, recover: bool = False) -> None:
+        self.placement_lifecycle(root).remove(recover=recover)
+
+    def verify_placement_absent(self, root: Path) -> None:
+        self.placement_lifecycle(root).verify_absent()
 
     def preflight_nft(self, site: SiteConfiguration, manifest: ModelManifest) -> None:
         self._call("preflight_nft")
@@ -128,6 +180,7 @@ class ModelHost:
         self, site: SiteConfiguration, manifest: ModelManifest
     ) -> None:
         self._call("verify_installed")
+        self.placement_lifecycle(self.paths.runtime).verify()
         if not self.installed:
             raise ValueError("model_host_unavailable")
 
