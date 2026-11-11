@@ -34,7 +34,8 @@ def test_freeze_produces_static_pair_and_exact_two_profile_blob(tmp_path: Path) 
     pre, post = source.split("profile paperradar-placement-post-v1", 1)
     assert "deny ptrace (readby, tracedby)," in pre
     assert "userns," in pre
-    assert "Px -> &paperradar-placement-post-v1," in pre
+    assert "Px -> paperradar-placement-post-v1," in pre
+    assert "Px -> &" not in pre
     assert "deny userns," in post and "deny change_profile," in post
     assert " ux" not in source and " Ux" not in source
     assert '/placement-pre" ix' not in post

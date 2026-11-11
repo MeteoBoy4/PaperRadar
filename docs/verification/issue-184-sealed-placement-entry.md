@@ -28,6 +28,8 @@ JSON 接收校验、真实 socket、parent SEIZE 和最终目标 exec-stop 保�
 它输出固定 `placement-pre`、`placement-post` 静态 ELF；直接解析 ELF64 拒绝动态
 INTERP/DYNAMIC、其他架构及可执行栈。程序不带任意目标 CLI，仅有正常固定握手定位参数
 和闭合 `--preflight`。后者只允许最终 `/usr/bin/true`，成功无输出且退出 0，拒绝无输出且退出 125。
+此模式只核 namespace/撤权，不提供真实 scope/ptrace 证明；新增完整 traced 模式与独立覆盖
+见[无秘密放置预检](issue-184-traced-placement-preflight.md)。
 
 pre 在 initial userns 中验证 root 保护的路径、配置及 resolver 字节，拒绝正常预先 trace
 与继承 NNP=1。它创建 NEWUSER/NEWNS，将产品 UID/GID 映射到同一非零值；写 map 之前
