@@ -14,22 +14,9 @@ from tests.live_bundle_support import ModelHost, bundle_model
 from tests.live_evidence_ledger_support import NOW, plan
 
 
-class ResourceHost(ModelHost):
-    def check_resources_interruption(
-        self, site: object, manifest: object, *, allow_stopped: bool = False
-    ) -> None:
-        self._call("check_resources_interruption")
-
-    def stop_resources_anchor(self, site: object, manifest: object) -> None:
-        self._call("stop_resources_anchor")
-
-    def verify_resources_stopped(self, site: object) -> None:
-        self._call("verify_resources_stopped")
-
-
 def pending(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, real_freeze: bool = False
-) -> tuple[LiveDeployment, ResourceHost, bytes, dict[str, str]]:
+) -> tuple[LiveDeployment, ModelHost, bytes, dict[str, str]]:
     paths = InstallationPaths.for_model(tmp_path)
     (paths.runtime / "wrappers").mkdir(parents=True)
     paths.sudoers.parent.mkdir(parents=True)
@@ -55,7 +42,7 @@ def pending(
     )
     for member in paths.runtime.rglob("*"):
         member.chmod(0o755 if member.is_dir() else 0o644)
-    host = ResourceHost(paths, fail="configure")
+    host = ModelHost(paths, fail="configure")
     old = LiveDeployment(first, paths=paths, host=host, owner_uid=os.getuid())
     with pytest.raises(ValueError, match=r"^model_interruption$"):
         old.install()
@@ -294,9 +281,9 @@ def test_filesystem_interruptions_resume_without_rewriting_known_history(
     rename = Path.rename
     fired = False
 
-    def unlink_once(path: Path, *args: object, **kwargs: object) -> None:
+    def unlink_once(path: Path, missing_ok: bool = False) -> None:
         nonlocal fired
-        unlink(path, *args, **kwargs)
+        unlink(path, missing_ok=missing_ok)
         if boundary == "resource_unlinked" and path == paths.sudoers and not fired:
             fired = True
             raise OSError("simulated crash after unlink")
