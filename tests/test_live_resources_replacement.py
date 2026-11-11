@@ -10,6 +10,7 @@ import pytest
 from paper_radar.live_evidence.deployment import file_digests
 from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerTrust
 from paper_radar.live_evidence.live_install import InstallationPaths, LiveDeployment
+from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 from tests.live_bundle_support import ModelHost, bundle_model
 from tests.live_evidence_ledger_support import NOW, plan
 
@@ -56,6 +57,9 @@ def pending(
         monkeypatch,
         real_freeze=real_freeze,
         upgrade_from=(state["payload"], state["manifest"]),
+        site_override=SiteConfiguration.model_validate_json(
+            (paths.runtime / "site.json").read_bytes()
+        ),
     )
     host.fail = None
     return (
@@ -79,6 +83,9 @@ def test_explicit_resources_replacement_archives_pending_and_preserves_schema1_h
         "/usr/bin/loginctl",
         "/usr/sbin/nft",
         "/usr/sbin/visudo",
+        "/usr/sbin/apparmor_parser",
+        "/usr/bin/true",
+        "/usr/bin/systemd-run",
     }
     assert tools["/usr/bin/busctl"] == {
         "resolved": str(Path("/usr/bin/busctl").resolve()),

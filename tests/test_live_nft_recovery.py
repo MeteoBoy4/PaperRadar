@@ -7,6 +7,7 @@ import pytest
 
 from paper_radar.live_evidence.deployment import file_digests
 from paper_radar.live_evidence.live_install import LiveDeployment
+from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 from tests.live_bundle_support import ModelHost, bundle_model
 from tests.test_live_resources_replacement import pending
 
@@ -26,6 +27,9 @@ def chained_pending(
         third_root,
         monkeypatch,
         upgrade_from=(state["payload"], state["manifest"]),
+        site_override=SiteConfiguration.model_validate_json(
+            (second.paths.runtime / "site.json").read_bytes()
+        ),
     )
     host.fail = None
     host.calls.clear()

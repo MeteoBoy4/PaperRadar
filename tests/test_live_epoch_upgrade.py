@@ -3,7 +3,7 @@
 import json
 import os
 import shutil
-import subprocess
+import sys
 import tarfile
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
@@ -38,41 +38,16 @@ from paper_radar.live_evidence.normal_auth_refresh import (
 from paper_radar.live_evidence.receipt import WireModel, canonical_bytes, content_sha256
 from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 from paper_radar.live_evidence.types import BindingComponent
-from tests.live_bundle_support import ModelHost, bundle_model
+from tests.live_bundle_support import ModelHost, alternate_python_input, bundle_model
 from tests.live_evidence_ledger_support import NOW, plan, receipt
 
 BINDING = {part: "b" * 64 for part in BindingComponent}
 
 
 @pytest.fixture(scope="module")
-def source_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    # 旧封印系统输入保持v16源码守卫原字节;当前builder/installer仍为真实业务路径。
-    root = tmp_path_factory.mktemp("epoch-v16-source")
-    subprocess.run(
-        (
-            "git",
-            "clone",
-            "--shared",
-            "--no-checkout",
-            "--quiet",
-            str(Path(__file__).resolve().parents[1]),
-            str(root),
-        ),
-        check=True,
-    )
-    subprocess.run(
-        (
-            "git",
-            "-C",
-            str(root),
-            "checkout",
-            "--quiet",
-            "--detach",
-            "f7d9e4c3e40e3521bb8a3a115721f1f2230972da",
-        ),
-        check=True,
-    )
-    return root
+def source_root() -> Path:
+    # 最终完整源码走真实guard、cc与compile-only parser;无需历史Git对象。
+    return Path(__file__).resolve().parents[1]
 
 
 def test_installed_upgrade_without_epoch_source_refuses_before_first_write(
@@ -122,10 +97,13 @@ class UpgradeCase:
 def upgrade(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, source_root: Path
 ) -> UpgradeCase:
-    # synthetic runtime source只测试部署协议,不是新的可执行v17包证明。
-    original_freeze = runtime_deployment.freeze_runtime
-    first, paths = bundle_model(tmp_path, monkeypatch, source_root=source_root)
-    monkeypatch.setattr(runtime_deployment, "freeze_runtime", original_freeze)
+    # 两代都冻结完整当前源码;只有合法解释器OS输入字节不同,业务输入不变。
+    python_input = alternate_python_input(tmp_path)
+    with monkeypatch.context() as freezer_input:
+        freezer_input.setattr(sys, "executable", str(python_input))
+        first, paths = bundle_model(
+            tmp_path, monkeypatch, source_root=source_root, real_freeze=True
+        )
     historical_ledger = EvidenceLedger(
         paths.ledger, trust=LedgerTrust(owner_uid=os.getuid(), anchor=tmp_path)
     )
@@ -419,9 +397,12 @@ def test_changed_source_copy_refuses_stale_guard(
         (upgrade.paths.runtime / "network-owner-confirmation.json").read_bytes()
     )["owner_input"]
     tampered_source = tmp_path / "guard-source"
-    shutil.copytree(
-        upgrade.source_root, tampered_source, ignore=shutil.ignore_patterns(".git")
-    )
+    vector_path = Path("tests/fixtures/live-admission-source-guard-v17.json")
+    vector = json.loads((upgrade.source_root / vector_path).read_bytes())
+    for name in (*vector["files"], vector_path.as_posix()):
+        target = tampered_source / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(upgrade.source_root / name, target)
     member = tampered_source / "src/paper_radar/live_evidence/live_bundle.py"
     member.write_bytes(member.read_bytes() + b"\n# synthetic changed source\n")
     output = tmp_path / "guard-rejected"
@@ -679,11 +660,17 @@ def test_linear_inherited_epoch_reader_replays_every_original_source(
         read_epoch(upgrade.ledger, third)
 
 
-def test_original_v1_epoch_model_ast_is_preserved(source_root: Path) -> None:
+def test_original_v1_epoch_model_ast_is_preserved() -> None:
     import ast
 
     relative = Path("src/paper_radar/live_evidence/normal_auth_refresh.py")
-    baseline = ast.parse((source_root / relative).read_bytes())
+    # 独立固定的原v1声明;不依赖Git对象,也不从当前生产声明生成预期。
+    baseline = ast.parse("""class NormalAuthEpoch(WireModel):
+    format_version: Literal[1] = 1
+    collector_sha256: Digest
+    plan_ids: tuple[Identifier, ...]
+    deployed_at: datetime
+""")
     current = ast.parse((Path(__file__).resolve().parents[1] / relative).read_bytes())
     old = next(
         node

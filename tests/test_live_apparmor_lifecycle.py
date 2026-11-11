@@ -370,28 +370,21 @@ def test_observer_distinguishes_policy_drift_from_temporary_readback_failure(
     assert any(item.revoked for item in evidence) is drift
 
 
-# These are synthetic protected roots at the installer/OS seam. The inherited
-# fixture's old-source construction is provisional until the final source guard
-# is published; none of these roots is an executable release package.
+# Installer fixtures use the complete current source and real compile-only
+# native/profile builds. Only host operations and selected Python freezer inputs
+# are modeled; these offline tests do not load policies or prove live placement.
 
 
-def attach_policy_fixture(root: Path) -> None:
-    from paper_radar.live_evidence.deployment import file_digests
-    from paper_radar.live_evidence.live_install import digest
+def require_compiled_policy(root: Path) -> None:
+    from paper_radar.live_evidence.placement_policy import read_placement_policy
 
-    policy_root(root)
-    digests = file_digests(root)
-    for name in ("manifest.sha256", "payload.sha256"):
-        del digests[name]
-    raw = "".join(f"{sha}  {name}\n" for name, sha in digests.items()).encode()
-    (root / "manifest.sha256").write_bytes(raw)
-    (root / "payload.sha256").write_text(digest(raw) + "\n")
+    assert read_placement_policy(root) is not None
 
 
 def test_upgrade_unknown_policy_refuses_before_any_old_state_write(
     upgrade: UpgradeCase,
 ) -> None:
-    attach_policy_fixture(upgrade.deployment.staged)
+    require_compiled_policy(upgrade.deployment.staged)
     host = upgrade.host
     stage = upgrade.deployment.staged
     gate = host.placement_lifecycle(stage)
@@ -399,11 +392,14 @@ def test_upgrade_unknown_policy_refuses_before_any_old_state_write(
     host.policy_os.load_binary(b"foreign policy")
     host.policy_os.writes.clear()
     before = upgrade.paths.journal.read_bytes()
+    policy_before = gate.journal.read_bytes() if gate.journal.exists() else None
     old_epoch = upgrade.old_epoch
     with pytest.raises(ValueError, match="apparmor_blob_mismatch"):
         upgrade.deployment.install()
     assert upgrade.paths.journal.read_bytes() == before
-    assert not gate.journal.exists()
+    assert (
+        gate.journal.read_bytes() if gate.journal.exists() else None
+    ) == policy_before
     assert host.policy_os.writes == []
     assert upgrade.old_epoch == old_epoch
 
@@ -430,7 +426,7 @@ def test_policy_and_original_epoch_survive_each_installer_interruption(
     from paper_radar.live_evidence.collection import ProtectedCollection
     from paper_radar.live_evidence.normal_auth_refresh import read_epoch
 
-    attach_policy_fixture(upgrade.deployment.staged)
+    require_compiled_policy(upgrade.deployment.staged)
     host = upgrade.host
     host.fail = failure
     received = upgrade.ledger.list_received()
@@ -704,6 +700,7 @@ def test_unexecuted_resources_replacement_retains_policy_and_exact_recovery(
         LiveDeployment,
         digest,
     )
+    from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
     from tests.live_bundle_support import ModelHost, bundle_model
 
     paths = InstallationPaths.for_model(tmp_path)
@@ -745,8 +742,11 @@ def test_unexecuted_resources_replacement_retains_policy_and_exact_recovery(
         source_root=source_root,
         upgrade_from=(old["payload"], old["manifest"]),
         real_freeze=True,
+        site_override=SiteConfiguration.model_validate_json(
+            (paths.runtime / "site.json").read_bytes()
+        ),
     )
-    attach_policy_fixture(staged)
+    require_compiled_policy(staged)
     deployed = LiveDeployment(staged, paths=paths, host=host, owner_uid=os.getuid())
     host.fail = failure
     with pytest.raises(ValueError, match="model_interruption"):

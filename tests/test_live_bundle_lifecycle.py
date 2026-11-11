@@ -311,6 +311,7 @@ def test_explicit_successive_v2_upgrade_preserves_prior_runtime_and_journal(
 ) -> None:
     import hashlib
     import os
+    import sys
 
     from paper_radar.live_evidence.deployment import file_digests
     from paper_radar.live_evidence.epoch_lineage import describe_epoch_upgrade
@@ -319,9 +320,16 @@ def test_explicit_successive_v2_upgrade_preserves_prior_runtime_and_journal(
     from paper_radar.live_evidence.model_manifest import parse_manifest
     from paper_radar.live_evidence.normal_auth_refresh import epoch_path
     from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
-    from tests.live_bundle_support import ModelHost, bundle_model
+    from tests.live_bundle_support import (
+        ModelHost,
+        alternate_python_input,
+        bundle_model,
+    )
 
-    first, paths = bundle_model(tmp_path, monkeypatch)
+    python_input = alternate_python_input(tmp_path)
+    with monkeypatch.context() as freezer_input:
+        freezer_input.setattr(sys, "executable", str(python_input))
+        first, paths = bundle_model(tmp_path, monkeypatch, real_freeze=True)
     host = ModelHost(paths)
     deployment = LiveDeployment(first, paths=paths, host=host, owner_uid=os.getuid())
     deployment.install()
@@ -347,6 +355,7 @@ def test_explicit_successive_v2_upgrade_preserves_prior_runtime_and_journal(
         monkeypatch,
         upgrade_from=(old_payload, old_manifest),
         epoch_upgrade=descriptor,
+        real_freeze=True,
         site_override=SiteConfiguration.model_validate_json(
             (paths.runtime / "site.json").read_bytes()
         ),
@@ -356,6 +365,8 @@ def test_explicit_successive_v2_upgrade_preserves_prior_runtime_and_journal(
         ),
     )
     changed = LiveDeployment(staged, paths=paths, host=host, owner_uid=os.getuid())
+    new_manifest_model = parse_manifest((staged / "model-manifest.json").read_bytes())
+    assert new_manifest_model.collector_sha256 != old_manifest_model.collector_sha256
     assert changed.install() == "installed"
     archive = paths.runtime.with_name(paths.runtime.name + ".archive-" + old_payload)
     assert file_digests(archive) == before
