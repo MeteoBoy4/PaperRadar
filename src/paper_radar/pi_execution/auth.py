@@ -24,7 +24,9 @@ from paper_radar.pi_supply.protection import InstallUse
 
 
 def auth_entry(install: InstallUse) -> Path:
-    return Path(__file__).with_name("auth_helper.mjs")
+    from paper_radar.pi_execution.placement_protocol import RUNTIME_ROOT
+
+    return RUNTIME_ROOT / "site-packages/paper_radar/pi_execution/auth_helper.mjs"
 
 
 def credential_token(
