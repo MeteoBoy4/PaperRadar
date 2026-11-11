@@ -144,6 +144,23 @@ class ModelHost:
         self._call("prepare_recovery")
         self.installed = False
 
+    def check_resources_interruption(
+        self,
+        site: SiteConfiguration,
+        manifest: ModelManifest,
+        *,
+        allow_stopped: bool = False,
+    ) -> None:
+        self._call("check_resources_interruption")
+
+    def stop_resources_anchor(
+        self, site: SiteConfiguration, manifest: ModelManifest
+    ) -> None:
+        self._call("stop_resources_anchor")
+
+    def verify_resources_stopped(self, site: SiteConfiguration) -> None:
+        self._call("verify_resources_stopped")
+
     def disable_observation(self) -> None:
         self._call("disable_observation")
 
