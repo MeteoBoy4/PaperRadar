@@ -69,9 +69,20 @@ class RetirementCase:
 
 
 def case(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, main_policy: bool = False
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    main_policy: bool = False,
+    static_binding: bool = False,
 ) -> RetirementCase:
     first, paths = bundle_model(tmp_path, monkeypatch)
+    if static_binding:
+        manifest_path = first / "model-manifest.json"
+        manifest_value = json.loads(manifest_path.read_bytes())
+        for cell_value in manifest_value["cells"]:
+            cell_value["binding"] = {"supply": "d" * 64}
+        manifest_path.write_bytes(json_bytes(manifest_value))
+        reseal(first)
     future = tmp_path / "future"
     shutil.copytree(first, future)
     if not main_policy:

@@ -10,6 +10,7 @@ import json
 import os
 import stat
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -20,6 +21,7 @@ from paper_radar.live_evidence.epoch_lineage import (
     continuity_identity,
     verify_installed_upgrade,
 )
+from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
 from paper_radar.live_evidence.live_apparmor_kernel import (
     AppArmorKernel,
     KernelPolicyIO,
@@ -32,13 +34,21 @@ from paper_radar.live_evidence.live_install import (
     publish,
     verify_tree,
 )
+from paper_radar.live_evidence.model_manifest import USES, ModelManifest
 from paper_radar.live_evidence.placement_policy import (
     MEMBERS,
     PlacementPolicyLifecycle,
     read_placement_policy,
     verify_host_security,
 )
-from paper_radar.live_evidence.receipt import Digest, WireModel
+from paper_radar.live_evidence.receipt import (
+    Digest,
+    UseId,
+    WireModel,
+    canonical_bytes,
+    content_sha256,
+)
+from paper_radar.live_evidence.types import BindingComponent as B
 
 _STAGING_ROOT = Path("/var/lib/paperradar/live-bundles")
 _PHASES = {"intent", "snapshotted", "removing", "removed", "preparing", "prepared"}
@@ -151,6 +161,71 @@ def describe_failed_preparation(old: Path, new: Path) -> FailedPreparation:
         epoch_upgrade_sha256=_sha(json_bytes(epoch.model_dump(mode="json"))),
         continuity_sha256=continuity_identity(new)[0],
     )
+
+
+class _HistoricalEnrollment(WireModel):
+    format_version: Literal[1]
+    manifest_sha256: Digest
+    site_receipt_sha256: Digest
+    target_sha256: Digest
+    owner_confirmation_sha256: Digest
+    bindings: dict[UseId, dict[B, Digest]]
+
+    @model_validator(mode="before")
+    @classmethod
+    def strict_version(cls, value: Any) -> Any:
+        if isinstance(value, dict) and type(value.get("format_version")) is not int:
+            raise ValueError("failed_preparation_refresh_source")
+        return value
+
+
+def _historical_refresh_stopped(
+    ledger: EvidenceLedger, manifest: ModelManifest, *, now: datetime
+) -> bool:
+    """只在退役接缝重放原root登记;不读取/刷新当前站点,不改历史或授予资格。"""
+    from paper_radar.live_evidence.normal_auth_refresh import (
+        NormalRefreshReview,
+        normal_review_path,
+        review_normal_refresh,
+    )
+
+    path = normal_review_path(ledger, manifest)
+    if not os.path.lexists(path):
+        return False
+    try:
+        raw = ledger._read_source(path)
+        report = NormalRefreshReview.model_validate_json(raw)
+        if canonical_bytes(report) != raw:
+            raise ValueError
+        manifest_sha = content_sha256(manifest)
+        if report.manifest_sha256 != manifest_sha:
+            source = ledger.root / "inbox" / f"collection-bindings-{manifest_sha}.json"
+            raw = ledger._read_source(source)
+            enrollment = _HistoricalEnrollment.model_validate_json(raw)
+            if (
+                canonical_bytes(enrollment) != raw
+                or enrollment.manifest_sha256 != manifest_sha
+                or enrollment.owner_confirmation_sha256
+                != manifest.network.owner_confirmation_sha256
+                or set(enrollment.bindings) != set(USES)
+            ):
+                raise ValueError
+            cells = []
+            for cell in manifest.cells:
+                binding = enrollment.bindings[cell.use_id]
+                if set(binding) != set(B) or any(
+                    binding[part] != value for part, value in cell.binding.items()
+                ):
+                    raise ValueError
+                cells.append(cell.model_copy(update={"binding": binding}))
+            # 原静态模型禁止部署后字段;仅替换已类型校验并认证的完整历史绑定。
+            manifest = manifest.model_copy(update={"cells": tuple(cells)})
+            if content_sha256(manifest) != report.manifest_sha256:
+                raise ValueError
+        return review_normal_refresh(ledger, manifest, now=now).stopped
+    except (ValueError, LedgerError):
+        # 在本接缝映射有限原因;不改变installer的历史异常处理。
+        raise ValueError("failed_preparation_refresh_source") from None
 
 
 class FailedPreparationRetirement:
@@ -360,10 +435,6 @@ class FailedPreparationRetirement:
             from paper_radar.live_evidence.collection import ProtectedCollection
             from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerTrust
             from paper_radar.live_evidence.model_manifest import parse_manifest
-            from paper_radar.live_evidence.normal_auth_refresh import (
-                normal_review_path,
-                review_normal_refresh,
-            )
 
             ledger = EvidenceLedger(
                 self.paths.ledger,
@@ -373,9 +444,8 @@ class FailedPreparationRetirement:
                 (self.paths.runtime / "model-manifest.json").read_bytes()
             )
             now = datetime.now(UTC)
-            if ProtectedCollection(ledger).is_stopped() or (
-                os.path.lexists(normal_review_path(ledger, manifest))
-                and review_normal_refresh(ledger, manifest, now=now).stopped
+            if ProtectedCollection(ledger).is_stopped() or _historical_refresh_stopped(
+                ledger, manifest, now=now
             ):
                 raise ValueError("failed_preparation_stopped")
         return old, new, phase
