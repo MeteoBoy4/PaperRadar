@@ -1,5 +1,6 @@
 """D1:公开退役check/prepare的真实合成封印与有限崩溃恢复;无现场策略操作。"""
 
+import errno
 import json
 from pathlib import Path
 
@@ -161,10 +162,14 @@ def test_unknown_or_installed_preparation_never_writes(
     else:
         model.io.unavailable = True
         reason = "apparmor_readback_unavailable"
-    with pytest.raises((ValueError, FileNotFoundError), match=reason):
+    with pytest.raises((ValueError, FileNotFoundError), match=reason) as error:
         model.gate.prepare(
             lambda: pytest.fail("no preflight"), lambda: None, recover=True
         )
+    if change == "missing":
+        assert isinstance(error.value, FileNotFoundError)
+        assert error.value.errno == errno.ENOENT
+        assert error.value.filename == str(model.old.journal)
     assert model.io.writes == []
     assert not model.gate.journal.exists()
 
