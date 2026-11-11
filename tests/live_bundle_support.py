@@ -166,7 +166,14 @@ class ModelHost:
     ) -> None:
         lifecycle = self.placement_lifecycle(root)
         if lifecycle.sealed is not None:
-            lifecycle.prepare(lambda: self._call("native_preflight"), recover=recover)
+
+            def preflight() -> None:
+                self._call("native_preflight")
+                # Model the live host's full probe against its still installed target.
+                if self.installed:
+                    self._call("traced_preflight")
+
+            lifecycle.prepare(preflight, recover=recover)
 
     def verify_target_preflight(self, root: Path, site: SiteConfiguration) -> None:
         lifecycle = self.placement_lifecycle(root)

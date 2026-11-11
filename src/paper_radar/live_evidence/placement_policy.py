@@ -359,6 +359,13 @@ class PlacementPolicyLifecycle:
             return
         actual = self.check(recover=recover)
         state = self._state()
+        if state == "prepared" and actual == "exact":
+            # Revalidate the same owned deployment without regressing its phase.
+            if os.path.lexists(self.journal.with_name(self.journal.name + ".new")):
+                raise ValueError("placement_policy_journal_identity")
+            preflight()
+            self.kernel.verify(self.sealed.policy)
+            return
         if actual == "partial":
             # Explicit recover + exact preparing/removing record only.
             self.kernel.remove(self.sealed.policy, allow_partial=True)
