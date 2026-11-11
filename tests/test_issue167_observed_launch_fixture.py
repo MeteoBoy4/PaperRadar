@@ -36,11 +36,18 @@ def inherited_count():
             pass
     return count
 agent = Path(os.environ['PI_CODING_AGENT_DIR'])
-if sys.argv[1:3] == ['auth', 'print-bearer-token']:
+if not sys.argv[1:]:
     config = json.loads((agent / 'auth.json').read_text())
     (agent / 'auth-chain-metadata.json').write_text(json.dumps({{
         'inherited_descriptor_count': inherited_count()
     }}))
+    from datetime import UTC, datetime
+    now = datetime.now(UTC).isoformat()
+    os.write(int(os.environ['PAPERRADAR_AUTH_METADATA_FD']), json.dumps({{
+        'format_version': 1, 'source_id': 'pi-auth-refresh-1.4.0-v1',
+        'pid': os.getpid(), 'started_at': now, 'completed_at': now,
+        'refresh_called': False,
+    }}).encode())
     print(config['token'])
 else:
     transient = agent / 'temporary-synthetic-write'

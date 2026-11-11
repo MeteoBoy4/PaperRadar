@@ -31,7 +31,14 @@ CLASSIFIED_PEER = f"""
 import json,os,sys
 from pathlib import Path
 agent=Path(os.environ['PI_CODING_AGENT_DIR'])
-if sys.argv[1:3]==['auth','print-bearer-token']:
+if not sys.argv[1:]:
+    from datetime import UTC, datetime
+    now = datetime.now(UTC).isoformat()
+    os.write(int(os.environ['PAPERRADAR_AUTH_METADATA_FD']), json.dumps({{
+        'format_version': 1, 'source_id': 'pi-auth-refresh-1.4.0-v1',
+        'pid': os.getpid(), 'started_at': now, 'completed_at': now,
+        'refresh_called': False,
+    }}).encode())
     print(json.loads((agent/'auth.json').read_text())['token'])
 else:
     for name in ('auth.json','models-store.json'):

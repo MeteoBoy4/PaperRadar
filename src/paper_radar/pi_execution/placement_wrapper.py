@@ -50,6 +50,13 @@ def main() -> None:
             payload.extend(data)
         spec = json.loads(payload)
         payload.clear()
+        metadata_index = spec.get("auth_metadata_fd_index")
+        if metadata_index is not None:
+            if spec["attempt"] is not None or type(metadata_index) is not int:
+                raise RuntimeError("placement_handshake_invalid")
+            spec["env"]["PAPERRADAR_AUTH_METADATA_FD"] = str(
+                descriptors[metadata_index]
+            )
         apply_resolver_view(Path(spec["resolver_view"]), spec["resolver_digest"])
         os.chdir(spec["cwd"])
         os.umask(0o077)

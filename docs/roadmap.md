@@ -103,10 +103,10 @@ flowchart TD
   v2 采集累计域、40/40 预占、三次／六轮停止及续跑公共边界见 [Live 契约](contracts/live-evidence.md#v2-采集额度失败类与续跑)，
   独立工程覆盖见 [#178 台账](verification/issue-178-live-collection-v2.md)；固定模型 collector 的公共派发／权威接收与 inbox 闭环见 [Live 契约](contracts/live-evidence.md#固定模型采集闭环)；封印 cutover、现场与最终集成门禁仍由 Live 收口。
   复用受保护准入账本、完整当前绑定、三检查点和共享分项投影；部署与当前代码策略匹配的冻结 runtime，以新受信回执取得所需分项并由所有者显式证据激活，不继承旧策略资格。
-  封印六格单案例计划集合、带 counter 的四负对照规则、owner 网络适用性确认及模型入口精确 sudoers／运行闭包安装；按[源码检查点](verification/issue-167-live-six-afk.md)与探索索引限定观察范围，核对同一绑定的终态文件集合和目录删除；完整会话写史保持未评估。自然到期／真实刷新缺无秘密来源时明确保持未知，不能用 stat 或调用成功推定。
+  封印六格单案例计划集合、带 counter 的四负对照规则、owner 网络适用性确认及模型入口精确 sudoers／运行闭包安装；按[源码检查点](verification/issue-167-live-six-afk.md)与探索索引限定观察范围，核对同一绑定的终态文件集合和目录删除；完整会话写史保持未评估。按 [ADR-0063](adr/0063-observe-normal-oauth-refresh-in-product-process.md) 的封印产品认证接缝取得正常刷新事件与提交来源；三批外部执行复用七计划，事件不足持久 unknown 停止。新 launch v9／admission v13 字节须另审部署；现场未执行，供应商真实到期仍 unknown，不能用 stat 或调用成功推定。
   按 [ADR-0058](adr/0058-allow-bounded-auth-cache-stat-evolution.md) 的固定 v2 不变量基线与独占 helper 临时布局，落实模型侧重验与失观测阻断，验证真实订阅刷新；
   独立工程覆盖见 [#179 台账](verification/issue-179-auth-cache-stat-v2.md)；
-  基线能力定义补充 [ADR-0059](adr/0059-clarify-auth-cache-baseline-capability.md) 待所有者评审；正常 metadata 演进不证明写史或 writer，真实自然刷新仍由 Live 现场验收承接。按 [ADR-0049](adr/0049-bound-core-persistence-with-explicit-zero-limit.md) 核验零 core／Apport 适用范围并补长期漂移诊断，保留其已接受残余，不能把全机 core 丢弃当作无人值守方案。
+  基线能力定义补充 [ADR-0059](adr/0059-clarify-auth-cache-baseline-capability.md) 待所有者评审；正常 metadata 演进不证明写史或 writer，正常刷新、部署后72小时目标与共同窗口由 Live 现场验收承接，独立工程覆盖见 [认证接缝台账](verification/issue-177-normal-auth-refresh.md)。按 [ADR-0049](adr/0049-bound-core-persistence-with-explicit-zero-limit.md) 核验零 core／Apport 适用范围并补长期漂移诊断，保留其已接受残余，不能把全机 core 丢弃当作无人值守方案。
   按 [ADR-0050](adr/0050-bind-egress-to-owner-visible-addresses.md) 冻结应用可见地址池与路由器 DNS，核对 [DNS/TLS 测量](verification/issue-167-dns-tls-result.md)的身份及 TTL 适用边界；上游映射不核验、本机不主张出口身份，IPv6 由 I 另行评估。
   能力要求、期限和材料复用分别遵循 [ADR-0052](adr/0052-version-admission-uses-and-capability-requirements.md)、[ADR-0053](adr/0053-expire-capabilities-by-evidence-class-and-coverage.md)、[ADR-0054](adr/0054-separate-execution-binding-from-call-materials.md)；必需项的缺失、失效或覆盖不足继续阻断，披露型保留 unknown、原状态、原因与下一动作。
   不重跑旧 EXP-2 或导入历史探索证据自证；保留实际 Pi 300 秒不补跑、直接 KI 不另备的范围限制。自然供应商迟延／错误、参数效力、日期映射、账号集合／限额及认证全写史／writer 的既有未知不提升为通过。请求仅沿 [ADR-0048](adr/0048-accept-bounded-request-observability.md) 声明可证下界与 unknown，保留隐藏重试／预热／刷新不可见及 Pi 自报 token 口径；精确计数交 I 重评。

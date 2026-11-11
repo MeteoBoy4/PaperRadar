@@ -125,7 +125,7 @@ def test_bundle_freezes_seven_plans_inventory_and_explicit_pending_owner_gate(
     import tarfile
 
     from paper_radar.live_evidence.live_bundle import build_live_bundle, derive_site
-    from paper_radar.live_evidence.model_manifest import ModelManifest
+    from paper_radar.live_evidence.model_manifest import parse_manifest
     from paper_radar.live_evidence.receipt import ApprovedPlan
     from paper_radar.live_evidence.receipt_v2 import ApprovedPlanV2
 
@@ -178,9 +178,7 @@ def test_bundle_freezes_seven_plans_inventory_and_explicit_pending_owner_gate(
     runtime = tmp_path / "extracted"
     with tarfile.open(output / "payload.tar") as archive:
         archive.extractall(runtime, filter="data")
-    manifest = ModelManifest.model_validate_json(
-        (runtime / "model-manifest.json").read_bytes()
-    )
+    manifest = parse_manifest((runtime / "model-manifest.json").read_bytes())
     assert len(manifest.cells) == 6
     assert len(list((runtime / "plans").glob("*.json"))) == 7
     assert (
@@ -289,6 +287,17 @@ def test_frozen_runtime_cold_entries_reject_arguments_and_ignore_user_imports(
     from tests.live_bundle_support import bundle_model
 
     staged, _ = bundle_model(tmp_path, monkeypatch, real_freeze=True)
+    import hashlib
+    import json
+
+    helper_name = "pi_execution/auth_helper.mjs"
+    helper = staged / "site-packages/paper_radar" / helper_name
+    identity = json.loads((staged / "source-identity.json").read_bytes())
+    assert identity["format_version"] == 3
+    assert (
+        identity["source_auxiliary_sha256"][helper_name]
+        == hashlib.sha256(helper.read_bytes()).hexdigest()
+    )
     hostile = tmp_path / "hostile"
     hostile.mkdir()
     marker = tmp_path / "imported-user-code"
@@ -389,12 +398,12 @@ def test_build_refuses_unreviewed_source_guard_before_freezing_or_output(
     )
     site, _ = derive_site(site)
     source = tmp_path / "source"
-    fixture = source / "tests/fixtures/live-admission-source-guard-v12.json"
+    fixture = source / "tests/fixtures/live-admission-source-guard-v13.json"
     fixture.parent.mkdir(parents=True)
     reviewed = json.loads(
         (
             Path(__file__).resolve().parents[1]
-            / "tests/fixtures/live-admission-source-guard-v12.json"
+            / "tests/fixtures/live-admission-source-guard-v13.json"
         ).read_bytes()
     )
     reviewed["files"] = {"root.py": "0" * 64}

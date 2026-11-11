@@ -14,7 +14,11 @@ from paper_radar.live_evidence.collection import (
 )
 from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
 from paper_radar.live_evidence.model_ipc import WorkerMessage
-from paper_radar.live_evidence.model_manifest import ModelCell, ModelManifest
+from paper_radar.live_evidence.model_manifest import (
+    ModelCell,
+    ModelManifest,
+    parse_manifest,
+)
 from paper_radar.live_evidence.model_worker import ModelObservation
 from paper_radar.live_evidence.receipt import (
     CaseResult,
@@ -112,6 +116,7 @@ def complete_model_case(
     *,
     ipv4_verified: bool,
     now: datetime,
+    auth_target: tuple[int, int, str] | None = None,
 ) -> Path:
     case_id = run.case_ids[0]
     counts = Counter(item.operation for item in reservations)
@@ -146,6 +151,23 @@ def complete_model_case(
         )
         for capability in (*MODEL_CAPABILITIES, C.IPV4_EGRESS)
     )
+    from paper_radar.live_evidence.model_worker import ModelObservationV2
+
+    if (
+        isinstance(observed, ModelObservationV2)
+        and observed.auth_metadata is not None
+        and (
+            auth_target is None
+            or observed.auth_metadata.pid != auth_target[0]
+            or not (
+                run.started_at
+                <= observed.auth_metadata.started_at
+                <= observed.auth_metadata.completed_at
+                <= now
+            )
+        )
+    ):
+        raise LedgerError("source_untrusted")
     receipt = EvidenceReceiptV2(
         format_version="v2",
         domain_id="live-177",
@@ -181,6 +203,27 @@ def complete_model_case(
     )
     source = _complete_and_publish(collection, receipt, "model", now=now)
     digest = content_sha256(receipt)
+    from paper_radar.live_evidence.normal_auth_refresh import record_auth_operation
+
+    if isinstance(observed, ModelObservationV2) and observed.auth_metadata is not None:
+        if auth_target is None:
+            raise LedgerError("source_untrusted")
+        auth_ids = [
+            item.reservation_id for item in reservations if item.operation == "auth"
+        ]
+        if len(auth_ids) != 1:
+            raise LedgerError("source_untrusted")
+        record_auth_operation(
+            collection,
+            digest,
+            observed.auth_metadata,
+            plan_id=plan.plan_id,
+            case_id=case_id,
+            operation_id=auth_ids[0],
+            target=auth_target,
+            started_at=run.started_at,
+            completed_at=now,
+        )
     # 摘要观测是披露,不扩展已冻结 v2 receipt wire;不保存原文/自由错误。
     _publish(
         collection.ledger.root / "inbox" / f"model-{digest}-observation.json",
@@ -212,12 +255,11 @@ def read_manifest(root: Path, ledger: EvidenceLedger) -> ModelManifest:
     """仅受保护固定入口调用,检查完整材料库存与所有者来源声明。"""
     import hashlib
 
-    from paper_radar.live_evidence.model_manifest import ModelManifest
     from paper_radar.live_evidence.protected_observer import _protected_bytes
     from paper_radar.pi_execution.site_binding import component_digest
 
     raw = _protected_bytes(ledger, root / "model-manifest.json")
-    manifest = ModelManifest.model_validate_json(raw)
+    manifest = parse_manifest(raw)
     if canonical_bytes(manifest) != raw:
         raise ValueError("collector_manifest_invalid")
     actual = {
@@ -413,8 +455,10 @@ def _run_model(
     reservations = []
     stages: list[str] = []
     targets: list[tuple[int, int, int]] = []
+    auth_target: tuple[int, int, str] | None = None
 
     def gate(message: WorkerMessage) -> None:
+        nonlocal auth_target
         expected = ("auth", "prepared", "model")
         if len(stages) >= 3 or message.stage != expected[len(stages)]:
             raise DispatchDenied("source_untrusted")
@@ -434,6 +478,8 @@ def _run_model(
                 )
             except Exception:
                 raise DispatchDenied("resource_unavailable") from None
+        if message.stage == "auth":
+            auth_target = (message.pid, message.start, message.unit)
         stages.append(message.stage)
 
     try:
@@ -469,6 +515,7 @@ def _run_model(
             tuple(reservations),
             ipv4_verified=True,
             now=clock(),
+            auth_target=auth_target,
         )
         # 复合出网来源:四个root完成源+所有者确认+本次权威成功;不是仅RPC成功。
         import json
@@ -812,15 +859,44 @@ def collect_models_once(
         manifest = bind_collection_site(
             root, ledger, manifest, collection, lock_fd, now=clock()
         )
+        from paper_radar.live_evidence.model_manifest import ModelManifestV2
+        from paper_radar.live_evidence.normal_auth_refresh import publish_normal_review
+
+        is_batched = isinstance(manifest, ModelManifestV2)
+        if is_batched:
+            report = publish_normal_review(ledger, manifest, now=clock())
+            if report.stopped:
+                return tuple(
+                    cell.use_id
+                    for cell in manifest.cells
+                    if collection.completed_case(
+                        cell.plan.cases[0], binding=cell.binding
+                    )
+                    is not None
+                )
         if not _run_negatives(root, ledger, manifest, site, collection, lock_fd, clock):
             return ()
         passed = []
-        for cell in manifest.cells:
+        executed_batch = None
+        for index, cell in enumerate(manifest.cells):
+            already_passed = (
+                collection.completed_case(cell.plan.cases[0], binding=cell.binding)
+                is not None
+            )
+            batch = 0 if index == 0 else 1 if index == 1 else 2
+            if is_batched and not already_passed:
+                if executed_batch is not None and batch != executed_batch:
+                    break
+                executed_batch = batch
             if not _run_model(
                 root, ledger, manifest, cell, site, collection, lock_fd, clock
             ):
                 break
             passed.append(cell.use_id)
+            if is_batched:
+                report = publish_normal_review(ledger, manifest, now=clock())
+                if report.stopped:
+                    break
         return tuple(passed)
 
 
@@ -834,11 +910,35 @@ def model_collector_main(arguments: list[str] | None = None) -> int:
     if args:
         return 2
     try:
-        passed = collect_models_once(RUNTIME_ROOT, EvidenceLedger())
+        ledger = EvidenceLedger()
+        passed = collect_models_once(RUNTIME_ROOT, ledger)
+        from paper_radar.live_evidence.normal_auth_refresh import (
+            NormalRefreshReview,
+            normal_review_path,
+        )
+
+        report_path = normal_review_path(ledger, read_manifest(RUNTIME_ROOT, ledger))
+        report = (
+            NormalRefreshReview.model_validate_json(ledger._read_source(report_path))
+            if report_path.exists()
+            else None
+        )
+        if report is not None:
+            print(
+                f"normal_refresh={report.status} stopped={str(report.stopped).lower()} "
+                f"next_batch={report.next_batch} "
+                f"six_cells_target={report.six_cells_target} "
+                "provider_real_expiry=unknown；"
+                "批次间由所有者选择时点，不自动补跑。"
+            )
         print(
             f"模型采集已完成格数={len(passed)};未接收、未激活;请所有者审阅受保护历史。"
         )
-        return 0 if len(passed) == 6 else 2
+        return (
+            0
+            if len(passed) == 6 and (report is None or report.status == "passed")
+            else 2
+        )
     except Exception:
         print(
             "模型采集拒绝 [collector_unavailable];"

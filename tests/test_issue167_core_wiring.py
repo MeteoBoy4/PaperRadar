@@ -15,9 +15,16 @@ PEER = f"""
 import json, os, resource, sys
 from pathlib import Path
 limits = list(resource.getrlimit(resource.RLIMIT_CORE))
-if sys.argv[1:3] == ['auth', 'print-bearer-token']:
+if not sys.argv[1:]:
     path = Path(os.environ['PI_CODING_AGENT_DIR']) / 'core-observed.json'
     path.write_text(json.dumps(limits))
+    from datetime import UTC, datetime
+    now = datetime.now(UTC).isoformat()
+    os.write(int(os.environ['PAPERRADAR_AUTH_METADATA_FD']), json.dumps({{
+        'format_version': 1, 'source_id': 'pi-auth-refresh-1.4.0-v1',
+        'pid': os.getpid(), 'started_at': now, 'completed_at': now,
+        'refresh_called': False,
+    }}).encode())
     print({TOKEN!r})
 else:
     print(json.dumps({{'core': limits}}), flush=True)
@@ -77,7 +84,7 @@ def checked_limit(key, value):
         raise PermissionError('sensitive-core-error-text')
     return setrlimit(key, value)
 def checked_exec(path, argv, env):
-    stage = b'auth\\n' if argv[2:4] == ['auth', 'print-bearer-token'] else b'model\\n'
+    stage = b'auth\\n' if 'PAPERRADAR_AUTH_METADATA_FD' in env else b'model\\n'
     os.write(exec_fd, stage)
     return execve(path, argv, env)
 resource.setrlimit = checked_limit

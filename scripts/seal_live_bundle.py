@@ -6,7 +6,7 @@ import hashlib
 import json
 import os
 import subprocess
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 
 
@@ -43,7 +43,6 @@ def main() -> int:
         assert_current_site,
         build_live_bundle,
         derive_site,
-        proposed_window,
     )
     from paper_radar.live_evidence.receipt import canonical_bytes
     from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
@@ -59,23 +58,24 @@ def main() -> int:
         print(json.dumps({"baseline_diff": changes}, ensure_ascii=False, indent=2))
         print(derived.model_dump_json(indent=2))
         if args.action == "derive":
-            start, end = proposed_window(datetime.now(UTC))
-            print(
-                json.dumps(
-                    {
-                        "window_candidate_not_confirmed": {
-                            "starts_at": start.isoformat(),
-                            "ends_at": end.isoformat(),
-                        }
-                    }
-                )
-            )
+            if bool(args.starts_at) != bool(args.ends_at):
+                raise ValueError("plan_window_invalid")
+            window = None
+            if args.starts_at:
+                start = datetime.fromisoformat(args.starts_at)
+                end = datetime.fromisoformat(args.ends_at)
+                if start.tzinfo is None or end.tzinfo is None or start >= end:
+                    raise ValueError("plan_window_invalid")
+                window = {"starts_at": start.isoformat(), "ends_at": end.isoformat()}
+            print(json.dumps({"explicit_window_not_reconfirmed": window}))
             descriptor = os.open(
                 args.output, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600
             )
             with os.fdopen(descriptor, "wb") as stream:
                 stream.write(canonical_bytes(derived))
-            print("派生配置仅供私有审阅；日期/网络仍待本人确认，尚未封印或部署。")
+            print(
+                "派生配置仅供私有审阅；窗口须显式给定并沿用所有者确认原值，不能按当前日滚动；尚未封印或部署。"
+            )
             return 0
         if not all((args.site, args.network, args.starts_at, args.ends_at)) or bool(
             args.upgrade_from_payload

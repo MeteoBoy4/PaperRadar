@@ -66,7 +66,8 @@ def test_adoption_interruption_reaps_process_and_resources_but_keeps_lease(
 
     def interrupted_adoption(child: subprocess.Popen[bytes]) -> PipeSession:
         assert isinstance(child.args, tuple)
-        if b"\x00auth\x00" in Path(f"/proc/{child.pid}/cmdline").read_bytes():
+        command = Path(f"/proc/{child.pid}/cmdline").read_bytes().split(b"\x00")
+        if len([argument for argument in command if argument]) == 2:
             return PipeSession(child)
         children.append(child)
         raise interruption
@@ -161,7 +162,7 @@ def test_correction_overflow_is_rejected_before_claim_without_task_effects(
         self: PlacedProcess, argv: tuple[str, ...], **kwargs: Any
     ) -> subprocess.Popen[bytes]:
         nonlocal now, before, auth_calls
-        if "auth" not in argv:
+        if "PAPERRADAR_AUTH_METADATA_FD" not in kwargs["env"]:
             return execute(self, argv, **kwargs)
         assert state.endswith("_during_auth"), "已知帧超限不应刷新认证"
         auth_calls += 1

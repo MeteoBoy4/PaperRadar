@@ -70,7 +70,7 @@ def test_auth_holds_install_protection_and_claim_uses_latest_correction(
                 service.database, selected.supply_id, selected.install_id
             ).state
         )
-        if "auth" in argv:
+        if "PAPERRADAR_AUTH_METADATA_FD" in kwargs["env"]:
             raw = valid_candidate(
                 main_findings=[
                     {
@@ -113,7 +113,7 @@ def test_model_interruption_reaps_entire_group_and_recovers_unknown_without_refu
         self: PlacedProcess, argv: tuple[str, ...], **kwargs: Any
     ) -> subprocess.Popen[bytes]:
         child = execute(self, argv, **kwargs)
-        if "auth" not in argv:
+        if "PAPERRADAR_AUTH_METADATA_FD" not in kwargs["env"]:
             children.append(child)
             directories.append(Path(kwargs["env"]["PI_CODING_AGENT_DIR"]).parent)
         return child

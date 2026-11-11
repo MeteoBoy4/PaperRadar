@@ -119,12 +119,15 @@ def review_text(
 UTC共同窗口：{start} → {end}。{"精确日期与网络适用性未确认：安装入口在变更前拒绝，现场gate保持。" if pending else "窗口与网络适用性来源已绑定；仍须所有者审阅本次确切字节。"}
 六格目标在部署后72小时内完成；子窗口不得超出共同窗口。七份v2计划属于live-177，累计认证+网络40、模型40；
 根侧预占不退款，安全失败首停/同类连续三轮/累计六失败轮停止，换计划/升级不重置。
-严格β仍使用独立v1单轮计划和旧失败语义。自然到期/真实刷新没有无秘密来源，保持unknown/未验并停止该闭环；
-不能把三次调用、cache stat变化或成功模型响应当刷新证明。不执行额外auth探测、loader或新认证入口。
+严格β仍使用独立v1单轮计划和旧失败语义。manifest v2固定三批外部执行：A=boundary-low，B=boundary-high，C=value-low及剩余三格。
+A后返回；B/C首格必须分别有本次真实refresh+原提交且模型成功，否则持久unknown停止，不能借续跑寻找事件。
+批间不留轮/锁/持密进程；所有者自行选择共同窗口内时点，不探测expiry、不自动等待/补跑/延窗。
+正常提前刷新满足ADR-0063；供应商真实到期始终unknown。部署epoch固定72h六格目标，仅披露，不改变授权。
+不能把三次调用、cache stat变化或成功模型响应当刷新证明。固定Node认证入口只在产品uid运行，正式与collector共用；root只接白名单。
 
 按顺序审阅：
 
-1. manifest.sha256、deployment.json、site.json、source-identity.json、source-vectors/、完整Python/stdlib/依赖/源码与entry.py/install-live.py。
+1. manifest.sha256、deployment.json、site.json、source-identity.json、source-vectors/、完整Python/stdlib/依赖/源码、auth_helper.mjs（公开入口/静态API摘要）、auth_metadata.py、normal_auth_refresh.py与entry.py/install-live.py。
 2. resources/paperradar.slice、paperradar-anchor.service、resolv.conf和live_host.py规则生成/验证代码。
    仅inet paperradar，真实slice层级与独立kernfs dev/inode，四固定comment+counter；允许28.0.0.0/8 TCP443、192.168.44.1 UDP/TCP53；其他项目出站drop。
    不改全机resolver、上游路由、sysctl、host capability或常驻root服务。scope逐调用wrapper把core软硬置0，anchor LimitCORE=0。
@@ -157,7 +160,7 @@ sudo /usr/libexec/paperradar/live-evidence-refresh
 sudo /usr/libexec/paperradar/live-evidence-model-collect
 ```
 
-模型collector先四出站负对照，再六格公共RPC/权威接收。collector只写inbox/历史；root不运行Pi，持密auth/model均产品uid。
+模型collector首次先四出站负对照，再执行A；后两次由所有者在选定时点独立调用同一零参数入口执行B、C（不是自动连续调用）。核每次normal_refresh/next_batch/stopped及受保护事件来源后再决定下一次。collector只写inbox/历史；root不运行Pi，持密auth/model均产品uid。
 任何不符合预期的失败立即按受保护状态停下；成功终态也不等于产品可执行。owner另行receive与逐格明确激活，不用--owner-closure。
 
 卸载/恢复仍调用同一已审副本并输入sudo密码：

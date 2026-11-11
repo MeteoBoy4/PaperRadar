@@ -11,12 +11,28 @@ from typing import Any
 MODE = "__MODE__"
 args = sys.argv[1:]
 agent = Path(os.environ["PI_CODING_AGENT_DIR"])
-if args[:2] == ["auth", "print-bearer-token"]:
+if not args:
     auth = json.loads((agent / "auth.json").read_text())
     (agent / "auth-observed.json").write_text(json.dumps({"argv": args}))
     if auth.get("mode") == "failure":
         print(auth["token"], file=sys.stderr)
         raise SystemExit(1)
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC).isoformat()
+    os.write(
+        int(os.environ["PAPERRADAR_AUTH_METADATA_FD"]),
+        json.dumps(
+            {
+                "format_version": 1,
+                "source_id": "pi-auth-refresh-1.4.0-v1",
+                "pid": os.getpid(),
+                "started_at": now,
+                "completed_at": now,
+                "refresh_called": False,
+            }
+        ).encode(),
+    )
     print(auth["token"])
     raise SystemExit(0)
 

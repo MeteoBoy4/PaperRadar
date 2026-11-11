@@ -32,14 +32,8 @@ def test_controlled_launch_owns_fresh_resources_and_install_protection(
         ).state == ("in_flight")
         assert TOKEN not in repr(prepared)
         auth = json.loads((credentials / "auth-observed.json").read_text())
-        assert auth["argv"] == [
-            "auth",
-            "print-bearer-token",
-            "--provider",
-            "openai",
-            "--min-expiry",
-            "900s",
-        ]
+        assert auth["argv"] == []
+        assert auth["env"]["PAPERRADAR_AUTH_ATTEMPT_TIMEOUT"] == "300"
         assert "PI_OFFLINE" not in auth["env"]
         assert "OPENAI_API_KEY" not in auth["env"]
         assert "NODE_OPTIONS" not in auth["env"]

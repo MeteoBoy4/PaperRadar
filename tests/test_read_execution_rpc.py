@@ -43,7 +43,7 @@ def test_first_reject_then_last_correction_uses_two_distinct_processes_and_one_a
         self: PlacedProcess, argv: tuple[str, ...], **kwargs: Any
     ) -> subprocess.Popen[bytes]:
         child = execute(self, argv, **kwargs)
-        if "auth" not in argv:
+        if "PAPERRADAR_AUTH_METADATA_FD" not in kwargs["env"]:
             sessions.append((child.pid, kwargs["env"]["PI_CODING_AGENT_DIR"]))
         return child
 

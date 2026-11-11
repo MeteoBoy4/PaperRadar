@@ -1,6 +1,6 @@
 # 以固定零参数入口采集封印合成模型证据
 
-状态：Proposed；依据：[#177 最终裁决 E-6、E-1/E-2/E-5 与 S-9](https://github.com/MeteoBoy4/PaperRadar/issues/177#issuecomment-6768256547)、[#182 实施澄清](https://github.com/MeteoBoy4/PaperRadar/issues/182#issuecomment-6768787557)。记录已经批准的边界扩展；补充 ADR-0055／#168 P-6，封印字节部署仍须所有者审阅。
+状态：Proposed；依据：[#177 最终裁决 E-6、E-1/E-2/E-5 与 S-9](https://github.com/MeteoBoy4/PaperRadar/issues/177#issuecomment-6768256547)、[#182 实施澄清](https://github.com/MeteoBoy4/PaperRadar/issues/182#issuecomment-6768787557)。记录已经批准的边界扩展；补充 ADR-0055／#168 P-6，封印字节部署仍须所有者审阅。 认证事件证明来源与正常刷新语义由 [ADR-0063](0063-observe-normal-oauth-refresh-in-product-process.md) 补充。
 
 首次模型取证不能依赖先具备模型资格，否则形成循环。固定零参数模型采集入口仅消费所有者批准的封印合成案例集合、站点完成历史、当前观察和累计额度；root 管理批准、逐操作预占、完成事实及 inbox，认证与模型保持不可逆降权后的产品身份，并复用正式 `prepare_launch`、`run_call`、同一放置及权威业务校验。正式消费者继续要求完整当前资格，采集入口不派发业务 task/attempt、不 receive、不激活、不自动续期。
 

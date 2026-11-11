@@ -123,6 +123,17 @@ class ModelHost:
         self, root: Path, site: SiteConfiguration, manifest: ModelManifest
     ) -> None:
         self._call("initialize_plans")
+        import os
+
+        from paper_radar.live_evidence.collection import ProtectedCollection
+        from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerTrust
+
+        ledger = EvidenceLedger(
+            self.paths.ledger,
+            trust=LedgerTrust(owner_uid=os.getuid(), anchor=self.paths.anchor),
+        )
+        ledger.initialize()
+        ProtectedCollection(ledger).initialize(now=datetime.now(UTC))
         history = self.paths.ledger / "retained-history"
         if not history.exists():
             history.write_bytes(b"failed/stopped/revoked/intents/auth=13/model=9\n")

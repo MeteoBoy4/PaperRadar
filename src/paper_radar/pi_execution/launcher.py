@@ -18,6 +18,7 @@ from paper_radar.llm.models import PROTOCOL_PROFILES, CallDescription
 from paper_radar.llm.rpc_pipes import PipeSession
 from paper_radar.llm.rpc_types import ByteSession, RpcProblem, RpcReason, SessionEvent
 from paper_radar.pi_execution.auth import credential_token
+from paper_radar.pi_execution.auth_metadata import AuthRefreshMetadata
 from paper_radar.pi_execution.errors import ExecutionError
 from paper_radar.pi_execution.isolation import (
     ISOLATION_POLICY_VERSION,
@@ -319,6 +320,7 @@ def prepare_launch(
     attempt_timeout: float = 300,
     auth_timeout: float = 30,
     before_auth: Callable[[int, int, str], None] | None = None,
+    observe_auth: Callable[[AuthRefreshMetadata], None] | None = None,
     collection: CollectionExecutionContext | None = None,
     cleanup_audit: CleanupAudit | None = None,
 ) -> Iterator[PreparedLaunch]:
@@ -359,6 +361,7 @@ def prepare_launch(
                     attempt_timeout=attempt_timeout,
                     timeout=auth_timeout,
                     before_release=before_auth,
+                    observe_auth=observe_auth,
                     cleanup_audit=cleanup_audit,
                 )
                 prepared = _PreparedLaunch(

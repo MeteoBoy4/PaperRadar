@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 from paper_radar.pi_execution.errors import ExecutionError
 
 EXECUTION_CWD = Path("/srv/pi-cwd")
-LAUNCH_POLICY_VERSION = "pi-launch-1.4.0-v8"
+LAUNCH_POLICY_VERSION = "pi-launch-1.4.0-v9"
 # Default settings bytes are part of LAUNCH_POLICY_VERSION.
 SETTINGS_JSON = (
     b'{"cacheWarming":"off","compaction":{"enabled":false},'

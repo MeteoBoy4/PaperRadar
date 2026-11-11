@@ -20,6 +20,9 @@ from tests.test_paper_service import observation
 
 def deny_default_live_io(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """未显式替换的真实OS来源必须拒绝;不覆盖已安装的protected fixture。"""
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.auth.auth_entry", lambda install: install.pi
+    )
     from paper_radar.live_evidence import service
     from paper_radar.live_evidence.intents import ProtectedIntentLog
     from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError

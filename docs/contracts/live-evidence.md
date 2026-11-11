@@ -406,8 +406,7 @@ stopped、撤销、已预占额度和旧 runtime 均保留。同 SHA 已安装�
 卸载先封闭当前观察、移除 dispatch，再停止项目 slice，独立核无活进程后移除本包资源。
 恢复重新核实际资源/CG/规则；重启后的 `/run` 或 CG 丢失需要 owner 显式 `recover`，
 不常驻 root 自愈。不恢复旧激活，不改变旧回执/成功时点；新绑定不符原 strict β 来源时，
-模型继续拒绝，需要新的已审计划/包取得新来源。自然到期/真实 refresh 缺无秘密独立信号，
-保持 unknown/未验及停止 gate，不能以三次调用、stat 演进或成功模型响应替代。
+模型继续拒绝，需要新的已审计划/包取得新来源。正常刷新由下述独立事件评审；缺来源保持 unknown/未验及停止 gate，不能以三次调用、stat 演进或成功模型响应替代。
 
 ### β 站点采集与封印部署
 
@@ -532,7 +531,7 @@ AUTH_CACHE_BASELINE 递归专用 credentials 全根，按[固定基线 v2](#当�
 
 `runtime_main collect-models` 只接受零参数，读取受保护 `model-manifest.json`、`site.json`、固定材料库存和 `network-owner-confirmation.json`。六格固定顺序为 boundary-low、boundary-high、value-low、value-high、read-low、read-high，各 plan 仅含 `model-<use>` 模板；四对照另用一份 `site_beta` v2 plan，全部共享 `live-177`。所有计划必须已由所有者批准，窗口、collector 摘要、实际 latest activation 三元组、每格可预知静态组件预期、材料／请求 SHA 与确认适用 plan 集合均受检查；入口不初始化账本、不批准、不 receive、不激活。
 
-整组持 `protected_collection_lock` 的同一个 fd，通过 `refresh_under_lock` 复用观察。封印集合只允许供给／实例／版本／策略和模型元组等可预知静态组件预期；不嵌入 observer、IPv4、认证/cache 基线或其他部署后现场值。root 同锁真实刷新后，从严格 β 完成源按每项站点依赖精确核对当前观察，结合受保护 placement target 和固定模型元组组装每格完整真实 binding。`inbox/collection-bindings-<manifestSHA>.json` 固定 manifest、站点完成回执、target、owner 确认摘要及完整六格绑定；后续必须逐字相等，已有完成史时缺该来源不能重新登记。没有 baseline 自拍／忽略漂移，也不要求构建时知道未来 cgroup inode 或把包自身 observer 哈希写回包。站点前置读取受保护已完成 β 来源并按登记依赖核对，可尚未 receive/activate；当前观察本身不替代站点成功。`completed_case` 只读重放完整绑定与原完成回执，按模板继续首个未通过案例，既有成功的原 verified_at 不刷新。完成与 inbox 发布之间用受保护 pending 区分中断：只重发已落账、仍有原 pending 的规范字节；已经发布后丢失的来源继续拒绝，不以恢复发布补造来源。可选 metadata sidecar 丢失保持未观测，不重建用量。一格失败即结束本次组调用，普通／安全停止沿既有 v2 状态机，不跨格补证。
+每次入口持 `protected_collection_lock` 的同一个 fd，通过 `refresh_under_lock` 复用观察。封印集合只允许供给／实例／版本／策略和模型元组等可预知静态组件预期；不嵌入 observer、IPv4、认证/cache 基线或其他部署后现场值。root 同锁真实刷新后，从严格 β 完成源按每项站点依赖精确核对当前观察，结合受保护 placement target 和固定模型元组组装每格完整真实 binding。`inbox/collection-bindings-<manifestSHA>.json` 固定 manifest、站点完成回执、target、owner 确认摘要及完整六格绑定；后续必须逐字相等，已有完成史时缺该来源不能重新登记。没有 baseline 自拍／忽略漂移，也不要求构建时知道未来 cgroup inode 或把包自身 observer 哈希写回包。站点前置读取受保护已完成 β 来源并按登记依赖核对，可尚未 receive/activate；当前观察本身不替代站点成功。`completed_case` 只读重放完整绑定与原完成回执，按模板继续首个未通过案例，既有成功的原 verified_at 不刷新。完成与 inbox 发布之间用受保护 pending 区分中断：只重发已落账、仍有原 pending 的规范字节；已经发布后丢失的来源继续拒绝，不以恢复发布补造来源。可选 metadata sidecar 丢失保持未观测，不重建用量。一格失败即结束本次组调用，普通／安全停止沿既有 v2 状态机，不跨格补证。
 
 产品 worker 清空环境与补充组、不可逆降权、禁止 dump，并关闭继承的 root fd。仅私有有界 socketpair 传输固定 case、阶段／序号、摘要、受控 RPC／校验／终态事实与 nullable tokens；ACK 在 root 原子 `reserve` 后发送。认证在实际 exec-stop 核验后且 DETACH 前预占 auth；prompt 在严格初始化及无主尾记录检查后、首字节前预占 model。失联和中断保留消耗并安全停止；已知放置组只按原核验 PID/start/group 回收。
 
@@ -549,7 +548,7 @@ AUTH_CACHE_BASELINE 递归专用 credentials 全根，按[固定基线 v2](#当�
 | activated | owner 明确启用本格非空分项 | 不补齐 unknown 或失败 |
 | qualified | 当前登记、依赖绑定、期限、来源和当前观察均成立 | 正式消费者才可继续完整 guard |
 
-自然到期／真实 refresh 没有无秘密事件时保持未知；metadata 变化、auth 或模型成功不能证明刷新发生或自然到期。本入口只执行六格与四对照，不增独立刷新探测阶段或认证入口。
+正常刷新没有本次无秘密事件与提交来源时保持未知；metadata 变化、auth 或模型成功不能证明刷新发生。当前 manifest v2 在既有六格操作中分批观察共享封印认证路径，不增加独立探测；供应商真实到期保持 unknown，具体见[正常认证刷新闭环](#正常认证刷新闭环)。
 
 ### 时钟与独立恢复
 
@@ -636,3 +635,15 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 只追加收紧依据：[ADR-0056](../adr/0056-protect-pending-revocations-with-an-append-only-log.md)。
 采集额度与停止依据：[#177 最终裁决](https://github.com/MeteoBoy4/PaperRadar/issues/177#issuecomment-6768256547)、[#178](https://github.com/MeteoBoy4/PaperRadar/issues/178)；补充决策草案：[ADR-0057](../adr/0057-reserve-live-collection-quotas-and-persist-stop-history.md)。
 现有产品边界：[Pi 执行](pi-execution.md)、[Read 执行](read-execution.md)。
+
+### 正常认证刷新闭环
+
+`ModelManifestV2` 是独立封印 envelope：`format_version=2`、固定 `normal-auth-refresh-v1` 和批次 A=`boundary-low`、B=`boundary-high`、C=`value-low/value-high/read-low/read-high`。七份单案例／负对照 plan 仍为原 v2 wire，原 manifest v1 的一次六格与通过案例跳过语义保留；不增加计划、操作或重跑已通过格。一次零参数入口只执行下一批，批间返回，不持锁、不留 open round、reservation 或持密进程，不自动定时等待。外部由所有者在共同批准窗口内选择调用时点，不能从未读取的 expiry 猜测固定等待可触发刷新。
+
+正式与 collector 共用 [宿主认证边界](pi-execution.md#宿主认证边界)。认证释放前仍 auth1 原子预占，未知不退款；40/40、失败分类、三次／六轮、安全首停及三检查点不变。`WorkerMessageV2`／`ModelObservationV2` 显式携带 `auth-refresh-metadata` v1；旧 worker／observation 类型和 receipt v1/v2 原格式保持。root 核对固定来源 ID、已核放置进程 pid/start/unit、预占操作、UTC 时序和当前 binding，追加 `inbox/auth-operation-v1-<receiptSHA>.json`，只含固定身份与五个 bool/unknown 事实，不含 credential、token、JWT、秘密摘要或自由错误。源码 ID 对应本包受保护成员与静态 API 源码绑定，产品不能自报任意源码字段。
+
+受保护 `normal-auth-refresh-v1-<firstPlanSHA>.json` 只重放原完成源：A 成功，随后 B 成功且其本次 `need_refresh/refresh_called/refresh_succeeded/store_committed` 全 true，再随后 C 首格成功并有另一更晚真实刷新提交。比较跨格完整站点绑定时只排除各自模型元组，不能把一格模型证据转授另一格。源缺失、提交未知、重复／逆序事件或事件不足均不通过；B 或 C 首格已成功但事件不足时持久 `unknown/stopped`，后续入口只返回原已通过事实，不能继续花额度寻找事件。没有现场来源初值为 `not_assessed`，不预置 passed。C 首格成立后才在同批继续剩余三格，六格资格仍分别接收、激活与判定；本评审不授予准入能力。
+
+`normal-auth-epoch-v1-<firstPlanSHA>.json` 记录首次可信部署完成 UTC、固定 collector 及七 plan IDs；同 SHA 重跑、卸载／恢复不更改时点。既有安装或执行历史缺该来源时拒绝，不能用 now 补造。部署后72小时是六格目标，评审分开披露目标时点、是否逾期及六格目标结果；不新增准入停止条件，不自动补跑或延长共同授权窗口。原部署 journal／SQLite schema 不变。
+
+正常提前刷新符合 [ADR-0063](../adr/0063-observe-normal-oauth-refresh-in-product-process.md) 已决验收语义。`was_expired_by_pi` 只是回调 UTC 时越过 Pi 存储阈值；供应商真实有效期到点始终 `unknown`。stat、调用成功、旧到期时点、另一进程提交、通用 store 的 best-effort 注释都不替代这次固定具体 backend 的事件与成功返回。文件写调用完成不承诺 fsync／断电耐久，认证全写史／writer、完整会话写史和隐藏请求数继续按既有边界披露。
