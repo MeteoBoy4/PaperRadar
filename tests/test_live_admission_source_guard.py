@@ -14,7 +14,7 @@ from paper_radar.pi_execution.resources import LAUNCH_POLICY_VERSION
 from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v16.json"
+MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v17.json"
 ARCHIVED_MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
 # 显式清单;不能由目录扫描或生产依赖图动态扩大/缩小。
 ARCHIVED_SOURCE_FILES = (
@@ -99,11 +99,21 @@ SOURCE_FILES = (
     "src/paper_radar/live_evidence/normal_auth_refresh.py",
     "src/paper_radar/live_evidence/nft_rules.py",
     "src/paper_radar/live_evidence/nft_generation.py",
+    "src/paper_radar/live_evidence/epoch_lineage.py",
+    "src/paper_radar/live_evidence/live_apparmor_kernel.py",
+    "src/paper_radar/live_evidence/placement_build.py",
+    "src/paper_radar/live_evidence/placement_policy.py",
+    "src/paper_radar/pi_execution/placement_protocol.py",
+    "src/paper_radar/pi_execution/placement_native.c",
+    "src/paper_radar/pi_execution/placement_preflight.py",
 )
 
 
 # 已审阅版本的清单摘要只追加;后继不得以同一策略键重绑该摘要。
 REVIEWED_POLICY_MANIFESTS = {
+    "pi-admission-v17": (
+        "08416e02199798eef8406e827c20c894b1c61556e8b131b101c762a3a8b93453"
+    ),
     "pi-admission-v16": (
         "f25d67d915172228c310721df0ee22d6bda80497cb41b47f333c1a5a696c315b"
     ),
