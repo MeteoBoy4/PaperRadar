@@ -181,16 +181,23 @@ class LinuxLiveHost:
 
     def preflight_placement(self, root: Path, *, recover: bool = False) -> None:
         from paper_radar.live_evidence.placement_policy import verify_host_security
+        from paper_radar.live_evidence.preparation_retirement import (
+            FailedPreparationRetirement,
+        )
 
         lifecycle = self._placement_lifecycle(root)
         if lifecycle.sealed is not None:
             verify_host_security(lifecycle.sealed)
-        lifecycle.check(recover=recover)
+        if not FailedPreparationRetirement(root, self.paths).check(recover=recover):
+            lifecycle.check(recover=recover)
 
     def prepare_placement(
         self, root: Path, site: SiteConfiguration, *, recover: bool = False
     ) -> None:
         from paper_radar.live_evidence.placement_policy import native_preflight
+        from paper_radar.live_evidence.preparation_retirement import (
+            FailedPreparationRetirement,
+        )
 
         lifecycle = self._placement_lifecycle(root)
         sealed = lifecycle.sealed
@@ -200,10 +207,42 @@ class LinuxLiveHost:
                 if os.path.lexists(self.paths.ledger / "inbox/placement-target-v1.json")
                 else None
             )
-            lifecycle.prepare(
-                lambda: native_preflight(root, site, sealed, target=target),
-                recover=recover,
-            )
+
+            def preflight() -> None:
+                native_preflight(root, site, sealed, target=target)
+
+            retirement = FailedPreparationRetirement(root, self.paths)
+            if not retirement.prepare(
+                preflight, lambda: self.verify_preparation_idle(site), recover=recover
+            ):
+                lifecycle.prepare(preflight, recover=recover)
+
+    def verify_preparation_idle(self, site: SiteConfiguration) -> None:
+        self.preflight(site)
+        target = self._preflight_target()  # MAIN的实际anchor与project scope必须空闲。
+        for directory in Path("/proc").iterdir():
+            if not directory.name.isdecimal():
+                continue
+            try:
+                if directory.stat().st_uid != site.product_uid:
+                    continue
+                exe = (directory / "exe").resolve(strict=True)
+                if (
+                    int(directory.name) == target.anchor_pid
+                    and exe == self.paths.runtime / "anchor"
+                    and process_identity(target.anchor_pid)[0] == target.anchor_start
+                ):
+                    continue
+                if (
+                    exe.name in {"placement-pre", "placement-post"}
+                    or exe.is_relative_to(self.paths.runtime)
+                    or exe.is_relative_to(self.source)
+                ):
+                    raise ValueError("failed_preparation_process_active")
+            except FileNotFoundError:
+                continue
+            except PermissionError:
+                raise ValueError("failed_preparation_process_unavailable") from None
 
     def _preflight_target(self) -> PlacementTarget:
         target = self._read_target()

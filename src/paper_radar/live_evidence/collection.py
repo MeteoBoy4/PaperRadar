@@ -614,6 +614,11 @@ class ProtectedCollection:
                 self._append(connection, state, fact, now)
                 self._apply(connection, state, fact)
 
+    def is_stopped(self) -> bool:
+        """只读重放全域停止事实;不要求某份计划已经获得批准。"""
+        with self._connection() as connection:
+            return self._replay(connection).stop_reason is not None
+
     def status(self, plan_id: str, *, now: datetime) -> CollectionStatus:
         with self._connection() as connection:
             state = self._replay(connection)

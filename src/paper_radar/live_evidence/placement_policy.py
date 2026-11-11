@@ -102,7 +102,8 @@ def read_placement_policy(
         build = json.loads(members["placement/build.json"])
         security = json.loads(members["placement/security.json"])
         if (
-            build["format_version"] != 1
+            type(build["format_version"]) is not int
+            or build["format_version"] not in {1, 2}
             or build["profiles"]
             != [{"name": name, "attachment": attach} for name, attach in PROFILES]
             or build["raw_abi"] != "v5"
@@ -131,6 +132,28 @@ def read_placement_policy(
                 or not Path(identity["resolved"]).is_absolute()
                 or not isinstance(identity["sha256"], str)
                 or re.fullmatch(r"[0-9a-f]{64}", identity["sha256"]) is None
+            ):
+                raise ValueError
+        if build["format_version"] == 2:
+            true = security["tools"]["/usr/bin/true"]
+            program = json.loads(members["placement/program.json"])
+            expected_exec = {
+                f'  "{program["runtime"]}/python/bin/python3" ix,',
+                f'  "{program["install"]}/node/bin/node" ix,',
+                f'  "{true["resolved"]}" ix,',
+            }
+            source = members["placement/apparmor.source"].decode("ascii")
+            if (
+                build["fixed_true_exec"] != true
+                or re.fullmatch(r"/[A-Za-z0-9_./-]+", true["resolved"]) is None
+                or ".." in Path(true["resolved"]).parts
+                or [line for line in source.splitlines() if line.endswith(" ix,")]
+                != [
+                    f'  "{program["runtime"]}/python/bin/python3" ix,',
+                    f'  "{program["install"]}/node/bin/node" ix,',
+                    f'  "{true["resolved"]}" ix,',
+                ]
+                or len(expected_exec) != 3
             ):
                 raise ValueError
         for field, member in (
@@ -340,6 +363,10 @@ class PlacementPolicyLifecycle:
             ),
             replace=self.journal.exists(),
         )
+
+    def phase(self) -> str | None:
+        """只读认证已拥有的精确side journal;不处理另一个完整身份。"""
+        return self._state()
 
     def check(self, *, recover: bool = False) -> str:
         if self.sealed is None or self.kernel is None:

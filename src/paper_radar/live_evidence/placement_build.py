@@ -237,7 +237,7 @@ profile {PLACEMENT_POST_PROFILE} "{root}/placement-post" {{
   "{target}" r,
   "{program.python}" ix,
   "{program.node}" ix,
-  /usr/bin/true ix,
+  "{_safe_path(Path("/usr/bin/true").resolve(strict=True))}" ix,
   "{install}/**" mr,
   "{lock}" r,
   "{credentials}/" r,
@@ -306,6 +306,13 @@ def freeze_placement(
     )
     directory = staged_root / "placement"
     directory.mkdir()
+    from paper_radar.live_evidence.placement_policy import (
+        freeze_security,
+        read_placement_policy,
+    )
+
+    freeze_security(staged_root)
+    security = json.loads((directory / "security.json").read_bytes())
     if not 0 < len(resolver_bytes) <= 65536 or b"\0" in resolver_bytes:
         raise ValueError("placement_resolver_invalid")
     program_path = staged_root / PROGRAM_PATH
@@ -470,7 +477,8 @@ def freeze_placement(
     manifest.write_text(
         json.dumps(
             {
-                "format_version": 1,
+                "format_version": 2,
+                "fixed_true_exec": security["tools"]["/usr/bin/true"],
                 "tools": identities,
                 "initial_namespaces": {
                     "user": [initial_user.st_dev, initial_user.st_ino],
@@ -524,6 +532,8 @@ def freeze_placement(
         resource.chmod(0o644)
     for stage in ("pre", "post"):
         (staged_root / ("placement-" + stage)).chmod(0o755)
+    if read_placement_policy(staged_root) is None:
+        raise ValueError("placement_seal_incomplete")
     return FrozenPlacement(
         source,
         binary,

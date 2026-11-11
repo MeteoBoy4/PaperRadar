@@ -150,9 +150,11 @@ def build_live_bundle(
     network_input: dict[str, Any],
     upgrade_from: tuple[str, str] | None = None,
     epoch_upgrade: EpochUpgrade | None = None,
+    failed_preparation_runtime: Path | None = None,
 ) -> dict[str, str]:
     """独立Live模式;拒绝在任何输出前检查策略/activation/窗口与输入形状。"""
     import hashlib
+    import json
     import os
     import tarfile
     import tempfile
@@ -311,12 +313,10 @@ def build_live_bundle(
         if placement_enabled:
             from paper_radar.live_evidence.placement_build import freeze_placement
             from paper_radar.live_evidence.placement_policy import (
-                freeze_security,
                 read_placement_policy,
             )
 
             freeze_placement(frozen, site, source_root)
-            freeze_security(frozen)
             if read_placement_policy(frozen) is None:
                 raise ValueError("placement_seal_incomplete")
         collector_sha = hashlib.sha256(
@@ -461,6 +461,15 @@ def build_live_bundle(
                 }
             )
         )
+        if failed_preparation_runtime is not None:
+            from paper_radar.live_evidence.preparation_retirement import (
+                describe_failed_preparation,
+            )
+
+            descriptor = describe_failed_preparation(failed_preparation_runtime, frozen)
+            specification = json.loads((frozen / "deployment.json").read_bytes())
+            specification["failed_preparation"] = descriptor.model_dump(mode="json")
+            (frozen / "deployment.json").write_bytes(json_bytes(specification))
         # source身份与payload分开,不把payload或manifest摘要反向写入自身。
         import subprocess
         import sys
