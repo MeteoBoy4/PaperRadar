@@ -217,7 +217,7 @@ profile {PLACEMENT_PRE_PROFILE} "{root}/placement-pre" {{
   deny change_profile,
   deny ptrace (readby, tracedby),
   signal (receive) peer=unconfined,
-  "{root}/placement-post" Px -> &{PLACEMENT_POST_PROFILE},
+  "{root}/placement-post" Px -> {PLACEMENT_POST_PROFILE},
 }}
 profile {PLACEMENT_POST_PROFILE} "{root}/placement-post" {{
 {directory_rules}

@@ -293,9 +293,34 @@ static void install_namespace_filter(void) {
     need(prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &filter) == 0);
     need(prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) == 1);
 }
+static void traced_preflight(const char *parent_text) {
+    char *end;
+    errno = 0;
+    long parent = strtol(parent_text, &end, 10);
+    need(!errno && !*end && parent > 1 && parent <= INT_MAX);
+    need(prctl(PR_SET_PTRACER, parent, 0, 0, 0) == 0);
+    char ready[64];
+    int length = snprintf(ready, sizeof(ready), "R %ld\n", (long)getpid());
+    need(length > 0 && length < (int)sizeof(ready));
+    need(write(STDOUT_FILENO, ready, (size_t)length) == length);
+    char byte;
+    need(read(STDIN_FILENO, &byte, 1) == 1 && byte == 'G');
+    need(read(STDIN_FILENO, &byte, 1) == 0);
+    char *argv[] = {"/usr/bin/true", NULL};
+    char *env[] = {NULL};
+    execve(argv[0], argv, env);
+    refuse();
+}
 static void arguments(int argc, char **argv) {
     if (argc == 2 && !strcmp(argv[1], "--preflight")) return;
     need(argc == 3);
+    if (!strcmp(argv[1], "--preflight-traced")) {
+        char *end;
+        errno = 0;
+        long parent = strtol(argv[2], &end, 10);
+        need(!errno && !*end && parent > 1 && parent <= INT_MAX);
+        return;
+    }
     const char *prefix = "/tmp/paperradar-placement-";
     size_t start = strlen(prefix), length = strlen(argv[1]);
     need(length == start + 8 + strlen("/handshake") && !strncmp(argv[1], prefix, start));
@@ -318,11 +343,13 @@ int main(int argc, char **argv) {
      * unconfined tracers at exec; that threat remains outside the source guard. */
     untraced();
     arguments(argc, argv);
+    int traced_probe = argc == 3 && !strcmp(argv[1], "--preflight-traced");
+    int normal = argc == 3 && !traced_probe;
     core_zero();
 #ifdef PLACEMENT_PRE
     close_unknown_fds(3);
 #else
-    close_unknown_fds(argc == 2 ? 5 : 6);
+    close_unknown_fds(normal ? 6 : 5);
 #endif
     need(clearenv() == 0);
 #ifdef PLACEMENT_PRE
@@ -333,8 +360,8 @@ int main(int argc, char **argv) {
     int post = protected_file(POST_PATH);
     close(post);
     check_profile(PRE_PROFILE);
-    if (argc == 3) fixed_descriptor(protected_node(INBOX_PATH, 1), 5);
-    resolver_place(argc == 2);
+    if (normal) fixed_descriptor(protected_node(INBOX_PATH, 1), 5);
+    resolver_place(!normal);
     drop_caps();
     char *post_argv[] = {POST_PATH, argv[1], argc == 3 ? argv[2] : NULL, NULL};
     char *env[] = {NULL};
@@ -352,9 +379,11 @@ int main(int argc, char **argv) {
     caps_empty();
     resolver_ready(4);
     close(4);
-    if (argc == 3) protected_inbox();
+    if (normal) protected_inbox();
     need(prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) == 0);
     char *env[] = {NULL};
+    if (!normal) close(3);
+    if (traced_probe) traced_preflight(argv[2]);
     if (argc == 2) {
         char *probe[] = {"/usr/bin/true", NULL};
         execve(probe[0], probe, env);
