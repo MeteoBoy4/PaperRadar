@@ -398,12 +398,12 @@ def test_build_refuses_unreviewed_source_guard_before_freezing_or_output(
     )
     site, _ = derive_site(site)
     source = tmp_path / "source"
-    fixture = source / "tests/fixtures/live-admission-source-guard-v19.json"
+    fixture = source / "tests/fixtures/live-admission-source-guard-v20.json"
     fixture.parent.mkdir(parents=True)
     reviewed = json.loads(
         (
             Path(__file__).resolve().parents[1]
-            / "tests/fixtures/live-admission-source-guard-v19.json"
+            / "tests/fixtures/live-admission-source-guard-v20.json"
         ).read_bytes()
     )
     reviewed["files"] = {"root.py": "0" * 64}
