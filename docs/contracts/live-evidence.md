@@ -403,6 +403,25 @@ owner 审阅并停止相关调用后，安装器在不可逆降权、关闭 root
 stopped、撤销、已预占额度和旧 runtime 均保留。同 SHA 已安装重跑只核现状，
 不重跑已通过案例或初始化谱系；已识别的阶段可续行，部分/未知状态不猜测回滚或清理。
 
+`LinuxLiveHost.unit_properties` 仅接受两个固定项目 unit；anchor 的六个额外执行数组由
+固定 `/usr/bin/busctl --user --json=short get-property` 从 systemd Service 接口读取。
+六行必须各自明确为 `a(sasbttttuii)` 空数组，缺行、重复键、类型/结构异常、非空或工具失败
+继续拒绝；`systemctl show` 省略字段不视为空。FragmentPath、DropInPaths、ExecStart、
+Slice 与软硬 LimitCORE 继续独立核对；`busctl` 纳入封印 `host_tools` 的解析路径与 SHA。
+
+更换字节的 `recover` 仅另接受明确的 `resources` 中断：新包的 `upgrade_from` 精确指向
+pending payload/manifest，原 journal 的 `previous=null`，原 legacy 升级归档、pending
+runtime 和全部已发布资源均逐字核验。旧新 strict β 与七计划均不得有计划登记、回执、
+事件、计划来源、停止标记、部署 epoch 或 target；其他 plan ID 的登记/回执/inbox
+若属于旧新 collector 也拒绝。schema1 只读核原三表及无 v2 事件，
+schema2 重放已有谱系，不在预检初始化或升级。其他 legacy 历史允许保留；旧观察若属于
+pending/新包 observer 则拒绝。普通安装、更早/更晚中断阶段及未知来源不取得此能力。
+固定宿主检查要求无项目 nft 表、管理员 anchor 身份正确且项目 subtree 只有该 anchor。
+核对完成后保留原 journal，记录 `replacing_resources`，封闭旧观察并仅停止已核 anchor；
+核空 subtree 后记录 `resources_stopped`，精确移除已核资源并原样归档 pending runtime，
+随后进入原 `archived` 安装路径。各已记录断点按旧新身份重核后续行，未知字节和其他进程
+均阻断，不停止其他 scope、删除未知 nft 或清空旧历史，不恢复激活。
+
 卸载先封闭当前观察、移除 dispatch，再停止项目 slice，独立核无活进程后移除本包资源。
 恢复重新核实际资源/CG/规则；重启后的 `/run` 或 CG 丢失需要 owner 显式 `recover`，
 不常驻 root 自愈。不恢复旧激活，不改变旧回执/成功时点；新绑定不符原 strict β 来源时，

@@ -407,6 +407,7 @@ def build_live_bundle(
                         }
                         for name in (
                             "/usr/bin/systemctl",
+                            "/usr/bin/busctl",
                             "/usr/bin/loginctl",
                             "/usr/sbin/nft",
                             "/usr/sbin/visudo",
