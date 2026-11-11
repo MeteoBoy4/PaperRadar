@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import ctypes
-import json
+import fcntl
 import math
 import os
+import re
 import signal
 import socket
 import stat
 import struct
 import subprocess
-import sys
 import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -28,7 +28,6 @@ from paper_radar.live_evidence.observation import load_current_observation
 from paper_radar.live_evidence.receipt import WireModel, canonical_bytes
 from paper_radar.live_evidence.types import BindingComponent as B
 from paper_radar.llm.rpc_types import RpcProblem
-from paper_radar.pi_execution import isolation
 from paper_radar.pi_execution.errors import ExecutionError, ExecutionReason
 from paper_radar.pi_execution.process import cleanup_process
 
@@ -128,6 +127,120 @@ def load_placement_target(*, now: datetime | None = None) -> PlacementTarget:
         ) from None
 
 
+def validate_placement_snapshot(
+    target_data: bytes,
+    observation_data: bytes,
+    refresh_data: bytes,
+    *,
+    now: datetime,
+) -> PlacementTarget:
+    """Validate the same root-protected snapshot semantics after native fd handoff."""
+    from paper_radar.live_evidence.observation import CurrentObservation, RefreshStatus
+
+    try:
+        target = PlacementTarget.model_validate_json(target_data)
+        observation = CurrentObservation.model_validate_json(observation_data)
+        refresh = RefreshStatus.model_validate_json(refresh_data)
+        if any(
+            canonical_bytes(model) != raw
+            for model, raw in (
+                (target, target_data),
+                (observation, observation_data),
+                (refresh, refresh_data),
+            )
+        ):
+            raise ExecutionError("placement_handshake_invalid")
+        observation.validate_current(refresh, now=now)
+        if observation.binding[B.IPV4_EGRESS] != target.egress_digest or not {
+            B.IPV4_EGRESS,
+            B.OBSERVER,
+        } <= set(observation.checked_components):
+            raise ExecutionError("placement_mismatch")
+        return target
+    except (ValueError, LedgerError):
+        raise ExecutionError("placement_handshake_invalid") from None
+
+
+def verify_inherited_placement(*, close: bool = False) -> PlacementTarget:
+    """Fresh fixed-name openat through native-pre root-verified inbox fd5.
+
+    Root alone publishes entries in this trusted directory. A new observation
+    inode is normal refresh; it is read fresh and never inherits an old lease.
+    Overflow uid is not treated as proof of root ownership.
+    """
+    from contextlib import suppress
+
+    from paper_radar.live_evidence.ledger import LEDGER_ROOT
+
+    names = (TARGET_FILENAME, "current-observation.json", "observation-refresh.json")
+    try:
+        directory = os.fstat(5)
+        linked_directory = (LEDGER_ROOT / "inbox").lstat()
+        if (
+            not stat.S_ISDIR(directory.st_mode)
+            or directory.st_mode & 0o022
+            or (directory.st_dev, directory.st_ino)
+            != (linked_directory.st_dev, linked_directory.st_ino)
+            or fcntl.fcntl(5, fcntl.F_GETFL) & os.O_ACCMODE != os.O_RDONLY
+        ):
+            raise ExecutionError("placement_handshake_invalid")
+        data = []
+        for name in names:
+            fd = os.open(
+                name,
+                os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK,
+                dir_fd=5,
+            )
+            try:
+                opened = os.fstat(fd)
+                linked = os.stat(name, dir_fd=5, follow_symlinks=False)
+                if (
+                    not stat.S_ISREG(opened.st_mode)
+                    or opened.st_nlink != 1
+                    or opened.st_mode & 0o022
+                    or not 0 < opened.st_size <= 1048576
+                    or (opened.st_dev, opened.st_ino) != (linked.st_dev, linked.st_ino)
+                ):
+                    raise ExecutionError("placement_handshake_invalid")
+                data.append(os.pread(fd, 1048577, 0))
+                after = os.fstat(fd)
+                relinked = os.stat(name, dir_fd=5, follow_symlinks=False)
+                if any(
+                    getattr(opened, key) != getattr(after, key)
+                    for key in (
+                        "st_dev",
+                        "st_ino",
+                        "st_mode",
+                        "st_nlink",
+                        "st_size",
+                        "st_mtime_ns",
+                        "st_ctime_ns",
+                    )
+                ) or (opened.st_dev, opened.st_ino) != (
+                    relinked.st_dev,
+                    relinked.st_ino,
+                ):
+                    raise ExecutionError("placement_handshake_invalid")
+            finally:
+                os.close(fd)
+        if (LEDGER_ROOT / "inbox").lstat().st_ino != directory.st_ino:
+            raise ExecutionError("placement_handshake_invalid")
+        target = validate_placement_snapshot(*data, now=datetime.now(UTC))
+        pid = os.getpid()
+        start, group = _proc(pid)
+        unit = PurePosixPath(group).name
+        if re.fullmatch(r"paperradar-[a-f0-9]{32}\.scope", unit) is None:
+            raise ExecutionError("placement_mismatch")
+        verify_placement(target, pid, start, unit)
+        return target
+    except (OSError, ValueError):
+        raise ExecutionError("placement_handshake_invalid") from None
+    finally:
+        if close:
+            with suppress(OSError):
+                os.close(5)
+
+
 def _proc(pid: int) -> tuple[int, str]:
     # comm can contain spaces and ')'; starttime is field 22.
     fields = (_PROC_ROOT / str(pid) / "stat").read_text().rsplit(")", 1)[1].split()
@@ -220,6 +333,45 @@ class LinuxPlacementPlatform:
     def verify(self, target: PlacementTarget, pid: int, start: int, unit: str) -> None:
         verify_placement(target, pid, start, unit)
 
+    def wrapper_command(self, handshake: str, parent: int) -> tuple[str, ...]:
+        from paper_radar.pi_execution.placement_protocol import RUNTIME_ROOT
+
+        return (str(RUNTIME_ROOT / "placement-pre"), handshake, str(parent))
+
+    def execution_payload(
+        self,
+        argv: tuple[str, ...],
+        *,
+        env: dict[str, str],
+        cwd: Path,
+        install: Path,
+        attempt: Path | None,
+        proxy_port: int | None,
+        pass_fds: tuple[int, ...],
+        target: PlacementTarget,
+    ) -> bytes:
+        from paper_radar.pi_execution.placement_protocol import (
+            encode_execution,
+            load_program,
+        )
+
+        program = load_program()
+        if (target.resolver_view, target.resolver_digest) != (
+            str(program.resolver_view),
+            program.resolver_digest,
+        ):
+            raise ExecutionError("placement_mismatch")
+        return encode_execution(
+            program,
+            argv,
+            env=env,
+            cwd=cwd,
+            install=install,
+            attempt=attempt,
+            proxy_port=proxy_port,
+            pass_fds=pass_fds,
+        )
+
     def spawn(
         self, argv: tuple[str, ...], env: dict[str, str]
     ) -> subprocess.Popen[bytes]:
@@ -285,11 +437,9 @@ class PlacedProcess:
                         "--expand-environment=no",
                         "--slice=" + self.target.slice,
                         "--unit=" + self.unit,
-                        sys.executable,
-                        "-I",
-                        str(Path(__file__).with_name("placement_wrapper.py")),
-                        listener.getsockname(),
-                        str(os.getpid()),
+                        *self._platform.wrapper_command(
+                            listener.getsockname(), os.getpid()
+                        ),
                     ),
                     env,
                 )
@@ -368,26 +518,16 @@ class PlacedProcess:
         try:
             self.recheck()
             # SCM_RIGHTS preserves protection even if systemd-run closes fds.
-            payload = json.dumps(
-                {
-                    "argv": argv,
-                    "env": env,
-                    "auth_metadata_fd_index": (
-                        pass_fds.index(int(env["PAPERRADAR_AUTH_METADATA_FD"]))
-                        if "PAPERRADAR_AUTH_METADATA_FD" in env
-                        else None
-                    ),
-                    "cwd": str(cwd),
-                    "install": str(install),
-                    "attempt": str(attempt) if attempt else None,
-                    "proxy_port": proxy_port,
-                    "resolver_view": self.target.resolver_view,
-                    "resolver_digest": self.target.resolver_digest,
-                    "runtime_paths": [str(path) for path in isolation._RUNTIME_PATHS],
-                }
-            ).encode()
-            if len(payload) > 512 * 1024:
-                raise ExecutionError("placement_handshake_invalid")
+            payload = self._platform.execution_payload(
+                argv,
+                env=env,
+                cwd=cwd,
+                install=install,
+                attempt=attempt,
+                proxy_port=proxy_port,
+                pass_fds=pass_fds,
+                target=self.target,
+            )
             import array
 
             rights = array.array("i", pass_fds)
