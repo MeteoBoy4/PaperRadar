@@ -7,6 +7,7 @@ import json
 import os
 import re
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -415,6 +416,42 @@ def _close_root_descriptors() -> None:
                     raise
 
 
+def _system_bus_directory() -> int:
+    """Keep only the fixed public system bus, with no caller-selected source."""
+    import stat
+
+    flags = os.O_PATH | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+    directory = os.open("/", flags)
+    try:
+        for component in (None, "run", "dbus"):
+            if component is not None:
+                child = os.open(component, flags, dir_fd=directory)
+                os.close(directory)
+                directory = child
+            info = os.fstat(directory)
+            if (
+                not stat.S_ISDIR(info.st_mode)
+                or info.st_uid != 0
+                or stat.S_IMODE(info.st_mode) & 0o022
+            ):
+                raise ValueError("placement_system_bus_identity")
+        socket = os.open(
+            "system_bus_socket",
+            os.O_PATH | os.O_NOFOLLOW | os.O_CLOEXEC,
+            dir_fd=directory,
+        )
+        try:
+            info = os.fstat(socket)
+            if not stat.S_ISSOCK(info.st_mode) or info.st_uid != 0:
+                raise ValueError("placement_system_bus_identity")
+        finally:
+            os.close(socket)
+        return directory
+    except BaseException:
+        os.close(directory)
+        raise
+
+
 def native_preflight(
     root: Path,
     site: SiteConfiguration,
@@ -432,12 +469,16 @@ def native_preflight(
     import ctypes
     import resource
     import signal
+    import sys
+
+    from paper_radar.pi_execution.errors import ExecutionError
 
     if os.geteuid() != 0 or root.resolve() != root:
         raise ValueError("placement_preflight_not_root")
     verify_host_security(sealed)
     pid = os.fork()
     if pid == 0:
+        failure = 120  # Fixed exit status is the only child-to-root diagnostic.
         try:
             signal.alarm(15)
             os.setsid()
@@ -469,7 +510,7 @@ def native_preflight(
                     raise OSError("placement_private_mount")
 
             if libc.unshare(0x00020000) != 0:  # CLONE_NEWNS, never NEWUSER as root.
-                os._exit(125)
+                raise OSError("placement_private_namespace")
             mount(None, "/", None, 0x4000 | 0x40000)  # MS_REC|MS_PRIVATE
             # Preserve the real canonical resolver as an fd before hiding /run.
             resolver_target = Path(sealed.build["resolver_target"])
@@ -482,6 +523,7 @@ def native_preflight(
                 if target is not None
                 else None
             )
+            system_bus_fd = _system_bus_directory() if target is not None else None
             # /usr/libexec and /run are fixed existing root directories. Covering
             # them in this child permits initial installs without host mkdirs.
             mount("tmpfs", "/usr/libexec", "tmpfs", 2 | 4, b"mode=755")
@@ -519,6 +561,14 @@ def native_preflight(
                     4096 | 0x4000,
                 )
                 os.close(user_runtime_fd)
+            if system_bus_fd is not None:
+                system_bus = Path("/run/dbus")
+                system_bus.mkdir(mode=0o755)
+                mount(
+                    "/proc/self/fd/" + str(system_bus_fd), str(system_bus), None, 4096
+                )
+                mount(None, str(system_bus), None, 4096 | 32 | 1 | 2 | 4 | 8)
+                os.close(system_bus_fd)
             # Redirect and close every setup fd while still root. The product
             # Python supervisor never receives an inherited root write handle.
             null = os.open("/dev/null", os.O_RDWR | os.O_CLOEXEC)
@@ -528,28 +578,59 @@ def native_preflight(
                 os.close(null)
             _close_root_descriptors()
             os.chdir("/")
+            failure = 121
             os.setgroups([])
             os.setresgid(site.product_gid, site.product_gid, site.product_gid)
             os.setresuid(site.product_uid, site.product_uid, site.product_uid)
+            failure = 124
             # Pre must enter with NNP0; it and post enforce their own core,
             # label, fd, immutable bytes, maps, capability and syscall checks.
             if libc.prctl(4, 0, 0, 0, 0) != 0:
-                os._exit(125)
+                os._exit(failure)
             if target is not None:
                 from paper_radar.pi_execution.placement_preflight import (
                     run_traced_preflight,
                 )
 
+                failure = 125
                 run_traced_preflight(
                     target, product_uid=site.product_uid, product_gid=site.product_gid
                 )
                 os._exit(0)
             executable = str(RUNTIME_ROOT / "placement-pre")
             os.execve(executable, (executable, "--preflight"), {})
+        except ExecutionError as error:
+            os._exit(
+                {
+                    "placement_unavailable": 122,
+                    "placement_anchor_invalid": 123,
+                    "placement_mismatch": 123,
+                    "placement_handshake_timeout": 126,
+                    "placement_handshake_invalid": 124,
+                    "placement_peer_exited": 124,
+                    "placement_exec_failed": 124,
+                }.get(error.reason, 125)
+            )
         except BaseException:
-            os._exit(125)
+            os._exit(failure)
     _, status = os.waitpid(pid, 0)
     if status != 0:
+        stage, reason = ("预检子进程", "未知拒绝")
+        if os.WIFEXITED(status):
+            stage, reason = {
+                120: ("根挂载与设置", "设置失败"),
+                121: ("永久降权", "身份切换失败"),
+                122: ("产品 manager", "依赖不可用"),
+                123: ("放置身份", "身份不匹配"),
+                124: ("native/scope/trace", "执行链失败"),
+                125: ("native/scope/trace", "未知拒绝"),
+                126: ("native/scope/trace", "握手超时"),
+            }.get(os.WEXITSTATUS(status), (stage, reason))
+        elif os.WIFSIGNALED(status):
+            reason = "超时" if os.WTERMSIG(status) == signal.SIGALRM else "信号终止"
+        # Diagnostic IO must never replace the controlled refusal.
+        with suppress(OSError, ValueError):
+            print(f"放置预检拒绝：阶段={stage}；原因={reason}。", file=sys.stderr)
         raise ValueError("placement_preflight_refused")
     # Changes during the probe cannot be treated as a successful preparation.
     verify_host_security(sealed)
