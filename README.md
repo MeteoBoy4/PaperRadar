@@ -491,7 +491,7 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 [ADR-0026](docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。
 `paper_radar.pi_execution` 提供固定安装保护、宿主专用 OAuth 刷新、独立 attempt 资源与
 Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接口与权限见
-[Pi 执行资源契约](docs/contracts/pi-execution.md)；认证与模型共用锚定用户 scope 和双阶段放置核验，模型领取前只准备阻塞封装；exec 前设置零 core，exec-stop 核身份后才释放认证或 prompt。resolver 只读视图与真实部署适用性仍需独立验证。独立测试范围见
+[Pi 执行资源契约](docs/contracts/pi-execution.md)；认证与模型共用锚定用户 scope 和专用封印放置入口，模型领取前只准备阻塞封装；引导阶段撤权后才进入动态代码，exec-stop 核身份后才释放认证或 prompt。入口、AppArmor 策略和 resolver 视图须审字节部署并核实际加载身份，真实部署适用性仍需独立验证。独立测试范围见
 [#140 独立组合台账](docs/verification/issue-140-pi-delivery.md)。现场隔离与固定 Pi 的剩余验收由 Live 统一承担；
 产品准入证据未被接收时继续阻断。
 带版本的六格登记、共享分项投影，以及独立受保护账本的接收、证据激活、不可逆撤销与恢复见
