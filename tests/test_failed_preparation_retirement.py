@@ -7,6 +7,7 @@ import pytest
 
 from paper_radar.live_evidence import preparation_retirement
 from paper_radar.live_evidence.live_install import json_bytes
+from paper_radar.live_evidence.live_install import publish as publish_record
 from tests.preparation_retirement_support import assert_business_unchanged, case
 
 
@@ -57,12 +58,14 @@ def test_durable_phase_recovery_never_retires_new_policy_twice(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str
 ) -> None:
     model = case(tmp_path, monkeypatch)
-    real_publish = preparation_retirement.publish
+    real_publish = publish_record
     interrupted = False
 
-    def publish(path: Path, raw: bytes, **kwargs: object) -> None:
+    def publish(
+        path: Path, raw: bytes, *, replace: bool = False, mode: int = 0o644
+    ) -> None:
         nonlocal interrupted
-        real_publish(path, raw, **kwargs)
+        real_publish(path, raw, replace=replace, mode=mode)
         matched = (
             path == model.gate.snapshot
             if phase == "snapshot"
@@ -246,7 +249,6 @@ def test_missing_original_or_unknown_retirement_record_never_allows_mutation(
     reason = "runtime_member_identity"
     if target == "old-source":
         (model.old.root / "placement/apparmor.source").write_bytes(b"changed")
-        reason = "placement_seal_identity"
     elif target == "new-source":
         (model.new.root / "entry.py").write_bytes(b"changed")
     elif target == "main":
@@ -300,9 +302,11 @@ def test_owned_marker_write_windows_resume_without_overwriting_original(
     marker = model.old.journal if which == "old" else model.new.journal
     interrupted = False
 
-    def publish(path: Path, raw: bytes, **kwargs: object) -> None:
+    def publish(
+        path: Path, raw: bytes, *, replace: bool = False, mode: int = 0o644
+    ) -> None:
         nonlocal interrupted
-        original(path, raw, **kwargs)
+        original(path, raw, replace=replace, mode=mode)
         if path == marker and json.loads(raw)["phase"] == phase and not interrupted:
             interrupted = True
             raise ValueError("synthetic_marker_interruption")
@@ -375,3 +379,86 @@ def test_stopped_old_collection_refuses_and_preserves_original_budget_and_source
     assert collection.status(plan.plan_id, now=now) == before
     assert ledger.database.read_bytes() == database
     assert model.io.writes == [] and not model.gate.journal.exists()
+
+
+@pytest.mark.parametrize("untrusted", ["symlink", "mode"])
+def test_old_seal_trust_precedes_any_policy_member_or_target_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, untrusted: str
+) -> None:
+    model = case(tmp_path, monkeypatch)
+    member = model.old.root / "placement/apparmor.source"
+    target = tmp_path / "untrusted-target"
+    target.write_bytes(b"must not be opened")
+    if untrusted == "symlink":
+        member.unlink()
+        member.symlink_to(target)
+    else:
+        member.chmod(0o666)
+    reads: list[str] = []
+    original = Path.read_bytes
+
+    def read(path: Path) -> bytes:
+        if path in {member, target}:
+            reads.append("untrusted-member-or-target")
+            raise AssertionError("old protected tree must precede member reads")
+        return original(path)
+
+    def seal_reader(*args: object, **kwargs: object) -> None:
+        reads.append("policy-reader")
+        raise AssertionError("old protected tree must precede policy reader")
+
+    monkeypatch.setattr(Path, "read_bytes", read)
+    monkeypatch.setattr(preparation_retirement, "read_placement_policy", seal_reader)
+    with pytest.raises(ValueError, match=r"^protected_identity$"):
+        model.gate.check()
+    assert reads == [] and model.io.writes == []
+    assert not model.gate.journal.exists() and not model.gate.snapshot.exists()
+
+
+@pytest.mark.parametrize(
+    "malformed", ["null", "integer", "boolean-version", "float-version"]
+)
+def test_retirement_journal_parser_refuses_nonobject_or_nonstrict_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, malformed: str
+) -> None:
+    model = case(tmp_path, monkeypatch)
+    real_publish = publish_record
+
+    def publish(
+        path: Path, raw: bytes, *, replace: bool = False, mode: int = 0o644
+    ) -> None:
+        real_publish(path, raw, replace=replace, mode=mode)
+        if path == model.gate.journal:
+            raise ValueError("synthetic_intent_stop")
+
+    with monkeypatch.context() as crash:
+        crash.setattr(preparation_retirement, "publish", publish)
+        with pytest.raises(ValueError, match=r"^synthetic_intent_stop$"):
+            model.gate.prepare(lambda: None, lambda: None)
+    value = json.loads(model.gate.journal.read_bytes())
+    if malformed == "null":
+        raw = b"null\n"
+    elif malformed == "integer":
+        raw = b"3\n"
+    else:
+        value["format_version"] = True if malformed == "boolean-version" else 1.0
+        raw = json_bytes(value)
+    model.gate.journal.write_bytes(raw)
+    with pytest.raises(ValueError, match=r"^failed_preparation_journal$"):
+        model.gate.check(recover=True)
+    assert model.gate.journal.read_bytes() == raw
+    assert model.io.writes == [] and not model.gate.snapshot.exists()
+    assert_business_unchanged(model)
+
+
+@pytest.mark.parametrize("raw", [b"null\n", b"3\n"])
+def test_main_state_parser_refuses_nonobjects_before_any_retirement_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, raw: bytes
+) -> None:
+    model = case(tmp_path, monkeypatch)
+    model.gate.paths.journal.write_bytes(raw)
+    with pytest.raises(ValueError, match=r"^failed_preparation_main$"):
+        model.gate.check()
+    assert model.gate.paths.journal.read_bytes() == raw
+    assert model.io.writes == []
+    assert not model.gate.journal.exists() and not model.gate.snapshot.exists()

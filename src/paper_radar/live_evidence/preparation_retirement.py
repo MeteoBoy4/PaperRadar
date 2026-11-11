@@ -1,4 +1,7 @@
-"""仅退役已认证、从未安装的失败放置准备;不替换已安装策略或业务状态。"""
+"""仅退役已认证、从未安装的失败放置准备;不替换已安装策略或业务状态。
+
+生产调用由既有installer的collector独占锁序列化;本模块不另建锁协议。
+"""
 
 from __future__ import annotations
 
@@ -88,12 +91,15 @@ def describe_failed_preparation(old: Path, new: Path) -> FailedPreparation:
     new_spec = json.loads((new / "deployment.json").read_bytes())
     epoch = EpochUpgrade.model_validate(new_spec.get("epoch_upgrade"))
     pair = (epoch.payload_sha256, epoch.runtime_manifest_sha256)
+    derived = {"strict_beta", "failed_preparation"}
     if (
         old_spec.get("failed_preparation") is not None
         or old_spec.get("epoch_upgrade") != new_spec.get("epoch_upgrade")
         or old_spec.get("upgrade_from") != list(pair)
         or new_spec.get("upgrade_from") != list(pair)
         or continuity_identity(old) != continuity_identity(new)
+        or {key: value for key, value in old_spec.items() if key not in derived}
+        != {key: value for key, value in new_spec.items() if key not in derived}
     ):
         raise ValueError("failed_preparation_continuity")
     changed = {
@@ -227,11 +233,13 @@ class FailedPreparationRetirement:
         raw = self._read(self.journal)
         try:
             value = json.loads(raw)
-            phase = value.pop("phase")
+            if not isinstance(value, dict):
+                raise ValueError
+            phase = value.get("phase")
             if (
-                phase not in _PHASES
-                or value != self._identity()
-                or json_bytes({**value, "phase": phase}) != raw
+                not isinstance(phase, str)
+                or phase not in _PHASES
+                or json_bytes({**self._identity(), "phase": phase}) != raw
             ):
                 raise ValueError
         except (ValueError, TypeError, KeyError):
@@ -274,10 +282,10 @@ class FailedPreparationRetirement:
         self,
     ) -> tuple[PlacementPolicyLifecycle, PlacementPolicyLifecycle, str | None]:
         assert self.descriptor is not None
-        old, new = self._lifecycles()
+        old_root = _STAGING_ROOT / self.descriptor.payload_sha256 / "runtime"
         for root, payload, manifest in (
             (
-                old.root,
+                old_root,
                 self.descriptor.payload_sha256,
                 self.descriptor.runtime_manifest_sha256,
             ),
@@ -290,6 +298,8 @@ class FailedPreparationRetirement:
                 payload=payload,
                 manifest_digest=manifest,
             )
+        # 新增的旧staged来源先核完整保护树,再允许读取任何policy成员。
+        old, new = self._lifecycles()
         if describe_failed_preparation(old.root, self.staged) != self.descriptor:
             raise ValueError("failed_preparation_source")
         for path in (self.journal, self.snapshot, old.journal, new.journal):
@@ -311,9 +321,13 @@ class FailedPreparationRetirement:
         # prepared 后不再按“失败旧准备”判定MAIN;新安装继续既有生命周期。
         if phase != "prepared":
             raw_state = self._read(self.paths.journal)
-            state = json.loads(raw_state)
+            try:
+                state = json.loads(raw_state)
+            except ValueError:
+                raise ValueError("failed_preparation_main") from None
             if (
-                json_bytes(state) != raw_state
+                not isinstance(state, dict)
+                or json_bytes(state) != raw_state
                 or state.get("phase") != "installed"
                 or [state.get("payload"), state.get("manifest")]
                 != list(self.descriptor.upgrade_from)
@@ -359,9 +373,7 @@ class FailedPreparationRetirement:
                 (self.paths.runtime / "model-manifest.json").read_bytes()
             )
             now = datetime.now(UTC)
-            if ProtectedCollection(ledger).status(
-                manifest.cells[0].plan.plan_id, now=now
-            ).stopped or (
+            if ProtectedCollection(ledger).is_stopped() or (
                 os.path.lexists(normal_review_path(ledger, manifest))
                 and review_normal_refresh(ledger, manifest, now=now).stopped
             ):

@@ -105,3 +105,15 @@ def test_caller_cannot_replace_old_full_manifest_identity_with_selected_members(
     # Candidate可读,但root重读必须仍与已封descriptor的旧完整manifest完全相等。
     with pytest.raises(ValueError, match=r"^runtime_manifest_identity$"):
         model.gate.check()
+
+
+def test_descriptor_preserves_other_deployment_host_tool_inputs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    model = case(tmp_path, monkeypatch)
+    path = model.gate.staged / "deployment.json"
+    spec = json.loads(path.read_bytes())
+    spec["host_tools"]["/usr/bin/busctl"]["sha256"] = "f" * 64
+    path.write_text(json.dumps(spec))
+    with pytest.raises(ValueError, match=r"^failed_preparation_continuity$"):
+        describe_failed_preparation(model.old.root, model.gate.staged)
