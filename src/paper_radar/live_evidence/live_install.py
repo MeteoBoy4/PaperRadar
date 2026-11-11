@@ -18,6 +18,13 @@ from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 
 class LiveHost(Protocol):
     def preflight(self, site: SiteConfiguration) -> None: ...
+    def preflight_placement(self, root: Path, *, recover: bool = False) -> None: ...
+    def prepare_placement(
+        self, root: Path, site: SiteConfiguration, *, recover: bool = False
+    ) -> None: ...
+    def verify_target_preflight(self, root: Path, site: SiteConfiguration) -> None: ...
+    def retire_placement(self, root: Path, *, recover: bool = False) -> None: ...
+    def verify_placement_absent(self, root: Path) -> None: ...
     def ensure_no_table(self) -> None: ...
     def preflight_nft(
         self, site: SiteConfiguration, manifest: ModelManifest
@@ -527,6 +534,7 @@ class LiveDeployment:
             self._checkpoint(state, "resources_stopped")
         host.verify_resources_stopped(site)
         previous._check_resources(absent_ok=True)
+        host.retire_placement(root, recover=True)
         for path in previous._resources():
             path.unlink(missing_ok=True)
         if root == self.paths.runtime:
@@ -599,6 +607,8 @@ class LiveDeployment:
             identity=identity,
             owner_uid=self.owner_uid,
         )
+        # Read-only exact kernel/source checks precede all old journal/history writes.
+        host.preflight_placement(self.staged, recover=recover)
         if state is not None:
             if any(
                 state[key] != identity[key]
@@ -636,7 +646,9 @@ class LiveDeployment:
                         ):
                             raise ValueError("resources_history_identity")
                     else:
-                        publish(history, json_bytes(state))
+                        host.prepare_placement(self.staged, site, recover=recover)
+                        host.prepare_placement(self.staged, site, recover=recover)
+                    publish(history, json_bytes(state))
                     identity["previous"] = state
                     state = identity
                     self._checkpoint(state, "replacing_resources")
@@ -705,6 +717,7 @@ class LiveDeployment:
                     self._check_resources(absent_ok=True)
                     host.preflight(site)
                     host.prepare_recovery(site, manifest)
+                    host.retire_placement(self.paths.runtime, recover=True)
                     self._checkpoint(state, "runtime")
                 else:
                     self._check_resources()
@@ -765,6 +778,7 @@ class LiveDeployment:
             else:
                 self._check_resources(absent_ok=True)
             host.ensure_no_table()
+            host.prepare_placement(self.staged, site, recover=recover)
             for path in (self.paths.ledger, self.paths.ledger / "inbox"):
                 if path.exists():
                     protected(path, self.owner_uid, anchor=self.paths.anchor)
@@ -798,6 +812,7 @@ class LiveDeployment:
                 previous._check_resources(absent_ok=True)
                 host.disable_observation()
                 host.stop_and_remove()
+                host.retire_placement(self.paths.runtime, recover=recover)
                 for path in previous._resources():
                     path.unlink(missing_ok=True)
                 if os.path.lexists(archive):
@@ -879,6 +894,7 @@ class LiveDeployment:
             )
             self._checkpoint(state, "runtime")
         if state["phase"] == "runtime":
+            host.prepare_placement(self.paths.runtime, site, recover=recover)
             self._check_resources(absent_ok=True)
             for path, raw in self._resources().items():
                 if not path.exists():
@@ -897,6 +913,7 @@ class LiveDeployment:
         if state["phase"] == "resources":
             self._check_resources()
             host.configure(site, manifest)
+            host.verify_target_preflight(self.paths.runtime, site)
             self._checkpoint(state, "target")
         if state["phase"] == "target":
             host.verify_installed(site, manifest)
@@ -928,6 +945,7 @@ class LiveDeployment:
             ):
                 raise ValueError("uninstalled_resource_conflict")
             host.verify_absent()
+            host.verify_placement_absent(self.staged)
             return "already_uninstalled"
         if state["phase"] not in {
             "installed",
@@ -950,6 +968,7 @@ class LiveDeployment:
                 payload=state["payload"],
             )
             self._check_resources()
+            host.preflight_placement(self.staged, recover=True)
             self._checkpoint(state, "uninstalling")
         if state["phase"] == "uninstalling":
             host.disable_observation()
@@ -969,8 +988,10 @@ class LiveDeployment:
             self._checkpoint(state, "disabled")
         if state["phase"] == "disabled":
             host.stop_and_remove()
+            host.retire_placement(self.staged, recover=True)
             self._checkpoint(state, "host_removed")
         if state["phase"] == "host_removed":
+            host.verify_placement_absent(self.staged)
             self._check_resources(absent_ok=True)
             for path in self._resources():
                 path.unlink(missing_ok=True)
@@ -1050,9 +1071,11 @@ def installation_main(root: Path, arguments: list[str] | None = None) -> int:
         return 0
     except Exception as error:
         # 原始OSError/工具stderr可能含路径/宿主数据;只公开有限受控原因。
+        from paper_radar.live_evidence.live_apparmor_kernel import AppArmorPolicyError
+
         reason = (
             str(error)
-            if type(error) is ValueError
+            if (type(error) is ValueError or isinstance(error, AppArmorPolicyError))
             and __import__("re").fullmatch("[a-z_]+", str(error))
             else "installation_unavailable"
         )

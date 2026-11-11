@@ -12,7 +12,7 @@ import stat
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from paper_radar.live_evidence.live_install import (
     InstallationPaths,
@@ -41,6 +41,9 @@ from paper_radar.pi_execution.placement import (
     PlacementTarget,
     verify_placement,
 )
+
+if TYPE_CHECKING:
+    from paper_radar.live_evidence.placement_policy import PlacementPolicyLifecycle
 
 
 def process_identity(pid: int) -> tuple[int, str]:
@@ -168,6 +171,67 @@ class LinuxLiveHost:
                     raise ValueError("product_process_active")
             except (FileNotFoundError, PermissionError):
                 continue
+
+    def _placement_lifecycle(self, root: Path) -> PlacementPolicyLifecycle:
+        from paper_radar.live_evidence.placement_policy import PlacementPolicyLifecycle
+
+        return PlacementPolicyLifecycle(
+            root, self.paths.ledger, owner_uid=0, anchor=self.paths.anchor
+        )
+
+    def preflight_placement(self, root: Path, *, recover: bool = False) -> None:
+        from paper_radar.live_evidence.placement_policy import verify_host_security
+
+        lifecycle = self._placement_lifecycle(root)
+        if lifecycle.sealed is not None:
+            verify_host_security(lifecycle.sealed)
+        lifecycle.check(recover=recover)
+
+    def prepare_placement(
+        self, root: Path, site: SiteConfiguration, *, recover: bool = False
+    ) -> None:
+        from paper_radar.live_evidence.placement_policy import native_preflight
+
+        lifecycle = self._placement_lifecycle(root)
+        sealed = lifecycle.sealed
+        if sealed is not None:
+            target = (
+                self._preflight_target()
+                if os.path.lexists(self.paths.ledger / "inbox/placement-target-v1.json")
+                else None
+            )
+            lifecycle.prepare(
+                lambda: native_preflight(root, site, sealed, target=target),
+                recover=recover,
+            )
+
+    def _preflight_target(self) -> PlacementTarget:
+        target = self._read_target()
+        if (
+            target.model_copy(update={"egress_digest": "0" * 64})
+            != self._anchor_target()
+        ):
+            raise ValueError("placement_identity_drift")
+        verify_placement(
+            target, target.anchor_pid, target.anchor_start, "paperradar-anchor.service"
+        )
+        return target
+
+    def verify_target_preflight(self, root: Path, site: SiteConfiguration) -> None:
+        from paper_radar.live_evidence.placement_policy import native_preflight
+
+        self.site = site
+        lifecycle = self._placement_lifecycle(root)
+        sealed = lifecycle.sealed
+        if sealed is not None:
+            lifecycle.verify()
+            native_preflight(root, site, sealed, target=self._preflight_target())
+
+    def retire_placement(self, root: Path, *, recover: bool = False) -> None:
+        self._placement_lifecycle(root).remove(recover=recover)
+
+    def verify_placement_absent(self, root: Path) -> None:
+        self._placement_lifecycle(root).verify_absent()
 
     def _snapshot(self) -> dict[str, Any]:
         return read_nft_snapshot()
@@ -377,6 +441,12 @@ class LinuxLiveHost:
         self, site: SiteConfiguration, manifest: ModelManifest
     ) -> None:
         self.site, self.manifest = site, manifest
+        from paper_radar.live_evidence.placement_policy import verify_host_security
+
+        lifecycle = self._placement_lifecycle(self.paths.runtime)
+        if lifecycle.sealed is not None:
+            verify_host_security(lifecycle.sealed)
+        lifecycle.verify()
         target = self._read_target()
         if (
             target.model_copy(update={"egress_digest": "0" * 64})
@@ -485,8 +555,68 @@ class LinuxLiveHost:
             (self.paths.runtime / "model-manifest.json").read_bytes()
         )
         target_path = self.paths.ledger / "inbox/placement-target-v1.json"
-        target = self._read_target()
+        payload = (self.paths.runtime / "payload.sha256").read_text().strip()
+        import re
+
+        if re.fullmatch(r"[0-9a-f]{64}", payload) is None:
+            raise ValueError("runtime_payload_identity")
+        retirement = self.paths.ledger / (
+            "placement-target-retirement-v1-" + payload + ".json"
+        )
+        retained = None
+        if os.path.lexists(retirement):
+            protected(retirement, 0)
+            info = retirement.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+                or stat.S_IMODE(info.st_mode) != 0o644
+                or info.st_size > 65536
+            ):
+                raise ValueError("target_retirement_identity")
+            retained = retirement.read_bytes()
+            if (
+                canonical_bytes(PlacementTarget.model_validate_json(retained))
+                != retained
+            ):
+                raise ValueError("target_retirement_identity")
+        if os.path.lexists(target_path):
+            target = self._read_target()
+        elif retained is not None:
+            target = PlacementTarget.model_validate_json(retained)
+        else:
+            raise ValueError("target_retirement_missing")
         raw = canonical_bytes(target)
+        archive = target_path.with_name(
+            "placement-target-retired-" + hashlib.sha256(raw).hexdigest() + ".json"
+        )
+        # An existing archive is resumable only when the exact retirement
+        # pointer already authenticated it; never bless a pre-existing object.
+        if os.path.lexists(archive) and retained != raw:
+            raise ValueError("target_archive_conflict")
+        if not os.path.lexists(target_path):
+            protected(archive, 0)
+            if (
+                not stat.S_ISREG(archive.lstat().st_mode)
+                or archive.lstat().st_nlink != 1
+                or stat.S_IMODE(archive.lstat().st_mode) != 0o644
+                or archive.read_bytes() != raw
+            ):
+                raise ValueError("target_retirement_identity")
+        if retained is not None and retained != raw:
+            prior = target_path.with_name(
+                "placement-target-retired-"
+                + hashlib.sha256(retained).hexdigest()
+                + ".json"
+            )
+            protected(prior, 0)
+            if (
+                not stat.S_ISREG(prior.lstat().st_mode)
+                or prior.lstat().st_nlink != 1
+                or stat.S_IMODE(prior.lstat().st_mode) != 0o644
+                or prior.read_bytes() != retained
+            ):
+                raise ValueError("target_retirement_identity")
         tables = json.loads(self._run(("/usr/sbin/nft", "-j", "list", "tables")))
         present = any(
             item.get("table", {}).get("family") == "inet"
@@ -501,6 +631,8 @@ class LinuxLiveHost:
             self.unit_properties("paperradar-anchor.service"),
             require_active=False,
         )
+        if retained != raw:
+            publish(retirement, raw, replace=retained is not None)
         self._run(
             ("/usr/bin/systemctl", "--user", "stop", "paperradar.slice"), product=True
         )
@@ -514,12 +646,25 @@ class LinuxLiveHost:
         if present:
             verify_nft(self._snapshot(), target, manifest.network)
             self._run(("/usr/sbin/nft", "delete", "table", "inet", "paperradar"))
-        archive = target_path.with_name(
-            "placement-target-retired-" + hashlib.sha256(raw).hexdigest() + ".json"
-        )
-        if archive.exists():
-            raise ValueError("target_archive_conflict")
-        target_path.rename(archive)
+        if os.path.lexists(archive):
+            protected(archive, 0)
+            info = archive.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+                or stat.S_IMODE(info.st_mode) != 0o644
+                or archive.read_bytes() != raw
+                or retirement.read_bytes() != raw
+            ):
+                raise ValueError("target_archive_conflict")
+            target_path.unlink(missing_ok=True)
+        else:
+            target_path.rename(archive)
+        descriptor = os.open(target_path.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
 
     def verify_absent(self) -> None:
         self.ensure_no_table()

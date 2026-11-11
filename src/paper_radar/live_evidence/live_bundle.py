@@ -303,6 +303,22 @@ def build_live_bundle(
             '/usr/libexec/paperradar/live-evidence-model-collect "", '
             "/usr/libexec/paperradar/live-evidence-tighten *\n"
         )
+        # Historical source inventories retain their own protocol. A new source
+        # guard must include the native source, so a new build cannot omit it.
+        placement_enabled = (
+            source_root / "src/paper_radar/pi_execution/placement_native.c"
+        ).is_file()
+        if placement_enabled:
+            from paper_radar.live_evidence.placement_build import freeze_placement
+            from paper_radar.live_evidence.placement_policy import (
+                freeze_security,
+                read_placement_policy,
+            )
+
+            freeze_placement(frozen, site, source_root)
+            freeze_security(frozen)
+            if read_placement_policy(frozen) is None:
+                raise ValueError("placement_seal_incomplete")
         collector_sha = hashlib.sha256(
             json_bytes(deployment.file_digests(frozen))
         ).hexdigest()
@@ -427,6 +443,15 @@ def build_live_bundle(
                             "/usr/bin/loginctl",
                             "/usr/sbin/nft",
                             "/usr/sbin/visudo",
+                            *(
+                                (
+                                    "/usr/sbin/apparmor_parser",
+                                    "/usr/bin/true",
+                                    "/usr/bin/systemd-run",
+                                )
+                                if placement_enabled
+                                else ()
+                            ),
                         )
                     },
                     "strict_beta": strict.plan_id,
@@ -465,7 +490,7 @@ def build_live_bundle(
                 for name, sha in deployment.file_digests(
                     source_root / "src/paper_radar"
                 ).items()
-                if name.endswith(".mjs")
+                if name.endswith((".mjs", ".c", ".h"))
             },
             "uv_lock_sha256": hashlib.sha256(
                 (source_root / "uv.lock").read_bytes()

@@ -593,6 +593,20 @@ AUTH_CACHE_BASELINE 递归专用 credentials 全根，按[固定基线 v2](#当�
 
 正常刷新没有本次无秘密事件与提交来源时保持未知；metadata 变化、auth 或模型成功不能证明刷新发生。当前 manifest v2 在既有六格操作中分批观察共享封印认证路径，不增加独立探测；供应商真实到期保持 unknown，具体见[正常认证刷新闭环](#正常认证刷新闭环)。
 
+### 封印放置策略生命周期
+
+新 Live 构建在计算 collector 摘要和计划 ID 前冻结 `placement-pre/post` 静态 ELF、`placement/program.json`、native 源码/生成头、AppArmor 原文、未压缩 compiled binary、固定 ABI/include/config 与构建工具/链接输入；`placement/security.json` 同时绑定实际 parser、`true/systemd-run/systemctl/loginctl` 固定工具和两个已启用的 `apparmor_restrict_unprivileged_unconfined/userns=1`。全部产物进入归档 manifest，C/h 进入 source auxiliary 身份；站点字段仍由原 SiteConfiguration 派生，网络 owner_input 全对象及共同 UTC 窗口不变。
+
+策略只附着固定 runtime 的两个专用入口，源码和 binary 保留在受保护 runtime，不写 `/etc/apparmor.d` 或设置自动启动源码编译。安装器只调用已封印固定 parser 加载确切 binary，并逐字回读 kernel raw_data、独立 raw_sha256、wire raw_abi、enforce、attachment 与整包精确 profile 集合；同名未知、未知 attachment、异字节、额外成员或接口/权限不足全部拒绝。只 add，不 replace。旧 v16 依据已经核验的旧 manifest/inventory 没有这些成员，不能用新代码强制要求旧 profile；新 source inventory 声明 native 而整套成员缺失则拒绝。已有 placement 的完整封印身份变化时当前升级拒绝（包括 policy binary 相同但 native/build/security 不同），不能借卸载或“修复”覆盖策略、重绑 marker；本轮旧 v16 没有 placement，首次迁入不受此后续升级边界影响。
+
+旧 installed 升级先完成 epoch/祖先/账本来源认证及新策略只读冲突检查，在第一次旧 history/journal/业务资源写入前准备新策略。独立 `placement-policy-v1-<binarySHA>.json` 绑定全部封印对象身份和 `preparing/prepared/removing/removed` 阶段；加载或无秘密预检失败保留可识别现场。owner root 的短命子进程只创建私有 mount namespace，将已核 staged runtime 和 resolver 绑定在固定路径并保留用户 bus，撤到产品 UID 后执行固定无秘密 true 预检。`--preflight` 只核 native namespace/map/只读 resolver/cap 撤除/seccomp/profile/NNP 链；已有 root 已核 target 时还调用闭合 `--preflight-traced`，在实际 user scope 核 post 的 R、产品 controller SEIZE、单字节 G/EOF、真正 true exec-stop 和同 PID/start/exe/core0/cap0/NNP/namespace 后 detach。installed 升级有旧 target 时在旧资源首写前做完整 traced 预检；初装/停后先准备策略，实际新 target 建立后、安装完成和 epoch 初始化前强制完整 traced 预检，失败留在 resources 阶段。两个模式都不读取凭据、不运行认证/网络/模型，不领取业务预算、刷新 lease 或生成资格/证据。root fork 子进程先枚举并关闭全部非 stdio 继承句柄；只在 root 私有设置阶段临时持固定已认证 resolver/user-runtime fd，设置完成后关闭全部句柄并重定向 stdio、清环境/安全 cwd，再永久移除 supplementary groups、resgid/resuid；产品 Python controller 从不持 root 可写锁/账本 fd，root 不作为 tracer。编译 initial user/mnt dev/inode 必须与 host 父端实际 self/1 一致，预检子端只允许已认证的私有 mount 差异；resolver 规范目标、现有 sysctl 和工具身份每次重核，不修改系统默认策略。
+
+resources、target、已安装恢复和卸载按同一精确策略接缝核验；先禁观察/派发并停止真实项目进程，再移除本项目 exact policy。默认 partial 拒绝，仅明确 recover 且已有精确 preparing/removing 记录时允许处理已知部分，未知成员保持原样。target 退役以按 payload 命名的受保护本轮 pointer 和逐 targetSHA 归档闭合 rename 前/后中断，不选择“最新”归档；同 SHA 多次显式卸载/恢复保留每轮原 target。旧 history、回执、额度、epoch、intents、撤销与 stopped 均保留，不把退役对象或时钟继承当当前资格。
+
+`verify_installed` 和 root observer 都核同一 loaded policy 的精确身份；root observer 读取全部新成员前先核完整保护链并用 O_NOFOLLOW 的受保护 fd，失信 symlink 不产生目标预读，非法工具描述在封印读取层受控拒绝。新封印成员、工具、sysctl/namespace 和 loaded policy 状态纳入原 `observer` 动态组件，不扩 BindingComponent wire；旧 runtime 的原 observer 闭包保持。稳定缺失/异字节属于 `observation_drift`，持久按依赖收紧；跨读 revision 变化、权限/接口暂不可用只报告 `observation_unavailable`，保留上次快照字节、observed_at 和原证据时点。不能把 temporarily unavailable 当来源失信。
+
+同 SHA 恢复要求全部封印身份和可识别阶段仍成立；若实际 initial namespace 身份改变，需新封印审阅，不能照抄旧 audit 绕过。真实 reboot、profile attach、userns/mount/cap/seccomp、scope/ptrace、认证/模型仍未由离线替身证明。[独立 D1 覆盖](../verification/issue-184-apparmor-lifecycle.md) 不增加既有验收分母。
+
 ### 时钟与独立恢复
 
 水位线取所有 events 中接收、批准、重复／拒绝、激活、撤销、mark、tick 与恢复时间的单调最大值。
@@ -691,6 +705,8 @@ observation_invalid／stale／changed、binding_observation_unavailable、pendin
 `normal-auth-epoch-v1-<firstPlanSHA>.json` 记录首次可信部署完成 UTC、固定 collector 及七 plan IDs；路径名称保留，读取兼容原 format 1 和独立继承 format 2。同 SHA 重跑、卸载／恢复不更改时点。既有安装或执行历史缺该来源时拒绝，不能用 now 补造。部署后72小时是六格目标，评审分开披露目标时点、是否逾期及六格目标结果；不新增准入停止条件，不自动补跑或延长共同授权窗口。原部署 journal／SQLite schema 不变。
 
 已 installed 的升版包须在受封印 `deployment.json.epoch_upgrade` 携带 `EpochUpgrade`：由原 runtime、原 model manifest／首 plan 和原 epoch 原字节派生 SHA、原 UTC、共同窗口、owner 输入和连续身份。`describe_epoch_upgrade` 仅派生候选；安装器在同一 collector 锁内、首次 history／journal／资源写入之前重验旧 runtime、所有 previous／history／archive 祖先、原 epoch、七计划／严格计划窗口、owner 原文及产品／站点／供给／材料身份。只允许启动策略及其派生 collector／plan 身份变化；缺源、冲突或窗口变化拒绝，resources 的无执行史恢复不承担已 installed 升级。
+
+公开 `scripts/seal_live_bundle.py build` 用配对 `--epoch-from-runtime` / `--epoch-source` 只读原 runtime 与原 epoch 原字节，经 `describe_epoch_upgrade` 派生 pair 和 descriptor 后传入构建器。旧 payload/manifest flags 若给出必须与该真实来源相等；仅给旧 pair 而无 epoch 来源在构建阶段拒绝，`derive` 不接受这些升版输入。没有自由 `deployed_at` 参数。该 CLI 新升版路径只处理有原 epoch 的 V2 继承候选；旧 β 入口与无执行史 resources 的专用已审 API 保持独立。候选仍不带 root 信任，安装时重验完整来源。
 
 新计划的 format 2 epoch 将已验证原 UTC 与完整 `inherited_from` 放在单个原子来源中发布；原 epoch 保留原路径和原字节。读取沿有限、无循环谱系逐字核对每代源 SHA、collector、七 plan IDs、UTC 与共同窗口；同字节发布幂等，不同来源／时点拒绝。retiring、archive、runtime、target 中断后每次恢复重新认证相同来源。旧 received、累计额度、失败／stopped、撤销及 intents 只读重放并保留；有 intent cutover 事件而日志缺失时拒绝，不能新 provision。继承时钟不继承资格、认证刷新事件、verified_at 或通过格。[独立部署 metadata Schema](../schemas/live-epoch-upgrade-v1.json) 与 [epoch format 2 Schema](../schemas/normal-auth-epoch-v2.json) 从权威 Pydantic 生成，不加入 receipt v1/v2 的 Frozen Contract。
 

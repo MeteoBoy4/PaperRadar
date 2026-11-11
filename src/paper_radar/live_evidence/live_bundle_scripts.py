@@ -131,10 +131,21 @@ A后返回；B/C首格必须分别有本次真实refresh+原提交且模型成�
 2. resources/paperradar.slice、paperradar-anchor.service、resolv.conf和live_host.py规则生成/验证代码。
    仅inet paperradar，真实slice层级与独立kernfs dev/inode，四固定comment+counter；允许28.0.0.0/8 TCP443、192.168.44.1 UDP/TCP53；其他项目出站drop。
    不改全机resolver、上游路由、sysctl、host capability或常驻root服务。scope逐调用wrapper把core软硬置0，anchor LimitCORE=0。
+   新封印还须逐字审placement-pre/post静态ELF及placement/{{placement_native.c,placement_config.h,program.json,apparmor.source,apparmor.bin,abi-5.0,parser.conf,build.json,security.json}}。
+   两个enforce策略仅附着固定runtime/placement-pre/post；仅pre有userns授权，post拒绝userns/mount/capability/change_profile。
+   build.json列源码、未压缩v5 binary、ABI/include/config、编译/link输入和cc/as/ld/cc1/parser身份；安装只调用固定已核apparmor_parser加载封印binary，不重编译源码，不写/etc/apparmor.d，不replace未知策略。
+   security.json封印两个既有kernel.apparmor_restrict_unprivileged_{{unconfined,userns}}=1及parser/true/systemd-run/systemctl/loginctl工具身份；安装及每次观察重读，任何不同拒绝，绝不写sysctl。
+   编译initial user/mnt namespace dev/inode必须与宿主当前/初始namespace相符；resolver规范目标必须与已审build相符，不复制旧audit身份。
+   在旧业务资源改变前先精确核新policy冲突，再记录placement-policy-v1-<binarySHA>.json并加载回读；root短命私有MNT只读bind staged runtime及resolver，保留用户bus，以产品uid监督固定true预检。
+   --preflight只核namespace/map/只读resolver/cap撤除/seccomp/profile/NNP/true链；已有root已核target时还以闭合--preflight-traced核实际user scope、post的R→SEIZE→G/EOF、真正true exec-stop及同PID/start/exe/cap0/core0/NNP/namespace后detach。
+   installed升级有旧target时在旧资源首写前做完整预检；初装或停后先准备策略，实际新target建立后、安装完成/epoch初始化前必须再做完整traced预检，失败保持resources现场。两种模式都不读凭据、不联网，不领取资格/额度或生成模型通过证据。
+   拒绝码包括placement_seal_incomplete/identity、placement_namespace_identity、placement_sysctl_identity/unavailable、placement_tool_identity、placement_resolver_target、placement_preflight_refused及apparmor_*精确冲突/回读原因。
+   预检失败保留preparing现场；partial只在明确recover且已有精确准备/移除记录时处理，未知资源保持原样。已有placement完整封印身份变化时拒绝，不借卸载重绑marker；旧v16无placement可首次迁入。
 3. network-owner-confirmation.json（每计划适用确认原文与七plan_ids）、plan.json、plans/七计划、model-manifest.json、materials/六格完整纯编译合成材料。
 4. wrappers/零参数collect/refresh/model-collect与精确sudoers；owner与tighten不放宽派发权限。
 5. legacy升级身份只作候选，实际root入口逐字核旧payload/manifest、完整成员与三个入口/sudoers后原样归档。
    本地候选版本不代表实际已部署；任一不符拒绝，不覆盖已有归档。保留旧runtime、账本、intents、原回执、撤销、失败/stopped、额度和新状态journal。
+   已installed的v2跨计划升级还核deployment.epoch_upgrade原来源完整链和原epoch字节；新epoch只继承原UTC与72h目标，不重新计时、不继承资格、不改网络owner_input全对象/原文或共同窗口。
 6. deployment.json若有cache_migration，先核metadata预期。停止产品业务/其他认证/collector后，在产品uid子进程中以RENAME_NOREPLACE将旧cache迁到凭据根同级辅助归档。
    仅lstat比较，不列cache目录或读正文；不删、不复制、不覆盖未知目标；同FS迁移失败即保留并停止。
 
@@ -171,8 +182,10 @@ sudo /usr/libexec/paperradar/live-evidence-model-collect
 ```
 
 卸载先使观察不可读、关闭派发入口，再停止项目slice并核无活进程后移除本包精确规则/unit/resolver/入口/runtime；
-历史/账本/额度/intents/归档/stopped全部保留。恢复重核manager/资源/实际新CG与规则，不恢复旧激活或清历史。
+历史/账本/额度/intents/归档/stopped全部保留。先确认真实项目进程停止，再按精确已核binary移除本项目两profile，不动其他profile；缺部分只凭本轮受保护记录恢复。
+placement-target-retirement-v1-<payloadSHA>.json仅指向本轮精确retired target，保留逐targetSHA归档；不能把旧target当当前资格，多次同SHA恢复也不清历史。
+恢复重核manager/资源/实际新CG与规则并显式重载精确binary，不恢复旧激活或清历史。
 新当前绑定与原strictβ来源不符时模型仍拒绝，需要新的审阅计划/包取得新站点来源，不能改写旧回执。
-重启后/run及CG改变导致暂不可执行；需所有者显式同SHA恢复，不能自动自愈或从旧观察续期。
+重启后/run及CG可能改变；同SHA恢复只在全部身份仍相符且阶段可识别时适用。实际initial namespace身份若变则拒绝并需新封印审阅；实际reboot行为未验，不能自动自愈或从旧观察续期。
 本包仅本地构建，真实OS/隔离/userns/ptrace/Apport分支/core对照/网络/认证/模型/receive/激活均未验证。
 """
