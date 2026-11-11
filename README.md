@@ -445,6 +445,8 @@ uv run --offline --locked paper-radar pi supply gc --execute <plan_id> \
 uv run --offline --locked python scripts/seal_live_bundle.py --help
 ```
 
+固定 true 预检使用同次封印的规范工具路径；明确指定原失败 runtime 时可封印仅限未安装 preparing 准备的退役描述，原失败记录与业务来源保留。详细条件见[放置策略生命周期](docs/contracts/live-evidence.md#封印放置策略生命周期)。
+
 归档及每个成员均有精确 SHA；日期/网络 pending 时安装继续拒绝。新包不自动 receive 或激活，
 升级/同 SHA 重跑/卸载/显式恢复保留历史与累计额度。流程与现场边界见
 [Live 封印审阅包](docs/contracts/live-evidence.md#live-封印审阅包)。

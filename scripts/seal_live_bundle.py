@@ -83,6 +83,11 @@ def main() -> int:
         type=Path,
         help="配对的原部署epoch原字节文件；沿用原UTC，不接受手抄deployed_at。",
     )
+    parser.add_argument(
+        "--failed-preparation-runtime",
+        type=Path,
+        help="build时明确只读原失败preparing的封印runtime；仅派生有限退休描述，部署时重新认证。",
+    )
     args = parser.parse_args()
     from paper_radar.live_evidence.live_bundle import (
         BundleInputError,
@@ -104,7 +109,10 @@ def main() -> int:
             else None
         )
         if args.action == "derive" and (
-            args.epoch_from_runtime or args.epoch_source or explicit_pair
+            args.epoch_from_runtime
+            or args.epoch_source
+            or explicit_pair
+            or args.failed_preparation_runtime
         ):
             raise ValueError("epoch_upgrade_build_only")
         upgrade_from, epoch_upgrade = read_epoch_candidate(
@@ -155,6 +163,7 @@ def main() -> int:
             network_input=json.loads(args.network.read_bytes()),
             upgrade_from=upgrade_from,
             epoch_upgrade=epoch_upgrade,
+            failed_preparation_runtime=args.failed_preparation_runtime,
         )
         for name, sha in hashes.items():
             print(f"{sha}  {name}")
