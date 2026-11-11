@@ -1,0 +1,367 @@
+{
+  "nftables": [
+    {
+      "table": {
+        "family": "inet",
+        "name": "paperradar",
+        "handle": 1
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "paperradar",
+        "name": "output",
+        "handle": 2,
+        "type": "filter",
+        "hook": "output",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "paperradar",
+        "name": "project",
+        "handle": 3
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "paperradar",
+        "chain": "output",
+        "handle": 4,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "socket": {
+                  "key": "cgroupv2"
+                }
+              },
+              "right": "user.slice/user-1000.slice/user@1000.service/paperradar.slice"
+            }
+          },
+          {
+            "jump": {
+              "target": "project"
+            }
+          }
+        ],
+        "comment": "paperradar-placement-v1"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "paperradar",
+        "chain": "project",
+        "handle": 5,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": "192.0.2.1"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 443
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "drop": null
+          }
+        ],
+        "comment": "paperradar-negative-outside-tcp443"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "paperradar",
+        "chain": "project",
+        "handle": 6,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": "192.0.2.2"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "udp",
+                  "field": "dport"
+                }
+              },
+              "right": 53
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "drop": null
+          }
+        ],
+        "comment": "paperradar-negative-nonrouter-udp53"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "paperradar",
+        "chain": "project",
+        "handle": 7,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": "192.0.2.2"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 53
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "drop": null
+          }
+        ],
+        "comment": "paperradar-negative-nonrouter-tcp53"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "paperradar",
+        "chain": "project",
+        "handle": 8,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": "192.0.2.1"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "udp",
+                  "field": "dport"
+                }
+              },
+              "right": 443
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "drop": null
+          }
+        ],
+        "comment": "paperradar-negative-udp443"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "paperradar",
+        "chain": "project",
+        "handle": 9,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": {
+                "prefix": {
+                  "addr": "28.0.0.0",
+                  "len": 8
+                }
+              }
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 443
+            }
+          },
+          {
+            "accept": null
+          }
+        ],
+        "comment": "paperradar-pool-tls"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "paperradar",
+        "chain": "project",
+        "handle": 10,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": "192.168.44.1"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "udp",
+                  "field": "dport"
+                }
+              },
+              "right": 53
+            }
+          },
+          {
+            "accept": null
+          }
+        ],
+        "comment": "paperradar-router-udp53"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "paperradar",
+        "chain": "project",
+        "handle": 11,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": "192.168.44.1"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 53
+            }
+          },
+          {
+            "accept": null
+          }
+        ],
+        "comment": "paperradar-router-tcp53"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "paperradar",
+        "chain": "project",
+        "handle": 12,
+        "expr": [
+          {
+            "drop": null
+          }
+        ],
+        "comment": "paperradar-deny-remainder"
+      }
+    }
+  ]
+}

@@ -499,7 +499,9 @@ Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接
 `show` 查询回执，`show --plan-id <ID>` 查询批准计划；v2 同时展示 root 累计额度、失败链、熔断与下一动作。
 固定零参数模型采集入口执行封印六格与四个 IPv4 对照，只写受保护完成历史／inbox，owner 仍独立 receive／逐格激活。新 Live 封印模式安装这些固定入口，详见[固定模型采集闭环](docs/contracts/live-evidence.md#固定模型采集闭环)。
 封印安装器显式核对 anchor 的空执行数组，并提供仅针对已核、未执行 `resources` 中断的
-新包 `recover` 替换；条件与拒绝边界见同一契约，不继承旧策略资格。
+新包 `recover` 替换；完整已核 resources 谱系按原史恢复，固定 native nft 在独立网络
+namespace 预检及宿主 dry-run 通过后才替换旧资源，实际 level 由代际一致的双视图核验。
+条件与拒绝边界见同一契约，不继承旧策略资格。
 Live 采集使用跨计划固定域的 40 次联网／40 次 prompt 预占，不退款；普通失败按三次／六轮规则停止，
 安全失败首次停止。规则与续跑来源见 [v2 契约](docs/contracts/live-evidence.md#v2-采集额度失败类与续跑)。帮助纯本地。
 activate 展示完整脱敏回执并要求手输短 ID；确认后由固定封印采集器刷新观察，审核内容相同才激活。

@@ -4,18 +4,19 @@ from __future__ import annotations
 
 import fcntl
 import hashlib
-import json
 import os
 import stat
 import subprocess
 import sys
-import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
 from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
+from paper_radar.live_evidence.nft_rules import (
+    stable_nft_snapshot as stable_nft_snapshot,
+)
 from paper_radar.live_evidence.observation import (
     CurrentObservation,
     load_refresh_status,
@@ -78,75 +79,13 @@ def observer_identity(root: Path, ledger: EvidenceLedger) -> str:
 
 
 def read_nft_snapshot() -> dict[str, object]:
-    """零参数固定只读命令;输出不上 stdout、不进入历史正文。"""
+    """固定双实际视图;安装、观察与 counter 共用同一读取。"""
+    from paper_radar.live_evidence.nft_rules import read_nft_snapshot as read_actual
 
-    def query(argv: tuple[str, ...]) -> tuple[int, dict[str, object]]:
-        with tempfile.TemporaryFile() as output:
-            try:
-                result = subprocess.run(
-                    argv,
-                    stdin=subprocess.DEVNULL,
-                    stdout=output,
-                    stderr=subprocess.DEVNULL,
-                    env={},
-                    timeout=5,
-                    check=False,
-                )
-                if output.tell() > 1024 * 1024:
-                    raise LedgerError("observation_unavailable")
-                output.seek(0)
-                raw = output.read()
-                if not raw and result.returncode == 0:
-                    raise LedgerError("observation_unavailable")
-                value = json.loads(raw) if raw else {"nftables": []}
-            except (OSError, ValueError, subprocess.SubprocessError):
-                raise LedgerError("observation_unavailable") from None
-        if not isinstance(value, dict) or not isinstance(value.get("nftables"), list):
-            raise LedgerError("observation_unavailable")
-        return result.returncode, value
-
-    result, value = query(
-        ("/usr/sbin/nft", "-j", "list", "table", "inet", "paperradar")
-    )
-    if result == 0:
-        return value
-    # 第二个固定只读查询能确认表已丢失;权限/工具/原因不明仍只是临时不可用。
-    result, tables = query(("/usr/sbin/nft", "-j", "list", "tables"))
-    rows = tables["nftables"]
-    if not isinstance(rows, list):
-        raise LedgerError("observation_unavailable")
-    if result == 0 and not any(
-        isinstance(row, dict)
-        and isinstance(row.get("table"), dict)
-        and row["table"].get("family") == "inet"
-        and row["table"].get("name") == "paperradar"
-        for row in rows
-    ):
-        return {"nftables": []}
-    raise LedgerError("observation_unavailable")
-
-
-def stable_nft_snapshot(value: object) -> object:
-    if isinstance(value, dict):
-        return {
-            key: (
-                {
-                    field: stable_nft_snapshot(content)
-                    for field, content in item.items()
-                    if field not in {"packets", "bytes"}
-                }
-                if key == "counter" and isinstance(item, dict)
-                else stable_nft_snapshot(item)
-            )
-            for key, item in value.items()
-        }
-    if isinstance(value, list):
-        return [
-            stable_nft_snapshot(item)
-            for item in value
-            if not (isinstance(item, dict) and set(item) == {"metainfo"})
-        ]
-    return value
+    try:
+        return read_actual()
+    except ValueError:
+        raise LedgerError("observation_unavailable") from None
 
 
 def egress_identity(snapshot: dict[str, object], target: PlacementTarget) -> str:
