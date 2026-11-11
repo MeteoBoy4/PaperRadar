@@ -168,7 +168,7 @@ def build_live_bundle(
     from paper_radar.live_evidence.model_manifest import (
         NEGATIVES,
         USES,
-        ModelManifest,
+        ModelManifestV2,
         NetworkConfiguration,
     )
     from paper_radar.live_evidence.receipt import (
@@ -369,8 +369,8 @@ def build_live_bundle(
                 "ends_at": end,
             }
         )
-        manifest = ModelManifest(
-            format_version=1,
+        manifest = ModelManifestV2(
+            format_version=2,
             collector_sha256=collector_sha,
             site_plan_id=strict.plan_id,
             site_plan_sha256=content_sha256(strict),
@@ -413,7 +413,9 @@ def build_live_bundle(
                         )
                     },
                     "strict_beta": strict.plan_id,
-                    "natural_refresh": "unknown_stop_gate",
+                    "natural_refresh": (
+                        "normal-auth-refresh-v1; not_assessed until live events"
+                    ),
                 }
             )
         )
@@ -430,7 +432,7 @@ def build_live_bundle(
             ).stdout.strip()
 
         identity = {
-            "format_version": 2,
+            "format_version": 3,
             "git_head": git("rev-parse", "HEAD"),
             "git_tree": git("rev-parse", "HEAD^{tree}"),
             "git_status": git("status", "--porcelain"),
@@ -440,6 +442,13 @@ def build_live_bundle(
                     source_root / "src/paper_radar"
                 ).items()
                 if name.endswith(".py")
+            },
+            "source_auxiliary_sha256": {
+                name: sha
+                for name, sha in deployment.file_digests(
+                    source_root / "src/paper_radar"
+                ).items()
+                if name.endswith(".mjs")
             },
             "uv_lock_sha256": hashlib.sha256(
                 (source_root / "uv.lock").read_bytes()

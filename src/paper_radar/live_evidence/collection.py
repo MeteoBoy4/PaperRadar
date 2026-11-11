@@ -587,6 +587,12 @@ class ProtectedCollection:
                     return receipt
             raise LedgerError("ledger_untrusted")
 
+    def has_plan_history(self, plan_ids: frozenset[str]) -> bool:
+        """只读已核谱系;包含未完成/已取消轮,不能据缺receipt补造部署时点。"""
+        with self._connection() as connection:
+            state = self._replay(connection)
+            return any(run.plan_id in plan_ids for run in state.rounds.values())
+
     def completed_receipts(self) -> tuple[EvidenceReceiptV2, ...]:
         """受保护完成历史;不含未完成轮或调用方提供的 inbox 候选。"""
         with self._connection() as connection:

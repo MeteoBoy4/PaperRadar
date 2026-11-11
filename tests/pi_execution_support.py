@@ -48,7 +48,7 @@ PEER = """
 import json, os, sys, time
 from pathlib import Path
 args = sys.argv[1:]
-if args[:2] == ['auth', 'print-bearer-token']:
+if not args:
     agent = Path(os.environ['PI_CODING_AGENT_DIR'])
     config = json.loads((agent / 'auth.json').read_text())
     (agent / 'auth-observed.json').write_text(json.dumps({
@@ -59,6 +59,13 @@ if args[:2] == ['auth', 'print-bearer-token']:
     if config.get('mode') == 'failure':
         print(config['token'], file=sys.stderr)
         raise SystemExit(1)
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    os.write(int(os.environ['PAPERRADAR_AUTH_METADATA_FD']), json.dumps({
+        'format_version': 1, 'source_id': 'pi-auth-refresh-1.4.0-v1',
+        'pid': os.getpid(), 'started_at': now, 'completed_at': now,
+        'refresh_called': False,
+    }).encode())
     print(config['token'])
 else:
     agent = Path(os.environ['PI_CODING_AGENT_DIR'])
@@ -117,6 +124,9 @@ def launch_inputs(
 ) -> tuple[Path, CallDescription, ExecutionRoots, Path, Path]:
     monkeypatch.setattr(pi_supply_support, "PI", "1.4.0")
     source = pi_supply_support.inputs(root)
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.auth.auth_entry", lambda install: install.pi
+    )
     (root / "data").mkdir(exist_ok=True)
     (root / "data/blob").write_text("business blob sentinel")
     (root / "publisher-secret").write_text("publisher sentinel")

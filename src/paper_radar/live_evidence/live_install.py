@@ -11,7 +11,8 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Protocol
 
-from paper_radar.live_evidence.model_manifest import ModelManifest
+from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerTrust
+from paper_radar.live_evidence.model_manifest import ModelManifest, parse_manifest
 from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 
 
@@ -272,7 +273,6 @@ class LiveDeployment:
                 raise ValueError("deployment_resource_identity")
 
     def install(self, *, recover: bool = False) -> str:
-        from paper_radar.live_evidence.model_manifest import ModelManifest
         from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 
         host = self.host
@@ -289,9 +289,7 @@ class LiveDeployment:
         site = SiteConfiguration.model_validate_json(
             (self.staged / "site.json").read_bytes()
         )
-        manifest = ModelManifest.model_validate_json(
-            (self.staged / "model-manifest.json").read_bytes()
-        )
+        manifest = parse_manifest((self.staged / "model-manifest.json").read_bytes())
         confirmation = json.loads(
             (self.staged / "network-owner-confirmation.json").read_bytes()
         )
@@ -349,7 +347,7 @@ class LiveDeployment:
                 old_site = SiteConfiguration.model_validate_json(
                     (self.paths.runtime / "site.json").read_bytes()
                 )
-                old_manifest = ModelManifest.model_validate_json(
+                old_manifest = parse_manifest(
                     (self.paths.runtime / "model-manifest.json").read_bytes()
                 )
                 host.preflight(site)
@@ -366,6 +364,20 @@ class LiveDeployment:
                 identity["previous"] = state
                 state = identity
                 self._checkpoint(state, "retiring")
+            if state["phase"] in {"installed", "uninstalled"}:
+                from paper_radar.live_evidence.model_manifest import ModelManifestV2
+                from paper_radar.live_evidence.normal_auth_refresh import read_epoch
+
+                if isinstance(manifest, ModelManifestV2):
+                    read_epoch(
+                        EvidenceLedger(
+                            self.paths.ledger,
+                            trust=LedgerTrust(
+                                owner_uid=self.owner_uid, anchor=self.paths.anchor
+                            ),
+                        ),
+                        manifest,
+                    )
             if state["phase"] == "installed":
                 verify_tree(
                     self.paths.runtime,
@@ -569,6 +581,18 @@ class LiveDeployment:
         if state["phase"] == "target":
             host.verify_installed(site, manifest)
             host.initialize_plans(self.paths.runtime, site, manifest)
+            from paper_radar.live_evidence.normal_auth_refresh import initialize_epoch
+
+            initialize_epoch(
+                EvidenceLedger(
+                    self.paths.ledger,
+                    trust=LedgerTrust(
+                        owner_uid=self.owner_uid, anchor=self.paths.anchor
+                    ),
+                ),
+                manifest,
+                now=datetime.now(UTC),
+            )
             self._checkpoint(state, "installed")
         return "installed"
 

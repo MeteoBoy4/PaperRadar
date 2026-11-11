@@ -1,6 +1,6 @@
 # 接受有界请求可观测性，以 Pi token 报告计量用量预算
 
-状态：已接受；日期：2026-11-07；依据：[#167](https://github.com/MeteoBoy4/PaperRadar/issues/167) 所有者 H4 计数终局裁决；补充／收窄 [ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md)、[ADR-0046](0046-consolidate-pi-readiness-under-live.md)。
+状态：已接受；日期：2026-11-07；依据：[#167](https://github.com/MeteoBoy4/PaperRadar/issues/167) 所有者 H4 计数终局裁决；补充／收窄 [ADR-0026](0026-control-pi-through-a-bounded-rpc-adapter.md)、[ADR-0046](0046-consolidate-pi-readiness-under-live.md)。 认证事件证明来源与正常刷新语义由 [ADR-0063](0063-observe-normal-oauth-refresh-in-product-process.md) 补充。
 
 固定 Pi 的一次 prompt、认证 CLI、连接和 packet 不能证明底层实际请求数；隐藏重试、预热与刷新没有完整独立计数。为了取得精确数而引入观察 loader、新启动策略或代理，会增加运行时与隐私边界的成本。接受按实际可观察来源声明请求数的近似下界及剩余 unknown 范围，不将该下界当精确请求总数、供应商账单或“没有额外请求”的证明。请求层、来源和适用窗口分别记录；不可观察项保留 unknown，不通过零值或其他层的计数补齐。
 

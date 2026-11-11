@@ -24,6 +24,7 @@ from paper_radar.live_evidence.model_manifest import (
     NEGATIVES,
     ModelManifest,
     NetworkConfiguration,
+    parse_manifest,
 )
 from paper_radar.live_evidence.receipt import ApprovedPlan, canonical_bytes
 from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
@@ -501,7 +502,7 @@ class LinuxLiveHost:
         from paper_radar.live_evidence.sealed_runtime import _read_configuration
 
         self.site = _read_configuration(self.paths.runtime)
-        manifest = ModelManifest.model_validate_json(
+        manifest = parse_manifest(
             (self.paths.runtime / "model-manifest.json").read_bytes()
         )
         target_path = self.paths.ledger / "inbox/placement-target-v1.json"

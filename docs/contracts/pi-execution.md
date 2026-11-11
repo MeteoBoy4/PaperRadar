@@ -67,7 +67,7 @@ pre-exec中更改，不修改调用方进程限额。
 缺少现场证据时普通执行仍阻断，合成Python对端不构成真实Pi/Node准入。
 
 
-### 启动策略 `pi-launch-1.4.0-v8`
+### 启动策略 `pi-launch-1.4.0-v9`
 
 模型进程固定 argv：
 
@@ -112,27 +112,29 @@ pre-exec中更改，不修改调用方进程限额。
 首批只支持 `provider=openai`、`auth_mode=chatgpt_subscription`、
 `credential_source=owner_provisioned_dir`。
 凭据目录必须显式提供、为当前 uid 所有的 0700 普通目录、路径组件无符号链接，位于各业务根之外；
-`auth.json` 必须是当前 uid 的普通文件。PaperRadar 不解析其内容，Pi 自行维护 OAuth 状态。
+`auth.json` 必须是当前 uid 的普通文件。Pi 原默认存储维护 OAuth 状态；封印产品认证进程仅从公开 API 回调检查到期元数据，其余 credential 不透明透传。
 不提供 API key、legacy、其他 provider、云环境凭据、`!command` 或自定义 models headers 路线。
 
-宿主用同一个受保护的固定入口调用：
+正式准备与 collector 共用受保护的固定入口：
 
 ```text
-<absolute-node> <absolute-pi-entry> auth print-bearer-token
---provider openai --min-expiry <ceil(attempt-timeout)+600>s
+<absolute-supply-node> <sealed-runtime>/paper_radar/pi_execution/auth_helper.mjs
 ```
 
-这是 `pi-launch-1.4.0-v8` 登记的独立入口形状；供给 Node 身份来自 manifest。
-依据 Pi 1.4.0 `docs/cli.md`「Authentication commands」；实际可用性仍需 Live 证据，
-不能由 install_check 或这份源码/文档推导证明。
-宿主 env 仅含 `PI_CODING_AGENT_DIR`、版本检查/遥测关闭、固定 locale/PATH 及独占受控临时根中的 HOME/TMPDIR；
+固定 argv 无额外参数。入口按该固定安装 `package.exports["."].import` 解析公开入口，核版本、导出形状及已审静态源码摘要；不使用裸包搜索、私有 deep import、loader 或替换 provider。`ModelRuntime.create` 使用所选持久根的 `auth.json`、`modelsPath:null`、`refreshOnCreate:false`、`allowModelNetwork:false`，复用原默认存储；会加载内置静态 catalog，不刷新模型目录或创建模型会话。保留原 CLI 的一次公开 `listCredentials` OAuth 类型核对，拒绝 API-key／`!command` 路线后仅调用一次 `getAuth('openai')`。
+
+本次实例的公开 `provider.auth.oauth.refresh` 包装在原 CredentialStore 锁内观察原 credential 的到期元数据，完整对象与原 signal 原样透传原 refresh。最低有效期仍是 `(ceil(attempt_timeout)+600)*1000` 毫秒。`refresh_called`、`refresh_succeeded` 来自真实回调；仅回调成功且整个 `getAuth` 成功后，按已固定具体 FileAuthStorageBackend 写错会抛出的实现记录 `store_committed=true`。写错、取消、短有效期或 `toAuth` 后置失败均保守未知；竞争跳过时本次 `refresh_called=false`，需要刷新与到期事实保持未知，不认领他人提交。
+
+`auth-refresh-metadata` v1 固定字段为版本／源码策略 ID、pid、开始／完成／刷新 UTC 和五个 bool/unknown 事实。独立 metadata FD 经原放置握手的 `SCM_RIGHTS` 映射；Python 严格拒绝额外字段、错误类型、来源 ID、pid 或时序。token stdout 仅产品父进程解析；root 仅接 v2 worker 元数据及其既有预占绑定，不继承 token FD。错误正文始终丢弃。Pi 存储阈值到期与供应商真实到期分开；后者始终 unknown，正常提前刷新满足 [ADR-0063](../adr/0063-observe-normal-oauth-refresh-in-product-process.md) 的已决口径。
+
+宿主 env 仅含 `PI_CODING_AGENT_DIR`、版本检查/遥测关闭、固定 locale/PATH、独占临时 HOME/TMPDIR，以及产品父进程构造的固定安装路径、原 attempt 超时与 metadata FD；不继承用户变量。这些内部参数不是外部 CLI 或 root 任意脚本入口。
 临时根为 `/tmp/paper-radar-auth-*`，根与 home/tmp 均 0700，位于业务／配置／材料／安装和持久凭据根之外。
 helper 成功、拒绝、超时或异常退出后先终止进程，再删除并核验整个临时根；删除不完整以 `cleanup_failed` 拒绝模型准备。
 compile cache 因此落在临时资源中，模型不会继承 helper 的 HOME/TMPDIR，持久认证根仍不可读。
 不传 `--offline` 或 `PI_OFFLINE`，不继承宿主 provider/代理变量，不启动模型会话。
 stdout 仅解析 token，stderr 原文丢弃；合计输出上限 64 KiB，刷新有限超时，所有退出路径有界清组。
 非零、超时、空值、非法字符、多行或 `sk-` 前缀均领取前拒绝；声明决定模式，不能嗅探后改选认证模式。
-`--min-expiry` 至少覆盖 attempt 超时再加 600 秒余量。
+原最低有效期至少覆盖 attempt 超时再加 600 秒余量。
 
 沙箱只得到 OPENAI_API_KEY，不得到凭据目录、refresh token、auth 文件或刷新入口权限。
 token 不进入 argv、attempt 文件、DB、审计、日志、repr；也不保存前缀、长度、哈希或其他派生值。

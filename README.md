@@ -458,7 +458,9 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 入口输出冻结 Python/依赖/源码、零请求批准计划、部署/卸载脚本、SHA256 与私有审阅说明。
 所有者审阅确切字节后从 root 冻结副本部署，默认卸载保留账本与回执；不自动证据激活。
 采集只观察当前站点和认证/cache stat 元数据，不读秘密正文、不认证、不调用模型、不联网。
-认证/cache 使用固定 v2 不变量基线，允许限定订阅刷新；helper 临时 HOME/TMPDIR 退出后删除并核验。
+正常刷新取证采用 manifest v2 的三次外部执行批次：A 为 boundary-low，B 为 boundary-high，C 为 value-low 及剩余三格。批间返回并释放锁／进程；B 或 C 首格缺真实刷新提交证据时持久 unknown 停止，不自动补跑。供应商真实到期保持 unknown；既有六格和原七份 v2 计划各自保留来源，部署后72小时目标不延长共同授权窗口。详细边界见 [Live 契约](docs/contracts/live-evidence.md#正常认证刷新闭环)；离线工程覆盖见 [独立台账](docs/verification/issue-177-normal-auth-refresh.md)。新版封印字节仍须所有者审阅并部署，未执行现场不能判通过。
+
+认证/cache 使用固定 v2 不变量基线，允许限定订阅刷新；launch v9 的封印产品认证入口经固定 1.4.0 公开 API 采样正常刷新／提交，正式与 collector 共用准备路径。helper 临时 HOME/TMPDIR 退出后删除并核验；root 只接固定元数据，token 仅产品内存。
 首次基线与旧证据边界见[Live 证据契约](docs/contracts/live-evidence.md#当前观察与认证cache-基线)。
 三项SHA OK后仍须核对部署/采集/接收终态；拒绝诊断给出受控原因与阶段。
 所有者审阅新包后只运行REVIEW中的run-g2.sh，输入一次sudo密码，脚本从入口内嵌字节冻结部署材料，

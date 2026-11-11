@@ -372,6 +372,11 @@ class PlacedProcess:
                 {
                     "argv": argv,
                     "env": env,
+                    "auth_metadata_fd_index": (
+                        pass_fds.index(int(env["PAPERRADAR_AUTH_METADATA_FD"]))
+                        if "PAPERRADAR_AUTH_METADATA_FD" in env
+                        else None
+                    ),
                     "cwd": str(cwd),
                     "install": str(install),
                     "attempt": str(attempt) if attempt else None,

@@ -143,3 +143,32 @@ class ModelManifest(WireModel):
 
 def material_root(root: Path, use_id: UseId) -> Path:
     return root / "materials" / use_id
+
+
+class ModelManifestV2(ModelManifest):
+    # A new sealed envelope; existing v1 readers and v2 plan/receipt bytes stay frozen.
+    format_version: Literal[2]  # type: ignore[assignment]
+    normal_refresh_batches: tuple[tuple[UseId, ...], ...] = (
+        ("boundary-low",),
+        ("boundary-high",),
+        ("value-low", "value-high", "read-low", "read-high"),
+    )
+    normal_refresh_policy: Literal["normal-auth-refresh-v1"] = "normal-auth-refresh-v1"
+    completion_target_hours: Literal[72] = 72
+
+    @model_validator(mode="after")
+    def batches_valid(self) -> Self:
+        if self.normal_refresh_batches != (
+            ("boundary-low",),
+            ("boundary-high",),
+            ("value-low", "value-high", "read-low", "read-high"),
+        ):
+            raise ValueError("collector_batch_invalid")
+        return self
+
+
+def parse_manifest(raw: bytes) -> ModelManifest:
+    import json
+
+    kind = json.loads(raw).get("format_version")
+    return (ModelManifestV2 if kind == 2 else ModelManifest).model_validate_json(raw)

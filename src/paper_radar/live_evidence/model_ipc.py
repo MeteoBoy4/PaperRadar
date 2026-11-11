@@ -15,7 +15,11 @@ from typing import Literal
 from pydantic import Field
 
 from paper_radar.live_evidence.model_manifest import ModelCell
-from paper_radar.live_evidence.model_worker import ModelObservation, execute_model
+from paper_radar.live_evidence.model_worker import (
+    ModelObservation,
+    ModelObservationV2,
+    execute_model,
+)
 from paper_radar.live_evidence.network_collection import (
     NetworkOutcome,
     execute_negative,
@@ -43,6 +47,11 @@ class WorkerMessage(WireModel):
     unit: str = Field(default="", pattern=r"^(|paperradar-[a-f0-9]{32}\.scope)$")
     model: ModelObservation | None = None
     network: NetworkOutcome | None = None
+
+
+class WorkerMessageV2(WorkerMessage):
+    format_version: Literal[2]
+    model: ModelObservationV2 | None = None
 
 
 class Ack(WireModel):
@@ -90,7 +99,8 @@ def product_worker(
             ) -> None:
                 nonlocal sequence
                 sequence += 1
-                message = WorkerMessage(
+                message = WorkerMessageV2(
+                    format_version=2,
                     case_id=case_id,
                     sequence=sequence,
                     stage=stage,
@@ -115,14 +125,15 @@ def product_worker(
             sequence += 1
             child.sendall(
                 canonical_bytes(
-                    WorkerMessage(
+                    WorkerMessageV2(
+                        format_version=2,
                         case_id=case_id,
                         sequence=sequence,
                         stage="result",
                         binding_sha256=binding_sha,
                         material_sha256=material_sha,
                         model=worker_result
-                        if isinstance(worker_result, ModelObservation)
+                        if isinstance(worker_result, ModelObservationV2)
                         else None,
                         network=worker_result
                         if isinstance(worker_result, NetworkOutcome)
@@ -144,7 +155,7 @@ def product_worker(
             raw = parent.recv(8193)
             if not raw or len(raw) > 8192:
                 raise DispatchDenied("source_untrusted")
-            message = WorkerMessage.model_validate_json(raw)
+            message = WorkerMessageV2.model_validate_json(raw)
             if (
                 message.case_id != case_id
                 or message.sequence != expected

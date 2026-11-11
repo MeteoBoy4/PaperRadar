@@ -13,6 +13,7 @@ from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 from paper_radar.llm.dispatch import CollectionReason
 from paper_radar.llm.models import CallDescription
 from paper_radar.llm.rpc_types import RpcReason
+from paper_radar.pi_execution.auth_metadata import AuthRefreshMetadata
 from paper_radar.reading.context import ReadContext
 from paper_radar.stage_inputs import StageInput
 
@@ -52,6 +53,11 @@ class ModelObservation(WireModel):
         if not self.passed and self.failure is None:
             raise ValueError("collector_result_invalid")
         return self
+
+
+class ModelObservationV2(ModelObservation):
+    format_version: Literal[2]
+    auth_metadata: AuthRefreshMetadata | None = None
 
 
 def build_material_call(
@@ -150,9 +156,13 @@ def execute_model(
     from paper_radar.screening.validation import validate_output
 
     if os.getuid() != site.product_uid or os.getgid() != site.product_gid:
-        return ModelObservation(
-            passed=False, authority="none", failure="permission_failed"
+        return ModelObservationV2(
+            format_version=2,
+            passed=False,
+            authority="none",
+            failure="permission_failed",
         )
+    auth_events: list[AuthRefreshMetadata] = []
     audit = RpcAudit()
     cleanup = CleanupAudit()
     reason: CollectionReason | None = None
@@ -192,6 +202,7 @@ def execute_model(
             proxy=site.binding.proxy,
             collection=execution,
             before_auth=lambda pid, start, unit: exchange("auth", pid, start, unit),
+            observe_auth=auth_events.append,
             cleanup_audit=cleanup,
         ) as launch:
             execution.recheck(site.database, description)
@@ -261,7 +272,9 @@ def execute_model(
         )
     ):
         reason = "isolation_failed"
-    return ModelObservation(
+    return ModelObservationV2(
+        format_version=2,
+        auth_metadata=auth_events[0] if len(auth_events) == 1 else None,
         passed=reason is None,
         failure=reason,
         authority=authority,
