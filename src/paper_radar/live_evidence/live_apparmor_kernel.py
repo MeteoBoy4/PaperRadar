@@ -199,6 +199,19 @@ class AppArmorKernel:
             found.add(profile.name)
         return frozenset(found)
 
+    def check(
+        self, policy: SealedPolicy, *, allow_partial: bool = False
+    ) -> Literal["absent", "exact", "partial"]:
+        """只读检查初装/恢复状态;未知现存策略始终拒绝。"""
+        found = self._known(policy, kind="conflict")
+        if not found:
+            return "absent"
+        if found == frozenset(dict(policy.profiles)):
+            return "exact"
+        if allow_partial:
+            return "partial"
+        raise AppArmorPolicyError("apparmor_partial_policy", "conflict")
+
     def verify(self, policy: SealedPolicy) -> None:
         if self._known(policy, kind="drift") != frozenset(dict(policy.profiles)):
             raise AppArmorPolicyError("apparmor_profile_missing", "drift")

@@ -626,3 +626,74 @@ def test_unknown_revision_is_unavailable(value: bytes) -> None:
         AppArmorKernel(os_boundary, PARSER).load(sealed())
     assert error.value.kind == "unavailable"
     assert os_boundary.writes == []
+
+
+@pytest.mark.parametrize("present", [False, True])
+def test_public_check_accepts_absent_and_exact_without_any_kernel_write(
+    present: bool,
+) -> None:
+    os_boundary = KernelFixture(loaded_profiles() if present else {})
+    assert AppArmorKernel(os_boundary, PARSER).check(sealed()) == (
+        "exact" if present else "absent"
+    )
+    assert os_boundary.writes == []
+
+
+def test_public_check_only_returns_partial_for_explicit_exact_recovery() -> None:
+    profiles = loaded_profiles()
+    del profiles["entry.1"]
+    os_boundary = KernelFixture(profiles)
+    kernel = AppArmorKernel(os_boundary, PARSER)
+    with pytest.raises(AppArmorPolicyError, match="apparmor_partial_policy") as error:
+        kernel.check(sealed())
+    assert error.value.kind == "conflict"
+    assert kernel.check(sealed(), allow_partial=True) == "partial"
+    assert os_boundary.writes == []
+
+
+@pytest.mark.parametrize("allow_partial", [False, True])
+@pytest.mark.parametrize("unknown", ["blob", "mode", "extra_attachment"])
+def test_public_check_never_accepts_unknown_existing_policy(
+    allow_partial: bool,
+    unknown: str,
+) -> None:
+    profiles = loaded_profiles()
+    del profiles["entry.1"]
+    if unknown == "blob":
+        profiles["entry.0"]["raw_data"] = b"unrecognized-policy"
+        reason = "apparmor_blob_mismatch"
+    elif unknown == "mode":
+        profiles["entry.0"]["mode"] = b"complain\n"
+        reason = "apparmor_mode_mismatch"
+    else:
+        extra = profiles["entry.0"].copy()
+        extra["name"] = b"unrecognized-profile\n"
+        profiles["foreign.19"] = extra
+        reason = "apparmor_profile_set_mismatch"
+    os_boundary = KernelFixture(profiles)
+    with pytest.raises(AppArmorPolicyError, match=reason) as error:
+        AppArmorKernel(os_boundary, PARSER).check(sealed(), allow_partial=allow_partial)
+    assert error.value.kind == "conflict"
+    assert os_boundary.writes == []
+
+
+@pytest.mark.parametrize("allow_partial", [False, True])
+def test_public_check_never_turns_read_failure_into_absence(
+    allow_partial: bool,
+) -> None:
+    class UnreadableKernel(KernelFixture):
+        def read_field(self, handle: str, field: str) -> bytes:
+            if field == "raw_data":
+                raise PermissionError("raw_data denied")
+            return super().read_field(handle, field)
+
+        def require_writer(self, parser: ParserIdentity) -> None:
+            raise AssertionError("read-only check attempted writer authorization")
+
+    os_boundary = UnreadableKernel(loaded_profiles())
+    with pytest.raises(
+        AppArmorPolicyError, match="apparmor_readback_unavailable"
+    ) as error:
+        AppArmorKernel(os_boundary, PARSER).check(sealed(), allow_partial=allow_partial)
+    assert error.value.kind == "unavailable"
+    assert os_boundary.writes == []
