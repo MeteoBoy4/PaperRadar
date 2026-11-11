@@ -328,7 +328,10 @@ class LinuxLiveHost:
     def validate_sudoers(self, path: Path) -> None:
         self._run(("/usr/sbin/visudo", "-cf", str(path)))
 
-    def _unit_properties(self, name: str) -> dict[str, str]:
+    def unit_properties(self, name: str) -> dict[str, str]:
+        """固定两unit的实际manager投影;空执行数组须由D-Bus明确证明。"""
+        if name not in {"paperradar.slice", "paperradar-anchor.service"}:
+            raise ValueError("unit_unknown")
         raw = self._run(
             (
                 "/usr/bin/systemctl",
@@ -339,16 +342,66 @@ class LinuxLiveHost:
             ),
             product=True,
         )
-        return dict(
+        values = dict(
             line.split("=", 1) for line in raw.decode().splitlines() if "=" in line
         )
+        if name == "paperradar-anchor.service":
+            properties = (
+                "ExecCondition",
+                "ExecStartPre",
+                "ExecStartPost",
+                "ExecStop",
+                "ExecStopPost",
+                "ExecReload",
+            )
+            raw = self._run(
+                (
+                    "/usr/bin/busctl",
+                    "--user",
+                    "--json=short",
+                    "get-property",
+                    "org.freedesktop.systemd1",
+                    "/org/freedesktop/systemd1/unit/paperradar_2danchor_2eservice",
+                    "org.freedesktop.systemd1.Service",
+                    *properties,
+                ),
+                product=True,
+            )
+
+            def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+                value = dict(pairs)
+                if len(value) != len(pairs):
+                    raise ValueError("anchor_exec_properties_invalid")
+                return value
+
+            try:
+                arrays = [
+                    json.loads(line, object_pairs_hook=unique_object)
+                    for line in raw.splitlines()
+                ]
+            except (ValueError, UnicodeError) as error:
+                raise ValueError("anchor_exec_properties_invalid") from error
+            if len(arrays) != len(properties) or any(
+                not isinstance(value, dict)
+                or set(value) != {"type", "data"}
+                or value["type"] != "a(sasbttttuii)"
+                or not isinstance(value["data"], list)
+                for value in arrays
+            ):
+                raise ValueError("anchor_exec_properties_invalid")
+            if any(value["data"] for value in arrays) or any(
+                values.get(key, "") != "" for key in properties
+            ):
+                raise ValueError("anchor_extra_commands")
+            values.update(dict.fromkeys(properties, ""))
+        return values
 
     def _anchor_target(self) -> PlacementTarget:
         if self.site is None:
             raise ValueError("product_identity_missing")
-        values = self._unit_properties("paperradar-anchor.service")
+        values = self.unit_properties("paperradar-anchor.service")
         validate_unit_identity(
-            self.paths, self._unit_properties("paperradar.slice"), values
+            self.paths, self.unit_properties("paperradar.slice"), values
         )
         pid = int(values["MainPID"])
         if (
@@ -498,6 +551,60 @@ class LinuxLiveHost:
         self.disable_observation()
         self.stop_and_remove()
 
+    def check_resources_interruption(
+        self,
+        site: SiteConfiguration,
+        manifest: ModelManifest,
+        *,
+        allow_stopped: bool = False,
+    ) -> None:
+        """专用的target发布前检查,不清理nft或停止项目slice。"""
+        self.site, self.manifest = site, manifest
+        if os.path.lexists(self.paths.ledger / "inbox/placement-target-v1.json"):
+            raise ValueError("resources_target_present")
+        self.ensure_no_table()
+        anchor = self.unit_properties("paperradar-anchor.service")
+        if anchor.get("ActiveState") == "active":
+            self._anchor_target()  # 独立核exe/uid/start/core/CG且项目仅此anchor。
+        elif allow_stopped:
+            validate_unit_identity(
+                self.paths,
+                self.unit_properties("paperradar.slice"),
+                anchor,
+                require_active=False,
+            )
+            self.verify_resources_stopped(site)
+        else:
+            raise ValueError("resources_anchor_identity")
+
+    def verify_resources_stopped(self, site: SiteConfiguration) -> None:
+        self.site = site
+        self.ensure_no_table()
+        values = self.unit_properties("paperradar-anchor.service")
+        if values.get("ActiveState") != "inactive" or values.get("MainPID") != "0":
+            raise ValueError("resources_anchor_not_stopped")
+        directory = Path("/sys/fs/cgroup") / (
+            f"user.slice/user-{site.product_uid}.slice/"
+            f"user@{site.product_uid}.service/paperradar.slice"
+        )
+        if directory.exists() and (
+            not directory.is_dir()
+            or any(
+                source.read_text().strip() for source in directory.rglob("cgroup.procs")
+            )
+        ):
+            raise ValueError("scope_not_empty")
+
+    def stop_resources_anchor(
+        self, site: SiteConfiguration, manifest: ModelManifest
+    ) -> None:
+        self.check_resources_interruption(site, manifest, allow_stopped=True)
+        self._run(
+            ("/usr/bin/systemctl", "--user", "stop", "paperradar-anchor.service"),
+            product=True,
+        )
+        self.verify_resources_stopped(site)
+
     def stop_and_remove(self) -> None:
         from paper_radar.live_evidence.sealed_runtime import _read_configuration
 
@@ -518,8 +625,8 @@ class LinuxLiveHost:
             verify_nft(self._snapshot(), target, manifest.network)
         validate_unit_identity(
             self.paths,
-            self._unit_properties("paperradar.slice"),
-            self._unit_properties("paperradar-anchor.service"),
+            self.unit_properties("paperradar.slice"),
+            self.unit_properties("paperradar-anchor.service"),
             require_active=False,
         )
         self._run(

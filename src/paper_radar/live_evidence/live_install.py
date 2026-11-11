@@ -31,6 +31,17 @@ class LiveHost(Protocol):
     def prepare_recovery(
         self, site: SiteConfiguration, manifest: ModelManifest
     ) -> None: ...
+    def check_resources_interruption(
+        self,
+        site: SiteConfiguration,
+        manifest: ModelManifest,
+        *,
+        allow_stopped: bool = False,
+    ) -> None: ...
+    def stop_resources_anchor(
+        self, site: SiteConfiguration, manifest: ModelManifest
+    ) -> None: ...
+    def verify_resources_stopped(self, site: SiteConfiguration) -> None: ...
     def stop_and_remove(self) -> None: ...
     def verify_absent(self) -> None: ...
 
@@ -272,6 +283,203 @@ class LiveDeployment:
             ):
                 raise ValueError("deployment_resource_identity")
 
+    def _unexecuted_resources(self, roots: tuple[Path, ...]) -> None:
+        """只读旧新计划的缺史证明;不初始化/升级账本,不否定其他历史。"""
+        from paper_radar.live_evidence.collection import ProtectedCollection
+        from paper_radar.live_evidence.normal_auth_refresh import epoch_path
+        from paper_radar.live_evidence.receipt import ApprovedPlan
+
+        ledger = EvidenceLedger(
+            self.paths.ledger,
+            trust=LedgerTrust(owner_uid=self.owner_uid, anchor=self.paths.anchor),
+        )
+        ids: set[str] = set()
+        collectors: set[str] = set()
+        for root in roots:
+            manifest = parse_manifest((root / "model-manifest.json").read_bytes())
+            strict = ApprovedPlan.model_validate_json((root / "plan.json").read_bytes())
+            collectors.update((manifest.collector_sha256, strict.collector_sha256))
+            ids.update(
+                (
+                    strict.plan_id,
+                    manifest.site_plan_id,
+                    *(cell.plan.plan_id for cell in manifest.cells),
+                    manifest.negative_plan.plan_id,
+                )
+            )
+            if os.path.lexists(epoch_path(ledger, manifest)):
+                raise ValueError("resources_execution_history")
+        if os.path.lexists(self.paths.ledger / "inbox/placement-target-v1.json"):
+            raise ValueError("resources_target_present")
+        # 封印writer总在执行前发布计划来源;同计划任何残留均不猜测。
+        for directory in (self.paths.ledger, self.paths.ledger / "inbox"):
+            protected(directory, self.owner_uid, anchor=self.paths.anchor)
+            if any(
+                any(identifier in entry.name for identifier in ids)
+                for entry in directory.iterdir()
+            ):
+                raise ValueError("resources_execution_history")
+        if os.path.lexists(ledger.database):
+            with ledger.connection() as connection:
+                for identifier in ids:
+                    if any(
+                        connection.execute(query, (identifier,)).fetchone()
+                        for query in (
+                            "SELECT 1 FROM plans WHERE plan_id=?",
+                            "SELECT 1 FROM receipts WHERE plan_id=?",
+                            "SELECT 1 FROM events WHERE subject_id=?",
+                        )
+                    ):
+                        raise ValueError("resources_execution_history")
+                for (raw,) in connection.execute(
+                    "SELECT payload FROM plans UNION ALL SELECT payload FROM receipts"
+                ):
+                    value = json.loads(raw)
+                    if not isinstance(value, dict):
+                        raise ValueError("resources_ledger_unknown")
+                    if value.get("collector_sha256") in collectors:
+                        raise ValueError("resources_execution_history")
+                version = connection.execute("PRAGMA user_version").fetchone()
+                if version == (1,) and (
+                    {
+                        row[0]
+                        for row in connection.execute(
+                            "SELECT name FROM sqlite_master WHERE type='table'"
+                        )
+                    }
+                    != {"plans", "receipts", "events"}
+                    or connection.execute(
+                        "SELECT 1 FROM events WHERE action LIKE 'collection_%' "
+                        "OR action LIKE 'history_collection_%' LIMIT 1"
+                    ).fetchone()
+                ):
+                    raise ValueError("resources_ledger_unknown")
+            if version == (2,) and ProtectedCollection(ledger).has_plan_history(
+                frozenset(ids)
+            ):
+                raise ValueError("resources_execution_history")
+        for source in (self.paths.ledger / "inbox").glob("*.json"):
+            value = json.loads(ledger._read_source(source))
+            if not isinstance(value, dict):
+                raise ValueError("resources_ledger_unknown")
+            if value.get("collector_sha256") in collectors:
+                raise ValueError("resources_execution_history")
+        observation = self.paths.ledger / "inbox/current-observation.json"
+        if os.path.lexists(observation):
+            from datetime import UTC, datetime
+
+            from paper_radar.live_evidence.observation import read_observation_snapshot
+            from paper_radar.live_evidence.protected_observer import observer_identity
+            from paper_radar.live_evidence.types import BindingComponent
+
+            current = read_observation_snapshot(ledger, now=datetime.now(UTC))
+            if current.binding[BindingComponent.OBSERVER] in {
+                observer_identity(root, ledger) for root in roots
+            }:
+                raise ValueError("resources_execution_history")
+
+    def _pending_resources(
+        self, old: dict[str, Any], root: Path, *, absent_ok: bool = False
+    ) -> LiveDeployment:
+        if (
+            old.get("format_version") != 2
+            or old["phase"] != "resources"
+            or old["previous"] is not None
+        ):
+            raise ValueError("resources_interruption_unknown")
+        legacy = old["upgrade_from"]
+        if (
+            not isinstance(legacy, list)
+            or len(legacy) != 2
+            or any(
+                not isinstance(value, str)
+                or len(value) != 64
+                or any(char not in "0123456789abcdef" for char in value)
+                for value in legacy
+            )
+        ):
+            raise ValueError("resources_legacy_identity")
+        verify_tree(
+            self.paths.runtime.with_name(
+                self.paths.runtime.name + ".archive-" + legacy[0]
+            ),
+            owner_uid=self.owner_uid,
+            anchor=self.paths.anchor,
+            payload=legacy[0],
+            manifest_digest=legacy[1],
+        )
+        verify_tree(
+            root,
+            owner_uid=self.owner_uid,
+            anchor=self.paths.anchor,
+            payload=old["payload"],
+            manifest_digest=old["manifest"],
+        )
+        if (
+            json.loads((root / "deployment.json").read_bytes()).get("upgrade_from")
+            != legacy
+        ):
+            raise ValueError("resources_interruption_unknown")
+        previous = LiveDeployment(
+            root, paths=self.paths, host=self.host, owner_uid=self.owner_uid
+        )
+        previous._check_resources(absent_ok=absent_ok)
+        self._unexecuted_resources((root, self.staged))
+        return previous
+
+    def _replace_resources(self, state: dict[str, Any]) -> None:
+        host = self.host
+        if host is None:
+            raise ValueError("host_unavailable")
+        old = state["previous"]
+        if not isinstance(old, dict) or state["upgrade_from"] != [
+            old["payload"],
+            old["manifest"],
+        ]:
+            raise ValueError("resources_interruption_unknown")
+        history = self.paths.journal.with_name(
+            "deployment-v2-history-" + old["payload"] + ".json"
+        )
+        protected(history, self.owner_uid, anchor=self.paths.anchor)
+        if (
+            not stat.S_ISREG(history.lstat().st_mode)
+            or history.lstat().st_nlink != 1
+            or history.read_bytes() != json_bytes(old)
+        ):
+            raise ValueError("resources_history_identity")
+        archive = self.paths.runtime.with_name(
+            self.paths.runtime.name + ".archive-" + old["payload"]
+        )
+        root = self.paths.runtime if os.path.lexists(self.paths.runtime) else archive
+        previous = self._pending_resources(
+            old, root, absent_ok=state["phase"] == "resources_stopped"
+        )
+        site = SiteConfiguration.model_validate_json((root / "site.json").read_bytes())
+        manifest = parse_manifest((root / "model-manifest.json").read_bytes())
+        if state["phase"] == "replacing_resources":
+            if root != self.paths.runtime or os.path.lexists(archive):
+                raise ValueError("archive_conflict")
+            host.check_resources_interruption(site, manifest, allow_stopped=True)
+            host.disable_observation()
+            host.stop_resources_anchor(site, manifest)
+            self._checkpoint(state, "resources_stopped")
+        host.verify_resources_stopped(site)
+        previous._check_resources(absent_ok=True)
+        for path in previous._resources():
+            path.unlink(missing_ok=True)
+        if root == self.paths.runtime:
+            if os.path.lexists(archive):
+                raise ValueError("archive_conflict")
+            root.rename(archive)
+        verify_tree(
+            archive,
+            owner_uid=self.owner_uid,
+            anchor=self.paths.anchor,
+            payload=old["payload"],
+            manifest_digest=old["manifest"],
+        )
+        self._checkpoint(state, "archived")
+
     def install(self, *, recover: bool = False) -> str:
         from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 
@@ -325,45 +533,81 @@ class LiveDeployment:
                 state[key] != identity[key]
                 for key in ("format_version", "payload", "manifest", "upgrade_from")
             ):
-                if state["phase"] != "installed" or upgrade != (
+                if (
+                    recover
+                    and state["phase"] == "resources"
+                    and upgrade == (state["payload"], state["manifest"])
+                ):
+                    self._pending_resources(state, self.paths.runtime)
+                    old_site = SiteConfiguration.model_validate_json(
+                        (self.paths.runtime / "site.json").read_bytes()
+                    )
+                    old_manifest = parse_manifest(
+                        (self.paths.runtime / "model-manifest.json").read_bytes()
+                    )
+                    host.preflight(site)
+                    host.check_resources_interruption(old_site, old_manifest)
+                    archive = self.paths.runtime.with_name(
+                        self.paths.runtime.name + ".archive-" + state["payload"]
+                    )
+                    if os.path.lexists(archive):
+                        raise ValueError("archive_conflict")
+                    history = self.paths.journal.with_name(
+                        "deployment-v2-history-" + state["payload"] + ".json"
+                    )
+                    if os.path.lexists(history):
+                        protected(history, self.owner_uid, anchor=self.paths.anchor)
+                        if (
+                            not stat.S_ISREG(history.lstat().st_mode)
+                            or history.lstat().st_nlink != 1
+                            or history.read_bytes() != json_bytes(state)
+                        ):
+                            raise ValueError("resources_history_identity")
+                    else:
+                        publish(history, json_bytes(state))
+                    identity["previous"] = state
+                    state = identity
+                    self._checkpoint(state, "replacing_resources")
+                elif state["phase"] != "installed" or upgrade != (
                     state["payload"],
                     state["manifest"],
                 ):
                     raise ValueError("deployment_identity_conflict")
-                verify_tree(
-                    self.paths.runtime,
-                    owner_uid=self.owner_uid,
-                    anchor=self.paths.anchor,
-                    payload=state["payload"],
-                    manifest_digest=state["manifest"],
-                )
-                previous = LiveDeployment(
-                    self.paths.runtime,
-                    paths=self.paths,
-                    host=host,
-                    owner_uid=self.owner_uid,
-                )
-                previous._check_resources()
-                old_site = SiteConfiguration.model_validate_json(
-                    (self.paths.runtime / "site.json").read_bytes()
-                )
-                old_manifest = parse_manifest(
-                    (self.paths.runtime / "model-manifest.json").read_bytes()
-                )
-                host.preflight(site)
-                host.verify_installed(old_site, old_manifest)
-                archive = self.paths.runtime.with_name(
-                    self.paths.runtime.name + ".archive-" + state["payload"]
-                )
-                history = self.paths.journal.with_name(
-                    "deployment-v2-history-" + state["payload"] + ".json"
-                )
-                if os.path.lexists(archive) or os.path.lexists(history):
-                    raise ValueError("archive_conflict")
-                publish(history, json_bytes(state))
-                identity["previous"] = state
-                state = identity
-                self._checkpoint(state, "retiring")
+                if state["phase"] == "installed":
+                    verify_tree(
+                        self.paths.runtime,
+                        owner_uid=self.owner_uid,
+                        anchor=self.paths.anchor,
+                        payload=state["payload"],
+                        manifest_digest=state["manifest"],
+                    )
+                    previous = LiveDeployment(
+                        self.paths.runtime,
+                        paths=self.paths,
+                        host=host,
+                        owner_uid=self.owner_uid,
+                    )
+                    previous._check_resources()
+                    old_site = SiteConfiguration.model_validate_json(
+                        (self.paths.runtime / "site.json").read_bytes()
+                    )
+                    old_manifest = parse_manifest(
+                        (self.paths.runtime / "model-manifest.json").read_bytes()
+                    )
+                    host.preflight(site)
+                    host.verify_installed(old_site, old_manifest)
+                    archive = self.paths.runtime.with_name(
+                        self.paths.runtime.name + ".archive-" + state["payload"]
+                    )
+                    history = self.paths.journal.with_name(
+                        "deployment-v2-history-" + state["payload"] + ".json"
+                    )
+                    if os.path.lexists(archive) or os.path.lexists(history):
+                        raise ValueError("archive_conflict")
+                    publish(history, json_bytes(state))
+                    identity["previous"] = state
+                    state = identity
+                    self._checkpoint(state, "retiring")
             if state["phase"] in {"installed", "uninstalled"}:
                 from paper_radar.live_evidence.model_manifest import ModelManifestV2
                 from paper_radar.live_evidence.normal_auth_refresh import read_epoch
@@ -406,6 +650,8 @@ class LiveDeployment:
                 "installed",
                 "uninstalled",
                 "retiring",
+                "replacing_resources",
+                "resources_stopped",
             }:
                 raise ValueError("deployment_interruption_unknown")
         else:
@@ -456,6 +702,8 @@ class LiveDeployment:
             state = identity
             self._checkpoint(state, "prepared")
         host.preflight(site)
+        if state["phase"] in {"replacing_resources", "resources_stopped"}:
+            self._replace_resources(state)
         if state["phase"] == "retiring":
             old_state = state["previous"]
             archive = self.paths.runtime.with_name(
