@@ -385,6 +385,28 @@ class FailedPreparationRetirement:
         if self.descriptor is None:
             return False
         old, new, phase = self._authenticate()
+        old_phases = (
+            {"preparing"}
+            if phase in {None, "intent", "snapshotted"}
+            else {"preparing", "removing", "removed"}
+            if phase == "removing"
+            else {"removed"}
+        )
+        new_phases = (
+            {"preparing", "prepared", "removing", "removed"}
+            if phase == "prepared"
+            else {"preparing", "prepared"}
+            if phase == "preparing"
+            else set()
+        )
+        # 旧生命周期保留历史解析语义;本接缝先按退休阶段认证完整规范字节。
+        self._policy_marker(old, old_phases, "failed_preparation_marker")
+        self._policy_marker(
+            new,
+            new_phases,
+            "failed_preparation_new_marker",
+            missing_allowed=phase != "prepared",
+        )
         if phase == "prepared":
             return False
         if phase is not None and not recover:
@@ -400,14 +422,43 @@ class FailedPreparationRetirement:
             if os.path.lexists(new.journal):
                 raise ValueError("failed_preparation_new_marker")
         elif phase == "removing":
-            if old.phase() not in {"preparing", "removing", "removed"}:
-                raise ValueError("failed_preparation_marker")
             old.check(recover=True)
         else:
-            if old.phase() != "removed":
-                raise ValueError("failed_preparation_marker")
             new.check(recover=True)
         return True
+
+    def _policy_marker(
+        self,
+        lifecycle: PlacementPolicyLifecycle,
+        phases: set[str],
+        reason: str,
+        *,
+        missing_allowed: bool = False,
+    ) -> None:
+        if missing_allowed and not os.path.lexists(lifecycle.journal):
+            return
+        raw = self._read(lifecycle.journal)
+        assert lifecycle.sealed is not None
+        try:
+            value = json.loads(raw)
+            if not isinstance(value, dict):
+                raise ValueError
+            phase = value.get("phase")
+            if (
+                not isinstance(phase, str)
+                or phase not in phases
+                or raw
+                != json_bytes(
+                    {
+                        "format_version": 1,
+                        "identity": lifecycle.sealed.identity,
+                        "phase": phase,
+                    }
+                )
+            ):
+                raise ValueError
+        except (ValueError, TypeError):
+            raise ValueError(reason) from None
 
     def prepare(
         self,
