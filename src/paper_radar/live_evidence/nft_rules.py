@@ -7,12 +7,45 @@ level 只能来自同一 handle 的实际 native 输出,不能从目标或预期
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Any
 
 from paper_radar.live_evidence.model_manifest import NEGATIVES, NetworkConfiguration
 from paper_radar.live_evidence.nft_generation import nft_generation
 from paper_radar.pi_execution.placement import PlacementTarget
+
+
+@dataclass(frozen=True)
+class _NetworkRule:
+    address: str
+    protocol: str
+    port: int
+    comment: str
+    prefix: bool = False
+
+
+def _network_rules(
+    network: NetworkConfiguration,
+) -> tuple[tuple[_NetworkRule, ...], tuple[_NetworkRule, ...]]:
+    """两个编码器共用固定四负对照和三允许的顺序与规格。"""
+    negative = tuple(
+        _NetworkRule(str(address), protocol, port, comment)
+        for _case, address, protocol, port, comment in zip(
+            NEGATIVES,
+            (network.outside, network.nonrouter, network.nonrouter, network.udp443),
+            ("tcp", "udp", "tcp", "udp"),
+            (443, 53, 53, 443),
+            network.rule_comments,
+            strict=True,
+        )
+    )
+    allowed = (
+        _NetworkRule(network.pool, "tcp", 443, "paperradar-pool-tls", prefix=True),
+        _NetworkRule(str(network.router), "udp", 53, "paperradar-router-udp53"),
+        _NetworkRule(str(network.router), "tcp", 53, "paperradar-router-tcp53"),
+    )
+    return negative, allowed
 
 
 def nft_program(target: PlacementTarget, network: NetworkConfiguration) -> bytes:
@@ -37,28 +70,20 @@ def nft_program(target: PlacementTarget, network: NetworkConfiguration) -> bytes
         f'add rule inet paperradar output socket cgroupv2 level {level} "{path}" '
         'jump project comment "paperradar-placement-v1"',
     ]
-    for address, protocol, port, comment in zip(
-        (network.outside, network.nonrouter, network.nonrouter, network.udp443),
-        ("tcp", "udp", "tcp", "udp"),
-        (443, 53, 53, 443),
-        network.rule_comments,
-        strict=True,
-    ):
-        lines.append(
-            f"add rule inet paperradar project meta nfproto ipv4 ip daddr {address} "
-            f"meta l4proto {protocol} {protocol} dport {port} "
-            f'counter packets 0 bytes 0 drop comment "{comment}"'
-        )
-    for allow_address, protocol, port, label in (
-        (network.pool, "tcp", 443, "pool-tls"),
-        (network.router, "udp", 53, "router-udp53"),
-        (network.router, "tcp", 53, "router-tcp53"),
-    ):
+    negative, allowed = _network_rules(network)
+    for rule in negative:
         lines.append(
             "add rule inet paperradar project meta nfproto ipv4 "
-            f"ip daddr {allow_address} "
-            f"meta l4proto {protocol} {protocol} dport {port} "
-            f'accept comment "paperradar-{label}"'
+            f"ip daddr {rule.address} "
+            f"meta l4proto {rule.protocol} {rule.protocol} dport {rule.port} "
+            f'counter packets 0 bytes 0 drop comment "{rule.comment}"'
+        )
+    for rule in allowed:
+        lines.append(
+            "add rule inet paperradar project meta nfproto ipv4 "
+            f"ip daddr {rule.address} "
+            f"meta l4proto {rule.protocol} {rule.protocol} dport {rule.port} "
+            f'accept comment "{rule.comment}"'
         )
     lines.append(
         'add rule inet paperradar project drop comment "paperradar-deny-remainder"'
@@ -351,48 +376,36 @@ def nft_document(
             "comment": "paperradar-placement-v1",
         }
     )
-    for _case, address, protocol, port, comment in zip(
-        NEGATIVES,
-        (
-            str(network.outside),
-            str(network.nonrouter),
-            str(network.nonrouter),
-            str(network.udp443),
-        ),
-        ("tcp", "udp", "tcp", "udp"),
-        (443, 53, 53, 443),
-        network.rule_comments,
-        strict=True,
-    ):
+    negative, allowed = _network_rules(network)
+    for rule in negative:
         rules.append(
             {
                 "chain": "project",
                 "expr": [
-                    *destination(address, protocol, port),
+                    *destination(rule.address, rule.protocol, rule.port),
                     {"counter": {"packets": 0, "bytes": 0}},
                     {"drop": None},
                 ],
-                "comment": comment,
+                "comment": rule.comment,
             }
         )
     from ipaddress import IPv4Network
 
-    pool = IPv4Network(network.pool)
-    for allow_address, protocol, port, label in (
-        (
-            {"prefix": {"addr": str(pool.network_address), "len": pool.prefixlen}},
-            "tcp",
-            443,
-            "pool-tls",
-        ),
-        (str(network.router), "udp", 53, "router-udp53"),
-        (str(network.router), "tcp", 53, "router-tcp53"),
-    ):
+    for rule in allowed:
+        address: object = rule.address
+        if rule.prefix:
+            pool = IPv4Network(rule.address)
+            address = {
+                "prefix": {"addr": str(pool.network_address), "len": pool.prefixlen}
+            }
         rules.append(
             {
                 "chain": "project",
-                "expr": [*destination(allow_address, protocol, port), {"accept": None}],
-                "comment": "paperradar-" + label,
+                "expr": [
+                    *destination(address, rule.protocol, rule.port),
+                    {"accept": None},
+                ],
+                "comment": rule.comment,
             }
         )
     rules.append(
