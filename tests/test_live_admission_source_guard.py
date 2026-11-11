@@ -14,7 +14,7 @@ from paper_radar.pi_execution.resources import LAUNCH_POLICY_VERSION
 from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v19.json"
+MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v20.json"
 ARCHIVED_MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
 # 显式清单;不能由目录扫描或生产依赖图动态扩大/缩小。
 ARCHIVED_SOURCE_FILES = (
@@ -106,11 +106,15 @@ SOURCE_FILES = (
     "src/paper_radar/pi_execution/placement_protocol.py",
     "src/paper_radar/pi_execution/placement_native.c",
     "src/paper_radar/pi_execution/placement_preflight.py",
+    "src/paper_radar/live_evidence/preparation_retirement.py",
 )
 
 
 # 已审阅版本的清单摘要只追加;后继不得以同一策略键重绑该摘要。
 REVIEWED_POLICY_MANIFESTS = {
+    "pi-admission-v20": (
+        "d0638d3fdf1b9c36d7f87fb2ebbfe28c8bb5e18aaec2fc482f1605f354e6cc2e"
+    ),
     "pi-admission-v19": (
         "dd418bdaff59b9845be32642daa7afea412569511f5d1b0f6298a1ab9cc449a6"
     ),
@@ -270,7 +274,9 @@ def test_fifth_policy_manifest_retains_original_bytes() -> None:
     assert json.loads(data)["policies"]["admission"] == "pi-admission-v5"
 
 
-@pytest.mark.parametrize("version", (6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18))
+@pytest.mark.parametrize(
+    "version", (6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)
+)
 def test_later_archived_policy_vectors_keep_original_bytes(version: int) -> None:
     data = (
         ROOT / f"tests/fixtures/live-admission-source-guard-v{version}.json"
