@@ -1,5 +1,6 @@
 """显式替代宿主I/O的Live封印工程模型;不伪称真实OS证明。"""
 
+import sys
 import tarfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -8,6 +9,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from paper_radar.live_evidence.deployment import freeze_runtime as freeze_python_runtime
 from paper_radar.live_evidence.epoch_lineage import EpochUpgrade
 from paper_radar.live_evidence.live_bundle import build_live_bundle, derive_site
 from paper_radar.live_evidence.live_install import InstallationPaths
@@ -17,6 +19,17 @@ from tests.site_collector_support import site_configuration
 
 if TYPE_CHECKING:
     from paper_radar.live_evidence.placement_policy import PlacementPolicyLifecycle
+
+
+def alternate_python_input(directory: Path) -> Path:
+    """同一有效ELF的非加载尾部差异;模拟另一个合法OS freezer输入。"""
+    path = directory / "python-freezer-input"
+    path.write_bytes(
+        Path(sys.executable).resolve().read_bytes()
+        + b"\nPaperRadar offline freezer input variant\n"
+    )
+    path.chmod(0o755)
+    return path
 
 
 def bundle_model(
@@ -54,6 +67,10 @@ def bundle_model(
     if not real_freeze:
         monkeypatch.setattr(
             "paper_radar.live_evidence.deployment.freeze_runtime", freeze
+        )
+    else:
+        monkeypatch.setattr(
+            "paper_radar.live_evidence.deployment.freeze_runtime", freeze_python_runtime
         )
     start = datetime.now(UTC) - timedelta(days=1)
     start, end = window or (start, start + timedelta(days=14))
