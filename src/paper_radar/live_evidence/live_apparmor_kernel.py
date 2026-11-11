@@ -188,7 +188,10 @@ class AppArmorKernel:
                 continue
             if profile.name not in expected or profile.name in found:
                 raise AppArmorPolicyError("apparmor_profile_set_mismatch", kind)
-            if profile.attach != expected[profile.name]:
+            # apparmorfs exports this exact sentinel when attachment has a DFA
+            # but no xmatch_str. The reviewed sealed binary binds that DFA;
+            # every mode/ABI/hash/full-byte check below remains mandatory.
+            if profile.attach not in {expected[profile.name], "<unknown>"}:
                 raise AppArmorPolicyError("apparmor_attachment_mismatch", kind)
             if profile.mode != "enforce":
                 raise AppArmorPolicyError("apparmor_mode_mismatch", kind)
