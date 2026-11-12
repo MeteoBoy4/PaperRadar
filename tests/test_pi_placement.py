@@ -232,21 +232,37 @@ def test_manager_linger_and_anchor_are_required(
     monkeypatch.setattr(
         placement, "PLACEMENT_PLATFORM", placement.LinuxPlacementPlatform()
     )
+    manager_query = (
+        "/usr/bin/systemctl",
+        "--user",
+        "show",
+        "--property=SystemState",
+        "--value",
+    )
 
     def run(
         argv: tuple[str, ...], **_kwargs: object
     ) -> subprocess.CompletedProcess[bytes]:
         if failure == "unavailable":
             raise OSError("private manager error")
-        output = (
-            b"running\n"
-            if "is-system-running" in argv
-            else b"yes\n"
-            if "show-user" in argv
-            else b"active\n"
-        )
+        output = {
+            manager_query: b"running\n",
+            (
+                "/usr/bin/loginctl",
+                "show-user",
+                str(os.getuid()),
+                "--property=Linger",
+                "--value",
+            ): b"yes\n",
+            (
+                "/usr/bin/systemctl",
+                "--user",
+                "is-active",
+                "paperradar-anchor.service",
+            ): b"active\n",
+        }[argv]
         if (
-            (failure == "degraded" and "is-system-running" in argv)
+            (failure == "degraded" and argv == manager_query)
             or (failure == "no_linger" and "show-user" in argv)
             or (failure == "no_anchor" and "is-active" in argv)
         ):

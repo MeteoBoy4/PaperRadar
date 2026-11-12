@@ -146,7 +146,11 @@ Python 内存引用在启动或上下文退出时释放，不承诺对不可变�
 `paper_radar.pi_execution.placement.PlacedProcess` 是认证、模型和 collector 的共同放置边界。
 构造时仅以固定 `systemd-run --user --scope --slice=paperradar.slice` 启动封装；
 要求 user manager 为 running、`Linger=yes`、`paperradar-anchor.service` 为 active。
-manager degraded、缺失或异常均拒绝。固定静态 `placement-pre` 不继承秘密或业务环境，
+manager 状态通过固定 `/usr/bin/systemctl --user show --property=SystemState --value`
+读取同一产品 user bus 的 `SystemState`，只接受退出码 0 且 stdout 精确为 `running\n`；
+私有 `/run` 中无需恢复或伪造 `/run/systemd/system` boot marker。
+manager degraded、未知、启动中、缺失、格式偏差或异常均拒绝；固定环境和每条查询 3 秒超时保持。
+固定静态 `placement-pre` 不继承秘密或业务环境，
 在 Python 与握手之前核 initial namespace、封印配置和 root 保护链，建立产品非零同
 UID/GID 映射的私有 user/mount namespace，只读挂载固定 resolver 视图，清除
 capabilities/bounding/ambient 并固定 securebits。它强制以替换型 `Px` 进入静态
