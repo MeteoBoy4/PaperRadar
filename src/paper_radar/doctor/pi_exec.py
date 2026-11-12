@@ -1,5 +1,6 @@
 """只读执行事实诊断;不导入执行编排、认证或 attempt 资源。"""
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -13,6 +14,12 @@ from paper_radar.config import (
 )
 from paper_radar.config.adapters import PiAdapter
 from paper_radar.config.compile import MaterialKind, RuntimeConfigSnapshot
+from paper_radar.config.owner_waiver import (
+    OWNER_WAIVER_NOTICE,
+    OWNER_WAIVER_REASON,
+    OwnerWaiverError,
+    owner_waiver,
+)
 from paper_radar.doctor.admission import projection_checks
 from paper_radar.doctor.cli import _show
 from paper_radar.doctor.service import Check, Result, basic_checks
@@ -111,6 +118,18 @@ def _admission_checks(
                 "当前档位没有登记用途；请显式选择已登记档位，不借用其他格证据。",
             ),
         )
+    waiver = owner_waiver(database, now=_utc_now())
+    if waiver.enabled:
+        return (
+            Check("admission", Result.PASSED, OWNER_WAIVER_REASON, OWNER_WAIVER_NOTICE),
+            Check(
+                "admission_evidence",
+                Result.NOT_ASSESSED,
+                "evidence_not_assessed",
+                "未评估证据；豁免不证明任何分项 verified。",
+                required=False,
+            ),
+        )
     checks: list[Check] = []
     for consumer in (Consumer.BOUNDARY, Consumer.VALUE):
         use = AdmissionUse(CallSite.SCREENING, consumer, level)
@@ -122,6 +141,7 @@ def _admission_checks(
                 credentials_dir=credentials_dir,
                 now=_utc_now(),
             )
+            request = replace(request, evidence_after=waiver.strict_since)
             projection = load_admission_evidence(request, now=_utc_now())
             if projection.decision.executable:
                 recheck_admission_request(request, now=_utc_now())
@@ -145,6 +165,26 @@ def execution_checks(
     checks = list(basic_checks(database))
     if any(check.result is not Result.PASSED for check in checks):
         return tuple(checks)
+    try:
+        waiver = owner_waiver(database, now=_utc_now())
+    except OwnerWaiverError as error:
+        checks.append(
+            Check(
+                "owner_waiver",
+                Result.INVALID,
+                error.reason,
+                "核对所有者动作记录的格式、哈希及版本链；修复前保持拒绝。",
+            )
+        )
+        return tuple(checks)
+    checks.append(
+        Check(
+            "owner_waiver",
+            Result.PASSED,
+            OWNER_WAIVER_REASON if waiver.enabled else "owner_waiver_disabled",
+            OWNER_WAIVER_NOTICE if waiver.enabled else "证据前提严格路径。",
+        )
+    )
     try:
         snapshot = load_config_snapshot(
             database, resolve_config_snapshot_reference(database, snapshot_reference)
@@ -221,7 +261,7 @@ def execution_checks(
                     )
                 else:
                     checks.extend(_admission_checks(database, binding, credentials_dir))
-            except (ExecutionError, SupplyError) as error:
+            except (ExecutionError, SupplyError, OwnerWaiverError) as error:
                 checks.append(
                     Check(
                         "admission",
@@ -343,7 +383,8 @@ def execution_checks(
             )
         )
     try:
-        check_placement_readiness()
+        if not waiver.enabled:
+            check_placement_readiness()
     except ExecutionError as error:
         checks.append(
             Check(
@@ -357,9 +398,14 @@ def execution_checks(
         checks.append(
             Check(
                 "placement",
-                Result.PASSED,
-                "placement_ready",
-                "只读锚定检查通过；实际子进程仍须逐调用双阶段核验。",
+                Result.NOT_ASSESSED if waiver.enabled else Result.PASSED,
+                "owner_waiver_placement_optional"
+                if waiver.enabled
+                else "placement_ready",
+                "豁免模式不要求放置或私有 resolver；使用宿主 DNS。"
+                if waiver.enabled
+                else "只读锚定检查通过；实际子进程仍须逐调用双阶段核验。",
+                required=not waiver.enabled,
             )
         )
     for name, reason, step in (

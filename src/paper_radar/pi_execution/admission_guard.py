@@ -28,6 +28,7 @@ class AdmissionGuard:
 
     def __init__(self, use: AdmissionUse) -> None:
         self.use = use
+        self.owner_waived = False
         self.projection: AdmissionProjection | None = None
         self.sources: dict[Capability, str] = {}
         self.observation_failure: str | None = None
@@ -74,6 +75,8 @@ class AdmissionGuard:
 
     def tighten_after_denial(self, *, now: datetime) -> None:
         """资格缺口只拒绝当次;已知漂移/来源失信才持久收紧。"""
+        if self.owner_waived:
+            return
         projection = self.projection
         known_drift = projection is not None and any(
             reason.code
@@ -118,6 +121,8 @@ class AdmissionGuard:
         self, *, now: datetime, failed_capabilities: frozenset[Capability] | None = None
     ) -> None:
         """失去来源时使用先前已读来源;helper/意图失败仍保持调用方拒绝。"""
+        if self.owner_waived:
+            return
         projection = self.projection
         components: set[BindingComponent] = set(self.observation_components)
         failed: set[Capability] = set(failed_capabilities or ())
