@@ -19,7 +19,12 @@ from paper_radar.live_evidence.live_apparmor_kernel import (
     SealedPolicy,
 )
 from paper_radar.live_evidence.sealed_runtime import RUNTIME_ROOT, SiteConfiguration
-from paper_radar.pi_execution.placement import PlacementTarget
+from paper_radar.pi_execution.placement import (
+    MANAGER_PREFLIGHT_CHECKS,
+    PlacementManagerError,
+    PlacementTarget,
+)
+from paper_radar.pi_execution.placement_protocol import NATIVE_PREFLIGHT_CHECKPOINTS
 
 _PROC_ROOT = Path("/proc")
 _PARSER_PATH = Path("/usr/sbin/apparmor_parser")
@@ -479,12 +484,63 @@ def _system_bus_directory() -> int:
         raise
 
 
+def _systemd_boot_directory() -> int:
+    """认证真实 boot marker 的每层目录;绝不构造宿主不存在的标记。"""
+    import stat
+
+    flags = os.O_PATH | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+    directory = os.open("/", flags)
+    try:
+        for component in (None, "run", "systemd", "system"):
+            if component is not None:
+                child = os.open(component, flags, dir_fd=directory)
+                os.close(directory)
+                directory = child
+            info = os.fstat(directory)
+            if (
+                not stat.S_ISDIR(info.st_mode)
+                or info.st_uid != 0
+                or stat.S_IMODE(info.st_mode) & 0o022
+            ):
+                raise ValueError("placement_boot_marker_identity")
+        return directory
+    except BaseException:
+        os.close(directory)
+        raise
+
+
+class PlacementPreflightRefusal(ValueError):
+    def __init__(
+        self,
+        checkpoint: str | None = None,
+        *,
+        manager_checks: tuple[str, ...] = (),
+        supervisor_checkpoint: str | None = None,
+    ) -> None:
+        from paper_radar.pi_execution.placement_preflight import (
+            SUPERVISOR_PREFLIGHT_CHECKPOINTS,
+        )
+
+        if checkpoint is not None and checkpoint not in NATIVE_PREFLIGHT_CHECKPOINTS:
+            raise ValueError("native_checkpoint_invalid")
+        if (
+            supervisor_checkpoint is not None
+            and supervisor_checkpoint not in SUPERVISOR_PREFLIGHT_CHECKPOINTS
+        ):
+            raise ValueError("supervisor_checkpoint_invalid")
+        self.checkpoint = checkpoint
+        self.manager_checks = manager_checks
+        self.supervisor_checkpoint = supervisor_checkpoint
+        super().__init__("placement_preflight_refused")
+
+
 def native_preflight(
     root: Path,
     site: SiteConfiguration,
     sealed: PlacementPolicy,
     *,
     target: PlacementTarget | None = None,
+    preserve_boot_marker: bool = False,
 ) -> None:
     """Owner root child only: private MNT, exact staged binds, product UID true.
 
@@ -499,6 +555,11 @@ def native_preflight(
     import sys
 
     from paper_radar.pi_execution.errors import ExecutionError
+    from paper_radar.pi_execution.placement_preflight import (
+        SUPERVISOR_PREFLIGHT_CHECKPOINTS,
+        NativePreflightError,
+        SupervisorPreflightError,
+    )
 
     if os.geteuid() != 0 or root.resolve() != root:
         raise ValueError("placement_preflight_not_root")
@@ -551,6 +612,11 @@ def native_preflight(
                 else None
             )
             system_bus_fd = _system_bus_directory() if target is not None else None
+            boot_fd = (
+                _systemd_boot_directory()
+                if target is not None and preserve_boot_marker
+                else None
+            )
             # /usr/libexec and /run are fixed existing root directories. Covering
             # them in this child permits initial installs without host mkdirs.
             mount("tmpfs", "/usr/libexec", "tmpfs", 2 | 4, b"mode=755")
@@ -596,6 +662,12 @@ def native_preflight(
                 )
                 mount(None, str(system_bus), None, 4096 | 32 | 1 | 2 | 4 | 8)
                 os.close(system_bus_fd)
+            if boot_fd is not None:
+                marker = Path("/run/systemd/system")
+                marker.mkdir(parents=True, mode=0o755)
+                mount("/proc/self/fd/" + str(boot_fd), str(marker), None, 4096)
+                mount(None, str(marker), None, 4096 | 32 | 1 | 2 | 4 | 8)
+                os.close(boot_fd)
             # Redirect and close every setup fd while still root. The product
             # Python supervisor never receives an inherited root write handle.
             null = os.open("/dev/null", os.O_RDWR | os.O_CLOEXEC)
@@ -620,13 +692,50 @@ def native_preflight(
                 )
 
                 failure = 125
-                run_traced_preflight(
-                    target, product_uid=site.product_uid, product_gid=site.product_gid
+                if preserve_boot_marker:
+                    run_traced_preflight(
+                        target,
+                        product_uid=site.product_uid,
+                        product_gid=site.product_gid,
+                        aggregate_manager=True,
+                    )
+                else:
+                    run_traced_preflight(
+                        target,
+                        product_uid=site.product_uid,
+                        product_gid=site.product_gid,
+                    )
+                os._exit(0)
+            if preserve_boot_marker:
+                from paper_radar.pi_execution.placement_preflight import (
+                    run_cold_preflight,
+                )
+
+                run_cold_preflight(
+                    product_uid=site.product_uid, product_gid=site.product_gid
                 )
                 os._exit(0)
             executable = str(RUNTIME_ROOT / "placement-pre")
             os.execve(executable, (executable, "--preflight"), {})
         except ExecutionError as error:
+            if isinstance(error, NativePreflightError):
+                os._exit(130 + NATIVE_PREFLIGHT_CHECKPOINTS.index(error.checkpoint))
+            if isinstance(error, PlacementManagerError):
+                os._exit(
+                    180
+                    + sum(
+                        1 << index
+                        for index, name in enumerate(MANAGER_PREFLIGHT_CHECKS)
+                        if name in error.checks
+                    )
+                )
+            if isinstance(error, SupervisorPreflightError):
+                os._exit(
+                    190
+                    + SUPERVISOR_PREFLIGHT_CHECKPOINTS.index(
+                        error.supervisor_checkpoint
+                    )
+                )
             os._exit(
                 {
                     "placement_unavailable": 122,
@@ -643,6 +752,9 @@ def native_preflight(
     _, status = os.waitpid(pid, 0)
     if status != 0:
         stage, reason = ("预检子进程", "未知拒绝")
+        checkpoint = None
+        manager_checks: tuple[str, ...] = ()
+        supervisor_checkpoint = None
         if os.WIFEXITED(status):
             stage, reason = {
                 120: ("根挂载与设置", "设置失败"),
@@ -653,12 +765,32 @@ def native_preflight(
                 125: ("native/scope/trace", "未知拒绝"),
                 126: ("native/scope/trace", "握手超时"),
             }.get(os.WEXITSTATUS(status), (stage, reason))
+            index = os.WEXITSTATUS(status) - 130
+            if 0 <= index < len(NATIVE_PREFLIGHT_CHECKPOINTS):
+                checkpoint = NATIVE_PREFLIGHT_CHECKPOINTS[index]
+                stage, reason = "native/" + checkpoint, "执行链失败"
+            mask = os.WEXITSTATUS(status) - 180
+            if 0 < mask < 8:
+                manager_checks = tuple(
+                    name
+                    for index, name in enumerate(MANAGER_PREFLIGHT_CHECKS)
+                    if mask & (1 << index)
+                )
+                stage, reason = "产品 manager/" + ",".join(manager_checks), "依赖不可用"
+            index = os.WEXITSTATUS(status) - 190
+            if 0 <= index < len(SUPERVISOR_PREFLIGHT_CHECKPOINTS):
+                supervisor_checkpoint = SUPERVISOR_PREFLIGHT_CHECKPOINTS[index]
+                stage, reason = "scope/trace/" + supervisor_checkpoint, "执行链失败"
         elif os.WIFSIGNALED(status):
             reason = "超时" if os.WTERMSIG(status) == signal.SIGALRM else "信号终止"
         # Diagnostic IO must never replace the controlled refusal.
         with suppress(OSError, ValueError):
             print(f"放置预检拒绝：阶段={stage}；原因={reason}。", file=sys.stderr)
-        raise ValueError("placement_preflight_refused")
+        raise PlacementPreflightRefusal(
+            checkpoint,
+            manager_checks=manager_checks,
+            supervisor_checkpoint=supervisor_checkpoint,
+        )
     # Changes during the probe cannot be treated as a successful preparation.
     verify_host_security(sealed)
     sealed.kernel().verify(sealed.policy)

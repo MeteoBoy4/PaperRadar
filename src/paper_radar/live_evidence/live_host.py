@@ -10,9 +10,11 @@ import resource
 import signal
 import stat
 import subprocess
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from paper_radar.live_evidence.live_install import (
     InstallationPaths,
@@ -44,6 +46,13 @@ from paper_radar.pi_execution.placement import (
 
 if TYPE_CHECKING:
     from paper_radar.live_evidence.placement_policy import PlacementPolicyLifecycle
+
+
+@dataclass(frozen=True)
+class PrerequisiteCheck:
+    name: str
+    status: Literal["pass", "fail", "blocked", "pending"]
+    reason: str
 
 
 def process_identity(pid: int) -> tuple[int, str]:
@@ -122,8 +131,7 @@ class LinuxLiveHost:
             raise ValueError(reason)
         return result.stdout
 
-    def preflight(self, site: SiteConfiguration) -> None:
-        self.site = site
+    def _verify_host_identity(self, site: SiteConfiguration) -> None:
         import platform
 
         specification = json.loads((self.source / "deployment.json").read_bytes())
@@ -142,6 +150,23 @@ class LinuxLiveHost:
                 != identity["sha256"]
             ):
                 raise ValueError("host_tool_identity")
+
+    def _verify_product_processes(self, site: SiteConfiguration) -> None:
+        # 只观察exe/uid元数据;不读环境、命令行、内存或秘密文件。
+        for directory in Path("/proc").iterdir():
+            if not directory.name.isdecimal():
+                continue
+            try:
+                if directory.stat().st_uid == site.product_uid and (
+                    directory / "exe"
+                ).resolve().is_relative_to(site.install_path):
+                    raise ValueError("product_process_active")
+            except (FileNotFoundError, PermissionError):
+                continue
+
+    def preflight(self, site: SiteConfiguration) -> None:
+        self.site = site
+        self._verify_host_identity(site)
         if (
             self._run(
                 ("/usr/bin/systemctl", "--user", "is-system-running"), product=True
@@ -160,17 +185,235 @@ class LinuxLiveHost:
             != b"yes\n"
         ):
             raise ValueError("manager_unavailable")
-        # 只观察exe/uid元数据;不读环境、命令行、内存或秘密文件。
-        for directory in Path("/proc").iterdir():
-            if not directory.name.isdecimal():
-                continue
+        self._verify_product_processes(site)
+
+    def _verify_prerequisite_source(
+        self, root: Path, site: SiteConfiguration, manifest: ModelManifest
+    ) -> None:
+        from paper_radar.live_evidence.live_install import verify_tree
+
+        if root != self.source or root.resolve() != root:
+            raise ValueError("prerequisite_source_identity")
+        protected(root / "payload.sha256", 0, anchor=self.paths.anchor)
+        verify_tree(
+            root,
+            owner_uid=0,
+            anchor=self.paths.anchor,
+            payload=(root / "payload.sha256").read_text().strip(),
+        )
+        if (
+            SiteConfiguration.model_validate_json((root / "site.json").read_bytes())
+            != site
+            or parse_manifest((root / "model-manifest.json").read_bytes()) != manifest
+        ):
+            raise ValueError("prerequisite_source_identity")
+        self._preflight_v2(root)
+
+    def prerequisite_report(
+        self,
+        root: Path,
+        site: SiteConfiguration,
+        manifest: ModelManifest,
+        *,
+        recover: bool = False,
+    ) -> tuple[PrerequisiteCheck, ...]:
+        """只读汇总独立前提;未知身份阻断,新策略的 true 明确等待事务应用。"""
+        from paper_radar.live_evidence.placement_policy import (
+            PlacementPreflightRefusal,
+            native_preflight,
+            verify_host_security,
+        )
+
+        results: list[PrerequisiteCheck] = []
+
+        def check(name: str, action: Callable[[], Any]) -> Any:
             try:
-                if directory.stat().st_uid == site.product_uid and (
-                    directory / "exe"
-                ).resolve().is_relative_to(site.install_path):
-                    raise ValueError("product_process_active")
-            except (FileNotFoundError, PermissionError):
-                continue
+                value = action()
+            except (OSError, ValueError, subprocess.SubprocessError) as error:
+                # Never reflect exception text, subprocess output or secret paths.
+                reason = (
+                    "native_checkpoint:" + error.checkpoint
+                    if isinstance(error, PlacementPreflightRefusal)
+                    and error.checkpoint is not None
+                    else name + "_refused"
+                )
+                if (
+                    isinstance(error, PlacementPreflightRefusal)
+                    and error.manager_checks
+                ):
+                    reason = "manager_checks:" + ",".join(error.manager_checks)
+                if (
+                    isinstance(error, PlacementPreflightRefusal)
+                    and error.supervisor_checkpoint is not None
+                ):
+                    reason = "supervisor_checkpoint:" + error.supervisor_checkpoint
+                results.append(PrerequisiteCheck(name, "fail", reason))
+                return None
+            results.append(PrerequisiteCheck(name, "pass", "verified"))
+            return value
+
+        names = (
+            "placement_seal",
+            "host_identity",
+            "host_security",
+            "manager_state",
+            "linger",
+            "anchor_active",
+            "product_idle",
+            "anchor_target",
+            "sudoers",
+            "nft",
+            "failed_preparation_descriptor",
+            "main_resources",
+            "zero_operation_baseline",
+            "placement_policy",
+            "native_scope_trace",
+        )
+        check(
+            "source_tree",
+            lambda: self._verify_prerequisite_source(root, site, manifest),
+        )
+        if results[-1].status != "pass":
+            return tuple(
+                results
+                + [PrerequisiteCheck(name, "blocked", "source_tree") for name in names]
+            )
+        lifecycle = check("placement_seal", lambda: self._placement_lifecycle(root))
+        if lifecycle is None or lifecycle.sealed is None:
+            if lifecycle is not None:
+                results[-1] = PrerequisiteCheck(
+                    "placement_seal", "fail", "placement_seal_missing"
+                )
+            return tuple(
+                results
+                + [
+                    PrerequisiteCheck(name, "blocked", "placement_seal")
+                    for name in names[1:]
+                ]
+            )
+        self.site, self.manifest = site, manifest
+        sealed = lifecycle.sealed
+        check("host_identity", lambda: self._verify_host_identity(site))
+        check("host_security", lambda: verify_host_security(sealed))
+        for name, argv, expected in (
+            (
+                "manager_state",
+                (
+                    "/usr/bin/systemctl",
+                    "--user",
+                    "show",
+                    "--property=SystemState",
+                    "--value",
+                ),
+                b"running\n",
+            ),
+            (
+                "linger",
+                (
+                    "/usr/bin/loginctl",
+                    "show-user",
+                    str(site.product_uid),
+                    "--property=Linger",
+                    "--value",
+                ),
+                b"yes\n",
+            ),
+            (
+                "anchor_active",
+                (
+                    "/usr/bin/systemctl",
+                    "--user",
+                    "is-active",
+                    "paperradar-anchor.service",
+                ),
+                b"active\n",
+            ),
+        ):
+
+            def query(argv: tuple[str, ...] = argv, expected: bytes = expected) -> None:
+                if self._run(argv, product=True) != expected:
+                    raise ValueError("manager_unavailable")
+
+            check(name, query)
+        check("product_idle", lambda: self._verify_product_processes(site))
+        target = check("anchor_target", self._preflight_target)
+        check("sudoers", lambda: self.validate_sudoers(root / "sudoers"))
+        if target is None:
+            results.append(PrerequisiteCheck("nft", "blocked", "anchor_target"))
+        else:
+            check("nft", lambda: self._check_nft_program(target, manifest))
+        gate = check(
+            "failed_preparation_descriptor", lambda: self._failed_preparation_void(root)
+        )
+        gate_valid = results[-1].status == "pass"
+        if gate is not None:
+            check("main_resources", gate.verify_main_resources)
+            check("zero_operation_baseline", gate.verify_zero_operation_baseline)
+
+        def policy() -> str:
+            if gate is not None and gate.check(recover=recover):
+                return "transaction_required"
+            actual = lifecycle.check(recover=recover)
+            if not isinstance(actual, str) or actual not in {
+                "exact",
+                "absent",
+                "partial",
+                "legacy",
+            }:
+                raise ValueError("placement_policy_unknown")
+            if gate is not None and actual != "exact":
+                raise ValueError("placement_policy_missing")
+            return actual
+
+        if gate_valid:
+            policy_state = check("placement_policy", policy)
+        else:
+            policy_state = None
+            results.extend(
+                PrerequisiteCheck(name, "blocked", "failed_preparation_descriptor")
+                for name in (
+                    "main_resources",
+                    "zero_operation_baseline",
+                    "placement_policy",
+                )
+            )
+        if any(value.status != "pass" for value in results):
+            results.append(
+                PrerequisiteCheck("native_scope_trace", "blocked", "prerequisites")
+            )
+        elif policy_state != "exact":
+            results.append(
+                PrerequisiteCheck(
+                    "native_scope_trace", "pending", "placement_transaction_required"
+                )
+            )
+        else:
+            check(
+                "native_scope_trace",
+                lambda: native_preflight(
+                    root, site, sealed, target=target, preserve_boot_marker=True
+                ),
+            )
+        return tuple(results)
+
+    def _preflight_v2(self, root: Path) -> bool:
+        specification = json.loads((root / "deployment.json").read_bytes())
+        if not isinstance(specification, dict):
+            raise ValueError("placement_preflight_protocol")
+        if "placement_preflight_version" not in specification:
+            return False
+        version = specification["placement_preflight_version"]
+        if type(version) is not int or version != 2:
+            raise ValueError("placement_preflight_protocol")
+        return True
+
+    def _failed_preparation_void(self, root: Path) -> Any:
+        specification = json.loads((root / "deployment.json").read_bytes())
+        if specification.get("failed_preparation_void") is None:
+            return None
+        from paper_radar.live_evidence.preparation_void import FailedPreparationVoid
+
+        return FailedPreparationVoid(root, self.paths)
 
     def _placement_lifecycle(self, root: Path) -> PlacementPolicyLifecycle:
         from paper_radar.live_evidence.placement_policy import PlacementPolicyLifecycle
@@ -185,9 +428,13 @@ class LinuxLiveHost:
             FailedPreparationRetirement,
         )
 
+        self._preflight_v2(root)
         lifecycle = self._placement_lifecycle(root)
         if lifecycle.sealed is not None:
             verify_host_security(lifecycle.sealed)
+        gate = self._failed_preparation_void(root)
+        if gate is not None and gate.check(recover=recover):
+            return
         if not FailedPreparationRetirement(root, self.paths).check(recover=recover):
             lifecycle.check(recover=recover)
 
@@ -199,17 +446,30 @@ class LinuxLiveHost:
             FailedPreparationRetirement,
         )
 
+        v2 = self._preflight_v2(root)
         lifecycle = self._placement_lifecycle(root)
         sealed = lifecycle.sealed
         if sealed is not None:
+            gate = self._failed_preparation_void(root)
             target = (
                 self._preflight_target()
-                if os.path.lexists(self.paths.ledger / "inbox/placement-target-v1.json")
+                if gate is not None
+                or os.path.lexists(self.paths.ledger / "inbox/placement-target-v1.json")
                 else None
             )
 
             def preflight() -> None:
-                native_preflight(root, site, sealed, target=target)
+                if v2:
+                    native_preflight(
+                        root, site, sealed, target=target, preserve_boot_marker=True
+                    )
+                else:
+                    native_preflight(root, site, sealed, target=target)
+
+            if gate is not None and gate.prepare(
+                preflight, lambda: self.verify_preparation_idle(site), recover=recover
+            ):
+                return
 
             retirement = FailedPreparationRetirement(root, self.paths)
             if not retirement.prepare(
@@ -259,12 +519,22 @@ class LinuxLiveHost:
     def verify_target_preflight(self, root: Path, site: SiteConfiguration) -> None:
         from paper_radar.live_evidence.placement_policy import native_preflight
 
+        v2 = self._preflight_v2(root)
         self.site = site
         lifecycle = self._placement_lifecycle(root)
         sealed = lifecycle.sealed
         if sealed is not None:
             lifecycle.verify()
-            native_preflight(root, site, sealed, target=self._preflight_target())
+            if v2:
+                native_preflight(
+                    root,
+                    site,
+                    sealed,
+                    target=self._preflight_target(),
+                    preserve_boot_marker=True,
+                )
+            else:
+                native_preflight(root, site, sealed, target=self._preflight_target())
 
     def retire_placement(self, root: Path, *, recover: bool = False) -> None:
         self._placement_lifecycle(root).remove(recover=recover)
