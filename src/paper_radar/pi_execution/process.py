@@ -1,14 +1,53 @@
 """Popen 与 PipeSession 交接失败时的有限回收;不记录任何子进程输出。"""
 
+import ctypes
 import os
 import selectors
 import signal
 import subprocess
 from contextlib import suppress
+from pathlib import Path
 from time import monotonic
 
 from paper_radar.llm.rpc_pipes import PipeSession
 from paper_radar.pi_execution.errors import ExecutionError
+from paper_radar.pi_execution.isolation import IsolationBoundary, disable_core_dumps
+
+
+def _auth_boundary() -> None:
+    disable_core_dumps()
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.prctl(38, 1, 0, 0, 0) != 0 or libc.prctl(39, 0, 0, 0, 0) != 1:
+        raise ExecutionError("isolation_unavailable")
+
+
+def spawn_unplaced(
+    argv: tuple[str, ...],
+    *,
+    cwd: Path,
+    env: dict[str, str],
+    install: Path,
+    attempt: Path | None,
+    proxy_port: int | None,
+    pass_fds: tuple[int, ...],
+) -> subprocess.Popen[bytes]:
+    """显式豁免后的宿主 resolver 路径;仍在 exec 前建立原隔离边界。"""
+    return subprocess.Popen(
+        argv,
+        cwd=cwd,
+        env=env,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        pass_fds=pass_fds,
+        start_new_session=True,
+        umask=0o077,
+        preexec_fn=(
+            _auth_boundary
+            if attempt is None
+            else IsolationBoundary(install, cwd, attempt, proxy_port)
+        ),
+    )
 
 
 def adopt_process(child: subprocess.Popen[bytes]) -> PipeSession:
