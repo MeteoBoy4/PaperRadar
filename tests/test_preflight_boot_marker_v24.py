@@ -161,3 +161,30 @@ def test_v24_private_manager_queries_do_not_short_circuit(
         capsys.readouterr().err
         == f"放置预检拒绝：阶段=产品 manager/{check}；原因=依赖不可用。\n"
     )
+
+
+@pytest.mark.parametrize(
+    "checkpoint",
+    ["spawn", "post_state_profile", "final_state_caps", "detach", "cold_wait"],
+)
+def test_supervisor_checkpoint_reaches_root_parent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    checkpoint: str,
+) -> None:
+    from paper_radar.pi_execution import placement_preflight as probe
+
+    model = BootMarkerModel(tmp_path, monkeypatch)
+
+    def fail(*args: Any, **kwargs: Any) -> Any:
+        raise probe.SupervisorPreflightError(checkpoint, "placement_exec_failed")
+
+    monkeypatch.setattr(probe.PREFLIGHT_PLATFORM, "spawn", fail)
+    with pytest.raises(ValueError, match=r"^placement_preflight_refused$") as caught:
+        model.run_v24()
+    assert caught.value.supervisor_checkpoint == checkpoint
+    assert (
+        capsys.readouterr().err
+        == f"放置预检拒绝：阶段=scope/trace/{checkpoint}；原因=执行链失败。\n"
+    )

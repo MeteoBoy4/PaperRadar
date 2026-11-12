@@ -12,9 +12,10 @@ from pathlib import Path
 from time import monotonic, sleep
 from uuid import uuid4
 
-from paper_radar.pi_execution.errors import ExecutionError
+from paper_radar.pi_execution.errors import ExecutionError, ExecutionReason
 from paper_radar.pi_execution.placement import (
     LinuxPlacementPlatform,
+    PlacementManagerError,
     PlacementTarget,
     _ptrace,
 )
@@ -26,6 +27,37 @@ from paper_radar.pi_execution.process import cleanup_process
 
 _POST_PROFILE = "paperradar-placement-post-v1 (enforce)"
 _TRUE = Path("/usr/bin/true")
+_STATE_FIELDS = (
+    "exe",
+    "tracer",
+    "ids",
+    "caps",
+    "nnp",
+    "seccomp",
+    "core",
+    "ns",
+    "profile",
+    "fds",
+)
+SUPERVISOR_PREFLIGHT_CHECKPOINTS = (
+    "anchor",
+    "initial_namespaces",
+    "spawn",
+    "ready",
+    "group_process_scope",
+    "post_state",
+    "seize",
+    "release",
+    "exec_stop",
+    "final_state",
+    "detach",
+    "final_exit",
+    "cold_spawn",
+    "cold_wait",
+    "cold_exit",
+    *("post_state_" + field for field in _STATE_FIELDS),
+    *("final_state_" + field for field in _STATE_FIELDS),
+)
 
 
 @dataclass(frozen=True)
@@ -104,6 +136,14 @@ class _PreflightExited(ExecutionError):
         super().__init__("placement_exec_failed")
 
 
+class SupervisorPreflightError(ExecutionError):
+    def __init__(self, checkpoint: str, reason: ExecutionReason) -> None:
+        if checkpoint not in SUPERVISOR_PREFLIGHT_CHECKPOINTS:
+            raise ValueError("supervisor_checkpoint_invalid")
+        self.supervisor_checkpoint = checkpoint
+        super().__init__(reason)
+
+
 def _check_state(
     platform: LinuxPreflightPlatform,
     pid: int,
@@ -113,26 +153,32 @@ def _check_state(
     gid: int,
     controller: int,
     initial: tuple[tuple[int, int], tuple[int, int]],
+    checkpoint: str | None = None,
 ) -> None:
     state = platform.inspect(pid)
     expected = platform.expected_executable(final=final).stat()
-    if (
-        state.executable != (expected.st_dev, expected.st_ino)
-        or state.tracer != (controller if final else 0)
-        or state.uid != (uid,) * 4
-        or state.gid != (gid,) * 4
-        or state.capabilities != (0,) * 5
-        or state.no_new_privs != 1
-        or state.seccomp != 2
-        or state.core != ("0", "0")
-        or any(
-            actual == before
+    checks = (
+        state.executable == (expected.st_dev, expected.st_ino),
+        state.tracer == (controller if final else 0),
+        state.uid == (uid,) * 4 and state.gid == (gid,) * 4,
+        state.capabilities == (0,) * 5,
+        state.no_new_privs == 1,
+        state.seccomp == 2,
+        state.core == ("0", "0"),
+        all(
+            actual != before
             for actual, before in zip(state.namespaces, initial, strict=True)
-        )
-        or state.profile != _POST_PROFILE
-        or not state.descriptors <= {0, 1, 2}
-    ):
-        raise ExecutionError("placement_exec_failed")
+        ),
+        state.profile == _POST_PROFILE,
+        state.descriptors <= {0, 1, 2},
+    )
+    for field, valid in zip(_STATE_FIELDS, checks, strict=True):
+        if not valid:
+            if checkpoint is not None:
+                raise SupervisorPreflightError(
+                    checkpoint + "_" + field, "placement_exec_failed"
+                )
+            raise ExecutionError("placement_exec_failed")
 
 
 def _ready(child: subprocess.Popen[bytes], deadline: float) -> int:
@@ -219,12 +265,14 @@ def run_cold_preflight(*, product_uid: int, product_gid: int) -> None:
         raise ExecutionError("placement_unavailable")
     child: subprocess.Popen[bytes] | None = None
     deadline = monotonic() + 10
+    checkpoint = "cold_spawn"
     try:
         child = PREFLIGHT_PLATFORM.spawn(
             (str(RUNTIME_ROOT / "placement-pre"), "--preflight"), {}
         )
         if child.stdout is None or child.stderr is None:
             raise ExecutionError("placement_exec_failed")
+        checkpoint = "cold_wait"
         diagnostic = bytearray()
         with selectors.DefaultSelector() as selector:
             selector.register(child.stdout, selectors.EVENT_READ, "stdout")
@@ -245,17 +293,23 @@ def run_cold_preflight(*, product_uid: int, product_gid: int) -> None:
             if selector.get_map():
                 raise ExecutionError("placement_handshake_timeout")
         code = child.wait(timeout=max(0.001, deadline - monotonic()))
+        checkpoint = "cold_exit"
         if code == 0 and not diagnostic:
             return
-        for checkpoint in NATIVE_PREFLIGHT_CHECKPOINTS:
+        for native_checkpoint in NATIVE_PREFLIGHT_CHECKPOINTS:
             if (
                 code == 125
-                and diagnostic == ("placement_native_v1:" + checkpoint + "\n").encode()
+                and diagnostic
+                == ("placement_native_v1:" + native_checkpoint + "\n").encode()
             ):
-                raise NativePreflightError(checkpoint)
+                raise NativePreflightError(native_checkpoint)
         raise ExecutionError("placement_exec_failed")
+    except NativePreflightError:
+        raise
+    except ExecutionError as error:
+        raise SupervisorPreflightError(checkpoint, error.reason) from None
     except (OSError, subprocess.SubprocessError):
-        raise ExecutionError("placement_exec_failed") from None
+        raise SupervisorPreflightError(checkpoint, "placement_exec_failed") from None
     finally:
         if child is not None:
             cleanup_process(child)
@@ -294,6 +348,7 @@ def run_traced_preflight(
     child: subprocess.Popen[bytes] | None = None
     pid = 0
     traced = False
+    checkpoint = "anchor"
     try:
         env = (
             platform.manager_preflight_environment()
@@ -303,6 +358,7 @@ def run_traced_preflight(
         platform.verify(
             target, target.anchor_pid, target.anchor_start, "paperradar-anchor.service"
         )
+        checkpoint = "initial_namespaces"
         initial_stats = tuple(
             Path("/proc/self/ns", kind).stat() for kind in ("user", "mnt")
         )
@@ -312,6 +368,7 @@ def run_traced_preflight(
         )
         controller = os.getpid()
         unit = f"paperradar-{uuid4().hex}.scope"
+        checkpoint = "spawn"
         child = platform.spawn(
             (
                 "/usr/bin/systemd-run",
@@ -328,12 +385,15 @@ def run_traced_preflight(
             ),
             env,
         )
+        checkpoint = "ready"
         pid = _ready(child, deadline)
+        checkpoint = "group_process_scope"
         if os.getpgid(pid) != child.pid:
             raise ExecutionError("placement_handshake_invalid")
         start = platform.process_identity(pid)[0]
         scope = platform.scope_identity(target, unit)
         platform.verify(target, pid, start, unit)
+        checkpoint = "post_state"
         _check_state(
             platform,
             pid,
@@ -342,17 +402,23 @@ def run_traced_preflight(
             gid=product_gid,
             controller=controller,
             initial=initial,
+            checkpoint=checkpoint if aggregate_manager else None,
         )
+        checkpoint = "seize"
         _ptrace(0x4206, pid, 0x10 | 0x100000)  # SEIZE TRACEEXEC EXITKILL
         traced = True
+        checkpoint = "release"
         if child.stdin is None:
             raise ExecutionError("placement_handshake_invalid")
         child.stdin.write(b"G")
         child.stdin.close()
+        checkpoint = "exec_stop"
         _exec_stop(pid, deadline)
+        checkpoint = "group_process_scope"
         platform.verify(target, pid, start, unit)
         if platform.scope_identity(target, unit) != scope:
             raise ExecutionError("placement_mismatch")
+        checkpoint = "final_state"
         _check_state(
             platform,
             pid,
@@ -361,9 +427,12 @@ def run_traced_preflight(
             gid=product_gid,
             controller=controller,
             initial=initial,
+            checkpoint=checkpoint if aggregate_manager else None,
         )
+        checkpoint = "detach"
         _ptrace(17, pid)  # DETACH; no true instruction has run.
         traced = False
+        checkpoint = "final_exit"
         child.wait(timeout=max(0.001, deadline - monotonic()))
         if child.stdout is None or child.stderr is None:
             raise ExecutionError("placement_exec_failed")
@@ -392,16 +461,23 @@ def run_traced_preflight(
                             os.set_blocking(stream.fileno(), False)
                         raw = os.read(child.stderr.fileno(), 97)
                         extra = os.read(child.stdout.fileno(), 1)
-                        for checkpoint in NATIVE_PREFLIGHT_CHECKPOINTS:
+                        for native_checkpoint in NATIVE_PREFLIGHT_CHECKPOINTS:
                             if (
                                 child.returncode == 125
                                 and not extra
                                 and raw
-                                == ("placement_native_v1:" + checkpoint + "\n").encode()
+                                == (
+                                    "placement_native_v1:" + native_checkpoint + "\n"
+                                ).encode()
                             ):
-                                raise NativePreflightError(checkpoint) from None
+                                raise NativePreflightError(native_checkpoint) from None
                 except (OSError, subprocess.SubprocessError):
                     pass
+        if aggregate_manager and not isinstance(
+            error,
+            (NativePreflightError, PlacementManagerError, SupervisorPreflightError),
+        ):
+            raise SupervisorPreflightError(checkpoint, error.reason) from None
         raise
     except (
         OSError,
@@ -411,6 +487,10 @@ def run_traced_preflight(
         KeyError,
         subprocess.SubprocessError,
     ):
+        if aggregate_manager:
+            raise SupervisorPreflightError(
+                checkpoint, "placement_exec_failed"
+            ) from None
         raise ExecutionError("placement_exec_failed") from None
     finally:
         if traced:

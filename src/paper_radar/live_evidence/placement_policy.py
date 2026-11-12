@@ -511,12 +511,26 @@ def _systemd_boot_directory() -> int:
 
 class PlacementPreflightRefusal(ValueError):
     def __init__(
-        self, checkpoint: str | None = None, *, manager_checks: tuple[str, ...] = ()
+        self,
+        checkpoint: str | None = None,
+        *,
+        manager_checks: tuple[str, ...] = (),
+        supervisor_checkpoint: str | None = None,
     ) -> None:
+        from paper_radar.pi_execution.placement_preflight import (
+            SUPERVISOR_PREFLIGHT_CHECKPOINTS,
+        )
+
         if checkpoint is not None and checkpoint not in NATIVE_PREFLIGHT_CHECKPOINTS:
             raise ValueError("native_checkpoint_invalid")
+        if (
+            supervisor_checkpoint is not None
+            and supervisor_checkpoint not in SUPERVISOR_PREFLIGHT_CHECKPOINTS
+        ):
+            raise ValueError("supervisor_checkpoint_invalid")
         self.checkpoint = checkpoint
         self.manager_checks = manager_checks
+        self.supervisor_checkpoint = supervisor_checkpoint
         super().__init__("placement_preflight_refused")
 
 
@@ -541,7 +555,11 @@ def native_preflight(
     import sys
 
     from paper_radar.pi_execution.errors import ExecutionError
-    from paper_radar.pi_execution.placement_preflight import NativePreflightError
+    from paper_radar.pi_execution.placement_preflight import (
+        SUPERVISOR_PREFLIGHT_CHECKPOINTS,
+        NativePreflightError,
+        SupervisorPreflightError,
+    )
 
     if os.geteuid() != 0 or root.resolve() != root:
         raise ValueError("placement_preflight_not_root")
@@ -711,6 +729,13 @@ def native_preflight(
                         if name in error.checks
                     )
                 )
+            if isinstance(error, SupervisorPreflightError):
+                os._exit(
+                    190
+                    + SUPERVISOR_PREFLIGHT_CHECKPOINTS.index(
+                        error.supervisor_checkpoint
+                    )
+                )
             os._exit(
                 {
                     "placement_unavailable": 122,
@@ -729,6 +754,7 @@ def native_preflight(
         stage, reason = ("预检子进程", "未知拒绝")
         checkpoint = None
         manager_checks: tuple[str, ...] = ()
+        supervisor_checkpoint = None
         if os.WIFEXITED(status):
             stage, reason = {
                 120: ("根挂载与设置", "设置失败"),
@@ -751,12 +777,20 @@ def native_preflight(
                     if mask & (1 << index)
                 )
                 stage, reason = "产品 manager/" + ",".join(manager_checks), "依赖不可用"
+            index = os.WEXITSTATUS(status) - 190
+            if 0 <= index < len(SUPERVISOR_PREFLIGHT_CHECKPOINTS):
+                supervisor_checkpoint = SUPERVISOR_PREFLIGHT_CHECKPOINTS[index]
+                stage, reason = "scope/trace/" + supervisor_checkpoint, "执行链失败"
         elif os.WIFSIGNALED(status):
             reason = "超时" if os.WTERMSIG(status) == signal.SIGALRM else "信号终止"
         # Diagnostic IO must never replace the controlled refusal.
         with suppress(OSError, ValueError):
             print(f"放置预检拒绝：阶段={stage}；原因={reason}。", file=sys.stderr)
-        raise PlacementPreflightRefusal(checkpoint, manager_checks=manager_checks)
+        raise PlacementPreflightRefusal(
+            checkpoint,
+            manager_checks=manager_checks,
+            supervisor_checkpoint=supervisor_checkpoint,
+        )
     # Changes during the probe cannot be treated as a successful preparation.
     verify_host_security(sealed)
     sealed.kernel().verify(sealed.policy)

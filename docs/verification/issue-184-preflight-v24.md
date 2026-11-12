@@ -25,16 +25,19 @@ bind，逐层拒绝符号链接、错误属主和可写目录；不以新建空�
 native 只在两个有效无秘密 preflight 模式中输出封闭 marker。监督器只接受单条完整
 白名单 marker 和原退出码 125；未知、额外、过长、混合或截断输出均拒绝。诊断涵盖
 首次 ready 之前，以及真实 ptrace 释放后、true exec 前的拒绝；初装冷预检也使用固定
-无参数语言的有限监督。root 子进程通过固定退出码区间传递 50 个检查点及 manager
-失败位集，父进程输出具体分项，无继承 root 可写诊断 fd。该诊断不执行额外探针。
+无参数语言的有限监督。root 子进程通过固定退出码区间传递 50 个 native 检查点、35 个 supervisor 检查点及 manager
+失败位集，父进程输出具体分项，无继承 root 可写诊断 fd。supervisor 只记录现有步骤；
+两次状态检查按 exe、tracer、ids、caps、nnp、seccomp、core、ns、profile、fds
+细分，保留原受控执行错误类别；native marker 与 manager 子项优先。该诊断不执行额外探针。
 
 独立测试模块：
 
 | 模块 | 用例数 | 覆盖 |
 | --- | ---: | --- |
 | `tests/test_prerequisite_report_v24.py` | 12 | 多失败汇总、tree/seal 屏障、依赖阻断、资源/额度、unknown kernel、prepared 缺失、pending 和真实 native 条件 |
-| `tests/test_preflight_boot_marker_v24.py` | 11 | 真实原目录内容只读保留、身份拒绝、设置 fd 关闭、root 检查点、私有 manager 三项不短路 |
+| `tests/test_preflight_boot_marker_v24.py` | 16 | 真实原目录内容只读保留、身份拒绝、设置 fd 关闭、root 检查点、私有 manager 三项不短路 |
 | `tests/test_preflight_protocol_v24.py` | 9 | 新候选 prepare/final verify 协议选择、历史缺失、未知和非整数版本拒绝 |
+| `tests/test_preflight_supervisor_v24.py` | 28 | spawn/ready/身份与 scope/SEIZE/释放/exec-stop/DETACH/退出，以及前后各十项状态故障 |
 | `tests/test_native_preflight_diagnostics_v24.py` | 67 | 50 个有限 marker、畸形输出拒绝、ready 后真实 ptrace 失败、固定冷预检 |
 
 这些用例使用明确的 OS adapter、子进程及有限的本地 ptrace；不实际改变宿主 mount、

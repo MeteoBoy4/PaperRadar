@@ -242,6 +242,11 @@ class LinuxLiveHost:
                     and error.manager_checks
                 ):
                     reason = "manager_checks:" + ",".join(error.manager_checks)
+                if (
+                    isinstance(error, PlacementPreflightRefusal)
+                    and error.supervisor_checkpoint is not None
+                ):
+                    reason = "supervisor_checkpoint:" + error.supervisor_checkpoint
                 results.append(PrerequisiteCheck(name, "fail", reason))
                 return None
             results.append(PrerequisiteCheck(name, "pass", "verified"))
@@ -393,6 +398,8 @@ class LinuxLiveHost:
 
     def _preflight_v2(self, root: Path) -> bool:
         specification = json.loads((root / "deployment.json").read_bytes())
+        if not isinstance(specification, dict):
+            raise ValueError("placement_preflight_protocol")
         if "placement_preflight_version" not in specification:
             return False
         version = specification["placement_preflight_version"]
