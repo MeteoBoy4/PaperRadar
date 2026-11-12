@@ -150,6 +150,8 @@ Python 内存引用在启动或上下文退出时释放，不承诺对不可变�
 
 ### 用户级放置与双阶段握手
 
+本节描述严格模式及可选 collector 使用的受保护放置路径；显式豁免的无放置路径见[上节](#可选放置与宿主-dns)。
+
 `paper_radar.pi_execution.placement.PlacedProcess` 是认证、模型和 collector 的共同放置边界。
 构造时仅以固定 `systemd-run --user --scope --slice=paperradar.slice` 启动封装；
 要求 user manager 为 running、`Linger=yes`、`paperradar-anchor.service` 为 active。
@@ -196,7 +198,7 @@ pid/starttime/cgroup、实际 executable、`NoNewPrivs=1` 和软硬零 core，�
 保持失败。`recheck()` 供正式消费者在 preclaim 使用；`check_placement_readiness()`
 是 doctor 的只读 manager/目标/锚定检查，不创建 scope、不证明未来子进程放置。
 
-当前执行链由静态 pre 完成固定 resolver 视图，不调用 Python
+受保护放置执行链由静态 pre 完成固定 resolver 视图，不调用 Python
 `resolver.apply_resolver_view(view,digest)`。该历史公共 API 保留原语义：在非特权私有
 user/mount namespace 内只读绑定视图，或在 uid 不可写且同 inode、同摘要时复用。
 封印部署提供 `/run/paper-radar/` 下 root 所有、产品不可改的文件，并要求站点已有
@@ -294,9 +296,9 @@ ScreeningTasks 唯一权威；不另建接收器、预算或租约。
 
 KeyboardInterrupt/SystemExit 保留未结算租约；显式过期恢复记 outcome_unknown，
 进程重建不加次数。历史成功及 Feed 组合可在原根/安装不可访问时查询和恢复，继续
-新执行仍重新检查当前证据/供给/auth，不加载旧会话。Feed 仅接收闭集 pi_rpc，根用途
+新执行仍重新检查当前所有者选择、供给和 auth；严格模式另核当前证据，不加载旧会话。Feed 仅接收闭集 pi_rpc，根用途
 仍独立于 executor_kind。认证 token 的 `sk-` 前缀拒绝是形状启发式，不能证明 token
-确属订阅、有效或具有模型权限；真实认证、额度/用量和参数能力仍交 Live。
+确属订阅、有效或具有模型权限；真实认证、额度/用量和参数能力证明由可选 Live 证据链承接。
 
 纯 admission 模块及包导入不连接 auth/launcher/安装保护；完整只读构造入口不导入 auth、
 launcher 或执行 service，不刷新、不创建会话或写账本，供诊断复用。

@@ -438,52 +438,15 @@ uv run --offline --locked paper-radar pi supply gc --execute <plan_id> \
 [安装清理计划](docs/contracts/pi-supply.md#不可变安装清理计划)。
 供给检查和激活不代表 RPC、模型或校准就绪。
 
-新的 Live 私有审阅包使用独立入口，派生当前策略/最新 activation 后冻结 strict β、七计划、
-六格合成材料、user slice/静态 anchor、nft/resolver 和精确零参 wrappers：
+Live 证据采集与封印部署保留为可选复验路径，入口帮助为：
 
 ```bash
 uv run --offline --locked python scripts/seal_live_bundle.py --help
-```
-
-固定 true 预检使用同次封印的规范工具路径；明确指定原失败 runtime 时可封印仅限未安装 preparing 准备的退役描述，原失败记录与业务来源保留。源码修复后可显式封印同全部放置成员的一跳 preparing 恢复来源，仍需原记录完整认证、所有者审阅与显式 recover。所有者明确选择的两份零操作失败 preparing 可用配对 `--failed-preparation-void-runtimes` / `--failed-preparation-void-journals` 封印作废范围；先归档原字节并提交作废意图，候选加载或完整预检失败则耐久回滚至旧主部署完整且无放置策略，保留历史与原额度。详细条件见[放置策略生命周期](docs/contracts/live-evidence.md#封印放置策略生命周期)。
-
-归档及每个成员均有精确 SHA；日期/网络 pending 时安装继续拒绝。新包不自动 receive 或激活，
-升级/同 SHA 重跑/卸载/显式恢复保留历史与累计额度。流程与现场边界见
-[Live 封印审阅包](docs/contracts/live-evidence.md#live-封印审阅包)。
-
-旧 β 站点封印模式保留独立入口：
-
-```bash
 uv run --offline --locked python scripts/seal_site_evidence.py --help
+uv run --offline --locked python scripts/issue176_closure.py --help
 ```
 
-入口输出冻结 Python/依赖/源码、零请求批准计划、部署/卸载脚本、SHA256 与私有审阅说明。
-所有者审阅确切字节后从 root 冻结副本部署，默认卸载保留账本与回执；不自动证据激活。
-采集只观察当前站点和认证/cache stat 元数据，不读秘密正文、不认证、不调用模型、不联网。
-正常刷新取证采用 manifest v2 的三次外部执行批次：A 为 boundary-low，B 为 boundary-high，C 为 value-low 及剩余三格。批间返回并释放锁／进程；B 或 C 首格缺真实刷新提交证据时持久 unknown 停止，不自动补跑。供应商真实到期保持 unknown；既有六格和原七份 v2 计划各自保留来源，部署后72小时目标不延长共同授权窗口。详细边界见 [Live 契约](docs/contracts/live-evidence.md#正常认证刷新闭环)；离线工程覆盖见 [独立台账](docs/verification/issue-177-normal-auth-refresh.md)。新版封印字节仍须所有者审阅并部署，未执行现场不能判通过。
-
-认证/cache 使用固定 v2 不变量基线，允许限定订阅刷新；封印产品认证入口经固定 1.4.0 公开 API 采样正常刷新／提交，正式与 collector 共用准备路径。helper 临时 HOME/TMPDIR 退出后删除并核验；root 只接固定元数据，token 仅产品内存。
-首次基线与旧证据边界见[Live 证据契约](docs/contracts/live-evidence.md#当前观察与认证cache-基线)。
-三项SHA OK后仍须核对部署/采集/接收终态；拒绝诊断给出受控原因与阶段。
-所有者审阅新包后只运行REVIEW中的run-g2.sh，输入一次sudo密码，脚本从入口内嵌字节冻结部署材料，
-不让root读取用户可换链来源，再自动预配固定空cwd并完成G2。
-普通部署不接管用户目录。更新既有冻结runtime可明确提供旧payload与manifest SHA，
-构建单入口升级包，核旧字节后原样归档，保留账本与历史；新字节须所有者重新审阅。
-首次升级的cutover会永久撤销旧资格，再采集新计划；root只追加收紧日志在helper失败时仍阻断，缺失或不支持则拒绝。
-`--owner-closure` 可冻结集成演练：三次本人手输实际短ID、产品uid权限负例、helper失败持久性和恢复后再活；
-实际新root字节及所有操作仍须所有者审阅执行，详见上述契约。
-该站点采集器不提供模型、RPC、IPv4 出站或 observer 的能力证明；规则见 [Live 证据契约](docs/contracts/live-evidence.md#β-站点采集与封印部署)。
-
-单次收口审阅包可用 `uv run --offline --locked python scripts/issue176_closure.py --help` 显式构建。
-它复用与当前准入策略身份匹配的已部署冻结 runtime，输出待审 owner 工作流；构建不执行 sudo 或操作账本。
-真实恢复会失效全部旧激活，成功出口要求所有者重新手动激活非空最终分项，详见
-[Live 证据契约](docs/contracts/live-evidence.md#所有者单次收口审阅包)。
-严格模式的正式消费者按分项证据决定资格，站点分项激活不能代替模型／RPC 等必需证据；显式所有者豁免仅移除证据前提。
-严格模式的 Pi 准入在调用前按需刷新受保护观察；临时不可用拒绝本次并保留原成功快照和证据时点，
-真实漂移继续收紧。doctor 只读同一结果；固定零参数特权入口的实际安装与现场核验仍由封印部署承担。
-详见 [Live 当前观察契约](docs/contracts/live-evidence.md#当前观察与认证cache-基线)。
-
-当前边界见 [Live 证据契约](docs/contracts/live-evidence.md)，后继工作与承接见[路线图](docs/roadmap.md#module-live)。
+构建不代表已部署或取得执行资格。批准计划、接收与激活、正常刷新、保留历史的升级／恢复及卸载规则统一见 [Live 证据契约](docs/contracts/live-evidence.md)；职责与完成范围见[路线图](docs/roadmap.md#module-live)。
 
 ## Pi RPC
 
@@ -505,25 +468,8 @@ uv run --offline --locked paper-radar live-evidence owner-waiver \
 ```
 
 不带 `--enable/--disable` 时只读查询；关闭用 `--disable --reason <理由>`，后续严格执行需重新采集、接收和激活。
-以下证据链与部署工具保留为可选后置复验，本次降范围不出新封印包。
-带版本的六格登记、共享分项投影，以及独立受保护账本的接收、证据激活、不可逆撤销与恢复见
-[Live evidence](docs/contracts/live-evidence.md)。所有者入口为 `paper-radar live-evidence receive/activate/revoke`，
-`show` 查询回执，`show --plan-id <ID>` 查询批准计划；v2 同时展示 root 累计额度、失败链、熔断与下一动作。
-固定零参数模型采集入口执行封印六格与四个 IPv4 对照，只写受保护完成历史／inbox，owner 仍独立 receive／逐格激活。新 Live 封印模式安装这些固定入口，详见[固定模型采集闭环](docs/contracts/live-evidence.md#固定模型采集闭环)。
-封印安装器显式核对 anchor 的空执行数组，并提供仅针对已核、未执行 `resources` 中断的
-新包 `recover` 替换；完整已核 resources 谱系按原史恢复，固定 native nft 在独立网络
-namespace 预检及宿主 dry-run 通过后才替换旧资源，实际 level 由代际一致的双视图核验。
-已安装升版从受保护原始来源继承部署时点；AppArmor 内核字节与无秘密 scope／exec 预检同样受封印约束。
-条件与拒绝边界见同一契约；升版字节须所有者重新审阅部署，不继承旧策略资格。
-Live 采集使用跨计划固定域的 40 次联网／40 次 prompt 预占，不退款；普通失败按三次／六轮规则停止，
-安全失败首次停止。规则与续跑来源见 [v2 契约](docs/contracts/live-evidence.md#v2-采集额度失败类与续跑)。帮助纯本地。
-activate 展示完整脱敏回执并要求手输短 ID；确认后由固定封印采集器刷新观察，审核内容相同才激活。
-阅读可超过60秒，执行前观察仍受60秒时效约束；事实改变或能力到期继续拒绝，原期限不延长。
-严格模式的 Screening 入口在刷新前、准备后和领取事务内读取同一分项权威；普通资格缺口只拒绝当次调用，
-已知漂移或明确失败按受影响范围持久收紧。
-Read 执行边界见[Read 执行契约](docs/contracts/read-execution.md)；受保护部署与实际证据激活由所有者完成。有限合成实验的适用范围见
-[EXP-2 证据与承接](docs/verification/exp-2-pi-live-probe.md)，不据此授予生产执行。
-真实执行接线的承接入口见[路线图承接索引](docs/roadmap.md#模块承接索引)。
+可选证据链提供 `paper-radar live-evidence receive/show/activate/revoke`；受保护部署、批准计划、分项状态与失效规则见 [Live 证据契约](docs/contracts/live-evidence.md)。
+Read 的执行组合见 [Read 执行契约](docs/contracts/read-execution.md)，真实资料、实验根与产品接线责任见[路线图承接索引](docs/roadmap.md#模块承接索引)。
 
 ## 论文事实与 Feed 发现的本地查询
 

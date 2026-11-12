@@ -80,7 +80,7 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 `paper_radar.doctor.pi_exec.execution_checks` 复用基础只读检查、历史快照加载和
 `doctor_supply` 的供给/版本/树/保护事实，不安装、不激活、不持执行生命周期保护。
 从已验证 snapshot 的 Screening 模型槽、adapter 与当前供给投影 `EvidenceBinding`，
-使用执行服务共用的只读 `build_admission_request` 构造完整当次请求，严格模式再调用唯一
+严格模式使用执行服务共用的只读 `build_admission_request` 构造完整当次请求，再调用唯一
 `load_admission_evidence` 取得 `AdmissionProjection`。账本、待撤销意图与受保护观察均只读；
 严格模式不可读或失信为 invalid/ledger_untrusted，不降级为 not_assessed；豁免模式不请求受保护证据来换取执行许可，原事实不重写。
 不创建任务、回执或 StageInput，不调用生产 preflight、prepare_launch、认证刷新或 dry_run。
@@ -100,7 +100,7 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 | authentication | 非必要上下文披露 not_assessed/authentication_not_assessed；不解析 token、不验证有效期、不刷新。所需能力资格由共享准入分项独立决定。 |
 | model_parameters | 非必要上下文披露 not_assessed/model_parameters_not_assessed；不调用模型或探测额度，参数与账号能力的必需/披露分类只取共享登记。 |
 
-诊断 result 与证据字段采用以下固定映射，不合并枚举：
+严格模式的共享投影采用以下诊断 result 与证据字段映射，不合并枚举；豁免模式的单独未评估行不生成这些分项：
 
 | 权威分项 | result | evidence | original_state |
 | --- | --- | --- | --- |
@@ -151,7 +151,7 @@ pi-supply 缺快照或带 settings、pi-exec 缺快照/凭据目录或带 settin
 其他 scope 带凭据目录均退出 2。敏感参数不回显；读取错误只显示受控类别与中文修复入口。
 中断退出 130。不可读路径由服务分类，不由参数转换提前降为用法错误。
 
-当前观察诊断只读同一受保护快照与刷新结果，不调用刷新入口或启动守护进程。
+严格模式的当前观察诊断只读同一受保护快照与刷新结果，不调用刷新入口或启动守护进程。
 `observation_unavailable`／`observation_stale` 显示「观察不可用（临时）」；实际放置不符
 显示「放置不符」，`observation_drift` 显示「漂移（已收紧）」并独立披露待撤销标记。
 共享中文片段保留原证据三态、verified_at、observed_at、refresh_result、refresh_at 与下一动作；
