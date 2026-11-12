@@ -130,3 +130,43 @@ def test_idle_and_reauthentication_precede_first_own_record(
     with pytest.raises(ValueError, match=r"^preparation_recovery_source$"):
         model.gate.prepare(lambda: pytest.fail("no preflight"), changed, recover=True)
     assert not model.gate.journal.exists() and model.original.io.writes == []
+
+
+@pytest.mark.parametrize(
+    "change,reason",
+    [
+        ("absent", "apparmor_profile_missing"),
+        ("partial", "preparation_recovery_kernel_write_refused"),
+    ],
+)
+def test_kernel_change_after_own_preparing_cannot_load_or_remove_policy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str, reason: str
+) -> None:
+    from paper_radar.live_evidence import preparation_retirement
+
+    model = recovery_case(tmp_path, monkeypatch)
+    from paper_radar.live_evidence.live_install import publish as original
+
+    interrupted = False
+
+    def publish(
+        path: Path, raw: bytes, *, replace: bool = False, mode: int = 0o644
+    ) -> None:
+        nonlocal interrupted
+        original(path, raw, replace=replace, mode=mode)
+        if path == model.gate.journal and json.loads(raw)["phase"] == "preparing":
+            assert not interrupted
+            interrupted = True
+            if change == "absent":
+                model.original.io.profiles.clear()
+            else:
+                model.original.io.profiles.pop("1")
+
+    with monkeypatch.context() as race:
+        race.setattr(preparation_retirement, "publish", publish)
+        with pytest.raises(ValueError, match="^" + reason + "$"):
+            model.gate.prepare(lambda: None, lambda: None, recover=True)
+            assert model.original.io.writes == [], "bridge changed kernel policy"
+    assert interrupted and model.original.io.writes == []
+    assert json.loads(model.gate.journal.read_bytes())["phase"] == "preparing"
+    assert_preserved(model)

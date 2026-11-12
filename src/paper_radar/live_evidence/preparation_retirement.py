@@ -26,6 +26,7 @@ from paper_radar.live_evidence.live_apparmor_kernel import (
     AppArmorKernel,
     KernelPolicyIO,
     LinuxKernelPolicyIO,
+    SealedPolicy,
 )
 from paper_radar.live_evidence.live_install import (
     InstallationPaths,
@@ -287,6 +288,17 @@ def _historical_refresh_stopped(
         raise ValueError("failed_preparation_refresh_source") from None
 
 
+class _ExistingPreparationKernel(AppArmorKernel):
+    """一跳接续只核现存策略;耐久认领之后的漂移也不能触达kernel写入口。"""
+
+    def load(self, policy: SealedPolicy) -> bool:
+        self.verify(policy)
+        return False
+
+    def remove(self, policy: SealedPolicy, *, allow_partial: bool = False) -> bool:
+        raise ValueError("preparation_recovery_kernel_write_refused")
+
+
 class FailedPreparationRetirement:
     """check只读;prepare先保存原记录再严格remove,全阶段不得写旧业务对象。"""
 
@@ -422,7 +434,11 @@ class FailedPreparationRetirement:
                 self.paths.ledger,
                 owner_uid=self.owner_uid,
                 anchor=self.paths.anchor,
-                kernel=AppArmorKernel(self.io, new_policy.parser),
+                kernel=(
+                    _ExistingPreparationKernel
+                    if self.recovery is not None
+                    else AppArmorKernel
+                )(self.io, new_policy.parser),
             ),
         )
 
