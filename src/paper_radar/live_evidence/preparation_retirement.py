@@ -101,7 +101,7 @@ def describe_failed_preparation(old: Path, new: Path) -> FailedPreparation:
     new_spec = json.loads((new / "deployment.json").read_bytes())
     epoch = EpochUpgrade.model_validate(new_spec.get("epoch_upgrade"))
     pair = (epoch.payload_sha256, epoch.runtime_manifest_sha256)
-    derived = {"strict_beta", "failed_preparation"}
+    derived = {"strict_beta", "failed_preparation", "preparation_recovery"}
     if (
         old_spec.get("failed_preparation") is not None
         or old_spec.get("epoch_upgrade") != new_spec.get("epoch_upgrade")
@@ -160,6 +160,65 @@ def describe_failed_preparation(old: Path, new: Path) -> FailedPreparation:
         upgrade_from=pair,
         epoch_upgrade_sha256=_sha(json_bytes(epoch.model_dump(mode="json"))),
         continuity_sha256=continuity_identity(new)[0],
+    )
+
+
+class PreparationRecovery(WireModel):
+    """仅命名一个原preparing候选及其原日志字节;不接受路径或链。"""
+
+    payload_sha256: Digest
+    runtime_manifest_sha256: Digest
+    journal_sha256: Digest
+
+
+def describe_preparation_recovery(
+    old: Path, new: Path, old_journal_raw: bytes
+) -> PreparationRecovery:
+    """离线派生一跳候选;root仍从固定staged/ledger地址重认证。"""
+    payload = (old / "payload.sha256").read_text().strip()
+    verify_tree(old, owner_uid=old.stat().st_uid, anchor=old, payload=payload)
+    old_spec = json.loads((old / "deployment.json").read_bytes())
+    new_spec = json.loads((new / "deployment.json").read_bytes())
+    if (
+        "preparation_recovery" in old_spec
+        or old == new
+        or (
+            (new / "payload.sha256").exists()
+            and (new / "payload.sha256").read_text().strip() == payload
+        )
+    ):
+        raise ValueError("preparation_recovery_one_hop")
+    descriptor = FailedPreparation.model_validate(old_spec.get("failed_preparation"))
+    derived = {"strict_beta", "preparation_recovery"}
+    if {key: value for key, value in old_spec.items() if key not in derived} != {
+        key: value for key, value in new_spec.items() if key not in derived
+    } or continuity_identity(old) != continuity_identity(new):
+        raise ValueError("preparation_recovery_continuity")
+    if any((old / name).read_bytes() != (new / name).read_bytes() for name in MEMBERS):
+        raise ValueError("preparation_recovery_policy_change")
+    previous, current = read_placement_policy(old), read_placement_policy(new)
+    if (
+        previous is None
+        or current is None
+        or previous.identity != current.identity
+        or previous.identity != descriptor.new_placement_identity
+    ):
+        raise ValueError("preparation_recovery_policy_change")
+    manifest = _sha((old / "manifest.sha256").read_bytes())
+    if old_journal_raw != json_bytes(
+        {
+            "format_version": 1,
+            "payload": payload,
+            "manifest": manifest,
+            "descriptor": descriptor.model_dump(mode="json"),
+            "phase": "preparing",
+        }
+    ):
+        raise ValueError("preparation_recovery_journal")
+    return PreparationRecovery(
+        payload_sha256=payload,
+        runtime_manifest_sha256=manifest,
+        journal_sha256=_sha(old_journal_raw),
     )
 
 
@@ -245,6 +304,14 @@ class FailedPreparationRetirement:
         self.descriptor = (
             FailedPreparation.model_validate(raw) if raw is not None else None
         )
+        recovery = specification.get("preparation_recovery")
+        self.recovery = (
+            PreparationRecovery.model_validate(recovery)
+            if "preparation_recovery" in specification
+            else None
+        )
+        if self.recovery is not None and self.descriptor is None:
+            raise ValueError("preparation_recovery_requires_retirement")
         self.io = kernel_io or LinuxKernelPolicyIO()
 
     def _read(self, path: Path) -> bytes:
@@ -295,12 +362,15 @@ class FailedPreparationRetirement:
 
     def _identity(self) -> dict[str, Any]:
         assert self.descriptor is not None
-        return {
+        value = {
             "format_version": 1,
             "payload": (self.staged / "payload.sha256").read_text().strip(),
             "manifest": _sha((self.staged / "manifest.sha256").read_bytes()),
             "descriptor": self.descriptor.model_dump(mode="json"),
         }
+        if self.recovery is not None:
+            value["preparation_recovery"] = self.recovery.model_dump(mode="json")
+        return value
 
     def _phase(self) -> str | None:
         if not os.path.lexists(self.journal):
@@ -313,7 +383,10 @@ class FailedPreparationRetirement:
             phase = value.get("phase")
             if (
                 not isinstance(phase, str)
-                or phase not in _PHASES
+                or phase
+                not in (
+                    {"preparing", "prepared"} if self.recovery is not None else _PHASES
+                )
                 or json_bytes({**self._identity(), "phase": phase}) != raw
             ):
                 raise ValueError
@@ -374,18 +447,46 @@ class FailedPreparationRetirement:
                 manifest_digest=manifest,
             )
         # 新增的旧staged来源先核完整保护树,再允许读取任何policy成员。
+        source = self.staged
+        allowed_journals = {self.journal}
+        if self.recovery is not None:
+            source = _STAGING_ROOT / self.recovery.payload_sha256 / "runtime"
+            verify_tree(
+                source,
+                owner_uid=self.owner_uid,
+                anchor=self.paths.anchor,
+                payload=self.recovery.payload_sha256,
+                manifest_digest=self.recovery.runtime_manifest_sha256,
+            )
+            source_journal = self.paths.ledger / (
+                "placement-retirement-v1-" + self.recovery.payload_sha256 + ".json"
+            )
+            if os.path.lexists(source_journal.with_name(source_journal.name + ".new")):
+                raise ValueError("failed_preparation_pending_file")
+            raw_source = self._read(source_journal)
+            if (
+                _sha(raw_source) != self.recovery.journal_sha256
+                or describe_preparation_recovery(source, self.staged, raw_source)
+                != self.recovery
+            ):
+                raise ValueError("preparation_recovery_source")
+            allowed_journals.add(source_journal)
         old, new = self._lifecycles()
-        if describe_failed_preparation(old.root, self.staged) != self.descriptor:
+        # 原失败策略仍按原v1->v2接缝认证,不能直接用新源码跳过原候选。
+        if describe_failed_preparation(old.root, source) != self.descriptor:
             raise ValueError("failed_preparation_source")
         for path in (self.journal, self.snapshot, old.journal, new.journal):
             if os.path.lexists(path.with_name(path.name + ".new")):
                 raise ValueError("failed_preparation_pending_file")
         if any(
-            path != self.journal
+            path not in allowed_journals
             for path in self.paths.ledger.glob("placement-retirement-v1-*.json")
         ):
             raise ValueError("failed_preparation_journal_conflict")
         phase = self._phase()
+        if self.recovery is not None and phase is None:
+            # 只有完整认证原preparing来源后才产生内存阶段;首写仍在idle+重验之后。
+            phase = "preparing"
         if os.path.lexists(self.snapshot):
             if self._read(self.snapshot) != original_marker(self.descriptor):
                 raise ValueError("failed_preparation_snapshot")
@@ -473,9 +574,11 @@ class FailedPreparationRetirement:
         self._policy_marker(old, old_phases, "failed_preparation_marker")
         self._policy_marker(
             new,
-            new_phases,
+            {"preparing"}
+            if self.recovery is not None and not os.path.lexists(self.journal)
+            else new_phases,
             "failed_preparation_new_marker",
-            missing_allowed=phase != "prepared",
+            missing_allowed=self.recovery is None and phase != "prepared",
         )
         if phase == "prepared":
             return False
@@ -493,6 +596,10 @@ class FailedPreparationRetirement:
                 raise ValueError("failed_preparation_new_marker")
         elif phase == "removing":
             old.check(recover=True)
+        elif self.recovery is not None:
+            # 同完整身份桥接不需要kernel写;缺失/partial不能借恢复权重新加载。
+            if new.check() != "exact":
+                raise ValueError("preparation_recovery_policy_missing")
         else:
             new.check(recover=True)
         return True
@@ -544,6 +651,12 @@ class FailedPreparationRetirement:
         check_idle()  # 仅实际进程/项目scope只读检查,不停止或trace。
         # idle观察后再次认证所有来源和kernel,再开始有限root写入。
         self.check(recover=recover)
+        if self.recovery is not None:
+            if not os.path.lexists(self.journal):
+                self._record("preparing")
+            new.prepare(preflight, recover=True)
+            self._record("prepared")
+            return True
         if phase is None:
             self._record("intent")
             phase = "intent"

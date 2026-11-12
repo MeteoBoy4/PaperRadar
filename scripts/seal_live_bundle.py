@@ -88,6 +88,16 @@ def main() -> int:
         type=Path,
         help="build时明确只读原失败preparing的封印runtime；仅派生有限退休描述，部署时重新认证。",
     )
+    parser.add_argument(
+        "--preparation-recovery-runtime",
+        type=Path,
+        help="仅build时只读原退休preparing的封印runtime；必须配对日志及原failed-preparation-runtime。",
+    )
+    parser.add_argument(
+        "--preparation-recovery-journal",
+        type=Path,
+        help="配对的原preparing日志原字节；仅构建三摘要候选，root从固定地址重认证。",
+    )
     args = parser.parse_args()
     from paper_radar.live_evidence.live_bundle import (
         BundleInputError,
@@ -101,6 +111,16 @@ def main() -> int:
     try:
         if os.geteuid() == 0:
             raise ValueError("build_requires_unprivileged_user")
+        recovery_inputs = (
+            args.preparation_recovery_runtime,
+            args.preparation_recovery_journal,
+        )
+        if args.action != "build" and any(recovery_inputs):
+            raise ValueError("preparation_recovery_build_only")
+        if bool(recovery_inputs[0]) != bool(recovery_inputs[1]):
+            raise ValueError("preparation_recovery_inputs_missing")
+        if any(recovery_inputs) and args.failed_preparation_runtime is None:
+            raise ValueError("preparation_recovery_requires_retirement")
         if bool(args.upgrade_from_payload) != bool(args.upgrade_from_manifest):
             raise ValueError("build_inputs_missing")
         explicit_pair = (
@@ -164,6 +184,8 @@ def main() -> int:
             upgrade_from=upgrade_from,
             epoch_upgrade=epoch_upgrade,
             failed_preparation_runtime=args.failed_preparation_runtime,
+            preparation_recovery_runtime=args.preparation_recovery_runtime,
+            preparation_recovery_journal=args.preparation_recovery_journal,
         )
         for name, sha in hashes.items():
             print(f"{sha}  {name}")
@@ -185,6 +207,9 @@ def main() -> int:
             and str(error)
             in {
                 "build_inputs_missing",
+                "preparation_recovery_build_only",
+                "preparation_recovery_inputs_missing",
+                "preparation_recovery_requires_retirement",
                 "epoch_upgrade_required",
                 "epoch_upgrade_inputs_missing",
                 "epoch_upgrade_source",
