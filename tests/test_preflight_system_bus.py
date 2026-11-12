@@ -284,7 +284,13 @@ class PreflightModel:
     ) -> subprocess.CompletedProcess[bytes]:
         assert self.product
         commands = {
-            ("/usr/bin/systemctl", "--user", "is-system-running"): (
+            (
+                "/usr/bin/systemctl",
+                "--user",
+                "show",
+                "--property=SystemState",
+                "--value",
+            ): (
                 f"/run/user/{self.uid}/bus",
                 b"running\n",
             ),
@@ -316,7 +322,7 @@ class PreflightModel:
             "check": False,
         }
         visible = self.mapped(endpoint).exists()
-        if self.fail == "nonrunning" and argv[-1] == "is-system-running":
+        if self.fail == "nonrunning" and "--property=SystemState" in argv:
             output = b"degraded\n"
         if self.fail == "linger" and argv[0] == "/usr/bin/loginctl":
             output = b"no\n"
