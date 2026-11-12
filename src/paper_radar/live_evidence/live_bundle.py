@@ -151,6 +151,8 @@ def build_live_bundle(
     upgrade_from: tuple[str, str] | None = None,
     epoch_upgrade: EpochUpgrade | None = None,
     failed_preparation_runtime: Path | None = None,
+    preparation_recovery_runtime: Path | None = None,
+    preparation_recovery_journal: Path | None = None,
 ) -> dict[str, str]:
     """独立Live模式;拒绝在任何输出前检查策略/activation/窗口与输入形状。"""
     import hashlib
@@ -182,6 +184,10 @@ def build_live_bundle(
     )
     from paper_radar.live_evidence.receipt_v2 import ApprovedPlanV2
 
+    if bool(preparation_recovery_runtime) != bool(preparation_recovery_journal):
+        raise ValueError("preparation_recovery_inputs_missing")
+    if preparation_recovery_runtime is not None and failed_preparation_runtime is None:
+        raise ValueError("preparation_recovery_requires_retirement")
     expected = assert_current_site(site)
     if os.geteuid() == 0:
         raise ValueError("build_requires_unprivileged_user")
@@ -469,6 +475,20 @@ def build_live_bundle(
             descriptor = describe_failed_preparation(failed_preparation_runtime, frozen)
             specification = json.loads((frozen / "deployment.json").read_bytes())
             specification["failed_preparation"] = descriptor.model_dump(mode="json")
+            (frozen / "deployment.json").write_bytes(json_bytes(specification))
+        if preparation_recovery_runtime is not None:
+            from paper_radar.live_evidence.preparation_retirement import (
+                describe_preparation_recovery,
+            )
+
+            assert preparation_recovery_journal is not None
+            recovery = describe_preparation_recovery(
+                preparation_recovery_runtime,
+                frozen,
+                preparation_recovery_journal.read_bytes(),
+            )
+            specification = json.loads((frozen / "deployment.json").read_bytes())
+            specification["preparation_recovery"] = recovery.model_dump(mode="json")
             (frozen / "deployment.json").write_bytes(json_bytes(specification))
         # source身份与payload分开,不把payload或manifest摘要反向写入自身。
         import subprocess
