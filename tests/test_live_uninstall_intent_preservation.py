@@ -148,6 +148,9 @@ def test_intent_flags_uses_read_only_ioctl(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import array
+    import fcntl
+    import platform
+    import sys
 
     calls: list[int] = []
 
@@ -156,8 +159,8 @@ def test_intent_flags_uses_read_only_ioctl(
         buffer[0] = 0x20
         return 0
 
-    monkeypatch.setattr(tool.fcntl, "ioctl", ioctl)
-    monkeypatch.setattr(tool.platform, "machine", lambda: "x86_64")
-    monkeypatch.setattr(tool.sys, "platform", "linux")
+    monkeypatch.setattr(fcntl, "ioctl", ioctl)
+    monkeypatch.setattr(platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sys, "platform", "linux")
     assert tool.intent_flags(123) == 0x20
     assert calls == [0x80086601]
