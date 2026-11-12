@@ -619,6 +619,18 @@ class ProtectedCollection:
         with self._connection() as connection:
             return self._replay(connection).stop_reason is not None
 
+    def zero_operation_baseline(self) -> bool:
+        """只读重放累计零调用、无在途轮和未停止;不批准计划或重置额度。"""
+        with self._connection() as connection:
+            state = self._replay(connection)
+            return (
+                state.initialized
+                and not state.reservations
+                and not state.stop_reason
+                and not state.failed_rounds
+                and not (state.rounds.keys() - state.closed)
+            )
+
     def status(self, plan_id: str, *, now: datetime) -> CollectionStatus:
         with self._connection() as connection:
             state = self._replay(connection)

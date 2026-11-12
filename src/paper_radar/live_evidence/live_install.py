@@ -9,14 +9,25 @@ import shutil
 import stat
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerTrust
 from paper_radar.live_evidence.model_manifest import ModelManifest, parse_manifest
 from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 
+if TYPE_CHECKING:
+    from paper_radar.live_evidence.live_host import PrerequisiteCheck
+
 
 class LiveHost(Protocol):
+    def prerequisite_report(
+        self,
+        root: Path,
+        site: SiteConfiguration,
+        manifest: ModelManifest,
+        *,
+        recover: bool = False,
+    ) -> tuple[PrerequisiteCheck, ...]: ...
     def preflight(self, site: SiteConfiguration) -> None: ...
     def preflight_placement(self, root: Path, *, recover: bool = False) -> None: ...
     def prepare_placement(
@@ -311,7 +322,9 @@ class LiveDeployment:
             ):
                 raise ValueError("deployment_resource_identity")
 
-    def _unexecuted_resources(self, roots: tuple[Path, ...]) -> None:
+    def _unexecuted_resources(
+        self, roots: tuple[Path, ...], *, allow_installed_target: bool = False
+    ) -> None:
         """只读旧新计划的缺史证明;不初始化/升级账本,不否定其他历史。"""
         from paper_radar.live_evidence.collection import ProtectedCollection
         from paper_radar.live_evidence.normal_auth_refresh import epoch_path
@@ -337,7 +350,9 @@ class LiveDeployment:
             )
             if os.path.lexists(epoch_path(ledger, manifest)):
                 raise ValueError("resources_execution_history")
-        if os.path.lexists(self.paths.ledger / "inbox/placement-target-v1.json"):
+        if not allow_installed_target and os.path.lexists(
+            self.paths.ledger / "inbox/placement-target-v1.json"
+        ):
             raise ValueError("resources_target_present")
         # 封印writer总在执行前发布计划来源;同计划任何残留均不猜测。
         for directory in (self.paths.ledger, self.paths.ledger / "inbox"):
@@ -582,6 +597,11 @@ class LiveDeployment:
             payload=payload,
         )
         specification = json.loads((self.staged / "deployment.json").read_bytes())
+        if "placement_preflight_version" in specification and (
+            type(specification["placement_preflight_version"]) is not int
+            or specification["placement_preflight_version"] != 2
+        ):
+            raise ValueError("placement_preflight_version")
         site = SiteConfiguration.model_validate_json(
             (self.staged / "site.json").read_bytes()
         )
@@ -625,6 +645,25 @@ class LiveDeployment:
             identity=identity,
             owner_uid=self.owner_uid,
         )
+        if specification.get("failed_preparation_void") is not None:
+            report = host.prerequisite_report(
+                self.staged, site, manifest, recover=recover
+            )
+            for check in report:
+                print(f"安装前置：{check.name}={check.status}；原因={check.reason}。")
+            if (
+                not report
+                or any(check.status not in {"pass", "pending"} for check in report)
+                or any(
+                    check.status == "pending"
+                    and (
+                        check.name != "native_scope_trace"
+                        or check.reason != "placement_transaction_required"
+                    )
+                    for check in report
+                )
+            ):
+                raise ValueError("installation_prerequisites_failed")
         # Read-only exact kernel/source checks precede all old journal/history writes.
         host.preflight_placement(self.staged, recover=recover)
         if state is not None:
