@@ -25,7 +25,7 @@ from paper_radar.pi_execution.isolation import (
     isolation_capability,
 )
 from paper_radar.pi_execution.placement import PlacedProcess
-from paper_radar.pi_execution.process import adopt_process
+from paper_radar.pi_execution.process import adopt_process, spawn_unplaced
 from paper_radar.pi_execution.resources import (
     LAUNCH_POLICY_VERSION,
     AttemptResources,
@@ -169,7 +169,7 @@ class _PreparedLaunch:
         token: str,
         proxy: str | None,
         auth_mode: str,
-        placement: PlacedProcess,
+        placement: PlacedProcess | None,
         cleanup_audit: CleanupAudit | None = None,
         collection_context: CollectionExecutionContext | None = None,
     ) -> None:
@@ -241,7 +241,12 @@ class _PreparedLaunch:
                 "--system-prompt",
                 prompt,
             )
-            child = self._placement.execute(
+            execute = (
+                self._placement.execute
+                if self._placement is not None
+                else spawn_unplaced
+            )
+            child = execute(
                 argv,
                 cwd=cwd,
                 env=env,
@@ -251,7 +256,8 @@ class _PreparedLaunch:
                 proxy_port=self.identity.proxy_port,
             )
             self._session = _OwnedSession(adopt_process(child), resources)
-            self._placement.handoff()
+            if self._placement is not None:
+                self._placement.handoff()
         except (OSError, subprocess.SubprocessError, SupplyError):
             if resources is not None:
                 resources.close()
@@ -270,10 +276,13 @@ class _PreparedLaunch:
             self._token = None
 
     def placement_metadata(self) -> tuple[int, int, str]:
+        if self._placement is None:
+            raise ExecutionError("placement_unavailable")
         return self._placement.pid, self._placement.start, self._placement.unit
 
     def recheck_placement(self) -> None:
-        self._placement.recheck()
+        if self._placement is not None:
+            self._placement.recheck()
 
     def __call__(self, description: CallDescription, /) -> ByteSession:
         if self._used or description != self._description or self._token is None:
@@ -305,7 +314,8 @@ class _PreparedLaunch:
         self._token = None
         if self._session is not None:
             self._session.terminate(10)
-        self._placement.close()
+        if self._placement is not None:
+            self._placement.close()
 
 
 @contextmanager
@@ -323,9 +333,14 @@ def prepare_launch(
     observe_auth: Callable[[AuthRefreshMetadata], None] | None = None,
     collection: CollectionExecutionContext | None = None,
     cleanup_audit: CleanupAudit | None = None,
+    placement_required: bool = True,
 ) -> Iterator[PreparedLaunch]:
     """领取前准备阻塞模型封装及认证;不创建业务 attempt 或派发模型。"""
     check_auth_mode(description.provider, auth_mode)
+    if type(placement_required) is not bool or (
+        not placement_required and (collection is not None or before_auth is not None)
+    ):
+        raise ExecutionError("placement_unavailable")
     if any(
         type(value) not in (int, float) or not math.isfinite(value) or value <= 0
         for value in (attempt_timeout, auth_timeout)
@@ -352,7 +367,7 @@ def prepare_launch(
         with installation as install:
             if install.record.manifest.pi_version != description.pi_version:
                 raise ExecutionError("protocol_unsupported")
-            placement = PlacedProcess()
+            placement = PlacedProcess() if placement_required else None
             try:
                 token = credential_token(
                     install,
@@ -363,6 +378,7 @@ def prepare_launch(
                     before_release=before_auth,
                     observe_auth=observe_auth,
                     cleanup_audit=cleanup_audit,
+                    placement_required=placement_required,
                 )
                 prepared = _PreparedLaunch(
                     database,
@@ -384,6 +400,7 @@ def prepare_launch(
                 finally:
                     prepared.close()
             finally:
-                placement.close()
+                if placement is not None:
+                    placement.close()
     except SupplyError:
         raise ExecutionError("install_unavailable") from None
