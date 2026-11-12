@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
+from typing import overload
 
 from paper_radar.config.owner_waiver import OwnerWaiverError, owner_waiver
 from paper_radar.live_evidence.ledger import LedgerError
@@ -46,6 +47,7 @@ class AdmissionCheckpoints:
         try:
             self.waiver = owner_waiver(database, now=now())
         except OwnerWaiverError:
+            self.guard.owner_policy_denied = True
             raise ExecutionError("evidence_missing") from None
         self.owner_waived = self.waiver.enabled
         self.guard.owner_waived = self.owner_waived
@@ -53,8 +55,10 @@ class AdmissionCheckpoints:
     def _recheck_waiver(self) -> None:
         try:
             if owner_waiver(self.database, now=self.now()) != self.waiver:
+                self.guard.owner_policy_denied = True
                 raise ExecutionError("evidence_missing")
         except OwnerWaiverError:
+            self.guard.owner_policy_denied = True
             raise ExecutionError("evidence_missing") from None
 
     def before_prepare(
@@ -91,6 +95,16 @@ class AdmissionCheckpoints:
         request = replace(request, evidence_after=self.waiver.strict_since)
         self.guard.check(request, now=self.now())
         return request
+
+    @overload
+    def after_prepare(
+        self, original: AdmissionRequest, binding: EvidenceBinding
+    ) -> AdmissionRequest: ...
+
+    @overload
+    def after_prepare(
+        self, original: WaivedRequest, binding: EvidenceBinding
+    ) -> WaivedRequest: ...
 
     def after_prepare(
         self, original: AdmissionRequest | WaivedRequest, binding: EvidenceBinding

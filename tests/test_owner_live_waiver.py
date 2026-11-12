@@ -1,6 +1,6 @@
 """#177 所有者豁免的公开边界;不绑定历史验收分母。"""
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +46,9 @@ def test_waiver_allows_screening_without_evidence_or_protected_io(
     from tests.pi_execution_service_support import service_inputs
 
     service, receipt, credentials = service_inputs(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.auth.local_auth_entry", lambda install: install.pi
+    )
     enabled = command(service.database, "--enable", "--reason", "所有者明确豁免")
     assert enabled.exit_code == 0, enabled.output
     result = service.run_attempt(receipt.receipt_id)
@@ -121,6 +124,9 @@ def test_waiver_allows_read_without_evidence_and_keeps_pi_rpc_source(
     from tests.read_execution_support import setup
 
     service, task, _ = setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.auth.local_auth_entry", lambda install: install.pi
+    )
     enabled = command(service.database, "--enable", "--reason", "所有者接受风险")
     assert enabled.exit_code == 0, enabled.output
     result = service.run_attempt(task.task_id)
@@ -164,6 +170,9 @@ def test_owner_policy_change_during_preparation_refuses_before_claim(
     from tests.pi_execution_service_support import service_inputs
 
     service, receipt, _ = service_inputs(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        "paper_radar.pi_execution.auth.local_auth_entry", lambda install: install.pi
+    )
     assert command(service.database, "--enable", "--reason", "显式开启").exit_code == 0
     from paper_radar.pi_execution.launcher import PreparedLaunch, prepare_launch
 
@@ -309,3 +318,70 @@ def test_strict_path_requires_new_collection_claims_receipt_and_activation(
         assert service.tasks.status(receipt.receipt_id).used_attempts == 0
     else:
         assert isinstance(service.run_attempt(receipt.receipt_id), SuccessReceipt)
+
+
+@pytest.mark.parametrize("consumer", ["screening", "read"])
+def test_corrupt_waiver_refuses_without_protected_writes_or_attempt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, consumer: str
+) -> None:
+    import sqlite3
+    from contextlib import closing
+
+    from paper_radar.live_evidence import service as evidence_service
+    from paper_radar.pi_execution import ExecutionError
+    from tests.pi_execution_service_support import service_inputs
+    from tests.read_execution_support import setup
+
+    calls: list[object] = []
+    if consumer == "screening":
+        screening, receipt, credentials = service_inputs(tmp_path, monkeypatch)
+        database, task_id = screening.database, receipt.receipt_id
+        run: Callable[[str], object] = screening.run_attempt
+    else:
+        reading, task, credentials = setup(tmp_path, monkeypatch)
+        database, task_id = reading.database, task.task_id
+        run = reading.run_attempt
+    assert command(database, "--enable", "--reason", "所有者动作").exit_code == 0
+    with closing(sqlite3.connect(database)) as connection:
+        connection.execute(
+            "UPDATE config_versions SET raw_sha256='invalid' WHERE kind='owner_waiver'"
+        )
+        connection.commit()
+
+    def helper(arguments: tuple[str, ...]) -> bool:
+        calls.append(arguments)
+        return False
+
+    monkeypatch.setattr(evidence_service, "_run_helper", helper)
+    monkeypatch.setattr(
+        evidence_service, "_append_pending", lambda record: calls.append(record)
+    )
+    with pytest.raises(ExecutionError, match="evidence_missing"):
+        run(task_id)
+    assert not calls
+    assert not (credentials / "auth-observed.json").exists()
+    if consumer == "screening":
+        assert screening.tasks.status(task_id).used_attempts == 0
+    else:
+        assert reading.tasks.task(task_id).remaining_attempts == 2
+
+
+@pytest.mark.parametrize("consumer", ["screening", "read"])
+def test_pipeline_cannot_enable_waiver_without_owner_action(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, consumer: str
+) -> None:
+    from paper_radar.pi_execution import ExecutionError
+    from tests.pi_execution_service_support import service_inputs
+    from tests.read_execution_support import setup
+
+    if consumer == "screening":
+        screening, receipt, _ = service_inputs(tmp_path, monkeypatch)
+        database, task_id = screening.database, receipt.receipt_id
+        run: Callable[[str], object] = screening.run_attempt
+    else:
+        reading, task, _ = setup(tmp_path, monkeypatch)
+        database, task_id = reading.database, task.task_id
+        run = reading.run_attempt
+    with pytest.raises(ExecutionError, match="evidence_missing"):
+        run(task_id)
+    assert "enabled=false version=0" in command(database).output
