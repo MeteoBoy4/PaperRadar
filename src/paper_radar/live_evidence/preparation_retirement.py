@@ -466,6 +466,8 @@ class FailedPreparationRetirement:
         source = self.staged
         allowed_journals = {self.journal}
         if self.recovery is not None:
+            if any(self.paths.ledger.glob("placement-retirement-v1-*.json.new")):
+                raise ValueError("failed_preparation_pending_file")
             source = _STAGING_ROOT / self.recovery.payload_sha256 / "runtime"
             verify_tree(
                 source,
