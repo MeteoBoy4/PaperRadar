@@ -281,7 +281,16 @@ def _manager() -> dict[str, str]:
     }
     try:
         for argv, expected in (
-            (("/usr/bin/systemctl", "--user", "is-system-running"), b"running\n"),
+            (
+                (
+                    "/usr/bin/systemctl",
+                    "--user",
+                    "show",
+                    "--property=SystemState",
+                    "--value",
+                ),
+                b"running\n",
+            ),
             (
                 (
                     "/usr/bin/loginctl",
