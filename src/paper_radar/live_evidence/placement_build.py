@@ -198,6 +198,7 @@ profile {PLACEMENT_PRE_PROFILE} "{root}/placement-pre" {{
 {directory_rules}
 {protected_source_rules}
   "{root}/placement-pre" mr,
+  "{root}/placement-post" r,
   "{root}/{PROGRAM_PATH}" r,
   "{resolver}" r,
   "{target}" r,
