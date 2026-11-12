@@ -14,13 +14,23 @@ from paper_radar.live_evidence.evaluator import AdmissionDecision, evaluate_admi
 from paper_radar.live_evidence.evidence import ExecutionBinding
 from paper_radar.live_evidence.intents import ProtectedIntentLog
 from paper_radar.live_evidence.ledger import EvidenceLedger, LedgerError
-from paper_radar.live_evidence.lifecycle import EvidenceLifecycle, use_for_id
+from paper_radar.live_evidence.lifecycle import (
+    EvidenceLifecycle,
+    LifecyclePayload,
+    use_for_id,
+    use_id_for,
+)
 from paper_radar.live_evidence.observation import CurrentObservation, RefreshStatus
 from paper_radar.live_evidence.reasons import AdmissionReason, ReasonCode
 from paper_radar.live_evidence.receipt import UseId, WireModel
 from paper_radar.live_evidence.registry import INITIAL_REGISTRY
 from paper_radar.live_evidence.time_policy import aware_utc, clock_reason
-from paper_radar.live_evidence.types import AdmissionUse, BindingComponent, Capability
+from paper_radar.live_evidence.types import (
+    AdmissionUse,
+    BindingComponent,
+    Capability,
+    Requirement,
+)
 
 TIGHTENING_HELPER = "/usr/libexec/paperradar/live-evidence-tighten"
 
@@ -32,6 +42,7 @@ class AdmissionRequest:
     checked_components: frozenset[BindingComponent] = frozenset()
     observation: CurrentObservation | None = None
     refresh: RefreshStatus | None = None
+    evidence_after: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,6 +231,55 @@ def _project_admission(
             checked_components=request.checked_components,
             ledger_watermark=snapshot.watermark,
         )
+        if request.evidence_after is not None:
+            cutoff = request.evidence_after
+            activated: set[tuple[str, Capability]] = set()
+            for event in ledger.audit():
+                if event.action == "evidence_activated" and event.recorded_at > cutoff:
+                    payload = LifecyclePayload.model_validate_json(event.reason or "")
+                    if (
+                        payload.use_id == use_id_for(request.use)
+                        and payload.registry_version == INITIAL_REGISTRY.version
+                    ):
+                        activated.update(
+                            (event.subject_id, capability)
+                            for capability in payload.capabilities
+                        )
+            stale: set[Capability] = set()
+            for item in decision.capabilities:
+                source = sources.get((request.use, item.capability))
+                claim = item.claim
+                if source is None or claim is None:
+                    stale.add(item.capability)
+                    continue
+                record = ledger.show(source)
+                if (
+                    record.receipt.started_at <= cutoff
+                    or record.received_at <= cutoff
+                    or claim.evidence_at is None
+                    or claim.evidence_at <= cutoff
+                    or claim.verified_at is None
+                    or claim.verified_at <= cutoff
+                    or (source, item.capability) not in activated
+                ):
+                    stale.add(item.capability)
+            reason = AdmissionReason(ReasonCode.OWNER_REVALIDATION)
+            decision = replace(
+                decision,
+                capabilities=tuple(
+                    replace(item, reasons=tuple(dict.fromkeys((*item.reasons, reason))))
+                    if item.capability in stale
+                    else item
+                    for item in decision.capabilities
+                ),
+                reasons=tuple(dict.fromkeys((*decision.reasons, reason)))
+                if any(
+                    item.capability in stale
+                    and item.requirement is Requirement.REQUIRED
+                    for item in decision.capabilities
+                )
+                else decision.reasons,
+            )
         selected = tuple(
             (cap, identifier)
             for use, cap, identifier in snapshot.sources

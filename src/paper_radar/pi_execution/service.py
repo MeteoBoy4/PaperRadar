@@ -237,6 +237,7 @@ class PiExecution:
             auth_mode=self.auth_mode,
             proxy=self.proxy,
             attempt_timeout=limits.total + limits.terminate + limits.close,
+            placement_required=not checkpoints.owner_waived,
         ) as prepared:
             if self._binding(description, prepared.identity) != binding:
                 raise ExecutionError("evidence_mismatch")

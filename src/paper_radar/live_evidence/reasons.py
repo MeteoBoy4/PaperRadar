@@ -7,6 +7,7 @@ from paper_radar.live_evidence.types import BindingComponent, Capability
 
 
 class ReasonCode(StrEnum):
+    OWNER_REVALIDATION = "owner_waiver_revalidation_required"
     LEDGER_UNTRUSTED = "ledger_untrusted"
     EVIDENCE_CONFLICT = "evidence_conflict"
     MATERIAL_MISMATCH = "material_mismatch"

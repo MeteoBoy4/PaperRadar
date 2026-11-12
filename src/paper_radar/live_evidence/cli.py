@@ -256,3 +256,63 @@ def revoke(
         f"receipt_id={receipt_id} evidence_revoked=true "
         f"capabilities={','.join(item.value for item in result)}"
     )
+
+
+@live_evidence_app.command(
+    "owner-waiver",
+    help="""所有者显式开启或关闭产品的 Live 证据前提豁免（ADR-0068）。
+
+必须显式提供 --database；无开关时只读查询，默认关闭。
+开启用 --enable --reason；恢复严格路径用 --disable --reason。
+动作在既有业务库追加版本化所有者记录；不修改保护账本、证据或历史激活。
+关闭后须重新采集、接收及激活，不能复活旧事实。
+豁免不放宽隔离、认证、业务预算与 test 来源拒绝；不授予校准资格。
+帮助不打开数据库；不联网、不认证、不调用模型，自动配额为 0。
+输出终端；动作非法或记录损坏返回 2，请核对参数或恢复完整业务库。
+""",
+)
+def owner_waiver_command(
+    database: Annotated[Path, typer.Option(help="既有已迁移的业务库；必须显式选择。")],
+    enable: Annotated[bool, typer.Option(help="所有者显式开启证据前提豁免。 ")] = False,
+    disable: Annotated[
+        bool, typer.Option(help="关闭豁免；重新采集、接收与激活。 ")
+    ] = False,
+    reason: Annotated[
+        str | None, typer.Option(help="所有者动作理由，不输出其正文。 ")
+    ] = None,
+) -> None:
+    from paper_radar.config.owner_waiver import (
+        OWNER_WAIVER_NOTICE,
+        OWNER_WAIVER_REASON,
+        OwnerWaiverError,
+        owner_waiver,
+        record_owner_waiver,
+    )
+
+    try:
+        if (enable and disable) or ((enable or disable) != (reason is not None)):
+            raise OwnerWaiverError("owner_waiver_action_invalid")
+        state = (
+            record_owner_waiver(
+                database, enabled=enable, reason=reason, actor="owner", now=_now()
+            )
+            if reason is not None
+            else owner_waiver(database)
+        )
+    except OwnerWaiverError as error:
+        typer.echo(
+            f"所有者豁免拒绝 [{error.reason}]；请核对显式开关、理由及业务库完整性。",
+            err=True,
+        )
+        raise typer.Exit(2) from None
+    strict_since = state.strict_since.isoformat() if state.strict_since else "none"
+    typer.echo(
+        f"enabled={str(state.enabled).lower()} version={state.version} "
+        f"reason={OWNER_WAIVER_REASON if state.enabled else 'owner_waiver_disabled'} "
+        f"strict_since={strict_since}"
+    )
+    typer.echo(
+        OWNER_WAIVER_NOTICE
+        if state.enabled
+        else "证据前提严格路径；恢复后必须重新采集、接收及激活。"
+    )
