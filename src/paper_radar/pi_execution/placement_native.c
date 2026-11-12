@@ -31,7 +31,24 @@
 #error sealed placement supports reviewed x86_64 ABI only
 #endif
 #define LOCKED_BITS (SECBIT_NOROOT | SECBIT_NOROOT_LOCKED | SECBIT_NO_SETUID_FIXUP | SECBIT_NO_SETUID_FIXUP_LOCKED | SECBIT_KEEP_CAPS_LOCKED | SECBIT_NO_CAP_AMBIENT_RAISE | SECBIT_NO_CAP_AMBIENT_RAISE_LOCKED)
-static void refuse(void) { _exit(125); }
+/* Only the already validated, closed, secret-free preflight language enables
+ * diagnostics. Values are source literals, never errno, argv or file content.
+ * Keep this finite vocabulary in placement_protocol.NATIVE_PREFLIGHT_CHECKPOINTS. */
+static int diagnostic = 0;
+static const char *checkpoint = "entry_core";
+static void at(const char *value) { checkpoint = value; }
+static void refuse(void) {
+    if (diagnostic) {
+        char message[96];
+        int length = snprintf(message, sizeof(message), "placement_native_v1:%s\n", checkpoint);
+        if (length > 0 && length < (int)sizeof(message)) {
+            /* Diagnostic failure must never change the controlled refusal. */
+            ssize_t ignored = write(STDERR_FILENO, message, (size_t)length);
+            (void)ignored;
+        }
+    }
+    _exit(125);
+}
 static void need(int value) { if (!value) refuse(); }
 
 /* Every component is opened without following symlinks. Only root may change
@@ -146,9 +163,12 @@ static int fixed_descriptor(int descriptor, int fixed) {
 }
 static void maps(void) {
     char map[96];
+    at("pre_setgroups");
     write_self("/proc/self/setgroups", "deny");
+    at("pre_uid_map");
     need(snprintf(map, sizeof(map), "%u %u 1\n", PRODUCT_UID, PRODUCT_UID) > 0);
     write_self("/proc/self/uid_map", map);
+    at("pre_gid_map");
     need(snprintf(map, sizeof(map), "%u %u 1\n", PRODUCT_GID, PRODUCT_GID) > 0);
     write_self("/proc/self/gid_map", map);
 }
@@ -173,15 +193,21 @@ static void caps_empty(void) {
     need(prctl(PR_GET_SECUREBITS, 0, 0, 0, 0) == LOCKED_BITS);
 }
 static void drop_caps(void) {
+    at("pre_securebits");
     need(prctl(PR_SET_SECUREBITS, LOCKED_BITS, 0, 0, 0) == 0);
+    at("pre_ambient_caps");
     need(prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0, 0, 0) == 0);
+    at("pre_bounding_caps");
     for (int cap = 0; cap <= CAP_LAST_CAP; cap++) need(prctl(PR_CAPBSET_DROP, cap, 0, 0, 0) == 0);
     /* Refuse future kernels with additional bounding capabilities we did not drop. */
+    at("pre_bounding_limit");
     errno = 0;
     need(prctl(PR_CAPBSET_READ, CAP_LAST_CAP + 1, 0, 0, 0) == -1 && errno == EINVAL);
     struct __user_cap_header_struct header = {_LINUX_CAPABILITY_VERSION_3, 0};
     struct __user_cap_data_struct data[2] = {{0}};
+    at("pre_capset");
     need(syscall(SYS_capset, &header, data) == 0);
+    at("pre_caps_verify");
     caps_empty();
 }
 static void descriptor_bytes(int descriptor, const char *path, const unsigned char *expected, size_t length) {
@@ -237,26 +263,39 @@ static unsigned long source_mount_flags(int descriptor) {
     return flags;
 }
 static void resolver_place(int preflight) {
+    at("pre_resolver_source");
     int source = fixed_descriptor(equal_file(RESOLVER_SOURCE, resolver_bytes, sizeof(resolver_bytes)), 4);
+    at("pre_resolver_flags");
     need(source_mount_flags(source) == RESOLVER_MOUNT_FLAGS);
+    at("pre_resolver_target");
     int target = open(RESOLVER_TARGET, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
     struct stat target_stat;
     need(target >= 0 && fstat(target, &target_stat) == 0 && S_ISREG(target_stat.st_mode));
     need(target_stat.st_uid != PRODUCT_UID && !(target_stat.st_mode & 022));
     close(target);
+    at("pre_initial_userns");
     need(initial_namespace("user", INITIAL_USER_DEVICE, INITIAL_USER_INODE));
+    at("pre_initial_mountns");
     need(preflight || initial_namespace("mnt", INITIAL_MOUNT_DEVICE, INITIAL_MOUNT_INODE));
+    at("pre_untraced");
     untraced();
+    at("pre_userns");
     need(unshare(CLONE_NEWUSER | CLONE_NEWNS) == 0);
     maps();
+    at("pre_dumpable");
     need(prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) == 0);
+    at("pre_mount_private");
     need(mount(NULL, "/", NULL, MS_REC | MS_PRIVATE, NULL) == 0);
+    at("pre_mount_bind");
     char fdpath[80];
     need(snprintf(fdpath, sizeof(fdpath), "/proc/self/fd/%d", source) > 0);
     need(mount(fdpath, RESOLVER_TARGET, NULL, MS_BIND, NULL) == 0);
+    at("pre_mount_readonly");
     need(mount(NULL, RESOLVER_TARGET, NULL, MS_BIND | MS_REMOUNT | MS_RDONLY | RESOLVER_MOUNT_FLAGS, NULL) == 0);
+    at("pre_resolver_descriptor");
     need(source == 4);
     need(fcntl(source, F_SETFD, 0) == 0);
+    at("pre_resolver_verify");
     resolver_ready(source);
 }
 
@@ -294,20 +333,24 @@ static void install_namespace_filter(void) {
     need(prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) == 1);
 }
 static void traced_preflight(const char *parent_text) {
+    at("post_ptracer");
     char *end;
     errno = 0;
     long parent = strtol(parent_text, &end, 10);
     need(!errno && !*end && parent > 1 && parent <= INT_MAX);
     need(prctl(PR_SET_PTRACER, parent, 0, 0, 0) == 0);
+    at("post_ready");
     char ready[64];
     int length = snprintf(ready, sizeof(ready), "R %ld\n", (long)getpid());
     need(length > 0 && length < (int)sizeof(ready));
     need(write(STDOUT_FILENO, ready, (size_t)length) == length);
+    at("post_release");
     char byte;
     need(read(STDIN_FILENO, &byte, 1) == 1 && byte == 'G');
     need(read(STDIN_FILENO, &byte, 1) == 0);
     char *argv[] = {"/usr/bin/true", NULL};
     char *env[] = {NULL};
+    at("post_exec_true");
     execve(argv[0], argv, env);
     refuse();
 }
@@ -345,49 +388,75 @@ int main(int argc, char **argv) {
     arguments(argc, argv);
     int traced_probe = argc == 3 && !strcmp(argv[1], "--preflight-traced");
     int normal = argc == 3 && !traced_probe;
+    diagnostic = !normal;
+    at("entry_core");
     core_zero();
 #ifdef PLACEMENT_PRE
+    at("pre_fd_cleanup");
     close_unknown_fds(3);
 #else
+    at("post_fd_cleanup");
     close_unknown_fds(normal ? 6 : 5);
 #endif
+    at("entry_environment");
     need(clearenv() == 0);
 #ifdef PLACEMENT_PRE
+    at("pre_nnp");
     require_pre_nnp_zero();
+    at("pre_identity");
     identity(PRE_PATH, 1);
+    at("pre_program");
     int program = fixed_descriptor(equal_file(PROGRAM_PATH, program_bytes, sizeof(program_bytes)), 3);
     need(program == 3 && fcntl(program, F_SETFD, 0) == 0);
+    at("pre_post");
     int post = protected_file(POST_PATH);
     close(post);
+    at("pre_profile");
     check_profile(PRE_PROFILE);
+    at("pre_inbox");
     if (normal) fixed_descriptor(protected_node(INBOX_PATH, 1), 5);
     resolver_place(!normal);
     drop_caps();
     char *post_argv[] = {POST_PATH, argv[1], argc == 3 ? argv[2] : NULL, NULL};
     char *env[] = {NULL};
+    at("pre_exec_post");
     execve(POST_PATH, post_argv, env);
 #else
     /* No handshake or dynamic code precedes these irreversible restrictions. */
+    at("post_seccomp");
     install_namespace_filter();
+    at("post_identity");
     identity(POST_PATH, 0);
+    at("post_program");
     descriptor_bytes(3, PROGRAM_PATH, program_bytes, sizeof(program_bytes));
+    at("post_profile");
     check_profile(POST_PROFILE);
+    at("post_userns");
     need(!initial_namespace("user", INITIAL_USER_DEVICE, INITIAL_USER_INODE));
+    at("post_mountns");
     need(!initial_namespace("mnt", INITIAL_MOUNT_DEVICE, INITIAL_MOUNT_INODE));
+    at("post_uid_map");
     verify_map("/proc/self/uid_map", PRODUCT_UID);
+    at("post_gid_map");
     verify_map("/proc/self/gid_map", PRODUCT_GID);
+    at("post_caps_verify");
     caps_empty();
+    at("post_resolver_verify");
     resolver_ready(4);
     close(4);
+    at("post_inbox");
     if (normal) protected_inbox();
+    at("post_dumpable");
     need(prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) == 0);
     char *env[] = {NULL};
     if (!normal) close(3);
     if (traced_probe) traced_preflight(argv[2]);
     if (argc == 2) {
+        at("post_exec_true");
         char *probe[] = {"/usr/bin/true", NULL};
         execve(probe[0], probe, env);
     } else {
+        at("post_exec_python");
         char *python[] = {PYTHON_PATH, "-I", "-S", "-B", WRAPPER_PATH, argv[1], argv[2], NULL};
         execve(python[0], python, env);
     }
