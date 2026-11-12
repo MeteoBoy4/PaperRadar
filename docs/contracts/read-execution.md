@@ -14,6 +14,13 @@ Read 的任务权威独立于 ScreeningTasks，使用同一个 Read Schema 与 v
 
 ## 规则
 
+### 所有者豁免
+
+Read 与 Screening 共用显式、持久、版本化的[所有者豁免](live-evidence.md#所有者豁免)，默认关闭。
+准备前、准备后与领取事务内均重读选择；豁免有效时免除下述证据／观察／收紧 helper 前提，采用无放置的宿主 DNS 路径；选择改变或损坏拒绝。
+固定供给、文件／TCP 隔离、零 core、`no_new_privs`、认证分离、临时根、输入预算、业务 attempt 和输出接收规则保持。
+豁免不改变 Read evidence、不放行 test 来源，也不自动开启人工／自动 Read 或质量资格。
+
 ### 准入与领取顺序
 
 1. 取得 `read_tasks.execution.execution_resource(data_root)` 的本机同根 Read 独占资源。
@@ -22,11 +29,11 @@ Read 的任务权威独立于 ScreeningTasks，使用同一个 Read Schema 与 v
 2. `ReadTasks.prepare_execution` 只读重建历史正文、Context 和调用描述，预算以普通值返回。
    默认审计配置为预算首次快照；显式 audit_snapshot_id 必须是该任务已登记的快照。
    语义仍取预算首次配置，本次审计取明确快照，两者 Read 投影必须相等，不读当前 settings。
-3. 读取本次激活供给/安装，用 LaunchIdentity、固定 cwd 与历史描述绑定执行准入。
+3. 读取本次激活供给/安装，用 LaunchIdentity、固定 cwd 与历史描述绑定执行准入。以下证据检查用于严格模式；豁免模式按上节检查所有者选择。
    以 Read 消费者格和历史档位构造完整 `AdmissionRequest`，通过与 Screening 共用的
    `AdmissionGuard` / `load_admission_evidence` 消费[受保护账本与分项权威](live-evidence.md)。
    凭据刷新前完整核对当前绑定、原验证时点、证据激活、来源、水位线和分项资格；
-   格与档之间不借证据。没有产品证据 JSON、布尔声明或模拟生产放行开关；
+   格与档之间不借证据。没有产品证据 JSON 或模拟生产放行开关；持久所有者豁免不作为能力事实；
    产品不保留 `_evidence_for` 证据别名。显式采样无已验证映射仍拒绝。
 4. **准入优先于完整帧预算**。两者同时失败首先报告准入原因。准入通过后才拒绝
    read_input_over_budget；完整首次帧及最坏修正槽均须符合 #160 的边界。

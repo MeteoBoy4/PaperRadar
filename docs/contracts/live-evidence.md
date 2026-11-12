@@ -8,10 +8,22 @@
 `live-evidence receive/show/activate/revoke` 暴露所有者入口。
 `service.load_admission_evidence` 对完整请求加载受保护事实并调用同一纯判定，返回结构化投影；
 `pi_execution.admission.load_admission_evidence` 延迟转交该完整请求，旧的不完整 EvidenceBinding 仍返回 None。
-Screening／Read 正式三检查点与 doctor 消费共享判定，分别见所属 Contract。
+Screening／Read 与 doctor 在默认严格模式消费共享判定；显式所有者豁免独立于证据判定，分别见所属 Contract。
 `collector`、`sealed_runtime` 与 `deployment` 提供零请求 β 采集、冻结构建与封印脚本；`model_collector` 提供独立批准的固定合成模型采集闭环。实际 root 权限、封印安装和证据激活由所有者现场验证。
 
 ## 规则
+
+### 所有者豁免
+
+Live 证据不再是产品执行的不可取消前提。所有者可以显式开启持久、版本化的豁免，Screening `run_attempt` 与 Read execution 免除接收／激活证据、受保护观察与部署链路前提；默认关闭且仍失败关闭。流水线只读该选择，不能静默开启。
+
+所有者动作记录独立于准入账本及能力三态，不产生证据、test 来源、预算或模型质量资格。doctor 单列“证据前提已由所有者豁免（ADR-0068）”与受控原因码；未评估仍为 `not_assessed`，不以 `verified` 或 `unknown` 替代。严格模式的既有拒绝、受信接收、历史格式和 test 来源拒绝保持。
+
+豁免下不部署或要求 nft、placement/cgroup、resolver 私有视图，使用宿主 DNS；没有主机级出站强制或 Live 溯源保证。Landlock 文件隔离与 TCP443 限制、`--no-session`、软硬 `RLIMIT_CORE=0`、`no_new_privs`、认证 helper 分离、attempt 临时根及业务预算／配额继续执行，见 [Pi 执行契约](pi-execution.md#可选放置与宿主-dns)。
+
+关闭豁免形成重新验证边界：严格路径只接受边界后重新采集、接收与激活的证据，旧激活不得复活；旧原始能力状态、接收、撤销、失败与停止事实保持。缺少部署或新证据就拒绝，不自动修复、重采或放宽旧期限。
+
+原证据链全部保留为可选后置路径。以下六格、批准计划、40/40 累计域、受保护历史与部署规则描述该可选路径，不作为豁免执行的前提。主机卸载只退出当前 root 部署，保留账本、inbox、intents、归档、失败／停止历史和 v22–v24 候选原字节，不改 journal、不重置任何历史成本。本次降范围不构建新封印包。
 
 ### 准入用途与独立维度
 
@@ -508,7 +520,7 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 源代码准入策略为 `pi-admission-v24`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v24.json)
 与源码守卫共同固定相关实现；v1–v23 的 D7 向量与摘要锚原字节保留。
 v7 增加共享用户 scope 双阶段放置、封装、只读 resolver 和只读诊断；保留固定认证基线 v2、helper 临时布局与 v2 额度／回执／账本错误权威，继续显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
-策略身份变化后不能继承旧策略的执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
+策略身份变化后严格模式不能继承旧策略的执行资格；将来恢复可选部署时，新字节须所有者重新审阅、部署并按新证据显式激活。豁免实现无需新封印包。
 源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。
 
 既有部署器仅安装固定零参数 `/usr/libexec/paperradar/live-evidence-collect` 与仅收紧的 `live-evidence-tighten`；后者由有限解析器核对 revoke/mark/revoke-use/tick。

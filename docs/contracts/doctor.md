@@ -66,8 +66,12 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 
 ### Pi 执行诊断
 
+诊断只读版本化所有者选择。有效豁免单列“证据前提已由所有者豁免（ADR-0068）”及原因码，不建立能力资格，不改变原证据三态；未评估仍显示 `not_assessed`。缺失选择默认严格，损坏或未知版本拒绝，不自行开启、修复或写入选择。
+豁免下不把缺失 root 部署、观察、nft/cgroup/resolver 证明当作产品执行阻断；固定供给、cwd、凭据元数据和 Landlock 能力仍检查。此诊断不刷新认证，不证明 DNS、RPC、模型参数或主机级出站已验。
+
+
 `scope=pi-exec result=passed|failed executable=true|false` 汇总必要工程项与共享准入结论；
-必要项 missing、invalid 或 not_assessed 时退出 2，全部通过退出 0。
+必要工程项或严格模式的必要证据项 missing、invalid 或 not_assessed 时退出 2；有效所有者豁免免除证据前提，其他必要检查仍决定退出码。
 披露型 unknown 独立显示，不改变退出码，也不因整体 passed 而成为已验证。
 该范围只诊断显式快照的 **Screening 当前档位 boundary/value 两格**，两格均须通过；
 输出始终注明 Read 此命令未选择、未诊断，不借用 Screening 证据，也不生成 Read 原状态。
@@ -76,9 +80,9 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 `paper_radar.doctor.pi_exec.execution_checks` 复用基础只读检查、历史快照加载和
 `doctor_supply` 的供给/版本/树/保护事实，不安装、不激活、不持执行生命周期保护。
 从已验证 snapshot 的 Screening 模型槽、adapter 与当前供给投影 `EvidenceBinding`，
-使用执行服务共用的只读 `build_admission_request` 构造完整当次请求，再调用唯一
+使用执行服务共用的只读 `build_admission_request` 构造完整当次请求，严格模式再调用唯一
 `load_admission_evidence` 取得 `AdmissionProjection`。账本、待撤销意图与受保护观察均只读；
-不可读或失信为 invalid/ledger_untrusted，不降级为 not_assessed。
+严格模式不可读或失信为 invalid/ledger_untrusted，不降级为 not_assessed；豁免模式不请求受保护证据来换取执行许可，原事实不重写。
 不创建任务、回执或 StageInput，不调用生产 preflight、prepare_launch、认证刷新或 dry_run。
 模型与采样字段仍由[运行配置](runtime-config.md)唯一定义；完整绑定与准入规则见
 [Live evidence](live-evidence.md)和[执行组合](pi-execution.md)。
@@ -163,7 +167,7 @@ Docling fixture/内存、NAS 或无人值守就绪；上述承接见[路线图](
 
 ## 相关
 
-依据：#168、#175、ADR-0052–0055；#144、#140 最终 B/N/C/D；#124、#120 最终 D1–D7；规格 §2.4、§14，ADR-0023、ADR-0026、ADR-0031。
+依据：[ADR-0068](../adr/0068-replace-live-prerequisites-with-explicit-owner-waiver.md)；#168、#175、ADR-0052–0055；#144、#140 最终 B/N/C/D；#124、#120 最终 D1–D7；规格 §2.4、§14，ADR-0023、ADR-0026、ADR-0031。
 
 - [运行配置](runtime-config.md)、[历史快照](config-snapshots.md)、[Pi 供给](pi-supply.md)
 - [运行日志](runtime-logging.md)、[共享资格／可见性](eligibility-visibility.md)、[组合覆盖台账](../verification/a-narrow-delivery.md)

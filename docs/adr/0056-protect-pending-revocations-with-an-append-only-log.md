@@ -1,6 +1,6 @@
 # 用内核只追加日志保留 helper 失败时的收紧依据
 
-状态：已接受；日期：2026-11-09；依据：所有者对精确草案 SHA256 `b3eca670e12ea44f66e74c66725a3ad8688936775c03b5de96ef03638237dc40` 明确回复「确认」，仅授权代码／离线验证。补充 [ADR-0055](0055-separate-protected-admission-ledger-from-business-facts.md)。实际新 root 字节仍须所有者按 P-5 审阅与执行。
+状态：已接受；日期：2026-11-09；依据：所有者对精确草案 SHA256 `b3eca670e12ea44f66e74c66725a3ad8688936775c03b5de96ef03638237dc40` 明确回复「确认」，仅授权代码／离线验证。补充 [ADR-0055](0055-separate-protected-admission-ledger-from-business-facts.md)。实际新 root 字节仍须所有者按 P-5 审阅与执行。 “产品执行必须凭证据”的约束关系由 [ADR-0068](0068-replace-live-prerequisites-with-explicit-owner-waiver.md) 取代，其他证据与历史规则保留。
 
 普通产品文件中的待撤销记录可以被同 uid 删除、截断或恢复旧副本；只读 root 账本并不能保住尚未由 helper 落账的失败。helper 不可用时，另一个普通 marker 或业务数据库也不能提供不可放宽的依据。拟增加一个独立、由 Linux 内核强制只追加的收紧日志；准入账本仍无产品写入通道。这对 D-6 的「产品零写入」增加了一个明确例外：产品只可向该日志追加拒绝事实，不能写授予、移除旧拒绝或操作 root 账本。此例外须由所有者接受后生效。
 

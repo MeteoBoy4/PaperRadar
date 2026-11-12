@@ -1,6 +1,6 @@
 # Pi 执行资源与隔离
 
-本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。没有执行 CLI；准入事实由独立[受保护账本](live-evidence.md)保存，本模块只读消费。产品缺少现场隔离/模型能力准入证据时在领取前阻断；这里的合成对端通过不产生兼容 passed。
+本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。没有执行 CLI；准入事实由独立[受保护账本](live-evidence.md)保存，本模块只读消费。默认严格模式缺少现场隔离/模型能力准入证据时在领取前阻断；所有者显式豁免只移除该证据前提，运行隔离仍强制；这里的合成对端通过不产生兼容 passed。
 
 ## 用途与范围
 
@@ -17,7 +17,7 @@
 不走 PATH、个人 Pi、供给或激活 fallback。
 
 返回值 `PreparedLaunch` 是只读身份与一次 `SessionFactory` 的接口；实现和 token 构造均私有。
-调用它之前，上层仍须完成调用描述、请求帧上限、采样、外发与全部由 Live 接收的执行证据判定，随后领取一次任务。
+调用它之前，上层仍须完成调用描述、请求帧上限、采样与外发检查，并按持久所有者选择完成证据前提或豁免检查，随后领取一次任务。
 `prepared(description)` 只允许与准备时完全相同的描述、只启动一次，返回 `ByteSession`。
 再次调用返回 RPC `startup_error`；领取后沿既有 `executor_error` 消耗预算，
 没有独立的 `launch_reused` 执行原因。
@@ -44,7 +44,7 @@ Popen 成功而 PipeSession 拒绝接管时，启动器仍负责有界组回收�
 - 代理语法、provider/auth_mode 闭集、协议档案与有限正数超时（不接受 bool、NaN、无穷或非数值）。
 - `use_install` 的供给与安装保护、平台和完整树检查。
 
-领取前准备允许创建临时 scope、阻塞封装、独占认证 HOME/TMPDIR 及其清理资源，并执行专用凭据刷新；刷新可能联网并写回该凭据目录。模型 Pi 仍未 exec，不发送 prompt，不写业务任务、attempt、预算、失败行或成功制品。上层先完成其余执行证据门禁，再调用 `prepare_launch`。
+领取前准备允许创建临时 scope、阻塞封装、独占认证 HOME/TMPDIR 及其清理资源，并执行专用凭据刷新；刷新可能联网并写回该凭据目录。模型 Pi 仍未 exec，不发送 prompt，不写业务任务、attempt、预算、失败行或成功制品。上层先完成当前模式要求的门禁，再调用 `prepare_launch`。
 刷新失败或后续领取前检查拒绝均不占用 attempt；成功取得的短期 token 仅随内存上下文存在，不另存缓存。
 
 领取后复核 cwd、指令、安装整树与已准备封装放置，然后创建临时资源、建立隔离和 exec。
@@ -64,10 +64,10 @@ pre-exec中更改，不修改调用方进程限额。
 部署仍须配置 `LimitCORE=0` 并核对所选Apport版本/配置、uid与非打包路径适用性；
 允许root内存瞬时采集而不落盘及后续doctor漂移检查的目标见
 [ADR-0049](../adr/0049-bound-core-persistence-with-explicit-zero-limit.md)。
-缺少现场证据时普通执行仍阻断，合成Python对端不构成真实Pi/Node准入。
+严格模式缺少现场证据时仍阻断；所有者豁免不跳过上述 exec 前零 core 设置与回读。合成 Python 对端不构成真实 Pi/Node 现场证明。
 
 
-### 启动策略 `pi-launch-1.4.0-v10`
+### 启动策略 `pi-launch-1.4.0-v11`
 
 模型进程固定 argv：
 
@@ -140,6 +140,13 @@ stdout 仅解析 token，stderr 原文丢弃；合计输出上限 64 KiB，刷�
 token 不进入 argv、attempt 文件、DB、审计、日志、repr；也不保存前缀、长度、哈希或其他派生值。
 Python 内存引用在启动或上下文退出时释放，不承诺对不可变字符串物理清零。
 测试对端的 env/argv 观察只在测试进程内，不提供产品转储能力。
+
+### 可选放置与宿主 DNS
+
+`prepare_launch(..., placement_required=True)` 默认保留严格放置路径。正式消费者只有读到有效的持久所有者豁免，才传入 `placement_required=False`；流水线不写入或开启该选择。
+豁免路径不读取放置 target、不构造 cgroup scope 或专用封装，不建立私有 resolver 视图，认证 helper 与模型使用宿主 DNS。
+认证仍独立 helper，模型仍通过原 Landlock 文件／TCP 权限边界启动；两类子进程的软硬零 core、`no_new_privs`、固定 argv/env、模型 `--no-session` 和 attempt 临时根清理保持。
+没有 nft 主机级出站强制或 Live 溯源保证；Landlock 不限制 UDP/DNS，宿主 stub 可用性不等于已验。
 
 ### 用户级放置与双阶段握手
 
@@ -224,7 +231,7 @@ TCP bind/connect 均默认拒绝，只给指定端口 connect 权限。
 文件规则没有开放业务 DB/blob、出版方凭据、宿主认证目录、个人 Pi 或其他用户文件。
 运行文件是否存在、符号链接目标是否还需要额外白名单，以及 Node 的 TLS/DNS 是否足够，由 Live 统一实测；
 不能为“跑通”扩大白名单而不更新隔离策略。
-Landlock 端口规则不限制主机，也不覆盖 UDP/DNS；主机级出站缺口由 Live 统一承接。
+Landlock 端口规则不限制主机，也不覆盖 UDP/DNS；豁免模式接受这一残余风险，可选证据链仍可独立验证主机级出站。
 本机 ABI 与可观察拒绝测试仅证明本次工程环境，不能迁移成部署机隔离事实。
 
 ### 一次任务执行组合
@@ -245,13 +252,17 @@ credentials_dir, auth_mode, proxy=None, sink=None, clock=None)` 提供显式回�
 完整请求由 `current_binding.build_admission_request(database, binding, *, use,
 credentials_dir, now)` 只读构造。准入用途从本次 boundary/value 与 low/high 精确取得；
 未登记档位拒绝，不借其他格的资格。`load_admission_evidence(request, now=...)`
-读取[受保护账本和统一分项判定](live-evidence.md)，所有必需项均须当前合格。
+在严格模式读取[受保护账本和统一分项判定](live-evidence.md)，所有必需项均须当前合格。
 旧的不完整 EvidenceBinding 加载继续返回 None；三布尔 `admit` 只保留独立工程判定，
-产品不保留 `_evidence_for` 证据别名，不接收证据、授予 factory 或工程模式参数。
+产品不保留 `_evidence_for` 证据别名，不接收证据或授予 factory；所有者豁免是持久用户决定，不是临时工程模式参数。
 explicit 的执行映射仍为空。材料保持系统指令形状、argv 与完整 RPC 帧上限检查，
 Prompt/Profile 正文不进入内容无关能力身份。
 
-三检查点依次是：
+所有者豁免在准备前、准备后和领取写事务内分别重读同一版本化选择；选择发生变化或损坏即拒绝，不在调用中自动切换模式。
+豁免时这三处不读取／刷新受保护证据观察、不要求账本与收紧 helper，运行供给、cwd、凭据和隔离检查、帧上限、任务事务与预算仍执行；真实执行失败继续按原业务规则结算。
+豁免不是证据或 test source，正式来源接收边界不变。关闭后重新采集、接收／激活的边界见 [Live 契约](live-evidence.md#所有者豁免)。
+
+严格证据模式的三检查点依次是：
 
 1. `prepare_launch` 前构造完整当前绑定并判定；缺项、过期、漂移或来源失信不刷新认证。
 2. 准备后重新构造绑定并重新读取账本；选择、策略、认证/cache 不变量及站点身份变化拒绝；获准演进字段按共享 v2 基线比较。
@@ -295,7 +306,7 @@ launcher 或执行 service，不刷新、不创建会话或写账本，供诊断
 运行时只绑定策略版本，不对 PaperRadar 源码求哈希，不改变 Pi argv 或协议档案。
 覆盖与未验边界见 [#143 台账](../verification/issue-143-pi-execution.md)。
 
-当前观察刷新采用 `pi-admission-v11`：正式三检查点在准备前及准备后请求固定零参数
+严格模式的当前观察刷新沿用固定受保护入口：其三检查点在准备前及准备后请求固定零参数
 受保护刷新，领取事务内只读核验。临时失败拒绝本次且不领取 attempt/业务预算；
 同一站点观察可用于 low/high，但完整模型身份和每格模型证据继续精确比对。
 失败分级和来源边界见 [Live 当前观察契约](live-evidence.md#当前观察与认证cache-基线)。
@@ -313,7 +324,7 @@ RPC 四类映射和任务业务拒绝仍由各自权威处理，不新增失败�
 
 ## 不提供／不证明
 
-本模块只消费受保护准入事实，不创建证据资格；真实部署与执行验收责任由 Live 统一承担。实际 cwd/祖先目录、固定 1.4.0 入口、订阅刷新、模型权限、参数能力、
+本模块不创建证据资格；严格模式消费受保护准入事实，豁免模式只消费独立所有者决定。真实部署与执行证明由可选 Live 证据链承担。实际 cwd/祖先目录、固定 1.4.0 入口、订阅刷新、模型权限、参数能力、
 TLS/DNS、主机级出站、旗标/settings 的自动网络抑制和 RPC 兼容均未验。
 `provider_default` 不能当作 `temperature=0`，采样声明与校准取舍以 runtime-config 契约与[ADR-0040](../adr/0040-declare-provider-default-sampling.md) 为准；
 本模块不删除或注入 sampling 参数。
@@ -322,7 +333,7 @@ TLS/DNS、主机级出站、旗标/settings 的自动网络抑制和 RPC 兼容�
 ## 相关
 
 依据：[#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终 B/N/C/D；
-[ADR-0039](../adr/0039-isolate-pi-with-landlock.md)、[ADR-0040](../adr/0040-declare-provider-default-sampling.md)。
+[ADR-0068](../adr/0068-replace-live-prerequisites-with-explicit-owner-waiver.md)、[ADR-0039](../adr/0039-isolate-pi-with-landlock.md)、[ADR-0040](../adr/0040-declare-provider-default-sampling.md)。
 
 [供给](pi-supply.md)、[RPC](pi-rpc.md)、[Screening任务](screening-tasks.md)、
 [Feed组合](feed-pipeline.md)、[doctor](doctor.md)、

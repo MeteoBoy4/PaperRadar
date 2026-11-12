@@ -1,6 +1,6 @@
 # 按所有者冻结的应用可见集合约束本机出站
 
-状态：已接受；日期：2026-11-07；依据：[#167](https://github.com/MeteoBoy4/PaperRadar/issues/167) 所有者 H4 真实出口终局裁决。本条独立记录本机部署范围；关联 [ADR-0039](0039-isolate-pi-with-landlock.md) 与 [ADR-0046](0046-consolidate-pi-readiness-under-live.md)，不改变其 Landlock 策略或 Live 职责归属。
+状态：已接受；日期：2026-11-07；依据：[#167](https://github.com/MeteoBoy4/PaperRadar/issues/167) 所有者 H4 真实出口终局裁决。本条独立记录本机部署范围；关联 [ADR-0039](0039-isolate-pi-with-landlock.md) 与 [ADR-0046](0046-consolidate-pi-readiness-under-live.md)，不改变其 Landlock 策略或 Live 职责归属。 主机级出站强制前提由 [ADR-0068](0068-replace-live-prerequisites-with-explicit-owner-waiver.md) 补充为可选。
 
 本机上联软路由使用 OpenClash fake-ip 与 sniffer.override-destination=true，上游决定实际线路和最终 IP。本机采用所有者实测并冻结的应用可见出站集合：TCP443 至 `28.0.0.0/8`，UDP/TCP53 至 `192.168.44.1`；原路由器配置池字符串 `28.0.0.1/8` 与规范 CIDR 同时保留，池值变化停止。当前 API/Auth 的两个映射是来源事实，不将允许集合缩为这两个地址，也不换成实际供应端 IP。IPv6 保持 not_assessed。
 
