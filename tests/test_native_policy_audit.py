@@ -305,3 +305,32 @@ def test_namespace_mount_and_capability_denials_have_finite_checkpoints(
     assert result.returncode == 125
     assert result.stdout == b""
     assert result.stderr == f"placement_native_v1:{checkpoint}\n".encode()
+
+
+@pytest.mark.parametrize("stage", ["pre", "post"])
+def test_closed_diagnostic_pipe_keeps_controlled_refusal(
+    tmp_path: Path, stage: str
+) -> None:
+    import os
+
+    from paper_radar.live_evidence.placement_build import freeze_placement
+    from tests.site_collector_support import site_configuration
+
+    root = tmp_path / "runtime"
+    (root / "resources").mkdir(parents=True)
+    (root / "resources/resolv.conf").write_bytes(b"nameserver 192.0.2.1\n")
+    freeze_placement(root, site_configuration(tmp_path), Path.cwd())
+    read_fd, write_fd = os.pipe()
+    os.close(read_fd)
+    try:
+        result = subprocess.run(
+            (str(root / ("placement-" + stage)), "--preflight"),
+            stdout=subprocess.PIPE,
+            stderr=write_fd,
+            restore_signals=True,
+            check=False,
+        )
+    finally:
+        os.close(write_fd)
+    assert result.returncode == 125
+    assert result.stdout == b""

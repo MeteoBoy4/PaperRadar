@@ -8,7 +8,7 @@
 
 | 独立未绑定模块 | 节点数 | 证明范围 |
 | --- | ---: | --- |
-| `tests/test_native_policy_audit.py` | 18 | 构建产物中 post 只读校验与强制 Px 并存；pre/post 静态入口的合法预检固定诊断、非法参数及普通握手静默；15 类映射、namespace、挂载、resolver 与撤权的 OS 边界拒绝 |
+| `tests/test_native_policy_audit.py` | 20 | 构建产物中 post 只读校验与强制 Px 并存；pre/post 静态入口的合法预检固定诊断、非法参数及普通握手静默；15 类映射、namespace、挂载、resolver 与撤权的 OS 边界拒绝 |
 
 权限修复先由缺少 post `r` 的回归断言复现；诊断先由两个静态入口无法返回
 固定 identity 检查点的回归复现，再补实现。新测试不依赖已安装策略：
@@ -81,7 +81,7 @@ Python/Node 和 true 是现有三条固定 `ix`。没有通用 shell、NSS helpe
 `placement_native_v1:CHECKPOINT\n`。拒绝仍退出 125；消息只含
 `NATIVE_PREFLIGHT_CHECKPOINTS` 的 50 个固定源码字面量，不含 errno、路径、内容、
 argv/env、token 或 Prompt。未知、超限、混合或不完整消息不得推定成可信检查点。
-诊断写入失败不改变拒绝；非法 argv、初始 pretrace 与普通 auth/model/negative
+诊断写入失败不改变拒绝；仅终止前的诊断分支忽略 SIGPIPE，关闭的诊断读端仍由 pre/post 真实静态入口验证退出 125；非法 argv、初始 pretrace 与普通 auth/model/negative
 入口保持静默。列表中 normal 专用检查点用于操作清单，normal 不输出它们。
 traced 模式 R 之后的 release/true 失败同样要由 supervisor 收集，不能只检查 R 前。
 

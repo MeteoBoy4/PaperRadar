@@ -11,6 +11,7 @@
 #include <linux/seccomp.h>
 #include <linux/securebits.h>
 #include <sched.h>
+#include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -41,7 +42,7 @@ static void refuse(void) {
     if (diagnostic) {
         char message[96];
         int length = snprintf(message, sizeof(message), "placement_native_v1:%s\n", checkpoint);
-        if (length > 0 && length < (int)sizeof(message)) {
+        if (length > 0 && length < (int)sizeof(message) && signal(SIGPIPE, SIG_IGN) != SIG_ERR) {
             /* Diagnostic failure must never change the controlled refusal. */
             ssize_t ignored = write(STDERR_FILENO, message, (size_t)length);
             (void)ignored;
