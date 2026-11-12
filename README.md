@@ -497,6 +497,14 @@ Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接
 豁免下认证与模型不要求 cgroup 放置或私有 resolver，使用宿主 DNS；Landlock 文件／TCP443 隔离、零 core、`no_new_privs`、`--no-session`、认证分离、临时根及业务预算保持。
 无主机级出站强制与 Live 溯源保证，未评估能力仍如实显示。关闭豁免后须重新采集／接收／激活，旧激活不复活。
 决策见 [ADR-0068](docs/adr/0068-replace-live-prerequisites-with-explicit-owner-waiver.md)，操作见 [所有者豁免](docs/contracts/live-evidence.md#所有者豁免)。
+所有者显式动作（先选择自己的业务库）：
+
+```bash
+uv run --offline --locked paper-radar live-evidence owner-waiver \
+  --database <业务库> --enable --reason '接受 ADR-0068 的证据前提豁免'
+```
+
+不带 `--enable/--disable` 时只读查询；关闭用 `--disable --reason <理由>`，后续严格执行需重新采集、接收和激活。
 以下证据链与部署工具保留为可选后置复验，本次降范围不出新封印包。
 带版本的六格登记、共享分项投影，以及独立受保护账本的接收、证据激活、不可逆撤销与恢复见
 [Live evidence](docs/contracts/live-evidence.md)。所有者入口为 `paper-radar live-evidence receive/activate/revoke`，

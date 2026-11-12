@@ -66,7 +66,7 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 
 ### Pi 执行诊断
 
-诊断只读版本化所有者选择。有效豁免单列“证据前提已由所有者豁免（ADR-0068）”及原因码，不建立能力资格，不改变原证据三态；未评估仍显示 `not_assessed`。缺失选择默认严格，损坏或未知版本拒绝，不自行开启、修复或写入选择。
+诊断只读版本化所有者选择。有效豁免单列“证据前提已由所有者豁免（ADR-0068）”及原因码 `owner_evidence_prerequisite_waived`，不建立能力资格，不改变原证据三态；未评估仍显示 `not_assessed`。缺失选择默认严格，损坏或未知版本拒绝，不自行开启、修复或写入选择。
 豁免下不把缺失 root 部署、观察、nft/cgroup/resolver 证明当作产品执行阻断；固定供给、cwd、凭据元数据和 Landlock 能力仍检查。此诊断不刷新认证，不证明 DNS、RPC、模型参数或主机级出站已验。
 
 
@@ -91,7 +91,8 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 | --- | --- |
 | selection | 历史快照有效为 passed/configuration_valid；缺失/损坏引用保留 ConfigReason，invalid。 |
 | supply | 无选择/安装/adapter 为 missing；树、版本或登记不符为 invalid；必要项通过为 passed/supply_valid。 |
-| admission | 按两格各自的共享 decision 计算；可执行为 passed/admitted；全部缺证据为 missing/evidence_missing；其他分项或全局拒绝为 invalid，保留 ledger_untrusted、clock_rollback、evidence_expired 等受控原因。缺 Screening 配置为 missing/screening_configuration_missing；未支持采样、版本、认证模式或用途继续受控拒绝。 |
+| owner_waiver | 独立持久选择；启用为 passed/owner_evidence_prerequisite_waived，关闭为 passed/owner_waiver_disabled；记录损坏为 invalid，不替代隔离检查或能力事实。 |
+| admission | 严格模式按两格各自的共享 decision 计算；可执行为 passed/admitted；全部缺证据为 missing/evidence_missing；其他分项或全局拒绝为 invalid，保留 ledger_untrusted、clock_rollback、evidence_expired 等受控原因。豁免时显示 owner_evidence_prerequisite_waived，另列非必要 admission_evidence=not_assessed/evidence_not_assessed；缺 Screening 配置为 missing/screening_configuration_missing；未支持采样、版本、认证模式或用途继续受控拒绝。 |
 | cwd | 缺常量目录为 missing/cwd_missing；复用路径形状、无链接、为空规则；非法为 invalid，通过为 passed/cwd_metadata_valid。 |
 | credentials_metadata | 缺目录/auth.json 为 missing/credentials_missing；owner、0700、无链接、普通文件检查非法为 invalid/credentials_invalid，否则 passed/metadata_valid。不读取 auth.json 内容。 |
 | isolation | 最低内核能力通过为 passed/isolation_capability；不足为 invalid/isolation_unavailable；不证明实际 Pi/TLS/DNS 可行。 |

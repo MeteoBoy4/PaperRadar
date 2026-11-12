@@ -17,6 +17,10 @@ Screening／Read 与 doctor 在默认严格模式消费共享判定；显式所�
 
 Live 证据不再是产品执行的不可取消前提。所有者可以显式开启持久、版本化的豁免，Screening `run_attempt` 与 Read execution 免除接收／激活证据、受保护观察与部署链路前提；默认关闭且仍失败关闭。流水线只读该选择，不能静默开启。
 
+所有者入口是 `paper-radar live-evidence owner-waiver --database <业务库>`，无开关只读查询；开启须明确 `--enable --reason <理由>`，关闭用 `--disable --reason <理由>`。开关冲突、缺少理由、未知／损坏版本或时钟回退拒绝。帮助不打开数据库。
+动作在既有 `config_versions` 中以独立 `owner_waiver/live-evidence` 种类与名称追加，格式版本 1、策略 `live-evidence-prerequisite-v1`，每次记录递增版本、所有者身份、时间、理由与前一记录摘要；不改配置快照、Stage fingerprint 或已有记录。无记录即关闭，记录损坏不能降级成缺省。输出不回显理由正文。
+查询及 doctor 不写动作，正式执行的三个检查点只读并要求同一选择；选择变化即拒绝。
+
 所有者动作记录独立于准入账本及能力三态，不产生证据、test 来源、预算或模型质量资格。doctor 单列“证据前提已由所有者豁免（ADR-0068）”与受控原因码；未评估仍为 `not_assessed`，不以 `verified` 或 `unknown` 替代。严格模式的既有拒绝、受信接收、历史格式和 test 来源拒绝保持。
 
 豁免下不部署或要求 nft、placement/cgroup、resolver 私有视图，使用宿主 DNS；没有主机级出站强制或 Live 溯源保证。Landlock 文件隔离与 TCP443 限制、`--no-session`、软硬 `RLIMIT_CORE=0`、`no_new_privs`、认证 helper 分离、attempt 临时根及业务预算／配额继续执行，见 [Pi 执行契约](pi-execution.md#可选放置与宿主-dns)。
@@ -24,6 +28,13 @@ Live 证据不再是产品执行的不可取消前提。所有者可以显式开
 关闭豁免形成重新验证边界：严格路径只接受边界后重新采集、接收与激活的证据，旧激活不得复活；旧原始能力状态、接收、撤销、失败与停止事实保持。缺少部署或新证据就拒绝，不自动修复、重采或放宽旧期限。
 
 原证据链全部保留为可选后置路径。以下六格、批准计划、40/40 累计域、受保护历史与部署规则描述该可选路径，不作为豁免执行的前提。主机卸载只退出当前 root 部署，保留账本、inbox、intents、归档、失败／停止历史和 v22–v24 候选原字节，不改 journal、不重置任何历史成本。本次降范围不构建新封印包。
+
+### 所有者卸载
+
+`scripts/live_uninstall.py prepare --output <私有审阅文件>` 以普通所有者身份只读核对已安装主部署和完整保留候选，生成精确身份清单。`apply --review <文件> --sha256 <摘要>` 仅供所有者亲自 sudo；工具本体也应按审阅摘要核对后从同一内存字节执行。它是一次性卸载工具，不安装新 runtime 或新封印包。
+
+卸载先汇总主部署、全部受保护资源、归档库存、历史可读性、空间、锁、项目进程、unit、nft 与 AppArmor 检查；未知身份或任一不满足时不修改部署。通过后先保存并复核原字节归档，再停止项目 anchor/slice、移除已认证项目策略及 nft、五入口、sudoers、unit 文件、resolver 视图与当前 runtime，并回读缺席和历史不变。
+不加载或替换 AppArmor 策略，不修改 journal；中途失败保留归档及准确失败阶段，不自动加载策略回滚。共享 user manager/linger、全机 resolver/sysctl 和非项目规则保持。账本内 placement-target 等原记录与全部历史保留；存在记录不代表仍有当前部署。
 
 ### 准入用途与独立维度
 
@@ -517,8 +528,8 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v24`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v24.json)
-与源码守卫共同固定相关实现；v1–v23 的 D7 向量与摘要锚原字节保留。
+源代码准入策略为 `pi-admission-v25`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v25.json)
+与源码守卫共同固定相关实现；v1–v24 的 D7 向量与摘要锚原字节保留。
 v7 增加共享用户 scope 双阶段放置、封装、只读 resolver 和只读诊断；保留固定认证基线 v2、helper 临时布局与 v2 额度／回执／账本错误权威，继续显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
 策略身份变化后严格模式不能继承旧策略的执行资格；将来恢复可选部署时，新字节须所有者重新审阅、部署并按新证据显式激活。豁免实现无需新封印包。
 源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。

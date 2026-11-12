@@ -175,7 +175,7 @@ B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各自入�
 | A10 | [#100](https://github.com/MeteoBoy4/PaperRadar/issues/100) | [验收证据](verification/a10-requirements.md)、[范围索引 E10](verification/stage-a-closure.md#证据索引与范围) |
 | Feed | [#114](https://github.com/MeteoBoy4/PaperRadar/issues/114) | [离线工程证据](verification/issue-114-feed-delivery.md) |
 | A 窄收口 | [#120](https://github.com/MeteoBoy4/PaperRadar/issues/120) | [独立工程覆盖与同次门禁判据](verification/a-narrow-delivery.md)；不等于完整阶段 A |
-| Live（降范围） | [#177](https://github.com/MeteoBoy4/PaperRadar/issues/177) | [ADR-0068](adr/0068-replace-live-prerequisites-with-explicit-owner-waiver.md)；所有者豁免与文档同步，证据链可选后置，不表示现场能力已验 |
+| Live（降范围） | [#177](https://github.com/MeteoBoy4/PaperRadar/issues/177) | [独立工程覆盖](verification/issue-177-owner-waiver.md)；所有者豁免与文档同步，证据链可选后置，不表示现场能力已验 |
 | Pi | [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) | [独立工程覆盖与同次门禁判据](verification/issue-140-gate-followup.md)；Live 继续独立验收 |
 | Extra | [#150](https://github.com/MeteoBoy4/PaperRadar/issues/150) | [独立工程覆盖与最终门禁判据](verification/issue-150-extra-delivery.md)；Body/B/F 继续独立验收 |
 | Body | [#155](https://github.com/MeteoBoy4/PaperRadar/issues/155) | [#165 工程覆盖与最终门禁判据](verification/issue-165-body-read-closure.md)；B/F/G/H 继续独立承接，真实单样本仍限 #164 |
