@@ -1,6 +1,6 @@
 # 分开核验 Live 完整绑定、分项能力与执行资格
 
-状态：已接受；日期：2026-11-08；依据：[#167 H4/H5接收及三条修正](https://github.com/MeteoBoy4/PaperRadar/issues/167#issuecomment-6719042528)；补充 [ADR-0047](0047-expire-and-explicitly-activate-live-evidence.md)。
+状态：已接受；日期：2026-11-08；依据：[#167 H4/H5接收及三条修正](https://github.com/MeteoBoy4/PaperRadar/issues/167#issuecomment-6719042528)；补充 [ADR-0047](0047-expire-and-explicitly-activate-live-evidence.md)。 “产品执行必须凭证据”的约束关系由 [ADR-0068](0068-replace-live-prerequisites-with-explicit-owner-waiver.md) 取代，其他证据与历史规则保留。
 
 有限探索可留下若干已核事实和若干未测或不可判断的能力；用一个总通过值接收它们，会把未测项涂成通过，或丢掉其他项独立成立的事实。Live接收权威必须先核来源、完整性和完整执行绑定；绑定缺项不接收。能力主张分别保存 `verified`、`not_assessed`、`unknown` 及各自依据、范围与原验证时间，不以探索签收或某一项通过替代另一项。历史失败保持，不能借分项状态抹除失败或撤销事实。
 

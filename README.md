@@ -114,7 +114,7 @@ uv run --offline --locked paper-radar doctor --scope pi-exec \
   --credentials-dir /path/to/owner-provisioned-credentials
 ```
 
-它只读核对 Screening 当前档位 boundary/value 两格的完整绑定与共享准入事实，
+它只读核对 Screening 当前档位 boundary/value 两格的工程检查及当前所有者选择；严格模式核完整绑定与共享准入事实，
 按必要项计算 executable 和退出码；披露型 unknown 保留原状态、原因与下一步，退出成功也逐项展示。
 Read 此命令未选择、未诊断。它仅检查凭据元数据，不刷新、不解析 token。
 共享结构化行与中文片段供 B/H 日报嵌入，不计入论文容量，见 [doctor Contract](docs/contracts/doctor.md#pi-执行诊断)。
@@ -478,8 +478,8 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 它复用与当前准入策略身份匹配的已部署冻结 runtime，输出待审 owner 工作流；构建不执行 sudo 或操作账本。
 真实恢复会失效全部旧激活，成功出口要求所有者重新手动激活非空最终分项，详见
 [Live 证据契约](docs/contracts/live-evidence.md#所有者单次收口审阅包)。
-正式消费者按分项证据决定资格，站点分项激活不能代替模型／RPC等必需证据。
-正式 Pi 准入在调用前按需刷新受保护观察；临时不可用拒绝本次并保留原成功快照和证据时点，
+严格模式的正式消费者按分项证据决定资格，站点分项激活不能代替模型／RPC 等必需证据；显式所有者豁免仅移除证据前提。
+严格模式的 Pi 准入在调用前按需刷新受保护观察；临时不可用拒绝本次并保留原成功快照和证据时点，
 真实漂移继续收紧。doctor 只读同一结果；固定零参数特权入口的实际安装与现场核验仍由封印部署承担。
 详见 [Live 当前观察契约](docs/contracts/live-evidence.md#当前观察与认证cache-基线)。
 
@@ -493,9 +493,11 @@ uv run --offline --locked python scripts/seal_site_evidence.py --help
 [ADR-0026](docs/adr/0026-control-pi-through-a-bounded-rpc-adapter.md)。
 `paper_radar.pi_execution` 提供固定安装保护、宿主专用 OAuth 刷新、独立 attempt 资源与
 Landlock 受控会话工厂；不提供执行 CLI，不保存准入 passed。接口与权限见
-[Pi 执行资源契约](docs/contracts/pi-execution.md)；认证与模型共用锚定用户 scope 和专用封印放置入口，模型领取前只准备阻塞封装；引导阶段撤权后才进入动态代码，exec-stop 核身份后才释放认证或 prompt。入口、AppArmor 策略和 resolver 视图须审字节部署并核实际加载身份，真实部署适用性仍需独立验证。独立测试范围见
-[#140 独立组合台账](docs/verification/issue-140-pi-delivery.md)。现场隔离与固定 Pi 的剩余验收由 Live 统一承担；
-产品准入证据未被接收时继续阻断。
+[Pi 执行资源契约](docs/contracts/pi-execution.md)。所有者可显式开启持久、版本化的证据前提豁免；默认严格拒绝，流水线不能自行开启。
+豁免下认证与模型不要求 cgroup 放置或私有 resolver，使用宿主 DNS；Landlock 文件／TCP443 隔离、零 core、`no_new_privs`、`--no-session`、认证分离、临时根及业务预算保持。
+无主机级出站强制与 Live 溯源保证，未评估能力仍如实显示。关闭豁免后须重新采集／接收／激活，旧激活不复活。
+决策见 [ADR-0068](docs/adr/0068-replace-live-prerequisites-with-explicit-owner-waiver.md)，操作见 [所有者豁免](docs/contracts/live-evidence.md#所有者豁免)。
+以下证据链与部署工具保留为可选后置复验，本次降范围不出新封印包。
 带版本的六格登记、共享分项投影，以及独立受保护账本的接收、证据激活、不可逆撤销与恢复见
 [Live evidence](docs/contracts/live-evidence.md)。所有者入口为 `paper-radar live-evidence receive/activate/revoke`，
 `show` 查询回执，`show --plan-id <ID>` 查询批准计划；v2 同时展示 root 累计额度、失败链、熔断与下一动作。
@@ -509,7 +511,7 @@ Live 采集使用跨计划固定域的 40 次联网／40 次 prompt 预占，不
 安全失败首次停止。规则与续跑来源见 [v2 契约](docs/contracts/live-evidence.md#v2-采集额度失败类与续跑)。帮助纯本地。
 activate 展示完整脱敏回执并要求手输短 ID；确认后由固定封印采集器刷新观察，审核内容相同才激活。
 阅读可超过60秒，执行前观察仍受60秒时效约束；事实改变或能力到期继续拒绝，原期限不延长。
-Screening 正式入口在刷新前、准备后和领取事务内读取同一分项权威；普通资格缺口只拒绝当次调用，
+严格模式的 Screening 入口在刷新前、准备后和领取事务内读取同一分项权威；普通资格缺口只拒绝当次调用，
 已知漂移或明确失败按受影响范围持久收紧。
 Read 执行边界见[Read 执行契约](docs/contracts/read-execution.md)；受保护部署与实际证据激活由所有者完成。有限合成实验的适用范围见
 [EXP-2 证据与承接](docs/verification/exp-2-pi-live-probe.md)，不据此授予生产执行。
@@ -538,7 +540,7 @@ Python 服务 `PaperFacts` 提供来源提交、Feed 登记、人工字段修正
 `paper_radar.screening_tasks.ScreeningTasks` 提供 boundary/value 请求登记、冻结回放、
 有限尝试、租约、`test | pi_rpc` 来源的成功接收、显式 retry 与历史查询。
 `pi_rpc` 的供给/安装与回执审计随备份恢复核验；这只证明持久事实一致性，
-真实执行和兼容仍需 Live 验收。这是 Python 服务，不是 screening CLI。
+真实执行和兼容证明由可选 Live 证据链承接，豁免不表示已经验证。这是 Python 服务，不是 screening CLI。
 value 通过 `register` 登记时由调用方提供语言事实，`register_feed_value` 则从 Feed
 发现归属派生该事实。
 接口与任务语义见[Screening 任务契约](docs/contracts/screening-tasks.md)，
@@ -546,7 +548,7 @@ value 通过 `register` 登记时由调用方提供语言事实，`register_feed
 来源政策见[ADR-0035](docs/adr/0035-feed-derived-original-title-language-fact.md)。
 
 Pi 一次执行已支持 models-v2 采样声明、共享受保护账本的三检查点准入、完整当前绑定、
-受保护隔离启动、pi_rpc 权威成功与 Feed value 登记/恢复。缺少有效且人工激活的必需证据时拒绝；
+隔离启动、pi_rpc 权威成功与 Feed value 登记/恢复。默认严格模式缺少有效且人工激活的必需证据时拒绝，持久所有者豁免只移除证据前提；
 合成对端通过不代表真实认证、参数或 RPC 兼容。见 [执行契约](docs/contracts/pi-execution.md#一次任务执行组合)。
 后续产品入口与实验用途由 [B](docs/roadmap.md#module-b) 承接。
 

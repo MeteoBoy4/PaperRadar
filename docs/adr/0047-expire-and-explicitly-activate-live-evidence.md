@@ -1,6 +1,6 @@
 # 对 Live 准入证据采用人工激活与限期重验
 
-状态：已接受；日期：2026-11-07；依据：所有者本轮 grill-with-docs Q7–Q10 裁决；补充 [ADR-0046](0046-consolidate-pi-readiness-under-live.md)；分项能力与到期未激活边界由 [ADR-0051](0051-separate-live-binding-capabilities-and-activation.md) 补充。
+状态：已接受；日期：2026-11-07；依据：所有者本轮 grill-with-docs Q7–Q10 裁决；补充 [ADR-0046](0046-consolidate-pi-readiness-under-live.md)；分项能力与到期未激活边界由 [ADR-0051](0051-separate-live-binding-capabilities-and-activation.md) 补充。 “产品执行必须凭证据”的约束关系由 [ADR-0068](0068-replace-live-prerequisites-with-explicit-owner-waiver.md) 取代，其他证据与历史规则保留。
 
 固定安装与配置未变不能证明供应商后台行为未变；受控采集成功也不应直接替所有者启用产品执行。Live 的证据接收权威先核验回执来源、完整性和适用性，再由所有者审阅完整脱敏回执并显式激活对应绑定。人工批准不能补齐未测项、覆盖失败或让任意 JSON/Markdown 自证通过。
 

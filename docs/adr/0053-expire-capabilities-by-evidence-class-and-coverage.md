@@ -1,6 +1,6 @@
 # 按证据类别与逐调用覆盖决定有效期
 
-状态：已接受；日期：2026-11-09；依据：所有者本轮明确接受；原裁决：[#168 所有者 D-4=A 与 E01 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#169](https://github.com/MeteoBoy4/PaperRadar/issues/169)；补充 [ADR-0047](0047-expire-and-explicitly-activate-live-evidence.md) 与 [ADR-0051](0051-separate-live-binding-capabilities-and-activation.md)，关联 [ADR-0052](0052-version-admission-uses-and-capability-requirements.md)、[ADR-0054](0054-separate-execution-binding-from-call-materials.md)。
+状态：已接受；日期：2026-11-09；依据：所有者本轮明确接受；原裁决：[#168 所有者 D-4=A 与 E01 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/168#issuecomment-6722370306)、[#169](https://github.com/MeteoBoy4/PaperRadar/issues/169)；补充 [ADR-0047](0047-expire-and-explicitly-activate-live-evidence.md) 与 [ADR-0051](0051-separate-live-binding-capabilities-and-activation.md)，关联 [ADR-0052](0052-version-admission-uses-and-capability-requirements.md)、[ADR-0054](0054-separate-execution-binding-from-call-materials.md)。 “产品执行必须凭证据”的约束关系由 [ADR-0068](0068-replace-live-prerequisites-with-explicit-owner-waiver.md) 取代，其他证据与历史规则保留。
 
 供应商后台可在本地身份未变时改变，不能只靠漂移检测无限复用；站点与工程性质若能每次完整核验，机械套用同一个时钟会产生没有额外证明价值的重验。供应商和未分类能力均从每项原 `verified_at` 起精确 `timedelta(days=30)`；接收、签收和证据激活不重新计时，等于到期时刻即拒绝。登记的较短上限可以收紧该期限，不能延长它。粒度是能力 × 消费者格 × 档位；跨格聚合只取明确已核验各格的最早 UTC 时点，不生成跨格资格。
 
