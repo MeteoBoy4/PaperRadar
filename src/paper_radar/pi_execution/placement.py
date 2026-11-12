@@ -270,7 +270,16 @@ def verify_placement(target: PlacementTarget, pid: int, start: int, unit: str) -
         raise ExecutionError("placement_anchor_invalid") from None
 
 
-def _manager() -> dict[str, str]:
+MANAGER_PREFLIGHT_CHECKS = ("manager_state", "linger", "anchor_active")
+
+
+class PlacementManagerError(ExecutionError):
+    def __init__(self, checks: tuple[str, ...]) -> None:
+        self.checks = checks
+        super().__init__("placement_unavailable")
+
+
+def _manager(*, aggregate: bool = False) -> dict[str, str]:
     uid = os.getuid()
     env = {
         "PATH": "/usr/bin:/bin",
@@ -279,8 +288,10 @@ def _manager() -> dict[str, str]:
         "XDG_RUNTIME_DIR": f"/run/user/{uid}",
         "DBUS_SESSION_BUS_ADDRESS": f"unix:path=/run/user/{uid}/bus",
     }
-    try:
-        for argv, expected in (
+    failures = []
+    for name, (argv, expected) in zip(
+        MANAGER_PREFLIGHT_CHECKS,
+        (
             (
                 (
                     "/usr/bin/systemctl",
@@ -310,15 +321,22 @@ def _manager() -> dict[str, str]:
                 ),
                 b"active\n",
             ),
-        ):
+        ),
+        strict=True,
+    ):
+        try:
             result = subprocess.run(
                 argv, env=env, capture_output=True, timeout=3, check=False
             )
             if result.returncode != 0 or result.stdout != expected:
-                raise ExecutionError("placement_unavailable")
-        return env
-    except (OSError, subprocess.SubprocessError):
-        raise ExecutionError("placement_unavailable") from None
+                failures.append(name)
+        except (OSError, subprocess.SubprocessError):
+            failures.append(name)
+        if failures and not aggregate:
+            raise ExecutionError("placement_unavailable") from None
+    if failures:
+        raise PlacementManagerError(tuple(failures))
+    return env
 
 
 def _ptrace(request: int, pid: int, data: int = 0) -> None:
@@ -331,6 +349,9 @@ class LinuxPlacementPlatform:
 
     def manager_environment(self) -> dict[str, str]:
         return _manager()
+
+    def manager_preflight_environment(self) -> dict[str, str]:
+        return _manager(aggregate=True)
 
     def process_identity(self, pid: int) -> tuple[int, str]:
         return _proc(pid)

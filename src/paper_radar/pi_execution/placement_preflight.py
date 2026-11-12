@@ -18,7 +18,10 @@ from paper_radar.pi_execution.placement import (
     PlacementTarget,
     _ptrace,
 )
-from paper_radar.pi_execution.placement_protocol import RUNTIME_ROOT
+from paper_radar.pi_execution.placement_protocol import (
+    NATIVE_PREFLIGHT_CHECKPOINTS,
+    RUNTIME_ROOT,
+)
 from paper_radar.pi_execution.process import cleanup_process
 
 _POST_PROFILE = "paperradar-placement-post-v1 (enforce)"
@@ -85,6 +88,22 @@ class LinuxPreflightPlatform(LinuxPlacementPlatform):
 PREFLIGHT_PLATFORM = LinuxPreflightPlatform()
 
 
+class NativePreflightError(ExecutionError):
+    """保留封闭 native 检查点;仍使用原执行失败类别与清理路径。"""
+
+    def __init__(self, checkpoint: str) -> None:
+        if checkpoint not in NATIVE_PREFLIGHT_CHECKPOINTS:
+            raise ValueError("native_checkpoint_invalid")
+        self.checkpoint = checkpoint
+        super().__init__("placement_exec_failed")
+
+
+class _PreflightExited(ExecutionError):
+    def __init__(self, code: int) -> None:
+        self.code = code
+        super().__init__("placement_exec_failed")
+
+
 def _check_state(
     platform: LinuxPreflightPlatform,
     pid: int,
@@ -123,13 +142,22 @@ def _ready(child: subprocess.Popen[bytes], deadline: float) -> int:
         selector.register(child.stdout, selectors.EVENT_READ, "stdout")
         selector.register(child.stderr, selectors.EVENT_READ, "stderr")
         raw = bytearray()
+        diagnostic = bytearray()
         while monotonic() < deadline:
             for key, _mask in selector.select(
                 min(0.05, max(0, deadline - monotonic()))
             ):
                 data = os.read(key.fd, 65)
-                if key.data == "stderr" or not data:
-                    raise ExecutionError("placement_peer_exited")
+                if not data:
+                    selector.unregister(key.fd)
+                    continue
+                if key.data == "stderr":
+                    diagnostic.extend(data)
+                    if len(diagnostic) > 96 or raw:
+                        raise ExecutionError("placement_handshake_invalid")
+                    continue
+                if diagnostic:
+                    raise ExecutionError("placement_handshake_invalid")
                 raw.extend(data)
                 if len(raw) > 64:
                     raise ExecutionError("placement_handshake_invalid")
@@ -145,7 +173,18 @@ def _ready(child: subprocess.Popen[bytes], deadline: float) -> int:
                     if pid <= 1:
                         raise ExecutionError("placement_handshake_invalid")
                     return pid
-            if child.poll() is not None:
+            # Require both complete streams and the original failure exit code.
+            # A known prefix, a partial line or extra bytes prove no checkpoint.
+            if not selector.get_map():
+                code = child.wait(timeout=max(0.001, deadline - monotonic()))
+                for checkpoint in NATIVE_PREFLIGHT_CHECKPOINTS:
+                    if (
+                        code == 125
+                        and not raw
+                        and diagnostic
+                        == ("placement_native_v1:" + checkpoint + "\n").encode()
+                    ):
+                        raise NativePreflightError(checkpoint)
                 raise ExecutionError("placement_peer_exited")
     raise ExecutionError("placement_handshake_timeout")
 
@@ -154,6 +193,8 @@ def _exec_stop(pid: int, deadline: float) -> None:
     while monotonic() < deadline:
         waited, status = os.waitpid(pid, os.WNOHANG | 0x40000000)
         if waited:
+            if os.WIFEXITED(status):
+                raise _PreflightExited(os.WEXITSTATUS(status))
             if (
                 not os.WIFSTOPPED(status)
                 or status >> 16 != 4
@@ -165,12 +206,68 @@ def _exec_stop(pid: int, deadline: float) -> None:
     raise ExecutionError("placement_handshake_timeout")
 
 
+def run_cold_preflight(*, product_uid: int, product_gid: int) -> None:
+    """产品身份的固定冷预检;有限输出,无 manager、凭据或任意执行参数。"""
+    if (
+        type(product_uid) is not int
+        or type(product_gid) is not int
+        or product_uid <= 0
+        or product_gid <= 0
+        or (os.getuid(), os.geteuid(), os.getgid(), os.getegid())
+        != (product_uid, product_uid, product_gid, product_gid)
+    ):
+        raise ExecutionError("placement_unavailable")
+    child: subprocess.Popen[bytes] | None = None
+    deadline = monotonic() + 10
+    try:
+        child = PREFLIGHT_PLATFORM.spawn(
+            (str(RUNTIME_ROOT / "placement-pre"), "--preflight"), {}
+        )
+        if child.stdout is None or child.stderr is None:
+            raise ExecutionError("placement_exec_failed")
+        diagnostic = bytearray()
+        with selectors.DefaultSelector() as selector:
+            selector.register(child.stdout, selectors.EVENT_READ, "stdout")
+            selector.register(child.stderr, selectors.EVENT_READ, "stderr")
+            while selector.get_map() and monotonic() < deadline:
+                for key, _mask in selector.select(
+                    min(0.05, max(0, deadline - monotonic()))
+                ):
+                    data = os.read(key.fd, 97)
+                    if not data:
+                        selector.unregister(key.fd)
+                    elif key.data == "stdout":
+                        raise ExecutionError("placement_exec_failed")
+                    else:
+                        diagnostic.extend(data)
+                        if len(diagnostic) > 96:
+                            raise ExecutionError("placement_exec_failed")
+            if selector.get_map():
+                raise ExecutionError("placement_handshake_timeout")
+        code = child.wait(timeout=max(0.001, deadline - monotonic()))
+        if code == 0 and not diagnostic:
+            return
+        for checkpoint in NATIVE_PREFLIGHT_CHECKPOINTS:
+            if (
+                code == 125
+                and diagnostic == ("placement_native_v1:" + checkpoint + "\n").encode()
+            ):
+                raise NativePreflightError(checkpoint)
+        raise ExecutionError("placement_exec_failed")
+    except (OSError, subprocess.SubprocessError):
+        raise ExecutionError("placement_exec_failed") from None
+    finally:
+        if child is not None:
+            cleanup_process(child)
+
+
 def run_traced_preflight(
     target: PlacementTarget,
     *,
     product_uid: int,
     product_gid: int,
     timeout: float = 10,
+    aggregate_manager: bool = False,
 ) -> None:
     """固定 native → SEIZE → 单字节释放 → true exec-stop → DETACH。
 
@@ -198,7 +295,11 @@ def run_traced_preflight(
     pid = 0
     traced = False
     try:
-        env = platform.manager_environment()
+        env = (
+            platform.manager_preflight_environment()
+            if aggregate_manager
+            else platform.manager_environment()
+        )
         platform.verify(
             target, target.anchor_pid, target.anchor_start, "paperradar-anchor.service"
         )
@@ -276,7 +377,31 @@ def run_traced_preflight(
             or os.read(child.stderr.fileno(), 1)
         ):
             raise ExecutionError("placement_exec_failed")
-    except ExecutionError:
+    except ExecutionError as error:
+        if isinstance(error, _PreflightExited):
+            # waitpid has consumed the native peer's exit; never signal a reused
+            # pid. A direct OS adapter child also needs Popen's status updated.
+            traced = False
+            if child is not None and child.pid == pid:
+                child.returncode = error.code
+            if error.code == 125 and child is not None:
+                try:
+                    child.wait(timeout=max(0.001, deadline - monotonic()))
+                    if child.stdout is not None and child.stderr is not None:
+                        for stream in (child.stdout, child.stderr):
+                            os.set_blocking(stream.fileno(), False)
+                        raw = os.read(child.stderr.fileno(), 97)
+                        extra = os.read(child.stdout.fileno(), 1)
+                        for checkpoint in NATIVE_PREFLIGHT_CHECKPOINTS:
+                            if (
+                                child.returncode == 125
+                                and not extra
+                                and raw
+                                == ("placement_native_v1:" + checkpoint + "\n").encode()
+                            ):
+                                raise NativePreflightError(checkpoint) from None
+                except (OSError, subprocess.SubprocessError):
+                    pass
         raise
     except (
         OSError,
