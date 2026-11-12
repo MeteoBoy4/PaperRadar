@@ -66,14 +66,37 @@ def protected(path: Path, root: Path, owner_uid: int) -> None:
     raise ValueError("protected_path")
 
 
+def file_identity(info: os.stat_result) -> tuple[int, ...]:
+    """Security/content identity excludes atime, which this read can update."""
+    return (
+        info.st_dev,
+        info.st_ino,
+        info.st_mode,
+        info.st_uid,
+        info.st_gid,
+        info.st_nlink,
+        info.st_size,
+        info.st_mtime_ns,
+        info.st_ctime_ns,
+    )
+
+
 def file_bytes(path: Path, root: Path, owner_uid: int) -> bytes:
     protected(path, root, owner_uid)
     before = path.lstat()
     if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
         raise ValueError("file_identity")
-    raw = path.read_bytes()
-    if path.lstat() != before:
-        raise ValueError("file_changed")
+    flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK
+    with os.fdopen(os.open(path, flags), "rb") as source:
+        if file_identity(os.fstat(source.fileno())) != file_identity(before):
+            raise ValueError("file_changed")
+        raw = source.read()
+        after = os.fstat(source.fileno())
+        protected(path, root, owner_uid)
+        if file_identity(after) != file_identity(before) or file_identity(
+            path.lstat()
+        ) != file_identity(before):
+            raise ValueError("file_changed")
     return raw
 
 
@@ -317,8 +340,18 @@ class SystemHost:
                 ):
                     raise ValueError("host_tool_identity")
             checks["tools"] = {"status": "pass", "reason": "host_tools_match"}
-        except (OSError, ValueError, KeyError):
-            checks["tools"] = {"status": "fail", "reason": "host_tool_identity"}
+        except ValueError as error:
+            reason = str(error)
+            if reason not in {
+                "file_changed",
+                "file_identity",
+                "protected_identity",
+                "protected_path",
+            }:
+                reason = "host_tool_identity"
+            checks["tools"] = {"status": "fail", "reason": reason}
+        except (OSError, KeyError):
+            checks["tools"] = {"status": "fail", "reason": "host_tool_unavailable"}
         try:
             checks.update(self._run("diagnose"))
         except (OSError, ValueError, subprocess.SubprocessError):
@@ -342,17 +375,28 @@ def deployment_locks() -> Iterator[dict[str, Any]]:
         for name in ("collection.lock", "collector.lock", "closure.lock"):
             try:
                 path = LEDGER / name
+                before = file_identity(path.lstat())
                 file_bytes(path, Path("/"), 0)
-                descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+                descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
                 descriptors.append(descriptor)
-                if os.fstat(descriptor) != path.stat(follow_symlinks=False):
+                if (
+                    file_identity(os.fstat(descriptor)) != before
+                    or file_identity(path.stat(follow_symlinks=False)) != before
+                ):
                     raise ValueError("lock_identity_changed")
                 fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 checks["lock:" + name] = {
                     "status": "pass",
                     "reason": "exclusive_existing_lock",
                 }
-            except (OSError, ValueError):
+            except BlockingIOError:
+                checks["lock:" + name] = {
+                    "status": "fail",
+                    "reason": "deployment_lock_busy",
+                }
+            except ValueError as error:
+                checks["lock:" + name] = {"status": "fail", "reason": str(error)}
+            except OSError:
                 checks["lock:" + name] = {
                     "status": "fail",
                     "reason": "deployment_lock_unavailable",
