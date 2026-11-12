@@ -98,6 +98,20 @@ def main() -> int:
         type=Path,
         help="配对的原preparing日志原字节；仅构建三摘要候选，root从固定地址重认证。",
     )
+    parser.add_argument(
+        "--failed-preparation-void-runtimes",
+        type=Path,
+        nargs=2,
+        metavar=("FIRST", "SECOND"),
+        help="仅build：明确选择原退役准备与其唯一单跳恢复的两棵原runtime。",
+    )
+    parser.add_argument(
+        "--failed-preparation-void-journals",
+        type=Path,
+        nargs=2,
+        metavar=("FIRST", "SECOND"),
+        help="配对的两份原preparing日志；归档并追加作废，root重新认证全部原字节。",
+    )
     args = parser.parse_args()
     from paper_radar.live_evidence.live_bundle import (
         BundleInputError,
@@ -111,6 +125,11 @@ def main() -> int:
     try:
         if os.geteuid() == 0:
             raise ValueError("build_requires_unprivileged_user")
+        if args.action != "build" and (
+            args.failed_preparation_void_runtimes
+            or args.failed_preparation_void_journals
+        ):
+            raise ValueError("preparation_void_build_only")
         recovery_inputs = (
             args.preparation_recovery_runtime,
             args.preparation_recovery_journal,
@@ -186,6 +205,16 @@ def main() -> int:
             failed_preparation_runtime=args.failed_preparation_runtime,
             preparation_recovery_runtime=args.preparation_recovery_runtime,
             preparation_recovery_journal=args.preparation_recovery_journal,
+            failed_preparation_void_runtimes=(
+                tuple(args.failed_preparation_void_runtimes)
+                if args.failed_preparation_void_runtimes
+                else None
+            ),
+            failed_preparation_void_journals=(
+                tuple(args.failed_preparation_void_journals)
+                if args.failed_preparation_void_journals
+                else None
+            ),
         )
         for name, sha in hashes.items():
             print(f"{sha}  {name}")
@@ -207,6 +236,9 @@ def main() -> int:
             and str(error)
             in {
                 "build_inputs_missing",
+                "preparation_void_build_only",
+                "preparation_void_inputs_missing",
+                "preparation_void_inputs_conflict",
                 "preparation_recovery_build_only",
                 "preparation_recovery_inputs_missing",
                 "preparation_recovery_requires_retirement",

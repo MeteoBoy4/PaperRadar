@@ -622,6 +622,16 @@ class FailedPreparationRetirement:
             new.check(recover=True)
         return True
 
+    def authenticate_preparing_source(self) -> None:
+        """只读认证一个已存在的原单跳 preparing 来源;不查改 kernel。"""
+        if self.descriptor is None or self.recovery is None:
+            raise ValueError("preparation_void_sources")
+        old, new, phase = self._authenticate()
+        if phase != "preparing" or not os.path.lexists(self.journal):
+            raise ValueError("preparation_void_source_phase")
+        self._policy_marker(old, {"removed"}, "preparation_void_original_marker")
+        self._policy_marker(new, {"preparing"}, "preparation_void_failed_marker")
+
     def _policy_marker(
         self,
         lifecycle: PlacementPolicyLifecycle,

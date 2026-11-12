@@ -74,6 +74,7 @@ def case(
     *,
     main_policy: bool = False,
     static_binding: bool = False,
+    distinct_candidate_plans: bool = False,
 ) -> RetirementCase:
     first, paths = bundle_model(tmp_path, monkeypatch)
     if static_binding:
@@ -109,6 +110,9 @@ def case(
     spec = json.loads((future / "deployment.json").read_bytes())
     spec["upgrade_from"] = [epoch.payload_sha256, epoch.runtime_manifest_sha256]
     spec["epoch_upgrade"] = epoch.model_dump(mode="json")
+    if distinct_candidate_plans:
+        _distinct_plans(future)
+        spec["strict_beta"] = json.loads((future / "plan.json").read_bytes())["plan_id"]
     (future / "deployment.json").write_bytes(json_bytes(spec))
     failed = tmp_path / "failed"
     shutil.copytree(future, failed)
@@ -169,6 +173,36 @@ def case(
         if path.is_file()
     }
     return RetirementCase(gate, old, new, io, before, host)
+
+
+def _distinct_plans(root: Path) -> None:
+    """模型化新源码封印派生的新 collector 与计划身份。"""
+    from paper_radar.live_evidence.receipt import ApprovedPlan, content_sha256
+
+    value = json.loads((root / "model-manifest.json").read_bytes())
+    replacements = {value["collector_sha256"]: "f" * 64}
+    ids = [value["site_plan_id"], *value["network"]["plan_ids"]]
+    replacements.update({identifier: "failed-" + identifier for identifier in ids})
+    for path in [
+        root / "plan.json",
+        root / "model-manifest.json",
+        root / "network-owner-confirmation.json",
+        *(root / "plans").glob("*.json"),
+    ]:
+        raw = path.read_bytes()
+        for old, new in replacements.items():
+            raw = raw.replace(old.encode(), new.encode())
+        path.write_bytes(raw)
+        if path.parent == root / "plans":
+            path.rename(path.with_name(replacements[path.stem] + ".json"))
+    value = json.loads((root / "model-manifest.json").read_bytes())
+    value["site_plan_sha256"] = content_sha256(
+        ApprovedPlan.model_validate_json((root / "plan.json").read_bytes())
+    )
+    value["network"]["owner_confirmation_sha256"] = hashlib.sha256(
+        (root / "network-owner-confirmation.json").read_bytes()
+    ).hexdigest()
+    (root / "model-manifest.json").write_bytes(json_bytes(value))
 
 
 def assert_business_unchanged(model: RetirementCase) -> None:
