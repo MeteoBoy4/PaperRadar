@@ -33,8 +33,15 @@ def inventory(root: Path) -> dict[Path, tuple[bytes, tuple[int, int, int, int, i
     }
 
 
-def recovery_case(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> RecoveryCase:
-    original = case(tmp_path, monkeypatch)
+def recovery_case(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    distinct_candidate_plans: bool = False,
+) -> RecoveryCase:
+    original = case(
+        tmp_path, monkeypatch, distinct_candidate_plans=distinct_candidate_plans
+    )
 
     def refused() -> None:
         raise ValueError("placement_preflight_refused")

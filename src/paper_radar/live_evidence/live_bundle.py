@@ -153,6 +153,8 @@ def build_live_bundle(
     failed_preparation_runtime: Path | None = None,
     preparation_recovery_runtime: Path | None = None,
     preparation_recovery_journal: Path | None = None,
+    failed_preparation_void_runtimes: tuple[Path, Path] | None = None,
+    failed_preparation_void_journals: tuple[Path, Path] | None = None,
 ) -> dict[str, str]:
     """独立Live模式;拒绝在任何输出前检查策略/activation/窗口与输入形状。"""
     import hashlib
@@ -184,6 +186,14 @@ def build_live_bundle(
     )
     from paper_radar.live_evidence.receipt_v2 import ApprovedPlanV2
 
+    if bool(failed_preparation_void_runtimes) != bool(failed_preparation_void_journals):
+        raise ValueError("preparation_void_inputs_missing")
+    if failed_preparation_void_runtimes is not None and (
+        failed_preparation_runtime is not None
+        or preparation_recovery_runtime is not None
+        or epoch_upgrade is None
+    ):
+        raise ValueError("preparation_void_inputs_conflict")
     if bool(preparation_recovery_runtime) != bool(preparation_recovery_journal):
         raise ValueError("preparation_recovery_inputs_missing")
     if preparation_recovery_runtime is not None and failed_preparation_runtime is None:
@@ -467,6 +477,9 @@ def build_live_bundle(
                 }
             )
         )
+        specification = json.loads((frozen / "deployment.json").read_bytes())
+        specification["placement_preflight_version"] = 2
+        (frozen / "deployment.json").write_bytes(json_bytes(specification))
         if failed_preparation_runtime is not None:
             from paper_radar.live_evidence.preparation_retirement import (
                 describe_failed_preparation,
@@ -489,6 +502,26 @@ def build_live_bundle(
             )
             specification = json.loads((frozen / "deployment.json").read_bytes())
             specification["preparation_recovery"] = recovery.model_dump(mode="json")
+            (frozen / "deployment.json").write_bytes(json_bytes(specification))
+        if failed_preparation_void_runtimes is not None:
+            from paper_radar.live_evidence.preparation_void import (
+                describe_preparation_void,
+            )
+
+            assert failed_preparation_void_journals is not None
+            descriptor_void = describe_preparation_void(
+                failed_preparation_void_runtimes[0],
+                failed_preparation_void_runtimes[1],
+                frozen,
+                (
+                    failed_preparation_void_journals[0].read_bytes(),
+                    failed_preparation_void_journals[1].read_bytes(),
+                ),
+            )
+            specification = json.loads((frozen / "deployment.json").read_bytes())
+            specification["failed_preparation_void"] = descriptor_void.model_dump(
+                mode="json"
+            )
             (frozen / "deployment.json").write_bytes(json_bytes(specification))
         # source身份与payload分开,不把payload或manifest摘要反向写入自身。
         import subprocess
