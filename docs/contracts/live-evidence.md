@@ -35,6 +35,7 @@ Live 证据不再是产品执行的不可取消前提。所有者可以显式开
 
 卸载先汇总主部署、全部受保护资源、归档库存、历史可读性、空间、锁、项目进程、unit、nft 与 AppArmor 检查；未知身份或任一不满足时不修改部署。通过后先保存并复核原字节归档，再停止项目 anchor/slice、移除已认证项目策略及 nft、五入口、sudoers、unit 文件、resolver 视图与当前 runtime，并回读缺席和历史不变。
 读取通过无跟链的同一文件描述符核对路径与 fd 身份，保留 dev/inode、mode、uid/gid、nlink、size 及纳秒 mtime/ctime 比较；读取自身可更新的 atime 不构成内容或身份漂移。锁仍要求真实排他锁，竞争显示 `deployment_lock_busy`，身份变化与 I/O 不可用分别保留原因。
+固定只追加收紧日志单独按原规则核验 root 属主、产品 gid、0660、单链接、0755 父目录和内核 append-only／非 immutable 标志；持有现存日志的排他锁，不创建、改写或清除标志。原日志留在原处，私有0600备份只保存原字节并另记原保护元数据，不成为可消费的新收紧日志；其他可写文件仍拒绝。
 不加载或替换 AppArmor 策略，不修改 journal；中途失败保留归档及准确失败阶段，不自动加载策略回滚。共享 user manager/linger、全机 resolver/sysctl 和非项目规则保持。账本内 placement-target 等原记录与全部历史保留；存在记录不代表仍有当前部署。
 
 ### 准入用途与独立维度

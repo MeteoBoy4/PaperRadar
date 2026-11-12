@@ -7,14 +7,17 @@ command environment, new sealed deployment, or policy load are used.
 from __future__ import annotations
 
 import argparse
+import array
 import fcntl
 import hashlib
 import json
 import os
+import platform
 import re
 import shutil
 import stat
 import subprocess
+import sys
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -25,6 +28,8 @@ LEDGER = Path("/var/lib/paperradar/live-evidence")
 BUNDLES = Path("/var/lib/paperradar/live-bundles")
 EXECUTABLES = RUNTIME.parent
 JOURNAL = LEDGER / "deployment-v2.json"
+INTENT_PATH = Path("/var/lib/paperradar/live-evidence-intents/pending.jsonl")
+MAX_INTENT_BYTES = 8 * 1024 * 1024
 RESOURCE_SOURCES = {
     **{
         str(EXECUTABLES / ("live-evidence-" + name)): "wrappers/" + name
@@ -100,16 +105,82 @@ def file_bytes(path: Path, root: Path, owner_uid: int) -> bytes:
     return raw
 
 
-def snapshot(path: Path, root: Path, owner_uid: int) -> dict[str, Any]:
+def product_gid(root: Path, owner_uid: int) -> int:
+    site = json.loads(
+        file_bytes(location(root, RUNTIME) / "site.json", root, owner_uid)
+    )
+    gid = site.get("product_gid")
+    if type(gid) is not int or not 0 <= gid < 2**32:
+        raise ValueError("product_identity_invalid")
+    return gid
+
+
+def intent_flags(fd: int) -> int:
+    if sys.platform != "linux" or platform.machine() not in {"x86_64", "aarch64"}:
+        raise ValueError("intent_identity")
+    flags = array.array("I", [0])
+    fcntl.ioctl(fd, 0x80086601, flags, True)
+    return flags[0]
+
+
+def intent_fd(root: Path, owner_uid: int, gid: int) -> int:
+    """Read-only descriptor for the one existing append-only intent log."""
+    path = location(root, INTENT_PATH)
+    protected(path.parent, root, owner_uid)
+    if stat.S_IMODE(path.parent.lstat().st_mode) != 0o755:
+        raise ValueError("intent_identity")
+    before = path.lstat()
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+    try:
+        info = os.fstat(fd)
+        if (
+            file_identity(info) != file_identity(before)
+            or not stat.S_ISREG(info.st_mode)
+            or info.st_uid != owner_uid
+            or info.st_gid != gid
+            or stat.S_IMODE(info.st_mode) != 0o660
+            or info.st_nlink != 1
+            or info.st_size >= MAX_INTENT_BYTES
+            or intent_flags(fd) & 0x30 != 0x20
+        ):
+            raise ValueError("intent_identity")
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def intent_bytes(root: Path, owner_uid: int, gid: int) -> bytes:
+    path = location(root, INTENT_PATH)
+    with os.fdopen(intent_fd(root, owner_uid, gid), "rb") as source:
+        before = file_identity(os.fstat(source.fileno()))
+        raw = source.read(MAX_INTENT_BYTES + 1)
+        if (
+            len(raw) >= MAX_INTENT_BYTES
+            or file_identity(os.fstat(source.fileno())) != before
+            or file_identity(path.lstat()) != before
+            or intent_flags(source.fileno()) & 0x30 != 0x20
+        ):
+            raise ValueError("intent_changed")
+    return raw
+
+
+def snapshot(
+    path: Path, root: Path, owner_uid: int, *, intent_gid: int | None = None
+) -> dict[str, Any]:
     """Hash the complete protected inventory, treating history solely as bytes."""
     digest = hashlib.sha256()
     count = 0
     for item in (path, *sorted(path.rglob("*"))):
-        protected(item, root, owner_uid)
+        is_intent = intent_gid is not None and item == location(root, INTENT_PATH)
+        if not is_intent:
+            protected(item, root, owner_uid)
         info = item.lstat()
         relative = "." if item == path else item.relative_to(path).as_posix()
         if stat.S_ISDIR(info.st_mode):
             content = "directory"
+        elif is_intent and intent_gid is not None:
+            content = sha(intent_bytes(root, owner_uid, intent_gid))
         else:
             content = sha(file_bytes(item, root, owner_uid))
         digest.update(
@@ -368,15 +439,17 @@ class SystemHost:
 
 
 @contextmanager
-def deployment_locks() -> Iterator[dict[str, Any]]:
+def deployment_locks(
+    *, root: Path = Path("/"), owner_uid: int = 0
+) -> Iterator[dict[str, Any]]:
     descriptors: list[int] = []
     checks: dict[str, Any] = {}
     try:
         for name in ("collection.lock", "collector.lock", "closure.lock"):
             try:
-                path = LEDGER / name
+                path = location(root, LEDGER) / name
                 before = file_identity(path.lstat())
-                file_bytes(path, Path("/"), 0)
+                file_bytes(path, root, owner_uid)
                 descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
                 descriptors.append(descriptor)
                 if (
@@ -400,6 +473,29 @@ def deployment_locks() -> Iterator[dict[str, Any]]:
                 checks["lock:" + name] = {
                     "status": "fail",
                     "reason": "deployment_lock_unavailable",
+                }
+        if os.path.lexists(
+            location(root, LEDGER).parent / "live-evidence-intents/pending.jsonl"
+        ):
+            try:
+                descriptor = intent_fd(root, owner_uid, product_gid(root, owner_uid))
+                descriptors.append(descriptor)
+                fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                checks["lock:intents"] = {
+                    "status": "pass",
+                    "reason": "exclusive_existing_lock",
+                }
+            except BlockingIOError:
+                checks["lock:intents"] = {
+                    "status": "fail",
+                    "reason": "deployment_lock_busy",
+                }
+            except ValueError:
+                checks["lock:intents"] = {"status": "fail", "reason": "intent_identity"}
+            except OSError:
+                checks["lock:intents"] = {
+                    "status": "fail",
+                    "reason": "intent_unavailable",
                 }
         yield checks
     finally:
@@ -504,7 +600,8 @@ def uninstall(
         return {"status": "refused", "checks": checks}
     phase = "backup"
     try:
-        preserved = preserved_inventory(root, owner_uid)
+        gid = product_gid(root, owner_uid)
+        preserved = preserved_inventory(root, owner_uid, intent_gid=gid)
         protected(archive.parent, root, owner_uid)
         archive.mkdir(mode=0o700)
         shutil.copytree(
@@ -516,6 +613,26 @@ def uninstall(
         intents = location(root, "/var/lib/paperradar/live-evidence-intents")
         if intents.exists():
             shutil.copytree(intents, archive / "intents", copy_function=shutil.copy2)
+            pending = location(root, INTENT_PATH)
+            if pending.exists():
+                copied = archive / "intents/pending.jsonl"
+                copied.chmod(0o600)
+                if file_bytes(copied, archive, owner_uid) != intent_bytes(
+                    root, owner_uid, gid
+                ):
+                    raise ValueError("backup_intents_changed")
+                info = pending.lstat()
+                (archive / "intents-metadata.json").write_bytes(
+                    canonical(
+                        {
+                            "uid": info.st_uid,
+                            "gid": info.st_gid,
+                            "mode": stat.S_IMODE(info.st_mode),
+                            "append_only": True,
+                            "sha256": sha(file_bytes(copied, archive, owner_uid)),
+                        }
+                    )
+                )
         for destination in RESOURCE_SOURCES:
             backup = archive / "resources" / destination.lstrip("/")
             backup.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -528,7 +645,7 @@ def uninstall(
         ):
             raise ValueError("backup_history_changed")
         durable(archive)
-        if preserved_inventory(root, owner_uid) != preserved:
+        if preserved_inventory(root, owner_uid, intent_gid=gid) != preserved:
             raise ValueError("preserved_changed_before_removal")
         repeated = diagnose(review, root, owner_uid, host, created_archive=archive)
         if any(item["status"] != "pass" for item in repeated.values()):
@@ -565,7 +682,7 @@ def uninstall(
         sync_directory(runtime.parent)
         host.action("absent")
         phase = "preserved_verification"
-        if preserved_inventory(root, owner_uid) != preserved:
+        if preserved_inventory(root, owner_uid, intent_gid=gid) != preserved:
             raise ValueError("preserved_changed_after_removal")
         report = {
             "status": "uninstalled",
@@ -600,10 +717,17 @@ def uninstall(
     return report
 
 
-def preserved_inventory(root: Path, owner_uid: int) -> dict[str, Any]:
+def preserved_inventory(
+    root: Path, owner_uid: int, *, intent_gid: int | None = None
+) -> dict[str, Any]:
+    if intent_gid is None and os.path.lexists(location(root, INTENT_PATH)):
+        intent_gid = product_gid(root, owner_uid)
     result = {
         "/var/lib/paperradar": snapshot(
-            location(root, "/var/lib/paperradar"), root, owner_uid
+            location(root, "/var/lib/paperradar"),
+            root,
+            owner_uid,
+            intent_gid=intent_gid,
         )
     }
     for path in sorted(location(root, EXECUTABLES).iterdir()):
@@ -639,6 +763,7 @@ HOST_PROGRAM = r"""
 import hashlib
 import json
 import os
+import platform
 import re
 import sys
 from pathlib import Path
