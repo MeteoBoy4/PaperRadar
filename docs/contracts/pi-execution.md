@@ -200,6 +200,7 @@ raw_data/raw_sha256、wire ABI、enforce、attachment 和完整 profile 集合�
 traced 预检必须先于旧资源首写，详细规则见
 [Live 策略生命周期](live-evidence.md#封印放置策略生命周期)。离线替身不证明真实
 挂载、scope/ptrace 或 DNS；现场责任见 [Live](../roadmap.md#module-live)。
+合法无秘密 native 预检可输出闭合检查点；普通认证、模型和负对照入口仍保持拒绝静默。产品 supervisor 将 native 与自身固定步骤失败映射到受控诊断，不传播原始工具错误、文件内容或参数；具体协议与安装前提汇总见上述 Live 契约。
 模型内层仍不开放 TCP53。
 
 ### 隔离策略 `pi-landlock-v1`

@@ -95,9 +95,9 @@ def report_model(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> HostModel:
 
 
 def run_report(model: HostModel) -> dict[str, Any]:
-    values = model.prerequisite_report(
-        model.source, SimpleNamespace(product_uid=1000), SimpleNamespace()
-    )
+    site: Any = SimpleNamespace(product_uid=1000)
+    manifest: Any = SimpleNamespace()
+    values = model.prerequisite_report(model.source, site, manifest)
     return {value.name: value for value in values}
 
 

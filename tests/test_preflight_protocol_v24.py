@@ -10,6 +10,7 @@ import pytest
 from paper_radar.live_evidence import placement_policy
 from paper_radar.live_evidence.live_host import LinuxLiveHost
 from paper_radar.live_evidence.live_install import InstallationPaths
+from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 
 
 @pytest.mark.parametrize("version", ["historical_missing", 2])
@@ -41,8 +42,8 @@ def test_prepare_and_installed_verify_select_sealed_protocol(
         "native_preflight",
         lambda *args, **kwargs: calls.append(kwargs),
     )
-    host.prepare_placement(root, SimpleNamespace())
-    host.verify_target_preflight(root, SimpleNamespace())
+    host.prepare_placement(root, SiteConfiguration.model_construct())
+    host.verify_target_preflight(root, SiteConfiguration.model_construct())
     if version == 2:
         assert len(calls) == 2 and all(
             call["preserve_boot_marker"] is True for call in calls
@@ -68,5 +69,5 @@ def test_unknown_or_inexact_protocol_is_refused_before_policy_prepare(
         host, "_placement_lifecycle", lambda root: calls.append("policy")
     )
     with pytest.raises(ValueError, match=r"^placement_preflight_protocol$"):
-        host.prepare_placement(root, SimpleNamespace())
+        host.prepare_placement(root, SiteConfiguration.model_construct())
     assert calls == []

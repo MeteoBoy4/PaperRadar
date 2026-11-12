@@ -505,8 +505,8 @@ run-upgrade先在普通用户态核包内固定SHA，再一次sudo -k从入口�
 未选择 `--owner-closure` 时，G3由所有者另行完整审阅新回执并本人手动确认；新owner入口在确认后真实刷新当前观察。
 升级成功重复执行同包拒绝旧身份不匹配；中断保留归档与当前状态，不自动删除、回滚或续跑。
 所有者须核明现场再准备恢复方案。默认uninstall保留旧runtime归档及全部历史。
-源代码准入策略为 `pi-admission-v23`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v23.json)
-与源码守卫共同固定相关实现；v1–v15 的 D7 向量与摘要锚原字节保留。
+源代码准入策略为 `pi-admission-v24`，[当前 D7 显式清单](../../tests/fixtures/live-admission-source-guard-v24.json)
+与源码守卫共同固定相关实现；v1–v23 的 D7 向量与摘要锚原字节保留。
 v7 增加共享用户 scope 双阶段放置、封装、只读 resolver 和只读诊断；保留固定认证基线 v2、helper 临时布局与 v2 额度／回执／账本错误权威，继续显式覆盖两份 after-backup 续行工具、共享检查点、站点回执构造、树身份与所有者入口。
 策略身份变化后不能继承旧策略的执行资格；新包须所有者重新审阅、部署并按新证据显式激活。
 源码守卫约束审阅流程，不防范同 uid 同时篡改源码和守卫本身。
@@ -619,7 +619,7 @@ AUTH_CACHE_BASELINE 递归专用 credentials 全根，按[固定基线 v2](#当�
 
 旧 installed 升级先完成 epoch/祖先/账本来源认证及新策略只读冲突检查，在第一次旧 history/journal/业务资源写入前准备新策略。独立 `placement-policy-v1-<binarySHA>.json` 绑定全部封印对象身份和 `preparing/prepared/removing/removed` 阶段；加载或无秘密预检失败保留可识别现场。owner root 的短命子进程只创建私有 mount namespace，将已核 staged runtime 和 resolver 绑定在固定路径；完整 traced 模式同时保留固定用户 bus 与 `/run/dbus` 系统 bus 的私有视图，撤到产品 UID 后执行固定无秘密 true 预检。`--preflight` 只核 native namespace/map/只读 resolver/cap 撤除/seccomp/profile/NNP 链；已有 root 已核 target 时还调用闭合 `--preflight-traced`，在实际 user scope 核 post 的 R、产品 controller SEIZE、单字节 G/EOF、真正 true exec-stop 和同 PID/start/exe/core0/cap0/NNP/namespace 后 detach。installed 升级有旧 target 时在旧资源首写前做完整 traced 预检；初装/停后先准备策略，实际新 target 建立后、安装完成和 epoch 初始化前强制完整 traced 预检，失败留在 resources 阶段。两个模式都不读取凭据、不运行认证/网络/模型，不领取业务预算、刷新 lease 或生成资格/证据。root fork 子进程先枚举并关闭全部非 stdio 继承句柄；只在 root 私有设置阶段临时持固定已认证 resolver/user-runtime fd，以及仅完整 traced 模式需要的固定 system-bus `O_PATH` 目录 fd，设置完成后关闭全部句柄并重定向 stdio、清环境/安全 cwd，再永久移除 supplementary groups、resgid/resuid；产品 Python controller 从不持 root 可写锁/账本 fd，root 不作为 tracer。编译 initial user/mnt dev/inode 必须与 host 父端实际 self/1 一致，预检子端只允许已认证的私有 mount 差异；resolver 规范目标、现有 sysctl 和工具身份每次重核，不修改系统默认策略。完整 traced 模式在覆盖 `/run` 前用 `O_PATH/O_DIRECTORY/O_NOFOLLOW/O_CLOEXEC` 逐级打开固定 `/`、`run`、`dbus`，每级要求 root 属主、目录类型且不可组/其他用户写；固定 `system_bus_socket` 以 no-follow `O_PATH` 核验 root 属主和 socket 类型。仅将该目录绑定到私有 `/run/dbus`，再以只读、nosuid、nodev、noexec 重挂载；缺失、链接、替代路径、类型/属主/权限错误或挂载失败均拒绝。不恢复整个 `/run`，不增加调用者路径或环境开关；root 不连接或调用 D-Bus，固定 `loginctl` 和 manager/linger/anchor 检查均在产品身份执行。
 
-子进程拒绝仅通过固定退出状态向 root 父端传递诊断；父端 stderr 只输出闭合中文阶段/类别，区分根挂载与设置、永久降权、产品 manager、放置身份及 native/scope/trace，未知状态、信号和超时使用固定类别。原始异常、路径、工具输出、堆栈及认证资料不进入诊断，也不新增跨降权继承的 root 写句柄。最终拒绝仍为 `placement_preflight_refused`；成功后继续重核 host 身份和 kernel raw policy，诊断不改变任何门禁。
+子进程拒绝仅通过固定退出状态向 root 父端传递诊断。新构建封印 `placement_preflight_version=2`；字段缺失只保留历史路径，非整数或未知版本拒绝。新路径分别核 manager 运行态、Linger 和 anchor，汇总所有失败子项；私有环境只读绑定经 root 保护链认证的真实 `/run/systemd/system` 目录，不伪造启动标记。父端输出闭合中文阶段和固定检查点：合法无秘密 native 预检使用 50 项字面量，Python supervisor 使用 35 项步骤或状态字段名，覆盖冷预检、scope、握手、SEIZE、释放、exec-stop、DETACH 和最终退出。普通执行与非法 native 参数保持静默；未知、超长、混合或不完整诊断拒绝，native 原始拒绝仍退出 125，包括诊断管道读端关闭的情况。原始异常、路径、工具输出、堆栈及认证资料不进入诊断，也不新增跨降权继承的 root 写句柄。最终拒绝仍为 `placement_preflight_refused`；成功后继续重核 host 身份和 kernel raw policy，诊断不改变任何门禁。
 
 resources、target、已安装恢复和卸载按同一精确策略接缝核验；先禁观察/派发并停止真实项目进程，再移除本项目 exact policy。默认 partial 拒绝，仅明确 recover 且已有精确 preparing/removing 记录时允许处理已知部分，未知成员保持原样。target 退役以按 payload 命名的受保护本轮 pointer 和逐 targetSHA 归档闭合 rename 前/后中断，不选择“最新”归档；同 SHA 多次显式卸载/恢复保留每轮原 target。旧 history、回执、额度、epoch、intents、撤销与 stopped 均保留，不把退役对象或时钟继承当当前资格。
 

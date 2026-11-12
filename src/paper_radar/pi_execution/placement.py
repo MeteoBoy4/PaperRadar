@@ -31,7 +31,7 @@ from paper_radar.llm.rpc_types import RpcProblem
 from paper_radar.pi_execution.errors import ExecutionError, ExecutionReason
 from paper_radar.pi_execution.process import cleanup_process
 
-PLACEMENT_POLICY_VERSION = "pi-placement-v2"
+PLACEMENT_POLICY_VERSION = "pi-placement-v3"
 TARGET_FILENAME = "placement-target-v1.json"
 _CGROUP_ROOT = Path("/sys/fs/cgroup")
 _PROC_ROOT = Path("/proc")

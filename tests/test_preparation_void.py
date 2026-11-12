@@ -57,7 +57,9 @@ def test_durable_checkpoint_crashes_restore_only_known_state(
     from paper_radar.live_evidence import preparation_void
 
     model = void_case(tmp_path, monkeypatch)
-    real = preparation_void.publish
+    from paper_radar.live_evidence.live_install import publish
+
+    real = publish
     cut = False
 
     def interrupted(

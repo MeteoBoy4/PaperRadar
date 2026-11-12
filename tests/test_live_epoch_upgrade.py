@@ -397,7 +397,7 @@ def test_changed_source_copy_refuses_stale_guard(
         (upgrade.paths.runtime / "network-owner-confirmation.json").read_bytes()
     )["owner_input"]
     tampered_source = tmp_path / "guard-source"
-    vector_path = Path("tests/fixtures/live-admission-source-guard-v23.json")
+    vector_path = Path("tests/fixtures/live-admission-source-guard-v24.json")
     vector = json.loads((upgrade.source_root / vector_path).read_bytes())
     for name in (*vector["files"], vector_path.as_posix()):
         target = tampered_source / name

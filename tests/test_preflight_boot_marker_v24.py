@@ -129,6 +129,7 @@ def test_native_checkpoint_reaches_root_parent_without_arbitrary_error_text(
     monkeypatch.setattr(probe.PREFLIGHT_PLATFORM, "spawn", fail)
     with pytest.raises(ValueError, match=r"^placement_preflight_refused$") as caught:
         model.run_v24()
+    assert isinstance(caught.value, owner.PlacementPreflightRefusal)
     assert caught.value.checkpoint == checkpoint
     assert (
         capsys.readouterr().err
@@ -156,6 +157,7 @@ def test_v24_private_manager_queries_do_not_short_circuit(
     with pytest.raises(ValueError, match=r"^placement_preflight_refused$") as caught:
         model.run_v24()
     assert len([event for event in model.events if event["event"] == "manager"]) == 3
+    assert isinstance(caught.value, owner.PlacementPreflightRefusal)
     assert caught.value.manager_checks == (check,)
     assert (
         capsys.readouterr().err
@@ -183,6 +185,7 @@ def test_supervisor_checkpoint_reaches_root_parent(
     monkeypatch.setattr(probe.PREFLIGHT_PLATFORM, "spawn", fail)
     with pytest.raises(ValueError, match=r"^placement_preflight_refused$") as caught:
         model.run_v24()
+    assert isinstance(caught.value, owner.PlacementPreflightRefusal)
     assert caught.value.supervisor_checkpoint == checkpoint
     assert (
         capsys.readouterr().err

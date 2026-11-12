@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from paper_radar.live_evidence.live_install import LiveDeployment
+from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 from tests.preparation_void_support import assert_void_preserved, void_case
 
 
@@ -79,7 +80,7 @@ def test_successful_void_install_reenters_normally_and_business_failure_is_not_c
         if not model.gate.check(recover=recover):
             original_check(root, recover=recover)
 
-    def prepare(root: Path, site: object, *, recover: bool = False) -> None:
+    def prepare(root: Path, site: SiteConfiguration, *, recover: bool = False) -> None:
         if not model.gate.prepare(lambda: None, lambda: None, recover=recover):
             original_prepare(root, site, recover=recover)
 

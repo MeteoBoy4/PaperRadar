@@ -66,6 +66,7 @@ def test_known_native_checkpoint_survives_public_traced_refusal(
     platform = DiagnosticPlatform(("placement_native_v1:" + checkpoint + "\n").encode())
     with pytest.raises(ExecutionError, match=r"^placement_exec_failed$") as caught:
         run(platform, monkeypatch)
+    assert isinstance(caught.value, probe.NativePreflightError)
     assert caught.value.checkpoint == checkpoint
 
 
@@ -151,6 +152,7 @@ def test_checkpoint_after_ready_survives_actual_ptrace_peer_exit(
             ),
             monkeypatch,
         )
+    assert isinstance(caught.value, probe.NativePreflightError)
     assert caught.value.checkpoint == checkpoint
 
 
@@ -173,6 +175,7 @@ def test_cold_preflight_keeps_finite_diagnostics(
     else:
         with pytest.raises(ExecutionError, match=r"^placement_exec_failed$") as caught:
             probe.run_cold_preflight(product_uid=os.getuid(), product_gid=os.getgid())
+        assert isinstance(caught.value, probe.NativePreflightError)
         assert caught.value.checkpoint == checkpoint
 
 

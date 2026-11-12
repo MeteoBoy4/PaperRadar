@@ -1,5 +1,7 @@
 """显式替代宿主I/O的Live封印工程模型;不伪称真实OS证明。"""
 
+from __future__ import annotations
+
 import sys
 import tarfile
 from datetime import UTC, datetime, timedelta
@@ -18,6 +20,7 @@ from paper_radar.live_evidence.sealed_runtime import SiteConfiguration
 from tests.site_collector_support import site_configuration
 
 if TYPE_CHECKING:
+    from paper_radar.live_evidence.live_host import PrerequisiteCheck
     from paper_radar.live_evidence.placement_policy import PlacementPolicyLifecycle
 
 
@@ -131,6 +134,16 @@ class ModelHost:
         self.calls.append(name)
         if self.fail == name:
             raise ValueError("model_interruption")
+
+    def prerequisite_report(
+        self,
+        root: Path,
+        site: SiteConfiguration,
+        manifest: ModelManifest,
+        *,
+        recover: bool = False,
+    ) -> tuple[PrerequisiteCheck, ...]:
+        raise AssertionError("explicit_prerequisite_report_model_required")
 
     def preflight(self, site: SiteConfiguration) -> None:
         self._call("preflight")

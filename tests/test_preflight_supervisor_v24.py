@@ -11,6 +11,7 @@ import pytest
 
 from paper_radar.pi_execution import placement_preflight as probe
 from paper_radar.pi_execution.errors import ExecutionError
+from paper_radar.pi_execution.placement import _ptrace
 from tests.test_native_preflight_diagnostics_v24 import TARGET, DiagnosticPlatform
 from tests.test_sealed_placement_preflight import _platform
 from tests.test_sealed_placement_preflight import native_peer as native_peer
@@ -34,6 +35,7 @@ def test_v24_scope_spawn_failure_retains_step_and_original_reason(
             product_gid=os.getgid(),
             aggregate_manager=True,
         )
+    assert isinstance(caught.value, probe.SupervisorPreflightError)
     assert caught.value.supervisor_checkpoint == "spawn"
 
 
@@ -46,6 +48,7 @@ def test_v24_state_refusal_names_only_the_failed_field(
     monkeypatch: pytest.MonkeyPatch, native_peer: Path, phase: str, field: str
 ) -> None:
     platform, target = _platform(monkeypatch, native_peer)
+    assert isinstance(platform, probe.LinuxPreflightPlatform)
     monkeypatch.setattr(platform, "manager_preflight_environment", lambda: {})
     original = platform.inspect
 
@@ -55,7 +58,7 @@ def test_v24_state_refusal_names_only_the_failed_field(
         if final != (phase == "final_state"):
             return state
         namespace = Path("/proc/self/ns/user").stat()
-        changes = {
+        changes: dict[str, dict[str, Any]] = {
             "exe": {"executable": (0, 0)},
             "tracer": {"tracer": state.tracer + 1},
             "ids": {"uid": (0, 0, 0, 0)},
@@ -77,6 +80,7 @@ def test_v24_state_refusal_names_only_the_failed_field(
             product_gid=os.getgid(),
             aggregate_manager=True,
         )
+    assert isinstance(caught.value, probe.SupervisorPreflightError)
     assert caught.value.supervisor_checkpoint == phase + "_" + field
     assert "SECRET" not in str(caught.value)
 
@@ -89,6 +93,7 @@ def test_v24_existing_step_fault_is_localized(
     monkeypatch: pytest.MonkeyPatch, native_peer: Path, step: str
 ) -> None:
     platform, target = _platform(monkeypatch, native_peer)
+    assert isinstance(platform, probe.LinuxPreflightPlatform)
     monkeypatch.setattr(platform, "manager_preflight_environment", lambda: {})
     if step == "anchor":
 
@@ -103,7 +108,7 @@ def test_v24_existing_step_fault_is_localized(
 
         monkeypatch.setattr(platform, "process_identity", process_identity)
     elif step in {"seize", "detach"}:
-        original = probe._ptrace
+        original = _ptrace
 
         def ptrace(request: int, pid: int, data: int = 0) -> None:
             if request == (0x4206 if step == "seize" else 17):
@@ -118,15 +123,17 @@ def test_v24_existing_step_fault_is_localized(
             child = original_spawn(*args)
             if step == "release":
                 original_input = child.stdin
+                assert original_input is not None
 
                 class BrokenInput:
                     def write(self, data: bytes) -> None:
                         raise OSError("SECRET failed pipe")
 
                     def close(self) -> None:
+                        assert original_input is not None
                         original_input.close()
 
-                child.stdin = BrokenInput()
+                monkeypatch.setattr(child, "stdin", BrokenInput())
             else:
                 original_wait = child.wait
 
@@ -137,7 +144,7 @@ def test_v24_existing_step_fault_is_localized(
                         return 1
                     return result
 
-                child.wait = wait
+                monkeypatch.setattr(child, "wait", wait)
             return child
 
         monkeypatch.setattr(platform, "spawn", spawn)
@@ -148,6 +155,7 @@ def test_v24_existing_step_fault_is_localized(
             product_gid=os.getgid(),
             aggregate_manager=True,
         )
+    assert isinstance(caught.value, probe.SupervisorPreflightError)
     assert caught.value.supervisor_checkpoint == step
     assert caught.value.reason in {"placement_anchor_invalid", "placement_exec_failed"}
     assert "SECRET" not in str(caught.value)
@@ -162,12 +170,9 @@ def test_v24_ready_and_exec_stop_refusals_are_localized(
         ("ready", DiagnosticPlatform),
         ("exec_stop", LateDiagnosticPlatform),
     ):
-
-        class Platform(base):
-            def manager_preflight_environment(self) -> dict[str, str]:
-                return {}
-
-        monkeypatch.setattr(probe, "PREFLIGHT_PLATFORM", Platform(b"SECRET"))
+        platform = base(b"SECRET")
+        monkeypatch.setattr(platform, "manager_preflight_environment", lambda: {})
+        monkeypatch.setattr(probe, "PREFLIGHT_PLATFORM", platform)
         with pytest.raises(ExecutionError) as caught:
             probe.run_traced_preflight(
                 TARGET,
@@ -175,5 +180,6 @@ def test_v24_ready_and_exec_stop_refusals_are_localized(
                 product_gid=os.getgid(),
                 aggregate_manager=True,
             )
+        assert isinstance(caught.value, probe.SupervisorPreflightError)
         assert caught.value.supervisor_checkpoint == step
         assert caught.value.reason in {"placement_peer_exited", "placement_exec_failed"}
