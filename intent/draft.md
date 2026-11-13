@@ -1162,7 +1162,7 @@ topics:
 
 主题文件必须声明版本与 topics 列表。每项 ID/name/description/enabled 均必填；ID 匹配 `^[a-z][a-z0-9-]{0,63}$` 且集合内唯一，名称与描述 strip 后非空，enabled 只接受明确 true/false。未知字段拒绝。空集合与全部停用均合法且已配置；settings 未选择 topics 版本才是缺项，两者不能混同。完整快照保留全部主题，后续 value 配置投影只取已启用主题的 ID/名称/描述，不包含整份文件的字节哈希或声明版本。
 
-主题只能由用户创建、修改和停用。Agent 只能返回已启用 ID；零匹配且仍有价值时标记 unclassified_value。主题没有权重，不进入决定公式，也不是检索关键词。
+主题由用户决定创建、修改和停用。B 允许 Agent 依据所有者明确委托，从真实 Profile 生成少量版本化实验主题用于验证归类，保留授权与配置来源；该授权只限 B 准备，不延伸到正式校准或运行时自行增改主题（[B 所有者裁决](review/stage-b-grill-decisions.md)）。执行 Screening 的模型只能返回已启用 ID；零匹配且仍有价值时标记 unclassified_value。主题没有权重，不进入决定公式，也不是检索关键词。
 
 ### 7.3 期刊信誉
 
@@ -1938,7 +1938,8 @@ A 真正收口时由收口实现票产出机器可读阶段结论，I 聚合。�
 
 ```text
 实验数据根：当前 JGR Feed → 发现/论文/版本 → 完整主摘要与最低元数据
-→ boundary → 非 out_of_scope 时 value → 用户人工 accepted
+→ 候选清单 → 用户选样及接受授权 → boundary → 非 out_of_scope 时 value
+→ Agent 依据选样授权代记用户 accepted
 → 人工附加合法 PDF → Docling/canonical/normalize/evidence → Read → 最小实验日报
 ```
 
@@ -1946,17 +1947,19 @@ A 真正收口时由收口实现票产出机器可读阶段结论，I 聚合。�
 
 - 首次真实 Feed 写入前交付强冲突观察持久化与 parser 固定样本/字段损失回归；只泛化本链所需最终接口，C 扩展四刊，不建临时主状态机。
 - 语言事实用数据库 Feed 身份/发现关系确定首发期刊，再按 ADR-0035 v1 映射，保存来源及策略版本；同刊多 Feed 一致，不做 first-seen/first-wins。跨刊冲突影响 bool 时保留冲突并拒绝新不确定登记；无归属人工 Paper 不登记 value；旧预算/retry 继承原值，策略不进 A5 指纹、不重置预算。
-- 用户在 Screening 前按研究判断预选当轮 JGR 样本并记录理由，冻结 Paper/版本、Feed 来源和 PDF 哈希（取得后绑定）。`out_of_scope` 不调用 value，保留结果后按同一规则换样、记录原因；不为迁就结果修改 Profile/Prompt。历史 §13.3 PDF 不自动等于当轮样本。
-- 校准关闭；B 可保存两阶段输出、实验范围的确定性建议及人工决定，只有用户人工 accepted 生效。实验建议无自动决定权，Read 的必填 `next_action` 保留；实验材料不流入普通生产建议/自动决定链。
+- 用户预选前提供当轮 JGR Feed 的候选 Markdown 清单，包含原题名、主摘要、DOI 和原文链接，支持按编号或 DOI 选样并记录理由。清单用于 Feed／元数据获取验证，不是日报，不套用日报五项容量；缺失或受阻如实展示，完整主摘要与最低元数据仍是 Screening 前置（[B 所有者裁决](review/stage-b-grill-decisions.md)）。
+- 用户在 Screening 前按研究判断选定当轮 JGR 样本并记录理由，同时表达对选定 Paper/版本的接受授权；先保存选择、授权及 Feed 来源，PDF 取得后再绑定哈希。所需 Screening 成功后，由 Agent 引用真实成功依据与选样授权代记来源为用户的 accepted，区分授权者与代执行者，无需再次询问接受。`out_of_scope` 不调用 value，保留结果后按同一规则由用户换样、记录原因；缺成功依据不放行，不为迁就结果修改 Profile/Prompt。历史 §13.3 PDF 不自动等于当轮样本（ADR-0069）。
+- 校准关闭；B 可保存两阶段输出、实验范围的确定性建议及人工决定，只有用户授权的人工 accepted 生效。选样授权不取决于实验建议是否 accepted，也不表示用户认可模型结果；实验建议无自动决定权，Read 的必填 `next_action` 保留；实验材料不流入普通生产建议/自动决定链（ADR-0069）。
 - 最低 PDF 路径为人工显式指定 paper/version 附加合法 PDF，缺省 version 在首次附加时冻结为当前版本；校验签名、最小体积与 SHA-256，不推断内容归属。DOI 检测候选不属于 Body 最低路径，由 B/F 后续取得入口承接；Wiley TDM、授权/渲染与凭据运行时留 F。B 记录样本峰值并显式单次运行，不能把它当作 F 锁定 fixture 峰值。
 - 生产 parser/canonical/normalize/evidence 切片与逐文档门槛须先交付；C1 禁止未入 extraction 指纹的题名/DOI/摘要，单样本失败阻断实验。按 ADR-0041 保留自包含 evidence-map 的 orig、页面、源块和 provenance，由 evidence_map_sha256 覆盖，document 只作审计；验证无 extra 冷重建、篡改/缺成员拒绝及恢复后逐字回查，不以方向已定推定真实样本保真已验。
 - Body 提供 SQLite 唯一事实源的不可变根用途、直接人工决定（附上游 Screening 成功引用）、冻结样本、PDF 选择、自动检查与六项人工版式核查 API；B 提供产品命令与真实核查。Read 上游来源取决定所引用的历史成功，不因依据过时而失效；纯人工 accepted 无 Screening 引用仍为 unknown，由 B/C 的专用人工通道扩展（ADR-0043）。
 - 最小 Read 票交付 Read StageInput、任务/两次预算、租约、显式 retry、analysis 持久化与幂等恢复；按 ADR-0042 保存接收策略、序号、三规则身份与丢弃清单。三规则均不进入模型指纹，纯后处理警告变化不触发模型重跑或刷新预算；不能仅把 A9 校验器接 RPC 视为完成。
 - 超出单次安全输入预算时，在任何模型调用前拒绝该样本，或前移该样本所需的完整分块能力；不得截断全文、丢章节或借 Screening 会话。G 继续负责通用长文能力。
-- 首张真实任务票同时交付 `screening failures/retry`、`paper trace` 组合、中文 help/退出码与恢复验证；show/trace/最小日报从第一天调用 A visibility 接口。
+- 首张真实任务票须在首次 Screening 执行前完成交付，同时包含 `screening failures/retry`、`paper trace` 组合、中文 help/退出码与恢复验证；show/trace/最小日报从第一天调用 A visibility 接口（[B 所有者裁决](review/stage-b-grill-decisions.md)）。
 - 窄实验命令为显式单篇执行，不扫描自动队列；显式人工精读请求不占自动 Read 名额，但仍受租约、每阶段两次 attempt 和显式 retry 纪律约束。人工 accepted 后由队列自动领取仍占自动名额；手动启动 run-due 不改变自动性质。首次引入任何自动领取时即接持久每日配额与重复运行防超额，不等 timer/H。
 - 最小实验日报使用最终 report run/entry 契约、明确实验范围、可重建且遵守每日五项/全文三项容量，不进入普通生产报告候选。 严格模式消费 Live 能力时按 §7.7 逐项核所需资格；豁免模式独立披露所有者决定，最小日报及对外说明保留原 not_assessed/unknown 和未验原因，不把有限探索签收写成产品能力通过（ADR-0051）。B 导出强标识（DOI 与版本关联）的冻结已暴露清单，C 在保留器启用前导入生产根。
-- 全部真实冻结材料只在本机验收/实验根保存并备份：Profile、配置快照、模型原始响应、正文与证据引文不进 public 仓库。CI/check-offline 仅用合成或脱敏 fixture；许可允许的 PDF/代表页可按 §13.3 单独审查入库。
+- Agent 在所有者指定的独立实验根内规划数据库、PDF、配置与模型结果、证据、日报、备份和独立恢复目录；恢复仍验证原数据目录不可访问时的自包含闭包。全部真实冻结材料只在本机验收/实验根保存并备份：Profile、派生主题、配置快照、模型原始响应、正文与证据引文不进 public 仓库。OAuth 凭据独立隔离，不进入 Git、SQLite、日志、报告或普通业务备份。CI/check-offline 仅用合成或脱敏 fixture；许可允许的 PDF/代表页可按 §13.3 单独审查入库（[B 所有者裁决](review/stage-b-grill-decisions.md)）。
+- B 必须由用户参与的选样／换样与理由、合法 PDF 及版本归属确认、六项人工版式核查，提供简短可操作交互和直观核查材料；其余已授权动作由 Agent 执行，不要求用户阅读工程日志。选样接受授权不替代 PDF 确认与人工版式核查（ADR-0069）。
 
 测试与真实验收：
 
@@ -2547,13 +2550,14 @@ JGR 的已核查合法样本固定为 Wada et al.，DOI `10.1029/2025JD043927`�
 方案和阶段 A 工程实现可以先完成。阶段 B 的真实纵向验收至少需要：
 
 - 六段式真实 Research Profile；
+- B value 执行前须选择版本化主题集合；空集合合法但不等于未配置。B 所有者可按 §7.2 明确委托生成实验主题，正式校准前再确定正式主题；
 - 阶段 B 显式选择的版本化 Screening 与 Read provider/model；Read 模型不属于校准门禁输入；
 - 按 §7.8 完成 Pi/Node/npm 精确版本供给与安装验证，提供显式运行资源、版本化适配器策略、`prompt_only` 通道及固定模型认证；认证信息不进入版本化配置、SQLite、日志或报告；
 - 外部 LLM 数据发送确认；
 - 选择直接执行时，由所有者显式开启版本化证据前提豁免；默认关闭，豁免不代替外发确认或质量验收。恢复严格模式须重新采集／接收／激活，不复活旧激活（ADR-0068）；
 - 供 Unpaywall、Crossref、DataCite 与其他外部 HTTP 客户端复用的联系邮箱；
 - B Read 前提供人工确认的合法 PDF；Wiley TDM token 与凭据运行时留 F，不作为 B 前置；
-- B 运行 Docling 前提供主机内存上限；B 显式单次执行并记录样本实测峰值，不替代 F 的锁定 fixture 峰值。F 后 doctor 对照锁定 fixture 峰值和安全余量，不足时阻止自动运行。
+- B 运行 Docling 前明确内存约束：单个进程上限 8 GB，执行前另核实主机可用资源；B 显式单次执行并记录样本实测峰值，不替代 F 的锁定 fixture 峰值。F 后 doctor 对照锁定 fixture 峰值和安全余量，不足时阻止自动运行（[B 所有者裁决](review/stage-b-grill-decisions.md)）。
 
 F 获取通道另需 Wiley TDM token（本人接受 Wiley 点击式 TDM 许可后取得）、受控渲染运行时
 或本人授权会话的显式启用与隔离凭据；B 最低路径不依赖这些通道。未启用渲染时仅走普通 HTTP，

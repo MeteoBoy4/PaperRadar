@@ -1,6 +1,6 @@
 # Body 持久前置事实，B 提供真实产品流程
 
-状态：已接受；日期：2026-11-05；依据：[#155 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/155#issuecomment-6631023698)、[#155 根用途裁决](https://github.com/MeteoBoy4/PaperRadar/issues/155#issuecomment-6632720328)、[#158 补充](https://github.com/MeteoBoy4/PaperRadar/issues/158#issuecomment-6634183486)；补充 [ADR-0036](0036-isolate-stage-b-read-experiment.md)。
+状态：已接受；日期：2026-11-05；依据：[#155 裁决](https://github.com/MeteoBoy4/PaperRadar/issues/155#issuecomment-6631023698)、[#155 根用途裁决](https://github.com/MeteoBoy4/PaperRadar/issues/155#issuecomment-6632720328)、[#158 补充](https://github.com/MeteoBoy4/PaperRadar/issues/158#issuecomment-6634183486)；补充 [ADR-0036](0036-isolate-stage-b-read-experiment.md)；[ADR-0069](0069-treat-stage-b-selection-as-owner-acceptance.md) 补充 B 选样接受授权与代执行，保留 Screening 成功引用要求。
 
 Body 持久保存一次写入不可变的根用途、直接人工决定、实验样本、PDF 选择、提取预算与逐文档质量，B 在同一公共服务上提供建根、选样、决定、真实核查和报告命令。根用途以 SQLite 为唯一事实源并绑定根登记，不另写文件标记，使严格备份集合和路径迁移后的用途拒绝保持一致；代价是不得凭数据目录名推定用途，也不能用临时投影替代恢复闭包。
 

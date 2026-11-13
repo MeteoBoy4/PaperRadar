@@ -8,7 +8,7 @@
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-当前没有符合上述条件的模块。下一步是 [B](#module-b) 的规格化准备；所需真实资料外发确认、实验根、质量与最小日报闸门见[规格 §11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)。
+当前前沿是 [B](#module-b)。所有者准备与授权已按[grill 裁决](../intent/review/stage-b-grill-decisions.md)归档，下一步为 B 规格化；质量、隔离与最小日报闸门仍按[规格 §11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)执行。
 
 to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 
@@ -58,7 +58,7 @@ flowchart TD
 | <a id="module-extra"></a>Extra | Docling extra 安装与兼容探测 | 已完成（[#150](https://github.com/MeteoBoy4/PaperRadar/issues/150)；[工程覆盖与最终门禁判据](verification/issue-150-extra-delivery.md)；[历史收口回帖](https://github.com/MeteoBoy4/PaperRadar/issues/150#issuecomment-6611646055)） | 无 | AFK |
 | <a id="module-body"></a>Body | 正文生产切片、Read 身份与预算 | 已完成（[#155](https://github.com/MeteoBoy4/PaperRadar/issues/155)；[工程覆盖与最终门禁判据](verification/issue-165-body-read-closure.md)） | Extra | AFK |
 | <a id="module-feed"></a>Feed | 强冲突持久化、JGR 元数据与语言事实 | 已完成（[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)；[离线工程证据](verification/issue-114-feed-delivery.md)） | 无 | AFK |
-| <a id="module-b"></a>B | B 实验根内纵向闭环 | 未成形 | A、Body、Feed、Source | HITL |
+| <a id="module-b"></a>B | B 实验根内纵向闭环 | 可规格化 | A、Body、Feed、Source | HITL |
 | <a id="module-c"></a>C | C 生产根四刊积累、保留器与可见性 | 未成形 | B | HITL |
 | <a id="module-f"></a>F | F 全通道、四刊正文与摘录 fixture | 未成形 | C | HITL |
 | <a id="module-abstract"></a>Abstract | 四刊摘要稳定证据及判据裁决 | 待裁决 | C、F | HITL |
@@ -80,7 +80,7 @@ flowchart TD
 | Extra | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0010](adr/0010-use-docling-as-the-only-body-parser.md) | [stage-inputs](contracts/stage-inputs.md)、[Docling 依赖探测](contracts/docling-runtime.md) |
 | Body | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0036](adr/0036-isolate-stage-b-read-experiment.md) | [read-validation](contracts/read-validation.md)、[正文持久化](contracts/body-persistence.md)、[Read 任务](contracts/read-tasks.md)、[Read 执行](contracts/read-execution.md) |
 | Feed | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0035](adr/0035-feed-derived-original-title-language-fact.md) | [paper-facts](contracts/paper-facts.md) |
-| B | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0036](adr/0036-isolate-stage-b-read-experiment.md) | [screening-tasks](contracts/screening-tasks.md) |
+| B | [§11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环) | [ADR-0036](adr/0036-isolate-stage-b-read-experiment.md)、[ADR-0069](adr/0069-treat-stage-b-selection-as-owner-acceptance.md) | [screening-tasks](contracts/screening-tasks.md) |
 | C | [§11 C](../intent/draft.md#阶段-c四刊发现身份版本与来源) | [ADR-0030](adr/0030-paper-version-identity-and-source-observations.md) | [paper-facts](contracts/paper-facts.md) |
 | F | [§11 F](../intent/draft.md#阶段-f全文取得与-docling-质量闭环) | [ADR-0032](adr/0032-relax-paper-acquisition-without-evading-access-controls.md) | [fixture-audit](contracts/fixture-audit.md) |
 | Abstract | [§11 D](../intent/draft.md#阶段-d完整-screening-与盲评校准) | [ADR-0032](adr/0032-relax-paper-acquisition-without-evading-access-controls.md) | [fixture-audit](contracts/fixture-audit.md) |
@@ -107,7 +107,7 @@ flowchart TD
 - Body：正文生产切片、Read 身份/预算、持久执行与两轴查询的工程覆盖及未验边界见[台账](verification/issue-165-body-read-closure.md)；产品接线与真实来源、四刊质量、通用长文编排及完整报告分别由 B/F/G/H 承接。
 - B：I03–I13、T02–T25、D02、D04 中的 B 消费者；另落实[StageInput C1](contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)，沿 [ADR-0041](adr/0041-self-contained-evidence-map.md) 的 EXP-6 自包含源成员方向消费[真实 SDK 与隔离回查证据](verification/issue-164-docling-smoke.md)（限冻结单样本；行间/行内分类及四刊覆盖仍由 F 补齐），并按 [ADR-0042](adr/0042-accept-read-v2-with-final-attempt-degradation.md) 落实已定的 EXP-7 方向（v2 末次降级与规则身份；[纯层覆盖](verification/issue-157-read-v2-delivery.md)不代替持久消费），并承接 [Docling 原始样本风险](verification/exp-3-docling-probe.md#移交与仍未验范围)的生产转换链、逐文档质量与资源门禁；实验原始输出不直接取得 Read 资格。B 消费已有 pi_rpc boundary/value 工程来源时须补真实接线与用途资格，保留 test 来源拒绝；在受限实验根核实 JGR 生产解析字段、entry 稳定性、主摘要非截断及语言来源约定，并完成真实材料与审计的字段差异审查、样本冻结和隔离恢复。B 消费 Body 已有的输入身份、任务/预算/租约/retry、analysis 持久化与证据规则身份（[规格补充准入](../intent/draft.md#b-最小-read-与正文消费)、[read-validation](contracts/read-validation.md)）；B 首张真实任务票另承接 Screening 产品接线，含 failures/retry、trace 组合及中文 help/退出码/恢复验证，不能后推到 H（[规格补充准入](../intent/draft.md#b-screening-产品接线)、[screening-tasks](contracts/screening-tasks.md)）。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[组合契约](contracts/feed-pipeline.md)、[parser 固定回归边界](verification/feed-parser-v1.md)；Feed 工程完成不替代来源验收。消费[首轮 JGR 来源证据](verification/exp-1-http-audit.md#生产路径适用性)时须保留 Crossref 主摘要依据，拒绝卷期说明充当主摘要；选择 v2 时核对[新计划 JGR 来源与差异依据](verification/exp-1-http-audit-v2.md#b-前进方向与后续责任)，仍由 B 自己完成生产路径完整主摘要与样本验收；CLI 默认 v1 不等于已切换 v2。后续解析规则变化须补适用证据，DEC-1/DEC-3 不因本轮关闭。
 - Body/B/F：另承接 [Extra 移交](verification/issue-150-extra-delivery.md#bodybf-承接)；Body 在明确请求及公共 probe 必要项通过后延迟导入 SDK，独立处理 native ABI、模型缓存、解析和资源失败；B 接线受限实验根的真实任务与资格；F 负责四刊/中文/复杂版式 fixture、摘录及资源阈值，并补齐公式行间/行内分类、独立 item 与无父源块类别；单样本的未知类别父源块及双口径峰值不替代上述责任，安装/依赖 passed 不解除这些责任。
-- B/C：消费[根、决定与样本持久接口](contracts/body-persistence.md)和[ADR-0043](adr/0043-persist-body-prerequisites-before-stage-b.md)，B 提供产品命令、真实选样/版式核查与暴露清单。决定须引用上游 Screening 成功；纯人工 accepted 无此依据仍为 unknown，专用通道由 B/C 另行扩展。F 提供正式质量门槛、四刊资源与 PDF 裁切，不提升旧实验结果。
+- B/C：消费[根、决定与样本持久接口](contracts/body-persistence.md)和[ADR-0043](adr/0043-persist-body-prerequisites-before-stage-b.md)，B 提供产品命令、真实选样/版式核查与暴露清单。B 按 [ADR-0069](adr/0069-treat-stage-b-selection-as-owner-acceptance.md)先保存选样及接受授权，Screening 成功后代记用户决定，PDF 后补绑定；候选清单、首票在 Screening 前交付及简短人工交互见[规格 §11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)。决定仍须引用上游 Screening 成功；纯人工 accepted 无此依据仍为 unknown，专用通道由 B/C 另行扩展。F 提供正式质量门槛、四刊资源与 PDF 裁切，不提升旧实验结果。
 - B 首个新增 migration 票：实施前核实 [#139 测试 head 人工预期集中化](https://github.com/MeteoBoy4/PaperRadar/issues/139) 完成及[交付结论](verification/issue-139-migration-expectations.md)，人工更新与集成要求分别见[测试规则](agents/testing.md)和[共享资源串行规则](agents/verification-scope.md#共享资源串行与后续承接)；此承接不新增 B/Body 对 Scope spec 的功能依赖。
 - C：I10、I12、I15、T01、T15–T19、T23、T24、T26；承接四刊生产采集扩展、保留器与未揭晓事实扩展、来源假设与语言约定核实、7 天复查/metadata_unobtainable 生命周期及完整 eligibility，不能从 JGR 合成材料推定四刊就绪。保留器装配 waiting_calibration 与身份/合并链全部仍成立的隐藏条件，存活论文继承事实，再调用共享 visibility；实际隐藏须做消费者组合验证。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[元数据契约](contracts/feed-metadata.md)、[共享规则](contracts/eligibility-visibility.md)。
 - F/Abstract：I09、I14、I15、T01、T10、T20、T26；F 另承接 [Docling 本轮未覆盖范围](verification/exp-3-docling-probe.md#移交与仍未验范围)的四刊/中文/其他版式、正式 fixture、摘录与资源阈值，不复用两份同论文材料作为四刊通过证据；与 C 共同承接[新规则实测的未完成项](verification/exp-1-http-audit-v2.md#b-前进方向与后续责任)：AIES Feed 202、dqkx 第 2 位协议重定向、Wiley 出版者 403 与 QJRMS `10.1002/qj.70349` 缺摘要。用户确认本轮不再处理 AIES/dqkx，后续阶段遇到时另拟方案；保留两个 partial 计划、成员/失败与暂停位置，不盲目 resume。v2 字段误取已修复且有该轮来源证据，不再把缺摘要与旧误取混为一事；完成适用新计划后才登记 acquired fixture，最迟 D 正式预热冻结/首批校准前逐刊收口。
@@ -149,13 +149,13 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 
 ## 用户须提供
 
-配置清单仅见[规格 §14](../intent/draft.md#十四上线前必须由用户提供的配置)。`/srv/pi-cwd` 为已裁决唯一常量；执行前须复核固定供给、运行隔离、专用认证/模型与外发授权；[历史 Live 未验边界](verification/exp-2-pi-live-probe.md#明确承接与产品闸门)继续披露，合成实验许可不外推真实资料。EXP-1 的临时 HTTP 联系标识与无代理选择分别只适用于明确确认的[首轮审计](verification/exp-1-http-audit.md)和[新规则补跑](verification/exp-1-http-audit-v2.md)，后续 live 仍显式提供。选择可选证据链重验时，由所有者重新批准采集窗口、接收及激活；已有模板和旧激活不代替新执行输入。豁免不替代 B 的真实资料外发确认。其他配置的就绪状态未记录，不从历史工程验收推定已提供。
+配置要求仅见[规格 §14](../intent/draft.md#十四上线前必须由用户提供的配置)。B 的实验根、Profile、模型与采样选择、OAuth 认证声明、联系邮箱、8 GB 单进程约束、阶段内外发授权及由 Agent 执行所有者豁免，已由本轮[grill 裁决](../intent/review/stage-b-grill-decisions.md)确定；精确运行资料在私有实验根 `stage-b-preparation.md`。主题按用户委托从 Profile 生成，仍须编译选择；认证和模型可用性由运行预检核实。用户后续只需在具体材料就绪时选样／换样、提供并确认合法 PDF 与版本归属、完成六项版式核查，接受动作按 ADR-0069 代执行。
+
+`/srv/pi-cwd` 为已裁决唯一常量；执行前须复核固定供给、运行隔离及专用认证／模型；[历史 Live 未验边界](verification/exp-2-pi-live-probe.md#明确承接与产品闸门)继续披露。B 使用本轮独立真实资料授权，不沿用 EXP-1 的临时 HTTP 标识或授权范围。选择可选证据链重验时，仍由所有者重新批准采集窗口、接收及激活；已有模板和旧激活不代替新执行输入。不从准备资料齐备推定 live 验收通过。
 
 ## 未成形
 
 [#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 取代 #112，承接 Verification Scope 文档解耦、集中登记与并行集成；按 S7(c) 不增模块、不阻塞 B。单 spec、跨 spec 与资源串行统一执行[唯一集成规则](agents/verification-scope.md)，材料与覆盖见[集成台账](verification/scope-registry-integration.md)。
-
-B 与 C–I 保持原阶段粒度，进一步规格化必须先核对各自入口、承接责任与待裁决项；依据[§11](../intent/draft.md#十一九阶段实施与验收)。
 
 ## 已完成
 
