@@ -2,14 +2,17 @@
 
 import json
 from pathlib import Path
+from typing import IO, NoReturn
 
 import pytest
-from typer.testing import CliRunner
+from typer.testing import CliRunner, Result
 
 from paper_radar.cli import app
+from paper_radar.config import RuntimeConfigSnapshot
+from paper_radar.experiment.egress import EgressAuthorization
 
 
-def invoke(*args: str):
+def invoke(*args: str) -> Result:
     return CliRunner().invoke(app, ["experiment", *args])
 
 
@@ -65,7 +68,7 @@ def test_check_refuses_missing_stage_changed_model_and_copied_root(
     database = root / "paper-radar.sqlite3"
     snapshot = compile_config(settings, database)
 
-    def check(path: Path, ref: str, stage: str):
+    def check(path: Path, ref: str, stage: str) -> Result:
         return invoke(
             "egress-check", "--root", str(path), "--snapshot", ref, "--stage", stage
         )
@@ -105,7 +108,7 @@ def test_check_refuses_missing_stage_changed_model_and_copied_root(
 
 
 def test_preflight_lists_both_slots_and_all_missing_resources_without_writes(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from paper_radar.config import compile_config
     from tests.config_adapter_support import adapter_inputs
@@ -117,7 +120,7 @@ def test_preflight_lists_both_slots_and_all_missing_resources_without_writes(
     snapshot = compile_config(settings, root / "paper-radar.sqlite3")
     from paper_radar.pi_execution.errors import ExecutionError
 
-    def unavailable():
+    def unavailable() -> NoReturn:
         raise ExecutionError("placement_unavailable")
 
     monkeypatch.setattr(
@@ -274,7 +277,12 @@ def test_damaged_authorization_chain_is_never_missing_or_default(
     ],
 )
 def test_fault_injected_call_scope_is_denied_before_any_execution(
-    tmp_path: Path, stage, provider, model, categories, reason
+    tmp_path: Path,
+    stage: str,
+    provider: str,
+    model: str,
+    categories: tuple[str, ...],
+    reason: str,
 ) -> None:
     from paper_radar.config import compile_config
     from paper_radar.experiment.egress import EgressError, require_egress_authorization
@@ -344,7 +352,9 @@ def test_new_help_does_not_access_network_sqlite_or_create_directories(
     assert list(tmp_path.iterdir()) == []
 
 
-def prepared_preflight(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def prepared_preflight(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[Path, RuntimeConfigSnapshot, list[str]]:
     from hashlib import sha256
 
     import yaml
@@ -485,13 +495,20 @@ def prepared_preflight(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     # 任何读取凭据内容/启动进程/联网均使本测试失败;只允许 stat 元数据。
     original_open = Path.open
 
-    def guarded_open(path, *args, **kwargs):
+    def guarded_open(
+        path: Path,
+        mode: str = "r",
+        buffering: int = -1,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+    ) -> IO[bytes] | IO[str]:
         assert path != credentials / "auth.json", "静态预检读取了凭据内容"
-        return original_open(path, *args, **kwargs)
+        return original_open(path, mode, buffering, encoding, errors, newline)
 
     monkeypatch.setattr(Path, "open", guarded_open)
 
-    def forbidden(*args, **kwargs):
+    def forbidden(*args: object, **kwargs: object) -> NoReturn:
         raise AssertionError("静态预检启动了外部动作")
 
     monkeypatch.setattr("subprocess.Popen", forbidden)
@@ -544,7 +561,9 @@ def test_preflight_checks_independent_read_selection_and_preserves_waived_unknow
         assert forbidden not in result.output
 
 
-def preflight_inventory(root: Path):
+def preflight_inventory(
+    root: Path,
+) -> tuple[tuple[str, int, int | None, bytes | None], ...]:
     return tuple(
         sorted(
             (
@@ -599,7 +618,7 @@ def test_static_preflight_reports_each_blocker_without_calls_or_business_writes(
         (tmp_path / "credentials").chmod(0o755)
     elif fault == "isolation":
 
-        def unavailable():
+        def unavailable() -> NoReturn:
             raise ExecutionError("isolation_unavailable")
 
         monkeypatch.setattr(
@@ -618,7 +637,7 @@ def test_static_preflight_reports_each_blocker_without_calls_or_business_writes(
             connection.commit()
         if fault == "waiver":
 
-            def placement_missing():
+            def placement_missing() -> NoReturn:
                 raise ExecutionError("placement_unavailable")
 
             monkeypatch.setattr(
@@ -750,7 +769,7 @@ def test_concurrent_owner_actions_append_one_complete_chain(tmp_path: Path) -> N
     original = egress_authorization(root / "paper-radar.sqlite3")
     now = datetime.now(UTC)
 
-    def append(enabled: bool):
+    def append(enabled: bool) -> EgressAuthorization:
         return record_egress_authorization(
             ExperimentRoot(root),
             enabled=enabled,

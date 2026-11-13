@@ -59,3 +59,25 @@ README 和工作流 Contract 按双方最终语义合并。
 解释历史；#192/#198 在认证前与领取短事务内调用 `require_egress_authorization`，两阶段
 之间重新读取。#191 承接无 prompt 映射探测；#196 承接实际提取时 cgroup ≤8 GiB/swap=0
 与双口径峰值记录。全部真实调用、认证刷新、合法材料、模型／Docling、现场隔离未验。
+
+## 新增 D1 严格类型复查
+
+本轮从 `bb40265` 合入当前 integration，仅补充
+`tests/test_stage_b_egress_preflight.py` 的参数、返回值、CLI Result、文件句柄与故障替身类型；
+不修改生产行为、测试成员、35 例分母或原有 pytest 实测记录，不新增 migration。
+先前生产模块 mypy 的通过结论不覆盖新增 D1；本轮将两者显式纳入同一次 strict 检查。
+
+精确命令：
+
+```bash
+MYPYPATH=src uv run --offline --locked mypy --strict \
+  tests/test_stage_b_egress_preflight.py src/paper_radar/experiment \
+  src/paper_radar/doctor/pi_exec.py src/paper_radar/runtime_logging/schema.py
+uv run --offline --locked pytest tests/test_stage_b_egress_preflight.py \
+  -q --basetemp=/tmp/paperradar-189-types-pytest --tb=short
+```
+
+strict mypy 检查 **10 个文件**通过；本票新增 D1 **35 passed**。
+本轮定向 Ruff、format 与 diff 检查通过。未降低 strict 或使用 ignore、cast、Any 注解掩盖错误。
+内存下限仍未裁决，生产 `MIN_AVAILABLE_MEMORY_BYTES=None` 继续作为必要阻断；
+没有执行真实/live 行为、访问真实实验根或读取凭据。
