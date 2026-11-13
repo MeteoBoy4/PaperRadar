@@ -2,7 +2,7 @@
 
 ## 用途与范围
 
-`paper_radar.feed_pipeline.FeedPipeline(database, data_root, *, http=None, sink=None, clock=None, monotonic=None)` 组合
+`paper_radar.feed_pipeline.FeedPipeline(database, data_root, *, http=None, sink=None, clock=None, monotonic=None, feed_parser_version=None, abstract_rules_version=None)` 组合
 JGR Feed 取得、当前版本最低元数据结果、语言依据及 value 任务登记。网络执行复用
 `SourceHTTPExecutor`；身份、制品、元数据、语言及任务仍由各公共服务负责。
 调用方提供已初始化并显式升级到当前 revision 的数据库与制品数据根；`prepare` 还要求
@@ -14,6 +14,10 @@ JGR Feed 取得、当前版本最低元数据结果、语言依据及 value 任�
 
 组合服务接受显式 `sink`、`clock`、`monotonic`，原样传给 Feed、元数据与任务服务；
 默认不写持久日志。事件与只读边界见[运行日志](runtime-logging.md)。
+可选 `feed_parser_version` 传给 Feed 检查的 `parser_version`，可选
+`abstract_rules_version` 传给各 Paper 元数据补充；省略时沿组件的 v1 默认规则，
+既有请求身份与历史回放不变。实验入口显式同时选择 2 与 `audit-abstract-v2`，
+见[B 工作流](stage-b-workflow.md)。
 共享资格与可见性由[纯规则 Contract](eligibility-visibility.md)定义；本服务保留自身
 元数据／boundary／来源守卫，尚未把 trace 或登记包装成完整资格或展示隔离。
 真实消费者与新执行入口的注入责任见[路线图 B](../roadmap.md#module-b)。
@@ -81,7 +85,7 @@ HTTP、条目失败、元数据缺项及异常均不被解释成“无新论文�
 
 ## 不提供／不证明
 
-不提供真实导入 CLI、调度、模型调用或完整资格体系；最低元数据完整不等于非截断主
+实验 Feed 导入 CLI 见[B 工作流](stage-b-workflow.md)；本库不提供调度、模型调用或完整资格体系。最低元数据完整不等于非截断主
 摘要、B 样本、Source 判据、校准或自动精读门禁通过。组合 `purpose=production` 也不
 表示普通生产消费资格，不能替代实验根隔离或样本准入。
 

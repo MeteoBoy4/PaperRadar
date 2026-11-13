@@ -25,6 +25,7 @@ from paper_radar.contracts import (
     export_frozen_contracts,
 )
 from paper_radar.contracts.schema import _SUPPORTED_CONTRACT_VERSIONS
+from paper_radar.experiment.cli import experiment_app
 from paper_radar.fixture_audit.audit_cli import audit_app
 from paper_radar.fixture_audit.cli import fixture_app
 from paper_radar.live_evidence.cli import live_evidence_app
@@ -194,6 +195,7 @@ contracts_app = typer.Typer(
     rich_markup_mode="markdown",
 )
 app.add_typer(paper_app, name="paper")
+app.add_typer(experiment_app, name="experiment")
 app.add_typer(fixture_app, name="fixture")
 app.add_typer(audit_app, name="audit")
 app.add_typer(contracts_app, name="contracts")

@@ -23,11 +23,13 @@ SQLite 任务、审计执行事实和成功制品仍是 trace 的依据；日志
 | `BodyService.extract` | `sink=`；component=body，入口及提交后安全 succeeded/failed 事件，只带安全标识与截短指纹 |
 | `FeedPipeline` | 将同一显式 `sink`、`clock`、`monotonic` 传给 Feed、元数据与任务服务 |
 | `audit run/resume` | 已交付执行 CLI 各自构造 `FileSink(data_root)`；`--data-root` 是显式所选根 |
+| `experiment feed-fetch` | 构造 `FileSink(root)` 并传给 FeedPipeline；独立 D1 装配守卫见 `tests/test_experiment_feed_cli.py` |
 
 `FeedPipeline` 是库组合服务，不推断生产根或实验根，不自行启用文件日志。
-现有 Feed CLI 只有只读事实查询；没有 Feed 导入、Screening 生产执行、实验命令或 run-due CLI。
-这些入口在 [B](../roadmap.md#module-b) 交付时必须装配显式根的文件汇并加入
-`tests/test_runtime_logging_entries.py` 的执行守卫；实验根自带 `logs/`，不向父目录寻找根。
+Feed 事实 CLI 保持只读；实验 Feed 导入见[B 工作流](stage-b-workflow.md)。
+后续执行入口在 [B](../roadmap.md#module-b) 交付时必须装配显式根的文件汇并加入
+独立 D1 执行守卫；既有审计守卫仍在 `tests/test_runtime_logging_entries.py`。
+实验根自带 `logs/`，不向父目录寻找根。
 守卫验证已交付入口的装配，不禁止库调用和服务测试使用 `NullSink`。
 
 ## 规则
