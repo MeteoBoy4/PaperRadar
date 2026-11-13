@@ -5,7 +5,8 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 组件，以及 JGR Feed／元数据取得服务、四刊摘要审计工具、只读 doctor、
 安全运行日志与共享资格／校准可见性纯规则，以及不依赖 SDK 的规范正文生产与持久证据回查。
 `experiment init/feed-fetch/candidates` 提供显式实验根初始化、JGR v2 生产取得
-与固定事实修订的私有候选清单；
+与固定事实修订的私有候选清单；`experiment select/selection` 保存选样接受授权及换样历史，
+按当前完整依据重新核对就绪，重放仅返回原回执；
 `experiment egress-authorize/status/check` 登记与核对范围外发授权，`experiment preflight`
 汇总两槽、隔离与资源静态阻断，不刷新认证或启动模型。
 根布局、用途守卫及安全输出见[B 实验工作流](docs/contracts/stage-b-workflow.md)。
@@ -38,6 +39,7 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 | 登记和查询 Screening 任务 | [Screening 任务](#screening-任务) |
 | 调用 JGR 取得与登记服务 | [JGR Feed 与元数据](#jgr-feed-与元数据) |
 | 登记外发授权、静态检查两槽与资源 | [B 实验工作流](docs/contracts/stage-b-workflow.md#外发授权与只读复核)；`paper-radar experiment preflight --help` |
+| 记录选样接受授权、显式换样与查询历史 | [B 选样契约](docs/contracts/stage-b-workflow.md#选样接受授权与换样)；`paper-radar experiment select --help` |
 | 初始化实验根、取得 JGR v2 并生成候选清单 | [B 实验工作流](docs/contracts/stage-b-workflow.md)；`paper-radar experiment --help` |
 | 登记 fixture、执行或回放摘要审计 | [Fixture 与摘要审计](#fixture-与摘要审计) |
 

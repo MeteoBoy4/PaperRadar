@@ -176,6 +176,12 @@ def verify_contents(root: Path, manifest: BackupManifest) -> None:
         blobs, artifacts, snapshot_ids = _registered_contents(database, root)
         # 业务语义只在完整副本上解析,源材料仅供复制与字节完整性检查。
         from paper_radar.body import BodyError, BodyService
+        from paper_radar.experiment.validation import (
+            ExperimentValidationError,
+        )
+        from paper_radar.experiment.validation import (
+            validate_all as validate_experiment,
+        )
         from paper_radar.feed_pipeline import FeedPipeline, PipelineError
         from paper_radar.fixture_audit import FixtureAudit, FixtureError
         from paper_radar.papers import PaperError
@@ -187,13 +193,21 @@ def verify_contents(root: Path, manifest: BackupManifest) -> None:
             FeedPipeline(database, root).validate_all()
             BodyService(database, root).validate_all()
             ReadTasks(database, root).validate_all()
+            validate_experiment(database, root)
         except ReadTaskError as error:
             raise BackupError(
                 BackupReason.UNSUPPORTED_RULE_VERSION
                 if error.reason == "unsupported_rule_version"
                 else BackupReason.REGISTRATION_INVALID
             ) from None
-        except (BodyError, PaperError, TaskError, FixtureError, PipelineError):
+        except (
+            BodyError,
+            PaperError,
+            TaskError,
+            FixtureError,
+            PipelineError,
+            ExperimentValidationError,
+        ):
             raise BackupError(BackupReason.REGISTRATION_INVALID) from None
         if (
             blobs != manifest.blobs

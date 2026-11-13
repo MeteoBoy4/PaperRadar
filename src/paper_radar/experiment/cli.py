@@ -474,3 +474,119 @@ def preflight(
         _show(check)
     if not passed:
         raise typer.Exit(2)
+
+
+@experiment_app.command(
+    "select",
+    cls=ExperimentCommand,
+    help="""按候选编号或 DOI 记录所有者选样与接受授权。
+
+参数：必填 --root、--view-id、--request-id、--reason（所有者原文）、
+--actor owner/agent；
+--position 与 --doi 二选一；换样须提供 --replaces 与 --replacement-reason。
+副作用：只追加本根授权并写 logs/；不调用模型，不产生 accepted 决定；自动配额 0。
+同 request 重放仅返回原回执，不许可继续执行。
+actor/授权者只是本地审计说明，不是认证或签名。
+输出去向：stdout 安全 JSON；stderr 受控原因与下一步；理由仅保存在私有数据库。
+帮助不联网、不开库、不建目录。常见失败：request_conflict、candidate_not_ready、
+basis_changed、selection_changed；请回查 selection，
+必要时生成新 candidates 并请所有者重选。
+退出码：成功 0；参数错误、受控拒绝或执行失败 2；中断 130。
+示例：paper-radar experiment select --root /tmp/my-experiment --view-id VIEW
+--position 1 --reason '研究问题相关' --actor agent --request-id selection-1
+""",
+)
+def select_candidate(
+    root: RootOption,
+    view_id: Annotated[str, typer.Option("--view-id", help="所有者所见候选视图身份。")],
+    request_id: Annotated[str, typer.Option("--request-id", help="幂等请求标识。")],
+    reason: Annotated[
+        str, typer.Option("--reason", help="所有者原文选样理由；不输出到终端。")
+    ],
+    actor: Annotated[
+        str, typer.Option("--actor", help="录入者 owner 或 agent；不是认证。")
+    ],
+    position: Annotated[
+        int | None, typer.Option("--position", help="检查中的固定原位次。")
+    ] = None,
+    doi: Annotated[
+        str | None, typer.Option("--doi", help="该检查中唯一论文 DOI。")
+    ] = None,
+    replaces: Annotated[
+        str | None, typer.Option("--replaces", help="换样引用当前 selection-id。")
+    ] = None,
+    replacement_reason: Annotated[
+        str | None, typer.Option("--replacement-reason", help="所有者原文换样理由。")
+    ] = None,
+) -> None:
+    from paper_radar.experiment import ExperimentError, ExperimentRoot
+    from paper_radar.experiment.selections import SelectionError, Selections, receipt
+    from paper_radar.runtime_logging import FileSink, RuntimeLog
+
+    try:
+        selected = ExperimentRoot(root)
+        selected.require()
+        log = RuntimeLog(FileSink(selected.root))
+        with log.execution("experiment", controlled=(SelectionError, ExperimentError)):
+            record, replayed = Selections(selected.database, selected.data_root).select(
+                view_id=view_id,
+                request_id=request_id,
+                reason=reason,
+                actor=actor,
+                position=position,
+                doi=doi,
+                replaces=replaces,
+                replacement_reason=replacement_reason,
+            )
+    except (ExperimentError, SelectionError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo(
+            "interrupted：选样中断；请使用同一 request-id 回查或重放授权。", err=True
+        )
+        raise typer.Exit(130) from None
+    except Exception as error:
+        report_component_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(json.dumps(receipt(record, replayed=replayed), ensure_ascii=False))
+
+
+@experiment_app.command(
+    "selection",
+    cls=ExperimentCommand,
+    help="""只读查询当前选择及授权历史的安全投影。
+
+参数：必填 --root。副作用：无，不创建日志；自动配额 0，不调用模型。
+输出去向：stdout JSON 身份历史，不含原文理由或摘要；错误写 stderr。
+帮助不联网、不开库、不建目录。常见失败：未知根或 registration_invalid，请核对可信备份。
+退出码：成功 0（包括未选样）；参数错误或拒绝 2；中断 130。
+示例：paper-radar experiment selection --root /tmp/my-experiment
+""",
+)
+def selection_history(root: RootOption) -> None:
+    from paper_radar.experiment import ExperimentError, ExperimentRoot
+    from paper_radar.experiment.selections import SelectionError, Selections, receipt
+
+    try:
+        selected = ExperimentRoot(root)
+        selected.require()
+        records = Selections(selected.database, selected.data_root).history()
+    except (ExperimentError, SelectionError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo("interrupted：查询中断；请重新查询 selection。", err=True)
+        raise typer.Exit(130) from None
+    except Exception as error:
+        report_component_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(
+        json.dumps(
+            dict(
+                current_selection_id=records[-1].selection_id if records else None,
+                history=[receipt(record) for record in records],
+            ),
+            ensure_ascii=False,
+        )
+    )
