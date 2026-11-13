@@ -1,22 +1,26 @@
 """只读执行事实诊断;不导入执行编排、认证或 attempt 资源。"""
 
+import json
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 
 import typer
 
 from paper_radar.config import (
     ConfigError,
+    StageName,
     load_config_snapshot,
+    project_config,
     resolve_config_snapshot_reference,
-    screening_model,
 )
 from paper_radar.config.adapters import PiAdapter
 from paper_radar.config.compile import MaterialKind, RuntimeConfigSnapshot
 from paper_radar.config.owner_waiver import (
     OWNER_WAIVER_NOTICE,
     OWNER_WAIVER_REASON,
+    OwnerWaiver,
     OwnerWaiverError,
     owner_waiver,
 )
@@ -60,17 +64,23 @@ from paper_radar.pi_supply import SupplyError, doctor_supply
 
 
 def _binding(
-    snapshot: RuntimeConfigSnapshot, supply_id: str, install_id: str
+    snapshot: RuntimeConfigSnapshot,
+    supply_id: str,
+    install_id: str,
+    slot: Literal["screening", "reading"] = "screening",
 ) -> EvidenceBinding | None:
     """仅投影已验证 snapshot;不伪造 StageInput、任务或 CallDescription。"""
-    adapter = snapshot.adapters["screening"]
-    selected = snapshot.adapter_selections.get("screening")
-    model = screening_model(snapshot)
+    adapter = snapshot.adapters[slot]
+    selected = snapshot.adapter_selections.get(slot)
+    stage = StageName.READ if slot == "reading" else StageName.BOUNDARY
+    model = json.loads(project_config(snapshot).projections[stage].payload_json)[
+        "components"
+    ]["model"]
     if (
         adapter is None
         or selected is None
         or model is None
-        or snapshot.model_slots["screening"] != "configured"
+        or snapshot.model_slots[slot] != "configured"
     ):
         return None
     declared = PiAdapter.model_validate_json(
@@ -102,7 +112,10 @@ def _utc_now() -> datetime:
 
 
 def _admission_checks(
-    database: Path, binding: EvidenceBinding, credentials_dir: Path
+    database: Path,
+    binding: EvidenceBinding,
+    credentials_dir: Path,
+    slot: Literal["screening", "reading"] = "screening",
 ) -> tuple[Check, ...]:
     sampling_reason = sampling_mapping_reason(binding)
     if sampling_reason is not None:
@@ -131,8 +144,13 @@ def _admission_checks(
             ),
         )
     checks: list[Check] = []
-    for consumer in (Consumer.BOUNDARY, Consumer.VALUE):
-        use = AdmissionUse(CallSite.SCREENING, consumer, level)
+    consumers = (
+        (Consumer.READ,) if slot == "reading" else (Consumer.BOUNDARY, Consumer.VALUE)
+    )
+    for consumer in consumers:
+        use = AdmissionUse(
+            CallSite.READ if slot == "reading" else CallSite.SCREENING, consumer, level
+        )
         try:
             request = build_admission_request(
                 database,
@@ -159,7 +177,11 @@ def _admission_checks(
 
 
 def execution_checks(
-    database: Path, snapshot_reference: str, credentials_dir: Path
+    database: Path,
+    snapshot_reference: str,
+    credentials_dir: Path,
+    *,
+    slot: Literal["screening", "reading"] = "screening",
 ) -> tuple[Check, ...]:
     """必要项决定汇总;披露项保留原状态,不创建执行或账本事实。"""
     checks = list(basic_checks(database))
@@ -176,15 +198,16 @@ def execution_checks(
                 "核对所有者动作记录的格式、哈希及版本链；修复前保持拒绝。",
             )
         )
-        return tuple(checks)
-    checks.append(
-        Check(
-            "owner_waiver",
-            Result.PASSED,
-            OWNER_WAIVER_REASON if waiver.enabled else "owner_waiver_disabled",
-            OWNER_WAIVER_NOTICE if waiver.enabled else "证据前提严格路径。",
+        waiver = OwnerWaiver()
+    else:
+        checks.append(
+            Check(
+                "owner_waiver",
+                Result.PASSED,
+                OWNER_WAIVER_REASON if waiver.enabled else "owner_waiver_disabled",
+                OWNER_WAIVER_NOTICE if waiver.enabled else "证据前提严格路径。",
+            )
         )
-    )
     try:
         snapshot = load_config_snapshot(
             database, resolve_config_snapshot_reference(database, snapshot_reference)
@@ -207,6 +230,29 @@ def execution_checks(
             "显式历史快照有效；未保存新事实。",
         )
     )
+    configured = (
+        snapshot.adapters[slot] is not None
+        and snapshot.model_slots[slot] == "configured"
+    )
+    checks.append(
+        Check(
+            "adapter",
+            Result.PASSED if snapshot.adapters[slot] is not None else Result.MISSING,
+            "adapter_configured"
+            if snapshot.adapters[slot] is not None
+            else "adapter_missing",
+            "核对本槽显式 adapter；不借用另一槽。",
+        )
+    )
+    if not configured:
+        checks.append(
+            Check(
+                "admission",
+                Result.MISSING,
+                f"{slot}_configuration_missing",
+                "补齐本槽模型与 adapter 后重新预检。",
+            )
+        )
     try:
         report = doctor_supply(database, snapshot_reference)
     except SupplyError as error:
@@ -248,19 +294,21 @@ def execution_checks(
         if report.current is not None:
             try:
                 binding = _binding(
-                    snapshot, report.current.supply_id, report.current.install_id
+                    snapshot, report.current.supply_id, report.current.install_id, slot
                 )
                 if binding is None:
                     checks.append(
                         Check(
                             "admission",
                             Result.MISSING,
-                            "screening_configuration_missing",
-                            "先配置显式 Screening 模型槽和 adapter；不推定其他槽资格。",
+                            f"{slot}_configuration_missing",
+                            "先配置所选槽的显式模型和 adapter；不推定其他槽资格。",
                         )
                     )
                 else:
-                    checks.extend(_admission_checks(database, binding, credentials_dir))
+                    checks.extend(
+                        _admission_checks(database, binding, credentials_dir, slot)
+                    )
             except (ExecutionError, SupplyError, OwnerWaiverError) as error:
                 checks.append(
                     Check(

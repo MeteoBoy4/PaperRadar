@@ -6,6 +6,8 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 安全运行日志与共享资格／校准可见性纯规则，以及不依赖 SDK 的规范正文生产与持久证据回查。
 `experiment init/feed-fetch/candidates` 提供显式实验根初始化、JGR v2 生产取得
 与固定事实修订的私有候选清单；
+`experiment egress-authorize/status/check` 登记与核对范围外发授权，`experiment preflight`
+汇总两槽、隔离与资源静态阻断，不刷新认证或启动模型。
 根布局、用途守卫及安全输出见[B 实验工作流](docs/contracts/stage-b-workflow.md)。
 仓库还提供 B 首版 boundary、value、reading 与 Pi 系统生产 Prompt，材料位置、
 复制登记与冻结规则见[公开生产 Prompt](docs/contracts/runtime-config.md#公开生产-prompt)。
@@ -35,6 +37,7 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 | 查询论文、发现与来源 | [论文事实与 Feed 发现的本地查询](#论文事实与-feed-发现的本地查询) |
 | 登记和查询 Screening 任务 | [Screening 任务](#screening-任务) |
 | 调用 JGR 取得与登记服务 | [JGR Feed 与元数据](#jgr-feed-与元数据) |
+| 登记外发授权、静态检查两槽与资源 | [B 实验工作流](docs/contracts/stage-b-workflow.md#外发授权与只读复核)；`paper-radar experiment preflight --help` |
 | 初始化实验根、取得 JGR v2 并生成候选清单 | [B 实验工作流](docs/contracts/stage-b-workflow.md)；`paper-radar experiment --help` |
 | 登记 fixture、执行或回放摘要审计 | [Fixture 与摘要审计](#fixture-与摘要审计) |
 

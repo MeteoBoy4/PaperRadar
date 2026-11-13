@@ -23,6 +23,7 @@ SQLite 任务、审计执行事实和成功制品仍是 trace 的依据；日志
 | `BodyService.extract` | `sink=`；component=body，入口及提交后安全 succeeded/failed 事件，只带安全标识与截短指纹 |
 | `FeedPipeline` | 将同一显式 `sink`、`clock`、`monotonic` 传给 Feed、元数据与任务服务 |
 | `audit run/resume` | 已交付执行 CLI 各自构造 `FileSink(data_root)`；`--data-root` 是显式所选根 |
+| `experiment egress-authorize` | 显式 FileSink(root)，component=experiment 的 run_started/run_finished；独立 D1 守卫 `tests/test_stage_b_egress_preflight.py` |
 | `experiment feed-fetch` | 构造 `FileSink(root)` 并传给 FeedPipeline；独立 D1 装配守卫见 `tests/test_experiment_feed_cli.py` |
 
 `FeedPipeline` 是库组合服务，不推断生产根或实验根，不自行启用文件日志。

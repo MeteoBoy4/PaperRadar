@@ -3,7 +3,8 @@
 ## 用途与范围
 
 `paper-radar experiment` 在必填的显式 `--root` 中组合 B 实验动作。
-当前提供 `init`、`feed-fetch` 和 `candidates`，不推断 cwd 或父目录中的根。
+当前提供 `init`、`feed-fetch`、`candidates`、`egress-authorize/status/check` 和静态
+`preflight`，不推断 cwd 或父目录中的根。
 实验用途、执行来源和质量资格分别判断；组件规则仍由各自 Contract 定义。
 
 ## 规则
@@ -51,6 +52,59 @@
 仅表示非中文。策略、来源歧义和预算冻结规则见[任务语言依据](screening-tasks.md#feed-原题名语言来源)。
 完整摘要只在获准的私有业务读取接口中存在，日志／终端诊断不展开文本。
 
+### 外发授权与只读复核
+
+`egress-authorize --root ROOT --snapshot REF --stage boundary --stage value --stage read
+--reason TEXT` 从显式历史快照取得每个所列阶段的精确 provider/model，并追加所有者决定。
+默认启用，`--disabled` 追加撤销；每次决定只覆盖所列阶段，不继承未列阶段。
+Screening 的数据类别为 `profile/title_abstract`，Read 另含 `legal_body`。
+理由必填且只保存在私有业务库，终端、错误与日志不回显正文。
+授权者固定为 owner，是本地审计说明，不构成身份认证或密码学签名。
+
+授权复用既有 `config_versions`，独立 kind/name 为 `experiment_egress/stage-b-egress`，
+不混入[所有者豁免](pi-execution.md)的记录。格式 `stage-b-egress-v1` 记录根身份、
+规范绝对位置、阶段/模型/类别范围、版本、原始字节 SHA-256、前版哈希与时间。
+写入持 `BEGIN IMMEDIATE`，验证完整链后只追加；没有记录表示未授权，损坏、未知格式、
+哈希不符、版本断链或时间倒退均拒绝，不能降级为缺省。
+
+`egress-status --root ROOT` 只读返回历史链的安全投影：enabled、version、record_sha256
+与 grants。恢复到新位置仍可验证并回查历史字节；enabled 只描述记录，不表示当前根已获执行许可。
+`egress-check --root ROOT --snapshot REF --stage STAGE` 按本次选择只读核对执行适用性。
+原根的授权不能延伸到复制/移动根、其他阶段、provider/model 或类别。
+
+公共 `experiment.egress.egress_authorization(database, connection=None)` 验证完整链而
+不比较当前位置，供备份/B 聚合验证消费；`selected_grants(snapshot, stages)` 只投影已验证
+快照。`require_egress_authorization(root, stage, provider, model, categories, connection=None)`
+在缺记录、撤销或范围不符时抛出封闭 `EgressError`；传入当前短事务的 Connection 可在
+认证前及领取事务内重读，检查本身不写任务、不占预算。Screening/Read 产品编排负责在
+每次新执行、两阶段之间和领取前消费此接口；历史请求回执不表示可继续执行。
+
+### 静态执行预检
+
+`preflight` 必须显式选择 `--root/--snapshot/--credentials-dir/--material-root/
+--install-root/--attempt-root/--model-root`。data/config 根取固定实验布局，其余根不猜测。
+命令组合 basic、所选配置的 boundary/value/read/extraction readiness、pi-supply、
+Screening boundary/value 与 Read 自身模型/adapter/档位的工程检查、docling-runtime、
+外发授权、所有者豁免及主机资源。Read 使用自身 `CallSite.READ/Consumer.READ` 准入用途，
+不复制 Screening 投影；每个必要项失败均以四态、封闭原因和中文下一步报告。
+组件四态与豁免披露沿[doctor](doctor.md)，不将 not_assessed/unknown 提升为 verified。
+
+根约束逐个对象列出：计划 attempt 临时根与 data/config/material/install 四根分别互不包含；
+凭据目录分别位于各根之外且互不包含；所选安装根须匹配供给登记实例并沿供给契约验证。
+不额外要求四个执行根两两互斥，固定的 config 位于 data 内不因此被拒绝。
+静态计划检查不创建 attempt 目录，实际启动仍由[执行资源边界](pi-execution.md)核验。
+
+主机项读取 MemAvailable、所选冻结模型部署/文件哈希和临时快照磁盘余量、当前用户
+cgroup v2 的 memory 写权限及 memory.peak。模型快照所需容量等于所选文件实际总字节，
+不借用 Pi 安装或开发环境的磁盘门槛。memory.peak 不可读显示 not_assessed/unknown，
+不代替 worker ru_maxrss；cgroup 能力通过不证明提取时 ≤8 GiB/swap=0 已实施。
+主机可用内存下限未设置时显示 `host_memory_policy_unset` 并阻断，不自行宣称容量足够。
+
+预检不建库、日志、任务或 attempt，不占预算，不调用可能刷新认证的 `prepare_launch`，
+不读取 auth.json 内容，不启动 Pi/Docling、不联网。模型映射明确为
+`model_mapping_not_probed/not_assessed`；无 prompt 的 RPC 探测是另一个执行边界。
+成功只表示本次静态必要项通过，不授予业务执行、逐文档质量或模型能力资格。
+
 ### 候选事实与私有视图
 
 `candidates --root ROOT --check-id CHECK` 不再次取得来源，只读回放指定检查；
@@ -96,6 +150,8 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 
 ### 日志与命令帮助
 
+`egress-authorize` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
+装配守卫见 `tests/test_stage_b_egress_preflight.py`。授权只读查询与静态预检不建日志。
 `feed-fetch` 显式注入 `FileSink(root)`，日志只写所选根的 `logs/`。新执行入口装配
 守卫位于独立 D1 模块 `tests/test_experiment_feed_cli.py`；既有审计守卫保持原样。
 `init` 与只读候选投影不记录模型／来源执行日志；候选默认终端只输出身份、数量和相对
@@ -107,7 +163,7 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 
 | 退出码／原因 | 含义与下一步 |
 | --- | --- |
-| `0` | 初始化成功，或 Feed 取得并且所有成员最低元数据、非截断主摘要及语言均就绪；空的有效 200 响应也返回 0，仍不推断新增数量 |
+| `0` | 授权写入/只读查询成功，或静态预检必要项均通过；初始化成功，或 Feed 取得并且所有成员最低元数据、非截断主摘要及语言均就绪；空的有效 200 响应也返回 0，仍不推断新增数量 |
 | `0 / candidates` | 候选生成或历史重建成功，含受阻成员也返回 0；就绪依据在私有视图中披露 |
 | `2 / invalid_arguments` | 缺必填参数或未知参数；查看对应 `--help` |
 | `2 / root_unknown` | 没有 experiment 登记；对独立空根运行 init，既有未知用途库不能改登记 |
@@ -115,6 +171,11 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 | `2 / unsafe_layout` | 固定位置不安全或不可写；检查布局、链接与权限 |
 | `2 / registration_corrupt` | 候选种类、载荷、历史成员或固定事实不一致；核对原检查及备份，不能覆盖历史事实 |
 | `2 / 组件封闭原因` | 来源受阻、HTTP／条目失败、元数据缺项或版本／请求冲突；按 check_id 回查，未完成请求用原 request_id 重跑，不能覆盖冲突 |
+| `2 / egress_not_authorized` | 无记录或已撤销；由所有者显式登记 |
+| `2 / egress_history_invalid` | 授权格式、哈希或版本链损坏；修复完整业务历史前保持拒绝 |
+| `2 / egress_scope_mismatch / egress_model_mismatch / egress_category_mismatch` | 根、阶段、provider/model 或类别不符；不得沿用其他范围授权 |
+| `2 / egress_action_invalid / egress_model_unconfigured / egress_clock_invalid / egress_unavailable` | 动作、时间或存储不可用；核对选择与完整历史后显式重试 |
+| `2 / 静态预检原因` | 必要项 missing/invalid/not_assessed；按逐项中文下一步修复，不领取任务 |
 | `2 / execution_failed` | 意外执行失败；检查根、数据库与原检查，保留历史后显式重跑 |
 | `130 / interrupted` | 操作中断；使用同根及原请求继续，不推断成功或退款 |
 
@@ -131,5 +192,5 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 ## 相关
 
 - [Feed 组合](feed-pipeline.md)、[元数据](feed-metadata.md)、[正文持久化](body-persistence.md)、[运行日志](runtime-logging.md)。
-- [根与 Feed 工程覆盖](../verification/issue-187-experiment-feed.md)、[候选工程覆盖](../verification/issue-188-candidate-views.md)。
+- [根与 Feed 工程覆盖](../verification/issue-187-experiment-feed.md)、[候选工程覆盖](../verification/issue-188-candidate-views.md)、[授权与预检工程覆盖](../verification/issue-189-egress-preflight.md)。
 - 依据：[#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)、[#187](https://github.com/MeteoBoy4/PaperRadar/issues/187)、[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。
