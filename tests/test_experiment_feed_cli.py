@@ -448,6 +448,18 @@ def test_invalid_contact_keeps_controlled_reason_and_redacts_input(
     assert not (root / "logs").exists()
 
 
+def test_corrupt_existing_database_has_controlled_redacted_error(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "PRIVATE_SYNTHETIC_ROOT"
+    root.mkdir()
+    (root / "paper-radar.sqlite3").write_bytes(b"PRIVATE_SYNTHETIC_NOT_SQLITE")
+    result = invoke("init", "--root", str(root))
+    assert result.exit_code == 2
+    assert "execution_failed" in result.output
+    assert "PRIVATE_SYNTHETIC" not in result.output
+
+
 def test_incremental_feed_preserves_discoveries_and_conflict_observations(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

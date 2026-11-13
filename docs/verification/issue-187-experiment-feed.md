@@ -7,7 +7,7 @@
 
 | 独立模块 | 数量 | 工程断言 |
 | --- | ---: | --- |
-| `tests/test_experiment_feed_cli.py` | 20 | CLI 初始化及同根幂等、production/unknown 用途拒绝、旧 experiment revision 显式升级、JGR v2 主摘要与 v1 语言观察、请求重放、304 原成员关联、同响应不增 discovery、新响应增量与历史、强冲突观察、HTTP/条目失败、受控原因及隐私、执行日志装配、冷进程禁 I/O 中文帮助、参数错误、初始化登记/发布故障与恢复、中断 130 |
+| `tests/test_experiment_feed_cli.py` | 21 | CLI 初始化及同根幂等、production/unknown 用途拒绝、旧 experiment revision 显式升级、JGR v2 主摘要与 v1 语言观察、请求重放、304 原成员关联、同响应不增 discovery、新响应增量与历史、强冲突观察、HTTP/条目失败、受控原因及隐私、执行日志装配、冷进程禁 I/O 中文帮助、参数错误、损坏 SQLite、初始化登记/发布故障与恢复、中断 130 |
 
 主接缝是产品 CLI；结果经组件公开读取入口回查。HTTP 全部使用 `MockTransport`，
 来源配额与退避使用注入时钟。初始化故障仅在临时根 SQL/文件发布边界注入；
@@ -16,14 +16,15 @@
 
 TDD red：`init` 缺失命令失败；`feed-fetch` 缺失命令失败；304 缺少原成员投影失败；
 旧 experiment revision 被迁移前版本守卫阻断失败；非法联系邮箱丢失封闭原因失败；
-新包提前导入 SQLAlchemy 导致禁 I/O 冷进程 help 失败。相应修正后 20 项通过。
+新包提前导入 SQLAlchemy 导致禁 I/O 冷进程 help 失败；损坏 SQLite 的初始化异常未受控失败。
+相应修正后 21 项通过。
 
 ## 验证
 
 - 相关组合：新 D1 模块、`test_feed_pipeline.py`、`test_wiley_production_versions.py`、
   `test_runtime_logging_feed.py`、`test_feed_language.py` 和 Schema 一致性节点
   `test_config_service.py::test_upgrade_is_idempotent_and_schema_matches_metadata`：
-  74 passed；Schema 比较有已有 Screening 循环外键排序 SAWarning，比较结果一致。
+  75 passed；Schema 比较有已有 Screening 循环外键排序 SAWarning，比较结果一致。
 - 触发的 `./scripts/check-compatibility cli` 以及定向 Ruff/mypy 的最终结果见本票外部交付报告。
 - 未运行完整离线门禁，未发布正式冻结树验收结论。
 

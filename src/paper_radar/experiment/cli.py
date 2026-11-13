@@ -131,6 +131,9 @@ def initialize(root: RootOption) -> None:
     except KeyboardInterrupt:
         typer.echo("interrupted：初始化中断；请使用同一显式根重跑 init。", err=True)
         raise typer.Exit(130) from None
+    except Exception as error:
+        report_component_error(error)
+        raise typer.Exit(2) from None
     typer.echo(
         json.dumps(
             dict(
