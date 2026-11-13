@@ -25,6 +25,7 @@ ARTIFACT_FORMAT_VERSION = 1
 BLOB_LAYOUT_VERSION = 1
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 KIND_ROLES = {
+    "candidate_snapshot": ("payload",),
     "source_snapshot": ("payload",),
     "original_pdf": ("payload",),
     "model_success_response": ("payload",),
@@ -80,6 +81,7 @@ class ArtifactManifest(BaseModel):
     domain: Literal["paper-radar.artifact"]
     format_version: Literal[1]
     kind: Literal[
+        "candidate_snapshot",
         "source_snapshot",
         "original_pdf",
         "model_success_response",
@@ -152,6 +154,8 @@ def media_type(kind: str, role: str) -> str:
         raise ArtifactError(ArtifactReason.INVALID_MANIFEST, "未知制品种类或角色")
     if kind == "original_pdf":
         return "application/pdf"
+    if kind == "candidate_snapshot":
+        return "application/json"
     if kind == "reference_tei":
         return "application/tei+xml"
     if kind == "extraction":

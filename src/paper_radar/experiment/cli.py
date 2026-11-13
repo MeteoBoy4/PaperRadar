@@ -109,6 +109,55 @@ experiment_app = typer.Typer(
 RootOption = Annotated[Path, typer.Option("--root", help="必填的显式实验根。")]
 
 
+@experiment_app.command(
+    "candidates",
+    cls=ExperimentCommand,
+    help="""生成或重建一次 Feed 检查的私有只读候选清单。
+
+参数：必填 --root；--check-id 生成新事实视图，或 --view-id 重建固定历史视图，两者互斥。
+副作用：只读取已取得的 Feed 和元数据，登记候选快照并写 views/candidates/；不访问来源。
+自动配额 0；不调用模型、不领取任务；帮助不联网、不开库、不建目录。
+输出去向：stdout 仅安全 JSON 身份、数量和相对文件名；完整题名、摘要只在私有视图中。
+常见失败：未知根、损坏检查／快照或不安全布局退出 2；请核对原检查与备份后重跑。
+退出码：成功 0（含未就绪候选）；参数错误或受控拒绝 2；中断 130。
+示例：paper-radar experiment candidates --root /tmp/my-experiment --check-id CHECK
+""",
+)
+def candidates(
+    root: RootOption,
+    check_id: Annotated[
+        str | None, typer.Option("--check-id", help="已取得的 Feed 检查身份。")
+    ] = None,
+    view_id: Annotated[
+        str | None, typer.Option("--view-id", help="既有候选快照身份；字节稳定重建。")
+    ] = None,
+) -> None:
+    from paper_radar.experiment import ExperimentError, ExperimentRoot
+    from paper_radar.experiment.candidates import CandidateViews
+
+    if (check_id is None) == (view_id is None):
+        typer.echo(
+            "invalid_arguments：请提供 --check-id 或 --view-id 之一；查看 --help。",
+            err=True,
+        )
+        raise typer.Exit(2)
+    try:
+        views = CandidateViews(ExperimentRoot(root))
+        identifier = views.create(check_id) if check_id is not None else view_id
+        assert identifier is not None
+        result = views.render(identifier)
+    except ExperimentError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo("interrupted：渲染中断；请按同一检查或视图身份重跑。", err=True)
+        raise typer.Exit(130) from None
+    except Exception as error:
+        report_component_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(json.dumps(result, ensure_ascii=False))
+
+
 @experiment_app.command("init", cls=ExperimentCommand, help=INIT_HELP)
 def initialize(root: RootOption) -> None:
     from paper_radar.body.models import BodyError
