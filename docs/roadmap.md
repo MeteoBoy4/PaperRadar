@@ -8,7 +8,7 @@
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-当前前沿是 [B](#module-b)。所有者准备与授权已按[grill 裁决](../intent/review/stage-b-grill-decisions.md)归档，下一步为 B 规格化；质量、隔离与最小日报闸门仍按[规格 §11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)执行。
+当前前沿是 [B](#module-b)，已规格化为 [#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)；所有者准备与授权见[grill 裁决](../intent/review/stage-b-grill-decisions.md)，质量、隔离与最小日报闸门仍按[规格 §11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)执行。
 
 to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 
@@ -58,7 +58,7 @@ flowchart TD
 | <a id="module-extra"></a>Extra | Docling extra 安装与兼容探测 | 已完成（[#150](https://github.com/MeteoBoy4/PaperRadar/issues/150)；[工程覆盖与最终门禁判据](verification/issue-150-extra-delivery.md)；[历史收口回帖](https://github.com/MeteoBoy4/PaperRadar/issues/150#issuecomment-6611646055)） | 无 | AFK |
 | <a id="module-body"></a>Body | 正文生产切片、Read 身份与预算 | 已完成（[#155](https://github.com/MeteoBoy4/PaperRadar/issues/155)；[工程覆盖与最终门禁判据](verification/issue-165-body-read-closure.md)） | Extra | AFK |
 | <a id="module-feed"></a>Feed | 强冲突持久化、JGR 元数据与语言事实 | 已完成（[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)；[离线工程证据](verification/issue-114-feed-delivery.md)） | 无 | AFK |
-| <a id="module-b"></a>B | B 实验根内纵向闭环 | 可规格化 | A、Body、Feed、Source | HITL |
+| <a id="module-b"></a>B | B 实验根内纵向闭环 | 已规格化（[#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)） | A、Body、Feed、Source | HITL |
 | <a id="module-c"></a>C | C 生产根四刊积累、保留器与可见性 | 未成形 | B | HITL |
 | <a id="module-f"></a>F | F 全通道、四刊正文与摘录 fixture | 未成形 | C | HITL |
 | <a id="module-abstract"></a>Abstract | 四刊摘要稳定证据及判据裁决 | 待裁决 | C、F | HITL |
