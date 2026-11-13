@@ -19,6 +19,7 @@ artifact 身份是规范清单 UTF-8 字节的 SHA-256，不包含时间、路�
 | kind | 恰有的角色 |
 | --- | --- |
 | source_snapshot | payload |
+| candidate_snapshot | payload |
 | original_pdf | payload |
 | model_success_response | payload |
 | reference_tei | payload |
@@ -28,6 +29,8 @@ extraction 的 manifest 成员与制品清单的区别见[集合规则](#多文�
 同一 artifact 内不同角色允许引用同一个 blob。媒体类型由 kind/role 推导，不由调用方传入，
 不进入身份：original_pdf 为 application/pdf，reference_tei 为 application/tei+xml，
 extraction/reading 为 text/markdown，其余 extraction 角色为 application/json；
+candidate_snapshot 为 application/json，其专用载荷格式与历史投影规则由
+[B 工作流](stage-b-workflow.md#候选事实与私有视图)定义；
 来源与模型响应默认 application/octet-stream，以保持原始字节语义。
 Screening 接收使用 model_success_response 保存原始成功响应；权威校验、响应格式、
 结构结果与审计归属见[Screening 任务契约](screening-tasks.md)。存储保留 payload
@@ -38,7 +41,8 @@ SQLite 是登记事实源：`content_objects` 记录 blob 身份、长度、布�
 `artifacts` 记录身份、kind、格式与时间；`artifact_members` 记录 artifact/role 到 blob 和
 成员长度。artifact 清单正文既不存磁盘也不存数据库；每次读取从关系重算身份。
 PK、UNIQUE、FK、hex 和非负整数约束在 SQLite 生效；kind/role 枚举由 Python Contract
-强制，不使用需要重建表才能演进的 DB CHECK 枚举。制品登记不承载论文事实、
+强制，不使用需要重建表才能演进的 DB CHECK 枚举。candidate_snapshot 是封闭版本的派生
+事实快照，不是外部来源原始材料；它复用三表，无新增 migration。制品登记不替代论文事实、
 backup_runs 或自由业务 JSON 桶；论文事实表与来源关联见[论文事实 Contract](paper-facts.md)。
 
 ## 独立固定向量
@@ -88,7 +92,7 @@ artifact ID：`b461c859afffb63c837b556746fd0ab9cfe892bcd1a58a912da46799b1738d87`
 
 `paper_radar.storage.artifacts.ArtifactStore(database: Path, data_root: Path)` 的构造不建库、不
 创建目录；仅解析根。公共发布入口 `publish_single(kind, chunks, *, expected_sha256=None)` 与
-`publish_artifact(kind, members, *, expected_sha256=None)` 分别接收单文件 kind 与上述全部五种 kind。
+`publish_artifact(kind, members, *, expected_sha256=None)` 分别接收单文件 kind 与上述全部受控 kind。
 `expected_sha256` 均为仅限关键字参数：单文件入口接收一个预期 blob 哈希，集合入口
 接收角色到预期 blob 哈希的映射，可只提供部分角色，但拒绝未知角色；它不是 artifact ID。
 chunks 为 bytes 分段 iterable，非 bytes 分段拒绝；members 为角色到分段 iterable 的映射。
