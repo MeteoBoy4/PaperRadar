@@ -14,6 +14,7 @@ from paper_radar.feed_pipeline.models import (
     PreparedItem,
     ValueRegistration,
 )
+from paper_radar.fixture_audit.abstract_versions import AbstractRulesVersion
 from paper_radar.fixture_audit.source_http import SourceHTTPExecutor
 from paper_radar.papers import PaperFacts
 from paper_radar.runtime_logging import Sink
@@ -65,8 +66,12 @@ class FeedPipeline:
         sink: Sink | None = None,
         clock: Clock | None = None,
         monotonic: MonotonicClock | None = None,
+        feed_parser_version: int | None = None,
+        abstract_rules_version: AbstractRulesVersion | None = None,
     ) -> None:
         self.database, self.data_root = database, data_root
+        self.feed_parser_version = feed_parser_version
+        self.abstract_rules_version = abstract_rules_version
         executor = http or SourceHTTPExecutor()
         self.feed = JGRFeed(
             database,
@@ -93,7 +98,10 @@ class FeedPipeline:
         self, feed_id: str, *, request_id: str, contact_email: str
     ) -> Preparation:
         check = self.feed.check(
-            feed_id, request_id=request_id, contact_email=contact_email
+            feed_id,
+            request_id=request_id,
+            contact_email=contact_email,
+            parser_version=self.feed_parser_version,
         )
         output = []
         for item in check.items:
@@ -112,6 +120,7 @@ class FeedPipeline:
                 result.paper_id,
                 request_id=sha(check.check_id + result.paper_id),
                 contact_email=contact_email,
+                abstract_rules_version=self.abstract_rules_version,
             )
             output.append(
                 PreparedItem(
