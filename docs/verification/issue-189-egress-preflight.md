@@ -47,6 +47,14 @@ Ruff/格式/mypy 与 diff 检查通过；本台账不把某次历史结果提升
 唯一已登记变化为基线已有 `src/paper_radar/cli.py` 的 source/support 漂移，未机械重绑。
 新增 D1 模块独立登记于本台账，未进入历史 required 分母。
 
+合入 #188 的 `41ea0e7` 后，在合并提交 `99294d8` 的代码树上复验：
+相关组合 **186 passed**（89.17s），CLI 兼容 **59 passed**（78.03s），
+定向 Ruff/格式与 mypy 通过。共享 CLI 保留 candidates 与授权/预检全部命令；
+README 和工作流 Contract 按双方最终语义合并。
+合并后 scope 审计以 `41ea0e7` 为 base，退出 1，另保留 #188 已有
+`src/paper_radar/storage/artifact_contract.py` source/support 漂移（A3/A7/A9/A10）；
+连同 CLI 基线漂移交 B 集成收口，不重绑历史材料。
+
 下游 #190 接 B 聚合验证时调用 `egress_authorization` 的纯链检查，不能按恢复路径重新
 解释历史；#192/#198 在认证前与领取短事务内调用 `require_egress_authorization`，两阶段
 之间重新读取。#191 承接无 prompt 映射探测；#196 承接实际提取时 cgroup ≤8 GiB/swap=0
