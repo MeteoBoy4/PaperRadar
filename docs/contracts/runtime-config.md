@@ -218,6 +218,45 @@ reading: null
 四个业务逻辑名由 `paper_radar.config.schema.PromptName` 声明，
 独立于阶段名（Read 阶段为 `read`，业务 Prompt 为 `reading`）。
 
+### 公开生产 Prompt
+
+仓库提供 B 首版公开指令，按配置根的相同相对路径逐字节复制后选择、编译登记：
+
+| 材料 | 路径与选择 |
+| --- | --- |
+| boundary v1 | [`prompts/screening/boundary-v1.md`](../../prompts/screening/boundary-v1.md)，`prompts.boundary: v1` |
+| value v1 | [`prompts/screening/value-v1.md`](../../prompts/screening/value-v1.md)，`prompts.value: v1` |
+| reading v1 | [`prompts/reading/v1.md`](../../prompts/reading/v1.md)，`prompts.reading: v1` |
+| Pi 系统 Prompt v1 | [`config/prompts/pi-system-v1.md`](../../config/prompts/pi-system-v1.md)，所选 adapter 的 `resources` 声明 `version: v1` 与其原始字节 SHA-256 |
+
+这四份材料只包含通用业务指令，不内嵌具体 Profile、主题、论文、期刊信誉、模型选择、
+推理档位或私有位置。实际 Profile、主题、models、adapter 与授权由调用根另行显式配置，
+复制 Prompt 不构成模型选择或执行授权。`examples/` 仍为独立的冻结合成材料，不能用其
+替代这些指令开始真实调用；公开材料的字节索引与离线覆盖见
+[Prompt 台账](../verification/issue-186-production-prompts.md)。
+
+三份业务指令分别消费随调用提供的 boundary/value-prediction/read v1 权威 Schema，
+通过 `prompt_only` 最终文本提交完整纯 JSON。Screening 不请求最终决定、权重、
+紧急性、自由标签、priority 或数值置信度；两项评分的含义与受控字段仍由
+[Screening 输出](screening-validation.md)定义。Read 默认中文、逐项引用输入 evidence ID，
+如实披露受限内容与未核对原 PDF 的限制；接收规则仍由
+[Read 输出与证据](read-validation.md)定义，Prompt 不替代确定性验证。
+
+首次真实 Screening 前冻结所选副本；首次 Screening 后不得为迁就样本原地修改。
+任何改动（包括空白）只能新建声明版本，旧登记与历史依据保留。影响 Screening 的
+变化按 [ADR-0020](../adr/0020-let-the-user-classify-calibration-impacting-changes.md)
+处理校准相关差异，Agent 不判定 minor/major；B 首版不构成 D 的正式冻结基线。
+只改 reading 业务 Prompt 不影响 Screening 指纹或校准语义基线，传播规则见
+[阶段配置投影](config-projections.md)。系统 Prompt 被多个槽共同使用时，变化按实际
+消费者传播，不能归为纯 Read 变化。
+
+系统 Prompt 通过执行器的形状和单参数上限检查；业务完整帧仍按每次实际输入检查，
+Read 同时预留最坏修正槽。合成材料的帧检查不保证任意真实正文可装入；超额处理见
+[Read 输入预算](read-inputs.md)。配置 check/compile 不调用 Pi、不读取凭据、
+不解析 PDF，也不证明真实模型质量或校准通过。
+
+### 契约读取
+
 所选 boundary、value-prediction、reuse-assessment、decision-reasons 与 read 契约只支持
 权威 `v1`。check/compile 调用[冻结契约只读检查](frozen-contracts.md)，并将同一份通过
 检查的 schema 与 manifest 字节分别登记；哈希和编译值一起进入快照。缺失、损坏、

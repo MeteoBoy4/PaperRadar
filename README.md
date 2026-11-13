@@ -4,6 +4,8 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 备份恢复、论文事实、Screening 任务与输出验证、Read 证据校验、Pi 固定供给与有界 RPC
 组件，以及 JGR Feed／元数据取得服务、四刊摘要审计工具、只读 doctor、
 安全运行日志与共享资格／校准可见性纯规则，以及不依赖 SDK 的规范正文生产与持久证据回查。
+仓库还提供 B 首版 boundary、value、reading 与 Pi 系统生产 Prompt，材料位置、
+复制登记与冻结规则见[公开生产 Prompt](docs/contracts/runtime-config.md#公开生产-prompt)。
 
 这些工程入口不等于完整论文处理流水线或生产运行许可。目标与判据见
 [V1 规格](intent/draft.md)，当前前沿、未验范围与后续责任见[路线图](docs/roadmap.md)，
@@ -19,6 +21,7 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 | 保存和读取原始材料 | [不可变制品存储](#不可变制品存储) |
 | 从 canonical 生产正文、恢复逐字证据 | [规范正文公共服务](docs/contracts/fulltext-extraction.md) |
 | 检查、保存和比较配置 | [运行配置快照](#运行配置快照) |
+| 准备 B 首版生产 Prompt | [公开材料与冻结规则](docs/contracts/runtime-config.md#公开生产-prompt) |
 | 只读诊断基础工程、显式配置与供给 | [只读诊断](#只读诊断) |
 | 接入安全日志和共享纯规则 | [运行日志与共享规则](#运行日志与共享规则) |
 | 构造阶段输入、验证模型输出 | [阶段输入](#阶段输入)、[Screening 输出验证](#screening-输出验证)、[Read 输出与证据校验](#read-输出与证据校验) |
