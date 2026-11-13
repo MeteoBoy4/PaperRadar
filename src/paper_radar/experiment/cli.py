@@ -192,3 +192,236 @@ def feed_fetch(
         )
     ):
         raise typer.Exit(2)
+
+
+EGRESS_HELP = """追加所有者对本实验根、阶段、provider/model 与数据类别的外发授权。
+
+参数：必填 --root、--snapshot、--stage（boundary/value/read，可重复）和 --reason。
+默认启用；--disabled 显式撤销。每次只授权所列阶段，其他阶段拒绝。
+副作用：只追加版本化所有者决定与所选根安全日志；不调用模型，自动配额 0。
+Screening 包含 Profile、题名摘要；Read 另包含合法正文提取物。
+输出去向：stdout 安全 JSON，不回显理由正文或根路径；错误写 stderr。
+常见失败：快照缺模型、授权损坏或根失配；请核对显式选择后重新登记。
+帮助不联网、不开库、不建目录。退出码：成功 0；受控拒绝 2；中断 130。
+示例：paper-radar experiment egress-authorize --root /tmp/my-experiment
+--snapshot snapshot-id --stage boundary --stage value --stage read --reason 所有者批准
+"""
+
+EGRESS_STATUS_HELP = """只读查看所有者外发授权的安全状态与范围，不输出理由正文。
+
+参数：必填 --root；副作用：无，不建日志、不写业务库；自动配额 0。
+输出去向：stdout 安全 JSON，缺记录显示未授权；损坏不退回缺省。
+常见失败：用途不符或链损坏；请核对实验根和授权历史，修复前保持拒绝。
+帮助不联网、不开库、不建目录。退出码：成功 0；受控拒绝 2；中断 130。
+示例：paper-radar experiment egress-status --root /tmp/my-experiment
+"""
+
+
+def _egress_error(error: Exception) -> None:
+    from paper_radar.config import ConfigError
+    from paper_radar.experiment.egress import EgressError
+    from paper_radar.experiment.root import ExperimentError
+
+    if isinstance(error, ExperimentError):
+        typer.echo(str(error), err=True)
+    else:
+        reason = (
+            error.reason
+            if isinstance(error, (EgressError, ConfigError))
+            else "egress_unavailable"
+        )
+        typer.echo(
+            f"{reason}：授权未完成；请核对实验根、显式快照、阶段和完整授权链后重试。",
+            err=True,
+        )
+
+
+@experiment_app.command("egress-authorize", cls=ExperimentCommand, help=EGRESS_HELP)
+def egress_authorize(
+    root: RootOption,
+    snapshot: Annotated[str, typer.Option("--snapshot", help="显式历史配置快照。")],
+    stage: Annotated[
+        list[str], typer.Option("--stage", help="明确授权的阶段，可重复。")
+    ],
+    reason: Annotated[
+        str, typer.Option("--reason", help="所有者理由，持久保存但不回显。")
+    ],
+    disabled: Annotated[
+        bool, typer.Option("--disabled", help="追加撤销决定。")
+    ] = False,
+) -> None:
+    from datetime import UTC, datetime
+
+    from paper_radar.config import (
+        load_config_snapshot,
+        resolve_config_snapshot_reference,
+    )
+    from paper_radar.experiment.egress import (
+        record_egress_authorization,
+        selected_grants,
+    )
+    from paper_radar.experiment.root import ExperimentRoot
+    from paper_radar.runtime_logging import FileSink, RuntimeLog
+
+    selected = ExperimentRoot(root)
+    try:
+        selected.require()
+        config = load_config_snapshot(
+            selected.database,
+            resolve_config_snapshot_reference(selected.database, snapshot),
+        )
+        grants = selected_grants(config, stage)
+        log = RuntimeLog(FileSink(root))
+        with log.operation("experiment", run=True):
+            state = record_egress_authorization(
+                selected,
+                enabled=not disabled,
+                reason=reason,
+                grants=grants,
+                now=datetime.now(UTC),
+            )
+    except KeyboardInterrupt:
+        typer.echo("interrupted：登记中断；请只读核对授权后显式重试。", err=True)
+        raise typer.Exit(130) from None
+    except Exception as error:
+        _egress_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(state.model_dump_json())
+
+
+@experiment_app.command("egress-status", cls=ExperimentCommand, help=EGRESS_STATUS_HELP)
+def egress_status(root: RootOption) -> None:
+    from paper_radar.experiment.egress import egress_authorization
+    from paper_radar.experiment.root import ExperimentRoot
+
+    try:
+        selected = ExperimentRoot(root)
+        selected.require()
+        state = egress_authorization(selected.database)
+    except KeyboardInterrupt:
+        typer.echo("interrupted：查询中断；请重新查询授权。", err=True)
+        raise typer.Exit(130) from None
+    except Exception as error:
+        _egress_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(state.model_dump_json())
+
+
+EGRESS_CHECK_HELP = """只读核对所选根、阶段、provider/model 与数据类别的外发授权。
+
+参数：必填 --root、--snapshot、--stage（boundary/value/read，可重复）。
+副作用：无；不刷新认证、不建日志、不领取任务；自动配额 0。
+输出去向：stdout 安全 JSON，错误写 stderr，不回显理由正文。
+常见失败：未授权、根/阶段/模型/类别不符或链损坏；请由所有者显式重新登记。
+帮助不联网、不开库、不建目录。退出码：成功 0；受控拒绝 2；中断 130。
+示例：paper-radar experiment egress-check --root /tmp/my-experiment
+--snapshot snapshot-id --stage boundary
+"""
+
+
+@experiment_app.command("egress-check", cls=ExperimentCommand, help=EGRESS_CHECK_HELP)
+def egress_check(
+    root: RootOption,
+    snapshot: Annotated[str, typer.Option("--snapshot", help="显式历史配置快照。")],
+    stage: Annotated[list[str], typer.Option("--stage", help="核对阶段，可重复。")],
+) -> None:
+    from paper_radar.config import (
+        load_config_snapshot,
+        resolve_config_snapshot_reference,
+    )
+    from paper_radar.experiment.egress import (
+        require_egress_authorization,
+        selected_grants,
+    )
+    from paper_radar.experiment.root import ExperimentRoot
+
+    try:
+        selected = ExperimentRoot(root)
+        selected.require()
+        config = load_config_snapshot(
+            selected.database,
+            resolve_config_snapshot_reference(selected.database, snapshot),
+        )
+        for grant in selected_grants(config, stage):
+            require_egress_authorization(
+                selected,
+                stage=grant.stage,
+                provider=grant.provider,
+                model=grant.model,
+                categories=grant.categories,
+            )
+    except KeyboardInterrupt:
+        typer.echo("interrupted：核对中断；请重新核对授权。", err=True)
+        raise typer.Exit(130) from None
+    except Exception as error:
+        _egress_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(json.dumps(dict(authorized=True, stages=stage), ensure_ascii=False))
+
+
+PREFLIGHT_HELP = """汇总 B 静态执行阻断。
+不领取任务、不刷新认证、不启动 Pi/Docling、不联网。
+
+参数：必填 --root、--snapshot、--credentials-dir、--material-root、--install-root、
+--attempt-root 和 --model-root；数据/配置根取实验根固定布局，其余根显式提供。
+副作用：无；只读历史配置、供给、授权、凭据元数据与主机资源，不建日志；自动配额 0。
+分别检查 Screening boundary/value 与 Read 所选槽，不借用另一槽证据。
+输出去向：stdout 四态、受控原因和中文下一步；不输出私有载荷、理由或凭据。
+常见失败：缺供给、授权、cwd、凭据元数据、隔离、模型快照或主机资源；按逐项下一步修复。
+帮助不联网、不开库、不建目录。退出码：必要项全部通过 0；受控拒绝或阻断 2；中断 130。
+示例：paper-radar experiment preflight --root /tmp/my-experiment --snapshot snapshot-id
+--credentials-dir /tmp/credentials --material-root /tmp/materials --install-root /tmp/pi
+--attempt-root /tmp/attempt --model-root /tmp/models
+"""
+
+
+@experiment_app.command("preflight", cls=ExperimentCommand, help=PREFLIGHT_HELP)
+def preflight(
+    root: RootOption,
+    snapshot: Annotated[str, typer.Option("--snapshot", help="显式历史配置快照。")],
+    credentials_dir: Annotated[
+        Path, typer.Option("--credentials-dir", help="仅检查凭据元数据的目录。")
+    ],
+    material_root: Annotated[
+        Path, typer.Option("--material-root", help="显式材料根。")
+    ],
+    install_root: Annotated[
+        Path, typer.Option("--install-root", help="显式固定供给安装根。")
+    ],
+    attempt_root: Annotated[
+        Path, typer.Option("--attempt-root", help="计划使用的 attempt 临时根，不创建。")
+    ],
+    model_root: Annotated[
+        Path, typer.Option("--model-root", help="模型部署根，不下载或运行。")
+    ],
+) -> None:
+    from paper_radar.doctor.cli import _show
+    from paper_radar.doctor.service import Result
+    from paper_radar.experiment.preflight import preflight_checks
+    from paper_radar.experiment.root import ExperimentRoot
+
+    try:
+        checks = preflight_checks(
+            ExperimentRoot(root),
+            snapshot=snapshot,
+            credentials_dir=credentials_dir,
+            material_root=material_root,
+            install_root=install_root,
+            attempt_root=attempt_root,
+            model_root=model_root,
+        )
+    except KeyboardInterrupt:
+        typer.echo("interrupted：预检中断；请重新执行静态预检。", err=True)
+        raise typer.Exit(130) from None
+    except Exception as error:
+        _egress_error(error)
+        raise typer.Exit(2) from None
+    passed = all(check.result is Result.PASSED for check in checks if check.required)
+    typer.echo(
+        f"scope=experiment-static result={'passed' if passed else 'failed'} "
+        "自动配额=0；不证明真实执行已验。"
+    )
+    for check in checks:
+        _show(check)
+    if not passed:
+        raise typer.Exit(2)

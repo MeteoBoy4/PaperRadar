@@ -77,6 +77,9 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 输出始终注明 Read 此命令未选择、未诊断，不借用 Screening 证据，也不生成 Read 原状态。
 这里的 executable 不替代执行服务领取前的真实四根、外发授权、质量或逐调用复核。
 
+公共 `execution_checks(..., slot="screening"|"reading")` 默认保持 Screening；
+`slot="reading"` 使用 Reading 自身模型/adapter/档位与 Read 准入用途。
+[B 静态预检](stage-b-workflow.md#静态执行预检) 分别消费两槽，本 doctor CLI 的范围仍保持 Screening。
 `paper_radar.doctor.pi_exec.execution_checks` 复用基础只读检查、历史快照加载和
 `doctor_supply` 的供给/版本/树/保护事实，不安装、不激活、不持执行生命周期保护。
 从已验证 snapshot 的 Screening 模型槽、adapter 与当前供给投影 `EvidenceBinding`，
