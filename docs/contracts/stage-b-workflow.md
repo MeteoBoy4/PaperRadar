@@ -3,7 +3,7 @@
 ## 用途与范围
 
 `paper-radar experiment` 在必填的显式 `--root` 中组合 B 实验动作。
-当前提供 `init`、`feed-fetch`、`candidates`、`egress-authorize/status/check` 和静态
+当前提供 `init`、`feed-fetch`、`candidates`、`select/selection`、`egress-authorize/status/check` 和静态
 `preflight`，不推断 cwd 或父目录中的根。
 实验用途、执行来源和质量资格分别判断；组件规则仍由各自 Contract 定义。
 
@@ -148,8 +148,64 @@ paper-radar experiment candidates --root /tmp/my-experiment --check-id CHECK
 paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 ```
 
+### 选样接受授权与换样
+
+`select --root ROOT --view-id VIEW --position N --request-id REQUEST --reason TEXT
+--actor owner|agent` 按该视图固定原位次记录所有者授权；也可用 `--doi DOI` 替代
+`--position`。DOI 经统一规范化后必须恰好匹配该检查中的一个成员，不能查询全库并选取
+其他检查的论文；没有匹配或同 DOI 多成员都受控拒绝。
+
+授权者固定为 owner，录入者为 owner 或 agent。两者都是本地审计说明，不是身份认证、
+签名或用户已阅读模型结果的证明。所有者原文选样理由、换样理由只保存在私有业务事实中；
+终端安全投影、错误和日志不输出这些文字。选样表达对冻结论文／版本的接受授权，
+不创建 `accepted` 决定、Screening/Read 任务，不调用模型；实际代记 accepted 仍须由
+后续产品编排引用该授权与所需真实成功，并遵守 [ADR-0069](../adr/0069-treat-stage-b-selection-as-owner-acceptance.md)。
+
+`experiment_selections` 只追加保存根身份、视图、请求检查／成员来源检查、原位次、发现、
+冻结 Paper／版本／修订、DOI、元数据请求、原文理由、授权者、录入者、request_id 与 UTC
+时间。规范 JSON 的 SHA-256 为 selection_id；SQL 引用列与完整载荷相互校验。
+数据库触发器仅接受衔接当前末项的新序号插入，并拒绝 UPDATE/DELETE 及 REPLACE 覆写。根身份是可恢复的 root_id，不依赖原绝对路径。
+
+写事务之前实际调用共享 visibility 的 SET_DECISION 普通动作许可；当前没有隐藏事实
+生产者时仍传空集合。写入持 `BEGIN IMMEDIATE`，在同一短事务内重读用途、完整授权链、
+当前选择、当前获选修订、当前元数据请求及全部路线、语言来源和强身份冲突。
+候选必须 metadata_ready、主摘要非截断、当前版本、语言 resolved、无阻断冲突；任一
+所见依据变化（包括同版本新增字段修订）返回 `basis_changed`，仅输出受控差异类别：
+`version_changed/revision_changed/metadata_changed/language_changed/conflict_changed`。
+所有者须查看显式生成的新视图再选样；不默默接受后来补摘要或变化的版本。
+
+同 request、同完整内容返回原记录并标记 `replayed=true`；异内容报 `request_conflict`。
+回执重放不重新选择样本、不改变当前有效选择，也不构成继续执行许可。
+任何后续新执行都须在领取短事务内重读当前选择和当前完整资格；历史授权不会绕过新阻断。
+
+当前有效选择是完整链的唯一末项。已有选择时，新 request 必须提供
+`--replaces CURRENT_SELECTION_ID --replacement-reason TEXT`；缺少引用拒绝，引用过期
+返回 `selection_changed`。换样追加指向被取代者的事实，不更新旧行。并发换样在写锁内
+串行复核，至多一个请求可以取代同一当前选择。A→B→A 产生三个事实；旧授权、原因、
+发现和暴露依据继续保留，不因换下样本而删除，也不重置任务预算。
+
+`selection --root ROOT` 只读返回 `current_selection_id` 与全链安全历史，不创建日志。
+公共 `Selections(database, data_root).history()` 返回完整私有事实；
+`history_in_connection/current_in_connection(connection)` 支持下游在自己短事务内读取
+授权历史／当前授权。当前记录查询不授予执行资格，调用者仍须联合校验版本、外发授权与
+阶段资格。
+
+### B 事实验证与备份闭包
+
+`experiment.validation.validate_all(database, data_root)` 是唯一 B 持久事实聚合，验证全部
+候选快照、完整选样链、所有者豁免和外发授权链；之后新增的 B 事实扩展此聚合。
+[备份](backup-restore.md)的 `verify_contents` 仅调用一次该聚合，损坏统一映射
+`registration_invalid`。验证在完整副本中进行，不回读原根；恢复数据库可以使用
+`database.sqlite3`，不要求实验 CLI 文件名或原 views 文件。
+外发授权在这里验证历史链，不以恢复位置重做当前执行适用性判断。
+
+授权写入失败或事务中断不保留半条事实。恢复后可经显式数据库／数据根接口查询原授权、
+理由和换样历史；它不自动续跑，也不证明恢复位置取得了新执行许可。
+
 ### 日志与命令帮助
 
+`select` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
+独立 D1 装配守卫见 `tests/test_experiment_selection_cli.py`，`selection` 不建日志。
 `egress-authorize` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
 装配守卫见 `tests/test_stage_b_egress_preflight.py`。授权只读查询与静态预检不建日志。
 `feed-fetch` 显式注入 `FileSink(root)`，日志只写所选根的 `logs/`。新执行入口装配
@@ -169,6 +225,11 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 | `2 / root_unknown` | 没有 experiment 登记；对独立空根运行 init，既有未知用途库不能改登记 |
 | `2 / root_not_experiment` | production 根被拒绝；使用独立实验根 |
 | `2 / unsafe_layout` | 固定位置不安全或不可写；检查布局、链接与权限 |
+| `2 / invalid_request / candidate_not_found` | 选样参数、所有者理由或成员不唯一；从固定视图按唯一编号或 DOI 重选 |
+| `2 / candidate_not_ready / basis_changed` | 就绪缺项或所见依据已变化；补齐后生成新视图并由所有者重选 |
+| `2 / request_conflict / replacement_required / selection_changed` | request 冲突、缺换样引用或引用过期；回查 selection，以新 request 和当前引用显式换样 |
+| `2 / visibility_denied` | 普通决定动作受共享规则阻断；先完成专用校准流程 |
+| `2 / registration_invalid / invalid_clock` | 授权链损坏或时间无时区；核对可信备份／修正时钟 |
 | `2 / registration_corrupt` | 候选种类、载荷、历史成员或固定事实不一致；核对原检查及备份，不能覆盖历史事实 |
 | `2 / 组件封闭原因` | 来源受阻、HTTP／条目失败、元数据缺项或版本／请求冲突；按 check_id 回查，未完成请求用原 request_id 重跑，不能覆盖冲突 |
 | `2 / egress_not_authorized` | 无记录或已撤销；由所有者显式登记 |
@@ -185,12 +246,12 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 
 ## 不提供／不证明
 
-不提供生产根初始化、生产消费、自动队列、选样或模型执行。实验结果不能提升为生产结果。
+不提供生产根初始化、生产消费、自动队列或模型执行。实验结果不能提升为生产结果。
 离线 HTTP 替身覆盖不证明真实 Feed 字段、entry 稳定性、主摘要完整、语言来源约定或
 模型／Docling／现场隔离成立；真实链与后续命令由[路线图 B](../roadmap.md#module-b)承接。
 
 ## 相关
 
 - [Feed 组合](feed-pipeline.md)、[元数据](feed-metadata.md)、[正文持久化](body-persistence.md)、[运行日志](runtime-logging.md)。
-- [根与 Feed 工程覆盖](../verification/issue-187-experiment-feed.md)、[候选工程覆盖](../verification/issue-188-candidate-views.md)、[授权与预检工程覆盖](../verification/issue-189-egress-preflight.md)。
+- [根与 Feed 工程覆盖](../verification/issue-187-experiment-feed.md)、[候选工程覆盖](../verification/issue-188-candidate-views.md)、[授权与预检工程覆盖](../verification/issue-189-egress-preflight.md)、[选样工程覆盖](../verification/issue-190-selection-authorization.md)。
 - 依据：[#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)、[#187](https://github.com/MeteoBoy4/PaperRadar/issues/187)、[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。

@@ -472,3 +472,19 @@ read_evidence = Table(
     Column("evidence_id", Text, primary_key=True),
     Column("artifact_id", Text, ForeignKey("artifacts.artifact_id"), nullable=False),
 )
+
+experiment_selections = Table(
+    "experiment_selections",
+    metadata,
+    Column("sequence", Integer, primary_key=True),
+    Column("selection_id", Text, nullable=False, unique=True),
+    Column("request_id", Text, nullable=False, unique=True),
+    Column(
+        "replaces", Text, ForeignKey("experiment_selections.selection_id"), unique=True
+    ),
+    Column("view_id", Text, ForeignKey("artifacts.artifact_id"), nullable=False),
+    Column("paper_id", Text, ForeignKey("papers.paper_id"), nullable=False),
+    Column("version_id", Text, ForeignKey("paper_versions.version_id"), nullable=False),
+    Column("record_json", Text, nullable=False),
+    CheckConstraint("sequence>0"),
+)
