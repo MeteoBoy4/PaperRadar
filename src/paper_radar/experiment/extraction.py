@@ -22,7 +22,6 @@ from paper_radar.docling_executor import (
 from paper_radar.doctor.service import Result
 from paper_radar.experiment.candidates import SnapshotModel
 from paper_radar.experiment.pdf import PdfError, PdfSamples
-from paper_radar.experiment.preflight import model_snapshot_disk_check
 from paper_radar.experiment.root import ExperimentRoot
 from paper_radar.runtime_logging import FileSink, RuntimeLog
 from paper_radar.storage.schema import (
@@ -242,6 +241,8 @@ def extract_once(
     timeout_seconds: float,
     threads: int,
 ) -> dict[str, object]:
+    from paper_radar.experiment.preflight import model_snapshot_disk_check
+
     root.require()
     log = RuntimeLog(FileSink(root.root))
     with log.execution(

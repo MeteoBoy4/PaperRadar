@@ -1,5 +1,6 @@
 """正文当前性与显式历史配置参照的只读组合。"""
 
+from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
 
@@ -159,6 +160,32 @@ class ReadQueries:
         return tuple(
             self._view(a, body, snapshot_id)
             for a in self.tasks.analyses(paper_id, ordinary=ordinary)
+        )
+
+    def axes(
+        self, paper_id: str, *, snapshot_id: str | None = None
+    ) -> tuple[dict[str, object], ...]:
+        """安全任务诊断的两轴;不展开获准内容,不要求 Agent 内容权限。"""
+        body = self.body.current_body(paper_id)
+        return tuple(
+            dict(
+                analysis_id=v.analysis_id,
+                paper_id=v.paper_id,
+                output_language=v.output_language,
+                identity=asdict(v.identity),
+                body_status=v.body_status,
+                body_reason=v.body_reason,
+                config_status=v.config_status,
+                changed_components=list(v.changed_components),
+                executor_kind=v.executor_kind,
+                root_purpose=v.root_purpose,
+                quality_basis=v.quality_basis,
+                has_discards=v.has_discards,
+                discard_counts=[asdict(c) for c in v.discard_counts],
+                restricted_content_warning=v.restricted_content_warning,
+            )
+            for a in self.tasks.analyses(paper_id)
+            for v in (self._view(a, body, snapshot_id),)
         )
 
     def old_configurations(

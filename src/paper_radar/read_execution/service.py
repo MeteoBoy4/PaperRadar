@@ -1,10 +1,13 @@
 """Read专用执行顺序;共享Pi资源与协议,预算和接收由ReadTasks拥有。"""
 
 import math
+from collections.abc import Callable
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic
+
+from sqlalchemy import Connection
 
 from paper_radar.live_evidence.ledger import LedgerError
 from paper_radar.live_evidence.types import (
@@ -129,6 +132,8 @@ class ReadExecution:
         task_id: str,
         *,
         audit_snapshot_id: str | None = None,
+        before_prepare: Callable[[], None] | None = None,
+        claim_guard: Callable[[Connection], None] | None = None,
         limits: RpcLimits = DEFAULT_LIMITS,
         cancelled: Cancellation = lambda: False,
         clock: MonotonicClock = monotonic,
@@ -138,6 +143,8 @@ class ReadExecution:
             raise ExecutionError("resources_invalid")
         # 等锁不持SQLite事务,不占attempt,不先刷新短期token。
         with execution_resource(self.data_root):
+            if before_prepare:
+                before_prepare()
             prepared_input = self.tasks.prepare_execution(
                 task_id, audit_snapshot_id=audit_snapshot_id
             )
@@ -173,7 +180,15 @@ class ReadExecution:
             guard = AdmissionGuard(use)
             try:
                 return self._run_admitted(
-                    task_id, prepared_input, binding, guard, limits, cancelled, clock
+                    task_id,
+                    prepared_input,
+                    binding,
+                    guard,
+                    limits,
+                    cancelled,
+                    clock,
+                    before_prepare,
+                    claim_guard,
                 )
             except (ExecutionError, LedgerError, SupplyError) as error:
                 if isinstance(error, ExecutionError):
@@ -190,12 +205,16 @@ class ReadExecution:
         limits: RpcLimits,
         cancelled: Cancellation,
         clock: MonotonicClock,
+        before_prepare: Callable[[], None] | None,
+        claim_guard: Callable[[Connection], None] | None,
     ) -> ReadAnalysis | ReadTask:
         description = prepared_input.description
 
         checkpoints = AdmissionCheckpoints(
             self.database, self.credentials_dir, guard, self._now
         )
+        if before_prepare:
+            before_prepare()
         request = checkpoints.before_prepare(binding)
         # 同时失败必须优先准入;这里只在准入后检查完整最坏修正帧。
         if not prepared_input.budget.accepted:
@@ -218,6 +237,8 @@ class ReadExecution:
 
         validate_frame(prepared_input, self.tasks.prepare_correction(task_id))
         check_system_prompt(description.system_prompt)
+        if before_prepare:
+            before_prepare()
         with prepare_launch(
             self.database,
             description,
@@ -242,6 +263,9 @@ class ReadExecution:
                     raise PreclaimAdmissionDenied from None
                 validate_frame(candidate, correction)
                 checkpoints.preclaim(rebound)
+
+            if before_prepare:
+                before_prepare()
 
             audit = PiRpcExecutionAudit.model_validate(
                 {
@@ -286,7 +310,9 @@ class ReadExecution:
                 return PiReadFailure(_FAILURES[result.category])
 
             try:
-                result = self.tasks.run_pi_once(task_id, executor, preclaim=preclaim)
+                result = self.tasks.run_pi_once(
+                    task_id, executor, preclaim=preclaim, claim_guard=claim_guard
+                )
                 if (
                     isinstance(result, ReadTask)
                     and result.attempts

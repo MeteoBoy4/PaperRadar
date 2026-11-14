@@ -21,6 +21,14 @@ from paper_radar.read_tasks.models import ReadTaskError
 from paper_radar.reading.context import ExtractionIdentity
 
 
+def verify_pdf(body: BodyService, facts: BodyFacts) -> None:
+    """业务写事务外验证实际 PDF 字节;领取事务仍重核其身份和全部资格。"""
+    if facts.pdf is not None:
+        raw = body.store.read_artifact(facts.pdf.artifact_id)["payload"]
+        if not valid_pdf_bytes(raw, facts.pdf.pdf_sha256):
+            raise ReadTaskError("facts_changed")
+
+
 def require_facts(
     body: BodyService,
     connection: Connection,
@@ -28,12 +36,6 @@ def require_facts(
     identity: ExtractionIdentity,
 ) -> BodyFacts:
     facts = body.facts_in_connection(connection, paper_id, identity=identity)
-    if facts.pdf is not None:
-        raw = body.store.read_artifact_in_connection(connection, facts.pdf.artifact_id)[
-            "payload"
-        ]
-        if not valid_pdf_bytes(raw, facts.pdf.pdf_sha256):
-            raise ReadTaskError("facts_changed")
     trace = load_trace(connection, paper_id)
     current = trace.current
     from paper_radar.feed_metadata import JGRMetadata

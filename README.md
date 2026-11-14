@@ -23,6 +23,11 @@ trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型�
 `experiment layout-materials` 从登记 PDF 与持久正文生成六项私有图文对照，不重跑 Docling；
 `experiment layout-review` 显式接收所有者全部六项布尔结论，区分所有者核查与 Agent 代录，
 否决对该正文指纹永久生效。
+`experiment read` 显式登记当前正文的默认中文 Read 并最多驱动本代剩余两次尝试；
+精确 request 重放不执行，已有 ready 任务用 `--task-id` 显式继续。
+`reading tasks/failures/reclaim/retry` 提供全库安全查询、显式过期结算与失败后继；
+`reading analysis` 是含未核对警告、丢弃计数和逐字 evidence 的获准私有视图。
+这些动作不建人工精读请求、不占自动名额，实验分析及其恢复副本始终被普通消费拒绝。
 `experiment probe-models` 显式对 screening/reading 分别执行无 prompt RPC 映射探测，
 认证可能刷新并写回专用凭据；只说明本次模型与档位可设置，不提供生成或准入证明。
 实验根将制品放在 `data/`，数据库保持根内原位置；Pi 供给四根可并列，
@@ -345,8 +350,8 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 各消费者格/档位不借证据，正文质量、根用途、输入预算及任务资格仍独立判断，
 必需证据缺失或退化时在领取前拒绝。公共边界见[Read 任务](docs/contracts/read-tasks.md)及
 [执行契约](docs/contracts/read-execution.md)，跨消费者组合与恢复候选见
-[独立 D1 台账](docs/verification/issue-165-body-read-closure.md)。产品 CLI 与真实 Pi 接线
-责任见[路线图 B](docs/roadmap.md#module-b)。
+[独立 D1 台账](docs/verification/issue-165-body-read-closure.md)。显式实验 CLI 与恢复路径见[B 工作流](docs/contracts/stage-b-workflow.md#显式-read-与恢复)。
+真实 Pi、真实材料与现场隔离责任见[路线图 B](docs/roadmap.md#module-b)。
 
 ## Read 输出与证据校验
 

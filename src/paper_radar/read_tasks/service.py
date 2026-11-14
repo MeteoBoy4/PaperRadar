@@ -22,8 +22,9 @@ from paper_radar.read_tasks.models import (
     ReadHandle,
     ReadTask,
     ReadTaskError,
+    ReadTaskFacts,
 )
-from paper_radar.read_tasks.preconditions import require_facts
+from paper_radar.read_tasks.preconditions import require_facts, verify_pdf
 from paper_radar.read_tasks.queries import budget_for, deadline, identity_of, task_view
 from paper_radar.read_tasks.repository import (
     canonical,
@@ -127,7 +128,29 @@ class ReadTasks:
         request_id: str,
         output_language: Literal["zh", "en"] = "zh",
         label: str = "manual",
+        registration_guard: Callable[[Connection], None] | None = None,
     ) -> ReadTask:
+        return self.register_with_status(
+            paper_id,
+            snapshot_id=snapshot_id,
+            extraction_fingerprint=extraction_fingerprint,
+            request_id=request_id,
+            output_language=output_language,
+            label=label,
+            registration_guard=registration_guard,
+        )[0]
+
+    def register_with_status(
+        self,
+        paper_id: str,
+        *,
+        snapshot_id: str,
+        extraction_fingerprint: str,
+        request_id: str,
+        output_language: Literal["zh", "en"] = "zh",
+        label: str = "manual",
+        registration_guard: Callable[[Connection], None] | None = None,
+    ) -> tuple[ReadTask, bool]:
         required(paper_id, snapshot_id, extraction_fingerprint, request_id, label)
         if output_language not in ("zh", "en"):
             raise ReadTaskError("invalid_request")
@@ -137,7 +160,7 @@ class ReadTasks:
         with transaction(self.database) as connection:
             replayed = _registration_replay(connection, request_id, request_hash)
             if replayed is not None:
-                return replayed
+                return replayed, True
         from paper_radar.read_inputs import prepare_read_input
 
         snapshot = load_config_snapshot(self.database, snapshot_id)
@@ -164,10 +187,13 @@ class ReadTasks:
         )
         if not prepared.budget.accepted:
             raise ReadTaskError("read_input_over_budget")
+        verify_pdf(self.body, facts)
         with transaction(self.database, write=True) as connection:
             replayed = _registration_replay(connection, request_id, request_hash)
             if replayed is not None:
-                return replayed
+                return replayed, True
+            if registration_guard:
+                registration_guard(connection)
             require_facts(self.body, connection, paper_id, view.identity)
             budget = (
                 connection.execute(
@@ -230,7 +256,7 @@ class ReadTasks:
                     registered_at=self._now().isoformat(),
                 )
             )
-            return task_view(connection, task_id)
+            return task_view(connection, task_id), False
 
     def task(self, task_id: str) -> ReadTask:
         with transaction(self.database) as connection:
@@ -249,6 +275,83 @@ class ReadTasks:
                 .order_by(t.tasks.c.created_at, t.tasks.c.generation)
             ).scalars()
             return tuple(task_view(connection, key) for key in ids)
+
+    def papers(self) -> tuple[str, ...]:
+        """全库任务身份,不限制当前 B 选样。"""
+        with transaction(self.database) as connection:
+            return tuple(
+                connection.execute(
+                    select(t.budgets.c.paper_id)
+                    .distinct()
+                    .order_by(t.budgets.c.paper_id)
+                ).scalars()
+            )
+
+    def failure_facts(
+        self, paper_id: str, *, snapshot_id: str | None = None
+    ) -> ReadTaskFacts:
+        """当前完整 Read 输入的最新代际;租约过期不隐式结算。"""
+        from paper_radar.config import ConfigError
+        from paper_radar.read_inputs import prepare_read_input
+        from paper_radar.read_tasks.models import ReadTaskFacts
+
+        if snapshot_id is None:
+            return ReadTaskFacts(paper_id, (), False)
+        current = self.body.current_body(paper_id)
+        if current.identity is None:
+            return ReadTaskFacts(paper_id, (), False)
+        try:
+            snapshot = load_config_snapshot(self.database, snapshot_id)
+            with transaction(self.database) as connection:
+                extraction = self.body.extraction_input_in_connection(
+                    connection, current.identity.extraction_fingerprint
+                )
+            view = next(
+                v
+                for v in self.body.extractions(paper_id)
+                if v.identity == current.identity
+            )
+            if view.artifact_id is None:
+                raise ReadTaskError("corrupt_reference")
+            languages: tuple[Literal["zh", "en"], ...] = ("zh", "en")
+            fingerprints = {
+                prepare_read_input(
+                    self.artifacts,
+                    view.artifact_id,
+                    extraction,
+                    snapshot,
+                    snapshot,
+                    expected_identity=current.identity,
+                    output_language=language,
+                ).stage_input.fingerprint
+                for language in languages
+            }
+        except ConfigError:
+            return ReadTaskFacts(paper_id, (), False)
+        latest: dict[str, ReadTask] = {}
+        for task in self.history(paper_id):
+            if task.fingerprint in fingerprints:
+                previous = latest.get(task.fingerprint)
+                if previous is None or previous.generation < task.generation:
+                    latest[task.fingerprint] = task
+        return ReadTaskFacts(
+            paper_id,
+            tuple(
+                sorted(
+                    task.task_id for task in latest.values() if task.status == "failed"
+                )
+            ),
+            True,
+        )
+
+    def failures(self, *, snapshot_id: str) -> tuple[ReadTask, ...]:
+        return tuple(
+            self.task(key)
+            for paper in self.papers()
+            for key in self.failure_facts(
+                paper, snapshot_id=snapshot_id
+            ).current_failed_task_ids
+        )
 
     def prepare(self, task_id: str) -> PreparedReadInput:
         with transaction(self.database) as connection:
@@ -290,17 +393,36 @@ class ReadTasks:
             else None
         )
 
+    def require_latest_in_connection(
+        self, connection: Connection, task_id: str
+    ) -> None:
+        """继续和领取前的同快照代际检查,不结算或重置预算。"""
+        budget = budget_for(connection, task_id)
+        latest = connection.execute(
+            select(t.tasks.c.task_id)
+            .where(t.tasks.c.budget_id == budget["budget_id"])
+            .order_by(t.tasks.c.generation.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+        if latest != task_id:
+            raise ReadTaskError("not_latest")
+
     def claim(
         self,
         task_id: str,
         *,
         preclaim: Callable[[PreparedReadInput, str | None], None] | None = None,
+        claim_guard: Callable[[Connection], None] | None = None,
     ) -> ReadHandle:
         from paper_radar.read_inputs import build_read_correction
 
         prepared = self.prepare(task_id)
+        task = self.task(task_id)
+        verify_pdf(self.body, self.body.facts(task.paper_id, identity=task.identity))
         with transaction(self.database, write=True) as connection:
             budget = budget_for(connection, task_id)
+            if claim_guard:
+                claim_guard(connection)
             facts = require_facts(
                 self.body, connection, budget["paper_id"], identity_of(budget)
             )
@@ -499,10 +621,13 @@ class ReadTasks:
         executor: Callable[[ReadHandle], PiReadCandidate | PiReadFailure],
         *,
         preclaim: Callable[[PreparedReadInput, str | None], None] | None = None,
+        claim_guard: Callable[[Connection], None] | None = None,
     ) -> ReadAnalysis | ReadTask:
         from paper_radar.read_tasks.pi_rpc import run_pi_once
 
-        return run_pi_once(self, task_id, executor, preclaim=preclaim)
+        return run_pi_once(
+            self, task_id, executor, preclaim=preclaim, claim_guard=claim_guard
+        )
 
     def submit_test(self, handle: ReadHandle, raw: bytes) -> ReadAnalysis | ReadTask:
         from paper_radar.read_tasks.acceptance import submit
@@ -524,7 +649,13 @@ class ReadTasks:
             return self.submit_test(handle, raw)
 
     def retry(
-        self, task_id: str, *, request_id: str, reason: str, actor: str
+        self,
+        task_id: str,
+        *,
+        request_id: str,
+        reason: str,
+        actor: str,
+        retry_guard: Callable[[Connection], None] | None = None,
     ) -> ReadTask:
         required(task_id, request_id, reason, actor)
         request_hash = digest(["retry", task_id, reason, actor])
@@ -543,6 +674,21 @@ class ReadTasks:
                 if old["request_hash"] != request_hash:
                     raise ReadTaskError("request_conflict")
                 return task_view(connection, old["task_id"])
+            from paper_radar.calibration.visibility import (
+                VisibilityCapability,
+                VisibilityPermission,
+                evaluate_visibility,
+            )
+
+            if (
+                evaluate_visibility(frozenset()).permission(
+                    VisibilityCapability.SET_DECISION
+                )
+                is not VisibilityPermission.ALLOWED
+            ):
+                raise ReadTaskError("visibility_denied")
+            if retry_guard:
+                retry_guard(connection)
             child = connection.execute(
                 select(t.tasks.c.task_id).where(t.tasks.c.parent_task_id == task_id)
             ).scalar()

@@ -52,6 +52,10 @@ from paper_radar.screening_tasks.tables import budgets as screening_budgets
 from paper_radar.screening_tasks.tables import successes as screening_successes
 from paper_radar.stage_inputs import StageInput
 from paper_radar.storage.artifacts import ArtifactStore
+from paper_radar.storage.schema import (
+    experiment_frozen_samples,
+    experiment_layout_recordings,
+)
 
 if TYPE_CHECKING:
     from paper_radar.body.models import (
@@ -592,15 +596,31 @@ class BodyService:
         ):
             raise BodyError("corrupt_reference")
         identity = facts.extraction.identity
-        review_id = connection.execute(
-            select(tables.reviews.c.review_id)
-            .where(
-                tables.reviews.c.fingerprint == identity.extraction_fingerprint,
-                tables.reviews.c.reading_sha256 == identity.reading_sha256,
-                tables.reviews.c.evidence_map_sha256 == identity.evidence_map_sha256,
-                tables.reviews.c.passed == 1,
+        review_query = select(tables.reviews.c.review_id).where(
+            tables.reviews.c.fingerprint == identity.extraction_fingerprint,
+            tables.reviews.c.reading_sha256 == identity.reading_sha256,
+            tables.reviews.c.evidence_map_sha256 == identity.evidence_map_sha256,
+            tables.reviews.c.passed == 1,
+        )
+        if (
+            facts.sample is not None
+            and connection.execute(
+                select(experiment_frozen_samples.c.sample_id).where(
+                    experiment_frozen_samples.c.sample_id == facts.sample.sample_id
+                )
+            ).first()
+            is not None
+        ):
+            # 同正文可由多个确认样本引用;只取本次样本的结构化所有者依据。
+            review_query = review_query.join(
+                experiment_layout_recordings,
+                experiment_layout_recordings.c.review_id == tables.reviews.c.review_id,
+            ).where(
+                experiment_layout_recordings.c.sample_id == facts.sample.sample_id,
+                tables.reviews.c.recording_kind == "stage_b_owner_review",
             )
-            .order_by(tables.reviews.c.reviewed_at.desc())
+        review_id = connection.execute(
+            review_query.order_by(tables.reviews.c.reviewed_at.desc())
         ).scalar()
         result = ReadBasis(
             root_id=facts.root.root_id,

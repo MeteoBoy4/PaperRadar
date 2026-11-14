@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Literal
 
+from paper_radar.eligibility.models import ReadTaskFacts as ReadTaskFacts
 from paper_radar.reading.acceptance_v2 import ReadV2Issue
 from paper_radar.reading.context import ExtractionIdentity
 from paper_radar.reading.schema import ReadAnalysisOutput

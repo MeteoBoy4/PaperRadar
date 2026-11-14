@@ -119,11 +119,14 @@ deferred 概念仍保留 None。普通单篇 deferred 结果不制造原因。
 
 `ScreeningTaskFacts.from_queries(paper_id, queries)` 从 A7 的 boundary/value
 `TaskQueryResult.current_failures` 取得当前最新代际失败引用，不重新推导状态或指纹。
-`evaluate_paper` 对已装配事实返回 `model_failure_queue` 的 partial 支持，scope 为
-`screening_current_latest_failed_only`；任一当前失败即为 true，没有失败且映射可判定时
-为 false/no_current_failed_task，映射不可判定时为 false/task_mapping_unknown，论文身份
-不符为 false/task_facts_contradictory。缺少此事实时保持 deferred；Read 失败队列未包含在
-此支持范围。单篇概念结果不宣称已枚举全库；全库入口由 [A7](screening-tasks.md#11-显式-retry-与共享查询)提供。
+`ReadTasks.failure_facts` 提供最小 `ReadTaskFacts(paper_id, current_failed_task_ids,
+mapping_determinable)`，当前性和代际由[Read 权威](read-tasks.md#领取与所有权)计算。
+`evaluate_paper` 对任一已装配任务事实返回 `model_failure_queue` 的 partial 支持；
+只有 Screening 时 scope=`screening_current_latest_failed_only`，装配 Read 时为
+`screening_and_read_current_latest_failed_only`。任一当前失败为 true；没有失败且所有已装配
+映射可判定时为 false/no_current_failed_task，否则 false/task_mapping_unknown；任一论文身份
+不符为 false/task_facts_contradictory。两类均未装配保持 deferred。规则不自行重算指纹、
+状态或过期结算；单篇概念不宣称已枚举全库，CLI 枚举由各任务权威提供。
 
 ### Read 质量、用途与请求
 
@@ -205,7 +208,7 @@ requested_manual_read 仍为 false，请求事实本身不删除。请求为空�
 | manual_accepted_channel | 人工通道排名/名额 | deferred | 人工 accepted 不等于获名额 | G/H |
 | accepted_read_backlog | 队列及既有分析 | deferred | 不计算积压 | G/H |
 | requested_manual_read | 显式请求、生效 accepted、Read 全部前置 | supported：请求的前置资格，不领取 | manual_request_*、Read 原因 | B/G |
-| model_failure_queue | ScreeningTaskFacts；缺省未装配 | partial：Screening 当前最新代际失败；未装配 deferred | no_current_failed_task、task_mapping_unknown、task_facts_contradictory | B；Read 范围由后续组合扩展 |
+| model_failure_queue | ScreeningTaskFacts / ReadTaskFacts；缺省未装配 | partial：已装配阶段当前输入最新代际失败；均未装配 deferred | no_current_failed_task、task_mapping_unknown、task_facts_contradictory | B；任务权威拥有各自输入与代际 |
 | waiting_calibration | Visibility.hidden_conditions | partial：仅已给定输入 | visibility_unknown、not_waiting_calibration | C 保留器，D/H |
 | waiting_review | 复核成员/规则 | deferred | 不制造资格 | B/H |
 | waiting_report | 报告候选/成员 | deferred | 不制造资格 | B/H |
@@ -284,7 +287,7 @@ JGRMetadata missing 与既有组合拒绝的对应关系只用于解释，不替
 
 | 消费者 | 承接责任 |
 | --- | --- |
-| [B](../roadmap.md#module-b) | trace 消费资格与 Screening 任务事实；后续扩展人工 accepted、PDF/Read/最小日报组合，继续实际调用 visibility 与普通动作写前守卫 |
+| [B](../roadmap.md#module-b) | trace 消费资格与 Screening/Read 任务事实及安全两轴；显式 accepted/PDF/Read 组合使用组件权威及动作写前守卫，最小日报继续消费这些受限事实 |
 | [C](../roadmap.md#module-c) | 保留器、waiting_calibration、实际隐藏；身份/合并链装配与存活论文继承 |
 | [D](../roadmap.md#module-d) | 未揭晓/揭晓事实、专用 review 路径及新增展示面隔离 |
 | [H](../roadmap.md#module-h) | 完整日报、复核与诊断分支的真实隐藏组合测试 |

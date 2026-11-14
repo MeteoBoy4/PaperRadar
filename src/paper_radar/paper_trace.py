@@ -22,11 +22,14 @@ from paper_radar.experiment.extraction import Extractions, extraction_payload
 from paper_radar.experiment.layout import LayoutReviews
 from paper_radar.experiment.pdf import PdfSamples
 from paper_radar.experiment.pdf import receipt as pdf_receipt
+from paper_radar.experiment.reading import task_payload
 from paper_radar.experiment.selections import Selections
 from paper_radar.feed_metadata import JGRMetadata
 from paper_radar.feed_pipeline import FeedPipeline
 from paper_radar.feed_pipeline.models import PipelineTrace
 from paper_radar.papers import PaperFacts
+from paper_radar.read_queries import ReadQueries
+from paper_radar.read_tasks import ReadTasks
 from paper_radar.screening_tasks import ScreeningTasks, TaskError, TaskReason
 from paper_radar.screening_tasks.query_models import TaskQueryResult
 from paper_radar.storage.database import (
@@ -72,12 +75,15 @@ class PaperWorkflowTrace:
     extractions: tuple[dict[str, object], ...] = ()
     bounded_executions: tuple[dict[str, object], ...] = ()
     layout_reviews: tuple[dict[str, object], ...] = ()
+    read_tasks: tuple[dict[str, object], ...] = ()
+    read_analyses: tuple[dict[str, object], ...] = ()
     scope: str = (
         "前置通过不代表名额、预算或领取许可；各组件独立只读视图，允许并发滞后。"
         "Screening 需显式 --snapshot；代执行接受依预先选样授权，"
         "不声称所有者看过模型输出。"
         "PDF 归属与合法性确认独立保存；冻结样本理由仅引用选样。"
-        "PDF 确认不替代六项版式核查；Read/报告由后续组合承接。"
+        "PDF 确认不替代六项版式核查；Read 默认只展示任务与正文/配置两轴，"
+        "内容需获准查询。"
     )
 
     def safe_payload(self) -> dict[str, object]:
@@ -167,6 +173,7 @@ def query_paper_trace(
             if claim_version is None:
                 raise TaskError(TaskReason.CORRUPT_REFERENCE)
             artifact = ArtifactFact.from_success(chosen, version_id=claim_version)
+    reads = ReadTasks(database, data_root)
     projection = PaperProjection(
         paper_id,
         current.version_id,
@@ -178,6 +185,7 @@ def query_paper_trace(
         root_purpose=root.purpose,
         visibility=permissions,
         screening=artifact,
+        read_tasks=reads.failure_facts(paper_id, snapshot_id=snapshot_id),
         screening_tasks=ScreeningTaskFacts.from_queries(paper_id, queries)
         if snapshot_id
         else None,
@@ -239,4 +247,8 @@ def query_paper_trace(
         ),
         bounded_executions=Extractions(database, data_root).history(paper_id),
         layout_reviews=LayoutReviews(database, data_root).history(paper_id),
+        read_tasks=tuple(task_payload(t) for t in reads.history(paper_id)),
+        read_analyses=ReadQueries(database, data_root).axes(
+            paper_id, snapshot_id=snapshot_id
+        ),
     )

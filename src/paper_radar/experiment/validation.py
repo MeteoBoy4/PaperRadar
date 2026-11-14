@@ -9,7 +9,9 @@ from paper_radar.experiment.egress import EgressError, egress_authorization
 from paper_radar.experiment.extraction import ExtractionError, Extractions
 from paper_radar.experiment.layout import LayoutError, LayoutReviews
 from paper_radar.experiment.pdf import PdfError, PdfSamples
+from paper_radar.experiment.reading import ReadingError, validate_read_links
 from paper_radar.experiment.selections import SelectionError, Selections
+from paper_radar.read_tasks import ReadTaskError
 from paper_radar.storage.artifact_contract import ArtifactError
 
 
@@ -28,6 +30,7 @@ def validate_all(database: Path, data_root: Path) -> None:
         PdfSamples(database, data_root).validate_all()
         Extractions(database, data_root).validate_all()
         LayoutReviews(database, data_root).validate_all()
+        validate_read_links(database, data_root)
         owner_waiver(database)
         egress_authorization(database)
     except (
@@ -37,6 +40,8 @@ def validate_all(database: Path, data_root: Path) -> None:
         PdfError,
         ExtractionError,
         LayoutError,
+        ReadingError,
+        ReadTaskError,
         OwnerWaiverError,
         EgressError,
     ):

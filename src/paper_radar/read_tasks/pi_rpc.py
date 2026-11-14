@@ -11,6 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from pydantic import ValidationError
+from sqlalchemy import Connection
 
 from paper_radar.execution_history import require_supply_reference
 from paper_radar.read_inputs import PreparedReadInput
@@ -151,9 +152,10 @@ def run_pi_once(
     executor: Callable[[ReadHandle], PiReadCandidate | PiReadFailure],
     *,
     preclaim: Callable[[PreparedReadInput, str | None], None] | None = None,
+    claim_guard: Callable[[Connection], None] | None = None,
 ) -> ReadAnalysis | ReadTask:
     """只由受控Pi执行组合调用;此端口不授予现场准入或启动模型。"""
-    handle = service.claim(task_id, preclaim=preclaim)
+    handle = service.claim(task_id, preclaim=preclaim, claim_guard=claim_guard)
     try:
         candidate = executor(handle)
     except Exception:
