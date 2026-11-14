@@ -400,6 +400,8 @@ stdout 仅包含严格类型的 `isolation=verified`、`descendant=verified`、
 `isolation_verification_failed`、`replay_failed`；既有 `file_missing/file_corrupt`、
 `registration_invalid`、`invalid_manifest`、`unsupported_rule_version` 等原具体原因保留。
 所有失败给出保留副本、检查来源/完整性/隔离部署后重试的安全下一步，不回显原始异常。
+临时权限探针链接清理失败时保留现场，不替换原受控错误；残留链接使下一次布局核验拒绝，
+须先检查副本，不静默放宽布局或扫描清理其他文件。
 
 此命令只验证内容闭包，不安装/调用 Pi、OAuth、Docling、模型或缓存，不是重新执行。
 恢复副本没有永久 replay-only 执行禁令；以后仍可按既有显式 db upgrade 与执行准入使用。

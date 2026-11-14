@@ -209,3 +209,25 @@ def test_standard_restore_is_not_a_replay_provenance_container(tmp_path: Path) -
         "database.sqlite3",
         "manifest.json",
     }
+
+
+def test_cleanup_failure_does_not_replace_the_controlled_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+
+    root, originals = restored_demo(tmp_path)
+    original_unlink = Path.unlink
+
+    def cleanup_failure(path: Path, missing_ok: bool = False) -> None:
+        if path.name.startswith(".replay-escape-"):
+            raise OSError("PRIVATE_CLEANUP_ERROR")
+        original_unlink(path, missing_ok=missing_ok)
+
+    def unavailable(*args: object, **kwargs: object) -> None:
+        raise subprocess.SubprocessError("PRIVATE_OS_ERROR")
+
+    monkeypatch.setattr(Path, "unlink", cleanup_failure)
+    monkeypatch.setattr(subprocess, "run", unavailable)
+    with pytest.raises(ReplayError, match="isolation_unavailable"):
+        replay(root, originals)

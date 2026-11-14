@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -85,4 +86,6 @@ def replay(root: Path, originals: tuple[Path, ...]) -> dict[str, Any]:
         raise ReplayError("unsafe_layout") from None
     finally:
         for link in links:
-            link.unlink(missing_ok=True)
+            # 清理失败保留副本供检查,不能替换受控错误或泄露原始异常。
+            with suppress(OSError):
+                link.unlink(missing_ok=True)

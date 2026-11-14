@@ -61,10 +61,10 @@ Linux `7.0.0-31-generic` x86_64、Landlock ABI 8、Python 3.14.4。
 | `tests/test_replay_business.py` | 1 |
 | `tests/test_replay_container.py` | 1 |
 | `tests/test_replay_entry.py` | 2 |
-| `tests/test_replay_faults.py` | 23 |
+| `tests/test_replay_faults.py` | 24 |
 | `tests/test_replay_os.py` | 1 |
 | `tests/test_replay_process.py` | 2 |
-| 合计 | **30** |
+| 合计 | **31** |
 
 支持为 `tests/replay_support.py` 与 `tests/replay_os_probe.py`，均进入静态检查。
 精确节点/数量保存于仓库外 `201-final-d1-collection.txt`、`201-final-d1-counts.json`；
@@ -80,6 +80,9 @@ collection 不作为执行证明。
 - 完整合成业务最终单节点：`201-final-business.log`，**1 passed /178.65s**，
   含第二次移动回放和 evidence-map 篡改／缺失。
   最终新 D1 同次 **30 passed /222.44s**，见 `201-final-d1.log`。
+  收尾另补清理失败红绿：`201-red-cleanup.log` 复现原始异常覆盖受控原因；
+  补丁后故障/入口/真实 OS 回放组合 **28 passed /58.19s**，见 `201-final-cleanup.log`。
+  31 个最终节点均有实际执行，不声称补丁后31项在同一命令执行。
 - 公共组件回归：`201-components.log`，**62 passed /203.63s**：备份服务5、恢复服务4、
   恢复故障25、恢复CLI11、备份架构1、正文制品10、暴露历史4、Docling隔离/资源2。
 - CLI 兼容：`201-cli-compatibility.log`，**59 passed /87.39s**，入口88.09s；
