@@ -16,18 +16,22 @@ from paper_radar.storage.errors import StorageError
 HELP = """\
 当前用途：只读查看论文当前事实、四类来源、人工修正、版本关系及 Feed 历史。
 不写入、不调用模型。
-仅覆盖论文事实；尚未计算完整任务资格。
+组合 Feed/语言、选样链、Screening 历史与共享资格支持范围；
+前置通过不表示名额、预算或领取许可。
 
 参数与选项：show/trace 接受 PAPER_ID、必填 --database；可选 --data-root、
---json、--show-abstract。trace 可用 --verify-source-bytes 只读核验来源字节，
+--json、--show-abstract、--show-agent-content、--snapshot。
+显式快照才计算 Screening 当前性。trace 可用 --verify-source-bytes 只读核验来源字节，
 使用时必须同时提供 --data-root。
 
-副作用：只读既有数据库；字节核验才访问既有制品根。帮助不连接数据库、不创建目录、不联网。
+副作用：只读既有数据库与组合所需制品；含选样历史时需提供实际 --data-root。
+帮助不连接数据库、不创建目录、不联网。
 
 自动配额：消耗 0 次模型配额。
 
 输出去向：事实写入标准输出；默认隐藏所有摘要，
-显式 --show-abstract 才展开；不转储原响应。
+显式 --show-abstract 才展开；--show-agent-content 需 visibility 获准、快照与制品根，
+只展开已接收结构结果，不转储原响应、Profile 或 Prompt。
 
 常见失败：请先显式 db upgrade 迁移既有库；缺失 ID 请核对，损坏请检查备份。
 受控失败退出 1，参数错误退出 2。
@@ -53,6 +57,20 @@ Database = Annotated[Path, typer.Option("--database", help="既有 SQLite 数据
 DataRoot = Annotated[
     Path | None, typer.Option("--data-root", help="既有制品根（字节核验必填）")
 ]
+
+
+def _json_default(value: object) -> object:
+    from datetime import datetime
+
+    from pydantic import BaseModel
+
+    if isinstance(value, BaseModel):
+        return value.model_dump(mode="json")
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, frozenset | set):
+        return sorted(value)
+    raise TypeError("unsupported_trace_value")
 
 
 def _redact_abstracts(value: object) -> object:
@@ -206,10 +224,27 @@ def _query(
     as_json: bool,
     show_abstract: bool,
     verify_source_bytes: bool = False,
+    snapshot: str | None = None,
+    show_agent_content: bool = False,
 ) -> None:
+    from paper_radar.body import BodyError
+    from paper_radar.calibration import visibility
+    from paper_radar.config import ConfigError
+    from paper_radar.experiment.selections import SelectionError
+    from paper_radar.paper_trace import query_paper_trace
     from paper_radar.papers.service import PaperFacts
+    from paper_radar.screening_tasks import TaskError
 
     try:
+        permissions = visibility.evaluate_visibility(frozenset())
+        if (
+            permissions.permission(visibility.VisibilityCapability.PAPER_FACTS)
+            is not visibility.VisibilityPermission.ALLOWED
+        ):
+            typer.echo(
+                "论文查询拒绝 [visibility_denied]；请完成专用校准流程。", err=True
+            )
+            raise typer.Exit(1)
         service = PaperFacts(database, data_root)
         result = (
             service.trace(paper_id, verify_source_bytes=verify_source_bytes)
@@ -219,12 +254,43 @@ def _query(
         payload: object = result.model_dump(mode="json")
         if not show_abstract:
             payload = _redact_abstracts(payload)
+        workflow = query_paper_trace(
+            database,
+            data_root or database.parent,
+            paper_id,
+            snapshot_id=snapshot,
+            include_agent_content=show_agent_content,
+        )
+        if isinstance(payload, dict):
+            payload["workflow"] = workflow.safe_payload()
         if as_json:
-            typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+            typer.echo(
+                json.dumps(payload, ensure_ascii=False, indent=2, default=_json_default)
+            )
         else:
             _text_result(result, trace=trace, show_abstract=show_abstract)
-    except (PaperError, StorageError) as error:
-        typer.echo(f"论文查询失败 [{error.reason.value}]：{error}", err=True)
+            typer.echo(f"根用途：{workflow.root.purpose.value}")
+            typer.echo(workflow.scope)
+            typer.echo(
+                json.dumps(
+                    workflow.safe_payload(),
+                    ensure_ascii=False,
+                    indent=2,
+                    default=_json_default,
+                )
+            )
+    except (
+        PaperError,
+        StorageError,
+        TaskError,
+        ConfigError,
+        BodyError,
+        SelectionError,
+    ) as error:
+        typer.echo(
+            f"论文查询失败 [{error.reason}]；请核对 ID、显式快照、制品根与备份。",
+            err=True,
+        )
         raise typer.Exit(1) from None
 
 
@@ -233,12 +299,37 @@ def show_command(
     paper_id: Annotated[str, typer.Argument(help="论文 UUID")],
     database: Database,
     data_root: DataRoot = None,
+    show_agent_content: Annotated[
+        bool,
+        typer.Option(
+            "--show-agent-content",
+            help="显式展开获准的 Screening 结构结果；需快照与制品根",
+        ),
+    ] = False,
+    snapshot: Annotated[
+        str | None, typer.Option("--snapshot", help="Screening 查询的明确配置快照")
+    ] = None,
     as_json: Annotated[bool, typer.Option("--json", help="受控 JSON 输出")] = False,
     show_abstract: Annotated[
         bool, typer.Option("--show-abstract", help="显式展开摘要")
     ] = False,
 ) -> None:
-    _query(paper_id, database, data_root, False, as_json, show_abstract)
+    if show_agent_content and (data_root is None or snapshot is None):
+        typer.echo(
+            "论文查询参数不正确：--show-agent-content 需要 --data-root 与 --snapshot",
+            err=True,
+        )
+        raise typer.Exit(2)
+    _query(
+        paper_id,
+        database,
+        data_root,
+        False,
+        as_json,
+        show_abstract,
+        snapshot=snapshot,
+        show_agent_content=show_agent_content,
+    )
 
 
 @paper_app.command("trace", cls=PaperCommand, help=HELP)
@@ -246,6 +337,16 @@ def trace_command(
     paper_id: Annotated[str, typer.Argument(help="论文 UUID")],
     database: Database,
     data_root: DataRoot = None,
+    show_agent_content: Annotated[
+        bool,
+        typer.Option(
+            "--show-agent-content",
+            help="显式展开获准的 Screening 结构结果；需快照与制品根",
+        ),
+    ] = False,
+    snapshot: Annotated[
+        str | None, typer.Option("--snapshot", help="Screening 查询的明确配置快照")
+    ] = None,
     as_json: Annotated[bool, typer.Option("--json", help="受控 JSON 输出")] = False,
     show_abstract: Annotated[
         bool, typer.Option("--show-abstract", help="显式展开包括未获选候选的摘要")
@@ -254,11 +355,25 @@ def trace_command(
         bool, typer.Option("--verify-source-bytes", help="只读核验来源字节，不转储正文")
     ] = False,
 ) -> None:
+    if show_agent_content and (data_root is None or snapshot is None):
+        typer.echo(
+            "论文查询参数不正确：--show-agent-content 需要 --data-root 与 --snapshot",
+            err=True,
+        )
+        raise typer.Exit(2)
     if verify_source_bytes and data_root is None:
         typer.echo(
             "论文查询参数不正确：--verify-source-bytes 需要 --data-root", err=True
         )
         raise typer.Exit(2)
     _query(
-        paper_id, database, data_root, True, as_json, show_abstract, verify_source_bytes
+        paper_id,
+        database,
+        data_root,
+        True,
+        as_json,
+        show_abstract,
+        verify_source_bytes,
+        snapshot,
+        show_agent_content,
     )

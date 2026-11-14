@@ -180,13 +180,18 @@ attempt；只读查询不要求先登记。更高 parser 删掉当前摘要时�
 领取凭据。repr/异常/日志同样脱敏。输入映射失败保留 A6 PaperReason，输出失败保留
 A1 类别/安全路径，TaskReason 只承载任务专属原因，不扩 storage/errors。
 
-本任务服务提供服务层 retry 与共享查询，不提供 screening CLI 或对应 help/退出码。
-[FeedPipeline.trace](feed-pipeline.md) 提供只读跨组件服务组合；已有
-[`paper trace` CLI](paper-facts.md#8-当前查询历史重建与只读-cli)仅覆盖论文事实，不展示这些任务组合。
-共享资格与 calibration visibility 的纯规则见[共享 Contract](eligibility-visibility.md)。
-本服务尚未消费该规则实现完整盲评隔离或生效筛选决定；
-CLI/真实产品接线由[路线图 B](../roadmap.md#module-b)承接，正式校准由
-[路线图 D](../roadmap.md#module-d)承接。
+本服务提供 `failures(snapshot_id=...)` 全库安全失败集合与
+`retry_failed(paper_id, snapshot_id, request_id, reason, actor, stage=None)` 产品边界。
+后者从当前失败唯一定位父任务，两个阶段同时失败时拒绝 `ambiguous_failure`，可显式指定
+stage；非失败拒绝 `not_failed`。精确 request 重放先于当前映射，原父身份从历史恢复；
+异内容仍由既有 retry 权威拒绝。新后继在同一写事务、任何写入前实际调用共享 visibility
+的 `set_decision` 许可，隐藏条件拒绝 `visibility_denied`。该产品边界仅接纳已经结算的
+失败终态，不以 lease_expired 为失败；低层 `retry` 的原子回收能力保持。
+
+规范命令 `screening failures/retry/reclaim` 与组合 `paper show/trace` 的参数、退出码及
+可复制恢复路径由[B 工作流 Contract](stage-b-workflow.md#失败查询显式恢复与组合追踪)定义。
+共享资格与 calibration visibility 的纯规则见[共享 Contract](eligibility-visibility.md)；
+正式盲评隐藏事实及身份链装配由[路线图 C/D](../roadmap.md#module-d)承接。
 
 <a id="7-完整性备份与验收随已交付事实递增"></a>
 
@@ -466,6 +471,12 @@ eligibility，不创建 pending/denied、建议或决定。映射和任务读取
 固定中文说明。retry 原因包括 `task_not_found`、`already_retried`、`not_latest`、
 `not_failed`，各有固定中文下一步。
 
+`failures(snapshot_id=...) -> tuple[CurrentFailure, ...]` 在没有任务时也校验显式快照。
+它枚举全库所有已持久任务的 `(paper_id, stage)`，逐项复用 `query`，返回每个当前失败的
+paper_id、stage、fingerprint 与 TaskView，顺序按 paper_id/stage；与实验当前选择无关。
+所有代际、当前性和失败判定仍由上述同一查询权威计算，不另建队列表。
+全库枚举与每项查询是独立只读视图，允许并发滞后，不承诺跨组件原子快照。
+
 `validate_all` 重验每预算连续代际、同预算唯一父链、父真实两次失败、每代请求、唯一
 retry 请求及其目标/规范摘要、首次预算依据。恢复保留父链与预算，不回收或执行。
 
@@ -487,8 +498,8 @@ retry 请求及其目标/规范摘要、首次预算依据。恢复保留父链�
 [运行日志](runtime-logging.md)。[B](../roadmap.md#module-b) 的真实执行入口负责构造所选根
 的文件汇，并在真实 trace、展示及普通动作中消费共享资格／可见性。
 
-本服务不提供 screening CLI、含任务组合的 `paper trace` CLI、完整 eligibility/visibility、每日自动配额、
-两阶段生产编排、建议/决定、校准、reuse/extraction/Read 任务或真实模型默认执行者。
+本服务不提供每日自动配额、建议/决定、校准、reuse/extraction/Read 任务或真实模型默认执行者。
+产品 CLI、两阶段实验编排及安全 trace 组合见 [B 工作流](stage-b-workflow.md)。
 这些边界不否定 Feed 语言派生与服务层 trace 已实现，也不把最低元数据或登记成功当作
 完整生产执行许可。产品组合由[路线图 B](../roadmap.md#module-b)承接，正式校准和复用
 执行由[路线图 D](../roadmap.md#module-d)承接，Read 由[Body](../roadmap.md#module-body)/

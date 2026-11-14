@@ -11,6 +11,7 @@ from paper_radar.screening.reasons import ScreeningReasonInput
 
 if TYPE_CHECKING:
     from paper_radar.feed_metadata.models import MetadataMissing, MetadataResult
+    from paper_radar.screening_tasks.query_models import TaskQueryResult
     from paper_radar.screening_tasks.success_models import Applicability, SuccessView
 
 
@@ -101,6 +102,9 @@ class EligibilityReason(StrEnum):
     MANUAL_REQUEST_SUPERSEDED = "manual_request_superseded"
     NOT_WAITING_CALIBRATION = "not_waiting_calibration"
     DUPLICATE_PAPER = "duplicate_paper"
+    NO_CURRENT_FAILED_TASK = "no_current_failed_task"
+    TASK_MAPPING_UNKNOWN = "task_mapping_unknown"
+    TASK_FACTS_CONTRADICTORY = "task_facts_contradictory"
 
 
 class Support(StrEnum):
@@ -232,6 +236,28 @@ class MetadataFacts:
 
 
 @dataclass(frozen=True)
+class ScreeningTaskFacts:
+    paper_id: str
+    current_failed_task_ids: tuple[str, ...]
+    mapping_determinable: bool
+
+    @classmethod
+    def from_queries(
+        cls,
+        paper_id: str,
+        queries: tuple[TaskQueryResult, ...],
+    ) -> ScreeningTaskFacts:
+        if any(query.paper_id != paper_id for query in queries):
+            raise ValueError("task_facts_contradictory")
+        return cls(
+            paper_id,
+            tuple(task.task_id for query in queries for task in query.current_failures),
+            {query.stage for query in queries} == {"boundary", "value"}
+            and all(query.reason is None for query in queries),
+        )
+
+
+@dataclass(frozen=True)
 class PaperProjection:
     paper_id: str
     version_id: str
@@ -251,6 +277,7 @@ class PaperProjection:
     manual_request: ManualReadRequest | None = None
     # E 装配的独立失败事实;资格规则不由它推导全文或参考文献生命周期。
     reference_harvest_failed: bool | None = None
+    screening_tasks: ScreeningTaskFacts | None = None
 
 
 @dataclass(frozen=True)

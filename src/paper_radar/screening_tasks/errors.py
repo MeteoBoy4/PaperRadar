@@ -14,6 +14,8 @@ class TaskReason(StrEnum):
     ALREADY_RETRIED = "already_retried"
     NOT_LATEST = "not_latest"
     NOT_FAILED = "not_failed"
+    AMBIGUOUS_FAILURE = "ambiguous_failure"
+    VISIBILITY_DENIED = "visibility_denied"
     INVALID_REQUEST = "invalid_request"
     INVALID_CONTEXT = "invalid_context"
     CONTEXT_CONFLICT = "context_conflict"
@@ -35,6 +37,8 @@ class TaskReason(StrEnum):
 
 
 GUIDANCE = {
+    TaskReason.AMBIGUOUS_FAILURE: "多个当前阶段失败，请用 --stage 明确唯一父任务。",
+    TaskReason.VISIBILITY_DENIED: "普通重试动作被隐藏条件阻断，请先完成专用校准流程。",
     TaskReason.LANGUAGE_MISSING: "缺少受支持的 Feed 语言归属，请补齐发现依据。",
     TaskReason.LANGUAGE_AMBIGUOUS: "Feed 归属的语言依据有歧义，拒绝新预算登记。",
     TaskReason.TASK_NOT_FOUND: "请核对目标任务 ID。",

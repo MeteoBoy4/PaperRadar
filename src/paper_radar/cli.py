@@ -31,6 +31,7 @@ from paper_radar.fixture_audit.cli import fixture_app
 from paper_radar.live_evidence.cli import live_evidence_app
 from paper_radar.papers.cli import paper_app
 from paper_radar.pi_supply.cli import DOCTOR_HELP, DoctorCommand, doctor_command, pi_app
+from paper_radar.screening_cli import screening_app
 
 _EXAMPLE_CONTRACT_NAME = ContractName.BOUNDARY.value
 _EXAMPLE_CONTRACT_VERSION = ContractVersion.V1.value
@@ -195,6 +196,7 @@ contracts_app = typer.Typer(
     rich_markup_mode="markdown",
 )
 app.add_typer(paper_app, name="paper")
+app.add_typer(screening_app, name="screening")
 app.add_typer(experiment_app, name="experiment")
 app.add_typer(fixture_app, name="fixture")
 app.add_typer(audit_app, name="audit")

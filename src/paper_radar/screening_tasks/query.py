@@ -19,6 +19,7 @@ from paper_radar.screening_tasks.execution import AttemptService
 from paper_radar.screening_tasks.query_models import (
     AttemptView,
     BudgetView,
+    CurrentFailure,
     TaskQueryResult,
     TaskView,
 )
@@ -34,6 +35,29 @@ from paper_radar.screening_tasks.tables import budgets, requests, tasks
 class QueryService:
     def __init__(self, attempts: AttemptService) -> None:
         self.attempts = attempts
+
+    def failures(self, *, snapshot_id: str) -> tuple[CurrentFailure, ...]:
+        # 全部持久任务的主体,不依赖当前实验选样或 CLI 自行枚举论文。
+        with self.attempts.connection(write=False) as connection:
+            subjects = tuple(
+                connection.execute(
+                    select(budgets.c.paper_id, budgets.c.stage)
+                    .distinct()
+                    .order_by(budgets.c.paper_id, budgets.c.stage)
+                )
+            )
+        failures = []
+        for paper_id, stage in subjects:
+            result = self.query(paper_id=paper_id, stage=stage, snapshot_id=snapshot_id)
+            for task in result.current_failures:
+                if result.current_fingerprint is None:
+                    raise TaskError(TaskReason.CORRUPT_REFERENCE)
+                failures.append(
+                    CurrentFailure(
+                        paper_id, result.stage, result.current_fingerprint, task
+                    )
+                )
+        return tuple(failures)
 
     def query(self, *, paper_id: str, stage: str, snapshot_id: str) -> TaskQueryResult:
         if not isinstance(paper_id, str) or not isinstance(snapshot_id, str):

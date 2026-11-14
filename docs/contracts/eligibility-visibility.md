@@ -63,7 +63,7 @@ waiting_calibration 或其他身份链成员上的隐藏事实。
 ### 资格输入与返回值
 
 `PaperProjection`、`MetadataFacts`、`ArtifactFact`、`DecisionFact`、`ExtractionFact`、
-`QualityFact`、`ManualReadRequest` 都是冻结的最小内存事实，不是未来持久化表或外部数据
+`QualityFact`、`ManualReadRequest`、`ScreeningTaskFacts` 都是冻结的最小内存事实，不是未来持久化表或外部数据
 解析器。调用方先校验外部值、读取同一一致视图，沿身份链装配后传入。
 不透明 reference 只用于身份相等检查，A 不解引用，也不按标题、摘要或路径推测归属。
 
@@ -116,6 +116,14 @@ support=`partial` 必须连同 scope 保存和展示：最低元数据为 `minim
 scope=`downstream_responsibility`；不能转换成 false、unknown 或 ready_to_claim。
 重复 paper_id 的批量条目仅该身份返回 duplicate_paper，清除选择性 evidence；不受排列影响，
 deferred 概念仍保留 None。普通单篇 deferred 结果不制造原因。
+
+`ScreeningTaskFacts.from_queries(paper_id, queries)` 从 A7 的 boundary/value
+`TaskQueryResult.current_failures` 取得当前最新代际失败引用，不重新推导状态或指纹。
+`evaluate_paper` 对已装配事实返回 `model_failure_queue` 的 partial 支持，scope 为
+`screening_current_latest_failed_only`；任一当前失败即为 true，没有失败且映射可判定时
+为 false/no_current_failed_task，映射不可判定时为 false/task_mapping_unknown，论文身份
+不符为 false/task_facts_contradictory。缺少此事实时保持 deferred；Read 失败队列未包含在
+此支持范围。单篇概念结果不宣称已枚举全库；全库入口由 [A7](screening-tasks.md#11-显式-retry-与共享查询)提供。
 
 ### Read 质量、用途与请求
 
@@ -197,7 +205,7 @@ requested_manual_read 仍为 false，请求事实本身不删除。请求为空�
 | manual_accepted_channel | 人工通道排名/名额 | deferred | 人工 accepted 不等于获名额 | G/H |
 | accepted_read_backlog | 队列及既有分析 | deferred | 不计算积压 | G/H |
 | requested_manual_read | 显式请求、生效 accepted、Read 全部前置 | supported：请求的前置资格，不领取 | manual_request_*、Read 原因 | B/G |
-| model_failure_queue | 真实任务失败队列 | deferred | A7 current_failures 不冒充完整列表 | B |
+| model_failure_queue | ScreeningTaskFacts；缺省未装配 | partial：Screening 当前最新代际失败；未装配 deferred | no_current_failed_task、task_mapping_unknown、task_facts_contradictory | B；Read 范围由后续组合扩展 |
 | waiting_calibration | Visibility.hidden_conditions | partial：仅已给定输入 | visibility_unknown、not_waiting_calibration | C 保留器，D/H |
 | waiting_review | 复核成员/规则 | deferred | 不制造资格 | B/H |
 | waiting_report | 报告候选/成员 | deferred | 不制造资格 | B/H |
@@ -247,6 +255,7 @@ READ_PREREQUISITES。缺失metadata请求保持metadata_unknown，不以字段�
 | manual_request_absent、manual_request_contradictory、manual_request_superseded | 无请求／请求身份或引用缺失矛盾／不再引用当前生效决定 |
 | not_waiting_calibration | 已给定隐藏事实中不存在等待保留事实 |
 | duplicate_paper | 批量输入同一身份重复，装配矛盾 |
+| no_current_failed_task、task_mapping_unknown、task_facts_contradictory | 没有当前失败／当前映射不可判定／任务事实论文身份矛盾 |
 
 JGRMetadata missing 与既有组合拒绝的对应关系只用于解释，不替代服务：
 
@@ -268,13 +277,14 @@ JGRMetadata missing 与既有组合拒绝的对应关系只用于解释，不替
 ## 不提供／不证明
 
 本入口不提供保留器、校准表、正式 evaluation、展示 DTO、动作写入服务或日志字段过滤。
-合成消费者仅证明许可契约，不证明真实产品面的字段裁剪、提交前守卫或身份链装配。
+纯规则合成测试仅证明许可契约；产品字段裁剪、提交前守卫见 [B 工作流](stage-b-workflow.md)。
+身份/合并链的实际隐藏装配由 C/D 承接。
 资格入口不实现建议算法、未来表、全文生产、质量门槛计算、队列排名、每日容量、任务领取、
 租约或重试；也不证明读取根标记、执行来源装配或事务内再次核验已接线。
 
 | 消费者 | 承接责任 |
 | --- | --- |
-| [B](../roadmap.md#module-b) | trace 首次消费资格；最低元数据、人工 accepted、PDF/Read 资格及两种投影的真实组合测试；show/trace/最小日报消费 visibility，即使隐藏集合为空；普通动作写入前守卫 |
+| [B](../roadmap.md#module-b) | trace 消费资格与 Screening 任务事实；后续扩展人工 accepted、PDF/Read/最小日报组合，继续实际调用 visibility 与普通动作写前守卫 |
 | [C](../roadmap.md#module-c) | 保留器、waiting_calibration、实际隐藏；身份/合并链装配与存活论文继承 |
 | [D](../roadmap.md#module-d) | 未揭晓/揭晓事实、专用 review 路径及新增展示面隔离 |
 | [H](../roadmap.md#module-h) | 完整日报、复核与诊断分支的真实隐藏组合测试 |
