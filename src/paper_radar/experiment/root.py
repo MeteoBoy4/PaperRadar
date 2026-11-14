@@ -17,7 +17,9 @@ from paper_radar.eligibility import RootPurpose
 from paper_radar.storage.database import DatabaseMode, open_database, upgrade_database
 from paper_radar.storage.filesystem import sync_directory
 
-ExperimentReason = Literal["root_unknown", "root_not_experiment", "unsafe_layout"]
+ExperimentReason = Literal[
+    "root_unknown", "root_not_experiment", "unsafe_layout", "legacy_layout"
+]
 
 
 class ExperimentError(ValueError):
@@ -26,6 +28,7 @@ class ExperimentError(ValueError):
         guidance = {
             "root_unknown": "此根尚未登记实验用途；请对独立空根运行 experiment init。",
             "root_not_experiment": "根用途不是 experiment；请使用已登记的独立实验根。",
+            "legacy_layout": "旧制品布局非空；请保留原库与材料，另行安排显式迁移。",
             "unsafe_layout": "固定布局不可安全使用；请检查目录、链接和权限后重试。",
         }
         super().__init__(f"{reason}：{guidance[reason]}")
@@ -41,7 +44,7 @@ class ExperimentRoot:
 
     @property
     def data_root(self) -> Path:
-        return self.root
+        return self.root / "data"
 
     @property
     def config(self) -> Path:
@@ -65,6 +68,9 @@ class ExperimentRoot:
             self.config,
             self.views,
             self.logs,
+            self.data_root,
+            self.data_root / "blobs",
+            self.data_root / "tmp",
             self.root / "blobs",
             self.root / "tmp",
         ):
@@ -73,6 +79,10 @@ class ExperimentRoot:
                 and not (path.is_file() if path == self.database else path.is_dir())
             ):
                 raise ExperimentError("unsafe_layout")
+
+        for legacy in (self.root / "blobs", self.root / "tmp"):
+            if legacy.is_dir() and next(legacy.iterdir(), None) is not None:
+                raise ExperimentError("legacy_layout")
 
     def require(self) -> RootRegistration:
         """只读用途守卫;不创建根、日志或数据库。"""
@@ -131,7 +141,7 @@ class ExperimentRoot:
                         os.fsync(stream.fileno())
                     os.link(database, self.database)
                     sync_directory(self.root)
-            for directory in (self.config, self.views):
+            for directory in (self.data_root, self.config, self.views):
                 directory.mkdir(mode=0o700, exist_ok=True)
             return registered
         finally:

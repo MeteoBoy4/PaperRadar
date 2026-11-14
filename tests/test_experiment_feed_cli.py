@@ -2,12 +2,27 @@
 
 import json
 from pathlib import Path
+from typing import TypedDict
 
 import httpx
 import pytest
+from pydantic import TypeAdapter
 from typer.testing import CliRunner, Result
 
 from paper_radar.cli import app
+
+
+class IncrementalItem(TypedDict):
+    paper_id: str | None
+    conflict_id: str | None
+    reason: str
+
+
+class IncrementalReceipt(TypedDict):
+    reason: str
+    items: list[IncrementalItem]
+    feed_id: str
+    check_id: str
 
 
 def invoke(*args: str) -> Result:
@@ -21,8 +36,8 @@ def test_init_registers_one_experiment_and_replays_same_root(tmp_path: Path) -> 
     original = json.loads(first.stdout)
     assert original["purpose"] == "experiment"
     assert original["database"] == "paper-radar.sqlite3"
-    assert original["data_root"] == "."
-    assert original["blobs"] == "blobs/sha256"
+    assert original["data_root"] == "data"
+    assert original["blobs"] == "data/blobs/sha256"
     assert (root / "paper-radar.sqlite3").is_file()
     assert (root / "config").is_dir() and (root / "views").is_dir()
     second = invoke("init", "--root", str(root))
@@ -107,13 +122,13 @@ def test_feed_fetch_selects_v2_and_keeps_sensitive_text_in_business_artifacts(
     (item,) = value["items"]
     assert item["language"]["policy_version"] == "v1"
     assert item["language"]["original_title_is_zh"] is False
-    metadata = JGRMetadata(root / "paper-radar.sqlite3", root)
+    metadata = JGRMetadata(root / "paper-radar.sqlite3", root / "data")
     content = metadata.content(item["metadata_request_key"])
     assert content.abstract == main
     assert {route.abstract_rules_version for route in content.result.routes} == {
         "audit-abstract-v2"
     }
-    tasks = ScreeningTasks(root / "paper-radar.sqlite3", root)
+    tasks = ScreeningTasks(root / "paper-radar.sqlite3", root / "data")
     assert (
         tasks.language_observations(item["paper_id"])[0]["original_title_is_zh"]
         is False
@@ -215,7 +230,7 @@ def test_existing_nonexperiment_database_is_refused_without_reassignment(
     root.mkdir()
     database = root / "paper-radar.sqlite3"
     upgrade_database(database)
-    service = BodyService(database, root)
+    service = BodyService(database, root / "data")
     if purpose != "unknown":
         service.register_root(purpose)
     before = service.root()
@@ -354,8 +369,8 @@ def test_request_parser_conflict_remains_controlled(
         sleep=clock.sleep,
     )
     database = root / "paper-radar.sqlite3"
-    source = PaperFacts(database, root).register_feed(endpoint("jgr"))
-    old = JGRFeed(database, root, http=executor).check(
+    source = PaperFacts(database, root / "data").register_feed(endpoint("jgr"))
+    old = JGRFeed(database, root / "data", http=executor).check(
         source.feed_id,
         request_id="same",
         contact_email="contact@example.org",
@@ -375,7 +390,7 @@ def test_request_parser_conflict_remains_controlled(
     )
     assert result.exit_code == 2
     assert "invalid_observation（parser_version）" in result.output
-    assert JGRFeed(database, root).replay(old.check_id) == old
+    assert JGRFeed(database, root / "data").replay(old.check_id) == old
 
 
 def test_init_upgrades_existing_experiment_without_replacing_identity(
@@ -424,7 +439,7 @@ def test_init_upgrades_existing_experiment_without_replacing_identity(
     assert (
         json.loads(upgraded.stdout)["root_id"] == json.loads(original.stdout)["root_id"]
     )
-    assert BodyService(database, root).root().purpose == "experiment"
+    assert BodyService(database, root / "data").root().purpose == "experiment"
 
 
 def test_invalid_contact_keeps_controlled_reason_and_redacts_input(
@@ -492,7 +507,7 @@ def test_incremental_feed_preserves_discoveries_and_conflict_observations(
         "paper_radar.feed_pipeline.service.SourceHTTPExecutor", lambda: executor
     )
 
-    def fetch(request: str) -> dict:
+    def fetch(request: str) -> IncrementalReceipt:
         result = invoke(
             "feed-fetch",
             "--root",
@@ -503,15 +518,16 @@ def test_incremental_feed_preserves_discoveries_and_conflict_observations(
             "contact@example.org",
         )
         assert result.exit_code == 2, result.output
-        value = json.loads(result.stdout)
+        value = TypeAdapter(IncrementalReceipt).validate_json(result.stdout)
         assert value["reason"] == "acquired"
         return value
 
     first = fetch("one")
     repeat = fetch("two")
     paper_id = first["items"][0]["paper_id"]
+    assert paper_id is not None
     assert repeat["items"][0]["paper_id"] == paper_id
-    papers = PaperFacts(root / "paper-radar.sqlite3", root)
+    papers = PaperFacts(root / "paper-radar.sqlite3", root / "data")
     assert len(papers.trace(paper_id).discoveries) == 1
     body[0] = (
         "<item><guid>stable-entry</guid><title>Synthetic</title>"
@@ -526,7 +542,9 @@ def test_incremental_feed_preserves_discoveries_and_conflict_observations(
     assert new["paper_id"] is not None and new["paper_id"] != paper_id
     assert len(papers.trace(paper_id).discoveries) == 1
     assert papers.conflicts()[0].conflict_id == conflict["conflict_id"]
-    history = JGRFeed(root / "paper-radar.sqlite3", root).view(changed["feed_id"])
+    history = JGRFeed(root / "paper-radar.sqlite3", root / "data").view(
+        changed["feed_id"]
+    )
     assert [check.check_id for check in history.checks] == [
         first["check_id"],
         repeat["check_id"],

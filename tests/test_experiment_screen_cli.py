@@ -53,7 +53,7 @@ def test_two_stages_use_authoritative_pi_rpc_and_replay_only_receipts(
     assert receipt["value"]["attempts"] == 1
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     for stage in ("boundary", "value"):
@@ -71,7 +71,10 @@ def test_two_stages_use_authoritative_pi_rpc_and_replay_only_receipts(
         ]
         is False
     )
-    assert BodyService(tasks.database, prepared.root).decisions(prepared.paper_id) == ()
+    assert (
+        BodyService(tasks.database, prepared.root / "data").decisions(prepared.paper_id)
+        == ()
+    )
     before = (prepared.credentials / "auth-observed.json").stat().st_mtime_ns
     replay = prepared.screen()
     assert replay.exit_code == 0, replay.output
@@ -130,7 +133,7 @@ def test_boundary_stop_and_unknown_reuse_do_not_create_downstream_tasks(
     assert receipt["state"] == state
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     value = tasks.query(
@@ -144,10 +147,16 @@ def test_boundary_stop_and_unknown_reuse_do_not_create_downstream_tasks(
         content = tasks.load_success(receipt["value"]["success_id"])
         assert isinstance(content.output, ValuePredictionOutput)
         assert content.output.reuse_feasibility_inferable is False
-    assert BodyService(tasks.database, prepared.root).decisions(prepared.paper_id) == ()
+    assert (
+        BodyService(tasks.database, prepared.root / "data").decisions(prepared.paper_id)
+        == ()
+    )
     from paper_radar.read_tasks import ReadTasks
 
-    assert ReadTasks(tasks.database, prepared.root).history(prepared.paper_id) == ()
+    assert (
+        ReadTasks(tasks.database, prepared.root / "data").history(prepared.paper_id)
+        == ()
+    )
 
 
 def test_two_failures_replay_and_a_b_a_preserve_original_budget(
@@ -223,7 +232,7 @@ def test_two_failures_replay_and_a_b_a_preserve_original_budget(
     assert old.exit_code == 0 and json.loads(old.stdout)["state"] == "replayed"
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     query = tasks.query(
@@ -286,7 +295,9 @@ def test_inflight_boundary_settles_but_changed_authority_blocks_value(
         elif change == "egress":
             assert prepared.egress(disabled=True).exit_code == 0
         else:
-            papers = PaperFacts(prepared.root / "paper-radar.sqlite3", prepared.root)
+            papers = PaperFacts(
+                prepared.root / "paper-radar.sqlite3", prepared.root / "data"
+            )
             current = papers.show(prepared.paper_id)
             papers.correct(
                 dict(
@@ -311,7 +322,7 @@ def test_inflight_boundary_settles_but_changed_authority_blocks_value(
     assert calls == 1
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     boundary = tasks.query(
@@ -372,7 +383,9 @@ def test_auth_to_claim_race_refuses_without_attempt_or_rpc(
         elif change == "egress":
             assert prepared.egress(disabled=True).exit_code == 0
         else:
-            papers = PaperFacts(prepared.root / "paper-radar.sqlite3", prepared.root)
+            papers = PaperFacts(
+                prepared.root / "paper-radar.sqlite3", prepared.root / "data"
+            )
             current = papers.show(prepared.paper_id)
             papers.correct(
                 dict(
@@ -400,7 +413,7 @@ def test_auth_to_claim_race_refuses_without_attempt_or_rpc(
     assert "corrupt_reference" not in result.output and calls == 1
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     query = tasks.query(
@@ -453,7 +466,7 @@ def test_explicit_receipt_recovers_ready_without_registration(
         monkeypatch.setattr(launcher, "credential_token", real_auth)
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     query = tasks.query(
@@ -513,7 +526,7 @@ def test_explicit_value_retry_uses_production_feed_basis_and_only_its_generation
     assert saved["value"]["attempts"] == 2
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     original = saved["value"]["receipt"]
@@ -582,7 +595,9 @@ def test_preconditions_refuse_before_authentication_and_without_budget(
             == 0
         )
     else:
-        papers = PaperFacts(prepared.root / "paper-radar.sqlite3", prepared.root)
+        papers = PaperFacts(
+            prepared.root / "paper-radar.sqlite3", prepared.root / "data"
+        )
         current = papers.show(prepared.paper_id)
         papers.correct(
             dict(
@@ -603,7 +618,7 @@ def test_preconditions_refuse_before_authentication_and_without_budget(
     assert not (prepared.credentials / "auth-observed.json").exists()
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     query = tasks.query(
@@ -680,7 +695,7 @@ def test_failed_budget_survives_backup_and_offline_subprocess_restore(
             "--database",
             str(prepared.root / "paper-radar.sqlite3"),
             "--data-root",
-            str(prepared.root),
+            str(prepared.root / "data"),
             "--output",
             str(backups),
         ],
@@ -758,7 +773,7 @@ def test_test_boundary_success_is_never_promoted_by_screen(
     prepared = screen_fixture(feed, tmp_path, monkeypatch)
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     registered = tasks.register(
@@ -805,7 +820,7 @@ def test_boundary_recovery_can_explicitly_register_value_without_reopening_bound
     assert refused.exit_code == 2 and "auth_failed" in refused.output
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     query = tasks.query(

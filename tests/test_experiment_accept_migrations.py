@@ -45,7 +45,7 @@ def test_upgrade_from_selection_head_keeps_authorization_and_is_atomic(
     assert selected.exit_code == 0, selected.output
     before = invoke("selection", "--root", str(root)).stdout
     database = root / "paper-radar.sqlite3"
-    registered = BodyService(database, root).root()
+    registered = BodyService(database, root / "data").root()
     config = Config()
     config.set_main_option(
         "script_location", str(Path(database_module.__file__).parent / "migrations")
@@ -79,7 +79,7 @@ def test_upgrade_from_selection_head_keeps_authorization_and_is_atomic(
                 for row in connection.execute("PRAGMA table_info(body_decisions)")
             }
     assert upgrade_database(database) == EXPECTED_MIGRATION_REVISION
-    assert BodyService(database, root).root() == registered
+    assert BodyService(database, root / "data").root() == registered
     assert invoke("selection", "--root", str(root)).stdout == before
     with sqlite3.connect(database) as connection:
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
@@ -96,7 +96,7 @@ def test_ordinary_body_request_resembling_delegation_survives_upgrade(
     paper_id = check["items"][0]["paper_id"]
     assert paper_id is not None
     database = root / "paper-radar.sqlite3"
-    body = BodyService(database, root)
+    body = BodyService(database, root / "data")
     reason = ScreeningReasonInput.model_validate(
         dict(result="accepted", source="direct_manual_decision", reason="user_judgment")
     )
@@ -125,4 +125,4 @@ def test_ordinary_body_request_resembling_delegation_survives_upgrade(
         assert after is not None and after[: len(legacy)] == legacy
     body.decide(paper_id, reason, request_id="b-accept-" + "b" * 64, actor="agent")
     body.validate_all()
-    assert Acceptances(database, root).history() == ()
+    assert Acceptances(database, root / "data").history() == ()
