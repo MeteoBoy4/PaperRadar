@@ -1,10 +1,31 @@
 # Pi 执行资源与隔离
 
-本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。组件不注册执行 CLI；上层显式入口见[B 工作流](stage-b-workflow.md)；准入事实由独立[受保护账本](live-evidence.md)保存，本模块只读消费。默认严格模式缺少现场隔离/模型能力准入证据时在领取前阻断；所有者显式豁免只移除该证据前提，运行隔离仍强制；这里的合成对端通过不产生兼容 passed。
+本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。组件不注册执行 CLI；B 提供 screen 执行与无 prompt 探测 CLI，上层显式入口见[B 工作流](stage-b-workflow.md)；准入事实由独立[受保护账本](live-evidence.md)保存，本模块只读消费。默认严格模式缺少现场隔离/模型能力准入证据时在领取前阻断；所有者显式豁免只移除该证据前提，运行隔离仍强制；这里的合成对端通过不产生兼容 passed。
 
 ## 用途与范围
 
 本边界提供受控会话和一次 Screening 任务执行组合；Read 使用[独立执行组合](read-execution.md)复用其资源公共面；只读诊断见 [doctor](doctor.md#pi-执行诊断)。
+
+### 无 prompt 模型映射探测
+
+`experiment probe-models` 是显式执行入口，分别探测 screening（boundary/value 共用槽）与
+reading；`--slot` 可只选其中一槽。它使用当前激活的 Pi 1.4.0 固定安装、独立映射描述与
+公开系统指令常量作为启动器参数，不构造 StageInput、业务请求、attempt 或预算。
+外发授权（screening 同时核对 boundary/value，reading 核对 read）、所有者豁免或严格
+证据、固定供给及不可豁免的隔离检查均先于认证。每槽独立核验自己的模型和档位；不借用另一槽结论。
+
+探测调用与执行相同的认证 helper，可能刷新并写回专用凭据目录，因此不是只读预检。
+认证上限 30 秒；RPC 初始化上限 30 秒、总期限上限 300 秒、关闭排空上限 10 秒、
+整组终止回收上限 10 秒。初始化仅到 `get_state`，随即关闭 stdin、排空至 EOF/退出 0，
+并回收整个进程组；成功和失败均清理 helper 与模型各自的独占 `/tmp` 根。
+清理失败受控拒绝，不报告映射成功。复用 Landlock、零 core、no_new_privs 与 helper 分离。
+日志写所选实验根；stdout 仅输出槽、状态与封闭原因；自动配额 0。
+成功退出 0，参数、前置拒绝、超时、协议或清理失败退出 2，中断退出 130。
+
+成功只说明此次精确 provider/model/档位可设置且状态回读一致，不证明订阅能生成、
+推理档位实际影响或外部参数有效，不保存为 verified 或准入证据。
+模型不可用、拒绝 set_model 或缺档位均停止，不替换模型/档位/采样；升级只能按规格 §7.8，交所有者裁决。
+协议边界见 [Pi RPC](pi-rpc.md#无-prompt-映射边界)。
 
 ## 规则
 
@@ -16,8 +37,9 @@
 保护从准备开始持有到上下文退出；选择切换只影响后续取得，已取得句柄冻结绝对 Node/Pi 入口。
 不走 PATH、个人 Pi、供给或激活 fallback。
 
-返回值 `PreparedLaunch` 是只读身份与一次 `SessionFactory` 的接口；实现和 token 构造均私有。
-调用它之前，上层仍须完成调用描述、请求帧上限、采样与外发检查，并按持久所有者选择完成证据前提或豁免检查，随后领取一次任务。
+返回值 `PreparedLaunch` 是只读身份与一次会话工厂的接口；接受 `CallDescription | MappingDescription`，实现和 token 构造均私有。
+调用它之前，上层仍须完成描述、采样与外发检查，并按持久所有者选择完成证据前提或豁免检查。
+业务调用还须检查请求帧上限、随后领取一次任务；无 prompt 映射探测直接执行初始化，不领取。
 `prepared(description)` 只允许与准备时完全相同的描述、只启动一次，返回 `ByteSession`。
 再次调用返回 RPC `startup_error`；领取后沿既有 `executor_error` 消耗预算，
 没有独立的 `launch_reused` 执行原因。

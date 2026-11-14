@@ -5,6 +5,7 @@ import sys
 from collections import deque
 from collections.abc import Callable
 from contextlib import suppress
+from dataclasses import dataclass
 from time import monotonic
 from typing import Any
 
@@ -14,6 +15,7 @@ from paper_radar.llm.models import (
     PROTOCOL_PROFILES,
     THINKING_LEVELS,
     CallDescription,
+    MappingDescription,
 )
 from paper_radar.llm.rpc_frames import FrameDecoder, command_frame
 from paper_radar.llm.rpc_messages import RunEvents
@@ -228,7 +230,9 @@ class _Connection:
 
 
 def _initialize(
-    connection: _Connection, description: CallDescription, deadline: float
+    connection: _Connection,
+    description: CallDescription | MappingDescription,
+    deadline: float,
 ) -> None:
     data = connection.exchange("new_session", deadline)
     if data.get("cancelled") is not False:
@@ -281,7 +285,9 @@ def _initialize(
         raise RpcProblem(RpcReason.RESPONSE_MISMATCH)
 
 
-def _match_model(model: object, description: CallDescription) -> None:
+def _match_model(
+    model: object, description: CallDescription | MappingDescription
+) -> None:
     if (
         not isinstance(model, dict)
         or model.get("provider") != description.provider
@@ -409,6 +415,128 @@ def _cleanup(session: ByteSession, clock: MonotonicClock, deadline: float) -> No
         raise interruption
     if failure is not None:
         raise failure
+
+
+@dataclass(frozen=True, slots=True)
+class RpcMappingResult:
+    """当次初始化映射回读匹配;不授予生成或执行资格。"""
+
+    state: str = "mapping_settable"
+
+
+def probe_mapping(
+    description: MappingDescription,
+    factory: Callable[[MappingDescription], ByteSession],
+    *,
+    clock: MonotonicClock = monotonic,
+    cancelled: Cancellation = lambda: False,
+    limits: RpcLimits = DEFAULT_LIMITS,
+) -> RpcMappingResult | RpcFailure:
+    """只初始化到 get_state;没有 prompt 参数,也没有业务候选。"""
+    session: ByteSession | None = None
+    connection: _Connection | None = None
+    deadline: float | None = None
+    cleaned = False
+    try:
+        if (
+            type(description) is not MappingDescription
+            or type(limits) is not RpcLimits
+            or type(description.slot) is not str
+            or description.slot not in {"screening", "reading"}
+            or type(description.pi_version) is not str
+            or PROTOCOL_PROFILES.get(description.pi_version)
+            != description.protocol_profile
+            or description.protocol != "prompt_only"
+            or type(description.thinking_level) is not str
+            or description.thinking_level not in THINKING_LEVELS
+            or any(
+                type(value) is not str or not value
+                for value in (description.provider, description.model)
+            )
+            or type(description.system_prompt) is not bytes
+            or not description.system_prompt
+        ):
+            raise RpcProblem(RpcReason.INVALID_DESCRIPTION)
+        try:
+            description.system_prompt.decode("utf-8")
+        except UnicodeError:
+            raise RpcProblem(RpcReason.INVALID_DESCRIPTION) from None
+        for value, maximum in zip(
+            (
+                limits.initialization,
+                limits.total,
+                limits.close,
+                limits.terminate,
+                limits.poll,
+            ),
+            (
+                DEFAULT_LIMITS.initialization,
+                DEFAULT_LIMITS.total,
+                DEFAULT_LIMITS.close,
+                DEFAULT_LIMITS.terminate,
+                DEFAULT_LIMITS.poll,
+            ),
+            strict=True,
+        ):
+            if (
+                type(value) not in (int, float)
+                or not math.isfinite(value)
+                or not 0 < value <= maximum
+            ):
+                raise RpcProblem(RpcReason.INVALID_DESCRIPTION)
+        started = clock()
+        if cancelled():
+            raise RpcProblem(RpcReason.CANCELLED)
+        try:
+            session = factory(description)
+        except Exception:
+            raise RpcProblem(RpcReason.STARTUP_ERROR) from None
+        connection = _Connection(session, clock, cancelled, limits, started)
+        initialization = min(connection.total_deadline, started + limits.initialization)
+        connection.pump(b"", initialization, immediate=True)
+        if connection.records or connection.decoder.has_tail:
+            raise RpcProblem(RpcReason.EARLY_RECORD)
+        _initialize(connection, description, initialization)
+        session.close_stdin()
+        close = min(connection.total_deadline, clock() + limits.close)
+        while not (
+            connection.stdout_eof
+            and connection.stderr_eof
+            and connection.exit_code == 0
+        ):
+            connection.pump(b"", close, closing=True)
+            if connection.records:
+                raise RpcProblem(RpcReason.RESPONSE_MISMATCH)
+        deadline = clock() + limits.terminate
+        _cleanup(session, clock, deadline)
+        cleaned = True
+        connection.check(connection.total_deadline, closing=True)
+        return RpcMappingResult()
+    except RpcProblem as error:
+        if error.reason is RpcReason.CANCELLED and connection is not None:
+            with suppress(Exception):
+                _cancel(connection)
+        return RpcFailure(error.reason)
+    except Exception:
+        return RpcFailure(RpcReason.TRANSPORT_ERROR)
+    finally:
+        if session is not None and not cleaned:
+            original = sys.exception()
+            interruption: KeyboardInterrupt | SystemExit | None = None
+            for _attempt in range(2):
+                try:
+                    if deadline is None:
+                        deadline = clock() + limits.terminate
+                    _cleanup(session, clock, deadline)
+                    break
+                except (KeyboardInterrupt, SystemExit) as error:
+                    interruption = interruption or error
+                except Exception:
+                    break
+            if interruption is not None and not isinstance(
+                original, (KeyboardInterrupt, SystemExit)
+            ):
+                raise interruption from None
 
 
 def run_call(

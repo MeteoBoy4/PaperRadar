@@ -12,6 +12,8 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 不设可用内存硬下限，也不把实测值解释为容量足够。
 `experiment screen` 显式执行有效选样的 boundary → value，重放只回原回执；
 `--receipt-id` 只执行明确回执的剩余尝试，失败不自动增代，out_of_scope 停止 value。
+`experiment probe-models` 显式对 screening/reading 分别执行无 prompt RPC 映射探测，
+认证可能刷新并写回专用凭据；只说明本次模型与档位可设置，不提供生成或准入证明。
 根布局、用途守卫及安全输出见[B 实验工作流](docs/contracts/stage-b-workflow.md)。
 仓库还提供 B 首版 boundary、value、reading 与 Pi 系统生产 Prompt，材料位置、
 复制登记与冻结规则见[公开生产 Prompt](docs/contracts/runtime-config.md#公开生产-prompt)。
@@ -43,6 +45,7 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 | 调用 JGR 取得与登记服务 | [JGR Feed 与元数据](#jgr-feed-与元数据) |
 | 登记外发授权、静态检查两槽与资源 | [B 实验工作流](docs/contracts/stage-b-workflow.md#外发授权与只读复核)；`paper-radar experiment preflight --help` |
 | 显式两阶段 Screening 或执行明确回执 | [B Screening 契约](docs/contracts/stage-b-workflow.md#显式两阶段-screening)；`paper-radar experiment screen --help` |
+| 显式探测两槽模型与档位映射 | [探测契约](docs/contracts/pi-execution.md#无-prompt-模型映射探测)；`paper-radar experiment probe-models --help` |
 | 记录选样接受授权、显式换样与查询历史 | [B 选样契约](docs/contracts/stage-b-workflow.md#选样接受授权与换样)；`paper-radar experiment select --help` |
 | 初始化实验根、取得 JGR v2 并生成候选清单 | [B 实验工作流](docs/contracts/stage-b-workflow.md)；`paper-radar experiment --help` |
 | 登记 fixture、执行或回放摘要审计 | [Fixture 与摘要审计](#fixture-与摘要审计) |
