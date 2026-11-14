@@ -873,3 +873,99 @@ def screen(
             "budget_exhausted：当前代际已耗尽；请查询失败并显式 retry。", err=True
         )
         raise typer.Exit(4)
+
+
+@experiment_app.command(
+    "attach-pdf",
+    cls=ExperimentCommand,
+    help="""登记所有者独立确认,把合法 PDF 附加到选样冻结版本并冻结样本。
+
+参数：必填 PAPER、--root、--selection-id、--version-id、--pdf、--sha256、
+--owner-confirmed、--actor owner/agent、--request-id；owner-confirmed 同时表达所有者
+已确认论文/版本归属及副本合法性；选样接受授权不替代该确认或六项版式核查。
+不通过 DOI 检测文件归属；签名须为 PDF、至少 1024 字节且 SHA-256 完全一致。
+副作用：先保存确认,再发布 PDF 制品,同事务附加/冻结/关联；日志写所选根 logs/。
+中断可同 request 续办；版本/选样变化或最新样本与当前 PDF 不符则拒绝。
+不调用模型/Docling、不扫描队列，自动配额 0；帮助不联网、不开库、不建目录。
+输出去向：stdout 安全 JSON 引用,stderr 受控原因与下一步；不输出文件路径、理由或正文。
+退出码：成功/精确重放 0；参数、未确认、版本/哈希/样本不符、
+visibility 或执行失败 2；中断 130。
+常见失败：请核对所有者确认、selection/accepted 和冻结版本；新文件用新 request，
+旧 request 内容冲突不能覆盖；缺确认不能靠接受授权放行。
+示例：paper-radar experiment attach-pdf PAPER --root /tmp/my-experiment
+--selection-id SELECTION --version-id VERSION --pdf /tmp/sample.pdf --sha256 SHA256
+--owner-confirmed --actor agent --request-id pdf-1
+""",
+)
+def attach_pdf(
+    paper: Annotated[str, typer.Argument(help="所有者明确确认的论文身份。")],
+    root: RootOption,
+    selection_id: Annotated[str, typer.Option("--selection-id", help="当前选样授权。")],
+    version_id: Annotated[
+        str, typer.Option("--version-id", help="所有者确认的选样冻结版本。")
+    ],
+    pdf: Annotated[Path, typer.Option("--pdf", help="所有者提供的合法 PDF。")],
+    sha256: Annotated[str, typer.Option("--sha256", help="明确核对的 PDF SHA-256。")],
+    actor: Annotated[str, typer.Option("--actor", help="确认代录者 owner 或 agent。")],
+    request_id: Annotated[
+        str, typer.Option("--request-id", help="幂等请求；中断可同 request 续办。")
+    ],
+    owner_confirmed: Annotated[
+        bool, typer.Option("--owner-confirmed", help="所有者已独立确认归属和合法性。")
+    ] = False,
+) -> None:
+    from paper_radar.body.models import BodyError
+    from paper_radar.experiment.acceptance import AcceptanceError
+    from paper_radar.experiment.pdf import PdfError, PdfSamples, receipt
+    from paper_radar.experiment.root import ExperimentError, ExperimentRoot
+    from paper_radar.experiment.selections import SelectionError
+    from paper_radar.runtime_logging import FileSink, RuntimeLog
+
+    try:
+        selected = ExperimentRoot(root)
+        selected.require()
+        log = RuntimeLog(FileSink(selected.root))
+        with log.execution(
+            "experiment",
+            controlled=(
+                PdfError,
+                ExperimentError,
+                SelectionError,
+                AcceptanceError,
+                BodyError,
+            ),
+            paper_id=paper,
+        ):
+            if not owner_confirmed:
+                raise PdfError("owner_confirmation_required")
+            try:
+                raw = pdf.read_bytes()
+            except OSError:
+                raise PdfError("pdf_unreadable") from None
+            record, sample, replayed = PdfSamples(
+                selected.database, selected.data_root
+            ).attach(
+                selected,
+                paper_id=paper,
+                version_id=version_id,
+                selection_id=selection_id,
+                pdf=raw,
+                pdf_sha256=sha256,
+                request_id=request_id,
+                owner_confirmed=owner_confirmed,
+                actor=actor,
+            )
+    except (PdfError, ExperimentError, SelectionError, AcceptanceError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo(
+            "interrupted：PDF 登记中断；回查 trace 后以同 request 显式续办。", err=True
+        )
+        raise typer.Exit(130) from None
+    except Exception as error:
+        report_component_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(
+        json.dumps(receipt(record, sample, replayed=replayed), ensure_ascii=False)
+    )

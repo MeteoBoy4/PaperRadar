@@ -16,6 +16,8 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 `experiment accept PAPER --selection-id SELECTION --snapshot SNAPSHOT --request-id REQUEST
 --root ROOT` 依预先选样授权代执行 accepted；决定、两阶段成功引用与授权关联原子追加，
 trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型输出。
+`experiment attach-pdf` 先保存所有者独立的 PDF 归属/合法性确认，再原子附加并冻结样本；
+冻结版本、SHA-256、选样及接受关联均可追踪，中断可按原 request 续办。
 `experiment probe-models` 显式对 screening/reading 分别执行无 prompt RPC 映射探测，
 认证可能刷新并写回专用凭据；只说明本次模型与档位可设置，不提供生成或准入证明。
 实验根将制品放在 `data/`，数据库保持根内原位置；Pi 供给四根可并列，
@@ -51,6 +53,7 @@ trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型�
 | 登记外发授权、静态检查两槽与资源 | [B 实验工作流](docs/contracts/stage-b-workflow.md#外发授权与只读复核)；`paper-radar experiment preflight --help` |
 | 显式两阶段 Screening 或执行明确回执 | [B Screening 契约](docs/contracts/stage-b-workflow.md#显式两阶段-screening)；`paper-radar experiment screen --help` |
 | 显式探测两槽模型与档位映射 | [探测契约](docs/contracts/pi-execution.md#无-prompt-模型映射探测)；`paper-radar experiment probe-models --help` |
+| 确认合法 PDF、附加到冻结版本并冻结样本 | [PDF 工作流](docs/contracts/stage-b-workflow.md#pdf-独立确认与样本冻结)；`paper-radar experiment attach-pdf --help` |
 | 记录选样接受授权、显式换样与查询历史 | [B 选样契约](docs/contracts/stage-b-workflow.md#选样接受授权与换样)；`paper-radar experiment select --help` |
 | 初始化实验根、取得 JGR v2 并生成候选清单 | [B 实验工作流](docs/contracts/stage-b-workflow.md)；`paper-radar experiment --help` |
 | 登记 fixture、执行或回放摘要审计 | [Fixture 与摘要审计](#fixture-与摘要审计) |
@@ -503,7 +506,7 @@ uv run --offline --locked paper-radar paper trace PAPER_ID --database data/paper
   --data-root data --verify-source-bytes --json
 ```
 
-`paper show/trace` 只读组合论文事实、Feed/语言、选样链、Screening 历史与共享资格支持范围，
+`paper show/trace` 只读组合论文事实、Feed/语言、选样链、Screening 历史、PDF 独立确认/冻结样本与共享资格支持范围，
 对根用途中性。`--snapshot SNAPSHOT` 指定任务当前性；`--show-agent-content` 经许可展开结构结果。
 恢复查询、显式 reclaim→retry→执行路径见 [B 工作流](docs/contracts/stage-b-workflow.md#失败查询显式恢复与组合追踪)。摘要需显式
 `--show-abstract` 展开；来源字节核验不会转储原始响应。

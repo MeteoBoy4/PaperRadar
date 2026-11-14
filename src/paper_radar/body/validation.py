@@ -114,6 +114,11 @@ def validate_all(database: Path, root: Path) -> None:
                             row["requested_version_id"],
                             row["pdf_sha256"],
                         ]
+                        + (
+                            [row["confirmation_id"]]
+                            if row["confirmation_id"] is not None
+                            else []
+                        )
                     )
                 )
                 require(

@@ -174,6 +174,11 @@ body_pdfs = Table(
     Column("attached_at", Text, nullable=False),
     Column("requested_version_id", Text),
     Column("access_basis", Text, nullable=False),
+    Column(
+        "confirmation_id",
+        Text,
+        ForeignKey("experiment_pdf_confirmations.confirmation_id"),
+    ),
     UniqueConstraint("paper_id", "sequence"),
     ForeignKeyConstraint(
         ["paper_id", "version_id"],
@@ -525,4 +530,52 @@ experiment_acceptances = Table(
         nullable=False,
     ),
     Column("record_json", Text, nullable=False),
+)
+
+
+experiment_pdf_confirmations = Table(
+    "experiment_pdf_confirmations",
+    metadata,
+    Column("confirmation_id", Text, primary_key=True),
+    Column("request_id", Text, nullable=False, unique=True),
+    Column(
+        "selection_id",
+        Text,
+        ForeignKey("experiment_selections.selection_id"),
+        nullable=False,
+    ),
+    Column(
+        "acceptance_id",
+        Text,
+        ForeignKey("experiment_acceptances.acceptance_id"),
+        nullable=False,
+    ),
+    Column("paper_id", Text, ForeignKey("papers.paper_id"), nullable=False),
+    Column("version_id", Text, ForeignKey("paper_versions.version_id"), nullable=False),
+    Column("record_json", Text, nullable=False),
+)
+
+experiment_frozen_samples = Table(
+    "experiment_frozen_samples",
+    metadata,
+    Column(
+        "confirmation_id",
+        Text,
+        ForeignKey("experiment_pdf_confirmations.confirmation_id"),
+        primary_key=True,
+    ),
+    Column(
+        "attachment_id",
+        Text,
+        ForeignKey("body_pdfs.attachment_id"),
+        nullable=False,
+        unique=True,
+    ),
+    Column(
+        "sample_id",
+        Text,
+        ForeignKey("body_samples.sample_id"),
+        nullable=False,
+        unique=True,
+    ),
 )

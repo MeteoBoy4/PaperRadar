@@ -18,6 +18,8 @@ from paper_radar.eligibility import (
 )
 from paper_radar.experiment.acceptance import Acceptances
 from paper_radar.experiment.acceptance import receipt as acceptance_receipt
+from paper_radar.experiment.pdf import PdfSamples
+from paper_radar.experiment.pdf import receipt as pdf_receipt
 from paper_radar.experiment.selections import Selections
 from paper_radar.feed_metadata import JGRMetadata
 from paper_radar.feed_pipeline import FeedPipeline
@@ -62,11 +64,15 @@ class PaperWorkflowTrace:
     eligibility: dict[Concept, Eligibility]
     agent_content: tuple[AgentContent, ...] = ()
     delegated_acceptances: tuple[dict[str, object], ...] = ()
+    pdfs: tuple[dict[str, object], ...] = ()
+    pdf_confirmations: tuple[dict[str, object], ...] = ()
+    frozen_samples: tuple[dict[str, object], ...] = ()
     scope: str = (
         "前置通过不代表名额、预算或领取许可；各组件独立只读视图，允许并发滞后。"
         "Screening 需显式 --snapshot；代执行接受依预先选样授权，"
         "不声称所有者看过模型输出。"
-        "PDF/Read/报告扩展由后续组合承接。"
+        "PDF 归属与合法性确认独立保存；冻结样本理由仅引用选样。"
+        "PDF 确认不替代六项版式核查；Read/报告由后续组合承接。"
     )
 
     def safe_payload(self) -> dict[str, object]:
@@ -185,6 +191,7 @@ def query_paper_trace(
                         content.output.model_dump(mode="json"),
                     )
                 )
+    pdf_samples = PdfSamples(database, data_root)
     return PaperWorkflowTrace(
         root,
         feed,
@@ -210,5 +217,16 @@ def query_paper_trace(
             acceptance_receipt(record)
             for record in Acceptances(database, data_root).history()
             if record.request.paper_id == paper_id
+        ),
+        pdfs=tuple(asdict(pdf) for pdf in body.pdfs(paper_id)),
+        pdf_confirmations=tuple(
+            pdf_receipt(record)
+            for record in pdf_samples.history()
+            if record.request.paper_id == paper_id
+        ),
+        frozen_samples=tuple(
+            sample.model_dump(mode="json")
+            for sample in pdf_samples.samples()
+            if sample.paper_id == paper_id
         ),
     )

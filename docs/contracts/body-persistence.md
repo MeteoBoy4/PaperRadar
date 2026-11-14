@@ -46,6 +46,12 @@ Read 分析自身成功来源由独立任务记录，不能用上述来源代替
 `attach_pdf(paper_id, pdf, *, request_id, version_id=None)` 要求明确 paper；
 version 缺省冻结为首次附加时当前版本，显式 version 必须属于该 paper。
 只验证文件级 `%PDF-` 签名、至少 1024 字节及 SHA-256，不声称离线证明论文归属。
+B 产品入口先登记独立所有者确认，其组合规则与当前样本核验见
+[B 工作流](stage-b-workflow.md#pdf-独立确认与样本冻结)。
+`attach_pdf_in_connection(connection, paper_id, *, pdf_sha256, artifact_id, request_id,
+version_id, selected_version_id, confirmation_id=None)` 要求调用方先在事务外完成合法 PDF
+与制品发布核验，再在已有写事务追加；可显式保存确认外键，与产品关联原子提交。
+`freeze_sample_in_connection` 复用同样冻结规则并由调用方提交，不开第二个写事务。
 原字节以 `original_pdf` 发布，访问依据固定 `manual`；失败不追加选择，发布后提交失败
 最多留下无业务引用的不可变材料。不同字节保留不同内容对象。
 每次显式附加追加选择事件；`pdfs(paper_id)` 返回历史，`current_pdf(paper_id)`
