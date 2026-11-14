@@ -62,6 +62,10 @@ GUIDANCE = {
 }
 
 
+class ClaimDenied(Exception):
+    """产品只读守卫的受控拒绝基类;安全原因由上层拥有,不写任务失败。"""
+
+
 class TaskError(Exception):
     def __init__(
         self,

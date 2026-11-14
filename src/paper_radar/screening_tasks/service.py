@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import overload
 
-from sqlalchemy import select
+from sqlalchemy import Connection, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.config import ConfigError, load_config_snapshot
@@ -29,7 +29,7 @@ from paper_radar.screening_tasks.attempt_models import (
 )
 from paper_radar.screening_tasks.attempt_rules import is_executor_failure
 from paper_radar.screening_tasks.database_errors import database_error
-from paper_radar.screening_tasks.errors import TaskError, TaskReason
+from paper_radar.screening_tasks.errors import ClaimDenied, TaskError, TaskReason
 from paper_radar.screening_tasks.execution import AttemptService
 from paper_radar.screening_tasks.feed_gate import FeedGate
 from paper_radar.screening_tasks.feed_gate import find as find_feed_gate
@@ -111,6 +111,19 @@ class ScreeningTasks:
         self._task_event("claimed", result)
         return result
 
+    def require_current_generation(
+        self, connection: Connection, receipt: RequestReceipt
+    ) -> None:
+        """产品写事务内只读复核当前代际;不回收、不增代、不退款。"""
+        latest = connection.execute(
+            select(tasks.c.task_id)
+            .where(tasks.c.budget_id == receipt.budget_id)
+            .order_by(tasks.c.generation.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+        if latest != receipt.task_id:
+            raise TaskError(TaskReason.NOT_LATEST)
+
     def status(self, receipt_id: str) -> TaskStatus:
         return self._attempts.status(self.get_receipt(receipt_id))
 
@@ -173,6 +186,7 @@ class ScreeningTasks:
         executor: FailureExecutor,
         *,
         preclaim: Callable[[str | None], None] | None = None,
+        claim_guard: Callable[[Connection], None] | None = None,
     ) -> FailureReceipt: ...
 
     @overload
@@ -182,6 +196,7 @@ class ScreeningTasks:
         executor: TestExecutor,
         *,
         preclaim: Callable[[str | None], None] | None = None,
+        claim_guard: Callable[[Connection], None] | None = None,
     ) -> FailureReceipt | SuccessReceipt: ...
 
     def run_once(
@@ -190,19 +205,26 @@ class ScreeningTasks:
         executor: TestExecutor,
         *,
         preclaim: Callable[[str | None], None] | None = None,
+        claim_guard: Callable[[Connection], None] | None = None,
     ) -> FailureReceipt | SuccessReceipt:
-        if not callable(executor) or (preclaim is not None and not callable(preclaim)):
+        if (
+            not callable(executor)
+            or (preclaim is not None and not callable(preclaim))
+            or (claim_guard is not None and not callable(claim_guard))
+        ):
             raise TaskError(TaskReason.INVALID_REQUEST)
         receipt = self.get_receipt(receipt_id)
         with self.log.operation(
             "screening",
-            controlled=(TaskError,),
+            controlled=(TaskError, ClaimDenied),
             task_id=receipt.task_id,
             paper_id=receipt.paper_id,
             stage=receipt.stage,
             fingerprint=receipt.fingerprint,
         ):
-            return self._run_once(receipt, executor, preclaim=preclaim)
+            return self._run_once(
+                receipt, executor, preclaim=preclaim, claim_guard=claim_guard
+            )
 
     def _task_event(self, event: str, claim: Claim, **fields: object) -> None:
         if isinstance(self.log.sink, NullSink):
@@ -228,12 +250,15 @@ class ScreeningTasks:
         executor: TestExecutor,
         *,
         preclaim: Callable[[str | None], None] | None = None,
+        claim_guard: Callable[[Connection], None] | None = None,
     ) -> FailureReceipt | SuccessReceipt:
         frozen = self.load_input(receipt.receipt_id)
         # 先拒绝已有修正依据损坏;领取可能回收过期尝试,提交后需重读实际修正。
         self._attempts.correction(receipt)
         self._success.store().prepare_publish()
-        claim = self._attempts.claim(receipt, frozen, preclaim=preclaim)
+        claim = self._attempts.claim(
+            receipt, frozen, preclaim=preclaim, claim_guard=claim_guard
+        )
         self._task_event("claimed", claim)
         self.log.bind(attempt=claim.attempt_no)
         stage_input = frozen.stage_input
@@ -271,6 +296,22 @@ class ScreeningTasks:
         """生产登记:派生来源、冻结预算及依据在同一写事务提交。"""
         return self._register(
             raw_request, policy_version=policy_version, feed_gate=feed_gate
+        )[0]
+
+    def register_feed_value_with_status(
+        self,
+        raw_request: object,
+        *,
+        policy_version: str = "v1",
+        feed_gate: FeedGate | None = None,
+        registration_guard: Callable[[Connection], None] | None = None,
+    ) -> tuple[RequestReceipt, bool]:
+        """生产 value 原子登记及重放标志;产品守卫只读当前写事务。"""
+        return self._register(
+            raw_request,
+            policy_version=policy_version,
+            feed_gate=feed_gate,
+            registration_guard=registration_guard,
         )
 
     def language_basis(self, receipt_id: str) -> LanguageBasis:
@@ -371,7 +412,16 @@ class ScreeningTasks:
                     )
 
     def register(self, raw_request: object) -> RequestReceipt:
-        return self._register(raw_request)
+        return self._register(raw_request)[0]
+
+    def register_with_status(
+        self,
+        raw_request: object,
+        *,
+        registration_guard: Callable[[Connection], None] | None = None,
+    ) -> tuple[RequestReceipt, bool]:
+        """返回原回执与是否精确重放;新登记在写事务内复核产品资格。"""
+        return self._register(raw_request, registration_guard=registration_guard)
 
     def _register(
         self,
@@ -379,7 +429,8 @@ class ScreeningTasks:
         *,
         policy_version: str | None = None,
         feed_gate: FeedGate | None = None,
-    ) -> RequestReceipt:
+        registration_guard: Callable[[Connection], None] | None = None,
+    ) -> tuple[RequestReceipt, bool]:
         if policy_version is not None:
             if (
                 type(raw_request) is not dict
@@ -416,7 +467,7 @@ class ScreeningTasks:
                                 or previous_gate["receipt_id"] != replayed.receipt_id
                             ):
                                 raise TaskError(TaskReason.REQUEST_CONFLICT)
-                        return replayed
+                        return replayed, True
                 mapping = PaperFacts(self.database).map_screening_inputs(
                     paper_id=request.paper_id, snapshot_id=request.snapshot_id
                 )
@@ -453,6 +504,8 @@ class ScreeningTasks:
                         if existing_budget is not None:
                             language = existing_budget["original_title_is_zh"]
                         else:
+                            if registration_guard is not None:
+                                registration_guard(connection)
                             basis = derive(connection, request.paper_id, policy_version)
                             if basis["status"] != "resolved":
                                 retain(connection, basis)
@@ -477,7 +530,9 @@ class ScreeningTasks:
                                 or previous_gate["receipt_id"] != replayed.receipt_id
                             ):
                                 raise TaskError(TaskReason.REQUEST_CONFLICT)
-                        return replayed
+                        return replayed, True
+                    if registration_guard is not None:
+                        registration_guard(connection)
                     if feed_gate is not None and (
                         evidence.version_id != feed_gate.version_id
                         or evidence.revision_no != feed_gate.revision_no
@@ -514,7 +569,7 @@ class ScreeningTasks:
                         )
                     if feed_gate is not None:
                         retain_feed_gate(connection, feed_gate, result.receipt_id)
-                    return result
+                    return result, False
             except SQLAlchemyError as error:
                 raise database_error(error) from None
 

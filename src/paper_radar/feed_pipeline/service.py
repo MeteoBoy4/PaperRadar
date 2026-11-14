@@ -1,9 +1,10 @@
 """显式Feed组合:保留服务权威;登记前置原子复核。"""
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal
 
-from sqlalchemy import select
+from sqlalchemy import Connection, select
 
 from paper_radar.feed_ingestion import JGRFeed
 from paper_radar.feed_metadata import JGRMetadata
@@ -29,6 +30,7 @@ from paper_radar.screening_tasks.feed_gate import (
     sha,
 )
 from paper_radar.screening_tasks.repository import task_database, task_transaction
+from paper_radar.screening_tasks.tables import requests, tasks
 
 PipelineReason = Literal[
     "invalid_request",
@@ -171,6 +173,23 @@ class FeedPipeline:
     ) -> ValueRegistration:
         return self._register(
             raw_request, metadata_request_key, boundary_success_id, "production"
+        )[0]
+
+    def register_value_with_status(
+        self,
+        raw_request: object,
+        *,
+        metadata_request_key: str,
+        boundary_success_id: str,
+        registration_guard: Callable[[Connection], None] | None = None,
+    ) -> tuple[ValueRegistration, bool]:
+        """沿生产前置原子区分登记/重放,新登记在 A7 写事务内调用只读守卫。"""
+        return self._register(
+            raw_request,
+            metadata_request_key,
+            boundary_success_id,
+            "production",
+            registration_guard=registration_guard,
         )
 
     def register_test_value(
@@ -183,7 +202,7 @@ class FeedPipeline:
         """显式test用途;保留metadata/current/boundary/语言所有检查。"""
         return self._register(
             raw_request, metadata_request_key, boundary_success_id, "test"
-        )
+        )[0]
 
     def _result(self, basis: dict[str, Any]) -> ValueRegistration:
         receipt = self.tasks.get_receipt(basis["receipt_id"])
@@ -201,7 +220,9 @@ class FeedPipeline:
         metadata_key: str,
         boundary_id: str,
         purpose: Literal["production", "test"],
-    ) -> ValueRegistration:
+        *,
+        registration_guard: Callable[[Connection], None] | None = None,
+    ) -> tuple[ValueRegistration, bool]:
         if (
             type(raw) is not dict
             or raw.get("stage") != "value"
@@ -216,7 +237,7 @@ class FeedPipeline:
         ):
             old = find(connection, key)
         if old is not None:
-            return self._verify_basis(old)
+            return self._verify_basis(old), True
         metadata = self.metadata.replay(metadata_key)
         if metadata.paper_id != raw.get("paper_id") or not metadata.minimum_complete:
             raise PipelineError("metadata_incomplete")
@@ -258,7 +279,9 @@ class FeedPipeline:
             current.revision_no,
             boundary.receipt.fingerprint,
         )
-        receipt = self.tasks.register_feed_value(raw, feed_gate=gate)
+        receipt, replayed = self.tasks.register_feed_value_with_status(
+            raw, feed_gate=gate, registration_guard=registration_guard
+        )
         return self._result(
             dict(
                 receipt_id=receipt.receipt_id,
@@ -266,7 +289,52 @@ class FeedPipeline:
                 metadata_request_key=metadata_key,
                 boundary_success_id=boundary_id,
             )
-        )
+        ), replayed
+
+    def production_value_basis(self, receipt_id: str) -> ValueRegistration:
+        """只读验证 value 预算的生产登记依据,含显式 retry 后继;不新建请求。"""
+        receipt = self.tasks.get_receipt(receipt_id)
+        if receipt.stage != "value":
+            raise PipelineError("invalid_request")
+        with (
+            task_database(self.database, write=False) as engine,
+            task_transaction(engine, write=False) as connection,
+        ):
+            keys = tuple(
+                connection.execute(
+                    select(proofs.c.request_key)
+                    .join(requests, requests.c.receipt_id == proofs.c.receipt_id)
+                    .join(tasks, tasks.c.task_id == requests.c.task_id)
+                    .where(tasks.c.budget_id == receipt.budget_id)
+                    .order_by(proofs.c.request_key)
+                ).scalars()
+            )
+            rows = tuple(find(connection, key) for key in keys)
+        for row in rows:
+            if row is None:
+                raise PipelineError("corrupt_reference")
+            if row["purpose"] != "production":
+                continue
+            basis = self._verify_basis(row)
+            metadata = self.metadata.replay(basis.metadata_request_key)
+            if (
+                not metadata.current_version
+                or metadata.version_id != receipt.version_id
+                or metadata.revision_no != receipt.revision_no
+            ):
+                raise PipelineError("metadata_stale")
+            if not any(
+                value.receipt.success_id == basis.boundary_success_id
+                and value.applicability == "current"
+                for value in self.tasks.query_successes(
+                    paper_id=receipt.paper_id,
+                    stage="boundary",
+                    snapshot_id=receipt.snapshot_id,
+                )
+            ):
+                raise PipelineError("boundary_missing")
+            return basis
+        raise PipelineError("test_source")
 
     def _verify_basis(self, row: dict[str, Any]) -> ValueRegistration:
         result = self._result(row)

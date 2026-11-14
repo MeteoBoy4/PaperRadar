@@ -81,6 +81,7 @@ class AttemptService:
         frozen: FrozenInput,
         *,
         preclaim: Callable[[str | None], None] | None = None,
+        claim_guard: Callable[[Connection], None] | None = None,
     ) -> Claim:
         # 时钟错误与指纹变化都先于领取事务,不会占用预算。
         now = utc_now(self.clock)
@@ -101,6 +102,8 @@ class AttemptService:
             current = resolve_revision(connection, paper_id=receipt.paper_id)
             if evidence_values(current) != basis:
                 raise TaskError(TaskReason.FACTS_CHANGED)
+            if claim_guard is not None:
+                claim_guard(connection)
             existing = read_attempts(connection, receipt.task_id)
             now = utc_now(self.clock)
             expires = lease_expiry(now)

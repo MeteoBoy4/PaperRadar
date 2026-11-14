@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic
 
+from sqlalchemy import Connection
+
 from paper_radar.config import ConfigError, load_config_snapshot
 from paper_radar.live_evidence.ledger import LedgerError
 from paper_radar.live_evidence.types import (
@@ -131,6 +133,8 @@ class PiExecution:
         limits: RpcLimits = DEFAULT_LIMITS,
         cancelled: Cancellation = lambda: False,
         clock: MonotonicClock = monotonic,
+        before_prepare: Callable[[], None] | None = None,
+        claim_guard: Callable[[Connection], None] | None = None,
     ) -> SuccessReceipt | FailureReceipt:
         if type(limits) is not RpcLimits or any(
             type(value) not in (int, float)
@@ -207,6 +211,8 @@ class PiExecution:
                 limits,
                 cancelled,
                 clock,
+                before_prepare,
+                claim_guard,
             )
         except (ExecutionError, LedgerError, SupplyError) as error:
             if isinstance(error, ExecutionError):
@@ -224,10 +230,14 @@ class PiExecution:
         limits: RpcLimits,
         cancelled: Cancellation,
         clock: MonotonicClock,
+        before_prepare: Callable[[], None] | None,
+        claim_guard: Callable[[Connection], None] | None,
     ) -> SuccessReceipt | FailureReceipt:
         checkpoints = AdmissionCheckpoints(
             self.database, self.credentials_dir, guard, self._now
         )
+        if before_prepare is not None:
+            before_prepare()
         request = checkpoints.before_prepare(binding)
         with prepare_launch(
             self.tasks.database,
@@ -299,7 +309,9 @@ class PiExecution:
                 return FailureReport(_FAILURE_KINDS[result.category])
 
             try:
-                result = self.tasks.run_once(receipt_id, executor, preclaim=preclaim)
+                result = self.tasks.run_once(
+                    receipt_id, executor, preclaim=preclaim, claim_guard=claim_guard
+                )
                 if (
                     isinstance(result, FailureReceipt)
                     and result.kind is FailureKind.MODEL_MISMATCH

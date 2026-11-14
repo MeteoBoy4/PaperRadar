@@ -4,7 +4,7 @@
 
 `paper-radar experiment` 在必填的显式 `--root` 中组合 B 实验动作。
 当前提供 `init`、`feed-fetch`、`candidates`、`select/selection`、`egress-authorize/status/check` 和静态
-`preflight`，以及显式无 prompt 映射探测 `probe-models`，不推断 cwd 或父目录中的根。
+`preflight`、显式无 prompt 映射探测 `probe-models` 与两阶段 `screen`；不推断 cwd 或父目录中的根。
 实验用途、执行来源和质量资格分别判断；组件规则仍由各自 Contract 定义。
 
 ## 规则
@@ -203,6 +203,64 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 授权历史／当前授权。当前记录查询不授予执行资格，调用者仍须联合校验版本、外发授权与
 阶段资格。
 
+### 显式两阶段 Screening
+
+`screen --root ROOT --selection-id SELECTION --snapshot REF --credentials-dir DIR
+--material-root DIR --install-root DIR` 对一个明确授权运行 boundary → value。
+默认 boundary 是 manual 请求，request_id 由 B selection 身份、快照身份和阶段确定性派生。
+`register_with_status` 原子区分新登记与精确重放；重放只返回登记时的原回执，不认证、
+不领取、不补后来的成功，也不继续 value。历史选样被换下后仍可回查这种原回执。
+
+每次新执行在认证前核对当前有效选择、同 Paper 的冻结 version/revision、当前最低元数据
+与非截断完整主摘要、外发授权；Pi 仍执行所有者豁免或严格证据检查及不可豁免的运行
+隔离。完整不可变选样链与候选制品在事务外预验，短事务用
+`Selections.require_current_in_connection(connection, validated_record)` 复核当前行、
+根和预验记录的规范字节，不在锁内读取候选文件。新登记、两阶段之间及每次领取短事务
+重新读取选择、版本、元数据与适用外发范围；已通过 boundary 不直接放行 value。
+领取守卫拒绝回滚、不新增 attempt/失败、不占预算；外部认证、RPC 和制品 I/O 在事务外。
+已领取的在途 attempt 沿原租约接收，不因换样或撤销授权删除历史、退款或改写 A7 独立阶段事实。
+
+每阶段一次命令最多驱动当前代际剩余的两次领取，第二次只使用 A7 的受控修正；成功即停。
+boundary 的权威 `pi_rpc` 成功为 out_of_scope 时保留结果，以 3 停止且不登记 value，提示
+所有者换样。其他 boundary 成功由 `FeedPipeline.register_value` 登记生产 value，语言从
+Feed 派生；`test` 成功拒绝。组件独立阶段与来源规则见[任务](screening-tasks.md)和
+[Feed 组合](feed-pipeline.md)。成功不创建建议、决定、Read 或 reuse；
+`reuse_feasibility_inferable=false` 也不触发额外任务。
+
+预算的唯一权威仍是 A7：同库、同 `(paper_id, stage, fingerprint)` 预算范围，每任务代际
+最多两次领取；重启、换 request/标签或 A→B→A 不重建旧预算。失败终态只由带理由的
+显式 retry 追加唯一后继，不自动重试或创建新代际。
+
+`screen ... --receipt-id RECEIPT` 是独立的显式执行模式，只执行该明确回执，不登记
+新请求，不自动继续另一阶段，不产生新代际。它重新核对当前选样、冻结版本、快照与
+当前代际；value 还须有同预算的 Feed 生产登记、冻结语言和当前非 out_of_scope 的
+`pi_rpc` boundary。ready/retryable 可使用剩余预算；running、已成功、非当前回执拒绝，
+失败耗尽以 4 拒绝；第二次租约过期但未结算时要求先显式结算，不暗中回收或退款。
+前置失败或中断留下的回执从公共任务查询回查，再由此模式显式继续；默认重放不表示继续许可。
+
+`screen ... --continue-value` 与 `--receipt-id` 互斥，显式从当前成功 boundary 登记 value。
+它仍重查当前授权、冻结版本、元数据与范围，boundary 必须为当前 pi_rpc 且非 out_of_scope；
+新 value 经 `FeedPipeline.register_value_with_status` 生产登记，资格守卫位于 A7 同一写事务，
+仅首次新登记执行；精确重复只返回原 value 回执，不认证、不继续 ready/failed 回执。
+已有 ready value 用明确的 `--receipt-id` 执行；不会重开 boundary 或以新任意 request 绕过。
+没有 boundary 成功时拒绝；out_of_scope 仍以 3 停止。
+
+前置失败/中断后，先从公共任务查询取得明确回执，再按下列连续动作恢复（各占位身份
+由原查询给出；配置与路径保持原值）：
+
+```bash
+paper-radar experiment screen --root /tmp/my-experiment --selection-id SELECTION \
+  --snapshot SNAPSHOT --credentials-dir /tmp/credentials --material-root /tmp/materials \
+  --install-root /tmp/pi --receipt-id BOUNDARY_RECEIPT
+paper-radar experiment screen --root /tmp/my-experiment --selection-id SELECTION \
+  --snapshot SNAPSHOT --credentials-dir /tmp/credentials --material-root /tmp/materials \
+  --install-root /tmp/pi --continue-value
+# 若 value 已登记但认证前中断，继续其原回执：
+paper-radar experiment screen --root /tmp/my-experiment --selection-id SELECTION \
+  --snapshot SNAPSHOT --credentials-dir /tmp/credentials --material-root /tmp/materials \
+  --install-root /tmp/pi --receipt-id VALUE_RECEIPT
+```
+
 ### B 事实验证与备份闭包
 
 `experiment.validation.validate_all(database, data_root)` 是唯一 B 持久事实聚合，验证全部
@@ -217,6 +275,9 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 
 ### 日志与命令帮助
 
+`screen` 显式装配 `FileSink(root)` 并传入 Pi/任务服务；独立入口守卫、任务事件与
+隐私断言位于 `tests/test_experiment_screen_cli.py`，日志只写所选根。
+
 `select` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
 独立 D1 装配守卫见 `tests/test_experiment_selection_cli.py`，`selection` 不建日志。
 `egress-authorize` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
@@ -225,7 +286,7 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 守卫位于独立 D1 模块 `tests/test_experiment_feed_cli.py`；既有审计守卫保持原样。
 `init` 与只读候选投影不记录模型／来源执行日志；候选默认终端只输出身份、数量和相对
 文件名，完整题名／摘要只进入获准的私有快照与视图。帮助不联网、不开库、不建目录。全部命令的自动配额
-恒为 0，不调用模型、不领取任务。错误只投影封闭原因与白名单字段位置，不展开
+恒为 0；只有显式 `screen` 发送业务 prompt 并领取任务；`probe-models` 只进行无 prompt 映射探测。错误只投影封闭原因与白名单字段位置，不展开
 异常自由文本、私有路径、HTTP 响应、Prompt、Profile、摘要、正文或凭据。
 
 ## 错误与拒绝
@@ -234,6 +295,12 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 | --- | --- |
 | `0` | 授权写入/只读查询成功，或静态预检必要项均通过；初始化成功，或 Feed 取得并且所有成员最低元数据、非截断主摘要及语言均就绪；空的有效 200 响应也返回 0，仍不推断新增数量 |
 | `0 / candidates` | 候选生成或历史重建成功，含受阻成员也返回 0；就绪依据在私有视图中披露 |
+| `0 / screen` | 两阶段或明确回执执行成功，或默认请求精确重放原回执 |
+| `3 / out_of_scope` | boundary 成功但停止 value；由所有者换样 |
+| `4 / budget_exhausted` | 当前代际两次失败已耗尽；查询后由所有者显式 retry |
+| `2 / invalid_execution_mode` | `--continue-value` 与 `--receipt-id` 互斥；选择一个明确动作 |
+| `2 / frozen_version_changed / metadata_not_ready / receipt_scope_mismatch` | 冻结版本、完整元数据或显式回执范围不符；回查事实后重新选样或使用正确回执 |
+| `2 / already_succeeded / not_latest / task_running / lease_unsettled` | 回执不能重新执行；查询当前代际与租约，必要时显式结算，禁止退款或重开预算 |
 | `2 / invalid_arguments` | 缺必填参数或未知参数；查看对应 `--help` |
 | `2 / root_unknown` | 没有 experiment 登记；对独立空根运行 init，既有未知用途库不能改登记 |
 | `2 / root_not_experiment` | production 根被拒绝；使用独立实验根 |
@@ -259,12 +326,12 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 
 ## 不提供／不证明
 
-不提供生产根初始化、生产消费、自动队列或模型执行。实验结果不能提升为生产结果。
+不提供生产根初始化、生产消费或自动队列。显式 Screening 仅限有效实验选样。实验结果不能提升为生产结果。
 离线 HTTP 替身覆盖不证明真实 Feed 字段、entry 稳定性、主摘要完整、语言来源约定或
 模型／Docling／现场隔离成立；真实链与后续命令由[路线图 B](../roadmap.md#module-b)承接。
 
 ## 相关
 
 - [Feed 组合](feed-pipeline.md)、[元数据](feed-metadata.md)、[正文持久化](body-persistence.md)、[运行日志](runtime-logging.md)。
-- [根与 Feed 工程覆盖](../verification/issue-187-experiment-feed.md)、[候选工程覆盖](../verification/issue-188-candidate-views.md)、[授权与预检工程覆盖](../verification/issue-189-egress-preflight.md)、[选样工程覆盖](../verification/issue-190-selection-authorization.md)。
+- [根与 Feed 工程覆盖](../verification/issue-187-experiment-feed.md)、[候选工程覆盖](../verification/issue-188-candidate-views.md)、[授权与预检工程覆盖](../verification/issue-189-egress-preflight.md)、[选样工程覆盖](../verification/issue-190-selection-authorization.md)、[Screening 工程覆盖](../verification/issue-192-screen-command.md)。
 - 依据：[#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)、[#187](https://github.com/MeteoBoy4/PaperRadar/issues/187)、[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。

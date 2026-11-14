@@ -47,7 +47,7 @@ JGR Feed 取得、当前版本最低元数据结果、语言依据及 value 任�
   `ValueRegistration`：用途、任务回执、元数据请求、boundary 成功和冻结语言依据；
   `scope` 明确声明仅登记任务。`Preparation.scope` 同样不表示真实来源或执行资格通过。
 - 任务成功接收已支持 `test | pi_rpc`，受控一次执行可提供生产来源 boundary。
-  合成对端已验证登记/value/恢复接线，产品仍缺 Live 接收的现场隔离与模型能力证据，不能真实执行。
+  严格证据或所有者豁免与不可豁免执行检查见[Pi 执行](pi-execution.md)。
   组合服务不生成 boundary 成功、不发送模型请求。
 - 新登记在现有任务写事务中复核预读论文版本/修订及 boundary 指纹；任务、预算、
   语言依据和组合前置引用一起提交。事实并发变化返回 `facts_changed`，事务故障不留下
@@ -58,6 +58,12 @@ JGR Feed 取得、当前版本最低元数据结果、语言依据及 value 任�
 - 组合用途 `test`/`production` 不进入 Stage fingerprint 或 Frozen Contract，也不划分
   新的预算范围。组合入口使用任务服务的 `v1` 语言策略，不接受策略参数；语言派生、
   已有预算及 retry 的冻结/继承语义见[任务语言规则](screening-tasks.md#feed-原题名语言来源)。
+- `register_value_with_status(..., registration_guard=None)` 沿生产登记返回 `(ValueRegistration, replayed)`；
+  新登记的只读产品资格守卫在 A7 同一写事务内、任何业务写入前执行，精确重放不调用守卫。
+  旧 `register_value` 返回值保持；重复请求不隐含继续执行许可。
+- `production_value_basis(receipt_id)` 只读验证同 value 预算的生产 Feed 登记、冻结语言、
+  元数据与当前非 out_of_scope 的 pi_rpc boundary；显式 retry 后继沿用该预算依据。
+  缺少生产登记或只有 test 登记拒绝，不补挂证明、不创建请求；B 另核对选样和冻结版本。
 - `validate_all()` 只读校验已保存组件事实及组合引用，不修复、不升级、不执行模型。
   [备份验证](backup-restore.md)包含该入口；组合引用损坏映射为备份
   `registration_invalid`。原根不可访问的隔离恢复仍可查询原材料、元数据、语言、
