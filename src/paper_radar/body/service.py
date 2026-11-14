@@ -14,6 +14,7 @@ from paper_radar.body.models import (
     BodyReason,
     CurrentBody,
     DecisionEvent,
+    DecisionMetadata,
     PdfAttachment,
     RootRegistration,
     SampleAdmission,
@@ -22,6 +23,7 @@ from paper_radar.body.pdf import valid_pdf_bytes
 from paper_radar.body.queries import (
     current_pdf,
     decision_events,
+    decision_metadata,
     pdf_record,
     root_fact,
     sample_record,
@@ -347,6 +349,12 @@ class BodyService:
     def decisions(self, paper_id: str) -> tuple[DecisionEvent, ...]:
         with transaction(self.database) as connection:
             return decision_events(connection, paper_id)
+
+    def decision_metadata_in_connection(
+        self, connection: Connection, paper_id: str
+    ) -> tuple[DecisionMetadata, ...]:
+        """只读当前事务的决定ID/序号/结果;不加载完整来源或上层关联。"""
+        return decision_metadata(connection, paper_id)
 
     def freeze_sample(
         self,

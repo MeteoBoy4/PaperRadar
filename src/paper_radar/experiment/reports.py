@@ -8,9 +8,10 @@ from typing import Any, Literal
 from uuid import uuid4
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import Connection, func, insert, select, update
 
 from paper_radar.body import BodyService
+from paper_radar.body.models import BodyError, DecisionMetadata
 from paper_radar.calibration import visibility
 from paper_radar.doctor.admission import report_admission_fragment
 from paper_radar.eligibility import RootPurpose
@@ -27,6 +28,7 @@ from paper_radar.papers import PaperFacts
 from paper_radar.read_tasks import ReadTasks
 from paper_radar.runtime_logging import RuntimeLog, Sink
 from paper_radar.runtime_logging.events import Clock
+from paper_radar.screening.reasons import ScreeningResult
 from paper_radar.screening_tasks import ScreeningTasks
 from paper_radar.screening_tasks import tables as screening_tables
 from paper_radar.storage.filesystem import (
@@ -292,6 +294,7 @@ class Reports:
         available_at: str,
         fact: dict[str, Any],
         acceptance: dict[str, Any] | None,
+        decision_scope: dict[str, Any],
     ) -> ReportEntry:
         revision = PaperFacts(self.database, self.data_root).revision(
             selection.version_id, selection.revision_no
@@ -329,6 +332,7 @@ class Reports:
                 acceptance=acceptance,
                 authorization=selection.model_dump(mode="json"),
                 fact=fact,
+                decision_scope=decision_scope,
             ),
         )
 
@@ -349,6 +353,15 @@ class Reports:
             ):
                 continue
             with transaction(self.database) as connection:
+                metadata = self._decision_metadata(connection, selection.paper_id)
+                scope = self._decision_scope(metadata)
+                accepted_ids = {a.decision_id for a in acceptances}
+                if any(
+                    d.result is ScreeningResult.ACCEPTED
+                    and d.decision_id not in accepted_ids
+                    for d in metadata
+                ):
+                    raise ReportError("facts_changed")
                 ids = tuple(
                     connection.execute(
                         select(screening_tables.successes.c.success_id)
@@ -385,6 +398,7 @@ class Reports:
                                 next_action="实验建议无决定权；由所有者显式代执行接受或换样。",
                             ),
                             acceptance=None,
+                            decision_scope=scope,
                         )
                     )
                     continue
@@ -402,6 +416,7 @@ class Reports:
                                 next_action="所有者确认合法 PDF 后显式 attach-pdf。",
                             ),
                             acceptance=acceptance.model_dump(mode="json"),
+                            decision_scope=scope,
                         )
                     )
                 else:
@@ -432,10 +447,33 @@ class Reports:
                                     next_action="检查解析失败和版式；保留质量失败，由所有者决定下一步，不自动重试。",
                                 ),
                                 acceptance=acceptance.model_dump(mode="json"),
+                                decision_scope=scope,
                             )
                         )
         # 同一冻结版本可被多次选回;相同制品只生成一个发布键。
         return list({e.first_publication_key: e for e in reversed(result)}.values())
+
+    def _decision_metadata(
+        self, connection: Connection, paper_id: str
+    ) -> tuple[DecisionMetadata, ...]:
+        try:
+            return BodyService(
+                self.database, self.data_root
+            ).decision_metadata_in_connection(connection, paper_id)
+        except BodyError:
+            raise ReportError("registration_invalid") from None
+
+    @staticmethod
+    def _decision_scope(metadata: tuple[DecisionMetadata, ...]) -> dict[str, Any]:
+        return dict(
+            through_sequence=metadata[-1].sequence if metadata else 0,
+            boundary_decision_id=metadata[-1].decision_id if metadata else None,
+            decisions_sha256=sha(
+                canonical(
+                    [[d.decision_id, d.sequence, d.result.value] for d in metadata]
+                )
+            ),
+        )
 
     def _summary(
         self, candidates: tuple[ReportEntry, ...]
@@ -579,6 +617,13 @@ class Reports:
                             ):
                                 continue
                             position = len(chosen) + 1
+                            if entry.primary_kind != "analysis" and (
+                                self._decision_scope(
+                                    self._decision_metadata(connection, entry.paper_id)
+                                )
+                                != entry.basis["decision_scope"]
+                            ):
+                                raise ReportError("facts_changed")
                             chosen.append(
                                 entry.model_copy(
                                     update={
@@ -667,7 +712,7 @@ class Reports:
         records = self._source_records() if inputs.entries else ((), ())
         for entry in inputs.entries:
             if entry.primary_kind != "analysis":
-                self._validate_nonanalysis(entry, inputs, records)
+                self._validate_nonanalysis(entry, records)
                 continue
             current = self._analysis_entry(
                 entry.primary_ref, inputs.snapshot_id, records
@@ -695,7 +740,6 @@ class Reports:
     def _validate_nonanalysis(
         self,
         entry: ReportEntry,
-        inputs: ReportInput,
         records: tuple[tuple[DelegatedAcceptance, ...], tuple[SelectionRecord, ...]],
     ) -> None:
         try:
@@ -711,6 +755,27 @@ class Reports:
                 raise ValueError
             acceptance = entry.basis["acceptance"]
             fact = entry.basis["fact"]
+            scope = entry.basis["decision_scope"]
+            if (
+                type(scope) is not dict
+                or set(scope)
+                != {"through_sequence", "boundary_decision_id", "decisions_sha256"}
+                or type(scope["through_sequence"]) is not int
+                or scope["through_sequence"] < 0
+            ):
+                raise ValueError
+            with transaction(self.database) as connection:
+                metadata = self._decision_metadata(connection, entry.paper_id)
+            bounded = tuple(
+                d for d in metadata if d.sequence <= scope["through_sequence"]
+            )
+            if self._decision_scope(bounded) != scope:
+                raise ValueError
+            accepted_ids = {
+                d.decision_id for d in bounded if d.result is ScreeningResult.ACCEPTED
+            }
+            if not accepted_ids <= {a.decision_id for a in records[0]}:
+                raise ValueError
             if entry.primary_kind == "pending":
                 success = ScreeningTasks(self.database, self.data_root).load_success(
                     success_id
@@ -722,8 +787,7 @@ class Reports:
                 ):
                     raise ValueError
                 if any(
-                    a.value_success_id == success_id
-                    and a.accepted_at <= inputs.frozen_at
+                    a.value_success_id == success_id and a.decision_id in accepted_ids
                     for a in records[0]
                 ):
                     raise ValueError
@@ -732,7 +796,11 @@ class Reports:
                     (a for a in records[0] if a.model_dump(mode="json") == acceptance),
                     None,
                 )
-                if record is None or record.value_success_id != success_id:
+                if (
+                    record is None
+                    or record.value_success_id != success_id
+                    or record.decision_id not in accepted_ids
+                ):
                     raise ValueError
                 if fact["kind"] == "needs_pdf":
                     if (
@@ -770,6 +838,7 @@ class Reports:
                 available_at=entry.available_at,
                 fact=fact,
                 acceptance=acceptance,
+                decision_scope=scope,
             )
             if (
                 entry.paper_id,
