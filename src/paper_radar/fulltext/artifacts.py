@@ -48,6 +48,7 @@ class FulltextArtifacts:
         document_json: bytes | None = None,
         warnings: tuple[str, ...] = (),
         execution_audit: ExtractionExecutionAudit | None = None,
+        normalization_version: Literal["v1", "v2"] = "v1",
     ) -> PublishedExtraction:
         for value in (
             extraction_fingerprint,
@@ -55,7 +56,7 @@ class FulltextArtifacts:
             model_artifacts_hash,
         ):
             require_sha256(value)
-        evidence_map = normalize_document(document)
+        evidence_map = normalize_document(document, version=normalization_version)
         reading = render_reading(evidence_map)
         evidence_bytes = canonical_json(evidence_map.model_dump(mode="json"))
         audit_bytes = (
@@ -67,6 +68,7 @@ class FulltextArtifacts:
             extraction_fingerprint, sha256(reading), sha256(evidence_bytes)
         )
         manifest = ExtractionManifest(
+            normalization_version=normalization_version,
             extraction_fingerprint=identity.extraction_fingerprint,
             reading_sha256=identity.reading_sha256,
             evidence_map_sha256=identity.evidence_map_sha256,
@@ -113,7 +115,8 @@ class FulltextArtifacts:
             sha256(members["evidence_map"]),
         )
         if (
-            identity != expected_identity
+            manifest.normalization_version != evidence_map.normalization_version
+            or identity != expected_identity
             or identity.reading_sha256 != manifest.reading_sha256
             or identity.evidence_map_sha256 != manifest.evidence_map_sha256
             or sha256(members["document"]) != manifest.document_sha256

@@ -47,7 +47,7 @@ class EvidenceEntry(CanonicalModel):
 
 class EvidenceMap(CanonicalModel):
     format_version: Literal[1] = 1
-    normalization_version: Literal["v1"] = "v1"
+    normalization_version: Literal["v1", "v2"] = "v1"
     has_text_layer: bool
     pages: tuple[CanonicalPage, ...]
     source_blocks: tuple[Source, ...]
@@ -57,7 +57,7 @@ class EvidenceMap(CanonicalModel):
 
 class ExtractionManifest(CanonicalModel):
     format_version: Literal[1] = 1
-    normalization_version: Literal["v1"] = "v1"
+    normalization_version: Literal["v1", "v2"] = "v1"
     extraction_fingerprint: str
     reading_sha256: str
     evidence_map_sha256: str

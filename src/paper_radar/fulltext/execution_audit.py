@@ -19,7 +19,7 @@ class ExtractionExecutionAudit(CanonicalModel):
     component_versions: tuple[tuple[str, str], ...]
     backend_config_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
     model_artifacts_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    normalization_version: Literal["v1"] = "v1"
+    normalization_version: Literal["v1", "v2"] = "v1"
     timeout_seconds: float = Field(gt=0, allow_inf_nan=False)
     memory_limit_bytes: int = Field(gt=0, le=2**63 - 1)
     memory_limit_method: Literal["rlimit_as_virtual_address_space_bytes"] = (

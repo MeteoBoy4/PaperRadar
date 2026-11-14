@@ -90,6 +90,9 @@ formula 的 orig/text 分别保留；启用时 text 另存 generated_text 候选
 原始 `export_to_dict()` 明确移除页面与节点的 image 字段，再拒绝残余嵌入二进制；
 不依赖 SDK 的 PLACEHOLDER 导出替代去图。不导出外部图片文件，也不增加第五制品角色。
 规范化和恢复不依赖 SDK，沿用[规范正文](fulltext-extraction.md)。
+映射不从缺失的字体/inline/span 字段推造修复依据；原始 export 的既有字段仍保留在 document 审计中。
+normalization v2 的页边、尾部事项组和局部重复符号风险检测在规范化层消费真实映射，
+版本取本次 ExtractionSemantics，执行审计与 manifest 一致。工具链及模型部署可以保持原身份。
 
 ### 持久审计
 

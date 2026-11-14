@@ -35,7 +35,7 @@
 | `pdf_backend` | 可省略，默认 `pypdfium2`；另允许显式 `threaded_docling_parse`，不自动 fallback。 |
 | `models` | 必填严格对象；必填 `layout`、`table`；公式开启时必须有 `formula`，关闭时必须省略或写 `null`。 |
 | `policy` | 可省略或 `{}`，补全下表的显式有效值；`null`、自由 options、未知字段拒绝。 |
-| `normalization_version` | 必填代码受控 `NormalizationVersion.V1`（`v1`），非文本和未知算法版本拒绝。 |
+| `normalization_version` | 必填代码受控 `NormalizationVersion.V1/V2`（`v1/v2`），非文本和未知算法版本拒绝。 |
 
 超时、内存/峰值、线程/批量/队列、模型本机目录、password、凭据及凭据引用均不是本配置的
 输入字段，任何层级出现时按未知字段拒绝并脱敏。PDF 后端包版本从工具链展开，不接受
@@ -127,7 +127,8 @@ extra 只选择 slim 的 `convert-core`、`format-pdf`、`models-local`，IBM mo
 
 两个后端同时安装，配置仍须通过 `pdf_backend` 选择；不会自动 fallback，也不会因
 parse 已安装而把其版本加入 pypdfium2 的阶段语义。两后端输出不视为相等。
-新配置示例为 `settings-extraction-v2.yaml` 与 `settings-extraction-v2-threaded.yaml`；
+新规范化示例为 `settings-extraction-v3.yaml` 与 `settings-extraction-v3-threaded.yaml`（normalization v2，工具链仍为 cpu-v2）；
+既有 `settings-extraction-v2.yaml` 与 `settings-extraction-v2-threaded.yaml` 保持 normalization v1；
 它们的模型哈希是合成声明，不是可执行模型供给。
 
 `check_docling_imports.py` 是独立显式 smoke，核对安装库存、CPU 状态及 converter、
@@ -211,6 +212,11 @@ backend 中立语义对象的空模型清单表示，不开放 V1 的无模型�
 不同快照而保持相同语义。backend、模型 commit/文件身份、有效策略或规范化算法身份的
 变化改变对应语义。`normalization_version` 是受控算法身份，不参与独立字节登记，不能
 作为普通声明标签剔除；同算法版本下的代码漂移仍靠评审和冻结纪律约束，配置服务不自动检测。
+
+规范化版本的算法、历史恢复与局部受限风险规则见[规范正文](fulltext-extraction.md#normalization-v2)。
+切换到 v2 须创建新的 extraction 声明版本及 selector，不能修改已登记 YAML；
+不要求切换工具链、模型、Prompt 或 Profile，也不要求下载新权重。
+相同模型文件可沿原部署清单核验复用，运行时仍重新准备只读快照。
 
 extraction 配置就绪只要求所选材料合法且完整，不依赖 Profile、LLM、PDF、其他阶段、
 本机模型或 fixture gate。无选择时为 `not_ready` / `extraction_config`；有选择但

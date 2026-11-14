@@ -112,7 +112,7 @@ def test_unknown_resource_credential_and_duplicate_identity_fields_are_rejected(
         ("docling-2.135.0-cpu-v1", "PRIVATE_MARKER", "toolchain"),
         (
             "normalization_version: v1",
-            "normalization_version: v2",
+            "normalization_version: v3",
             "normalization_version",
         ),
         ("normalization_version: v1\n", "", "normalization_version"),

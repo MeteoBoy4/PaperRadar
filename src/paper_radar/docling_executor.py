@@ -163,6 +163,7 @@ class DoclingParser:
                 timeout_seconds=run.timeout_seconds,
                 memory_limit_bytes=run.memory_limit_bytes,
                 threads=run.threads,
+                normalization_version=semantics.normalization_version.value,
             )
             snapshot = snapshot_models(run.model_root, semantics)
         except DoclingPreflightError:
