@@ -178,7 +178,7 @@ def test_snapshot_format_rejects_forged_display_content(
     check = fetch("first")
     first = invoke("candidates", "--root", str(root), "--check-id", check["check_id"])
     receipt = json.loads(first.stdout)
-    store = ArtifactStore(root / "paper-radar.sqlite3", root)
+    store = ArtifactStore(root / "paper-radar.sqlite3", root / "data")
     payload = json.loads(store.read_artifact(receipt["view_id"])["payload"])
     if damage == "abstract":
         payload["items"][0]["abstract"] = "PRIVATE_SYNTHETIC_FORGED"
@@ -210,7 +210,7 @@ def test_later_metadata_revision_creates_new_identity_and_keeps_old_bytes(
     old = json.loads(first.stdout)
     path = root / old["view"]
     original = path.read_bytes()
-    papers = PaperFacts(root / "paper-radar.sqlite3", root)
+    papers = PaperFacts(root / "paper-radar.sqlite3", root / "data")
     paper_id = check["items"][0]["paper_id"]
     assert paper_id is not None
     current = papers.show(paper_id)
@@ -420,7 +420,7 @@ def test_candidate_snapshot_survives_backup_restore_without_view_files(
             "--database",
             str(root / "paper-radar.sqlite3"),
             "--data-root",
-            str(root),
+            str(root / "data"),
             "--output",
             str(backups),
         ],
@@ -437,7 +437,7 @@ def test_candidate_snapshot_survives_backup_restore_without_view_files(
     working = tmp_path / "working-copy"
     working.mkdir()
     shutil.copyfile(restored / "database.sqlite3", working / "paper-radar.sqlite3")
-    shutil.copytree(restored / "blobs", working / "blobs")
+    shutil.copytree(restored / "blobs", working / "data/blobs")
     result = invoke(
         "candidates", "--root", str(working), "--view-id", receipt["view_id"]
     )
@@ -472,7 +472,7 @@ def test_truncated_abstract_is_preserved_and_blocked(feed: FeedFixture) -> None:
     root, state, fetch = feed
     state["order"] = [1]
     check = fetch("first")
-    papers = PaperFacts(root / "paper-radar.sqlite3", root)
+    papers = PaperFacts(root / "paper-radar.sqlite3", root / "data")
     paper_id = check["items"][0]["paper_id"]
     assert paper_id is not None
     current = papers.show(paper_id)
@@ -546,7 +546,7 @@ def test_production_root_is_refused(tmp_path: Path) -> None:
     root = tmp_path / "production"
     root.mkdir()
     upgrade_database(root / "paper-radar.sqlite3")
-    BodyService(root / "paper-radar.sqlite3", root).register_root("production")
+    BodyService(root / "paper-radar.sqlite3", root / "data").register_root("production")
     result = invoke("candidates", "--root", str(root), "--check-id", "synthetic")
     assert result.exit_code == 2 and "root_not_experiment" in result.output
     assert not (root / "views").exists()

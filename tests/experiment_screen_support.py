@@ -11,7 +11,8 @@ import yaml
 from typer.testing import Result
 
 from paper_radar.config import compile_config
-from paper_radar.pi_supply import activate_supply, prepare_supply
+from paper_radar.experiment import ExperimentRoot
+from paper_radar.pi_supply import activate_supply, prepare_supply, verify_supply
 from tests.config_adapter_support import adapter_inputs
 from tests.pi_execution_service_support import deny_default_live_io
 from tests.pi_execution_support import PeerRun
@@ -114,7 +115,8 @@ def screen_fixture(
     shutil.copytree(source / "contracts", root / "contracts", dirs_exist_ok=True)
     database = root / "paper-radar.sqlite3"
     snapshot = compile_config(root / "config/settings.yaml", database)
-    install, materials = tmp_path / "install", tmp_path / "materials"
+    layout = ExperimentRoot(root)
+    install, materials = root / "pi-install", root / "pi-materials"
     # Download 的 PI 常量只定义合成 release 版本;同步独立供给替身。
     from tests import pi_supply_support
 
@@ -176,12 +178,14 @@ def screen_fixture(
         "screening",
         request,
         install,
-        data_root=root / "blobs",
-        config_root=root / "config",
+        data_root=layout.data_root,
+        config_root=layout.config,
         material_root=materials,
         downloader=download,
         runner=PeerRun(peer),
     )
+    checked = verify_supply(database, prepared.supply_id, runner=PeerRun(peer))
+    assert len(checked) == 1 and checked[0].passed, checked
     activate_supply(database, prepared.supply_id, snapshot.snapshot_id)
     cwd = tmp_path / "cwd"
     cwd.mkdir()

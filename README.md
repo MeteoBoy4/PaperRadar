@@ -18,7 +18,8 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型输出。
 `experiment probe-models` 显式对 screening/reading 分别执行无 prompt RPC 映射探测，
 认证可能刷新并写回专用凭据；只说明本次模型与档位可设置，不提供生成或准入证明。
-根布局、用途守卫及安全输出见[B 实验工作流](docs/contracts/stage-b-workflow.md)。
+实验根将制品放在 `data/`，数据库保持根内原位置；Pi 供给四根可并列，
+非空旧顶层制品布局受控拒绝并保留原材料。根布局、用途守卫及安全输出见[B 实验工作流](docs/contracts/stage-b-workflow.md)。
 仓库还提供 B 首版 boundary、value、reading 与 Pi 系统生产 Prompt，材料位置、
 复制登记与冻结规则见[公开生产 Prompt](docs/contracts/runtime-config.md#公开生产-prompt)。
 

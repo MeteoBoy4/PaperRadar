@@ -75,13 +75,14 @@ init 显式迁移数据库并登记不可改写的 experiment 用途。
 
 INIT_HELP = """初始化独立实验根，显式迁移并一次性登记 experiment 用途。
 
-参数：必填 --root。固定数据库 paper-radar.sqlite3，制品 blobs/sha256，配置
+参数：必填 --root。固定数据库 paper-radar.sqlite3，制品 data/blobs/sha256，配置
 config/settings.yaml，日志 logs/，私有视图 views/；不猜测根。
 副作用：创建目录与数据库；同根重放保持根身份；不改登记 production/unknown 库。
 帮助不联网、不开库、不建目录；自动配额 0，不调用模型。
 输出去向：stdout 安全 JSON，错误写 stderr，不输出私有绝对路径。
 退出码：成功 0；参数错误或受控拒绝 2；中断 130。
 常见失败：根用途不符或布局不安全；请使用独立空根，不迁移既有未知用途库。
+旧顶层 blobs/ 或 tmp/ 非空以 legacy_layout 拒绝；请保留原库材料，另行安排显式迁移。
 示例：paper-radar experiment init --root /tmp/my-experiment
 """
 
@@ -349,8 +350,8 @@ def initialize(root: RootOption) -> None:
                 root_id=registered.root_id,
                 purpose=registered.purpose.value,
                 database="paper-radar.sqlite3",
-                data_root=".",
-                blobs="blobs/sha256",
+                data_root="data",
+                blobs="data/blobs/sha256",
                 config="config/settings.yaml",
                 logs="logs",
                 views="views",

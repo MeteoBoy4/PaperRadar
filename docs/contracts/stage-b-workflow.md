@@ -16,9 +16,9 @@
 | 属性／内容 | 相对显式根的位置 |
 | --- | --- |
 | `database` | `paper-radar.sqlite3` |
-| `data_root` | `.`，供既有 `ArtifactStore` 与组件服务使用 |
-| 内容制品 | `blobs/sha256/`，沿用[制品契约](artifact-store.md) |
-| 制品发布临时成员 | `tmp/`，不是模型 attempt 运行目录 |
+| `data_root` | `data/`，供既有 `ArtifactStore` 与组件服务使用 |
+| 内容制品 | `data/blobs/sha256/`，沿用[制品契约](artifact-store.md) |
+| 制品发布临时成员 | `data/tmp/`，不是模型 attempt 运行目录 |
 | `config`／`settings` | `config/`／`config/settings.yaml` |
 | `logs` | `logs/`，沿用[运行日志](runtime-logging.md) |
 | `views` | `views/`，私有只读业务投影的输出位置 |
@@ -32,6 +32,15 @@
 `require()` 只读核对固定布局、当前数据库版本和 experiment 用途，不创建根、日志
 或数据库。固定业务位置拒绝符号链接及错误文件类型。组件服务仍接受显式数据库与
 数据根；后续实验命令消费本类及此守卫，不维护另一套布局常量。
+
+Pi prepare 的 data/config 根使用这里的实际值；material/install 仍显式传入，
+可分别选择根内并列的 `pi-materials/` 与 `pi-install/`。四根两两不得包含，
+供给安全检查保持生效；prepare/verify/activate、模型探测与任务消费使用同一数据库
+和实际 data_root。数据库保持根内原位置，预算和用途身份不因制品子目录变化重建。
+
+旧顶层 `blobs/` 或 `tmp/` 非空时，`init` 和 `require()` 均以 `legacy_layout`
+受控拒绝，保留原库、原材料和目录，不忽略旧制品、不自动搬迁。仅有用途登记的空库
+可经 `init` 创建 `data/`，数据库不移动、root_id 不重登记；空的旧目录可保留。
 
 ### 显式 Feed 取得
 
@@ -280,7 +289,7 @@ retryable、lease_expired 与旧指纹失败保留在 trace，不进入当前失
 
 ```bash
 paper-radar paper trace PAPER --database /tmp/root/paper-radar.sqlite3 \
-  --data-root /tmp/root --snapshot SNAPSHOT --json
+  --data-root /tmp/root/data --snapshot SNAPSHOT --json
 paper-radar screening reclaim RECEIPT --database /tmp/root/paper-radar.sqlite3
 paper-radar screening failures --database /tmp/root/paper-radar.sqlite3 --snapshot SNAPSHOT
 paper-radar screening retry PAPER --database /tmp/root/paper-radar.sqlite3 \
@@ -409,6 +418,7 @@ Body 决定原因/actor/引用/时间、受控标记与请求身份，并检查�
 | `2 / invalid_arguments` | 缺必填参数或未知参数；查看对应 `--help` |
 | `2 / root_unknown` | 没有 experiment 登记；对独立空根运行 init，既有未知用途库不能改登记 |
 | `2 / root_not_experiment` | production 根被拒绝；使用独立实验根 |
+| `2 / legacy_layout` | 旧顶层制品或临时目录非空；保留原库与材料，另行安排显式迁移 |
 | `2 / unsafe_layout` | 固定位置不安全或不可写；检查布局、链接与权限 |
 | `2 / invalid_request / candidate_not_found` | 选样参数、所有者理由或成员不唯一；从固定视图按唯一编号或 DOI 重选 |
 | `2 / candidate_not_ready / basis_changed` | 就绪缺项或所见依据已变化；补齐后生成新视图并由所有者重选 |
