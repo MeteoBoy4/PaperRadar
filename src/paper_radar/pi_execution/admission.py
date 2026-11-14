@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Literal, overload
 if TYPE_CHECKING:
     from paper_radar.live_evidence.service import AdmissionProjection, AdmissionRequest
 
-from paper_radar.llm.models import CallDescription
+from paper_radar.llm.models import CallDescription, MappingDescription
 from paper_radar.pi_execution.errors import ExecutionReason
 
 
@@ -38,7 +38,7 @@ class AdmissionEvidence:
 
 
 def bind_description(
-    description: CallDescription,
+    description: CallDescription | MappingDescription,
     *,
     supply_id: str,
     install_id: str,

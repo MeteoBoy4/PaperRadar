@@ -4,7 +4,7 @@
 
 `paper-radar experiment` 在必填的显式 `--root` 中组合 B 实验动作。
 当前提供 `init`、`feed-fetch`、`candidates`、`select/selection`、`egress-authorize/status/check` 和静态
-`preflight`，不推断 cwd 或父目录中的根。
+`preflight`，以及显式无 prompt 映射探测 `probe-models`，不推断 cwd 或父目录中的根。
 实验用途、执行来源和质量资格分别判断；组件规则仍由各自 Contract 定义。
 
 ## 规则
@@ -108,6 +108,15 @@ MemAvailable 是非必需披露项：成功采集为 passed/host_memory_observed
 不读取 auth.json 内容，不启动 Pi/Docling、不联网。模型映射明确为
 `model_mapping_not_probed/not_assessed`；无 prompt 的 RPC 探测是另一个执行边界。
 成功只表示本次静态必要项通过，不授予业务执行、逐文档质量或模型能力资格。
+
+### 显式无 prompt 映射探测
+
+`probe-models --root ROOT --snapshot REF --credentials-dir AUTH --material-root MATERIAL
+--install-root INSTALL` 默认独立探测 screening 与 reading；`--slot` 可只选一槽。
+认证前核对实验根与精确外发范围（screening 为 boundary/value，reading 为 read），
+再消费共享所有者豁免或严格证据与不可豁免隔离。它不消费选样、不登记业务任务或预算。
+认证可能刷新并写回凭据，输出仅为本次映射状态；生命周期、副作用、时限、错误与证明边界
+唯一规则见 [Pi 执行探测](pi-execution.md#无-prompt-模型映射探测)。
 
 ### 候选事实与私有视图
 

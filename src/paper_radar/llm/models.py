@@ -28,6 +28,24 @@ class CallDescriptionError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
+class MappingDescription:
+    """只描述启动与映射;不存在业务输入或可渲染的用户消息。"""
+
+    slot: Literal["screening", "reading"]
+    audit_snapshot_id: str
+    pi_version: str
+    protocol_profile: str
+    provider: str = field(repr=False)
+    model: str = field(repr=False)
+    thinking_level: ThinkingLevel
+    system_prompt: bytes = field(repr=False)
+    protocol: Literal["prompt_only"] = "prompt_only"
+    sampling: Literal["explicit", "provider_default"] = "provider_default"
+    temperature: float | None = None
+    top_p: float | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class CallDescription:
     stage: Literal["boundary", "value", "read"]
     fingerprint: str

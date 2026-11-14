@@ -88,6 +88,16 @@ correction 始终保留槽位：首次为 null，后续为 A7 唯一构造的受
 
 ## 公共单次协议与字节会话
 
+### 无 prompt 映射边界
+
+`MappingDescription` 只含槽、快照、Pi/协议版本、精确模型/档位、采样声明及系统指令，
+没有业务 Prompt、Profile 或论文输入。`probe_mapping(description, factory)` 复用同一
+有界初始化序列至 `get_state`，不发送 prompt；关闭输入、排空、整组回收成功后才返回
+`RpcMappingResult`。失败返回同一封闭 `RpcFailure`；时限、帧界限、取消与清理约束沿用下文。
+返回值只证明本次映射与状态可设置，不构成生成、参数有效性或准入证明。
+
+### 有 prompt 单次调用
+
 `paper_radar.llm.rpc.run_call(description, user_message, factory, *, clock,
 cancelled, limits)` 返回 `RpcCandidate | RpcFailure`。clock 默认 `time.monotonic`，
 cancelled 默认始终为 false，limits 默认 `DEFAULT_LIMITS`。user_message 是已渲染

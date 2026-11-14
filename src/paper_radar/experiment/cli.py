@@ -110,6 +110,91 @@ RootOption = Annotated[Path, typer.Option("--root", help="必填的显式实验�
 
 
 @experiment_app.command(
+    "probe-models",
+    cls=ExperimentCommand,
+    help="""显式执行无 prompt 的模型映射探测，screening 与 reading 独立核对。
+
+参数：必填 --root、--snapshot、--credentials-dir、--material-root、--install-root；
+--slot 可选 screening 或 reading，默认两槽。只核实精确模型与推理档位可设置。
+副作用：调用认证 helper，可能刷新并写回专用凭据目录；不是只读预检。
+创建独占 /tmp 根，完成后回收进程组并清理；日志写所选根 logs/。
+不发送 prompt、Profile、摘要或正文，不登记任务、attempt 或预算；自动配额 0。
+输出去向：stdout 安全 JSON 槽和原因；错误写 stderr；不保存准入证据。
+帮助不联网、不开库、不建目录。
+常见失败：无授权、缺严格证据或豁免、隔离不可用、模型/档位不可用、超时、清理失败；
+请核对 egress、owner-waiver、固定供给和精确配置；升级须按 §7.8 交所有者裁决。
+退出码：成功 0；参数、受控拒绝或失败 2；中断 130。
+示例：paper-radar experiment probe-models --root /tmp/my-experiment --snapshot SNAP
+--credentials-dir /tmp/auth --material-root /tmp/materials --install-root /tmp/install
+""",
+)
+def probe_models(
+    root: RootOption,
+    snapshot: Annotated[str, typer.Option("--snapshot", help="显式历史快照。")],
+    credentials_dir: Annotated[
+        Path, typer.Option("--credentials-dir", help="独立认证目录。")
+    ],
+    material_root: Annotated[
+        Path, typer.Option("--material-root", help="显式材料根。")
+    ],
+    install_root: Annotated[
+        Path, typer.Option("--install-root", help="当前固定安装根。")
+    ],
+    slot: Annotated[
+        str | None, typer.Option("--slot", help="screening 或 reading；默认两槽。")
+    ] = None,
+) -> None:
+    from paper_radar.experiment import ExperimentError, ExperimentRoot
+    from paper_radar.experiment.egress import EgressError
+    from paper_radar.experiment.model_mapping import probe_models as execute
+    from paper_radar.pi_execution.errors import ExecutionError
+    from paper_radar.runtime_logging import FileSink, RuntimeLog
+
+    if slot not in {None, "screening", "reading"}:
+        typer.echo(
+            "invalid_arguments：--slot 须为 screening 或 reading；查看 --help。",
+            err=True,
+        )
+        raise typer.Exit(2)
+    try:
+        selected = ExperimentRoot(root)
+        selected.require()
+        log = RuntimeLog(FileSink(selected.root))
+        with log.execution(
+            "experiment", controlled=(ExperimentError, EgressError, ExecutionError)
+        ):
+            result = execute(
+                selected,
+                snapshot=snapshot,
+                credentials_dir=credentials_dir,
+                material_root=material_root,
+                install_root=install_root,
+                slot=slot,
+            )
+    except (ExperimentError, EgressError, ExecutionError) as error:
+        typer.echo(
+            f"{error.reason}：探测停止；核对外发授权、豁免/严格证据、"
+            "固定供给及隔离后显式重跑；模型升级交所有者按 §7.8 裁决。",
+            err=True,
+        )
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo("interrupted：探测中断；回查隔离与清理后显式重跑。", err=True)
+        raise typer.Exit(130) from None
+    except Exception as error:
+        report_component_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(json.dumps(result, ensure_ascii=False))
+    if any(item["state"] != "mapping_settable" for item in result):
+        typer.echo(
+            "mapping_probe_failed：仅回读映射，未取得生成或参数有效性证明；"
+            "请核对精确模型、档位及清理，升级按 §7.8 交所有者裁决。",
+            err=True,
+        )
+        raise typer.Exit(2)
+
+
+@experiment_app.command(
     "candidates",
     cls=ExperimentCommand,
     help="""生成或重建一次 Feed 检查的私有只读候选清单。

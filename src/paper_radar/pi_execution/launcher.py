@@ -14,7 +14,11 @@ from typing import Literal, Protocol
 
 from paper_radar.llm import render_request
 from paper_radar.llm.dispatch import DispatchDenied
-from paper_radar.llm.models import PROTOCOL_PROFILES, CallDescription
+from paper_radar.llm.models import (
+    PROTOCOL_PROFILES,
+    CallDescription,
+    MappingDescription,
+)
 from paper_radar.llm.rpc_pipes import PipeSession
 from paper_radar.llm.rpc_types import ByteSession, RpcProblem, RpcReason, SessionEvent
 from paper_radar.pi_execution.auth import credential_token
@@ -148,7 +152,9 @@ class PreparedLaunch(Protocol):
     @property
     def identity(self) -> LaunchIdentity: ...
 
-    def __call__(self, description: CallDescription, /) -> ByteSession: ...
+    def __call__(
+        self, description: CallDescription | MappingDescription, /
+    ) -> ByteSession: ...
 
     def close(self) -> None: ...
 
@@ -163,7 +169,7 @@ class _PreparedLaunch:
     def __init__(
         self,
         database: Path,
-        description: CallDescription,
+        description: CallDescription | MappingDescription,
         install: InstallUse,
         roots: ExecutionRoots,
         token: str,
@@ -284,7 +290,9 @@ class _PreparedLaunch:
         if self._placement is not None:
             self._placement.recheck()
 
-    def __call__(self, description: CallDescription, /) -> ByteSession:
+    def __call__(
+        self, description: CallDescription | MappingDescription, /
+    ) -> ByteSession:
         if self._used or description != self._description or self._token is None:
             raise RpcProblem(RpcReason.STARTUP_ERROR)
         self._used = True
@@ -295,6 +303,8 @@ class _PreparedLaunch:
             )
             self.recheck_placement()
             if self._collection_context is not None:
+                if not isinstance(description, CallDescription):
+                    raise ExecutionError("snapshot_invalid")
                 self._collection_context.recheck(self._database, description)
             self.start()
         except (ExecutionError, SupplyError) as error:
@@ -321,7 +331,7 @@ class _PreparedLaunch:
 @contextmanager
 def prepare_launch(
     database: Path,
-    description: CallDescription,
+    description: CallDescription | MappingDescription,
     *,
     roots: ExecutionRoots,
     credentials_dir: Path,
@@ -358,6 +368,8 @@ def prepare_launch(
     prepared: PreparedLaunch | None = None
     try:
         if collection is not None:
+            if not isinstance(description, CallDescription):
+                raise ExecutionError("snapshot_invalid")
             collection.recheck(database, description)
         installation = (
             use_install(database, description.audit_snapshot_id)
@@ -395,6 +407,8 @@ def prepare_launch(
                 token = ""
                 try:
                     if collection is not None:
+                        if not isinstance(description, CallDescription):
+                            raise ExecutionError("snapshot_invalid")
                         collection.recheck(database, description)
                     yield prepared
                 finally:
