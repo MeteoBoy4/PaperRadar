@@ -63,7 +63,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。批次根及根内任何路径�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 `b005_layout_recordings`，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 `b006_reports`，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -108,7 +108,9 @@ integrity_check 与 foreign_key_check、DELETE 文件头、支持格式/head、�
 存储前置见[制品存储契约](artifact-store.md#路径权限与发布)。
 
 批次包含数据库随历史保留的已登记配置原字节；不包含 config/ 树、settings.yaml 与
-selector、未登记草稿、contracts/ 导出目录、reports、logs、缓存、认证和孤立文件。
+selector、未登记草稿、contracts/ 导出目录、Markdown 报告视图、logs、缓存、认证和孤立文件。
+report run/entry 的冻结投影输入保存在数据库，其源制品随闭包备份；
+[报告公共接口](reports.md#恢复与消费接缝)可在显式独立输出目录重建字节。
 **配置文件本身请用 git 保管**。完整已登记但未被业务引用的制品仍纳入批次，
 不因没有业务引用判坏，不凭其存在补出成功事实，也不自动清理。
 
@@ -204,7 +206,7 @@ backup verify 一样只给批次 ID、清单 SHA-256 及按 kind 汇总，不逐
 
 ## 版本准入与旧批次
 
-`BACKUP_DATABASE_REVISION` 固定支持 `b005_layout_recordings`，且要求与随包唯一 head
+`BACKUP_DATABASE_REVISION` 固定支持 `b006_reports`，且要求与随包唯一 head
 一致。format 1 不表示任意 revision 兼容：verify／restore 对所有旧 revision（包括 a302、
 a405、a704、a1001 及 feed01–feed06）返回 `unsupported_revision`，不在批次内部迁移。
 保留原批次，用匹配该 revision 的旧程序先 verify／restore，再切回当前程序，对恢复的
@@ -298,8 +300,9 @@ Read 业务验证调用 ReadTasks.validate_all，闭包包括每代预算、未�
 
 - 不提供 NAS 增量备份、保留策略或无人值守 timer；本机隔离恢复不证明 NAS 恢复。
   承接：[路线图 I](../roadmap.md#module-i)。
-- 不提供业务任务自动续跑、完整报告重建或校准／自动精读资格；恢复不扩大已保存制品的使用权限。
-  报告由[路线图 H](../roadmap.md#module-h)承接，最终执行恢复由[I](../roadmap.md#module-i)承接。
+- 不提供业务任务自动续跑、普通生产完整报告或校准／自动精读资格；恢复不扩大已保存制品的使用权限。
+  实验报告冻结重建见[报告 Contract](reports.md)，生产报告由[H](../roadmap.md#module-h)承接，
+  最终执行恢复由[I](../roadmap.md#module-i)承接。
 - 不提供 Pi 执行环境脱网重建（[V1 排除项](../../intent/draft.md#13-明确不进入第一版)）；
   固定供给与实际 RPC 的后续验证范围见[Pi](../roadmap.md#module-pi)／[Live](../roadmap.md#module-live)。
 - 不证明真实来源、Docling／正文质量、B 实验入口隔离或模型质量／live 就绪；相应责任见
@@ -315,7 +318,7 @@ Read 业务验证调用 ReadTasks.validate_all，闭包包括每代预算、未�
   这些是固定历史证据，不替代当前程序校验、完整阶段 A 或 live 验收。
 - 实现依据：[备份与校验](../../src/paper_radar/backup/service.py)、
   [清单与原因](../../src/paper_radar/backup/manifest.py)、[恢复](../../src/paper_radar/backup/restore.py)、
-  [当前迁移](../../src/paper_radar/storage/migrations/versions/b005_layout_recordings.py)。
+  [当前迁移](../../src/paper_radar/storage/migrations/versions/b006_reports.py)。
 - 规格与决策依据：[§9.1](../../intent/draft.md#91-本机一致性快照)、
   [ADR-0027](../adr/0027-address-artifacts-by-content.md)、
   [ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)、

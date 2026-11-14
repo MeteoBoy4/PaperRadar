@@ -565,7 +565,19 @@ Read 成功/回执重放退出 0，参数/前置/运行拒绝 2，预算耗尽�
 中断退出 130；reading 查询/reclaim/retry 成功 0、拒绝 2、中断 130。
 执行命令注入所选根 FileSink；tasks/failures/analysis 不建日志。帮助均不联网、不开库、不建目录。
 
+### 最小实验报告
+
+`experiment report render/rebuild/verify` 在实验 views 内发布、重建和核验最终 run/entry 投影；
+同日日报固定后晚到分析只生成单篇并等待次日日报。容量、FIFO、首次发布键、私有内容、
+历史准入片段及原子发布规则由[报告 Contract](reports.md)唯一维护。
+报告每次实际调用共享 visibility，不调用模型、不新增任务/预算、不进入普通候选或复核。
+标准恢复消费显式 database/data_root/output_dir，不改 manifest 布局；
+report validate_all 经本组合唯一聚合加入备份，现场隔离回放另按 B 闸门验收。
+
 ### 日志与命令帮助
+
+`report render` 显式装配所选根 FileSink；rebuild/verify 只读库、不建日志，守卫见
+`tests/test_experiment_reports_cli.py`。
 
 `screen` 显式装配 `FileSink(root)` 并传入 Pi/任务服务；独立入口守卫、任务事件与
 隐私断言位于 `tests/test_experiment_screen_cli.py`，日志只写所选根。

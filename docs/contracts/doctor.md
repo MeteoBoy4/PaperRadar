@@ -103,7 +103,10 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 | authentication | 非必要上下文披露 not_assessed/authentication_not_assessed；不解析 token、不验证有效期、不刷新。所需能力资格由共享准入分项独立决定。 |
 | model_parameters | 非必要上下文披露 not_assessed/model_parameters_not_assessed；不调用模型或探测额度，参数与账号能力的必需/披露分类只取共享登记。 |
 
-严格模式的共享投影采用以下诊断 result 与证据字段映射，不合并枚举；豁免模式的单独未评估行不生成这些分项：
+严格模式的共享投影采用以下诊断 result 与证据字段映射，不合并枚举。
+豁免模式通过共享 `render_unassessed_fragment` 展示同一登记清单的未观察分项，
+assessment=not_assessed、historical_state_read=false，未读取的 original_state=unknown；
+received/active/revoked 同为 unknown，不合成历史 claim、不授予 verified，也不读取受保护账本：
 
 | 权威分项 | result | evidence | original_state |
 | --- | --- | --- | --- |
@@ -124,7 +127,11 @@ Apport/core 只展示共享投影的当次绑定结论，不另做长期漂移�
 `paper_radar.doctor.admission.admission_rows` 提供结构化行；
 `render_admission_fragment` 提供供 B/H 嵌入的中文片段，二者消费同一个 AdmissionProjection，
 不重判能力或改写原始事实。接口也接受 Read 格的共享投影，但不使本 CLI 自动诊断 Read。
-片段不计入每日五项/全文三项论文容量；日报嵌入的后继工作见[路线图](../roadmap.md)。
+片段不计入每日五项/全文三项论文容量；[实验报告](reports.md)通过
+`report_admission_fragment(database, snapshot_id, now)` 冻结 Screening/Read 格、
+所有者豁免、本次 not_assessed 与未读取的历史原状态 unknown。
+此只读接缝不读主机、认证、安装或受保护 Live 链；
+报告重建保留发布时片段，当前 doctor 仍展示当前事实与时点。
 本接口不实现整套日报或论文筛选排版。
 `UsageDisclosure` 保留请求可证下界及观察层/来源/窗口、精确请求数 unknown 与 Pi 自报 token；
 隐藏重试、预热、刷新可能不可见，缺失或 totalTokens=0 不代表零成本，不推算供应商独立账单。

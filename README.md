@@ -30,6 +30,9 @@ trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型�
 从当前失败唯一定位父代并只登记后继，歧义拒绝；可选 `--task-id` 仍须当前/latest/failed。
 后继再用 `experiment read ... --task-id CHILD` 显式执行，精确 retry 重放不续跑；
 `reading analysis` 是含未核对警告、丢弃计数和逐字 evidence 的获准私有视图。
+`experiment report render --root ROOT --date YYYY-MM-DD --timezone Asia/Shanghai` 发布固定实验日报；
+`--analysis-id ANALYSIS` 生成单篇，`report rebuild/verify REPORT --root ROOT` 重建或核验。
+已发布日报固定成员与字节，晚到分析等待次日日报；私有内容与恢复接口见[报告 Contract](docs/contracts/reports.md)。
 这些动作不建人工精读请求、不占自动名额，实验分析及其恢复副本始终被普通消费拒绝。
 `experiment probe-models` 显式对 screening/reading 分别执行无 prompt RPC 映射探测，
 认证可能刷新并写回专用凭据；只说明本次模型与档位可设置，不提供生成或准入证明。

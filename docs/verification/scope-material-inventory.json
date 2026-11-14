@@ -16199,6 +16199,7 @@
         "docs/contracts/pi-supply.md",
         "docs/contracts/read-execution.md",
         "docs/contracts/read-validation.md",
+        "docs/contracts/reports.md",
         "docs/contracts/runtime-config.md",
         "docs/contracts/runtime-logging.md",
         "docs/contracts/screening-tasks.md",

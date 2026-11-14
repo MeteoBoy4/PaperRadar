@@ -171,6 +171,10 @@ RPC 或完整会话均没有日志字段。日志失败不改变结算、不重�
 真实 Pi、cwd 隔离、Docling、正式校准与 NAS 仍由[路线图](../roadmap.md)对应节点承接；
 后续 Audit 首轮 live 使用已有 audit 入口接线，离线合成来源不构成其通过证据。
 
+
+实验 `report render` 在所选根显式注入 FileSink，仅记录 experiment 入口/结尾安全事件；
+`report rebuild/verify` 不建日志。获准私有报告内容与默认安全输出的边界见[报告 Contract](reports.md)。
+
 ## 相关
 
 依据：[#120 最终裁决 D2/D5/D7](https://github.com/MeteoBoy4/PaperRadar/issues/120#issuecomment-6520223100)、
