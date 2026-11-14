@@ -103,7 +103,9 @@ def test_successful_read_has_private_daily_and_independent_paper_report(
         "pdf_sha256",
         "reading_sha256",
         "owner_evidence_prerequisite_waived",
-        "original_state=not_assessed",
+        "original_state=unknown",
+        "assessment=not_assessed",
+        "historical_state_read=false",
         "evidence=unknown",
         "Screening",
         "Read",
@@ -213,3 +215,17 @@ def test_dates_and_timezone_are_controlled_without_leaking_arguments(
     assert result.exit_code == 2 and "invalid_date_timezone" in result.output
     assert "../private" not in result.output
     assert list((root / "views").iterdir()) == []
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [("PRIVATE_ARGUMENT",), ("--PRIVATE_ARGUMENT",), ("render", "--PRIVATE_ARGUMENT")],
+)
+def test_report_group_argument_errors_never_echo_private_text(
+    tmp_path: Path, arguments: tuple[str, ...]
+) -> None:
+    result = CliRunner().invoke(app, ["experiment", "report", *arguments])
+    assert result.exit_code == 2
+    assert "PRIVATE_ARGUMENT" not in result.output
+    assert "--help" in result.output
+    assert list(tmp_path.iterdir()) == []

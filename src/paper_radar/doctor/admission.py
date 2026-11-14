@@ -30,10 +30,9 @@ def render_unassessed_fragment(
         AdmissionDecision,
         CapabilityAssessment,
     )
-    from paper_radar.live_evidence.evidence import CapabilityClaim
     from paper_radar.live_evidence.registry import INITIAL_REGISTRY
 
-    reason = AdmissionReason(ReasonCode.EVIDENCE_MISSING)
+    reason = AdmissionReason(ReasonCode.OBSERVATION_UNAVAILABLE)
     projection = AdmissionProjection(
         AdmissionDecision(
             use,
@@ -42,12 +41,7 @@ def render_unassessed_fragment(
                 CapabilityAssessment(
                     rule.capability,
                     rule.requirement,
-                    CapabilityClaim(
-                        EvidenceStatus.NOT_ASSESSED,
-                        "evidence_not_assessed",
-                        "未读取受保护证据;保留原 not_assessed",
-                        evidence_at=None,
-                    ),
+                    None,
                     False,
                     False,
                     False,
@@ -66,9 +60,10 @@ def render_unassessed_fragment(
     return (
         f"{OWNER_WAIVER_NOTICE if enabled else '所有者豁免未开启'} "
         f"reason={OWNER_WAIVER_REASON if enabled else 'owner_waiver_disabled'} "
-        f"recorded_at={_value(recorded_at)}；未评估仍为 not_assessed，"
-        "不证明 verified；下一步：仅按所有者显式决定补充证据。\n"
-        + render_admission_fragment(projection)
+        f"recorded_at={_value(recorded_at)}；本次 assessment=not_assessed；"
+        "历史原状态 unknown（未读取），不证明 verified；"
+        "下一步：仅按所有者显式决定补充证据。\n"
+        + render_admission_fragment(projection, historical_state_read=False)
     )
 
 
@@ -93,7 +88,8 @@ def report_admission_fragment(
         fragments.append(f"### {label} 格（配置{'已固定' if adapter else 'unknown'}）")
         if adapter is None:
             fragments.append(
-                "配置 unknown；原能力 not_assessed；reason=configuration_missing；"
+                "配置 unknown；本次 assessment=not_assessed；"
+                "历史原状态 unknown（未读取）；reason=configuration_missing；"
                 "证据时点 unknown；下一步：补齐显式快照的本槽模型与 adapter。"
             )
             # 缺少档位不能假定 low/high;仍披露所有者事实。
@@ -139,6 +135,8 @@ class AdmissionRow:
     qualified: bool
     source: str | None
     next_step: str
+    historical_state_read: bool = True
+    assessment: EvidenceStatus | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -187,12 +185,14 @@ def _action(reasons: tuple[AdmissionReason, ...], fallback: str) -> str:
     return next((action for code, action in actions if code in codes), fallback)
 
 
-def admission_rows(projection: AdmissionProjection) -> tuple[AdmissionRow, ...]:
+def admission_rows(
+    projection: AdmissionProjection, *, historical_state_read: bool = True
+) -> tuple[AdmissionRow, ...]:
     """只映射权威给出的 requirement/qualified/reasons,不另维护能力清单。"""
     sources = dict(projection.sources)
     rows = []
     for item in projection.decision.capabilities:
-        claim = item.claim
+        claim = item.claim if historical_state_read else None
         required = item.requirement is Requirement.REQUIRED
         result = (
             Result.PASSED
@@ -217,7 +217,7 @@ def admission_rows(projection: AdmissionProjection) -> tuple[AdmissionRow, ...]:
                 item.capability,
                 projection.decision.use,
                 item.requirement,
-                result,
+                result if historical_state_read else Result.NOT_ASSESSED,
                 EvidenceStatus.VERIFIED if item.qualified else EvidenceStatus.UNKNOWN,
                 claim.status if claim else None,
                 tuple(reason.token for reason in item.reasons),
@@ -231,9 +231,16 @@ def admission_rows(projection: AdmissionProjection) -> tuple[AdmissionRow, ...]:
                 item.evidence_active,
                 item.revoked,
                 item.applicability,
-                item.qualified,
+                item.qualified if historical_state_read else False,
                 sources.get(item.capability),
-                _action(item.reasons, step),
+                _action(item.reasons, step)
+                if historical_state_read
+                else (
+                    "本次未评估；历史原状态 unknown（未读取）；"
+                    "仅按所有者显式决定补充观察，不自动重跑。"
+                ),
+                historical_state_read,
+                None if historical_state_read else EvidenceStatus.NOT_ASSESSED,
             )
         )
     return tuple(rows)
@@ -257,6 +264,12 @@ def render_admission_row(row: AdmissionRow) -> str:
         f"capability={row.capability.value} result={row.result.value} "
         f"evidence={row.evidence.value} original_state="
         f"{row.original_state.value if row.original_state else 'absent'} "
+        if row.historical_state_read
+        else (
+            f"capability={row.capability.value} result=not_assessed "
+            "evidence=unknown original_state=unknown "
+        )
+    ) + (
         f"requirement={row.requirement.value} "
         f"use={row.use.consumer.value}-{row.use.thinking_level.value} "
         f"call_site={row.use.call_site.value} "
@@ -264,16 +277,26 @@ def render_admission_row(row: AdmissionRow) -> str:
         f"basis={_value(row.basis)} scope={_value(row.scope)} "
         f"evidence_at={_value(row.evidence_at)} verified_at={_value(row.verified_at)} "
         f"expires_at={_value(row.expires_at)} expired={_value(row.expired)} "
-        f"received={_value(row.received)} "
-        f"evidence_active={_value(row.evidence_active)} "
-        f"revoked={_value(row.revoked)} applicability={row.applicability.value} "
+        f"received={_value(row.received if row.historical_state_read else None)} "
+        f"evidence_active="
+        f"{_value(row.evidence_active if row.historical_state_read else None)} "
+        f"revoked={_value(row.revoked if row.historical_state_read else None)} "
+        f"applicability={row.applicability.value} "
         f"qualified={_value(row.qualified)} source={_value(row.source)} "
-        f"下一步：{row.next_step}"
+        + (
+            ""
+            if row.historical_state_read
+            else "assessment=not_assessed historical_state_read=false "
+        )
+        + f"下一步：{row.next_step}"
     )
 
 
 def render_admission_fragment(
-    projection: AdmissionProjection, *, usage: UsageDisclosure | None = None
+    projection: AdmissionProjection,
+    *,
+    usage: UsageDisclosure | None = None,
+    historical_state_read: bool = True,
 ) -> str:
     """供 B/H 嵌入的中文片段,与论文列表及其容量计算无关。"""
     usage = usage or UsageDisclosure()
@@ -292,9 +315,11 @@ def render_admission_fragment(
         "执行能力与证据披露（不计入每日五项/全文三项论文容量）：\n"
         f"use={use.consumer.value}-{use.thinking_level.value} "
         f"call_site={use.call_site.value} registry={decision.registry_version} "
-        f"executable={_value(decision.executable)} reason={reasons} "
+        f"executable={_value(decision.executable if historical_state_read else None)} "
+        f"reason={reasons} "
         f"watermark={_value(projection.watermark)} "
-        f"pending_revocation={_value(projection.pending_revocation)} "
+        f"pending_revocation="
+        f"{_value(projection.pending_revocation if historical_state_read else None)} "
         f"observed_at={_value(observed_at)} "
         f"refresh_result={refresh_result} "
         f"refresh_at={_value(refreshed_at)}\n"
@@ -315,7 +340,15 @@ def render_admission_fragment(
         "缺失或 totalTokens=0 不代表零成本。"
     )
     return "\n".join(
-        (header, *(render_admission_row(row) for row in admission_rows(projection)))
+        (
+            header,
+            *(
+                render_admission_row(row)
+                for row in admission_rows(
+                    projection, historical_state_read=historical_state_read
+                )
+            ),
+        )
     )
 
 

@@ -137,8 +137,19 @@ def render(value: ReportInput) -> bytes:
                     "### Screening（实验非决定支撑）",
                     _block(entry.basis.get("screening")),
                     "",
-                    "### 决定来源：所有者授权 + Agent 代执行",
-                    _block(entry.basis.get("acceptance")),
+                )
+            )
+            acceptance = entry.basis.get("acceptance")
+            lines.extend(
+                (
+                    "### 决定来源：所有者授权 + Agent 代执行"
+                    if acceptance is not None
+                    else "### 决定来源：尚无代执行接受决定（保留选样授权）",
+                    _block(
+                        acceptance
+                        if acceptance is not None
+                        else entry.basis.get("authorization")
+                    ),
                 )
             )
             if entry.primary_kind == "analysis":

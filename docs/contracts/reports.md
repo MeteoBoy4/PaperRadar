@@ -49,16 +49,19 @@ replace 已完成、published 尚未提交时，重跑仍使用原输入、成�
 
 每次 render/rebuild/verify 和获准历史查询都实际调用共享 visibility，B 的隐藏集合为空。
 原题名保持来源文本；Screening 明示实验非决定支撑；授权者 owner 与代执行者 agent
-分列，注明依预先选样授权代执行，不声称所有者看过模型输出。
+分列；实际存在代执行记录时注明依预先选样授权代执行，不声称所有者看过模型输出。
+尚无该记录的 pending 条目明确显示“尚无代执行接受决定（保留选样授权）”。
 Read 只经 `analysis_payload` / ReadQueries 消费已接收输出、历史 attempt 依据和 evidence；
 显著披露受限内容未核对、各类 discard 标记与计数。evidence 保存原页码、bbox、
 charspan；没有稳定章节定位时显示 unknown。健康运行摘要只显示计数，异常展开受控告警；
 空日报分别显示无新结果或因故障没有结果。
 
 准入披露复用 doctor 的共享片段及分项行，分别展示 Screening/Read 格，
-保留所有者豁免、not_assessed/unknown、原因、时点及下一动作，不计论文容量。
+披露所有者豁免、本次 assessment=not_assessed、未读取的 original_state=unknown、
+historical_state_read=false、原因、时点及下一动作，不计论文容量。
 报告发布只读取业务库豁免/显式快照，不探测宿主、认证、安装或受保护 Live 链；
-未作观察的分项如实为 not_assessed，不因此产生 verified。重建使用冻结片段，
+未作观察的分项如实为 not_assessed，未读取的历史状态不写成 absent 或原 not_assessed，
+received/active/revoked 也保持 unknown，不合成历史 claim 或因此产生 verified。重建使用冻结片段，
 不重新查询当前 doctor 或所有者选择。
 
 ### 恢复与消费接缝
@@ -76,7 +79,8 @@ paper/version/revision、primary/supporting 与原授权依据，供后续暴露
 ## 错误与拒绝
 
 成功退出 0；参数/受控业务拒绝/执行失败退出 2；中断退出 130。
-受控原因包括 invalid_date_timezone、invalid_clock、ordinary_consumption_denied、
+受控原因包括 invalid_arguments、unknown_command、invalid_date_timezone、
+invalid_clock、ordinary_consumption_denied、
 analysis_not_found、analysis_scope_invalid、report_not_found、visibility_denied、
 registration_invalid、unsafe_path、file_missing、content_corrupt。
 错误只含受控原因与下一步，不回显题名、摘要、模型响应、路径或自由文本。

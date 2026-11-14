@@ -105,7 +105,8 @@ Profile 或外发说明。范围成功提示仅说明这些必要检查，不改
 
 严格模式的共享投影采用以下诊断 result 与证据字段映射，不合并枚举。
 豁免模式通过共享 `render_unassessed_fragment` 展示同一登记清单的未观察分项，
-original_state=not_assessed、evidence=unknown 不授予 verified，也不读取受保护账本：
+assessment=not_assessed、historical_state_read=false，未读取的 original_state=unknown；
+received/active/revoked 同为 unknown，不合成历史 claim、不授予 verified，也不读取受保护账本：
 
 | 权威分项 | result | evidence | original_state |
 | --- | --- | --- | --- |
@@ -128,7 +129,8 @@ Apport/core 只展示共享投影的当次绑定结论，不另做长期漂移�
 不重判能力或改写原始事实。接口也接受 Read 格的共享投影，但不使本 CLI 自动诊断 Read。
 片段不计入每日五项/全文三项论文容量；[实验报告](reports.md)通过
 `report_admission_fragment(database, snapshot_id, now)` 冻结 Screening/Read 格、
-所有者豁免及原 not_assessed/unknown。此只读接缝不读主机、认证、安装或受保护 Live 链；
+所有者豁免、本次 not_assessed 与未读取的历史原状态 unknown。
+此只读接缝不读主机、认证、安装或受保护 Live 链；
 报告重建保留发布时片段，当前 doctor 仍展示当前事实与时点。
 本接口不实现整套日报或论文筛选排版。
 `UsageDisclosure` 保留请求可证下界及观察层/来源/窗口、精确请求数 unknown 与 Pi 自报 token；

@@ -8,6 +8,8 @@ from typing import Annotated, Any
 import typer
 from typer.core import TyperCommand
 
+from paper_radar.backup.cli_support import BatchGroup
+
 
 class ExperimentCommand(TyperCommand):
     """参数诊断不回显未知参数、自由文本或私有根路径。"""
@@ -1272,7 +1274,17 @@ def read(
         raise typer.Exit(4)
 
 
+class ReportGroup(BatchGroup):
+    parameter_error = (
+        "invalid_arguments：报告参数不完整或不受支持；请查看 experiment report --help。"
+    )
+    unknown_command_error = (
+        "unknown_command：报告子命令不受支持；请查看 experiment report --help。"
+    )
+
+
 report_app = typer.Typer(
+    cls=ReportGroup,
     help="""实验范围的固定日报与成功分析单篇报告。
 
 参数：必填 --root，render 另需 --date 与 --timezone，可选 --analysis-id 生成单篇。
