@@ -24,7 +24,7 @@ from paper_radar.config.owner_waiver import (
     OwnerWaiverError,
     owner_waiver,
 )
-from paper_radar.doctor.admission import projection_checks
+from paper_radar.doctor.admission import projection_checks, render_unassessed_fragment
 from paper_radar.doctor.cli import _show
 from paper_radar.doctor.service import Check, Result, basic_checks
 from paper_radar.live_evidence.ledger import LedgerError
@@ -141,6 +141,27 @@ def _admission_checks(
                 "evidence_not_assessed",
                 "未评估证据；豁免不证明任何分项 verified。",
                 required=False,
+                detail=(
+                    "check=admission_evidence result=not_assessed "
+                    "reason=evidence_not_assessed "
+                    "下一步：未评估证据；豁免不证明任何分项 verified。\n"
+                )
+                + "\n".join(
+                    render_unassessed_fragment(
+                        AdmissionUse(
+                            CallSite.READ if slot == "reading" else CallSite.SCREENING,
+                            consumer,
+                            level,
+                        ),
+                        enabled=True,
+                        recorded_at=waiver.recorded_at,
+                    )
+                    for consumer in (
+                        (Consumer.READ,)
+                        if slot == "reading"
+                        else (Consumer.BOUNDARY, Consumer.VALUE)
+                    )
+                ),
             ),
         )
     checks: list[Check] = []

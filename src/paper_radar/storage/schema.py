@@ -17,6 +17,58 @@ from sqlalchemy import (
 
 metadata = MetaData()
 
+report_runs = Table(
+    "report_runs",
+    metadata,
+    Column("report_id", Text, primary_key=True),
+    Column("run_key", Text, nullable=False, unique=True),
+    Column("kind", Text, nullable=False),
+    Column("scope", Text, nullable=False),
+    Column("report_date", Text, nullable=False),
+    Column("timezone", Text, nullable=False),
+    Column("input_fingerprint", Text, nullable=False),
+    Column("projection_json", Text, nullable=False),
+    Column("renderer_version", Integer, nullable=False),
+    Column("relative_path", Text, nullable=False, unique=True),
+    Column("content_sha256", Text, nullable=False),
+    Column("state", Text, nullable=False),
+    Column("published_at", Text),
+    CheckConstraint("kind IN ('daily','paper')"),
+    CheckConstraint("scope='experiment'"),
+    CheckConstraint("renderer_version=1"),
+    CheckConstraint("state IN ('prepared','published')"),
+)
+
+report_entries = Table(
+    "report_entries",
+    metadata,
+    Column("report_id", Text, ForeignKey("report_runs.report_id"), primary_key=True),
+    Column("position", Integer, primary_key=True),
+    Column("display_number", Text, nullable=False),
+    Column("paper_id", Text, ForeignKey("papers.paper_id"), nullable=False),
+    Column("primary_kind", Text, nullable=False),
+    Column("version_id", Text, ForeignKey("paper_versions.version_id"), nullable=False),
+    Column("revision_no", Integer, nullable=False),
+    Column("primary_ref", Text, nullable=False),
+    Column("analysis_id", Text, ForeignKey("read_analyses.analysis_id")),
+    Column("supporting_success_id", Text, ForeignKey("screening_successes.success_id")),
+    Column("section", Text, nullable=False),
+    Column("first_publication_key", Text, nullable=False),
+    Column("daily_first_key", Text, unique=True),
+    Column("projection_json", Text, nullable=False),
+    CheckConstraint("position BETWEEN 1 AND 5"),
+    CheckConstraint("display_number IN ('N1','N2','N3','N4','N5')"),
+    CheckConstraint("primary_kind IN ('analysis','pending','blocked')"),
+    CheckConstraint("section IN ('transferable','cognitive','pending','blocked')"),
+    UniqueConstraint("report_id", "first_publication_key"),
+    UniqueConstraint("report_id", "display_number"),
+    ForeignKeyConstraint(
+        ["version_id", "revision_no"],
+        ["paper_version_revisions.version_id", "paper_version_revisions.revision_no"],
+    ),
+    CheckConstraint("revision_no>0"),
+)
+
 config_versions = Table(
     "config_versions",
     metadata,

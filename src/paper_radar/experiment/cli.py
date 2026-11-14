@@ -1270,3 +1270,135 @@ def read(
     if result["state"] == "failed":
         typer.echo("budget_exhausted：请 reading failures 查询并显式 retry。", err=True)
         raise typer.Exit(4)
+
+
+report_app = typer.Typer(
+    help="""实验范围的固定日报与成功分析单篇报告。
+
+参数：必填 --root，render 另需 --date 与 --timezone，可选 --analysis-id 生成单篇。
+副作用：render 固定数据库输入并原子发布；rebuild 仅写私有视图；verify 只读。
+自动配额 0，不调用模型、不登记任务。帮助不联网、不开库、不建目录。
+输出去向：安全 JSON 写 stdout；内容留所选根 views/；render 日志写 logs/。
+退出码：成功 0；参数或受控拒绝 2；中断 130。
+常见失败：身份、固定引用、证据或路径损坏；先 verify，保留历史后显式 rebuild。
+示例：paper-radar experiment report render --root /tmp/my-experiment
+--date 2026-11-14 --timezone Asia/Shanghai
+""",
+    no_args_is_help=True,
+)
+experiment_app.add_typer(report_app, name="report")
+
+
+def _reports(root: Path, *, logging: bool = False) -> Any:
+    from paper_radar.experiment.reports import Reports
+    from paper_radar.experiment.root import ExperimentRoot
+    from paper_radar.runtime_logging import FileSink
+
+    selected = ExperimentRoot(root)
+    selected.require()
+    return Reports(
+        selected.database,
+        selected.data_root,
+        selected.views,
+        sink=FileSink(selected.root) if logging else None,
+    )
+
+
+def _report_error(error: Exception) -> None:
+    from paper_radar.experiment.reports import ReportError
+    from paper_radar.experiment.root import ExperimentError
+
+    if isinstance(error, (ReportError, ExperimentError)):
+        typer.echo(str(error), err=True)
+    else:
+        report_component_error(error)
+
+
+@report_app.command(
+    "render",
+    cls=ExperimentCommand,
+    help="""发布固定中文实验日报或成功分析单篇报告。
+
+参数：必填 --root、--date（YYYY-MM-DD）、--timezone（IANA 时区）；
+--analysis-id 选择单篇；--snapshot 可固定准入披露配置，缺失配置如实 unknown。
+副作用：先固定库内 run/entry，再同目录临时文件、校验、fsync、原子替换、标记 published。
+同日日报一发布即固定；当日晚到成功可生成单篇并等待次日日报。
+自动配额 0；不调用模型、不新建任务。帮助不联网、不开库、不建目录。
+输出去向：stdout 安全 JSON；私有内容 views/日期/UUID.md；文件日志 logs/。
+退出码：成功 0；参数、分析不存在、闭包/路径失败 2；中断 130。
+常见失败：先 verify 回查原成员，显式 rebuild 重建；不覆盖历史成员。
+示例：paper-radar experiment report render --root /tmp/my-experiment
+--date 2026-11-14 --timezone Asia/Shanghai
+""",
+)
+def report_render(
+    root: RootOption,
+    day: Annotated[str, typer.Option("--date", help="受控报告日期 YYYY-MM-DD。")],
+    timezone: Annotated[str, typer.Option("--timezone", help="显式 IANA 时区。")],
+    analysis_id: Annotated[
+        str | None, typer.Option("--analysis-id", help="成功分析身份；指定则生成单篇。")
+    ] = None,
+    snapshot: Annotated[
+        str | None, typer.Option("--snapshot", help="准入披露的显式配置快照。")
+    ] = None,
+) -> None:
+    try:
+        result = _reports(root, logging=True).render(
+            day=day, timezone=timezone, analysis_id=analysis_id, snapshot_id=snapshot
+        )
+        typer.echo(json.dumps(result, ensure_ascii=False))
+    except KeyboardInterrupt:
+        typer.echo("interrupted：发布中断；保留原 run，显式重跑完成发布。", err=True)
+        raise typer.Exit(130) from None
+    except Exception as error:
+        _report_error(error)
+        raise typer.Exit(2) from None
+
+
+@report_app.command(
+    "rebuild",
+    cls=ExperimentCommand,
+    help="""从冻结输入只读重建原报告。
+
+参数：REPORT 与必填 --root。副作用：只写原 views/日期/UUID.md，不写数据库或日志。
+自动配额 0；不调用模型、不读当前准入/主机/认证。帮助不联网、不开库、不建目录。
+输出去向：stdout 安全 JSON，私有视图 views/。成功 0；身份、证据、路径损坏 2；中断 130。
+常见失败：核对 backup verify 与固定成员，不能重新选样。
+示例：paper-radar experiment report rebuild REPORT --root /tmp/my-experiment
+""",
+)
+def report_rebuild(
+    report_id: Annotated[str, typer.Argument(help="固定报告 UUID。")], root: RootOption
+) -> None:
+    _report_read_action(root, report_id, rebuild=True)
+
+
+@report_app.command(
+    "verify",
+    cls=ExperimentCommand,
+    help="""只读核对报告字节、固定成员、evidence 与受控路径。
+
+参数：REPORT 与必填 --root。无写副作用、不建日志；自动配额 0，不调用模型。
+帮助不联网、不开库、不建目录。输出去向：stdout 安全 JSON；错误 stderr。
+退出码：成功 0；缺失、篡改、引用或不安全路径 2；中断 130。
+常见失败：保留损坏诊断，核对备份后显式 rebuild。
+示例：paper-radar experiment report verify REPORT --root /tmp/my-experiment
+""",
+)
+def report_verify(
+    report_id: Annotated[str, typer.Argument(help="固定报告 UUID。")], root: RootOption
+) -> None:
+    _report_read_action(root, report_id, rebuild=False)
+
+
+def _report_read_action(root: Path, report_id: str, *, rebuild: bool) -> None:
+    try:
+        service = _reports(root)
+        result = service.rebuild(report_id) if rebuild else service.verify(report_id)
+        typer.echo(json.dumps(result, ensure_ascii=False))
+    except KeyboardInterrupt:
+        typer.echo("interrupted：报告核对中断；保留原成员后显式重试。", err=True)
+        raise typer.Exit(130) from None
+    except Exception as error:
+        _report_error(error)
+        raise typer.Exit(2) from None

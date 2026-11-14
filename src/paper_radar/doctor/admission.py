@@ -3,6 +3,7 @@
 import json
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 
 from paper_radar.doctor.service import Check, Result
 from paper_radar.live_evidence.evidence import Applicability
@@ -18,6 +19,102 @@ from paper_radar.live_evidence.types import (
     EvidenceStatus,
     Requirement,
 )
+
+
+def render_unassessed_fragment(
+    use: AdmissionUse, *, enabled: bool, recorded_at: datetime | None
+) -> str:
+    """doctor 与报告共用的无观察披露;不读取受保护账本,不判定执行资格。"""
+    from paper_radar.config.owner_waiver import OWNER_WAIVER_NOTICE, OWNER_WAIVER_REASON
+    from paper_radar.live_evidence.evaluator import (
+        AdmissionDecision,
+        CapabilityAssessment,
+    )
+    from paper_radar.live_evidence.evidence import CapabilityClaim
+    from paper_radar.live_evidence.registry import INITIAL_REGISTRY
+
+    reason = AdmissionReason(ReasonCode.EVIDENCE_MISSING)
+    projection = AdmissionProjection(
+        AdmissionDecision(
+            use,
+            INITIAL_REGISTRY.version,
+            tuple(
+                CapabilityAssessment(
+                    rule.capability,
+                    rule.requirement,
+                    CapabilityClaim(
+                        EvidenceStatus.NOT_ASSESSED,
+                        "evidence_not_assessed",
+                        "未读取受保护证据;保留原 not_assessed",
+                        evidence_at=None,
+                    ),
+                    False,
+                    False,
+                    False,
+                    Applicability.UNKNOWN,
+                    None,
+                    None,
+                    (reason,),
+                )
+                for rule in INITIAL_REGISTRY.requirements_for(use)
+            ),
+            (reason,),
+        ),
+        None,
+        False,
+    )
+    return (
+        f"{OWNER_WAIVER_NOTICE if enabled else '所有者豁免未开启'} "
+        f"reason={OWNER_WAIVER_REASON if enabled else 'owner_waiver_disabled'} "
+        f"recorded_at={_value(recorded_at)}；未评估仍为 not_assessed，"
+        "不证明 verified；下一步：仅按所有者显式决定补充证据。\n"
+        + render_admission_fragment(projection)
+    )
+
+
+def report_admission_fragment(
+    database: Path, *, snapshot_id: str | None, now: datetime
+) -> str:
+    """仅从业务库读取豁免/快照,不访问主机、安装、认证或受保护 Live 链。"""
+    from paper_radar.config import load_config_snapshot
+    from paper_radar.config.owner_waiver import owner_waiver
+    from paper_radar.live_evidence.types import CallSite, Consumer, ThinkingLevel
+
+    waiver = owner_waiver(database, now=now)
+    snapshot = load_config_snapshot(database, snapshot_id) if snapshot_id else None
+    fragments = [
+        f"准入披露时点：{now.isoformat()}（只读业务事实;能力观察 not_assessed）"
+    ]
+    for label, slot, consumers in (
+        ("Screening", "screening", (Consumer.BOUNDARY, Consumer.VALUE)),
+        ("Read", "reading", (Consumer.READ,)),
+    ):
+        adapter = snapshot.adapters[slot] if snapshot else None
+        fragments.append(f"### {label} 格（配置{'已固定' if adapter else 'unknown'}）")
+        if adapter is None:
+            fragments.append(
+                "配置 unknown；原能力 not_assessed；reason=configuration_missing；"
+                "证据时点 unknown；下一步：补齐显式快照的本槽模型与 adapter。"
+            )
+            # 缺少档位不能假定 low/high;仍披露所有者事实。
+            fragments.append(
+                f"所有者豁免={str(waiver.enabled).lower()} "
+                f"recorded_at={_value(waiver.recorded_at)}；不证明 verified。"
+            )
+            continue
+        for consumer in consumers:
+            fragments.append(
+                render_unassessed_fragment(
+                    AdmissionUse(
+                        CallSite.READ if slot == "reading" else CallSite.SCREENING,
+                        consumer,
+                        ThinkingLevel(adapter.thinking_level),
+                    ),
+                    enabled=waiver.enabled,
+                    recorded_at=waiver.recorded_at,
+                )
+            )
+    return "\n".join(fragments)
 
 
 @dataclass(frozen=True, slots=True)

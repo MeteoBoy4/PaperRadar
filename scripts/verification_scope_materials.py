@@ -2,7 +2,7 @@
 
 SHARED_MATERIALS = {
     "tests/migration_expectations.py": (
-        "a7e99a619b687fda731b902ae88cbe77b6ba3ce89bf180c30d9ad11378175088"
+        "0b36d151e7b2c1f04a8eb0a0414444bef0562d30a6f2ec020a5addb8d8047f18"
     ),
     "docs/verification/contracts-backup-restore-history.md": (
         "77fdc9ee348bddd16d5c5a694ef52459d2703241efe5e123da8e6742f68ff46e"
@@ -122,7 +122,7 @@ SHARED_MATERIALS = {
         "8bf4f05fea2085b1e6b25bb0ae426db2c13da47aa314dd695a1cd5c5259d36b8"
     ),
     "src/paper_radar/backup/manifest.py": (
-        "2a23e940eff0e587e0e067135aa4b729dd62cb3fc70213ca0b0649fa7797dbee"
+        "780f91fac19a79d2cc8d364e08f5cebaabc371664830dd1703e220db26c1240a"
     ),
     "src/paper_radar/backup/restore.py": (
         "13d80b3ce3239dcc8159d02cc91ac50ac6abec1f526a8337b16fad8aba77b46f"
