@@ -418,11 +418,37 @@ def review_layout(
     request_id: str,
 ) -> ExtractionView:
     required(note, actor, request_id)
+    _layout_request(identity, passed, checks, note, actor, request_id, None)
+    with transaction(database, write=True) as connection:
+        return review_layout_in_connection(
+            connection,
+            identity,
+            passed=passed,
+            checks=checks,
+            note=note,
+            actor=actor,
+            request_id=request_id,
+        )
+
+
+def _layout_request(
+    identity: ExtractionIdentity,
+    passed: bool,
+    checks: Mapping[str, bool],
+    note: str,
+    actor: str,
+    request_id: str,
+    recording_kind: str | None,
+) -> str:
+    required(actor, request_id)
     if (
         type(passed) is not bool
         or set(checks) != LAYOUT_CHECKS
         or any(type(v) is not bool for v in checks.values())
         or passed != all(checks.values())
+        or recording_kind not in {None, "stage_b_owner_review"}
+        or type(note) is not str
+        or len(note) > 8192
     ):
         raise BodyError("invalid_request")
     request_hash = digest(
@@ -436,32 +462,52 @@ def review_layout(
             actor,
         ]
     )
-    with transaction(database, write=True) as connection:
-        old = replay(connection, tables.reviews, request_id, request_hash)
-        view = extraction_view(connection, identity.extraction_fingerprint)
-        if view is None or view.identity != identity or view.artifact_id is None:
-            raise BodyError("corrupt_reference")
-        if old is not None:
-            return view
-        if view.permanent_failure and (
-            passed or view.quality.failure is not QualityFailure.LAYOUT_REVIEW
-        ):
-            raise BodyError("layout_conflict")
-        connection.execute(
-            insert(tables.reviews).values(
-                review_id=str(uuid4()),
-                request_id=request_id,
-                request_hash=request_hash,
-                fingerprint=identity.extraction_fingerprint,
-                reading_sha256=identity.reading_sha256,
-                evidence_map_sha256=identity.evidence_map_sha256,
-                passed=int(passed),
-                checks_json=json.dumps(dict(checks), sort_keys=True),
-                note=note,
-                actor=actor,
-                reviewed_at=now(),
-            )
+    if recording_kind is not None:
+        request_hash = digest([request_hash, recording_kind])
+    return request_hash
+
+
+def review_layout_in_connection(
+    connection: Connection,
+    identity: ExtractionIdentity,
+    *,
+    passed: bool,
+    checks: Mapping[str, bool],
+    note: str,
+    actor: str,
+    request_id: str,
+    recording_kind: str | None = None,
+) -> ExtractionView:
+    """调用方持有事务;与产品追加事实一起提交,不自建事务。"""
+    request_hash = _layout_request(
+        identity, passed, checks, note, actor, request_id, recording_kind
+    )
+    old = replay(connection, tables.reviews, request_id, request_hash)
+    view = extraction_view(connection, identity.extraction_fingerprint)
+    if view is None or view.identity != identity or view.artifact_id is None:
+        raise BodyError("corrupt_reference")
+    if old is not None:
+        return view
+    if view.permanent_failure and (
+        passed or view.quality.failure is not QualityFailure.LAYOUT_REVIEW
+    ):
+        raise BodyError("layout_conflict")
+    connection.execute(
+        insert(tables.reviews).values(
+            review_id=str(uuid4()),
+            request_id=request_id,
+            request_hash=request_hash,
+            fingerprint=identity.extraction_fingerprint,
+            reading_sha256=identity.reading_sha256,
+            evidence_map_sha256=identity.evidence_map_sha256,
+            passed=int(passed),
+            checks_json=json.dumps(dict(checks), sort_keys=True),
+            note=note,
+            actor=actor,
+            reviewed_at=now(),
+            recording_kind=recording_kind,
         )
-        updated = extraction_view(connection, identity.extraction_fingerprint)
-        assert updated is not None
-        return updated
+    )
+    updated = extraction_view(connection, identity.extraction_fingerprint)
+    assert updated is not None
+    return updated

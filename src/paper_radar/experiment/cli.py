@@ -1,6 +1,7 @@
 """B 显式实验命令;帮助与导入不访问业务根。"""
 
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -1035,3 +1036,148 @@ def attach_pdf(
     typer.echo(
         json.dumps(receipt(record, sample, replayed=replayed), ensure_ascii=False)
     )
+
+
+_LAYOUT_HELP = """生成六项私有版式材料或代录所有者六项布尔核查。
+
+参数：必填 PAPER、--root、--fingerprint、--reading-sha256、--evidence-map-sha256；
+绑定明确正文三元组；多个成功正文身份拒绝，不猜最新。
+副作用：materials 只写 views/ 可重建材料，不改业务事实，不建日志；review 追加核查与
+所有者/代录者关联，日志写 logs/。不重跑 Docling、不调用模型，自动配额 0。
+输出去向：stdout 安全 JSON 身份及受控相对路径；正文/可选说明仅在私有根内。
+帮助不联网、不开库、不建目录；渲染延迟导入已锁定 pypdfium2/Pillow，缺依赖受控拒绝。
+常见失败：body_identity_mismatch、ambiguous_extractions、owner_conclusions_required、
+layout_conflict、renderer_dependency_missing；核对当前样本与所有者输入，否决不可覆盖。
+退出码：成功 0；参数错误或受控拒绝 2；中断 130。
+示例：paper-radar experiment layout-materials PAPER --root /tmp/my-experiment
+--fingerprint SHA --reading-sha256 SHA --evidence-map-sha256 SHA
+"""
+
+
+@experiment_app.command("layout-materials", cls=ExperimentCommand, help=_LAYOUT_HELP)
+def layout_materials(
+    paper: Annotated[str, typer.Argument(help="已冻结样本论文。")],
+    root: RootOption,
+    fingerprint: Annotated[str, typer.Option("--fingerprint", help="正文提取指纹。")],
+    reading_sha256: Annotated[
+        str, typer.Option("--reading-sha256", help="阅读成员哈希。")
+    ],
+    evidence_map_sha256: Annotated[
+        str, typer.Option("--evidence-map-sha256", help="证据成员哈希。")
+    ],
+) -> None:
+    from paper_radar.experiment.layout import Materials
+    from paper_radar.experiment.root import ExperimentRoot
+    from paper_radar.reading.context import ExtractionIdentity
+
+    _layout_run(
+        lambda: Materials(ExperimentRoot(root)).generate(
+            paper, ExtractionIdentity(fingerprint, reading_sha256, evidence_map_sha256)
+        )
+    )
+
+
+@experiment_app.command(
+    "layout-review",
+    cls=ExperimentCommand,
+    help=_LAYOUT_HELP
+    + """
+review 参数：六个必填 --body-boundary、--reading-order、--sections、--headers-footers、
+--provenance、--restricted-content 各为 true/false；--reviewer 必须 owner，
+--recorder 必须 agent，--request-id 幂等；--note 可选所有者说明，不默认展示。
+这些值必须来自所有者；本地身份说明不是认证，材料不预填判断。
+示例：paper-radar experiment layout-review PAPER --root /tmp/my-experiment
+--fingerprint SHA --reading-sha256 SHA --evidence-map-sha256 SHA --reviewer owner
+--recorder agent --request-id review-1 --body-boundary true --reading-order true
+--sections true --headers-footers true --provenance true --restricted-content false
+""",
+)
+def layout_review(
+    paper: Annotated[str, typer.Argument(help="已冻结样本论文。")],
+    root: RootOption,
+    fingerprint: Annotated[str, typer.Option("--fingerprint", help="正文提取指纹。")],
+    reading_sha256: Annotated[
+        str, typer.Option("--reading-sha256", help="阅读成员哈希。")
+    ],
+    evidence_map_sha256: Annotated[
+        str, typer.Option("--evidence-map-sha256", help="证据成员哈希。")
+    ],
+    reviewer: Annotated[
+        str, typer.Option("--reviewer", help="提供结论的所有者 owner。")
+    ],
+    recorder: Annotated[str, typer.Option("--recorder", help="代录者 agent。")],
+    request_id: Annotated[str, typer.Option("--request-id", help="幂等请求标识。")],
+    body_boundary: Annotated[
+        str, typer.Option("--body-boundary", help="所有者正文边界结论 true/false。")
+    ],
+    reading_order: Annotated[
+        str, typer.Option("--reading-order", help="所有者阅读顺序结论 true/false。")
+    ],
+    sections: Annotated[
+        str, typer.Option("--sections", help="所有者标题层级结论 true/false。")
+    ],
+    headers_footers: Annotated[
+        str, typer.Option("--headers-footers", help="所有者页眉页脚结论 true/false。")
+    ],
+    provenance: Annotated[
+        str, typer.Option("--provenance", help="所有者证据定位结论 true/false。")
+    ],
+    restricted_content: Annotated[
+        str,
+        typer.Option("--restricted-content", help="所有者受限内容结论 true/false。"),
+    ],
+    note: Annotated[
+        str, typer.Option("--note", help="所有者可选说明，仅私有保存。")
+    ] = "",
+) -> None:
+    from paper_radar.experiment.layout import LayoutError, LayoutReviews
+    from paper_radar.experiment.root import ExperimentRoot
+    from paper_radar.reading.context import ExtractionIdentity
+
+    def record() -> dict[str, object]:
+        checks = dict(
+            body_boundary=body_boundary,
+            reading_order=reading_order,
+            sections=sections,
+            headers_footers=headers_footers,
+            provenance=provenance,
+            restricted_content=restricted_content,
+        )
+        if any(value not in {"true", "false"} for value in checks.values()):
+            raise LayoutError("owner_conclusions_required")
+        selected = ExperimentRoot(root)
+        return LayoutReviews(selected.database, selected.data_root).record(
+            selected,
+            paper,
+            ExtractionIdentity(fingerprint, reading_sha256, evidence_map_sha256),
+            checks={key: value == "true" for key, value in checks.items()},
+            reviewer=reviewer,
+            recorder=recorder,
+            request_id=request_id,
+            note=note,
+        )
+
+    _layout_run(record)
+
+
+def _layout_run(action: Callable[[], dict[str, object]]) -> None:
+    from paper_radar.body.models import BodyError
+    from paper_radar.experiment.layout import LayoutError
+    from paper_radar.experiment.pdf import PdfError
+    from paper_radar.experiment.root import ExperimentError
+    from paper_radar.fulltext.models import FulltextError
+
+    try:
+        result = action()
+    except (LayoutError, ExperimentError, PdfError, BodyError, FulltextError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo(
+            "interrupted：操作中断；回查 trace 后显式重建或同 request 重放。", err=True
+        )
+        raise typer.Exit(130) from None
+    except Exception as error:
+        report_component_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(json.dumps(result, ensure_ascii=False))

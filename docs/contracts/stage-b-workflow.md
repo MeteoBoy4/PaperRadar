@@ -4,7 +4,8 @@
 
 `paper-radar experiment` 在必填的显式 `--root` 中组合 B 实验动作。
 当前提供 `init`、`feed-fetch`、`candidates`、`select/selection`、`egress-authorize/status/check` 和静态
-`preflight`、显式无 prompt 映射探测 `probe-models` 与两阶段 `screen`、`accept` 及 `attach-pdf`；不推断 cwd 或父目录中的根。
+`preflight`、显式无 prompt 映射探测 `probe-models` 与两阶段 `screen`、`accept`、`attach-pdf`、
+`extract` 及 `layout-materials/layout-review`；不推断 cwd 或父目录中的根。
 实验用途、执行来源和质量资格分别判断；组件规则仍由各自 Contract 定义。
 
 ## 规则
@@ -376,7 +377,8 @@ paper-radar experiment accept PAPER --root /tmp/my-experiment \
 ### B 事实验证与备份闭包
 
 `experiment.validation.validate_all(database, data_root)` 是唯一 B 持久事实聚合，验证全部
-候选快照、完整选样链、所有者豁免、外发授权链和代执行接受闭包；之后新增的 B 事实扩展此聚合。
+候选快照、完整选样链、所有者豁免、外发授权链、代执行接受、PDF 确认与冻结、
+有界提取执行及所有者版式核查关联闭包；之后新增的 B 事实扩展此聚合。
 接受闭包重验规范关联及哈希、选样和根、原冻结修订/快照、两项成功原字节/审计、
 Body 决定原因/actor/引用/时间、受控标记与请求身份，并检查缺关联决定；历史不要求授权仍当前。
 [备份](backup-restore.md)的 `verify_contents` 仅调用一次该聚合，损坏统一映射
@@ -470,6 +472,46 @@ trace 安全投影扩展 `extractions`（身份、质量、预算、attempt 与�
 成功或已成功重放退出 0；参数、资源、样本／配置变化、预检或转换失败退出 2；中断 130。
 失败须回查 trace，由所有者选择显式再次提取或换样；永久失败与耗尽不能用重跑绕过。
 
+### 版式材料与核查
+
+两个入口均必填 `PAPER --root ROOT --fingerprint FP --reading-sha256 READING
+--evidence-map-sha256 MAP`，只消费当前冻结样本与 `Body.current_body` 明确身份，
+经 `FulltextArtifacts.load` 校验四角色、规范编码、哈希与自动质量。
+同一 PDF 多个成功正文三元组保留 `ambiguous_extractions`，显式参数也不代替选定事实。
+只读取已登记 PDF 字节、reading/evidence-map，不读取原附件路径，不运行 Docling、模型或网络。
+
+`experiment layout-materials` 只写 `views/layout-<身份摘要>/`，默认 JSON 返回正文身份及
+六个受控相对 HTML 路径。每项配有 PNG 页面／裁切：正文起止及整页；持久阅读顺序的块列表
+与编号 bbox 叠加；标题层级与 PDF；全部块页眉页脚去留与上下页边；抽样 evidence 的
+页码、bbox、charspan、逐字 orig 并列裁切；公式、表格、不可靠字符的定位及降级标记。
+evidence 确定性取首／中／尾及首个受限源；charspan 是持久 source.orig 的半开索引。
+无定位、无源父块与零类别显示缺口／未覆盖，生成候选和占位没有 evidence。
+源文字经 HTML 转义，只用本地相对图片，不预填判断。原始 PDF 和正文仍属私有材料。
+同输入重建字节相同；既有目录不符以 `materials_conflict` 拒绝，不覆盖人工修改。
+目录、链接不安全拒绝；页面最多 1000，累计渲染上限 1 亿像素，最长边最多 1600 像素。
+PDFium 转换器处理 cropbox、旋转与两种来源原点；页数／几何不符拒绝，不猜坐标。
+只延迟导入锁内 `pypdfium2/Pillow`，无 extra 时 `renderer_dependency_missing`，
+帮助与纯 evidence 回查不导入渲染依赖。材料不写业务事实或日志，可从持久闭包重建。
+
+`experiment layout-review` 另必填 `--reviewer owner --recorder agent --request-id REQUEST`
+及 `--body-boundary/--reading-order/--sections/--headers-footers/--provenance/--restricted-content`
+全部六个 `true/false` 原文输入；缺项或非布尔值拒绝，`--note` 可选，仅私有数据库保存。
+本地 reviewer/recorder 是审计角色说明，不能认证输入人；没有所有者结论不得代签。
+材料生成不构成结论。动作在写事务前检查 visibility，并在同一个短写事务重核
+selection／版本／修订／当前 PDF／最新样本及正文身份，随后经 Body 权威追加核查。
+`body_layout_reviews.recording_kind=stage_b_owner_review` 与
+`experiment_layout_recordings`（review／sample／paper／owner reviewer／agent recorder）
+同事务追加；关联失败则整组回滚，旧 Body 核查不回填标记或改写。
+passed 等于全部六项通过；自动与人工均通过才由 Body 合成 `experiment_document_gate`。
+任一否决永久产生 `failed(layout_review)`；之后通过拒绝为 `layout_conflict`。
+记录与资源事实均不独立授予 Read、预算、自动队列或普通生产消费资格。
+
+`LayoutReviews(database, data_root).history(paper_id=None)` 核验结构标记、关联、六项、
+正文三元组、请求摘要、PDF 与冻结样本，并返回不含说明的安全历史；支持标准恢复路径。
+trace 的公共 `safe_payload().layout_reviews` 保留这份安全投影；原文说明和正文不默认序列化。
+新事实只扩唯一 `experiment.validation.validate_all`，备份／无 SDK 冷恢复沿同一闭包验证。
+成功／精确重放 0；缺项、冲突、前置、依赖、渲染拒绝或运行失败 2；中断 130。
+
 ### 日志与命令帮助
 
 `screen` 显式装配 `FileSink(root)` 并传入 Pi/任务服务；独立入口守卫、任务事件与
@@ -481,6 +523,8 @@ trace 安全投影扩展 `extractions`（身份、质量、预算、attempt 与�
 见 `tests/test_experiment_accept_cli.py` 与 `tests/test_experiment_pdf_cli.py`。原文理由、模型正文和凭据不进入回执或日志。
 `extract` 的独立入口／日志／隐私守卫在 `tests/test_experiment_extract_cli.py`；
 只读 trace 不追加日志，帮助在冷进程禁止网络与 SQLite 后仍可用。
+`layout-review` 显式装配所选根文件汇；独立执行入口／说明隐私守卫在
+`tests/test_experiment_layout_cli.py`，`layout-materials` 只生成私有视图、不建日志。
 `egress-authorize` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
 装配守卫见 `tests/test_stage_b_egress_preflight.py`。授权只读查询与静态预检不建日志。
 `feed-fetch` 显式注入 `FileSink(root)`，日志只写所选根的 `logs/`。新执行入口装配
@@ -507,6 +551,11 @@ trace 安全投影扩展 `extractions`（身份、质量、预算、attempt 与�
 | `2 / cgroup_limit_invalid / cgroup_changed` | 当前组不合规或等待期间变化；在符合 ≤8 GiB、swap=0 的组内显式重跑，不占提取预算 |
 | `2 / model_snapshot_space_insufficient / model_deployment_invalid / runtime_selection_invalid` | 核对完整部署、实际快照磁盘、正有限超时与 1–32 线程；不领取尝试 |
 | `2 / extraction_failed` | 本次单次转换失败或已有永久失败／预算耗尽；回查 trace，由所有者选择下一步，不调用 Read |
+| `2 / owner_conclusions_required / invalid_arguments` | 缺少所有者六项明确布尔输入或角色不符；请按帮助取得所有者结论再原样代录 |
+| `2 / body_identity_mismatch / ambiguous_extractions` | 当前正文不符或多个成功身份；核对明确三元组，不能猜最新 |
+| `2 / layout_conflict` | 当前指纹已被否决；保留否决，不以之后通过覆盖 |
+| `2 / renderer_dependency_missing / pdf_render_failed / pdf_geometry_mismatch / pdf_pages_mismatch / render_limit_exceeded` | 渲染依赖、PDF 几何或有界渲染不满足；核对锁内 extra 与登记材料，禁止重跑解析或猜坐标 |
+| `2 / unsafe_material_path / materials_conflict` | 私有视图存在链接或内容不符；保留原材料，核对后显式重建 |
 | `2 / invalid_arguments` | 缺必填参数或未知参数；查看对应 `--help` |
 | `2 / root_unknown` | 没有 experiment 登记；对独立空根运行 init，既有未知用途库不能改登记 |
 | `2 / root_not_experiment` | production 根被拒绝；使用独立实验根 |

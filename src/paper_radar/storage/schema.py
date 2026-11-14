@@ -319,6 +319,7 @@ body_layout_reviews = Table(
     Column("note", Text, nullable=False),
     Column("actor", Text, nullable=False),
     Column("reviewed_at", Text, nullable=False),
+    Column("recording_kind", Text),
     CheckConstraint("passed IN (0,1)"),
 )
 
@@ -604,4 +605,15 @@ experiment_extraction_peaks = Table(
         primary_key=True,
     ),
     Column("cgroup_peak_bytes", Integer),
+)
+
+experiment_layout_recordings = Table(
+    "experiment_layout_recordings",
+    metadata,
+    Column(
+        "review_id", Text, ForeignKey("body_layout_reviews.review_id"), primary_key=True
+    ),
+    Column("sample_id", Text, ForeignKey("body_samples.sample_id"), nullable=False),
+    Column("paper_id", Text, ForeignKey("papers.paper_id"), nullable=False),
+    Column("record_json", Text, nullable=False),
 )

@@ -1,3 +1,3 @@
 """人工维护的迁移 head 预期, 禁止从生产代码、Alembic、scope 或实际输出推导。"""
 
-EXPECTED_MIGRATION_REVISION = "b004_bounded_extractions"
+EXPECTED_MIGRATION_REVISION = "b005_layout_recordings"
