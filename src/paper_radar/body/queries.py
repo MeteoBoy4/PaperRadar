@@ -147,13 +147,17 @@ def decision_events(connection: Connection, paper_id: str) -> tuple[DecisionEven
 
 
 def current_body(connection: Connection, paper_id: str) -> CurrentBody:
-    """只使用当前版本、显式 PDF 选择及唯一成功提取事实。"""
+    """有效显式选择优先;否则保留唯一成功规则。"""
     from paper_radar.body.extraction import extraction_view
+    from paper_radar.body.selection import current_selection
 
     trace = load_trace(connection, paper_id)
     pdf = current_pdf(connection, paper_id, trace.current.version_id)
     if pdf is None:
         return CurrentBody(None, "pdf_absent")
+    selected = current_selection(connection, paper_id)
+    if selected is not None:
+        return CurrentBody(selected.identity)
     keys = (
         connection.execute(
             select(tables.successes.c.fingerprint)

@@ -1040,10 +1040,77 @@ def attach_pdf(
     )
 
 
+_BODY_SELECTION_HELP = """所有者授权、Agent 代录当前冻结样本的正文选择。
+
+参数：必填 PAPER、--root、准确三元组 --fingerprint、--reading-sha256、
+--evidence-map-sha256、--selector owner、--recorder agent、--request-id。
+副作用：只追加选择事实，日志写所选根 logs/；不调用 Docling 或模型，不更改预算或任务。
+自动配额：0。选择不授予 Read，仍须生成材料并由所有者重新完成六项核查。
+输出去向：stdout 安全 JSON 回执；历史用 body-selections 查询。
+常见失败：facts_changed、request_conflict、owner_authorization_required、visibility_denied；
+核对当前样本/PDF和已注册成功三元组；旧否决永久保留。帮助不联网、不开库、不建目录。
+退出码：成功 0；参数错误或受控拒绝 2；中断 130。
+示例：paper-radar experiment body-select PAPER --root /tmp/my-experiment
+--fingerprint SHA --reading-sha256 SHA --evidence-map-sha256 SHA
+--selector owner --recorder agent --request-id body-choice-1
+"""
+
+
+@experiment_app.command("body-select", cls=ExperimentCommand, help=_BODY_SELECTION_HELP)
+def body_select(
+    paper: Annotated[str, typer.Argument(help="当前冻结样本论文。")],
+    root: RootOption,
+    fingerprint: Annotated[str, typer.Option("--fingerprint", help="成功正文指纹。")],
+    reading_sha256: Annotated[
+        str, typer.Option("--reading-sha256", help="阅读成员 SHA-256。")
+    ],
+    evidence_map_sha256: Annotated[
+        str, typer.Option("--evidence-map-sha256", help="证据成员 SHA-256。")
+    ],
+    selector: Annotated[str, typer.Option("--selector", help="授权者 owner。")],
+    recorder: Annotated[str, typer.Option("--recorder", help="代录者 agent。")],
+    request_id: Annotated[str, typer.Option("--request-id", help="幂等请求。")],
+) -> None:
+    from paper_radar.experiment.body_selection import SelectBody
+    from paper_radar.experiment.root import ExperimentRoot
+    from paper_radar.reading.context import ExtractionIdentity
+
+    _layout_run(
+        lambda: SelectBody(ExperimentRoot(root)).record(
+            paper,
+            ExtractionIdentity(fingerprint, reading_sha256, evidence_map_sha256),
+            selector=selector,
+            recorder=recorder,
+            request_id=request_id,
+        )
+    )
+
+
+@experiment_app.command(
+    "body-selections",
+    cls=ExperimentCommand,
+    help="""只读回查显式正文选择历史。
+
+参数：PAPER、--root。副作用：无；自动配额 0；输出去向：stdout 安全 JSON。
+常见失败：registration_invalid、visibility_denied；核对根和恢复材料。
+退出码：成功 0；拒绝 2；中断 130。帮助不联网、不开库、不建目录。
+示例：paper-radar experiment body-selections PAPER --root /tmp/my-experiment
+""",
+)
+def body_selections(
+    paper: Annotated[str, typer.Argument(help="论文身份。")],
+    root: RootOption,
+) -> None:
+    from paper_radar.experiment.body_selection import SelectBody
+    from paper_radar.experiment.root import ExperimentRoot
+
+    _layout_run(lambda: SelectBody(ExperimentRoot(root)).history(paper))
+
+
 _LAYOUT_HELP = """生成六项私有版式材料或代录所有者六项布尔核查。
 
 参数：必填 PAPER、--root、--fingerprint、--reading-sha256、--evidence-map-sha256；
-绑定明确正文三元组；多个成功正文身份拒绝，不猜最新。
+绑定明确正文三元组；多个成功正文须先显式 body-select，不猜最新。
 副作用：materials 只写 views/ 可重建材料，不改业务事实，不建日志；review 追加核查与
 所有者/代录者关联，日志写 logs/。不重跑 Docling、不调用模型，自动配额 0。
 输出去向：stdout 安全 JSON 身份及受控相对路径；正文/可选说明仅在私有根内。
@@ -1164,6 +1231,7 @@ def layout_review(
 
 def _layout_run(action: Callable[[], dict[str, object]]) -> None:
     from paper_radar.body.models import BodyError
+    from paper_radar.experiment.body_selection import BodySelectionError
     from paper_radar.experiment.layout import LayoutError
     from paper_radar.experiment.pdf import PdfError
     from paper_radar.experiment.root import ExperimentError
@@ -1171,7 +1239,14 @@ def _layout_run(action: Callable[[], dict[str, object]]) -> None:
 
     try:
         result = action()
-    except (LayoutError, ExperimentError, PdfError, BodyError, FulltextError) as error:
+    except (
+        BodySelectionError,
+        LayoutError,
+        ExperimentError,
+        PdfError,
+        BodyError,
+        FulltextError,
+    ) as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(2) from None
     except KeyboardInterrupt:

@@ -473,12 +473,32 @@ trace 安全投影扩展 `extractions`（身份、质量、预算、attempt 与�
 成功或已成功重放退出 0；参数、资源、样本／配置变化、预检或转换失败退出 2；中断 130。
 失败须回查 trace，由所有者选择显式再次提取或换样；永久失败与耗尽不能用重跑绕过。
 
+### 显式正文选择
+
+`experiment body-select PAPER --root ROOT --fingerprint FP --reading-sha256 READING
+--evidence-map-sha256 MAP --selector owner --recorder agent --request-id REQUEST`
+依所有者授权代录当前冻结样本的正文选择。`SelectBody(root, *, clock=None).record`
+先以 PdfSamples 完整核验当前样本，再由 BodySelections 在同一短写事务重核并追加选择。
+`experiment body-selections PAPER --root ROOT` 与 `SelectBody.history(paper)` 只读回查安全选择历史。
+回执含 body_selection_id、request_id、request_hash、root_id、paper_id、version_id、revision_no、sequence、
+sample_id、attachment_id、authorization_id、pdf_sha256、fingerprint、reading_sha256、
+evidence_map_sha256、selector、recorder、selected_at 和 replayed；history 不带 replayed。
+精确 request 重放返回原事实（包括原样本绑定），不再次改变选择；异正文或角色内容冲突拒绝。
+当前选择权威、永久否决、预算及在途 Read 规则由[Body 契约](body-persistence.md#人工版式核查与同事务事实)维护。
+
+选择先于新正文材料与所有者六项核查；选择不产生任何一项通过，也不授予 Read 或普通生产消费。
+动作不调用 Docling/Pi，自动配额 0；写操作仅追加选择并向所选根 logs/ 写安全日志，stdout 返回安全 JSON。
+history 无副作用。帮助不联网、不开库、不建目录；成功 0、受控拒绝 2、中断 130。
+非法角色为 owner_authorization_required，三元组/样本变化为 facts_changed 或 PdfSamples 的明确拒绝，
+坏成员、visibility_denied、request_conflict 均停止；核对当前样本和成功登记，再以新 request 做新选择。
+
 ### 版式材料与核查
 
 两个入口均必填 `PAPER --root ROOT --fingerprint FP --reading-sha256 READING
 --evidence-map-sha256 MAP`，只消费当前冻结样本与 `Body.current_body` 明确身份，
 经 `FulltextArtifacts.load` 校验四角色、规范编码、哈希与自动质量。
-同一 PDF 多个成功正文三元组保留 `ambiguous_extractions`，显式参数也不代替选定事实。
+同一 PDF 多个成功正文三元组没有有效显式选择时保留 `ambiguous_extractions`；
+先用 body-select 记录所有者授权的选择，显式材料/核查参数本身不代替该事实。
 只读取已登记 PDF 字节、reading/evidence-map，不读取原附件路径，不运行 Docling、模型或网络。
 
 `experiment layout-materials` 只写 `views/layout-<身份摘要>/`，默认 JSON 返回正文身份及
