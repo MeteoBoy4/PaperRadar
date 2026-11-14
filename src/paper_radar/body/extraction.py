@@ -5,7 +5,7 @@ import json
 import os
 import stat
 import sys
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from time import monotonic
@@ -19,6 +19,7 @@ from paper_radar.body.models import (
     CanonicalParser,
     ExtractionAttempt,
     ExtractionFailure,
+    ExtractionObserver,
     ExtractionView,
     ParserFailure,
 )
@@ -212,6 +213,9 @@ def extract(
     paper_id: str,
     snapshot_id: str,
     parser: CanonicalParser,
+    *,
+    claim_guard: Callable[[Connection], None] | None = None,
+    observer: ExtractionObserver | None = None,
 ) -> ExtractionView:
     from paper_radar.body.queries import current_pdf
     from paper_radar.papers.queries import load_trace
@@ -241,8 +245,14 @@ def extract(
         audit = prepared.audit if prepared is not None else None
         if audit is not None and not audit.matches(semantics):
             raise BodyError("invalid_request")
+        if observer is not None:
+            observer.before_claim()
         resources.enter_context(root_lock(root))
+        if observer is not None:
+            observer.before_claim()
         with transaction(database, write=True) as connection:
+            if claim_guard is not None:
+                claim_guard(connection)
             selected = current_pdf(
                 connection,
                 paper_id,
@@ -298,6 +308,8 @@ def extract(
                     else None,
                 )
             )
+            if observer is not None:
+                observer.claimed(connection, attempt_id)
         start = monotonic()
         peak_memory_bytes = 0
         try:
@@ -315,6 +327,8 @@ def extract(
                 execution_audit=audit,
             )
         except FulltextError:
+            if observer is not None:
+                observer.completed()
             with transaction(database, write=True) as connection:
                 settle_failure(
                     connection,
@@ -323,7 +337,11 @@ def extract(
                     max(0, monotonic() - start),
                     peak_memory_bytes,
                 )
+                if observer is not None:
+                    observer.settled(connection, attempt_id)
         except ParserFailure as error:
+            if observer is not None:
+                observer.completed()
             with transaction(database, write=True) as connection:
                 settle_failure(
                     connection,
@@ -332,7 +350,11 @@ def extract(
                     max(0, monotonic() - start),
                     error.peak_memory_bytes,
                 )
+                if observer is not None:
+                    observer.settled(connection, attempt_id)
         except Exception:
+            if observer is not None:
+                observer.completed()
             with transaction(database, write=True) as connection:
                 settle_failure(
                     connection,
@@ -341,7 +363,11 @@ def extract(
                     max(0, monotonic() - start),
                     0,
                 )
+                if observer is not None:
+                    observer.settled(connection, attempt_id)
         else:
+            if observer is not None:
+                observer.completed()
             failure = (
                 published.quality.issues[0].failure
                 if published.quality.issues
@@ -373,6 +399,8 @@ def extract(
                             fingerprint=fingerprint, attempt_id=attempt_id
                         )
                     )
+                if observer is not None:
+                    observer.settled(connection, attempt_id)
         with transaction(database) as connection:
             view = extraction_view(connection, fingerprint)
             assert view is not None

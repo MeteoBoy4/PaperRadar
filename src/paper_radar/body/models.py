@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Literal, Protocol
 
+from sqlalchemy import Connection
+
 from paper_radar.config.extraction import ExtractionSemantics
 from paper_radar.eligibility import (
     DecisionFact,
@@ -141,6 +143,18 @@ class CanonicalParser(Protocol):
         ...
 
     def convert(self, pdf: bytes, semantics: ExtractionSemantics) -> ParserResult: ...
+
+
+class ExtractionObserver(Protocol):
+    """可选产品执行事实接缝;外部读取在 before_claim/completed,事务只追加。"""
+
+    def before_claim(self) -> None: ...
+
+    def claimed(self, connection: Connection, attempt_id: str) -> None: ...
+
+    def completed(self) -> None: ...
+
+    def settled(self, connection: Connection, attempt_id: str) -> None: ...
 
 
 @dataclass(frozen=True)

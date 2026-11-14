@@ -111,6 +111,72 @@ RootOption = Annotated[Path, typer.Option("--root", help="必填的显式实验�
 
 
 @experiment_app.command(
+    "extract",
+    cls=ExperimentCommand,
+    help="""对当前冻结样本显式执行一次 Docling 提取。
+
+参数：必填 PAPER、--root、--snapshot、--model-root、--timeout-seconds、--threads。
+模型根的 deployment.json 与全部所选文件必须核验；不下载模型。
+副作用：根锁前核验当前进程 cgroup memory.max ≤8 GiB、swap=0，
+主机 MemAvailable 仅披露；临时模型快照要求完整所选文件大小的磁盘空间。
+显式设置 32 GiB RLIMIT_AS，它不是物理内存上限；超时与线程使用显式参数。
+只领取一次既有 Body attempt；质量失败永久阻断，其他失败遵守两次预算。
+自动配额 0；不调用 Read，不截断、不自动重试或换样。
+输出去向：stdout 安全 JSON，worker ru_maxrss 与 cgroup 历史组峰值分列；
+日志写所选根 logs/，正文制品留 data/；峰值不可读明确为 unknown。
+帮助不联网、不开库、不建目录。
+退出码：成功或已成功重放 0；参数、资源、模型预检、样本变化或提取失败 2；中断 130。
+常见失败：请核对 cgroup/部署/冻结样本；失败后回查 paper trace，
+由所有者选择显式重试或换样并说明理由，不能绕过质量或预算。
+示例：paper-radar experiment extract PAPER --root /tmp/my-experiment
+--snapshot SNAP --model-root /tmp/models --timeout-seconds 300 --threads 4
+""",
+)
+def extract(
+    paper: Annotated[str, typer.Argument(help="当前已冻结样本的论文身份。")],
+    root: RootOption,
+    snapshot: Annotated[str, typer.Option("--snapshot", help="显式配置快照。")],
+    model_root: Annotated[Path, typer.Option("--model-root", help="已部署模型根。")],
+    timeout_seconds: Annotated[
+        float, typer.Option("--timeout-seconds", help="显式超时秒数。")
+    ],
+    threads: Annotated[int, typer.Option("--threads", help="显式 CPU 线程数，1–32。")],
+) -> None:
+    from paper_radar.docling_executor import DoclingPreflightError
+    from paper_radar.experiment.extraction import ExtractionError, extract_once
+    from paper_radar.experiment.pdf import PdfError
+    from paper_radar.experiment.root import ExperimentError, ExperimentRoot
+
+    try:
+        result = extract_once(
+            ExperimentRoot(root),
+            paper_id=paper,
+            snapshot=snapshot,
+            model_root=model_root,
+            timeout_seconds=timeout_seconds,
+            threads=threads,
+        )
+    except (ExtractionError, PdfError, ExperimentError, DoclingPreflightError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo(
+            "interrupted：提取中断；先回查 trace，再显式重跑；不退款。", err=True
+        )
+        raise typer.Exit(130) from None
+    except Exception as error:
+        report_component_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(json.dumps(result, ensure_ascii=False))
+    if not result["succeeded"]:
+        typer.echo(
+            "extraction_failed：实验停止；回查原因，由所有者选择重试或换样，不能绕过预算或永久失败。",
+            err=True,
+        )
+        raise typer.Exit(2)
+
+
+@experiment_app.command(
     "accept",
     cls=ExperimentCommand,
     help="""依所有者预先选样授权，由 Agent 显式代记 accepted。

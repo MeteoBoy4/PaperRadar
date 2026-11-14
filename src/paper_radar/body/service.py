@@ -1,7 +1,7 @@
 """Body 最小持久层;独立决定、PDF 选择与冻结样本均只追加。"""
 
 import hashlib
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from uuid import uuid4
@@ -54,7 +54,12 @@ from paper_radar.stage_inputs import StageInput
 from paper_radar.storage.artifacts import ArtifactStore
 
 if TYPE_CHECKING:
-    from paper_radar.body.models import BodyFacts, CanonicalParser, ExtractionView
+    from paper_radar.body.models import (
+        BodyFacts,
+        CanonicalParser,
+        ExtractionObserver,
+        ExtractionView,
+    )
     from paper_radar.reading.context import ExtractionIdentity
 
 
@@ -417,13 +422,26 @@ class BodyService:
             )
 
     def extract(
-        self, paper_id: str, *, snapshot_id: str, parser: "CanonicalParser"
+        self,
+        paper_id: str,
+        *,
+        snapshot_id: str,
+        parser: "CanonicalParser",
+        claim_guard: Callable[[Connection], None] | None = None,
+        observer: "ExtractionObserver | None" = None,
     ) -> "ExtractionView":
         from paper_radar.body.extraction import extract
 
         with self.log.execution("body", controlled=(BodyError,), paper_id=paper_id):
             result = extract(
-                self.database, self.data_root, self.store, paper_id, snapshot_id, parser
+                self.database,
+                self.data_root,
+                self.store,
+                paper_id,
+                snapshot_id,
+                parser,
+                claim_guard=claim_guard,
+                observer=observer,
             )
             self.log.emit(
                 "failed"
@@ -438,6 +456,24 @@ class BodyService:
 
         with transaction(self.database) as connection:
             return extraction_view(connection, fingerprint)
+
+    def extractions(self, paper_id: str) -> "tuple[ExtractionView, ...]":
+        """该论文所有显式 PDF 的提取历史;不选最新成功或改变质量。"""
+        from paper_radar.body.extraction import extraction_view
+
+        with transaction(self.database) as connection:
+            hashes = select(tables.pdfs.c.pdf_sha256).where(
+                tables.pdfs.c.paper_id == paper_id
+            )
+            fingerprints = connection.execute(
+                select(tables.inputs.c.fingerprint)
+                .where(tables.inputs.c.pdf_sha256.in_(hashes))
+                .order_by(tables.inputs.c.fingerprint)
+            ).scalars()
+            views = tuple(
+                extraction_view(connection, fingerprint) for fingerprint in fingerprints
+            )
+            return tuple(view for view in views if view is not None)
 
     def review_layout(
         self,

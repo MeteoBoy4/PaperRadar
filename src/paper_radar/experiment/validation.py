@@ -6,6 +6,7 @@ from paper_radar.config.owner_waiver import OwnerWaiverError, owner_waiver
 from paper_radar.experiment.acceptance import AcceptanceError, Acceptances
 from paper_radar.experiment.candidates import validate_candidate_snapshots
 from paper_radar.experiment.egress import EgressError, egress_authorization
+from paper_radar.experiment.extraction import ExtractionError, Extractions
 from paper_radar.experiment.pdf import PdfError, PdfSamples
 from paper_radar.experiment.selections import SelectionError, Selections
 from paper_radar.storage.artifact_contract import ArtifactError
@@ -24,6 +25,7 @@ def validate_all(database: Path, data_root: Path) -> None:
         Selections(database, data_root).validate_all()
         Acceptances(database, data_root).validate_all()
         PdfSamples(database, data_root).validate_all()
+        Extractions(database, data_root).validate_all()
         owner_waiver(database)
         egress_authorization(database)
     except (
@@ -31,6 +33,7 @@ def validate_all(database: Path, data_root: Path) -> None:
         SelectionError,
         AcceptanceError,
         PdfError,
+        ExtractionError,
         OwnerWaiverError,
         EgressError,
     ):
