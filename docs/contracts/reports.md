@@ -33,6 +33,14 @@ value 成功与缺 PDF／终态解析受阻事实共同按首次可发布时间 
 单篇，等待次日日报；新事实不改写原成员。prepared run 预留首次发布键，
 中断后按原日期继续，不通过另一天重选原成员。
 
+非分析成员另冻结 Body 决定范围 decision_scope：through_sequence、boundary_decision_id
+与序号/ID/结果元数据的 decisions_sha256。完整接受关联和来源在事务外预验；
+报告固定写事务只通过 Body 的同 Connection 元数据端口重核范围，变化以 facts_changed
+回滚并要求显式重规划。Body 不读取实验关联；report 以已预验的 decision_id 映射 supporting value 成功。
+历史 pending 只排除冻结范围内已接受的同一成功，后来追加的决定即使墙钟回退或相同也不进入原范围。
+日期/时间只作披露，不作为决定 as-of 次序。缺少范围的旧开发树非分析输入受控拒绝，不按墙钟回填；
+此范围属于本票首次发布的固定输入格式。
+
 ### 发布与核验
 
 发布顺序是同一事务固定 run/entries → 同目录独占临时文件 → 核对成员、引用、
@@ -80,7 +88,7 @@ paper/version/revision、primary/supporting 与原授权依据，供后续暴露
 
 成功退出 0；参数/受控业务拒绝/执行失败退出 2；中断退出 130。
 受控原因包括 invalid_arguments、unknown_command、invalid_date_timezone、
-invalid_clock、ordinary_consumption_denied、
+invalid_clock、facts_changed、ordinary_consumption_denied、
 analysis_not_found、analysis_scope_invalid、report_not_found、visibility_denied、
 registration_invalid、unsafe_path、file_missing、content_corrupt。
 错误只含受控原因与下一步，不回显题名、摘要、模型响应、路径或自由文本。

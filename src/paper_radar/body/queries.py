@@ -8,6 +8,7 @@ from paper_radar.body.models import (
     BodyError,
     CurrentBody,
     DecisionEvent,
+    DecisionMetadata,
     PdfAttachment,
     RootRegistration,
     SampleAdmission,
@@ -67,6 +68,37 @@ def current_pdf(
         .first()
     )
     return pdf_record(row) if row is not None else None
+
+
+def decision_metadata(
+    connection: Connection, paper_id: str
+) -> tuple[DecisionMetadata, ...]:
+    """只投影 Body 元数据;调用者的事务决定可见范围,不解释上层关联。"""
+    result = []
+    try:
+        for row in connection.execute(
+            select(
+                tables.decisions.c.decision_id,
+                tables.decisions.c.sequence,
+                tables.decisions.c.record_json,
+            )
+            .where(tables.decisions.c.paper_id == paper_id)
+            .order_by(tables.decisions.c.sequence)
+        ).mappings():
+            record = ScreeningReasonInput.model_validate_json(row["record_json"])
+            build_screening_reason(record)
+            if record.source is not ScreeningSource.DIRECT_MANUAL_DECISION or (
+                type(row["sequence"]) is not int or row["sequence"] <= 0
+            ):
+                raise ValueError
+            result.append(
+                DecisionMetadata(row["decision_id"], row["sequence"], record.result)
+            )
+        if len({r.sequence for r in result}) != len(result):
+            raise ValueError
+        return tuple(result)
+    except (ValueError, TypeError, KeyError):
+        raise BodyError("corrupt_reference") from None
 
 
 def decision_events(connection: Connection, paper_id: str) -> tuple[DecisionEvent, ...]:

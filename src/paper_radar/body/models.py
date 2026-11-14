@@ -16,6 +16,7 @@ from paper_radar.eligibility import (
 from paper_radar.fulltext.canonical import CanonicalDocument
 from paper_radar.fulltext.execution_audit import ExtractionExecutionAudit
 from paper_radar.reading.context import ExtractionIdentity
+from paper_radar.screening.reasons import ScreeningResult
 
 
 class BodyReason(StrEnum):
@@ -89,6 +90,15 @@ class DecisionEvent:
     screening_references: tuple[str, ...]
     actor: str = field(repr=False)
     decided_at: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionMetadata:
+    """同一 Connection 下的持久顺序;不加载 Paper trace 或来源文件。"""
+
+    decision_id: str
+    sequence: int
+    result: ScreeningResult
 
 
 @dataclass(frozen=True)

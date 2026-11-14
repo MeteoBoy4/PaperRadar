@@ -23,6 +23,9 @@ Body 与 Read 的关系表完整登记于 `paper_radar.storage.schema.metadata`�
 sequence 在论文内全局单调，由 API 在 `BEGIN IMMEDIATE` 内分配；不接受调用方序号。
 同论文同序号唯一约束保留先提交者；相同 request 重放幂等，换内容为 `request_conflict`。
 `decisions(paper_id)` 保留全部来源、原因、actor、时间与 Screening 成功引用。
+`decision_metadata_in_connection(connection, paper_id)` 只读调用方事务可见的
+`DecisionMetadata(decision_id, sequence, result)`，按持久序号排列；不另开事务，
+不加载完整 Paper trace、制品文件或上层实验关联。它只提供决定元数据，不判定用途或执行资格。
 `decide_in_connection(connection, paper_id, record, *, request_id, actor,
 screening_references=(), delegation_kind=None)` 提供相同的校验、精确重放、visibility、当前修订和 sequence
 语义，由调用方持有写事务；它不另开连接、不提交或回滚调用方连接。
