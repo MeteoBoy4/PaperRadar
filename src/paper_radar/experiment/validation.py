@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from paper_radar.config.owner_waiver import OwnerWaiverError, owner_waiver
+from paper_radar.experiment.acceptance import AcceptanceError, Acceptances
 from paper_radar.experiment.candidates import validate_candidate_snapshots
 from paper_radar.experiment.egress import EgressError, egress_authorization
 from paper_radar.experiment.selections import SelectionError, Selections
@@ -20,7 +21,14 @@ def validate_all(database: Path, data_root: Path) -> None:
     try:
         validate_candidate_snapshots(database, data_root)
         Selections(database, data_root).validate_all()
+        Acceptances(database, data_root).validate_all()
         owner_waiver(database)
         egress_authorization(database)
-    except (ArtifactError, SelectionError, OwnerWaiverError, EgressError):
+    except (
+        ArtifactError,
+        SelectionError,
+        AcceptanceError,
+        OwnerWaiverError,
+        EgressError,
+    ):
         raise ExperimentValidationError("registration_invalid") from None

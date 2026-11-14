@@ -3,7 +3,7 @@
 import hashlib
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from uuid import uuid4
 
 from sqlalchemy import Connection, insert, select
@@ -56,6 +56,30 @@ from paper_radar.storage.artifacts import ArtifactStore
 if TYPE_CHECKING:
     from paper_radar.body.models import BodyFacts, CanonicalParser, ExtractionView
     from paper_radar.reading.context import ExtractionIdentity
+
+
+def _decision_request(
+    paper_id: str,
+    record: ScreeningReasonInput,
+    request_id: str,
+    actor: str,
+    screening_references: tuple[str, ...],
+    delegation_kind: Literal["stage_b_preselection"] | None = None,
+) -> tuple[tuple[str, ...], str]:
+    required(paper_id, request_id, actor)
+    if record.source is not ScreeningSource.DIRECT_MANUAL_DECISION:
+        raise BodyError(BodyReason.SOURCE_REQUIRES_DEDICATED_PATH)
+    try:
+        build_screening_reason(record)
+    except ValueError:
+        raise BodyError("invalid_request") from None
+    refs = tuple(sorted(set(screening_references)))
+    if delegation_kind not in {None, "stage_b_preselection"}:
+        raise BodyError("invalid_request")
+    payload: list[object] = [paper_id, record.model_dump(mode="json"), actor, refs]
+    if delegation_kind is not None:
+        payload.append(delegation_kind)
+    return refs, digest(payload)
 
 
 class BodyService:
@@ -196,67 +220,86 @@ class BodyService:
         actor: str,
         screening_references: tuple[str, ...] = (),
     ) -> DecisionEvent:
-        required(paper_id, request_id, actor)
-        if record.source is not ScreeningSource.DIRECT_MANUAL_DECISION:
-            raise BodyError(BodyReason.SOURCE_REQUIRES_DEDICATED_PATH)
-        try:
-            build_screening_reason(record)
-        except ValueError:
-            raise BodyError("invalid_request") from None
-        refs = tuple(sorted(set(screening_references)))
-        request_hash = digest([paper_id, record.model_dump(mode="json"), actor, refs])
+        refs, _ = _decision_request(
+            paper_id, record, request_id, actor, screening_references
+        )
         with transaction(self.database, write=True) as connection:
-            if (
-                evaluate_visibility(frozenset()).permission(
-                    VisibilityCapability.SET_DECISION
-                )
-                is not VisibilityPermission.ALLOWED
-            ):
-                raise BodyError("visibility_denied")
-            old = replay(connection, tables.decisions, request_id, request_hash)
-            if old is not None:
-                return next(
-                    event
-                    for event in decision_events(connection, paper_id)
-                    if event.fact.reference == old["decision_id"]
-                )
-            trace = load_trace(connection, paper_id)
-            for reference in refs:
-                owner = connection.execute(
-                    select(screening_budgets.c.paper_id)
-                    .select_from(
-                        screening_successes.join(
-                            screening_budgets,
-                            screening_successes.c.budget_id
-                            == screening_budgets.c.budget_id,
-                        )
+            return self.decide_in_connection(
+                connection,
+                paper_id,
+                record,
+                request_id=request_id,
+                actor=actor,
+                screening_references=refs,
+            )
+
+    def decide_in_connection(
+        self,
+        connection: Connection,
+        paper_id: str,
+        record: ScreeningReasonInput,
+        *,
+        request_id: str,
+        actor: str,
+        screening_references: tuple[str, ...] = (),
+        delegation_kind: Literal["stage_b_preselection"] | None = None,
+    ) -> DecisionEvent:
+        """调用方持有写事务;保留 decide 校验/重放/顺序,不提交连接。"""
+        refs, request_hash = _decision_request(
+            paper_id, record, request_id, actor, screening_references, delegation_kind
+        )
+        if (
+            evaluate_visibility(frozenset()).permission(
+                VisibilityCapability.SET_DECISION
+            )
+            is not VisibilityPermission.ALLOWED
+        ):
+            raise BodyError("visibility_denied")
+        old = replay(connection, tables.decisions, request_id, request_hash)
+        if old is not None:
+            return next(
+                event
+                for event in decision_events(connection, paper_id)
+                if event.fact.reference == old["decision_id"]
+            )
+        trace = load_trace(connection, paper_id)
+        for reference in refs:
+            owner = connection.execute(
+                select(screening_budgets.c.paper_id)
+                .select_from(
+                    screening_successes.join(
+                        screening_budgets,
+                        screening_successes.c.budget_id
+                        == screening_budgets.c.budget_id,
                     )
-                    .where(screening_successes.c.success_id == reference)
-                ).scalar_one_or_none()
-                if owner != paper_id:
-                    raise BodyError("screening_mismatch")
-            decision_id = str(uuid4())
+                )
+                .where(screening_successes.c.success_id == reference)
+            ).scalar_one_or_none()
+            if owner != paper_id:
+                raise BodyError("screening_mismatch")
+        decision_id = str(uuid4())
+        connection.execute(
+            insert(tables.decisions).values(
+                decision_id=decision_id,
+                request_id=request_id,
+                request_hash=request_hash,
+                paper_id=paper_id,
+                version_id=trace.current.version_id,
+                revision_no=trace.current.revision_no,
+                sequence=sequence(connection, tables.decisions, paper_id),
+                record_json=record.model_dump_json(),
+                actor=actor,
+                decided_at=now(),
+                delegation_kind=delegation_kind,
+            )
+        )
+        for reference in refs:
             connection.execute(
-                insert(tables.decisions).values(
-                    decision_id=decision_id,
-                    request_id=request_id,
-                    request_hash=request_hash,
-                    paper_id=paper_id,
-                    version_id=trace.current.version_id,
-                    revision_no=trace.current.revision_no,
-                    sequence=sequence(connection, tables.decisions, paper_id),
-                    record_json=record.model_dump_json(),
-                    actor=actor,
-                    decided_at=now(),
+                insert(tables.decision_screenings).values(
+                    decision_id=decision_id, success_id=reference
                 )
             )
-            for reference in refs:
-                connection.execute(
-                    insert(tables.decision_screenings).values(
-                        decision_id=decision_id, success_id=reference
-                    )
-                )
-            return decision_events(connection, paper_id)[-1]
+        return decision_events(connection, paper_id)[-1]
 
     def decisions(self, paper_id: str) -> tuple[DecisionEvent, ...]:
         with transaction(self.database) as connection:

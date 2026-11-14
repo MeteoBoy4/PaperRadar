@@ -16,6 +16,8 @@ from paper_radar.eligibility import (
     ScreeningTaskFacts,
     evaluate_paper,
 )
+from paper_radar.experiment.acceptance import Acceptances
+from paper_radar.experiment.acceptance import receipt as acceptance_receipt
 from paper_radar.experiment.selections import Selections
 from paper_radar.feed_metadata import JGRMetadata
 from paper_radar.feed_pipeline import FeedPipeline
@@ -59,9 +61,12 @@ class PaperWorkflowTrace:
     projection: PaperProjection
     eligibility: dict[Concept, Eligibility]
     agent_content: tuple[AgentContent, ...] = ()
+    delegated_acceptances: tuple[dict[str, object], ...] = ()
     scope: str = (
         "前置通过不代表名额、预算或领取许可；各组件独立只读视图，允许并发滞后。"
-        "Screening 需显式 --snapshot；Body/Read/报告扩展由后续组合承接。"
+        "Screening 需显式 --snapshot；代执行接受依预先选样授权，"
+        "不声称所有者看过模型输出。"
+        "PDF/Read/报告扩展由后续组合承接。"
     )
 
     def safe_payload(self) -> dict[str, object]:
@@ -201,4 +206,9 @@ def query_paper_trace(
         projection,
         evaluate_paper(projection),
         tuple(agent_content),
+        tuple(
+            acceptance_receipt(record)
+            for record in Acceptances(database, data_root).history()
+            if record.request.paper_id == paper_id
+        ),
     )

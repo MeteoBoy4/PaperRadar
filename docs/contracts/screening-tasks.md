@@ -153,6 +153,18 @@ A1 `validate_output("value_prediction", raw, context=...)`。提交和成功回�
 规范结构、提交摘要和冻结模型审计。`query_successes` 封闭支持两阶段，适用性均按 §5
 派生；查询仍只返回安全回执。没有隐式两阶段编排或生产默认执行者。
 
+`require_current_success_in_connection(connection, validated, *, paper_id, mapping)`
+复核事务外经 `load_success` 完整预验的 `SuccessContent`，以及经 PaperFacts
+`map_screening_inputs` 预验的 `ScreeningMappingResult`。同一个 Connection 核对当前
+完整修订等于预验依据、成功 Paper/阶段/指纹、回执身份、结构、审计与提交摘要；
+不重新加载 blob、配置或文件，不另开连接，不提交。依据变化为 `facts_changed`，
+成功行与预验内容不一致为 `corrupt_reference`，未知成功为 `success_not_found`。
+调用方必须保留完整预验，不能以构造 DTO 或裸指纹代替权威加载。
+`require_success_reference_in_connection` 使用同样成功核验，对明确历史修订的映射
+进行闭包回验，不要求该版本仍当前，供备份与历史查询消费。配置与成功均不可变；
+两接口不证明 B 选样有效、pi_rpc 来源或 boundary 非 out_of_scope，这些组合约束见
+[B 工作流](stage-b-workflow.md#依预先选样授权代执行接受)。
+
 <a id="5-当前适用性完全派生d2"></a>
 
 ## 5. 当前适用性完全派生

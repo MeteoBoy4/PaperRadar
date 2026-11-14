@@ -23,6 +23,15 @@ Body 与 Read 的关系表完整登记于 `paper_radar.storage.schema.metadata`�
 sequence 在论文内全局单调，由 API 在 `BEGIN IMMEDIATE` 内分配；不接受调用方序号。
 同论文同序号唯一约束保留先提交者；相同 request 重放幂等，换内容为 `request_conflict`。
 `decisions(paper_id)` 保留全部来源、原因、actor、时间与 Screening 成功引用。
+`decide_in_connection(connection, paper_id, record, *, request_id, actor,
+screening_references=(), delegation_kind=None)` 提供相同的校验、精确重放、visibility、当前修订和 sequence
+语义，由调用方持有写事务；它不另开连接、不提交或回滚调用方连接。
+`decide` 保持原事务包装及写前请求校验。该接缝让
+[B 代执行接受](stage-b-workflow.md#依预先选样授权代执行接受)与关联原子追加；
+两阶段、来源和适用性前置由 B 组合负责，Body 本身只核成功归属同 Paper。
+`delegation_kind` 仅接受空值或受控的 `stage_b_preselection`，后者写入独立持久标记并
+纳入该新记录的请求摘要。普通 `decide` 不提供该参数；旧记录及新普通决定均为空标记，
+原有请求摘要、事件和任意 request_id 的语义保持。自由 request/actor 字符串不作为代执行来源。
 共享 `effective_screening_decision` 选择最新人工事件；旧版本/修订的人工决定保持效力，
 其依据标为 historical（stale），不因后来 Screening 成功自动改写来源。
 

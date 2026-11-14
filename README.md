@@ -13,6 +13,9 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 `experiment screen` 显式执行有效选样的 boundary → value，重放只回原回执；
 `--receipt-id` 只执行明确回执，`--continue-value` 从已恢复的 boundary 显式登记 value；
 失败不自动增代，out_of_scope 停止 value。
+`experiment accept PAPER --selection-id SELECTION --snapshot SNAPSHOT --request-id REQUEST
+--root ROOT` 依预先选样授权代执行 accepted；决定、两阶段成功引用与授权关联原子追加，
+trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型输出。
 `experiment probe-models` 显式对 screening/reading 分别执行无 prompt RPC 映射探测，
 认证可能刷新并写回专用凭据；只说明本次模型与档位可设置，不提供生成或准入证明。
 根布局、用途守卫及安全输出见[B 实验工作流](docs/contracts/stage-b-workflow.md)。

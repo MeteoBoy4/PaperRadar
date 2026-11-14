@@ -171,8 +171,8 @@ paper-radar experiment candidates --root /tmp/my-experiment --view-id VIEW
 授权者固定为 owner，录入者为 owner 或 agent。两者都是本地审计说明，不是身份认证、
 签名或用户已阅读模型结果的证明。所有者原文选样理由、换样理由只保存在私有业务事实中；
 终端安全投影、错误和日志不输出这些文字。选样表达对冻结论文／版本的接受授权，
-不创建 `accepted` 决定、Screening/Read 任务，不调用模型；实际代记 accepted 仍须由
-后续产品编排引用该授权与所需真实成功，并遵守 [ADR-0069](../adr/0069-treat-stage-b-selection-as-owner-acceptance.md)。
+不创建 `accepted` 决定、Screening/Read 任务，不调用模型；实际代记 accepted 由下述
+独立显式命令引用该授权与所需真实成功，遵守 [ADR-0069](../adr/0069-treat-stage-b-selection-as-owner-acceptance.md)。
 
 `experiment_selections` 只追加保存根身份、视图、请求检查／成员来源检查、原位次、发现、
 冻结 Paper／版本／修订、DOI、元数据请求、原文理由、授权者、录入者、request_id 与 UTC
@@ -299,7 +299,8 @@ paper-radar experiment screen --root /tmp/root --selection-id SELECTION \
 `paper_radar.paper_trace.query_paper_trace(database, data_root, paper_id, snapshot_id=None,
 include_agent_content=False)` 返回 `PaperWorkflowTrace`，供后续 Body/Read/报告扩展。
 其 `safe_payload()` 保留 root、Feed 来源与语言观察、选样授权安全引用与完整换样链、
-Screening 预算/指纹/代际/父链/attempt/租约/安全失败，以及共享 `evaluate_paper(projection)`
+Screening 预算/指纹/代际/父链/attempt/租约/安全失败、代执行接受授权关联及双方角色，
+以及共享 `evaluate_paper(projection)`
 概念结果、原因和支持范围；不倾倒内部 projection 或决定载荷。
 论文事实与各组件分别读，不承诺跨组件同一 SQLite 快照，允许并发滞后。
 
@@ -321,10 +322,52 @@ screening 三命令成功退出 0，受控拒绝/参数错误 2，中断 130；p
 retry 父链与安全 trace 保持，第二次过期仍未结算。实验专用执行布局与恢复副本再授权由
 后续隔离重放入口承接，不把副本回查误称为可执行许可。
 
+### 依预先选样授权代执行接受
+
+`experiment accept PAPER --root ROOT --selection-id SELECTION --snapshot SNAPSHOT
+--request-id REQUEST` 只在有效选样冻结的同论文、同版本及同修订下追加接受。
+当前适用 boundary 与 value 均须由 A7 权威 `load_success` 完整回验且来源为 pi_rpc；
+boundary 非 out_of_scope。value 预测无需支持 accepted，实验建议不取得决定权。
+test 来源、缺成功、out_of_scope、版本/修订变化、选样被取代或 Paper 不匹配均拒绝。
+
+完整授权链、成功内容及 PaperFacts 映射在事务外预验；短 `BEGIN IMMEDIATE` 内经
+Selections 的 `require_current_in_connection`、当前获选修订及 A7 的
+[成功引用复核](screening-tasks.md)重新核对，不把预读 current 当成锁内事实。
+写前和短事务内均实际调用共享 SET_DECISION visibility，空隐藏集合也不跳过。
+在同一个调用方 Connection 中经 [Body](body-persistence.md#根决定与来源) 的
+`decide_in_connection` 追加 `accepted(direct_manual_decision, user_judgment)`，引用两项
+成功，并追加 `experiment_acceptances` 授权→决定关联；任何写入/提交失败全部回滚。
+不会先单独提交决定再补关联。该动作不认证、不调用模型、不产生 Read 任务，自动配额 0。
+
+关联记录冻结 request、root_id、选样、Paper/版本/修订、配置快照、Body 决定与两成功 ID、
+授权者 owner、代执行者 agent 和 UTC 时间，以规范 JSON SHA-256 寻址。外键及唯一约束
+绑定选样/决定/成功；触发器拒绝 UPDATE、DELETE 和 REPLACE 覆写。同一个选样至多代执行一次。
+同 request 同内容精确重放原记录并标记 replayed；异内容 `request_conflict`，不同 request
+重复消费同一选样为 `already_accepted`。历史重放不重新取得当前执行许可。
+Body 同事务写入受控 `delegation_kind=stage_b_preselection` 标记，聚合验证拒绝该标记
+下缺关联的决定；普通决定及迁移前历史的标记为空。内部请求可使用 `b-accept-` 前缀，
+前缀和自由 actor 字符串均不作为来源权威，普通 Body 请求使用同形字符串仍保持合法。
+
+安全回执及 trace 的 `delegated_acceptances` 显示「依预先选样授权代执行」和授权者、
+代执行者及全部关联 ID，不输出所有者理由或模型正文，不声称所有者看过模型输出。
+`Acceptances(database, data_root).history()` 查询并回验完整历史；恢复副本不依赖原根路径。
+该接受不等于 PDF 归属/合法性确认、六项人工版式核查、正式校准标签或自动消费许可。
+命令中文帮助不联网、不开库、不建目录；安全 JSON 写 stdout，错误写 stderr，日志仅写所选根。
+退出码成功/精确重放 0，参数、受控前置拒绝、冲突或执行失败 2，中断 130。
+失败下一步为回查 selection 与 `paper trace --snapshot`，缺成功时显式继续/retry，
+授权或版本变化由所有者重新选样；冲突不可覆盖。
+
+```bash
+paper-radar experiment accept PAPER --root /tmp/my-experiment \
+  --selection-id SELECTION --snapshot SNAPSHOT --request-id accept-1
+```
+
 ### B 事实验证与备份闭包
 
 `experiment.validation.validate_all(database, data_root)` 是唯一 B 持久事实聚合，验证全部
-候选快照、完整选样链、所有者豁免和外发授权链；之后新增的 B 事实扩展此聚合。
+候选快照、完整选样链、所有者豁免、外发授权链和代执行接受闭包；之后新增的 B 事实扩展此聚合。
+接受闭包重验规范关联及哈希、选样和根、原冻结修订/快照、两项成功原字节/审计、
+Body 决定原因/actor/引用/时间、受控标记与请求身份，并检查缺关联决定；历史不要求授权仍当前。
 [备份](backup-restore.md)的 `verify_contents` 仅调用一次该聚合，损坏统一映射
 `registration_invalid`。验证在完整副本中进行，不回读原根；恢复数据库可以使用
 `database.sqlite3`，不要求实验 CLI 文件名或原 views 文件。
@@ -340,6 +383,8 @@ retry 父链与安全 trace 保持，第二次过期仍未结算。实验专用�
 
 `select` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
 独立 D1 装配守卫见 `tests/test_experiment_selection_cli.py`，`selection` 不建日志。
+`accept` 同样装配所选根文件汇及入口守卫；成功/重放的入口事件及只读 trace 不追加日志的断言
+见 `tests/test_experiment_accept_cli.py`。原文理由、模型正文和凭据不进入回执或日志。
 `egress-authorize` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
 装配守卫见 `tests/test_stage_b_egress_preflight.py`。授权只读查询与静态预检不建日志。
 `feed-fetch` 显式注入 `FileSink(root)`，日志只写所选根的 `logs/`。新执行入口装配

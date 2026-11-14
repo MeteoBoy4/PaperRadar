@@ -130,6 +130,7 @@ body_decisions = Table(
     Column("record_json", Text, nullable=False),
     Column("actor", Text, nullable=False),
     Column("decided_at", Text, nullable=False),
+    Column("delegation_kind", Text),
     UniqueConstraint("paper_id", "sequence"),
     ForeignKeyConstraint(
         ["paper_id", "version_id"],
@@ -140,6 +141,9 @@ body_decisions = Table(
         ["paper_version_revisions.version_id", "paper_version_revisions.revision_no"],
     ),
     CheckConstraint("sequence>0"),
+    CheckConstraint(
+        "delegation_kind IS NULL OR delegation_kind='stage_b_preselection'"
+    ),
 )
 
 body_decision_screenings = Table(
@@ -487,4 +491,38 @@ experiment_selections = Table(
     Column("version_id", Text, ForeignKey("paper_versions.version_id"), nullable=False),
     Column("record_json", Text, nullable=False),
     CheckConstraint("sequence>0"),
+)
+
+experiment_acceptances = Table(
+    "experiment_acceptances",
+    metadata,
+    Column("acceptance_id", Text, primary_key=True),
+    Column("request_id", Text, nullable=False, unique=True),
+    Column(
+        "selection_id",
+        Text,
+        ForeignKey("experiment_selections.selection_id"),
+        nullable=False,
+        unique=True,
+    ),
+    Column(
+        "decision_id",
+        Text,
+        ForeignKey("body_decisions.decision_id"),
+        nullable=False,
+        unique=True,
+    ),
+    Column(
+        "boundary_success_id",
+        Text,
+        ForeignKey("screening_successes.success_id"),
+        nullable=False,
+    ),
+    Column(
+        "value_success_id",
+        Text,
+        ForeignKey("screening_successes.success_id"),
+        nullable=False,
+    ),
+    Column("record_json", Text, nullable=False),
 )
