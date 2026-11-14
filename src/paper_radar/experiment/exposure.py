@@ -333,6 +333,17 @@ class Exposures:
             if temporary is not None:
                 temporary.unlink(missing_ok=True)
 
+    def history(self) -> tuple[str, ...]:
+        """全部已冻结导出身份;不重算当前暴露,不写库。"""
+        with transaction(self.database) as connection:
+            return tuple(
+                connection.execute(
+                    select(exposure_exports.c.export_id).order_by(
+                        exposure_exports.c.export_id
+                    )
+                ).scalars()
+            )
+
     def validate_all(self) -> None:
         with transaction(self.database) as connection:
             ids = tuple(

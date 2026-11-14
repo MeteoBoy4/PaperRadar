@@ -54,7 +54,9 @@ def copy_verified_contents(result: BackupResult, destination: Path) -> None:
     copy(result, destination)
 
 
-def restore_backup(batch_dir: Path, target: Path) -> RestoreResult:
+def restore_backup(
+    batch_dir: Path, target: Path, *, replay_container: bool = False
+) -> RestoreResult:
     from paper_radar.backup.restore import restore_backup as restore
 
-    return restore(batch_dir, target)
+    return restore(batch_dir, target, replay_container=replay_container)

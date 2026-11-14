@@ -161,8 +161,8 @@ MemAvailable 是非必需披露项：成功采集为 passed/host_memory_observed
 `validate_candidate_snapshots(database, data_root)` 校验全部候选快照，供 B 聚合消费。
 选样命令须重新核对当前依据与就绪条件，不能仅凭旧快照曾就绪领取任务。
 候选快照及完整摘要随既有 artifact blob 闭包备份；views 文件不作为备份事实源。
-既有 restore 的 `database.sqlite3` 与实验命令固定布局的公共协调由
-[路线图 B](../roadmap.md#module-b)恢复票承接，本接口不修改恢复 manifest。
+既有 restore 的 `database.sqlite3` 与根级 blobs 由[脱网回放封装](backup-restore.md#隔离脱网回放)
+显式协调；候选读取仍使用 database/data_root，不修改恢复 manifest。
 
 示例：
 
@@ -666,3 +666,14 @@ report validate_all 经本组合唯一聚合加入备份，现场隔离回放另
 - [Feed 组合](feed-pipeline.md)、[元数据](feed-metadata.md)、[正文持久化](body-persistence.md)、[运行日志](runtime-logging.md)。
 - [根与 Feed 工程覆盖](../verification/issue-187-experiment-feed.md)、[候选工程覆盖](../verification/issue-188-candidate-views.md)、[授权与预检工程覆盖](../verification/issue-189-egress-preflight.md)、[选样工程覆盖](../verification/issue-190-selection-authorization.md)、[Screening 工程覆盖](../verification/issue-192-screen-command.md)、[失败恢复与追踪工程覆盖](../verification/issue-193-recovery-trace.md)。
 - 依据：[#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)、[#187](https://github.com/MeteoBoy4/PaperRadar/issues/187)、[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。
+
+
+### 脱网恢复组合
+
+`restore verify --replay-container` 与根级 `replay` 使用独立受限 worker，
+先自证原数据库/数据/配置/材料与逃逸链接不可读、实际禁网及后代继承，
+再组合全部 validate_all、Read evidence、固定日报/单篇重渲染和暴露 payload。
+contents 与库只读，输出限定封装内 views，移动及第二次回放仍完整核验；
+不读取原配置路径，不执行 Pi/Docling、不激活或回收，不改变预算/业务历史。
+准确来源、布局、退出码、隔离部署限制与未解决跨副本执行风险唯一规则见
+[备份/恢复 Contract](backup-restore.md#隔离脱网回放)；真实现场结论由 B 单独取得。

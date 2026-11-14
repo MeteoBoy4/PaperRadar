@@ -31,6 +31,8 @@ RESTORE_VERIFY_HELP = """向 --target 写入完整副本并验证，不是只读
 参数与选项：<backup-batch> 是备份批次目录，不是运行配置快照 ID；--target 必须显式提供。
 副作用：会写入完整副本，并在目标父目录临时创建唯一隐藏 staging；
 父目录须已存在，目标只能不存在或为非符号链接的空目录，不覆盖非空目标。
+--replay-container 显式选择封装：target/contents 保留标准成员、target/views 独立输出，
+并保存 restore verify 本地来源回执；供 replay 使用。默认布局不变。
 副本保留 DELETE 单文件模式，不自动升级、激活快照或启动任务；
 要作为工作库需另行 db upgrade。
 自动配额：不联网、不调用模型、不安装 Pi，不消耗自动处理配额；帮助无外部 I/O。
@@ -77,11 +79,20 @@ def restore_verify(
             "--target", help="完整副本目标；父目录须存在，目标须为空或不存在。"
         ),
     ],
+    replay_container: Annotated[
+        bool,
+        typer.Option(
+            "--replay-container",
+            help="生成 contents/、views/ 与来源回执的回放封装；默认布局不变。",
+        ),
+    ] = False,
 ) -> None:
     from paper_radar.backup import restore_backup
 
     try:
-        show_result(restore_backup(backup_batch, target))
+        show_result(
+            restore_backup(backup_batch, target, replay_container=replay_container)
+        )
     except RestoreError as error:
         show_failure("恢复", error)
     except KeyboardInterrupt:
