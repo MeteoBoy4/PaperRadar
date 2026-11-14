@@ -2,7 +2,7 @@
 
 from scripts.verification_scope_materials import SHARED_MATERIALS
 
-MIGRATION_REVISION = "b007_exposure"
+MIGRATION_REVISION = "b008_body_selection"
 ARTIFACT_MIGRATION_MODULES: tuple[tuple[str, str], ...] = (
     (
         "src/paper_radar/storage/migrations/versions/a302_artifact_store.py",
@@ -203,7 +203,7 @@ FORMAT_VERSIONS = {
     "artifact": 1,
     "blob_layout": 1,
     "backup": 1,
-    "backup_database_revision": "b007_exposure",
+    "backup_database_revision": "b008_body_selection",
 }
 CAPABILITIES = (
     "artifact_publication",

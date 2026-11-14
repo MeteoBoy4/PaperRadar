@@ -36,11 +36,13 @@ def timestamp(value: str) -> None:
 
 def validate_all(database: Path, root: Path) -> None:
     from paper_radar.body.queries import decision_events, root_fact
+    from paper_radar.body.selection import BodySelections
 
     store = ArtifactStore(database, root)
     try:
         PaperFacts(database, root).validate_all()
         ScreeningTasks(database, root).validate_all()
+        BodySelections(database, root).validate_all()
         with transaction(database) as connection:
             roots = connection.execute(select(tables.roots)).mappings().all()
             require(

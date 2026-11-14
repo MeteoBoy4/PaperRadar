@@ -160,7 +160,7 @@ class BodyService:
     def current_body_in_connection(
         self, connection: Connection, paper_id: str
     ) -> CurrentBody:
-        """当前版本最新显式 PDF 的唯一成功正文,与资格共用同一查询。"""
+        """当前版本最新 PDF 的显式选择或唯一成功,与资格共用同一查询。"""
         from paper_radar.body.queries import current_body
 
         return current_body(connection, paper_id)

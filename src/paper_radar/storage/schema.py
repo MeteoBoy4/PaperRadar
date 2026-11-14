@@ -261,6 +261,53 @@ body_samples = Table(
     CheckConstraint("sequence>0"),
 )
 
+body_selections = Table(
+    "body_selections",
+    metadata,
+    Column("body_selection_id", Text, primary_key=True),
+    Column("request_id", Text, nullable=False, unique=True),
+    Column("request_hash", Text, nullable=False),
+    Column("root_id", Text, ForeignKey("body_root.root_id"), nullable=False),
+    Column("paper_id", Text, ForeignKey("papers.paper_id"), nullable=False),
+    Column("version_id", Text, nullable=False),
+    Column("revision_no", Integer, nullable=False),
+    Column("sequence", Integer, nullable=False),
+    Column("sample_id", Text, ForeignKey("body_samples.sample_id"), nullable=False),
+    Column(
+        "attachment_id", Text, ForeignKey("body_pdfs.attachment_id"), nullable=False
+    ),
+    Column(
+        "authorization_id",
+        Text,
+        ForeignKey("experiment_selections.selection_id"),
+        nullable=False,
+    ),
+    Column("pdf_sha256", Text, nullable=False),
+    Column(
+        "fingerprint",
+        Text,
+        ForeignKey("body_extraction_successes.fingerprint"),
+        nullable=False,
+    ),
+    Column("reading_sha256", Text, nullable=False),
+    Column("evidence_map_sha256", Text, nullable=False),
+    Column("selector", Text, nullable=False),
+    Column("recorder", Text, nullable=False),
+    Column("selected_at", Text, nullable=False),
+    UniqueConstraint("paper_id", "sequence"),
+    ForeignKeyConstraint(
+        ["paper_id", "version_id"],
+        ["paper_versions.paper_id", "paper_versions.version_id"],
+    ),
+    ForeignKeyConstraint(
+        ["version_id", "revision_no"],
+        ["paper_version_revisions.version_id", "paper_version_revisions.revision_no"],
+    ),
+    CheckConstraint("sequence>0"),
+    CheckConstraint("selector='owner'"),
+    CheckConstraint("recorder='agent'"),
+)
+
 body_extraction_inputs = Table(
     "body_extraction_inputs",
     metadata,
