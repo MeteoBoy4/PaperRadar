@@ -25,6 +25,7 @@ SQLite 任务、审计执行事实和成功制品仍是 trace 的依据；日志
 | `audit run/resume` | 已交付执行 CLI 各自构造 `FileSink(data_root)`；`--data-root` 是显式所选根 |
 | `experiment select` | 显式 FileSink(root)，component=experiment 的 run_started/run_finished；独立 D1 守卫 `tests/test_experiment_selection_cli.py`；原文理由不进入日志，selection 只读不建日志 |
 | `experiment egress-authorize` | 显式 FileSink(root)，component=experiment 的 run_started/run_finished；独立 D1 守卫 `tests/test_stage_b_egress_preflight.py` |
+| `experiment read` / `reading retry` / `reading reclaim` | 显式 FileSink(root)，component=experiment 入口及原 ReadTasks 安全事件；独立 D1 装配守卫见 `tests/test_experiment_read_cli.py`；查询/分析不建日志，原因正文与模型内容只留业务库/获准视图 |
 | `experiment feed-fetch` | 构造 `FileSink(root)` 并传给 FeedPipeline；独立 D1 装配守卫见 `tests/test_experiment_feed_cli.py` |
 
 `FeedPipeline` 是库组合服务，不推断生产根或实验根，不自行启用文件日志。

@@ -307,7 +307,7 @@ paper-radar experiment screen --root /tmp/root --selection-id SELECTION \
 `paper show/trace` 对 experiment/production/unknown 根中性，每次实际调用 visibility，
 包括空隐藏集合。论文事实规则由 [PaperFacts](paper-facts.md#8-当前查询历史重建与只读-cli)定义；
 `paper_radar.paper_trace.query_paper_trace(database, data_root, paper_id, snapshot_id=None,
-include_agent_content=False)` 返回 `PaperWorkflowTrace`，供后续 Body/Read/报告扩展。
+include_agent_content=False)` 返回 `PaperWorkflowTrace`，组合任务、正文与 Read 两轴，供报告消费。
 其 `safe_payload()` 保留 root、Feed 来源与语言观察、选样授权安全引用与完整换样链、
 Screening 预算/指纹/代际/父链/attempt/租约/安全失败、代执行接受授权关联及双方角色、
 PDF 附加/独立确认与冻结样本引用（理由只引用选样），
@@ -315,13 +315,14 @@ PDF 附加/独立确认与冻结样本引用（理由只引用选样），
 概念结果、原因和支持范围；不倾倒内部 projection 或决定载荷。
 论文事实与各组件分别读，不承诺跨组件同一 SQLite 快照，允许并发滞后。
 
-显式 `--snapshot` 才加载 Screening 当前性；省略时任务事实未知，model_failure_queue
-保持 deferred。已装配任务时按[共享资格](eligibility-visibility.md)提供 Screening 范围，
-其他 partial/deferred 含义保持。metadata_ready 仍仅最低元数据；value 的当前成功作为
+显式 `--snapshot` 才核对 Screening 与 Read 输入的当前性；省略时 Read 最小事实保持
+mapping_determinable=false，model_failure_queue 以 partial/task_mapping_unknown 披露，
+不从历史任务猜当前失败。已装配事实按[共享资格](eligibility-visibility.md)提供
+Screening/Read 当前最新代际范围，其他 partial/deferred 含义保持。metadata_ready 仍仅最低元数据；value 的当前成功作为
 current_screening_artifact，boundary 单阶段成功不冒充完整建议/决定。
 实验 eligible_for_auto_read 始终包含 experiment_no_auto_queue；前置通过不代表名额、
-预算或领取许可。PDF 附加、确认与样本提供独立事实；正文/Read 与报告资格由后续 B
-组合扩展，未装配事实保持 unknown。
+预算或领取许可。PDF 附加、确认与样本提供独立事实；正文与 Read 资格由各自权威和
+下述显式组合继续核对，报告由报告组合承接，未装配事实保持 unknown。
 
 默认输出不含 Agent 内容、Profile、Prompt、摘要正文或原始响应。`--show-abstract`
 展开获准的论文事实；`--show-agent-content` 必须同时提供快照与 data-root，实际核对
@@ -512,6 +513,53 @@ trace 的公共 `safe_payload().layout_reviews` 保留这份安全投影；原�
 新事实只扩唯一 `experiment.validation.validate_all`，备份／无 SDK 冷恢复沿同一闭包验证。
 成功／精确重放 0；缺项、冲突、前置、依赖、渲染拒绝或运行失败 2；中断 130。
 
+### 显式 Read 与恢复
+
+`experiment read PAPER --root ROOT --snapshot SNAPSHOT --fingerprint FP
+--reading-sha256 READING --evidence-map-sha256 MAP --credentials-dir AUTH
+--material-root MATERIAL --install-root INSTALL --request-id REQUEST` 显式执行单篇默认中文 Read。
+必需当前有效选样/冻结版本、关联的 accepted 及两项 pi_rpc 成功、当前确认 PDF/冻结样本、
+唯一明确当前正文和 Body 的 experiment_document_gate；资源历史本身不授予 Read 资格。
+所有者来源仅接受 `LayoutReviews.history` 核验的 `stage_b_owner_review` 结构标记及同样本关联，
+旧 actor/request 文字不能提升；旧否决仍永久生效，多正文不能凭参数、配置或时间猜选。
+完整文件与上游闭包在业务短事务外核验；认证前、等待根 Read 锁后、准备后及实际领取事务
+重读当前事实、外发范围与资格，豁免/严格证据由 ReadExecution 原权威各检查点核对。
+资格变化拒绝下一次领取；不取消/退款已领取在途预算。
+
+登记和执行分别复用 [ReadTasks](read-tasks.md) 与 [ReadExecution](read-execution.md)，
+label=manual、默认 zh；不创建 manual_read_request/read_requests、不扫描自动队列，自动配额 0。
+每调用最多驱动当前代际剩余尝试（≤2），成功即停；完整最坏修正帧超额在任何模型调用前拒绝，
+不截正文、不丢章节、不借 Screening 会话。v2 候选接收、末次降级、规则身份和原候选均由
+[接收权威](read-validation.md)保存，B 不另写接收或预算规则。
+
+精确 `--request-id` 重放只返回原登记身份，不认证、不补后来状态、不执行。
+认证或领取前受阻后，`reading tasks --root ROOT` 查询 ready/running/failed/succeeded、
+租约和原 task_id，再用同一明确正文、快照与执行根加 `--task-id TASK` 显式继续；
+`--request-id` 与 `--task-id` 互斥。成功或非最新代际不能继续。恢复链为：
+
+1. `reading tasks --root ROOT` 查询；过期仍保持 running，不进入失败队列。
+2. `reading reclaim TASK --root ROOT` 显式追加 outcome_unknown，不退款；尚有尝试则 ready，
+   用 `experiment read ... --task-id TASK` 继续。
+3. `reading failures --root ROOT --snapshot SNAPSHOT` 枚举全库当前 Read 输入最新 failed 代际，
+   不限制当前选样；配置或正文无法映射不猜失败，不隐式回收。
+4. `reading retry TASK --root ROOT --request-id REQUEST --reason REASON --actor OWNER` 显式追加
+   唯一后继，写事务重核可见性与当前选样/版本/PDF/正文；原失败保留。返回登记回执，不执行模型。
+   后继用 `experiment read ... --task-id CHILD` 单独执行。retry 精确请求只回原回执。
+
+`reading analysis ANALYSIS --root ROOT [--snapshot SNAPSHOT]` 是获准的私有内容查询：
+stdout 显著显示“受限内容未核对”、三类丢弃计数/标记、接收规则身份、接受后的结构结果与
+逐字 evidence/page/bbox/charspan。原始候选与被丢弃陈述不出此视图；日志、错误、默认 trace
+均不展开这些内容。`analysis_payload(database, data_root, analysis_id, snapshot_id=...)` 是相同
+公共投影，包含原领取的 PDF 哈希/冻结样本引用及正文三元组，允许标准恢复副本 `database.sqlite3 + blobs`；供报告复用，不重建分析规则。
+普通消费拒绝实验分析，恢复不升级资格。trace 的 `read_tasks/read_analyses` 只展示安全任务与
+正文/配置两轴，MODEL_FAILURE_QUEUE 从共享 evaluate_paper 组合 Screening/Read 最小事实。
+B 的唯一 validate_all 对已关联 B 样本的 Read 领取复核结构化所有者核查引用与三元组；
+备份服务不复制此检查，旧无 B 样本事实不补标。
+
+Read 成功/回执重放退出 0，参数/前置/运行拒绝 2，预算耗尽输出安全任务后退出 4，
+中断退出 130；reading 查询/reclaim/retry 成功 0、拒绝 2、中断 130。
+执行命令注入所选根 FileSink；tasks/failures/analysis 不建日志。帮助均不联网、不开库、不建目录。
+
 ### 日志与命令帮助
 
 `screen` 显式装配 `FileSink(root)` 并传入 Pi/任务服务；独立入口守卫、任务事件与
@@ -573,6 +621,8 @@ trace 的公共 `safe_payload().layout_reviews` 保留这份安全投影；原�
 | `2 / egress_scope_mismatch / egress_model_mismatch / egress_category_mismatch` | 根、阶段、provider/model 或类别不符；不得沿用其他范围授权 |
 | `2 / egress_action_invalid / egress_model_unconfigured / egress_clock_invalid / egress_unavailable` | 动作、时间或存储不可用；核对选择与完整历史后显式重试 |
 | `2 / 静态预检原因` | 必要项 missing/invalid/not_assessed；按逐项中文下一步修复，不领取任务 |
+| `4 / budget_exhausted` | Read 本代已结算两次失败；查询 reading failures，所有者决定显式 retry |
+| `2 / owner_review_required / document_gate_required / task_scope_mismatch` | 核对同样本结构化所有者核查、当前质量、明确任务/正文/语言；不从旧 actor 或裸指纹猜许可 |
 | `2 / execution_failed` | 意外执行失败；检查根、数据库与原检查，保留历史后显式重跑 |
 | `130 / interrupted` | 操作中断；使用同根及原请求继续，不推断成功或退款 |
 

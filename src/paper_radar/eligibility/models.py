@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from paper_radar.calibration.visibility import Visibility
 from paper_radar.screening.reasons import ScreeningReasonInput
 
 if TYPE_CHECKING:
     from paper_radar.feed_metadata.models import MetadataMissing, MetadataResult
-    from paper_radar.screening_tasks.query_models import TaskQueryResult
     from paper_radar.screening_tasks.success_models import Applicability, SuccessView
 
 
@@ -235,6 +235,32 @@ class MetadataFacts:
         )
 
 
+class _TaskReference(Protocol):
+    @property
+    def task_id(self) -> str: ...
+
+
+class _ScreeningQuery(Protocol):
+    @property
+    def paper_id(self) -> str: ...
+
+    @property
+    def stage(self) -> str: ...
+
+    @property
+    def reason(self) -> object | None: ...
+
+    @property
+    def current_failures(self) -> Sequence[_TaskReference]: ...
+
+
+@dataclass(frozen=True)
+class ReadTaskFacts:
+    paper_id: str
+    current_failed_task_ids: tuple[str, ...]
+    mapping_determinable: bool
+
+
 @dataclass(frozen=True)
 class ScreeningTaskFacts:
     paper_id: str
@@ -245,7 +271,7 @@ class ScreeningTaskFacts:
     def from_queries(
         cls,
         paper_id: str,
-        queries: tuple[TaskQueryResult, ...],
+        queries: tuple[_ScreeningQuery, ...],
     ) -> ScreeningTaskFacts:
         if any(query.paper_id != paper_id for query in queries):
             raise ValueError("task_facts_contradictory")
@@ -278,6 +304,7 @@ class PaperProjection:
     # E 装配的独立失败事实;资格规则不由它推导全文或参考文献生命周期。
     reference_harvest_failed: bool | None = None
     screening_tasks: ScreeningTaskFacts | None = None
+    read_tasks: ReadTaskFacts | None = None
 
 
 @dataclass(frozen=True)

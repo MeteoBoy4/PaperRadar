@@ -12,10 +12,13 @@
 ### 登记与历史输入
 
 `register(paper_id, *, snapshot_id, extraction_fingerprint, request_id,
-output_language='zh', label='manual')` 返回 ReadTask。
+output_language='zh', label='manual', registration_guard=None)` 返回 ReadTask。
 同 request_id 的完整登记参数与原请求哈希相同则只读返回既有任务，后来的资格变化
 不阻止此回执重放；异参同 ID 返回 request_conflict，先于输入重建和当前资格核验。
 回执重放不登记新事实、不领取或补充预算。新 request_id 仍按当前事实核验。
+`register_with_status` 使用同一登记权威，返回 `(ReadTask, replayed)`；事务内命中并发的
+同请求仍返回 replayed。新登记的可选 `registration_guard(Connection)` 在同一短写事务内
+重核调用方组合资格，拒绝整组回滚；精确重放不调用 guard。
 extraction_fingerprint 只用来定位已登记 Body 输入；artifact、reading/evidence 哈希和
 expected_identity 均取持久记录，不能由调用方提交投影或裸指纹自证。
 `prepare(task_id)` 返回首次预算配置重建的 PreparedReadInput；
@@ -34,15 +37,20 @@ expected_identity 均取持久记录，不能由调用方提交投影或裸指�
 JGRMetadata.facts_in_connection 在同 Connection 读取真实 metadata 请求、路线结算、
 agency 与当前字段，缺失保持 unknown；不把题名/摘要存在当路线完成。
 完整 READ_PREREQUISITES 经共享 eligibility 计算；不建立 manual_read_request 或自动名额。
-PDF 的制品登记和真实字节也在该 Connection 核验。上下文重建和完整帧最坏修正预算
+PDF 的实际字节在业务写事务外完整核验，短事务重读其登记身份及当前关联。上下文重建和完整帧最坏修正预算
 在领取之前完成；不可预见的文件或数据库损坏仍安全拒绝。
 
 ### 领取与所有权
 
-`claim(task_id, *, preclaim=None)` 返回 ReadHandle；包含真实本代 ordinal、token、
+`claim(task_id, *, preclaim=None, claim_guard=None)` 返回 ReadHandle；包含真实本代 ordinal、token、
 600 秒截止时间、历史 CallDescription 和安全 correction。preclaim 在领取短事务内取得
-最新修正，拒绝时没有 attempt。实际模型运行在事务外。每次领取另存当时decision/root/PDF/sample/质量核查/上游来源及
-metadata请求与明确历史修订的引用；历史验证只重放这些依据，来源 acquisition 的结果
+最新修正，拒绝时没有 attempt。`claim_guard(Connection)` 在同一写事务重读组合资格，
+不把完整文件检查、认证或模型 I/O 放入该事务。
+`require_latest_in_connection` 供调用方在认证前及领取时核对预算的当前代际。
+实际模型运行在事务外。每次领取另存当时decision/root/PDF/sample/质量核查/上游来源及
+metadata请求与明确历史修订的引用；
+对 B 关联样本，实际核查引用按当前 sample_id 的结构化 owner 关联限定，不以别的样本核查时间排序代替。
+历史验证只重放这些依据，来源 acquisition 的结果
 修订不能晚于所引修订，不拿后来的当前资格替换。
 `renew(handle)` 只允许未过期持有者追加续租，截止时间为续租时刻加 600 秒。
 `fail(handle, failure)` 结算封闭执行失败；output_invalid 只能由权威接收产生，
@@ -51,8 +59,13 @@ outcome_unknown 只能由回收产生。
 过期不退款，也不在只读查询或下一次 claim 自动结算。`reclaim(task_id)` 显式追加
 outcome_unknown，旧 token 失权；最后一次过期回收后该代失败。
 KeyboardInterrupt/SystemExit 透传并保留已花费但未结算的租约。
-`retry(task_id, *, request_id, reason, actor)` 只允许当前失败终态建立唯一后继；
+`retry(task_id, *, request_id, reason, actor, retry_guard=None)` 只允许当前失败终态建立唯一后继；
 重复父边/请求幂等，原因与操作者保留，成功或运行中不能重开预算。新代 ordinal 从 1 开始。
+新 retry 在写事务复核共享 `set_decision` 可见性与可选 retry_guard；精确旧请求仅回原任务。
+`papers()` 枚举全库任务身份；`failure_facts(paper_id, snapshot_id=...)` 从唯一当前正文与明确
+历史配置重建 Read 输入，按语言匹配预算并仅取最新代际的 failed；旧输入、ready、running
+及过期未结算均不计失败。无明确配置或正文不可判定时 mapping_determinable=false。
+`failures(snapshot_id=...)` 组合全库此事实，不限制 B 的当前选样；不结算、不激活配置。
 
 ### 外部执行与串行资源
 
@@ -156,6 +169,10 @@ main_findings/reusable_points/key_limitations 的逐类别丢弃条数、restric
 不写决定、不消费预算、不导入 SDK/模型或调用执行器。恢复后使用同一查询与规则。
 B/H 负责报告文案与显著警告，Body 没有日报或产品 CLI。
 
+安全任务诊断可调用 `ReadQueries.axes(paper_id, snapshot_id=...)`，只返回正文/配置两轴、
+来源/用途/质量及丢弃标记和各类计数，不展开结构结果、证据、原候选或私有说明。
+该投影不提升内容权限；含内容与 evidence 的 `analysis/history/evidence` 仍独立执行 AGENT_CONTENT 检查。
+
 ## 错误与拒绝
 
 ReadTaskError.reason 为封闭 ReadReason；前置拒绝的 reasons 保留共享资格或 Body 原因。
@@ -165,7 +182,7 @@ unsupported_rule_version。输入/Context/配置/存储组件的受控错误保�
 
 ## 不提供／不证明
 
-没有产品 CLI、自动队列、每日 quota、read_requests、pending/denied 原子 accepted、
+显式实验 CLI 由[B 工作流](stage-b-workflow.md#显式-read-与恢复)提供。本服务没有自动队列、每日 quota、read_requests、pending/denied 原子 accepted、
 通用 map/reduce、正式校准或真实 Pi/Docling 验收。真实产品与现场责任见[路线图](../roadmap.md)。
 
 ## 相关

@@ -4,8 +4,9 @@
 
 `paper_radar.read_execution.ReadExecution(database, data_root, *, roots,
 credentials_dir, auth_mode, proxy=None, sink=None, clock=None)` 为 B 提供已登记单篇
-Read 的执行服务。`run_attempt(task_id, *, audit_snapshot_id=None, limits=DEFAULT_LIMITS,
-cancelled=..., clock=...)` 返回 ReadAnalysis 或 ReadTask；没有产品 CLI、自动队列、
+Read 的执行服务。`run_attempt(task_id, *, audit_snapshot_id=None, before_prepare=None,
+claim_guard=None, limits=DEFAULT_LIMITS, cancelled=..., clock=...)` 返回 ReadAnalysis 或 ReadTask；
+产品显式 CLI 由[B 工作流](stage-b-workflow.md#显式-read-与恢复)组合；本服务没有自动队列、
 每日 quota、read_requests 或模型 fallback。构造不启动模型、刷新认证或加载 Docling。
 
 复用 prepare_launch、admission、run_call、安装使用保护及 PiRpcExecutionAudit。
@@ -62,6 +63,15 @@ helper 失败保留待撤销意图，重启或业务恢复不复活资格、不�
 配置、正文或持久引用损坏仍由原组件安全拒绝；有限正数超时及显式四根约束也保持。
 roots.data_root 必须与服务的数据根相同。调用上限最多为 RPC 默认值，完整执行和回收预算
 小于 Read 的 600 秒租约；不引入后台续租线程或锁内数据库长事务。
+
+### B 的调用方守卫
+
+可选 `before_prepare()` 在取得根 Read 锁后、准入/认证前及准备完成后于业务事务外调用；
+B 用它完整重读当前样本、PDF、正文三元组与所有者核查闭包，再廉价复核最新资格。
+`claim_guard(Connection)` 通过 run_pi_once 传入 ReadTasks 的实际领取短事务；
+它和原 preclaim 的帧/准入复核共同完成后才能插入 attempt。认证期间的撤销、换样、
+版本或正文变化拒领，不新增失败或预算；在途领取仍按原租约与结算权威处理。
+这些回调只增加拒绝条件，不绕过任何原 Read 前置、完整帧预算、安装保护或独立会话。
 
 ### 一次执行与来源
 

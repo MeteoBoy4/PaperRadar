@@ -1181,3 +1181,89 @@ def _layout_run(action: Callable[[], dict[str, object]]) -> None:
         report_component_error(error)
         raise typer.Exit(2) from None
     typer.echo(json.dumps(result, ensure_ascii=False))
+
+
+@experiment_app.command(
+    "read",
+    cls=ExperimentCommand,
+    help="""显式执行当前固定样本的默认中文 Read。
+
+参数：PAPER、--root、--snapshot、明确正文三元组、认证/材料/安装根；
+--request-id 与 --task-id 二选一。label=manual，不创建 manual_read_request。
+副作用：新登记最多执行当前代际剩余两次尝试，认证与 RPC 外发，写任务及所选根 logs/。
+自动配额 0；不扫描队列。输出去向：stdout 安全回执。
+分析内容另用 reading analysis 私有视图。
+精确 --request-id 重放只回原登记身份，不继续；ready 用 --task-id 继续。
+常见失败：先核对当前选样/PDF/正文、所有者六项和外发授权/豁免。
+失败查询 reading failures，
+过期租约必须 reading reclaim 显式结算，再用 --task-id 继续或 reading retry 追加后继。
+输入超额拒绝，不截正文或丢章节。帮助不联网、不开库、不建目录。
+退出码：成功/重放 0；前置/运行拒绝 2；预算耗尽 4；中断 130。
+示例：paper-radar experiment read PAPER --root /tmp/experiment --snapshot SNAP
+--fingerprint SHA --reading-sha256 SHA --evidence-map-sha256 SHA --request-id read-1
+--credentials-dir /tmp/credentials --material-root /tmp/materials --install-root /tmp/pi
+""",
+)
+def read(
+    paper: str,
+    root: RootOption,
+    snapshot: Annotated[str, typer.Option("--snapshot", help="明确历史快照。")],
+    fingerprint: Annotated[
+        str, typer.Option("--fingerprint", help="当前正文提取指纹。")
+    ],
+    reading_sha256: Annotated[
+        str, typer.Option("--reading-sha256", help="阅读成员哈希。")
+    ],
+    evidence_map_sha256: Annotated[
+        str, typer.Option("--evidence-map-sha256", help="证据成员哈希。")
+    ],
+    credentials_dir: Annotated[
+        Path, typer.Option("--credentials-dir", help="专用认证目录。")
+    ],
+    material_root: Annotated[
+        Path, typer.Option("--material-root", help="显式材料根。")
+    ],
+    install_root: Annotated[Path, typer.Option("--install-root", help="所选安装根。")],
+    request_id: Annotated[
+        str | None, typer.Option("--request-id", help="幂等登记请求。")
+    ] = None,
+    task_id: Annotated[
+        str | None, typer.Option("--task-id", help="只执行明确已有代际。")
+    ] = None,
+) -> None:
+    from paper_radar.experiment import ExperimentRoot
+    from paper_radar.experiment.reading import READING_ERRORS, Reading
+    from paper_radar.pi_execution import ExecutionError
+    from paper_radar.reading.context import ExtractionIdentity
+    from paper_radar.reading_cli import reading_clock, reading_error
+    from paper_radar.runtime_logging import FileSink, RuntimeLog
+
+    try:
+        selected = ExperimentRoot(root)
+        selected.require()
+        sink = FileSink(selected.root)
+        with RuntimeLog(sink).execution(
+            "experiment", controlled=(*READING_ERRORS, ExecutionError)
+        ):
+            result = Reading(
+                selected,
+                snapshot=snapshot,
+                credentials_dir=credentials_dir,
+                material_root=material_root,
+                install_root=install_root,
+                sink=sink,
+                clock=reading_clock,
+            ).run(
+                paper,
+                identity=ExtractionIdentity(
+                    fingerprint, reading_sha256, evidence_map_sha256
+                ),
+                request_id=request_id,
+                task_id=task_id,
+            )
+    except BaseException as error:
+        reading_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False))
+    if result["state"] == "failed":
+        typer.echo("budget_exhausted：请 reading failures 查询并显式 retry。", err=True)
+        raise typer.Exit(4)
