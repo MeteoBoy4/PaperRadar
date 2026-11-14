@@ -429,6 +429,47 @@ trace 的 `pdfs/pdf_confirmations/frozen_samples` 是安全引用，不展示 PD
 样本/版本不符、visibility 或执行失败 2；中断 130。失败时核对所有者确认、selection、
 accepted、文件哈希与版本；中断可同 request 续办，内容冲突不能覆盖。
 
+### 显式有界提取
+
+`experiment extract PAPER --root ROOT --snapshot SNAP --model-root MODELS
+--timeout-seconds SECONDS --threads THREADS` 对当前冻结样本显式执行一次 Body 提取。
+模型根、有限正超时、1–32 线程显式提供；`DoclingRun` 固定显式 `RLIMIT_AS=32 GiB`，
+这是虚拟地址空间资源参数，不是物理内存上限。部署清单、commit、全部所选成员哈希及
+私有模型快照仍由 [Docling 执行权威](docling-execution.md)核验；不下载模型。
+快照前按所选文件实际总大小核对 `tempfile` 实际临时根的可用磁盘，空间不足拒绝，
+不使用开发环境或 Pi 的磁盘阈值；复制期间失败仍按既有预检受控拒绝。
+
+入口只读 `/proc/self/cgroup` 与 v2 mountinfo，定位当前进程所属组并要求
+`0 < memory.max ≤ 8 GiB`、`memory.swap.max = 0`；无限、缺失、不可读、歧义、越界路径或链接拒绝。
+它在根锁前及等待根锁后、领取事务前重新核验；更换所属组拒绝。
+主机 `MemAvailable` 仅披露实际字节或 unknown，不设置硬下限，也不解释为容量足够。
+资源或模型预检拒绝不建立 attempt 或提取预算；只可能追加所选根安全入口日志。
+
+先通过 `PdfSamples.require_current_sample` 完整预验冻结样本，外部文件读取在事务外；
+实际领取短事务经 `require_current_sample_in_connection` 重核当前选样、冻结版本／修订、
+当前 PDF 与最新样本关联，预检后换样或修订不能领取。parser 只接收 PDF 与 extraction
+语义，不从参数或数据库补题名、DOI、摘要，遵守 [C1](stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)。
+根锁、同 backend／指纹两次预算、永久失败及失联领取结算全部复用
+[Body 权威](body-persistence.md)，不建第二套计数器。每次命令最多转换一次；
+失败、无文本层、质量失败、资源耗尽或超时均停止，不截断、不自动换样、不调用 Read。
+SIGKILL 未提供可归属 worker 的 OOM 证据时沿原 `executor_error`，不凭组事件猜测。
+
+`experiment_extractions` 与 Body 新领取同事务追加，结构绑定 sample／paper／attempt，
+保存已核验组限制与主机披露；`experiment_extraction_peaks` 与完成结算同事务追加，
+保存完成后读取的 `memory.peak`。两表禁止 UPDATE/DELETE/REPLACE。
+中断导致未观察或峰值不可读时为 unknown，历史丢失领取仍按 Body 结算，不退款。
+worker `ru_maxrss` 字节继续属于原 attempt；组峰值标记 `historical_group_peak`，可能含
+父进程和同组其他工作，不当作 worker 峰值、不作起止相减或通用 F 阈值。
+命中成功／永久失败／耗尽时 `cached=true`，不创建执行记录或新组峰值；
+当前主机披露不回写旧转换。`succeeded` 仅说明本次提取已有可用成功，
+`automatic_quality` 披露自动门槛，独立的 `quality` 仍由 Body 保留版式核查资格。
+
+trace 安全投影扩展 `extractions`（身份、质量、预算、attempt 与运行审计、worker 峰值）和
+`bounded_executions`（冻结样本、限制、主机披露、组历史峰值）；不展开正文或私有模型路径。
+新事实只扩唯一 `experiment.validation.validate_all`，随备份、无模型／SDK的恢复保留。
+成功或已成功重放退出 0；参数、资源、样本／配置变化、预检或转换失败退出 2；中断 130。
+失败须回查 trace，由所有者选择显式再次提取或换样；永久失败与耗尽不能用重跑绕过。
+
 ### 日志与命令帮助
 
 `screen` 显式装配 `FileSink(root)` 并传入 Pi/任务服务；独立入口守卫、任务事件与
@@ -438,6 +479,8 @@ accepted、文件哈希与版本；中断可同 request 续办，内容冲突不
 独立 D1 装配守卫见 `tests/test_experiment_selection_cli.py`，`selection` 不建日志。
 `accept` 与 `attach-pdf` 同样装配所选根文件汇及入口守卫；成功/重放的入口事件及只读 trace 不追加日志的断言
 见 `tests/test_experiment_accept_cli.py` 与 `tests/test_experiment_pdf_cli.py`。原文理由、模型正文和凭据不进入回执或日志。
+`extract` 的独立入口／日志／隐私守卫在 `tests/test_experiment_extract_cli.py`；
+只读 trace 不追加日志，帮助在冷进程禁止网络与 SQLite 后仍可用。
 `egress-authorize` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
 装配守卫见 `tests/test_stage_b_egress_preflight.py`。授权只读查询与静态预检不建日志。
 `feed-fetch` 显式注入 `FileSink(root)`，日志只写所选根的 `logs/`。新执行入口装配
@@ -461,6 +504,9 @@ accepted、文件哈希与版本；中断可同 request 续办，内容冲突不
 | `2 / already_succeeded / not_latest / task_running / lease_unsettled` | 回执不能重新执行；查询当前代际与租约，必要时显式结算，禁止退款或重开预算 |
 | `2 / owner_confirmation_required / confirmation_mismatch / acceptance_missing` | 独立确认、冻结归属或接受缺失；由所有者确认正确 PDF，并核对 selection/accepted |
 | `2 / invalid_pdf / pdf_unreadable / sample_missing / sample_mismatch` | 文件不可读、签名/体积/哈希不符或当前样本不符；核对合法 PDF，以新 request 确认变更 |
+| `2 / cgroup_limit_invalid / cgroup_changed` | 当前组不合规或等待期间变化；在符合 ≤8 GiB、swap=0 的组内显式重跑，不占提取预算 |
+| `2 / model_snapshot_space_insufficient / model_deployment_invalid / runtime_selection_invalid` | 核对完整部署、实际快照磁盘、正有限超时与 1–32 线程；不领取尝试 |
+| `2 / extraction_failed` | 本次单次转换失败或已有永久失败／预算耗尽；回查 trace，由所有者选择下一步，不调用 Read |
 | `2 / invalid_arguments` | 缺必填参数或未知参数；查看对应 `--help` |
 | `2 / root_unknown` | 没有 experiment 登记；对独立空根运行 init，既有未知用途库不能改登记 |
 | `2 / root_not_experiment` | production 根被拒绝；使用独立实验根 |

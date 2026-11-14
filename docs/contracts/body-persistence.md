@@ -92,6 +92,14 @@ attempt 保存耗时/峰值；manifest 的转换测量不含后续发布耗时�
 三元组、质量、永久失败及 remaining_attempts，不自动继续执行或回收失联者。
 根级串行与中断规则见[提取配置](extraction-config.md#根级并发与等待)。
 
+`extractions(paper_id)` 返回该论文所有显式 PDF 对应的提取历史，不挑选最新成功。
+`extract` 可接收 `claim_guard(Connection)`，在领取短事务先重新核对产品前置；
+守卫不读取 blob、不调用外部解析器。可选 `ExtractionObserver` 的 `before_claim`
+在根锁前及取得根锁后、写事务前运行；`claimed` 与新 attempt 在同一事务追加。
+`completed` 在外部转换和自动质量流程结束后、结算事务前运行，`settled` 与对应 outcome
+在同一事务追加。中断保留原领取，不退款；观察者不处理或重建 Body 预算。
+B 使用这些接缝保存[有界执行记录](stage-b-workflow.md#显式有界提取)。
+
 ### 人工版式核查与同事务事实
 
 `review_layout(identity, *, passed, checks, note, actor, request_id)` 独立追加记录，

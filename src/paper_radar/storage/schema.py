@@ -579,3 +579,29 @@ experiment_frozen_samples = Table(
         unique=True,
     ),
 )
+
+experiment_extractions = Table(
+    "experiment_extractions",
+    metadata,
+    Column(
+        "attempt_id",
+        Text,
+        ForeignKey("body_extraction_attempts.attempt_id"),
+        primary_key=True,
+    ),
+    Column("sample_id", Text, ForeignKey("body_samples.sample_id"), nullable=False),
+    Column("paper_id", Text, ForeignKey("papers.paper_id"), nullable=False),
+    Column("record_json", Text, nullable=False),
+)
+
+experiment_extraction_peaks = Table(
+    "experiment_extraction_peaks",
+    metadata,
+    Column(
+        "attempt_id",
+        Text,
+        ForeignKey("experiment_extractions.attempt_id"),
+        primary_key=True,
+    ),
+    Column("cgroup_peak_bytes", Integer),
+)

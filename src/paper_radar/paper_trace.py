@@ -18,6 +18,7 @@ from paper_radar.eligibility import (
 )
 from paper_radar.experiment.acceptance import Acceptances
 from paper_radar.experiment.acceptance import receipt as acceptance_receipt
+from paper_radar.experiment.extraction import Extractions, extraction_payload
 from paper_radar.experiment.pdf import PdfSamples
 from paper_radar.experiment.pdf import receipt as pdf_receipt
 from paper_radar.experiment.selections import Selections
@@ -67,6 +68,8 @@ class PaperWorkflowTrace:
     pdfs: tuple[dict[str, object], ...] = ()
     pdf_confirmations: tuple[dict[str, object], ...] = ()
     frozen_samples: tuple[dict[str, object], ...] = ()
+    extractions: tuple[dict[str, object], ...] = ()
+    bounded_executions: tuple[dict[str, object], ...] = ()
     scope: str = (
         "前置通过不代表名额、预算或领取许可；各组件独立只读视图，允许并发滞后。"
         "Screening 需显式 --snapshot；代执行接受依预先选样授权，"
@@ -229,4 +232,8 @@ def query_paper_trace(
             for sample in pdf_samples.samples()
             if sample.paper_id == paper_id
         ),
+        extractions=tuple(
+            extraction_payload(view) for view in body.extractions(paper_id)
+        ),
+        bounded_executions=Extractions(database, data_root).history(paper_id),
     )
