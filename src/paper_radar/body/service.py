@@ -497,6 +497,31 @@ class BodyService:
             request_id=request_id,
         )
 
+    def review_layout_in_connection(
+        self,
+        connection: Connection,
+        identity: "ExtractionIdentity",
+        *,
+        passed: bool,
+        checks: "Mapping[str, bool]",
+        note: str,
+        actor: str,
+        request_id: str,
+        recording_kind: str | None = None,
+    ) -> "ExtractionView":
+        from paper_radar.body.extraction import review_layout_in_connection
+
+        return review_layout_in_connection(
+            connection,
+            identity,
+            passed=passed,
+            checks=checks,
+            note=note,
+            actor=actor,
+            request_id=request_id,
+            recording_kind=recording_kind,
+        )
+
     def facts_in_connection(
         self,
         connection: Connection,

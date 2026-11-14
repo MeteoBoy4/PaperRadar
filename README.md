@@ -20,6 +20,9 @@ trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型�
 冻结版本、SHA-256、选样及接受关联均可追踪，中断可按原 request 续办。
 `experiment extract` 在核验当前进程 cgroup ≤8 GiB、无 swap、部署与快照磁盘后，
 显式执行冻结样本的一次 Body 提取；worker 与历史组峰值分列，失败停止，不调用 Read。
+`experiment layout-materials` 从登记 PDF 与持久正文生成六项私有图文对照，不重跑 Docling；
+`experiment layout-review` 显式接收所有者全部六项布尔结论，区分所有者核查与 Agent 代录，
+否决对该正文指纹永久生效。
 `experiment probe-models` 显式对 screening/reading 分别执行无 prompt RPC 映射探测，
 认证可能刷新并写回专用凭据；只说明本次模型与档位可设置，不提供生成或准入证明。
 实验根将制品放在 `data/`，数据库保持根内原位置；Pi 供给四根可并列，
@@ -57,6 +60,7 @@ trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型�
 | 显式探测两槽模型与档位映射 | [探测契约](docs/contracts/pi-execution.md#无-prompt-模型映射探测)；`paper-radar experiment probe-models --help` |
 | 确认合法 PDF、附加到冻结版本并冻结样本 | [PDF 工作流](docs/contracts/stage-b-workflow.md#pdf-独立确认与样本冻结)；`paper-radar experiment attach-pdf --help` |
 | 在有界 cgroup 中显式提取当前冻结样本 | [显式提取](docs/contracts/stage-b-workflow.md#显式有界提取)；`paper-radar experiment extract --help` |
+| 生成六项版式对照并代录所有者结论 | [版式材料与核查](docs/contracts/stage-b-workflow.md#版式材料与核查)；`paper-radar experiment layout-materials --help` |
 | 记录选样接受授权、显式换样与查询历史 | [B 选样契约](docs/contracts/stage-b-workflow.md#选样接受授权与换样)；`paper-radar experiment select --help` |
 | 初始化实验根、取得 JGR v2 并生成候选清单 | [B 实验工作流](docs/contracts/stage-b-workflow.md)；`paper-radar experiment --help` |
 | 登记 fixture、执行或回放摘要审计 | [Fixture 与摘要审计](#fixture-与摘要审计) |

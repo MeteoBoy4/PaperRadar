@@ -130,7 +130,7 @@ chunks 为 bytes 分段 iterable，非 bytes 分段拒绝；members 为角色到
 ## Revision 与原因码
 
 所有制品发布和登记查询均要求数据库处于随包迁移图的唯一 head，当前为
-`b004_bounded_extractions`；不会隐式建库或升级。制品三表由
+`b005_layout_recordings`；不会隐式建库或升级。制品三表由
 [`a302_artifact_store`](../../src/paper_radar/storage/migrations/versions/a302_artifact_store.py)
 从 `a201_profile_snapshot` 追加 CREATE TABLE/INDEX，不重建既有配置三表；
 `a302_artifact_store` 是历史迁移节点，不是当前可用库的 head。

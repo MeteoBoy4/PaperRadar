@@ -109,6 +109,12 @@ checks 必须完整包含 `body_boundary/reading_order/sections/headers_footers/
 自动通过且人工通过才合成 `experiment_document_gate`；缺人工为 absent。
 人工否决产生 `failed(layout_review)` 并对指纹永久；后来通过为 `layout_conflict`，
 后来否决可继续追加。Body 不产生 formal_gate。
+`review_layout_in_connection(connection, identity, *, passed, checks, note, actor,
+request_id, recording_kind=None)` 复用相同权威，在调用者事务中追加，不自行提交。
+只有 `stage_b_owner_review` 是受支持的非空结构标记，B 与所有者／代录者关联同事务写入；
+标记参与该请求摘要，普通旧 wrapper 保持非空说明要求及原请求语义。
+同事务入口允许空的可选说明，不改变六项完整性、passed 与永久否决规则。
+产品材料、所有者输入及关联闭包见[B 工作流](stage-b-workflow.md#版式材料与核查)。
 `ExtractionView` 拒绝 basis=failed 却无 failure，及其他 basis 携带 failure 的矛盾 DTO。
 
 `facts_in_connection(connection, paper_id, *, identity=None, fingerprint=None, ordinary=False)`

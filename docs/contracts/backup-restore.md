@@ -63,7 +63,7 @@ WAL/SHM/journal、嵌套 staging 一律拒绝。批次根及根内任何路径�
 | --- | --- |
 | format_version | 1 |
 | batch_id / created_at | 上述 ID 与 UTC 审计时间，目录名须等于 batch_id |
-| database_revision | 显式支持 `b004_bounded_extractions`，且须等于随包唯一 head；不动态接受未来 head |
+| database_revision | 显式支持 `b005_layout_recordings`，且须等于随包唯一 head；不动态接受未来 head |
 | artifact_format_version / blob_layout_version | 各为整数 1 |
 | database | 恰有 path=`database.sqlite3`、sha256、非负整数 size_bytes |
 | blobs | 全部且去重的 FileEntry(path,sha256,size_bytes)，按 SHA-256 升序；path 必须等于 blobs/sha256/<前2>/<哈希> |
@@ -204,7 +204,7 @@ backup verify 一样只给批次 ID、清单 SHA-256 及按 kind 汇总，不逐
 
 ## 版本准入与旧批次
 
-`BACKUP_DATABASE_REVISION` 固定支持 `b004_bounded_extractions`，且要求与随包唯一 head
+`BACKUP_DATABASE_REVISION` 固定支持 `b005_layout_recordings`，且要求与随包唯一 head
 一致。format 1 不表示任意 revision 兼容：verify／restore 对所有旧 revision（包括 a302、
 a405、a704、a1001 及 feed01–feed06）返回 `unsupported_revision`，不在批次内部迁移。
 保留原批次，用匹配该 revision 的旧程序先 verify／restore，再切回当前程序，对恢复的
@@ -223,7 +223,8 @@ a405、a704、a1001 及 feed01–feed06）返回 `unsupported_revision`，不在
 备份固定副本的公共登记回放之后、manifest 反查之前，`verify_contents` 调用
 `FixtureAudit.validate_all()`、`FeedPipeline.validate_all()`、`BodyService.validate_all()` 和
 `ReadTasks.validate_all()`，并单次调用 B 的 `experiment.validation.validate_all(database, data_root)`；
-B 的候选、选样、豁免、外发授权与代执行接受完整历史规则见[B 事实闭包](stage-b-workflow.md#b-事实验证与备份闭包)。
+B 的候选、选样、豁免、外发授权、代执行接受、PDF 确认、有界执行与所有者版式核查
+完整历史规则见[B 事实闭包](stage-b-workflow.md#b-事实验证与备份闭包)。
 FeedPipeline 组合 PaperFacts、
 ScreeningTasks、JGRFeed、JGRMetadata 及组合登记依据的校验。所有来源语义在副本上校验，
 外层数据库／清单重哈希不能绕过这些检查；拒绝不回写源库、不修复批次、不发布错误恢复目标。
@@ -279,7 +280,9 @@ attempt，源库与副本独立继续时，不承诺追回丢失次数、跨恢�
 无需原运行目录或 SDK。backup verify 在完整副本上经 BodyService.validate_all 重验
 已登记的根用途、决定及 Screening 引用、PDF 原字节/选择历史、独立所有者 PDF 确认及
 选样/接受/附件/样本双向关联（沿唯一 B validate_all 聚合）、冻结样本、extraction
-StageInput、两次预算/唯一成功、自动质量和人工核查闭包；损坏为 registration_invalid。
+StageInput、两次预算/唯一成功、自动质量和人工核查闭包；B 还核对核查结构标记与
+所有者／Agent 代录的追加关联，私有视图可从已验证成员重建，不是备份业务依赖。
+损坏为 registration_invalid。
 未被业务事实引用的任意 extraction 不自动取得消费资格。核验不回收未结算 attempt，
 不调用 parser、不改变剩余预算或用途；锁载体 .body-docling.lock 与 .body-read.lock 均不在批次封闭集合，
 恢复不要求存在，误入批次为 unexpected_entry。详细规则见[正文持久化](body-persistence.md)。
@@ -312,7 +315,7 @@ Read 业务验证调用 ReadTasks.validate_all，闭包包括每代预算、未�
   这些是固定历史证据，不替代当前程序校验、完整阶段 A 或 live 验收。
 - 实现依据：[备份与校验](../../src/paper_radar/backup/service.py)、
   [清单与原因](../../src/paper_radar/backup/manifest.py)、[恢复](../../src/paper_radar/backup/restore.py)、
-  [当前迁移](../../src/paper_radar/storage/migrations/versions/b004_bounded_extractions.py)。
+  [当前迁移](../../src/paper_radar/storage/migrations/versions/b005_layout_recordings.py)。
 - 规格与决策依据：[§9.1](../../intent/draft.md#91-本机一致性快照)、
   [ADR-0027](../adr/0027-address-artifacts-by-content.md)、
   [ADR-0031](../adr/0031-screening-budget-and-derived-applicability.md)、

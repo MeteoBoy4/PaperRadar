@@ -267,22 +267,25 @@ def validate_all(database: Path, root: Path) -> None:
                     and all(type(v) is bool for v in checks.values())
                     and bool(row["passed"]) == all(checks.values())
                 )
-                required(row["note"], row["actor"])
+                require(row["recording_kind"] in {None, "stage_b_owner_review"})
+                required(row["actor"])
+                if row["recording_kind"] is None:
+                    required(row["note"])
                 timestamp(row["reviewed_at"])
-                require(
-                    row["request_hash"]
-                    == digest(
-                        [
-                            row["fingerprint"],
-                            row["reading_sha256"],
-                            row["evidence_map_sha256"],
-                            bool(row["passed"]),
-                            checks,
-                            row["note"],
-                            row["actor"],
-                        ]
-                    )
+                review_hash = digest(
+                    [
+                        row["fingerprint"],
+                        row["reading_sha256"],
+                        row["evidence_map_sha256"],
+                        bool(row["passed"]),
+                        checks,
+                        row["note"],
+                        row["actor"],
+                    ]
                 )
+                if row["recording_kind"] is not None:
+                    review_hash = digest([review_hash, row["recording_kind"]])
+                require(row["request_hash"] == review_hash)
     except BodyError:
         raise
     except (ValueError, KeyError, TypeError, AssertionError):
