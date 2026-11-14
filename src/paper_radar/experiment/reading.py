@@ -266,11 +266,7 @@ class Reading:
                 return dict(state="replayed", receipt=receipt)
         else:
             task = tasks.task(task_id)
-            if (task.paper_id, task.identity, task.output_language) != (
-                paper,
-                identity,
-                "zh",
-            ):
+            if (task.paper_id, task.identity) != (paper, identity):
                 raise ReadingError("task_scope_mismatch")
             tasks.prepare_execution(task_id, audit_snapshot_id=snapshot)
             receipt = dict(task_id=task_id)

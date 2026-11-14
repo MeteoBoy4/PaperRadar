@@ -32,7 +32,7 @@ from paper_radar.read_tasks.repository import (
     required,
     transaction,
 )
-from paper_radar.reading.context import SourceSlice
+from paper_radar.reading.context import ExtractionIdentity, SourceSlice
 from paper_radar.runtime_logging import RuntimeLog, Sink
 from paper_radar.storage.artifacts import ArtifactStore
 
@@ -287,19 +287,17 @@ class ReadTasks:
                 ).scalars()
             )
 
-    def failure_facts(
-        self, paper_id: str, *, snapshot_id: str | None = None
-    ) -> ReadTaskFacts:
-        """当前完整 Read 输入的最新代际;租约过期不隐式结算。"""
+    def _current_fingerprints(
+        self, paper_id: str, snapshot_id: str | None
+    ) -> tuple[ExtractionIdentity | None, frozenset[str]]:
         from paper_radar.config import ConfigError
         from paper_radar.read_inputs import prepare_read_input
-        from paper_radar.read_tasks.models import ReadTaskFacts
 
         if snapshot_id is None:
-            return ReadTaskFacts(paper_id, (), False)
+            return None, frozenset()
         current = self.body.current_body(paper_id)
         if current.identity is None:
-            return ReadTaskFacts(paper_id, (), False)
+            return None, frozenset()
         try:
             snapshot = load_config_snapshot(self.database, snapshot_id)
             with transaction(self.database) as connection:
@@ -327,13 +325,26 @@ class ReadTasks:
                 for language in languages
             }
         except ConfigError:
-            return ReadTaskFacts(paper_id, (), False)
+            return None, frozenset()
+        return current.identity, frozenset(fingerprints)
+
+    def _failure_facts_in_connection(
+        self, connection: Connection, paper_id: str, fingerprints: frozenset[str]
+    ) -> ReadTaskFacts:
         latest: dict[str, ReadTask] = {}
-        for task in self.history(paper_id):
-            if task.fingerprint in fingerprints:
-                previous = latest.get(task.fingerprint)
-                if previous is None or previous.generation < task.generation:
-                    latest[task.fingerprint] = task
+        ids = connection.execute(
+            select(t.tasks.c.task_id)
+            .join(t.budgets, t.tasks.c.budget_id == t.budgets.c.budget_id)
+            .where(
+                t.budgets.c.paper_id == paper_id,
+                t.budgets.c.fingerprint.in_(fingerprints),
+            )
+        ).scalars()
+        for key in ids:
+            task = task_view(connection, key)
+            previous = latest.get(task.fingerprint)
+            if previous is None or previous.generation < task.generation:
+                latest[task.fingerprint] = task
         return ReadTaskFacts(
             paper_id,
             tuple(
@@ -341,8 +352,16 @@ class ReadTasks:
                     task.task_id for task in latest.values() if task.status == "failed"
                 )
             ),
-            True,
+            bool(fingerprints),
         )
+
+    def failure_facts(
+        self, paper_id: str, *, snapshot_id: str | None = None
+    ) -> ReadTaskFacts:
+        """当前完整 Read 输入的最新代际;租约过期不隐式结算。"""
+        _, fingerprints = self._current_fingerprints(paper_id, snapshot_id)
+        with transaction(self.database) as connection:
+            return self._failure_facts_in_connection(connection, paper_id, fingerprints)
 
     def failures(self, *, snapshot_id: str) -> tuple[ReadTask, ...]:
         return tuple(
@@ -648,6 +667,117 @@ class ReadTasks:
                 return self.fail(handle, "executor_error")
             return self.submit_test(handle, raw)
 
+    def _paper_retry_request(
+        self,
+        paper_id: str,
+        snapshot_id: str,
+        task_id: str | None,
+        reason: str,
+        actor: str,
+    ) -> list[object]:
+        required(paper_id, snapshot_id, reason, actor)
+        if task_id is not None:
+            required(task_id)
+        return ["retry_paper", paper_id, snapshot_id, task_id, reason, actor]
+
+    def replay_retry_paper(
+        self,
+        paper_id: str,
+        *,
+        snapshot_id: str,
+        request_id: str,
+        reason: str,
+        actor: str,
+        task_id: str | None = None,
+    ) -> ReadTask | None:
+        """精确 paper 请求在当前性/状态/选择复核前只回原后继。"""
+        required(request_id)
+        values = self._paper_retry_request(
+            paper_id, snapshot_id, task_id, reason, actor
+        )
+        with transaction(self.database) as connection:
+            return _registration_replay(connection, request_id, digest(values))
+
+    def retry_paper(
+        self,
+        paper_id: str,
+        *,
+        snapshot_id: str,
+        request_id: str,
+        reason: str,
+        actor: str,
+        task_id: str | None = None,
+        retry_guard: Callable[[Connection], None] | None = None,
+    ) -> ReadTask:
+        """由当前失败权威唯一定位父代,同事务重核后只登记后继。"""
+        replayed = self.replay_retry_paper(
+            paper_id,
+            snapshot_id=snapshot_id,
+            request_id=request_id,
+            reason=reason,
+            actor=actor,
+            task_id=task_id,
+        )
+        if replayed is not None:
+            return replayed
+        identity, fingerprints = self._current_fingerprints(paper_id, snapshot_id)
+        if identity is None:
+            raise ReadTaskError("facts_changed")
+
+        def selected_parent(connection: Connection) -> str:
+            facts = self._failure_facts_in_connection(
+                connection, paper_id, fingerprints
+            )
+            keys = facts.current_failed_task_ids
+            if task_id is not None:
+                view = task_view(connection, task_id)
+                if view.paper_id != paper_id:
+                    raise ReadTaskError("facts_changed")
+                self.require_latest_in_connection(connection, task_id)
+                if task_id not in keys:
+                    raise ReadTaskError("not_failed")
+                return task_id
+            if len(keys) > 1:
+                raise ReadTaskError("ambiguous_task")
+            if not keys:
+                raise ReadTaskError("not_failed")
+            return keys[0]
+
+        values = self._paper_retry_request(
+            paper_id, snapshot_id, task_id, reason, actor
+        )
+        with transaction(self.database) as connection:
+            replayed = _registration_replay(connection, request_id, digest(values))
+            if replayed is not None:
+                return replayed
+            parent = selected_parent(connection)
+        verify_pdf(self.body, self.body.facts(paper_id, identity=identity))
+
+        def check(connection: Connection) -> None:
+            if (
+                self.body.current_body_in_connection(connection, paper_id).identity
+                != identity
+            ):
+                raise ReadTaskError("facts_changed")
+            if selected_parent(connection) != parent:
+                raise ReadTaskError("facts_changed")
+            require_facts(self.body, connection, paper_id, identity)
+            if retry_guard:
+                retry_guard(connection)
+
+        values = self._paper_retry_request(
+            paper_id, snapshot_id, task_id, reason, actor
+        )
+        return self._retry(
+            parent,
+            request_id=request_id,
+            reason=reason,
+            actor=actor,
+            retry_guard=check,
+            request_values=values,
+            registration_snapshot_id=snapshot_id,
+        )
+
     def retry(
         self,
         task_id: str,
@@ -657,8 +787,32 @@ class ReadTasks:
         actor: str,
         retry_guard: Callable[[Connection], None] | None = None,
     ) -> ReadTask:
+        return self._retry(
+            task_id,
+            request_id=request_id,
+            reason=reason,
+            actor=actor,
+            retry_guard=retry_guard,
+        )
+
+    def _retry(
+        self,
+        task_id: str,
+        *,
+        request_id: str,
+        reason: str,
+        actor: str,
+        retry_guard: Callable[[Connection], None] | None = None,
+        request_values: list[object] | None = None,
+        registration_snapshot_id: str | None = None,
+    ) -> ReadTask:
         required(task_id, request_id, reason, actor)
-        request_hash = digest(["retry", task_id, reason, actor])
+        values = (
+            request_values
+            if request_values is not None
+            else ["retry", task_id, reason, actor]
+        )
+        request_hash = digest(values)
         with transaction(self.database, write=True) as connection:
             view = task_view(connection, task_id)
             old = (
@@ -698,9 +852,9 @@ class ReadTasks:
                     insert(t.registrations).values(
                         request_id=request_id,
                         request_hash=request_hash,
-                        request_json=canonical(["retry", task_id, reason, actor]),
+                        request_json=canonical(values),
                         task_id=child,
-                        snapshot_id=budget["snapshot_id"],
+                        snapshot_id=registration_snapshot_id or budget["snapshot_id"],
                         label="retry",
                         registered_at=self._now().isoformat(),
                     )
@@ -732,9 +886,9 @@ class ReadTasks:
                 insert(t.registrations).values(
                     request_id=request_id,
                     request_hash=request_hash,
-                    request_json=canonical(["retry", task_id, reason, actor]),
+                    request_json=canonical(values),
                     task_id=new_id,
-                    snapshot_id=budget["snapshot_id"],
+                    snapshot_id=registration_snapshot_id or budget["snapshot_id"],
                     label="retry",
                     registered_at=self._now().isoformat(),
                 )

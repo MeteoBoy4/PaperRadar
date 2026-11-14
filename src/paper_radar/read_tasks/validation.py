@@ -187,6 +187,30 @@ def replay_analysis(
         validate_audit(service, prepared, row["audit_json"], task_id=row["task_id"])
 
 
+def _paper_retry_matches(
+    values: object,
+    *,
+    paper_id: str,
+    snapshot_id: str,
+    parent_task_id: str | None,
+    reason: str | None,
+    actor: str | None,
+) -> bool:
+    return (
+        isinstance(values, list)
+        and len(values) == 6
+        and type(parent_task_id) is str
+        and values[0] == "retry_paper"
+        and values[1:3] == [paper_id, snapshot_id]
+        and values[3] in (None, parent_task_id)
+        and values[4:] == [reason, actor]
+        and all(
+            type(v) is str and v.strip()
+            for v in (values[1], values[2], values[4], values[5])
+        )
+    )
+
+
 def validate_all(service: ReadTasks) -> None:
     try:
         with transaction(service.database) as connection:
@@ -242,6 +266,14 @@ def validate_all(service: ReadTasks) -> None:
                             generation["retry_reason"],
                             generation["retry_actor"],
                         ]
+                        or _paper_retry_matches(
+                            json.loads(r["request_json"]),
+                            paper_id=budget["paper_id"],
+                            snapshot_id=r["snapshot_id"],
+                            parent_task_id=previous["task_id"],
+                            reason=generation["retry_reason"],
+                            actor=generation["retry_actor"],
+                        )
                         for r in requests
                     ):
                         invalid()
@@ -348,11 +380,34 @@ def validate_all(service: ReadTasks) -> None:
                     or sha(row["request_json"].encode()) != row["request_hash"]
                 ):
                     invalid()
-                if (
+                legacy_retry = (
                     isinstance(values, list)
                     and len(values) == 4
                     and values[0] == "retry"
-                ):
+                )
+                paper_retry = (
+                    isinstance(values, list)
+                    and bool(values)
+                    and values[0] == "retry_paper"
+                )
+                if paper_retry:
+                    generation = (
+                        connection.execute(
+                            select(t.tasks).where(t.tasks.c.task_id == row["task_id"])
+                        )
+                        .mappings()
+                        .one()
+                    )
+                    if row["label"] != "retry" or not _paper_retry_matches(
+                        values,
+                        paper_id=budget["paper_id"],
+                        snapshot_id=row["snapshot_id"],
+                        parent_task_id=generation["parent_task_id"],
+                        reason=generation["retry_reason"],
+                        actor=generation["retry_actor"],
+                    ):
+                        invalid()
+                elif legacy_retry:
                     generation = (
                         connection.execute(
                             select(t.tasks).where(t.tasks.c.task_id == row["task_id"])
@@ -376,6 +431,7 @@ def validate_all(service: ReadTasks) -> None:
                         row["label"],
                     ]:
                         invalid()
+                if not legacy_retry:
                     from paper_radar.read_inputs import prepare_read_input
 
                     snapshot = load_config_snapshot(

@@ -1186,10 +1186,12 @@ def _layout_run(action: Callable[[], dict[str, object]]) -> None:
 @experiment_app.command(
     "read",
     cls=ExperimentCommand,
-    help="""显式执行当前固定样本的默认中文 Read。
+    help="""显式新登记默认中文 Read，或继续已有任务。
 
 参数：PAPER、--root、--snapshot、明确正文三元组、认证/材料/安装根；
---request-id 与 --task-id 二选一。label=manual，不创建 manual_read_request。
+--request-id 与 --task-id 二选一。新登记默认 zh/label=manual。
+不创建 manual_read_request。
+已有任务由 --task-id 继承其冻结 output_language/指纹，不登记新请求或新预算。
 副作用：新登记最多执行当前代际剩余两次尝试，认证与 RPC 外发，写任务及所选根 logs/。
 自动配额 0；不扫描队列。输出去向：stdout 安全回执。
 分析内容另用 reading analysis 私有视图。
@@ -1228,7 +1230,8 @@ def read(
         str | None, typer.Option("--request-id", help="幂等登记请求。")
     ] = None,
     task_id: Annotated[
-        str | None, typer.Option("--task-id", help="只执行明确已有代际。")
+        str | None,
+        typer.Option("--task-id", help="继续明确已有代际，沿用冻结语言/指纹。"),
     ] = None,
 ) -> None:
     from paper_radar.experiment import ExperimentRoot

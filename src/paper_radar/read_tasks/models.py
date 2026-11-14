@@ -31,6 +31,7 @@ class ReadReason(StrEnum):
     SETTLEMENT_CONFLICT = "settlement_conflict"
     NOT_LATEST = "not_latest"
     NOT_FAILED = "not_failed"
+    AMBIGUOUS_TASK = "ambiguous_task"
     VISIBILITY_DENIED = "visibility_denied"
     ORDINARY_CONSUMPTION_DENIED = "ordinary_consumption_denied"
     CORRUPT_REFERENCE = "corrupt_reference"
