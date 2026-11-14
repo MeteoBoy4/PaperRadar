@@ -646,3 +646,74 @@ def test_change_during_blob_publication_never_attaches_to_stale_selection(
     assert len(PdfSamples(root.database, root.data_root).history()) == 1
     assert BodyService(root.database, root.data_root).pdfs(prepared.paper_id) == ()
     assert PdfSamples(root.database, root.data_root).samples() == ()
+
+
+def test_sample_query_does_not_mix_confirmation_and_link_snapshots(
+    feed: FeedFixture, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from sqlalchemy import Connection, Engine, event
+
+    from paper_radar.experiment.pdf import PdfSamples
+
+    prepared = screen_fixture(feed, tmp_path, monkeypatch)
+    assert prepared.screen().exit_code == 0
+    assert accept(prepared).exit_code == 0
+    assert attach(prepared, tmp_path).exit_code == 0
+    root = ExperimentRoot(prepared.root)
+    changed = False
+
+    def append_at_link_query(
+        connection: Connection,
+        cursor: object,
+        statement: str,
+        parameters: object,
+        context: object,
+        executemany: bool,
+    ) -> None:
+        nonlocal changed
+        if "FROM experiment_frozen_samples" in statement and not changed:
+            changed = True
+            result = attach(
+                prepared, tmp_path, request="raced-pdf", raw=PDF + b"second"
+            )
+            assert result.exit_code == 0, result.output
+
+    event.listen(Engine, "before_cursor_execute", append_at_link_query)
+    try:
+        samples = PdfSamples(root.database, root.data_root).samples()
+    finally:
+        event.remove(Engine, "before_cursor_execute", append_at_link_query)
+    assert len(samples) >= 1
+    assert len(PdfSamples(root.database, root.data_root).samples()) == (
+        2 if changed else 1
+    )
+
+
+@pytest.mark.parametrize(
+    "table", ["experiment_pdf_confirmations", "experiment_frozen_samples"]
+)
+def test_confirmation_and_sample_association_are_append_only(
+    feed: FeedFixture, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, table: str
+) -> None:
+    import sqlite3
+
+    from paper_radar.experiment.pdf import PdfSamples
+
+    prepared = screen_fixture(feed, tmp_path, monkeypatch)
+    assert prepared.screen().exit_code == 0
+    assert accept(prepared).exit_code == 0
+    assert attach(prepared, tmp_path).exit_code == 0
+    root = ExperimentRoot(prepared.root)
+    service = PdfSamples(root.database, root.data_root)
+    before = service.history(), service.samples()
+    for statement in (
+        f"UPDATE {table} SET confirmation_id='changed'",
+        f"DELETE FROM {table}",
+        f"INSERT OR REPLACE INTO {table} SELECT * FROM {table}",
+    ):
+        with (
+            sqlite3.connect(root.database) as connection,
+            pytest.raises(sqlite3.IntegrityError, match="append_only"),
+        ):
+            connection.execute(statement)
+    assert (service.history(), service.samples()) == before

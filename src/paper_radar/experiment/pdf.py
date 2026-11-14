@@ -141,10 +141,20 @@ class PdfSamples:
         return tuple(records)
 
     def history(self) -> tuple[PdfConfirmation, ...]:
-        """核验确认与所有持久成员的双向闭包,允许仅确认的可续办状态。"""
+        """完整核验确认历史,允许仅确认的可续办状态。"""
+        return self._validated_history()[0]
+
+    def samples(self) -> tuple[FrozenSample, ...]:
+        """确认、关联及安全投影在同一只读快照核验,允许并发滞后。"""
+        return self._validated_history()[1]
+
+    def _validated_history(
+        self,
+    ) -> tuple[tuple[PdfConfirmation, ...], tuple[FrozenSample, ...]]:
         store = ArtifactStore(self.database, self.data_root)
         with transaction(self.database) as connection:
             records = self._records(connection)
+            samples: list[tuple[int, FrozenSample]] = []
             selections = Selections(
                 self.database, self.data_root
             ).history_in_connection(connection)
@@ -253,65 +263,35 @@ class PdfSamples:
                         )
                     ):
                         raise ValueError
-                return records
-            except (ValueError, StopIteration, TypeError, KeyError):
-                raise PdfError("registration_invalid") from None
-
-    def samples(self) -> tuple[FrozenSample, ...]:
-        records = self.history()
-        selections = Selections(self.database, self.data_root).history()
-        with transaction(self.database) as connection:
-            relations = (
-                connection.execute(
-                    select(experiment_frozen_samples)
-                    .join(
-                        body_samples,
-                        experiment_frozen_samples.c.sample_id
-                        == body_samples.c.sample_id,
-                    )
-                    .order_by(body_samples.c.sequence)
-                )
-                .mappings()
-                .all()
-            )
-            result = []
-            for row in relations:
-                record = next(
-                    r for r in records if r.confirmation_id == row["confirmation_id"]
-                )
-                selected = next(
-                    s
-                    for s in selections
-                    if s.selection_id == record.request.selection_id
-                )
-                sample = (
-                    connection.execute(
-                        select(body_samples).where(
-                            body_samples.c.sample_id == row["sample_id"]
+                    samples.append(
+                        (
+                            sample["sequence"],
+                            FrozenSample(
+                                confirmation_id=record.confirmation_id,
+                                attachment_id=relation["attachment_id"],
+                                sample_id=sample["sample_id"],
+                                selection_id=selected.selection_id,
+                                acceptance_id=record.acceptance_id,
+                                paper_id=selected.paper_id,
+                                version_id=selected.version_id,
+                                revision_no=selected.revision_no,
+                                pdf_sha256=record.request.pdf_sha256,
+                                feed_id=sample["feed_id"],
+                                discovery_id=selected.discovery_id,
+                                source_check_id=selected.source_check_id,
+                                reason_selection_id=selected.selection_id,
+                                frozen_at=sample["frozen_at"],
+                            ),
                         )
                     )
-                    .mappings()
-                    .one()
-                )
-                result.append(
-                    FrozenSample(
-                        confirmation_id=record.confirmation_id,
-                        attachment_id=row["attachment_id"],
-                        sample_id=row["sample_id"],
-                        selection_id=selected.selection_id,
-                        acceptance_id=record.acceptance_id,
-                        paper_id=selected.paper_id,
-                        version_id=selected.version_id,
-                        revision_no=selected.revision_no,
-                        pdf_sha256=record.request.pdf_sha256,
-                        feed_id=sample["feed_id"],
-                        discovery_id=selected.discovery_id,
-                        source_check_id=selected.source_check_id,
-                        reason_selection_id=selected.selection_id,
-                        frozen_at=sample["frozen_at"],
+                return records, tuple(
+                    item[1]
+                    for item in sorted(
+                        samples, key=lambda item: (item[1].paper_id, item[0])
                     )
                 )
-            return tuple(result)
+            except (ValueError, StopIteration, TypeError, KeyError):
+                raise PdfError("registration_invalid") from None
 
     def _require_confirmation_current(
         self, connection: Connection, record: PdfConfirmation, selected: SelectionRecord
