@@ -32,7 +32,9 @@ def test_every_read_execution_entry_uses_selected_root_sink_and_queries_are_read
         result = (
             fixture.query(
                 "retry",
-                task,
+                fixture.layout.extraction.prepared.paper_id,
+                "--snapshot",
+                fixture.snapshot,
                 "--request-id",
                 "retry-logging",
                 "--reason",

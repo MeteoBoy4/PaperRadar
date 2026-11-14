@@ -69,6 +69,14 @@ def reading_error(error: BaseException) -> NoReturn:
         )
         else "execution_failed"
     )
+    if reason == "ambiguous_task":
+        typer.echo(
+            "ambiguous_task：当前失败父代不唯一；"
+            "请用 reading failures --snapshot 查询，"
+            "再提供 --task-id 明确当前 failed 父代。",
+            err=True,
+        )
+        raise typer.Exit(2) from None
     typer.echo(
         f"{reason}：Read 操作停止;核对当前资格、外发授权与 doctor;"
         "用 reading tasks 查询，running 待租约后显式 reclaim，耗尽后 retry;"
@@ -184,18 +192,26 @@ def reclaim(task: str, root: RootOption) -> None:
     "retry",
     cls=ExperimentCommand,
     help="""为已结算两次失败的 Read 追加唯一后继，不调用模型。
-参数：TASK、--root、--request-id、--reason、--actor。
+参数：PAPER、--root、--snapshot、--request-id、--reason、--actor。
 副作用：追加代际/登记和所选根 logs/。
 自动配额 0。
 输出去向：stdout 原登记回执;精确重放不继续执行。常见失败：running 先显式 reclaim;
-非当前正文/选样不得新建后继;后继 ready 用 experiment read --task-id 继续。
+从当前 failed 唯一定位父代；歧义拒绝，可用 --task-id 明确。
+明确任务仍须属于该论文/快照的当前输入、latest、failed，不绕当前资格。
+非当前正文/选样、成功/running/ready/过期未结算不能 retry。
+过期须先显式 reclaim；精确旧请求先回原回执，不受后继推进或选择变化影响。
+后继 ready 用 experiment read --task-id 继续。
 帮助不联网、不开库、不建目录。退出码：成功 0;拒绝 2;中断 130。
-示例：paper-radar reading retry TASK --root /tmp/experiment --request-id retry-1 
+示例：paper-radar reading retry PAPER --root /tmp/experiment --snapshot SNAP
+--request-id retry-1
 --reason 修正执行环境 --actor owner
 """,
 )
 def retry(
-    task: str,
+    paper: str,
+    snapshot: Annotated[
+        str, typer.Option("--snapshot", help="明确当前 Read 输入配置。")
+    ],
     root: RootOption,
     request_id: Annotated[str, typer.Option("--request-id", help="唯一幂等请求。")],
     reason: Annotated[
@@ -204,10 +220,15 @@ def retry(
     actor: Annotated[
         str, typer.Option("--actor", help="决定重试者，本地说明不是认证。")
     ],
+    task_id: Annotated[
+        str | None,
+        typer.Option("--task-id", help="可选明确父代，仍须属于本论文当前failed。"),
+    ] = None,
 ) -> None:
     from sqlalchemy import Connection
 
     from paper_radar.body import BodyService
+    from paper_radar.config import resolve_config_snapshot_reference
     from paper_radar.experiment import ExperimentRoot
     from paper_radar.experiment.pdf import PdfSamples
     from paper_radar.experiment.reading import (
@@ -226,36 +247,47 @@ def retry(
         service = ReadTasks(
             selected.database, selected.data_root, sink=sink, clock=reading_clock
         )
-        view = service.task(task)
+        snapshot_id = resolve_config_snapshot_reference(selected.database, snapshot)
+        replayed = service.replay_retry_paper(
+            paper,
+            snapshot_id=snapshot_id,
+            request_id=request_id,
+            reason=reason,
+            actor=actor,
+            task_id=task_id,
+        )
         sample = None
-        if registration_receipt(service, request_id) is None:
+        identity = None
+        if replayed is None:
             sample = PdfSamples(
                 selected.database, selected.data_root
-            ).require_current_sample(view.paper_id)
+            ).require_current_sample(paper)
+            identity = (
+                BodyService(selected.database, selected.data_root)
+                .current_body(paper)
+                .identity
+            )
+            if identity is None:
+                raise ReadingError("body_identity_mismatch")
 
         def check(connection: Connection) -> None:
-            if sample is None:
+            if sample is None or identity is None:
                 raise ReadingError("request_conflict")
             PdfSamples(
                 selected.database, selected.data_root
             ).require_current_sample_in_connection(connection, sample)
-            if (
-                BodyService(selected.database, selected.data_root)
-                .current_body_in_connection(connection, view.paper_id)
-                .identity
-                != view.identity
-            ):
-                raise ReadingError("body_identity_mismatch")
             require_facts(
                 BodyService(selected.database, selected.data_root),
                 connection,
-                view.paper_id,
-                view.identity,
+                paper,
+                identity,
             )
 
         with RuntimeLog(sink).execution("experiment", controlled=READING_ERRORS):
-            service.retry(
-                task,
+            service.retry_paper(
+                paper,
+                snapshot_id=snapshot_id,
+                task_id=task_id,
                 request_id=request_id,
                 reason=reason,
                 actor=actor,

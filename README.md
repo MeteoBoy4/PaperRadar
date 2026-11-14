@@ -24,8 +24,11 @@ trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型�
 `experiment layout-review` 显式接收所有者全部六项布尔结论，区分所有者核查与 Agent 代录，
 否决对该正文指纹永久生效。
 `experiment read` 显式登记当前正文的默认中文 Read 并最多驱动本代剩余两次尝试；
-精确 request 重放不执行，已有 ready 任务用 `--task-id` 显式继续。
-`reading tasks/failures/reclaim/retry` 提供全库安全查询、显式过期结算与失败后继；
+精确 request 重放不执行；已有 ready 任务用 `--task-id` 继承冻结语言和指纹继续，不另建请求或预算。
+`reading tasks/failures/reclaim` 提供全库安全查询与显式过期结算；
+`reading retry PAPER --root ROOT --snapshot SNAP --request-id REQUEST --reason REASON --actor owner`
+从当前失败唯一定位父代并只登记后继，歧义拒绝；可选 `--task-id` 仍须当前/latest/failed。
+后继再用 `experiment read ... --task-id CHILD` 显式执行，精确 retry 重放不续跑；
 `reading analysis` 是含未核对警告、丢弃计数和逐字 evidence 的获准私有视图。
 这些动作不建人工精读请求、不占自动名额，实验分析及其恢复副本始终被普通消费拒绝。
 `experiment probe-models` 显式对 screening/reading 分别执行无 prompt RPC 映射探测，

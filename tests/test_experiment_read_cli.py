@@ -131,6 +131,7 @@ def test_failure_retry_and_explicit_task_continue_are_a_real_cli_path(
     assert failed.exit_code == 4, failed.output
     value = json.loads(failed.stdout.splitlines()[0])
     task = value["task"]["task_id"]
+    paper = fixture.layout.extraction.prepared.paper_id
     assert len(value["task"]["attempts"]) == 2
     result = fixture.query("failures", "--snapshot", fixture.snapshot)
     assert result.exit_code == 0, result.output
@@ -154,7 +155,9 @@ def test_failure_retry_and_explicit_task_continue_are_a_real_cli_path(
         visibility_patch.setattr(Visibility, "permission", deny_decision)
         hidden = fixture.query(
             "retry",
-            task,
+            paper,
+            "--snapshot",
+            fixture.snapshot,
             "--request-id",
             "hidden-retry",
             "--reason",
@@ -166,7 +169,9 @@ def test_failure_retry_and_explicit_task_continue_are_a_real_cli_path(
     assert len(json.loads(fixture.query("tasks").stdout)) == 1
     retried = fixture.query(
         "retry",
-        task,
+        paper,
+        "--snapshot",
+        fixture.snapshot,
         "--request-id",
         "retry-1",
         "--reason",
@@ -183,7 +188,9 @@ def test_failure_retry_and_explicit_task_continue_are_a_real_cli_path(
     assert len(json.loads(continued.stdout.splitlines()[0])["task"]["attempts"]) == 2
     repeated = fixture.query(
         "retry",
-        task,
+        paper,
+        "--snapshot",
+        fixture.snapshot,
         "--request-id",
         "retry-1",
         "--reason",
@@ -225,7 +232,9 @@ def test_failure_retry_and_explicit_task_continue_are_a_real_cli_path(
     assert [r["task_id"] for r in json.loads(all_failed.stdout)] == [receipt["task_id"]]
     rejected = fixture.query(
         "retry",
-        receipt["task_id"],
+        paper,
+        "--snapshot",
+        fixture.snapshot,
         "--request-id",
         "retry-2",
         "--reason",
@@ -236,7 +245,9 @@ def test_failure_retry_and_explicit_task_continue_are_a_real_cli_path(
     assert rejected.exit_code == 2 and "selection_changed" in rejected.output
     replay_after_change = fixture.query(
         "retry",
-        task,
+        paper,
+        "--snapshot",
+        fixture.snapshot,
         "--request-id",
         "retry-1",
         "--reason",

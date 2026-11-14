@@ -534,7 +534,8 @@ label=manual、默认 zh；不创建 manual_read_request/read_requests、不扫�
 
 精确 `--request-id` 重放只返回原登记身份，不认证、不补后来状态、不执行。
 认证或领取前受阻后，`reading tasks --root ROOT` 查询 ready/running/failed/succeeded、
-租约和原 task_id，再用同一明确正文、快照与执行根加 `--task-id TASK` 显式继续；
+租约和原 task_id，再用同一明确正文、快照与执行根加 `--task-id TASK` 显式继续，继承原任务的冻结语言和指纹，
+不因默认中文另建输入/预算/登记；
 `--request-id` 与 `--task-id` 互斥。成功或非最新代际不能继续。恢复链为：
 
 1. `reading tasks --root ROOT` 查询；过期仍保持 running，不进入失败队列。
@@ -542,9 +543,13 @@ label=manual、默认 zh；不创建 manual_read_request/read_requests、不扫�
    用 `experiment read ... --task-id TASK` 继续。
 3. `reading failures --root ROOT --snapshot SNAPSHOT` 枚举全库当前 Read 输入最新 failed 代际，
    不限制当前选样；配置或正文无法映射不猜失败，不隐式回收。
-4. `reading retry TASK --root ROOT --request-id REQUEST --reason REASON --actor OWNER` 显式追加
-   唯一后继，写事务重核可见性与当前选样/版本/PDF/正文；原失败保留。返回登记回执，不执行模型。
-   后继用 `experiment read ... --task-id CHILD` 单独执行。retry 精确请求只回原回执。
+4. `reading retry PAPER --root ROOT --snapshot SNAPSHOT --request-id REQUEST --reason REASON
+   --actor OWNER` 由公共 ReadTasks 当前失败查询唯一定位父代，显式追加后继。
+   当前失败不唯一以 ambiguous_task 拒绝；可选 `--task-id PARENT` 明确父代，但仍须归属该论文、
+   显式快照的当前输入、最新且已结算两次失败。成功、ready、running、过期未结算、非当前或非最新均拒绝；
+   Read 的过期必须先显式 reclaim。写事务重新核对失败唯一性/父代、visibility 与当前选样/版本/PDF/正文。
+   原失败保留，只返回登记回执，不执行模型；后继用 `experiment read ... --task-id CHILD` 单独执行。
+   精确 paper/snapshot/可选task/reason/actor 请求先回原回执，后继推进、选样或当前性变化不新增或执行。
 
 `reading analysis ANALYSIS --root ROOT [--snapshot SNAPSHOT]` 是获准的私有内容查询：
 stdout 显著显示“受限内容未核对”、三类丢弃计数/标记、接收规则身份、接受后的结构结果与

@@ -67,6 +67,22 @@ KeyboardInterrupt/SystemExit 透传并保留已花费但未结算的租约。
 及过期未结算均不计失败。无明确配置或正文不可判定时 mapping_determinable=false。
 `failures(snapshot_id=...)` 组合全库此事实，不限制 B 的当前选样；不结算、不激活配置。
 
+`retry_paper(paper_id, *, snapshot_id, request_id, reason, actor, task_id=None, retry_guard=None)`
+是规范 paper-ID 恢复入口。它复用上述当前 failed 查询权威，省略 task_id 时须唯一父代；
+多个当前失败为 ambiguous_task，没有当前失败为 not_failed，不能按最新时间、单一选样或旧输入猜选。
+高级 task_id 必须属于该论文及快照的当前输入、最新失败代际，不能绕过 current/latest/failed 及原 Read 资格。
+已成功、ready/running、过期未结算不能创建后继；过期仍须先显式 reclaim。
+完整输入/PDF 重建在短写事务外；写事务重核当前正文、同一当前失败集合、唯一/明确父代、
+共享 visibility、原 Read 前置与调用方 retry_guard，再复用相同代际登记权威。
+`replay_retry_paper` 供组合在当前样本预验前查询原回执；精确请求先回原后继，
+后继继续/成功、新代际、选择/版本/当前性变化均不阻止只读重放；异参同 request_id 为 request_conflict。
+新 paper 请求以现有 registrations 保存 paper、显式 snapshot、可选 task、reason、actor 的规范请求范围，
+并登记所选 snapshot；恢复验证核对父链及该快照的同一 Read 指纹。
+原 `retry(task_id, ...)` 服务端口和已存四项 task 请求保留历史兼容，不是规范 CLI 的位置参数。
+已明确 task 的执行恢复继承其冻结 output_language（包括 en）；新 request 的 B 默认 zh 不覆盖已有输入，
+恢复不登记新 request/预算，仍复核 paper/snapshot/current/latest、选样/正文/owner/egress 与原准入。
+
+
 ### 外部执行与串行资源
 
 `run_once(task_id, executor)` 的 test 执行器接收 ReadHandle，只能返回原始 bytes；
@@ -177,7 +193,7 @@ B/H 负责报告文案与显著警告，Body 没有日报或产品 CLI。
 
 ReadTaskError.reason 为封闭 ReadReason；前置拒绝的 reasons 保留共享资格或 Body 原因。
 常见原因：prerequisites_failed、read_input_over_budget、task_running、budget_exhausted、
-invalid_credential、settlement_conflict、not_failed、request_conflict、corrupt_reference、
+invalid_credential、settlement_conflict、not_failed、not_latest、ambiguous_task、request_conflict、corrupt_reference、
 unsupported_rule_version。输入/Context/配置/存储组件的受控错误保持其原边界，均不等同模型失败。
 
 ## 不提供／不证明
