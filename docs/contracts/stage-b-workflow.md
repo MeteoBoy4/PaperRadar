@@ -4,7 +4,7 @@
 
 `paper-radar experiment` 在必填的显式 `--root` 中组合 B 实验动作。
 当前提供 `init`、`feed-fetch`、`candidates`、`select/selection`、`egress-authorize/status/check` 和静态
-`preflight`、显式无 prompt 映射探测 `probe-models` 与两阶段 `screen`；不推断 cwd 或父目录中的根。
+`preflight`、显式无 prompt 映射探测 `probe-models` 与两阶段 `screen`、`accept` 及 `attach-pdf`；不推断 cwd 或父目录中的根。
 实验用途、执行来源和质量资格分别判断；组件规则仍由各自 Contract 定义。
 
 ## 规则
@@ -299,7 +299,8 @@ paper-radar experiment screen --root /tmp/root --selection-id SELECTION \
 `paper_radar.paper_trace.query_paper_trace(database, data_root, paper_id, snapshot_id=None,
 include_agent_content=False)` 返回 `PaperWorkflowTrace`，供后续 Body/Read/报告扩展。
 其 `safe_payload()` 保留 root、Feed 来源与语言观察、选样授权安全引用与完整换样链、
-Screening 预算/指纹/代际/父链/attempt/租约/安全失败、代执行接受授权关联及双方角色，
+Screening 预算/指纹/代际/父链/attempt/租约/安全失败、代执行接受授权关联及双方角色、
+PDF 附加/独立确认与冻结样本引用（理由只引用选样），
 以及共享 `evaluate_paper(projection)`
 概念结果、原因和支持范围；不倾倒内部 projection 或决定载荷。
 论文事实与各组件分别读，不承诺跨组件同一 SQLite 快照，允许并发滞后。
@@ -309,7 +310,8 @@ Screening 预算/指纹/代际/父链/attempt/租约/安全失败、代执行接
 其他 partial/deferred 含义保持。metadata_ready 仍仅最低元数据；value 的当前成功作为
 current_screening_artifact，boundary 单阶段成功不冒充完整建议/决定。
 实验 eligible_for_auto_read 始终包含 experiment_no_auto_queue；前置通过不代表名额、
-预算或领取许可。PDF/正文、Read 与报告事实由后续 B 组合扩展，未装配事实保持 unknown。
+预算或领取许可。PDF 附加、确认与样本提供独立事实；正文/Read 与报告资格由后续 B
+组合扩展，未装配事实保持 unknown。
 
 默认输出不含 Agent 内容、Profile、Prompt、摘要正文或原始响应。`--show-abstract`
 展开获准的论文事实；`--show-agent-content` 必须同时提供快照与 data-root，实际核对
@@ -376,6 +378,48 @@ Body 决定原因/actor/引用/时间、受控标记与请求身份，并检查�
 授权写入失败或事务中断不保留半条事实。恢复后可经显式数据库／数据根接口查询原授权、
 理由和换样历史；它不自动续跑，也不证明恢复位置取得了新执行许可。
 
+### PDF 独立确认与样本冻结
+
+`experiment attach-pdf PAPER --root ROOT --selection-id SELECTION --version-id VERSION
+--pdf FILE --sha256 SHA256 --owner-confirmed --actor agent --request-id REQUEST`
+要求所有者明确确认该文件的论文/版本归属及副本合法性；确认者固定 owner，录入者为
+owner/agent，本地角色说明不构成认证或签名。未给独立确认即拒绝，选样/接受授权及
+历史 §13.3 PDF 不替代当轮确认。命令不作 DOI 检测、不调用模型或 Docling，自动配额 0。
+文件检查复用 [Body](body-persistence.md#pdf-与实验样本) 的签名、最小字节数与 SHA-256。
+
+确认绑定当前选样冻结的 Paper/版本/修订、根、PDF SHA-256、request_id、owner、录入者、
+UTC 时间及已验证代执行接受引用。显式版本必须与选样一致且仍是当前修订；选样已更换、
+版本/修订改变、接受缺失、哈希或签名不符均拒绝。写前、确认事务和附加事务前均实际调用
+共享 SET_DECISION visibility，空隐藏集合也执行检查。
+
+先在独立事务追加 `experiment_pdf_confirmations`；发布 PDF 在短事务外，经权威制品发布
+核验原字节哈希。随后在同一 `BEGIN IMMEDIATE` 中重核当前选样/版本，并经 Body 的
+Connection 接缝追加 PDF、冻结样本与 `experiment_frozen_samples` 关联。附件通过
+`body_pdfs.confirmation_id` 外键绑定确认；附加/样本/关联任一写入或提交失败全部回滚，
+已提交确认保留，可按原 request 续办。该独立确认事实不因文件发布失败而删除。
+确认规范 JSON 的 SHA-256 作为身份；新增两表触发器拒绝 UPDATE/DELETE/REPLACE 覆写。
+旧 Body 附件的确认标记为空，不因请求前缀或 actor 字符串而推断确认。
+
+冻结样本关联选样、接受、确认、Body 附件/样本、当轮 Feed 发现与 source_check_id、
+PDF 哈希；原理由保存在选样/Body 私有事实中，安全输出只给 `reason_selection_id`。
+同 request 异内容拒绝 `request_conflict`；精确完成重放只返回同附件/样本，不追加。
+重放仍须当前选样/版本且最新样本与当前 PDF 完全一致；变化后的文件使用新确认 request。
+更换 PDF 保留历史，Body 重新判断当前正文与 Read 资格，Screening 输入指纹/预算不变。
+PDF 确认与冻结均不产生六项版式通过、Read 任务或自动消费许可。
+
+公共 `PdfSamples(database, data_root).history()/samples()` 完整核验历史并支持恢复位置；
+`require_current_sample(paper_id)` 为正文产品编排提供预验，
+`require_current_sample_in_connection(connection, validated_sample)` 在领取事务内只重读
+当前选样、冻结修订、当前 PDF 和最新样本关联，不作文件 I/O。历史验证允许仅有确认的
+可续办状态；带确认标记的附件必须与冻结关联双向闭合。所有 B 事实仅通过
+`experiment.validation.validate_all` 聚合进入备份/恢复，备份服务不另建一套选择器。
+trace 的 `pdfs/pdf_confirmations/frozen_samples` 是安全引用，不展示 PDF/理由正文。
+
+中文帮助不联网、不开库、不建目录；stdout 安全 JSON，stderr 受控原因，执行入口日志
+只写所选根且不含文件路径/正文。成功/精确重放 0；参数、未确认、无接受、归属/哈希/
+样本/版本不符、visibility 或执行失败 2；中断 130。失败时核对所有者确认、selection、
+accepted、文件哈希与版本；中断可同 request 续办，内容冲突不能覆盖。
+
 ### 日志与命令帮助
 
 `screen` 显式装配 `FileSink(root)` 并传入 Pi/任务服务；独立入口守卫、任务事件与
@@ -383,8 +427,8 @@ Body 决定原因/actor/引用/时间、受控标记与请求身份，并检查�
 
 `select` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
 独立 D1 装配守卫见 `tests/test_experiment_selection_cli.py`，`selection` 不建日志。
-`accept` 同样装配所选根文件汇及入口守卫；成功/重放的入口事件及只读 trace 不追加日志的断言
-见 `tests/test_experiment_accept_cli.py`。原文理由、模型正文和凭据不进入回执或日志。
+`accept` 与 `attach-pdf` 同样装配所选根文件汇及入口守卫；成功/重放的入口事件及只读 trace 不追加日志的断言
+见 `tests/test_experiment_accept_cli.py` 与 `tests/test_experiment_pdf_cli.py`。原文理由、模型正文和凭据不进入回执或日志。
 `egress-authorize` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
 装配守卫见 `tests/test_stage_b_egress_preflight.py`。授权只读查询与静态预检不建日志。
 `feed-fetch` 显式注入 `FileSink(root)`，日志只写所选根的 `logs/`。新执行入口装配
@@ -406,6 +450,8 @@ Body 决定原因/actor/引用/时间、受控标记与请求身份，并检查�
 | `2 / invalid_execution_mode` | `--continue-value` 与 `--receipt-id` 互斥；选择一个明确动作 |
 | `2 / frozen_version_changed / metadata_not_ready / receipt_scope_mismatch` | 冻结版本、完整元数据或显式回执范围不符；回查事实后重新选样或使用正确回执 |
 | `2 / already_succeeded / not_latest / task_running / lease_unsettled` | 回执不能重新执行；查询当前代际与租约，必要时显式结算，禁止退款或重开预算 |
+| `2 / owner_confirmation_required / confirmation_mismatch / acceptance_missing` | 独立确认、冻结归属或接受缺失；由所有者确认正确 PDF，并核对 selection/accepted |
+| `2 / invalid_pdf / pdf_unreadable / sample_missing / sample_mismatch` | 文件不可读、签名/体积/哈希不符或当前样本不符；核对合法 PDF，以新 request 确认变更 |
 | `2 / invalid_arguments` | 缺必填参数或未知参数；查看对应 `--help` |
 | `2 / root_unknown` | 没有 experiment 登记；对独立空根运行 init，既有未知用途库不能改登记 |
 | `2 / root_not_experiment` | production 根被拒绝；使用独立实验根 |

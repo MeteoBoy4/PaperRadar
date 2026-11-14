@@ -163,33 +163,67 @@ class BodyService:
             "original_pdf", [pdf], expected_sha256=pdf_hash
         )
         with transaction(self.database, write=True) as connection:
-            previous = replay(connection, tables.pdfs, request_id, request_hash)
-            if previous is not None:
-                return pdf_record(previous)
-            # 发布期间版本变化拒绝默认绑定漂移;已发布制品只是孤立材料,无附加事实。
-            if (
-                version_id is None
-                and load_trace(connection, paper_id).current.version_id != selected
-            ):
-                raise BodyError("facts_changed")
-            saved = PdfAttachment(
-                str(uuid4()),
+            return self.attach_pdf_in_connection(
+                connection,
                 paper_id,
-                selected,
-                sequence(connection, tables.pdfs, paper_id),
-                artifact.artifact_id,
-                pdf_hash,
-                now(),
+                pdf_sha256=pdf_hash,
+                artifact_id=artifact.artifact_id,
+                request_id=request_id,
+                version_id=version_id,
+                selected_version_id=selected,
             )
-            connection.execute(
-                insert(tables.pdfs).values(
-                    **saved.__dict__,
-                    request_id=request_id,
-                    request_hash=request_hash,
-                    requested_version_id=version_id,
-                )
+
+    def attach_pdf_in_connection(
+        self,
+        connection: Connection,
+        paper_id: str,
+        *,
+        pdf_sha256: str,
+        artifact_id: str,
+        request_id: str,
+        version_id: str | None,
+        selected_version_id: str,
+        confirmation_id: str | None = None,
+    ) -> PdfAttachment:
+        """调用方已发布并校验 PDF;在其写事务追加,不提交连接。"""
+        required(paper_id, pdf_sha256, artifact_id, request_id, selected_version_id)
+        request_hash = digest(
+            [paper_id, version_id, pdf_sha256]
+            + ([confirmation_id] if confirmation_id is not None else [])
+        )
+        selected = selected_version_id
+        if selected not in {
+            v.version_id for v in load_trace(connection, paper_id).versions
+        }:
+            raise BodyError("version_mismatch")
+        previous = replay(connection, tables.pdfs, request_id, request_hash)
+        if previous is not None:
+            return pdf_record(previous)
+        # 发布期间版本变化拒绝默认绑定漂移;已发布制品只是孤立材料,无附加事实。
+        if (
+            version_id is None
+            and load_trace(connection, paper_id).current.version_id != selected
+        ):
+            raise BodyError("facts_changed")
+        saved = PdfAttachment(
+            str(uuid4()),
+            paper_id,
+            selected,
+            sequence(connection, tables.pdfs, paper_id),
+            artifact_id,
+            pdf_sha256,
+            now(),
+        )
+        connection.execute(
+            insert(tables.pdfs).values(
+                **saved.__dict__,
+                request_id=request_id,
+                request_hash=request_hash,
+                requested_version_id=version_id,
+                confirmation_id=confirmation_id,
             )
-            return saved
+        )
+        return saved
 
     def pdfs(self, paper_id: str) -> tuple[PdfAttachment, ...]:
         with transaction(self.database) as connection:
@@ -315,40 +349,61 @@ class BodyService:
         request_id: str,
     ) -> SampleAdmission:
         required(paper_id, feed_id, pdf_sha256, reason, request_id)
-        request_hash = digest([paper_id, feed_id, pdf_sha256, reason])
         with transaction(self.database, write=True) as connection:
-            old = replay(connection, tables.samples, request_id, request_hash)
-            if old is not None:
-                return sample_record(old)
-            trace = load_trace(connection, paper_id)
-            pdf = current_pdf(connection, paper_id, trace.current.version_id)
-            if root_fact(connection).purpose is not RootPurpose.EXPERIMENT:
-                raise BodyError("root_unknown")
-            if (
-                pdf is None
-                or pdf.pdf_sha256 != pdf_sha256
-                or not any(
-                    item.feed_id == feed_id and item.version_id == pdf.version_id
-                    for item in trace.discoveries
-                )
-            ):
-                raise BodyError("sample_mismatch")
-            saved = SampleAdmission(
-                str(uuid4()),
+            return self.freeze_sample_in_connection(
+                connection,
                 paper_id,
-                pdf.version_id,
-                sequence(connection, tables.samples, paper_id),
-                feed_id,
-                pdf_sha256,
-                now(),
-                reason,
+                feed_id=feed_id,
+                pdf_sha256=pdf_sha256,
+                reason=reason,
+                request_id=request_id,
             )
-            connection.execute(
-                insert(tables.samples).values(
-                    **saved.__dict__, request_id=request_id, request_hash=request_hash
-                )
+
+    def freeze_sample_in_connection(
+        self,
+        connection: Connection,
+        paper_id: str,
+        *,
+        feed_id: str,
+        pdf_sha256: str,
+        reason: str,
+        request_id: str,
+    ) -> SampleAdmission:
+        """复用冻结规则,允许产品关联与样本在同一事务追加。"""
+        required(paper_id, feed_id, pdf_sha256, reason, request_id)
+        request_hash = digest([paper_id, feed_id, pdf_sha256, reason])
+        old = replay(connection, tables.samples, request_id, request_hash)
+        if old is not None:
+            return sample_record(old)
+        trace = load_trace(connection, paper_id)
+        pdf = current_pdf(connection, paper_id, trace.current.version_id)
+        if root_fact(connection).purpose is not RootPurpose.EXPERIMENT:
+            raise BodyError("root_unknown")
+        if (
+            pdf is None
+            or pdf.pdf_sha256 != pdf_sha256
+            or not any(
+                item.feed_id == feed_id and item.version_id == pdf.version_id
+                for item in trace.discoveries
             )
-            return saved
+        ):
+            raise BodyError("sample_mismatch")
+        saved = SampleAdmission(
+            str(uuid4()),
+            paper_id,
+            pdf.version_id,
+            sequence(connection, tables.samples, paper_id),
+            feed_id,
+            pdf_sha256,
+            now(),
+            reason,
+        )
+        connection.execute(
+            insert(tables.samples).values(
+                **saved.__dict__, request_id=request_id, request_hash=request_hash
+            )
+        )
+        return saved
 
     def samples(self, paper_id: str) -> tuple[SampleAdmission, ...]:
         with transaction(self.database) as connection:
