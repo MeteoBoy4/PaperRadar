@@ -12,7 +12,12 @@ from sqlalchemy import Connection, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.config import ConfigError, load_config_snapshot
-from paper_radar.papers import PaperError, PaperFacts, resolve_revision
+from paper_radar.papers import (
+    PaperError,
+    PaperFacts,
+    ScreeningMappingResult,
+    resolve_revision,
+)
 from paper_radar.papers.tables import feeds
 from paper_radar.runtime_logging import NullSink, RuntimeLog, Sink
 from paper_radar.runtime_logging.events import MonotonicClock, warn_once
@@ -205,6 +210,32 @@ class ScreeningTasks:
 
     def load_success(self, success_id: str) -> SuccessContent:
         return self._success.load(success_id)
+
+    def require_current_success_in_connection(
+        self,
+        connection: Connection,
+        validated: SuccessContent,
+        *,
+        paper_id: str,
+        mapping: ScreeningMappingResult,
+    ) -> None:
+        """同连接核对完整预验的成功/当前 Paper 映射;不加载制品或提交。"""
+        self._success.require_current_in_connection(
+            connection, validated, paper_id=paper_id, mapping=mapping
+        )
+
+    def require_success_reference_in_connection(
+        self,
+        connection: Connection,
+        validated: SuccessContent,
+        *,
+        paper_id: str,
+        mapping: ScreeningMappingResult,
+    ) -> None:
+        """历史闭包核验;映射须由 PaperFacts 对明确历史修订预验。"""
+        self._success.require_reference_in_connection(
+            connection, validated, paper_id=paper_id, mapping=mapping
+        )
 
     def query_successes(
         self, *, paper_id: str, stage: str, snapshot_id: str

@@ -110,6 +110,81 @@ RootOption = Annotated[Path, typer.Option("--root", help="必填的显式实验�
 
 
 @experiment_app.command(
+    "accept",
+    cls=ExperimentCommand,
+    help="""依所有者预先选样授权，由 Agent 显式代记 accepted。
+
+参数：必填 PAPER、--root、--selection-id、--snapshot、--request-id。
+前置：同论文同版本有效选样、当前 pi_rpc boundary（非 out_of_scope）与 value 成功。
+value 实验预测无需为 accepted；不声称所有者看过模型输出。
+副作用：同一事务追加 Body 决定与授权关联，日志写所选根 logs/；重放不追加。
+不调用模型、不领取任务，自动配额 0；帮助不联网、不开库、不建目录。
+输出去向：stdout 安全 JSON 引用与授权者/代执行者；错误写 stderr，不输出理由或模型正文。
+退出码：成功或精确重放 0；参数、授权/版本变化、缺成功、test 来源、
+out_of_scope、visibility 拒绝、请求冲突或执行失败 2；中断 130。
+常见失败：请回查 selection、paper trace --snapshot 与两阶段成功，
+需要时由所有者重新选样或显式 retry；请求冲突不能覆盖。
+示例：paper-radar experiment accept PAPER --root /tmp/my-experiment
+--selection-id SELECTION --snapshot SNAPSHOT --request-id accept-1
+""",
+)
+def accept(
+    paper: Annotated[str, typer.Argument(help="选样冻结的论文身份。")],
+    root: RootOption,
+    selection_id: Annotated[
+        str, typer.Option("--selection-id", help="有效的预先选样授权。")
+    ],
+    snapshot: Annotated[str, typer.Option("--snapshot", help="两阶段适用性所用快照。")],
+    request_id: Annotated[
+        str, typer.Option("--request-id", help="幂等请求标识；异内容不可覆盖。")
+    ],
+) -> None:
+    from paper_radar.body.models import BodyError
+    from paper_radar.experiment.acceptance import AcceptanceError, Acceptances, receipt
+    from paper_radar.experiment.root import ExperimentError, ExperimentRoot
+    from paper_radar.experiment.selections import SelectionError
+    from paper_radar.runtime_logging import FileSink, RuntimeLog
+    from paper_radar.screening_tasks import TaskError
+
+    try:
+        selected = ExperimentRoot(root)
+        selected.require()
+        log = RuntimeLog(FileSink(selected.root))
+        with log.execution(
+            "experiment",
+            controlled=(
+                AcceptanceError,
+                ExperimentError,
+                SelectionError,
+                BodyError,
+                TaskError,
+            ),
+            paper_id=paper,
+        ):
+            record, replayed = Acceptances(
+                selected.database, selected.data_root
+            ).accept(
+                selected,
+                paper_id=paper,
+                selection_id=selection_id,
+                snapshot=snapshot,
+                request_id=request_id,
+            )
+    except (AcceptanceError, ExperimentError, SelectionError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        typer.echo(
+            "interrupted：登记中断；请先回查 trace，再以同 request 显式重跑。", err=True
+        )
+        raise typer.Exit(130) from None
+    except Exception as error:
+        report_component_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(json.dumps(receipt(record, replayed=replayed), ensure_ascii=False))
+
+
+@experiment_app.command(
     "probe-models",
     cls=ExperimentCommand,
     help="""显式执行无 prompt 的模型映射探测，screening 与 reading 独立核对。

@@ -81,6 +81,8 @@ def validate_all(database: Path, root: Path) -> None:
                         .mappings()
                         .one()
                     )
+                    delegation_kind = row["delegation_kind"]
+                    require(delegation_kind in {None, "stage_b_preselection"})
                     require(
                         row["request_hash"]
                         == digest(
@@ -90,6 +92,7 @@ def validate_all(database: Path, root: Path) -> None:
                                 event.actor,
                                 event.screening_references,
                             ]
+                            + ([delegation_kind] if delegation_kind is not None else [])
                         )
                     )
                     execution_source(connection, paper_id, event)

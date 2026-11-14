@@ -8,7 +8,8 @@ from uuid import uuid4
 from sqlalchemy import Connection, select
 
 from paper_radar.config import ConfigError
-from paper_radar.papers import PaperFacts
+from paper_radar.papers import PaperFacts, RevisionView, ScreeningMappingResult
+from paper_radar.papers.queries import resolve_revision
 from paper_radar.screening import (
     BoundaryOutput,
     OutputValidationError,
@@ -257,6 +258,64 @@ class SuccessService:
             OverflowError,
         ):
             raise TaskError(TaskReason.CORRUPT_REFERENCE) from None
+
+    def require_current_in_connection(
+        self,
+        connection: Connection,
+        validated: SuccessContent,
+        *,
+        paper_id: str,
+        mapping: ScreeningMappingResult,
+    ) -> None:
+        """重核 load 已完整预验的成功与当前映射;无文件 I/O、不开第二连接。"""
+        evidence = mapping.evidence
+        if evidence is None or evidence.paper_id != paper_id:
+            raise TaskError(TaskReason.FACTS_CHANGED)
+        revision = resolve_revision(connection, paper_id=paper_id)
+        if revision != RevisionView.model_validate(
+            evidence.model_dump(exclude={"snapshot_id", "source_bytes_verified"})
+        ):
+            raise TaskError(TaskReason.FACTS_CHANGED)
+        self.require_reference_in_connection(
+            connection, validated, paper_id=paper_id, mapping=mapping
+        )
+
+    def require_reference_in_connection(
+        self,
+        connection: Connection,
+        validated: SuccessContent,
+        *,
+        paper_id: str,
+        mapping: ScreeningMappingResult,
+    ) -> None:
+        evidence = mapping.evidence
+        if evidence is None or evidence.paper_id != paper_id:
+            raise TaskError(TaskReason.FACTS_CHANGED)
+        revision = resolve_revision(
+            connection, version_id=evidence.version_id, revision_no=evidence.revision_no
+        )
+        if revision != RevisionView.model_validate(
+            evidence.model_dump(exclude={"snapshot_id", "source_bytes_verified"})
+        ):
+            raise TaskError(TaskReason.CORRUPT_REFERENCE)
+        row = self._row(connection, validated.receipt.success_id)
+        mapped = stage_mapping(mapping, validated.receipt.stage)
+        if (
+            row["paper_id"] != paper_id
+            or mapped.reason is not None
+            or mapped.value is None
+            or mapped.value.fingerprint != row["fingerprint"]
+        ):
+            raise TaskError(TaskReason.FACTS_CHANGED)
+        if (
+            self._receipt(row) != validated.receipt
+            or row["structured_json"]
+            != canonical(validated.output.model_dump(mode="json")).decode("utf-8")
+            or json.loads(row["audit_json"]) != validated.audit
+            or row["submission_sha256"]
+            != submission_digest(validated.raw_response, row["audit_json"])
+        ):
+            raise TaskError(TaskReason.CORRUPT_REFERENCE)
 
     def _load_content(self, success_id: str) -> SuccessContent:
         with self.attempts.connection(write=False) as connection:

@@ -7,7 +7,7 @@ ISSUE = 45
 PARENT_ISSUE = 36
 FORMAT_VERSION = 1
 SUFFIX = ".a4.json"
-MIGRATION_REVISION = "b001_selection_authorizations"
+MIGRATION_REVISION = "b002_delegated_acceptances"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = (
     "alembic",
