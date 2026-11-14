@@ -83,6 +83,13 @@ from paper_radar.screening_tasks.tables import budgets, requests, tasks
 from paper_radar.sources.feeds import Journal
 from paper_radar.stage_inputs import BuildReason, StageInputError
 from paper_radar.storage.database import require_current_revision
+from paper_radar.storage.history import (
+    HistoryBoundary,
+    HistoryKeys,
+    HistoryPage,
+    history_boundaries,
+    history_page,
+)
 from paper_radar.storage.schema import runtime_config_snapshots
 
 
@@ -654,6 +661,58 @@ class ScreeningTasks:
                     return to_receipt(row)
             except SQLAlchemyError as error:
                 raise database_error(error) from None
+
+    def exposure_scope_in_connection(
+        self, connection: Connection
+    ) -> dict[str, HistoryBoundary]:
+        """短写事务使用的只读事件范围元数据;不加载历史或文件。"""
+        from paper_radar.screening_tasks.tables import attempts
+
+        return history_boundaries(connection, (budgets, tasks, requests, attempts))
+
+    def exposure_history_in_connection(
+        self, connection: Connection, through: dict[str, HistoryKeys] | None = None
+    ) -> tuple[HistoryPage, ...]:
+        """不读当前配置、时钟或资格;每个请求与 attempt 保留自身历史版本。"""
+        from paper_radar.screening_tasks.tables import attempts
+
+        return (
+            history_page(
+                connection, budgets, ("budget_id", "paper_id", "stage"), through=through
+            ),
+            history_page(
+                connection,
+                tasks,
+                ("task_id", "budget_id", "generation", "parent_task_id"),
+                through=through,
+            ),
+            history_page(
+                connection,
+                requests,
+                (
+                    "receipt_id",
+                    "task_id",
+                    "version_id",
+                    "revision_no",
+                    "selection_id",
+                    "request_sha256",
+                ),
+                through=through,
+            ),
+            history_page(
+                connection,
+                attempts,
+                (
+                    "task_id",
+                    "attempt_no",
+                    "receipt_id",
+                    "version_id",
+                    "revision_no",
+                    "selection_id",
+                ),
+                through=through,
+            ),
+        )
 
     def receipts(self, paper_id: str) -> tuple[RequestReceipt, ...]:
         with task_database(self.database, write=False) as engine:

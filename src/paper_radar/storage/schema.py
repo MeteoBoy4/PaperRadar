@@ -669,3 +669,17 @@ experiment_layout_recordings = Table(
     Column("paper_id", Text, ForeignKey("papers.paper_id"), nullable=False),
     Column("record_json", Text, nullable=False),
 )
+
+exposure_exports = Table(
+    "exposure_exports",
+    metadata,
+    Column("export_id", Text, primary_key=True),
+    Column("root_id", Text, nullable=False),
+    Column("format_version", Integer, nullable=False),
+    Column("artifact_id", Text, ForeignKey("artifacts.artifact_id"), nullable=False),
+    Column("audit_sha256", Text, nullable=False),
+    Column("scope_json", Text, nullable=False),
+    CheckConstraint("length(export_id)=64"),
+    CheckConstraint("format_version=1"),
+    CheckConstraint("length(audit_sha256)=64"),
+)

@@ -201,6 +201,13 @@ unsupported_rule_version。输入/Context/配置/存储组件的受控错误保�
 显式实验 CLI 由[B 工作流](stage-b-workflow.md#显式-read-与恢复)提供。本服务没有自动队列、每日 quota、read_requests、pending/denied 原子 accepted、
 通用 map/reduce、正式校准或真实 Pi/Docling 验收。真实产品与现场责任见[路线图](../roadmap.md)。
 
+## 暴露历史读面
+
+`ReadTasks.exposure_history_in_connection` 在调用方一致读事务拥有全库登记／任务链的解引用，
+登记只输出论文级依据，attempt 用持久 metadata 及原历史 revision 输出精确版本依据；
+请求正文和 Read basis 只保留摘要，不返回 token、租约或结果正文。
+`exposure_scope_in_connection` 仅提供完整持久主键元数据，冻结和精度约定见[暴露导出](exposure-export.md)。
+
 ## 相关
 
 依据：[#161](https://github.com/MeteoBoy4/PaperRadar/issues/161)、[#155 最终裁决](https://github.com/MeteoBoy4/PaperRadar/issues/155)。

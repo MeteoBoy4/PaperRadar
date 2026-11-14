@@ -23,6 +23,13 @@ from paper_radar.papers.conflicts import read_all
 from paper_radar.papers.doi import normalize_doi
 from paper_radar.papers.queries import load_trace, resolve_revision
 from paper_radar.screening_tasks.language import derive
+from paper_radar.storage.history import (
+    HistoryBoundary,
+    HistoryKeys,
+    HistoryPage,
+    history_boundaries,
+    history_page,
+)
 from paper_radar.storage.schema import experiment_selections
 
 
@@ -175,6 +182,26 @@ def _check_current(
 
 class Selections:
     """显式 database/data_root 支持恢复副本查询;clock 仅供受控测试注入。"""
+
+    def exposure_scope_in_connection(
+        self, connection: Connection
+    ) -> dict[str, HistoryBoundary]:
+        """短写事务使用的只读事件范围元数据;不加载历史或文件。"""
+        return history_boundaries(connection, (experiment_selections,))
+
+    def exposure_history_in_connection(
+        self, connection: Connection, through: dict[str, HistoryKeys] | None = None
+    ) -> tuple[HistoryPage, ...]:
+        """持久历史安全投影;保留全部事件,与当前执行资格无关。"""
+        return (
+            history_page(
+                connection,
+                experiment_selections,
+                ("sequence", "selection_id", "paper_id", "version_id", "record_json"),
+                through=through,
+                hashed=("record_json",),
+            ),
+        )
 
     def __init__(
         self,

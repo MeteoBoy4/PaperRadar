@@ -379,7 +379,7 @@ paper-radar experiment accept PAPER --root /tmp/my-experiment \
 
 `experiment.validation.validate_all(database, data_root)` 是唯一 B 持久事实聚合，验证全部
 候选快照、完整选样链、所有者豁免、外发授权链、代执行接受、PDF 确认与冻结、
-有界提取执行及所有者版式核查关联闭包；之后新增的 B 事实扩展此聚合。
+有界提取执行、所有者版式核查、Read 关联、固定报告与冻结暴露清单闭包。
 接受闭包重验规范关联及哈希、选样和根、原冻结修订/快照、两项成功原字节/审计、
 Body 决定原因/actor/引用/时间、受控标记与请求身份，并检查缺关联决定；历史不要求授权仍当前。
 [备份](backup-restore.md)的 `verify_contents` 仅调用一次该聚合，损坏统一映射
@@ -564,6 +564,14 @@ B 的唯一 validate_all 对已关联 B 样本的 Read 领取复核结构化所�
 Read 成功/回执重放退出 0，参数/前置/运行拒绝 2，预算耗尽输出安全任务后退出 4，
 中断退出 130；reading 查询/reclaim/retry 成功 0、拒绝 2、中断 130。
 执行命令注入所选根 FileSink；tasks/failures/analysis 不建日志。帮助均不联网、不开库、不建目录。
+
+### 冻结已暴露清单
+
+`experiment export-exposure --root ROOT` 只在显式实验根登记全历史并集并发布私有 JSON，
+执行入口注入所选根 FileSink；不领取任务、不调用模型。选样、失败、换下及后续持久事实
+按[暴露导出 Contract](exposure-export.md)冻结；候选展示不计入。其规范 DOI／权威关系格式
+供 C 机械排除正式校准，SQL 和历史核验由事实组件各自拥有。
+导出 validate_all 仅经本组合的唯一聚合进入备份；恢复保持 root_id 和原字节，不提升结果。
 
 ### 最小实验报告
 

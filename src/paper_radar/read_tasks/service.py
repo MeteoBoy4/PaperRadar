@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -30,11 +31,19 @@ from paper_radar.read_tasks.repository import (
     canonical,
     digest,
     required,
+    sha,
     transaction,
 )
 from paper_radar.reading.context import ExtractionIdentity, SourceSlice
 from paper_radar.runtime_logging import RuntimeLog, Sink
 from paper_radar.storage.artifacts import ArtifactStore
+from paper_radar.storage.history import (
+    HistoryBoundary,
+    HistoryKeys,
+    HistoryPage,
+    history_boundaries,
+    history_page,
+)
 
 if TYPE_CHECKING:
     from paper_radar.read_inputs import PreparedReadInput
@@ -257,6 +266,92 @@ class ReadTasks:
                 )
             )
             return task_view(connection, task_id), False
+
+    def exposure_scope_in_connection(
+        self, connection: Connection
+    ) -> dict[str, HistoryBoundary]:
+        """短写事务使用的只读事件范围元数据;不加载历史或文件。"""
+        return history_boundaries(
+            connection, (t.budgets, t.tasks, t.registrations, t.attempts)
+        )
+
+    def exposure_history_in_connection(
+        self, connection: Connection, through: dict[str, HistoryKeys] | None = None
+    ) -> tuple[HistoryPage, ...]:
+        """登记仅证明论文级请求;attempt metadata 才证明精确历史版本。"""
+        pages = (
+            history_page(
+                connection, t.budgets, ("budget_id", "paper_id"), through=through
+            ),
+            history_page(
+                connection,
+                t.tasks,
+                ("task_id", "budget_id", "generation", "parent_task_id"),
+                through=through,
+            ),
+            history_page(
+                connection,
+                t.registrations,
+                ("request_id", "task_id", "request_json"),
+                through=through,
+                hashed=("request_json",),
+            ),
+            history_page(
+                connection,
+                t.attempts,
+                ("attempt_id", "task_id", "ordinal", "metadata_json", "basis_json"),
+                through=through,
+                hashed=("basis_json",),
+            ),
+        )
+
+        budgets = {row["budget_id"]: row["paper_id"] for row in pages[0].rows}
+        task_papers = {
+            row["task_id"]: budgets[row["budget_id"]] for row in pages[1].rows
+        }
+        registrations = pages[2].model_copy(
+            update={
+                "rows": tuple(
+                    {
+                        **row,
+                        "paper_id": task_papers[row["task_id"]],
+                        "basis_precision": "paper",
+                    }
+                    for row in pages[2].rows
+                )
+            }
+        )
+        attempts = []
+        from paper_radar.papers import resolve_revision
+
+        for original in pages[3].rows:
+            row = dict(original)
+            metadata_json = row.pop("metadata_json")
+            metadata = json.loads(metadata_json)
+            paper_id = task_papers[row["task_id"]]
+            revision = resolve_revision(
+                connection,
+                version_id=metadata["version_id"],
+                revision_no=metadata["revision_no"],
+            )
+            if revision.paper_id != paper_id:
+                raise ReadTaskError("corrupt_reference")
+            attempts.append(
+                {
+                    **row,
+                    "paper_id": paper_id,
+                    "version_id": revision.version_id,
+                    "revision_no": revision.revision_no,
+                    "metadata_request_key": metadata["request_key"],
+                    "metadata_sha256": sha(metadata_json.encode()),
+                    "basis_precision": "version",
+                }
+            )
+        return (
+            *pages[:2],
+            registrations,
+            pages[3].model_copy(update={"rows": tuple(attempts)}),
+        )
 
     def task(self, task_id: str) -> ReadTask:
         with transaction(self.database) as connection:

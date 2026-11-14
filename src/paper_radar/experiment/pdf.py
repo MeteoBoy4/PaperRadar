@@ -19,6 +19,13 @@ from paper_radar.experiment.selections import SelectionRecord, Selections
 from paper_radar.feed_metadata.repository import canonical, sha, transaction
 from paper_radar.papers.queries import load_trace, resolve_revision
 from paper_radar.storage.artifacts import ArtifactStore
+from paper_radar.storage.history import (
+    HistoryBoundary,
+    HistoryKeys,
+    HistoryPage,
+    history_boundaries,
+    history_page,
+)
 from paper_radar.storage.schema import (
     body_pdfs,
     body_samples,
@@ -92,6 +99,26 @@ def _body_request(confirmation_id: str) -> str:
 
 class PdfSamples:
     """database/data_root 显式,只读历史不要求原路径或当前授权。"""
+
+    def exposure_scope_in_connection(
+        self, connection: Connection
+    ) -> dict[str, HistoryBoundary]:
+        """短写事务使用的只读事件范围元数据;不加载历史或文件。"""
+        return history_boundaries(connection, (experiment_pdf_confirmations,))
+
+    def exposure_history_in_connection(
+        self, connection: Connection, through: dict[str, HistoryKeys] | None = None
+    ) -> tuple[HistoryPage, ...]:
+        """持久历史安全投影;保留全部事件,与当前执行资格无关。"""
+        return (
+            history_page(
+                connection,
+                experiment_pdf_confirmations,
+                ("confirmation_id", "paper_id", "version_id", "record_json"),
+                through=through,
+                hashed=("record_json",),
+            ),
+        )
 
     def __init__(
         self,

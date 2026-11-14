@@ -36,6 +36,13 @@ from paper_radar.storage.filesystem import (
     controlled_path,
     sync_directory,
 )
+from paper_radar.storage.history import (
+    HistoryBoundary,
+    HistoryKeys,
+    HistoryPage,
+    history_boundaries,
+    history_page,
+)
 from paper_radar.storage.schema import report_entries, report_runs
 
 
@@ -69,6 +76,35 @@ def _day(day: str, timezone: str) -> None:
 
 class Reports:
     """显式 database/data_root/output_dir;恢复无需执行根布局,重建从不写库。"""
+
+    def exposure_scope_in_connection(
+        self, connection: Connection
+    ) -> dict[str, HistoryBoundary]:
+        """短写事务使用的只读事件范围元数据;不加载历史或文件。"""
+        return history_boundaries(connection, (report_entries,))
+
+    def exposure_history_in_connection(
+        self, connection: Connection, through: dict[str, HistoryKeys] | None = None
+    ) -> tuple[HistoryPage, ...]:
+        """持久历史安全投影;保留全部事件,与当前执行资格无关。"""
+        return (
+            history_page(
+                connection,
+                report_entries,
+                (
+                    "report_id",
+                    "position",
+                    "paper_id",
+                    "version_id",
+                    "revision_no",
+                    "primary_kind",
+                    "primary_ref",
+                    "projection_json",
+                ),
+                through=through,
+                hashed=("projection_json",),
+            ),
+        )
 
     def __init__(
         self,

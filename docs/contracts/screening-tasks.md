@@ -575,6 +575,13 @@ Feed 不存在或期刊不受支持报 `invalid_request`。同刊多个 Feed 和
 不能把新生产关联丢失降级成合法历史。`validate_all` 和备份闭包核对这些引用，恢复后不依赖原根。来源级语言
 约定不构成逐篇语言核实，也不授予模型执行、校准或自动精读资格。
 
+## 暴露历史读面
+
+`ScreeningTasks.exposure_history_in_connection` 在调用方一致读事务返回全库预算／代际、
+全部请求和 attempt 的不可变安全依据，保留各自 version/revision/selection。
+它不读取当前配置、不计算当前资格／失败状态，不返回租约密钥或响应正文。
+`exposure_scope_in_connection` 只投影完整持久主键元数据；冻结规则见[暴露导出](exposure-export.md)。
+
 ## 相关
 
 依据：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#118](https://github.com/MeteoBoy4/PaperRadar/issues/118)、[#76](https://github.com/MeteoBoy4/PaperRadar/issues/76)、[#77](https://github.com/MeteoBoy4/PaperRadar/issues/77)、[#78](https://github.com/MeteoBoy4/PaperRadar/issues/78)、[#79](https://github.com/MeteoBoy4/PaperRadar/issues/79)、[#80](https://github.com/MeteoBoy4/PaperRadar/issues/80)、[#81](https://github.com/MeteoBoy4/PaperRadar/issues/81)、[#82](https://github.com/MeteoBoy4/PaperRadar/issues/82)、[#83](https://github.com/MeteoBoy4/PaperRadar/issues/83)、[#84](https://github.com/MeteoBoy4/PaperRadar/issues/84)、[#85](https://github.com/MeteoBoy4/PaperRadar/issues/85)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。

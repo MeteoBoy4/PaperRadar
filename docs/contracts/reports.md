@@ -101,6 +101,12 @@ render 显式注入所选根 FileSink；安全 JSON 只含身份、固定成员�
 不证明真实论文、模型质量、现场脱网隔离或 NAS；B 现场回放与[I](../roadmap.md#module-i)
 各自验收。恢复 API 的 Python 禁 I/O 守卫不代表操作系统隔离证明。
 
+## 暴露成员读面
+
+`Reports.exposure_history_in_connection` 在调用方一致读事务投影全部固定 entry 的安全引用和
+不可变 projection 摘要；prepared 与 published 都保留，不携带后续发布状态或报告正文。
+`exposure_scope_in_connection` 仅返回完整持久主键元数据；消费规则见[暴露导出](exposure-export.md)。
+
 ## 相关
 
 依据：[规格 §4.11/§5.6](../../intent/draft.md#411-报告与复核)、

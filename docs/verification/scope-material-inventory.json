@@ -16185,6 +16185,7 @@
         "docs/contracts/config-snapshots.md",
         "docs/contracts/doctor.md",
         "docs/contracts/eligibility-visibility.md",
+        "docs/contracts/exposure-export.md",
         "docs/contracts/extraction-config.md",
         "docs/contracts/feed-ingestion.md",
         "docs/contracts/feed-metadata.md",
