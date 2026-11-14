@@ -98,7 +98,11 @@ Screening boundary/value 与 Read 自身模型/adapter/档位的工程检查、d
 cgroup v2 的 memory 写权限及 memory.peak。模型快照所需容量等于所选文件实际总字节，
 不借用 Pi 安装或开发环境的磁盘门槛。memory.peak 不可读显示 not_assessed/unknown，
 不代替 worker ru_maxrss；cgroup 能力通过不证明提取时 ≤8 GiB/swap=0 已实施。
-主机可用内存下限未设置时显示 `host_memory_policy_unset` 并阻断，不自行宣称容量足够。
+MemAvailable 是非必需披露项：成功采集为 passed/host_memory_observed 并显示实测字节，
+仅表示读到数值，不判断容量足够；不可读或格式异常为 not_assessed/host_memory_unknown，
+明确 unknown。两者均不单独影响退出码，不新增可用内存硬下限，也不因低于 8 GiB 阻断。
+这是[所有者“仅披露”裁决](https://github.com/MeteoBoy4/PaperRadar/issues/185#issuecomment-6869017674)
+的范围；cgroup、模型临时快照磁盘、隔离和授权等必要闸门仍独立决定结果。
 
 预检不建库、日志、任务或 attempt，不占预算，不调用可能刷新认证的 `prepare_launch`，
 不读取 auth.json 内容，不启动 Pi/Docling、不联网。模型映射明确为

@@ -8,7 +8,8 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 与固定事实修订的私有候选清单；`experiment select/selection` 保存选样接受授权及换样历史，
 按当前完整依据重新核对就绪，重放仅返回原回执；
 `experiment egress-authorize/status/check` 登记与核对范围外发授权，`experiment preflight`
-汇总两槽、隔离与资源静态阻断，不刷新认证或启动模型。
+汇总两槽、隔离与资源静态阻断，不刷新认证或启动模型；主机 MemAvailable 仅披露，
+不设可用内存硬下限，也不把实测值解释为容量足够。
 根布局、用途守卫及安全输出见[B 实验工作流](docs/contracts/stage-b-workflow.md)。
 仓库还提供 B 首版 boundary、value、reading 与 Pi 系统生产 Prompt，材料位置、
 复制登记与冻结规则见[公开生产 Prompt](docs/contracts/runtime-config.md#公开生产-prompt)。

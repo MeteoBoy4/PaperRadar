@@ -26,9 +26,6 @@ from paper_radar.pi_execution.resources import ExecutionRoots
 from paper_radar.pi_supply import SupplyError, available_installs, doctor_supply
 from paper_radar.pi_supply.filesystem import no_symlink_components
 
-# 尚无所有者数值裁决时,内存只披露,不宣称容量足够。
-MIN_AVAILABLE_MEMORY_BYTES: int | None = None
-
 
 @dataclass(frozen=True)
 class HostPaths:
@@ -40,9 +37,7 @@ class HostPaths:
 HOST_PATHS = HostPaths()
 
 
-def host_memory_check(
-    meminfo: Path = Path("/proc/meminfo"), *, minimum: int | None = None
-) -> Check:
+def host_memory_check(meminfo: Path = Path("/proc/meminfo")) -> Check:
     try:
         lines = [
             line.split()
@@ -57,23 +52,17 @@ def host_memory_check(
     except (OSError, ValueError):
         return Check(
             "host.memory",
-            Result.INVALID,
-            "host_memory_unknown",
-            "核对主机 MemAvailable 后重新预检。",
-        )
-    if minimum is None:
-        return Check(
-            "host.memory",
             Result.NOT_ASSESSED,
-            "host_memory_policy_unset",
-            f"可用内存字节={available}；须明确容量下限，未判为足够。",
+            "host_memory_unknown",
+            "主机可用内存 unknown；仅披露，未判断容量足够，可核对 MemAvailable。",
+            required=False,
         )
-    sufficient = available >= minimum
     return Check(
         "host.memory",
-        Result.PASSED if sufficient else Result.INVALID,
-        "host_memory_sufficient" if sufficient else "host_memory_insufficient",
-        f"可用内存字节={available}；要求至少={minimum}；不足请释放内存后重试。",
+        Result.PASSED,
+        "host_memory_observed",
+        f"可用内存字节={available}；仅披露实测值，不判断容量足够。",
+        required=False,
     )
 
 
@@ -407,9 +396,7 @@ def preflight_checks(
             snapshot=snapshot,
         )
     )
-    checks.append(
-        host_memory_check(HOST_PATHS.meminfo, minimum=MIN_AVAILABLE_MEMORY_BYTES)
-    )
+    checks.append(host_memory_check(HOST_PATHS.meminfo))
     checks.extend(cgroup_checks(HOST_PATHS.cgroup_membership, HOST_PATHS.cgroup_mount))
     checks.append(
         model_snapshot_disk_check(model_root, attempt_root, selected.extraction)

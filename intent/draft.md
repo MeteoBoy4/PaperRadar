@@ -1950,6 +1950,7 @@ A 真正收口时由收口实现票产出机器可读阶段结论，I 聚合。�
 - 用户预选前提供当轮 JGR Feed 的候选 Markdown 清单，包含原题名、主摘要、DOI 和原文链接，支持按编号或 DOI 选样并记录理由。清单用于 Feed／元数据获取验证，不是日报，不套用日报五项容量；缺失或受阻如实展示，完整主摘要与最低元数据仍是 Screening 前置（[B 所有者裁决](review/stage-b-grill-decisions.md)）。
 - 用户在 Screening 前按研究判断选定当轮 JGR 样本并记录理由，同时表达对选定 Paper/版本的接受授权；先保存选择、授权及 Feed 来源，PDF 取得后再绑定哈希。所需 Screening 成功后，由 Agent 引用真实成功依据与选样授权代记来源为用户的 accepted，区分授权者与代执行者，无需再次询问接受。`out_of_scope` 不调用 value，保留结果后按同一规则由用户换样、记录原因；缺成功依据不放行，不为迁就结果修改 Profile/Prompt。历史 §13.3 PDF 不自动等于当轮样本（ADR-0069）。
 - 校准关闭；B 可保存两阶段输出、实验范围的确定性建议及人工决定，只有用户授权的人工 accepted 生效。选样授权不取决于实验建议是否 accepted，也不表示用户认可模型结果；实验建议无自动决定权，Read 的必填 `next_action` 保留；实验材料不流入普通生产建议/自动决定链（ADR-0069）。
+- B 静态执行预检对主机 MemAvailable 只披露实测值，不新增可用内存硬下限，不因低于 8 GiB 阻断；不可读或异常明确 unknown/not_assessed，也不单独阻断。采集成功不表示容量足够；提取时 cgroup `memory.max ≤ 8 GiB`、`memory.swap.max = 0`、模型临时快照磁盘及隔离／授权／预算闸门仍独立成立（[所有者“仅披露”裁决](https://github.com/MeteoBoy4/PaperRadar/issues/185#issuecomment-6869017674)）。
 - 最低 PDF 路径为人工显式指定 paper/version 附加合法 PDF，缺省 version 在首次附加时冻结为当前版本；校验签名、最小体积与 SHA-256，不推断内容归属。DOI 检测候选不属于 Body 最低路径，由 B/F 后续取得入口承接；Wiley TDM、授权/渲染与凭据运行时留 F。B 记录样本峰值并显式单次运行，不能把它当作 F 锁定 fixture 峰值。
 - 生产 parser/canonical/normalize/evidence 切片与逐文档门槛须先交付；C1 禁止未入 extraction 指纹的题名/DOI/摘要，单样本失败阻断实验。按 ADR-0041 保留自包含 evidence-map 的 orig、页面、源块和 provenance，由 evidence_map_sha256 覆盖，document 只作审计；验证无 extra 冷重建、篡改/缺成员拒绝及恢复后逐字回查，不以方向已定推定真实样本保真已验。
 - Body 提供 SQLite 唯一事实源的不可变根用途、直接人工决定（附上游 Screening 成功引用）、冻结样本、PDF 选择、自动检查与六项人工版式核查 API；B 提供产品命令与真实核查。Read 上游来源取决定所引用的历史成功，不因依据过时而失效；纯人工 accepted 无 Screening 引用仍为 unknown，由 B/C 的专用人工通道扩展（ADR-0043）。
@@ -2557,7 +2558,7 @@ JGR 的已核查合法样本固定为 Wada et al.，DOI `10.1029/2025JD043927`�
 - 选择直接执行时，由所有者显式开启版本化证据前提豁免；默认关闭，豁免不代替外发确认或质量验收。恢复严格模式须重新采集／接收／激活，不复活旧激活（ADR-0068）；
 - 供 Unpaywall、Crossref、DataCite 与其他外部 HTTP 客户端复用的联系邮箱；
 - B Read 前提供人工确认的合法 PDF；Wiley TDM token 与凭据运行时留 F，不作为 B 前置；
-- B 运行 Docling 前明确内存约束：单个进程上限 8 GB，执行前另核实主机可用资源；B 显式单次执行并记录样本实测峰值，不替代 F 的锁定 fixture 峰值。F 后 doctor 对照锁定 fixture 峰值和安全余量，不足时阻止自动运行（[B 所有者裁决](review/stage-b-grill-decisions.md)）。
+- B 运行 Docling 前明确内存约束：用户 cgroup 的 `memory.max ≤ 8 GiB` 且 `memory.swap.max = 0`，领取前核验；主机 MemAvailable 只披露实测值或 unknown/not_assessed，不新增可用内存硬下限、不单独阻断，也不表示容量足够。模型临时快照磁盘检查保留。B 显式单次执行并记录样本实测峰值，不替代 F 的锁定 fixture 峰值。F 后 doctor 对照锁定 fixture 峰值和安全余量，不足时阻止自动运行（[B 所有者裁决](review/stage-b-grill-decisions.md)、[主机内存“仅披露”裁决](https://github.com/MeteoBoy4/PaperRadar/issues/185#issuecomment-6869017674)）。
 
 F 获取通道另需 Wiley TDM token（本人接受 Wiley 点击式 TDM 许可后取得）、受控渲染运行时
 或本人授权会话的显式启用与隔离凭据；B 最低路径不依赖这些通道。未启用渲染时仅走普通 HTTP，

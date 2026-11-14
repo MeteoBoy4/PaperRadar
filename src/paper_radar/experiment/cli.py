@@ -415,8 +415,10 @@ PREFLIGHT_HELP = """汇总 B 静态执行阻断。
 --attempt-root 和 --model-root；数据/配置根取实验根固定布局，其余根显式提供。
 副作用：无；只读历史配置、供给、授权、凭据元数据与主机资源，不建日志；自动配额 0。
 分别检查 Screening boundary/value 与 Read 所选槽，不借用另一槽证据。
+主机 MemAvailable 仅披露实测值或 unknown，不设可用内存硬下限，不单独阻断。
 输出去向：stdout 四态、受控原因和中文下一步；不输出私有载荷、理由或凭据。
-常见失败：缺供给、授权、cwd、凭据元数据、隔离、模型快照或主机资源；按逐项下一步修复。
+常见失败：缺供给、授权、cwd、凭据元数据、隔离、cgroup 能力或模型快照磁盘；
+按逐项下一步修复，内存采集成功不表示容量足够。
 帮助不联网、不开库、不建目录。退出码：必要项全部通过 0；受控拒绝或阻断 2；中断 130。
 示例：paper-radar experiment preflight --root /tmp/my-experiment --snapshot snapshot-id
 --credentials-dir /tmp/credentials --material-root /tmp/materials --install-root /tmp/pi
