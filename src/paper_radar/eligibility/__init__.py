@@ -18,6 +18,7 @@ from paper_radar.eligibility.models import (
     QualityFact,
     QualityFailure,
     RootPurpose,
+    ScreeningTaskFacts,
     Support,
 )
 from paper_radar.eligibility.rules import evaluate_concept, evaluate_paper
@@ -40,6 +41,7 @@ __all__ = [
     "QualityFact",
     "QualityFailure",
     "RootPurpose",
+    "ScreeningTaskFacts",
     "Support",
     "evaluate_concept",
     "evaluate_paper",

@@ -1,8 +1,9 @@
 """显式 retry:映射当前输入,原子结算并追加唯一后继。"""
 
+from collections.abc import Callable
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import Connection, select
 
 from paper_radar.papers import PaperFacts, resolve_revision
 from paper_radar.screening_tasks.attempt_models import ATTEMPTS_PER_GENERATION
@@ -33,7 +34,84 @@ class RetryService:
     def __init__(self, attempts: AttemptService) -> None:
         self.attempts = attempts
 
-    def register(self, raw: object) -> RequestReceipt:
+    def failed(
+        self,
+        *,
+        paper_id: str,
+        snapshot_id: str,
+        request_id: str,
+        reason: str,
+        actor: str,
+        stage: str | None = None,
+        write_guard: Callable[[Connection], None] | None = None,
+    ) -> RequestReceipt:
+        from paper_radar.screening_tasks.query import QueryService
+
+        if stage not in (None, "boundary", "value") or any(
+            not isinstance(value, str) or not value.strip()
+            for value in (request_id, reason, actor)
+        ):
+            raise TaskError(TaskReason.INVALID_REQUEST)
+        # 重放优先于当前映射和失败列表;父身份仍由权威历史恢复。
+        with self.attempts.connection(write=False) as connection:
+            old = connection.execute(
+                select(requests.c.receipt_id, tasks.c.parent_task_id)
+                .join(tasks, requests.c.task_id == tasks.c.task_id)
+                .where(requests.c.request_id == request_id)
+            ).first()
+            if old is not None:
+                row = receipt_row(connection, old.receipt_id)
+                if row is None or old.parent_task_id is None:
+                    raise TaskError(TaskReason.REQUEST_CONFLICT)
+                selected_stage = row["stage"] if stage is None else stage
+                return self.register(
+                    dict(
+                        paper_id=paper_id,
+                        snapshot_id=snapshot_id,
+                        request_id=request_id,
+                        reason=reason,
+                        actor=actor,
+                        stage=selected_stage,
+                        parent_task_id=old.parent_task_id,
+                    ),
+                    write_guard=write_guard,
+                )
+        failures = tuple(
+            (query.stage, task)
+            for selected_stage in (
+                (stage,) if stage is not None else ("boundary", "value")
+            )
+            for query in (
+                QueryService(self.attempts).query(
+                    paper_id=paper_id, stage=selected_stage, snapshot_id=snapshot_id
+                ),
+            )
+            for task in query.current_failures
+        )
+        if not failures:
+            raise TaskError(TaskReason.NOT_FAILED)
+        if len(failures) != 1:
+            raise TaskError(TaskReason.AMBIGUOUS_FAILURE)
+        parent_stage, parent = failures[0]
+        return self.register(
+            dict(
+                paper_id=paper_id,
+                snapshot_id=snapshot_id,
+                request_id=request_id,
+                reason=reason,
+                actor=actor,
+                stage=parent_stage,
+                parent_task_id=parent.task_id,
+            ),
+            write_guard=write_guard,
+        )
+
+    def register(
+        self,
+        raw: object,
+        *,
+        write_guard: Callable[[Connection], None] | None = None,
+    ) -> RequestReceipt:
         request = parse_retry(raw)
         with self.attempts.connection(write=False) as connection:
             replayed = replay_request(connection, request)
@@ -110,6 +188,8 @@ class RetryService:
                 status = derive_status(request.parent_task_id, rows, now)
             if status.state != "failed":
                 raise TaskError(TaskReason.NOT_FAILED)
+            if write_guard is not None:
+                write_guard(connection)
             task_id = str(uuid4())
             connection.execute(
                 tasks.insert().values(

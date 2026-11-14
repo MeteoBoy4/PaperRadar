@@ -59,3 +59,11 @@ class TaskQueryResult:
     current_failures: tuple[TaskView, ...]
     kind: Literal["task_query_result"] = field(default="task_query_result", init=False)
     format_version: Literal[1] = field(default=1, init=False)
+
+
+@dataclass(frozen=True, slots=True)
+class CurrentFailure:
+    paper_id: str
+    stage: Stage
+    fingerprint: str
+    task: TaskView

@@ -261,6 +261,66 @@ paper-radar experiment screen --root /tmp/my-experiment --selection-id SELECTION
   --install-root /tmp/pi --receipt-id VALUE_RECEIPT
 ```
 
+### 失败查询、显式恢复与组合追踪
+
+`screening failures --database DATABASE --snapshot SNAPSHOT` 查询全库模型失败队列，
+安全 JSON 包含根用途与当前失败引用。当前性、最新代际和 state=failed 唯一规则来自
+[Screening 任务](screening-tasks.md#11-显式-retry-与共享查询)，不局限当前选样。
+retryable、lease_expired 与旧指纹失败保留在 trace，不进入当前失败列表。
+
+`screening retry PAPER_ID --database DATABASE --snapshot SNAPSHOT --request-id REQUEST
+--reason REASON --actor ACTOR [--stage boundary|value]` 调用 A7 产品重试边界，只登记唯一
+后继回执，不执行模型；request/reason/actor 非空，歧义拒绝，精确重放返回原回执。
+写入前实际调用 visibility；本地 actor/reason 是审计说明，不是身份认证。
+`screening reclaim RECEIPT --database DATABASE` 显式结算过期尝试为 outcome_unknown，
+不退款、不续租。只读 failures/show/trace 从不调用 reclaim。
+
+第二次租约过期时，下列是连续可复制的动作路径。查询输出提供 PAPER、SNAPSHOT、
+原 RECEIPT 和选择身份；SUCCESSOR_RECEIPT 取自 retry 输出；其余执行路径保持原值。
+
+```bash
+paper-radar paper trace PAPER --database /tmp/root/paper-radar.sqlite3 \
+  --data-root /tmp/root --snapshot SNAPSHOT --json
+paper-radar screening reclaim RECEIPT --database /tmp/root/paper-radar.sqlite3
+paper-radar screening failures --database /tmp/root/paper-radar.sqlite3 --snapshot SNAPSHOT
+paper-radar screening retry PAPER --database /tmp/root/paper-radar.sqlite3 \
+  --snapshot SNAPSHOT --request-id retry-1 --reason 所有者选择重试 --actor owner
+paper-radar experiment screen --root /tmp/root --selection-id SELECTION \
+  --snapshot SNAPSHOT --credentials-dir /tmp/credentials --material-root /tmp/materials \
+  --install-root /tmp/pi --receipt-id SUCCESSOR_RECEIPT
+# boundary 恢复后尚未登记 value：
+paper-radar experiment screen --root /tmp/root --selection-id SELECTION \
+  --snapshot SNAPSHOT --credentials-dir /tmp/credentials --material-root /tmp/materials \
+  --install-root /tmp/pi --continue-value
+```
+
+`paper show/trace` 对 experiment/production/unknown 根中性，每次实际调用 visibility，
+包括空隐藏集合。论文事实规则由 [PaperFacts](paper-facts.md#8-当前查询历史重建与只读-cli)定义；
+`paper_radar.paper_trace.query_paper_trace(database, data_root, paper_id, snapshot_id=None,
+include_agent_content=False)` 返回 `PaperWorkflowTrace`，供后续 Body/Read/报告扩展。
+其 `safe_payload()` 保留 root、Feed 来源与语言观察、选样授权安全引用与完整换样链、
+Screening 预算/指纹/代际/父链/attempt/租约/安全失败，以及共享 `evaluate_paper(projection)`
+概念结果、原因和支持范围；不倾倒内部 projection 或决定载荷。
+论文事实与各组件分别读，不承诺跨组件同一 SQLite 快照，允许并发滞后。
+
+显式 `--snapshot` 才加载 Screening 当前性；省略时任务事实未知，model_failure_queue
+保持 deferred。已装配任务时按[共享资格](eligibility-visibility.md)提供 Screening 范围，
+其他 partial/deferred 含义保持。metadata_ready 仍仅最低元数据；value 的当前成功作为
+current_screening_artifact，boundary 单阶段成功不冒充完整建议/决定。
+实验 eligible_for_auto_read 始终包含 experiment_no_auto_queue；前置通过不代表名额、
+预算或领取许可。PDF/正文、Read 与报告事实由后续 B 组合扩展，未装配事实保持 unknown。
+
+默认输出不含 Agent 内容、Profile、Prompt、摘要正文或原始响应。`--show-abstract`
+展开获准的论文事实；`--show-agent-content` 必须同时提供快照与 data-root，实际核对
+agent_content 许可后，仅由 A7 load_success 展开已接收结构输出，永不转储原响应/完整
+SuccessContent。所有只读命令不建日志；retry/reclaim 不调用模型，自动配额为 0。
+
+screening 三命令成功退出 0，受控拒绝/参数错误 2，中断 130；paper 查询沿既有规则成功 0、
+受控查询/可见性拒绝 1、参数错误 2。帮助均为中文且不联网、不开库、不建目录。
+恢复副本通过显式 database/data-root 查询，支持恢复固定 `database.sqlite3`；失败列表、
+retry 父链与安全 trace 保持，第二次过期仍未结算。实验专用执行布局与恢复副本再授权由
+后续隔离重放入口承接，不把副本回查误称为可执行许可。
+
 ### B 事实验证与备份闭包
 
 `experiment.validation.validate_all(database, data_root)` 是唯一 B 持久事实聚合，验证全部
@@ -333,5 +393,5 @@ paper-radar experiment screen --root /tmp/my-experiment --selection-id SELECTION
 ## 相关
 
 - [Feed 组合](feed-pipeline.md)、[元数据](feed-metadata.md)、[正文持久化](body-persistence.md)、[运行日志](runtime-logging.md)。
-- [根与 Feed 工程覆盖](../verification/issue-187-experiment-feed.md)、[候选工程覆盖](../verification/issue-188-candidate-views.md)、[授权与预检工程覆盖](../verification/issue-189-egress-preflight.md)、[选样工程覆盖](../verification/issue-190-selection-authorization.md)、[Screening 工程覆盖](../verification/issue-192-screen-command.md)。
+- [根与 Feed 工程覆盖](../verification/issue-187-experiment-feed.md)、[候选工程覆盖](../verification/issue-188-candidate-views.md)、[授权与预检工程覆盖](../verification/issue-189-egress-preflight.md)、[选样工程覆盖](../verification/issue-190-selection-authorization.md)、[Screening 工程覆盖](../verification/issue-192-screen-command.md)、[失败恢复与追踪工程覆盖](../verification/issue-193-recovery-trace.md)。
 - 依据：[#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)、[#187](https://github.com/MeteoBoy4/PaperRadar/issues/187)、[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。

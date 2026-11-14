@@ -54,7 +54,7 @@ from paper_radar.screening_tasks.language import (
 )
 from paper_radar.screening_tasks.models import FrozenInput, RequestReceipt, ValueRequest
 from paper_radar.screening_tasks.query import QueryService
-from paper_radar.screening_tasks.query_models import TaskQueryResult
+from paper_radar.screening_tasks.query_models import CurrentFailure, TaskQueryResult
 from paper_radar.screening_tasks.repository import (
     evidence_values,
     receipt_row,
@@ -100,6 +100,40 @@ class ScreeningTasks:
     def query(self, *, paper_id: str, stage: str, snapshot_id: str) -> TaskQueryResult:
         return QueryService(self._attempts).query(
             paper_id=paper_id, stage=stage, snapshot_id=snapshot_id
+        )
+
+    def failures(self, *, snapshot_id: str) -> tuple[CurrentFailure, ...]:
+        # 验证显式快照,即使全库没有任何任务。
+        load_config_snapshot(self.database, snapshot_id)
+        return QueryService(self._attempts).failures(snapshot_id=snapshot_id)
+
+    def retry_failed(
+        self,
+        *,
+        paper_id: str,
+        snapshot_id: str,
+        request_id: str,
+        reason: str,
+        actor: str,
+        stage: str | None = None,
+    ) -> RequestReceipt:
+        from paper_radar.calibration import visibility
+
+        def guard(connection: Connection) -> None:
+            permission = visibility.evaluate_visibility(frozenset()).permission(
+                visibility.VisibilityCapability.SET_DECISION
+            )
+            if permission is not visibility.VisibilityPermission.ALLOWED:
+                raise TaskError(TaskReason.VISIBILITY_DENIED)
+
+        return RetryService(self._attempts).failed(
+            paper_id=paper_id,
+            snapshot_id=snapshot_id,
+            request_id=request_id,
+            reason=reason,
+            actor=actor,
+            stage=stage,
+            write_guard=guard,
         )
 
     def retry(self, raw_request: object) -> RequestReceipt:

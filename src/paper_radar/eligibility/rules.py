@@ -237,6 +237,22 @@ def evaluate_paper(facts: PaperProjection) -> dict[Concept, Eligibility]:
             scope="downstream_responsibility",
             owner=owner,
         )
+    task_facts = facts.screening_tasks
+    if task_facts is not None:
+        task_reasons = set[EligibilityReason]()
+        if task_facts.paper_id != facts.paper_id:
+            task_reasons.add(EligibilityReason.TASK_FACTS_CONTRADICTORY)
+        elif not task_facts.current_failed_task_ids:
+            task_reasons.add(
+                EligibilityReason.NO_CURRENT_FAILED_TASK
+                if task_facts.mapping_determinable
+                else EligibilityReason.TASK_MAPPING_UNKNOWN
+            )
+        results[Concept.MODEL_FAILURE_QUEUE] = _result(
+            task_reasons,
+            support=Support.PARTIAL,
+            scope="screening_current_latest_failed_only",
+        )
     return {concept: results[concept] for concept in Concept}
 
 

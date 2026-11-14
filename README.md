@@ -499,7 +499,9 @@ uv run --offline --locked paper-radar paper trace PAPER_ID --database data/paper
   --data-root data --verify-source-bytes --json
 ```
 
-`paper show/trace` 只读查询论文身份、版本、字段来源与发现历史。摘要需显式
+`paper show/trace` 只读组合论文事实、Feed/语言、选样链、Screening 历史与共享资格支持范围，
+对根用途中性。`--snapshot SNAPSHOT` 指定任务当前性；`--show-agent-content` 经许可展开结构结果。
+恢复查询、显式 reclaim→retry→执行路径见 [B 工作流](docs/contracts/stage-b-workflow.md#失败查询显式恢复与组合追踪)。摘要需显式
 `--show-abstract` 展开；来源字节核验不会转储原始响应。
 
 Python 服务 `PaperFacts` 提供来源提交、Feed 登记、人工字段修正、历史修订与版本关系，
@@ -514,7 +516,8 @@ Python 服务 `PaperFacts` 提供来源提交、Feed 登记、人工字段修正
 `paper_radar.screening_tasks.ScreeningTasks` 提供 boundary/value 请求登记、冻结回放、
 有限尝试、租约、`test | pi_rpc` 来源的成功接收、显式 retry 与历史查询。
 `pi_rpc` 的供给/安装与回执审计随备份恢复核验；这只证明持久事实一致性，
-真实执行和兼容证明由可选 Live 证据链承接，豁免不表示已经验证。这是 Python 服务，不是 screening CLI。
+真实执行和兼容证明由可选 Live 证据链承接，豁免不表示已经验证。服务与规范 `screening failures/retry/reclaim` CLI 共用同一任务权威；
+失败队列覆盖全库，重试只登记后继，执行仍需显式实验命令。
 value 通过 `register` 登记时由调用方提供语言事实，`register_feed_value` 则从 Feed
 发现归属派生该事实。
 接口与任务语义见[Screening 任务契约](docs/contracts/screening-tasks.md)，

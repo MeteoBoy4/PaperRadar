@@ -242,7 +242,15 @@ locator 规范后必须非空且最多 2048 UTF-8 字节、无敏感 URL 包装�
 
 普通映射仅核对数据库引用链、候选→观察→同一版本及已登记制品 kind=source_snapshot，不全量哈希 blob，不读当前文件补历史。backup verify 与显式 trace 字节核验承担实际字节验证。
 
-CLI 命令为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER_ID --database PATH`，两者共用可选 `--data-root PATH`、`--json`、`--show-abstract`。database 必须指向既有数据库，data-root 在来源字节核验时指向既有制品根；json 输出与文本同一受控形状，show-abstract 才展开摘要，trace 中未获选摘要也只在此显式选项下展示。所有可选布尔开关默认关闭，`data-root` 默认 `None`；选项不初始化目录或数据库。不提供历史选择器、snapshot 参数、输入指纹或任何写入命令。show 显示 `paper_id/version_id/revision_no/version_kind/doi`、当前题名/书目、摘要是否存在与截断状态、当前选择依据；trace 显示全部版本/修订/选择、Feed 发现及 first_seen/last_seen、来源与 parser_version/locator、未获选候选、关系三态及人工修正不跨版本限制。默认不展开摘要/原始响应；显式展示论文文本仍不暴露 Profile、Prompt、密钥或任意 blob。
+CLI 命令为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER_ID --database PATH`，
+共用可选 `--data-root PATH`、`--json`、`--show-abstract`、`--snapshot`、`--show-agent-content`。
+论文事实仍来自本服务同次一致读视图；在既有输出中另有安全 `workflow` 组合，详细字段、
+共享资格支持范围、visibility 与根中性规则由 [B 工作流](stage-b-workflow.md#失败查询显式恢复与组合追踪)定义。
+显式 snapshot 只用于 Screening 当前性查询，不是论文历史选择器；不初始化目录或数据库。
+show 显示当前身份/版本/修订、题名/书目、摘要存在性与截断状态；trace 保留完整来源历史、
+关系三态、未获选候选及人工修正不跨版本限制。摘要只在显式 show-abstract 展开；
+模型结构结果只在显式 show-agent-content 且快照、制品根及共享 visibility 许可齐备时展开。
+默认不含摘要或 Agent 内容，所有视图均不展开 Profile、Prompt、凭据或原始模型响应。
 
 `paper trace PAPER_ID --verify-source-bytes` 默认关闭，增加只读制品 I/O，只报原因与受控位置，不转储来源正文。开启时必须同时提供 `--data-root`，遗漏在数据库 I/O 前作为参数错误退出 2；直接服务调用缺制品根返回 `invalid_observation`（`data_root`）。读取接口保留 `StorageError` 的缺库、未初始化、旧 revision 等环境原因及中文指引，不将其改成业务引用损坏；写入和映射结果的封闭原因形状保持不变。退出码固定：正常只读查询（含合法等待端点/等待合并）0，受控拒绝/缺失/损坏/忙 1，CLI 参数语法错误 2。requires_merge 若出现在服务写入结果中是 retained 成功，不按拒绝重试。help 用中文、可复制示例，说明只读/零模型配额；空目录 help 无配置、数据库或网络副作用。
 
