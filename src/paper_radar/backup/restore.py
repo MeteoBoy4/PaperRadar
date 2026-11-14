@@ -29,7 +29,9 @@ def _require_empty_target(target: Path) -> None:
             raise RestoreError(RestoreReason.TARGET_NOT_EMPTY)
 
 
-def restore_backup(batch_dir: Path, target: Path) -> RestoreResult:
+def restore_backup(
+    batch_dir: Path, target: Path, *, replay_container: bool = False
+) -> RestoreResult:
     """只消费已发布批次。父目录须存在;不升级、不激活、不续跑。"""
     staging: Path | None = None
     try:
@@ -49,7 +51,16 @@ def restore_backup(batch_dir: Path, target: Path) -> RestoreResult:
         _require_empty_target(destination)
         staging = Path(tempfile.mkdtemp(prefix=".restore-staging-", dir=parent))
         sync_directory(parent)
-        copy_verified_contents(verified, staging)
+        if replay_container:
+            from paper_radar.replay.container import write_receipt
+
+            (staging / "contents").mkdir(mode=0o700)
+            (staging / "views").mkdir(mode=0o700)
+            copy_verified_contents(verified, staging / "contents")
+            write_receipt(staging, verified.manifest)
+            sync_directory(staging)
+        else:
+            copy_verified_contents(verified, staging)
         _require_empty_target(destination)
         try:
             # POSIX rename 可替换空目录,拒绝被并发占用的非空目录/文件/链接。

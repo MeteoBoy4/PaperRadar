@@ -22,6 +22,11 @@ def restrict_worker(memory_limit_bytes: int) -> None:
     # 地址空间而非物理 RSS/整组 MemoryMax;不宣称通用适用阈值。
     resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    deny_network()
+
+
+def deny_network() -> None:
+    """纯 seccomp 机制;拒绝网络与 namespace 逃逸,不加载 SDK 或设置内存门槛。"""
     # seccomp_data.arch/nr/args[0]。未知架构与 x32 ABI 均终止。
     instructions = [
         _Filter(0x20, 0, 0, 4),

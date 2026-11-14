@@ -119,7 +119,7 @@ flowchart TD
   规则见[Read 两轴查询](contracts/read-tasks.md#展示查询与两轴)。
 - B/H：承接 I04、I05、T05、T07、T08、T12 的分项披露，B 首个日报票验收共享片段在最小/健康/空日报的嵌入，H 完整日报保持 unknown、原状态与下一动作，片段不占论文容量，依据见[收口台账](verification/issue-168-176-live-admission-closure.md)；按 [ADR-0042](adr/0042-accept-read-v2-with-final-attempt-degradation.md) 显著展示受限内容未核对警告及丢弃标记/每类计数，不把降级结果展示为已核对或已支撑。
 - H：I06、I12、T15–T17、T23、T24；另承接 A3 历史证明未含的报告重建（[规格 §9.1](../intent/draft.md#91-本机一致性快照)）；E 沿用 I07、T02、T03、T11、T24 的共同约束。
-- I：I13、T06、T17、T25、D02、D04；聚合各阶段验收，另承接 A3 历史证明未含的任务续跑、NAS 及最终恢复。 依 [ADR-0048](adr/0048-accept-bounded-request-observability.md) 在无人值守/NAS 门槛重新评估精确请求计数及其隐私/运行边界成本，不把 Live 接受的近似下界与 unknown 当完整计数通过。
+- I：承接[脱网回放](contracts/backup-restore.md#隔离脱网回放)后原根/副本并行执行的重复外发授权、预算与租约风险；不以本机内容闭包通过代替跨副本 exactly-once 或 NAS。I13、T06、T17、T25、D02、D04；聚合各阶段验收，另承接 A3 历史证明未含的任务续跑、NAS 及最终恢复。 依 [ADR-0048](adr/0048-accept-bounded-request-observability.md) 在无人值守/NAS 门槛重新评估精确请求计数及其隐私/运行边界成本，不把 Live 接受的近似下界与 unknown 当完整计数通过。
 - A10 遗留：AMS 来源与四刊摘要稳定及附加区块语义接 C/F/Abstract，正文/PDF/Docling 接 Body/F，生产导入接 Feed/C，NAS 接 I；首轮 AIES 为 202，不能声称历史 AMS403 复现，来源承接见[实测证据](verification/exp-1-http-audit.md)。其他未验范围见[A10 继承缺口](verification/doc-unification-history.md#a10-继承缺口)。
 
 B 的 Screening 执行、Feed 导入、实验及 run-due 新入口须给所选根显式注入文件日志汇，

@@ -32,6 +32,7 @@ from paper_radar.live_evidence.cli import live_evidence_app
 from paper_radar.papers.cli import paper_app
 from paper_radar.pi_supply.cli import DOCTOR_HELP, DoctorCommand, doctor_command, pi_app
 from paper_radar.reading_cli import reading_app
+from paper_radar.replay.cli import REPLAY_HELP, ReplayCommand, replay_command
 from paper_radar.screening_cli import screening_app
 
 _EXAMPLE_CONTRACT_NAME = ContractName.BOUNDARY.value
@@ -207,6 +208,7 @@ app.add_typer(db_app, name="db")
 app.add_typer(config_app, name="config")
 app.add_typer(backup_app, name="backup")
 app.add_typer(restore_app, name="restore")
+app.command("replay", cls=ReplayCommand, help=REPLAY_HELP)(replay_command)
 app.add_typer(pi_app, name="pi")
 app.add_typer(live_evidence_app, name="live-evidence")
 app.command("doctor", cls=DoctorCommand, help=DOCTOR_HELP)(doctor_command)

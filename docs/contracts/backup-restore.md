@@ -330,3 +330,82 @@ Read 业务验证调用 ReadTasks.validate_all，闭包包括每代预算、未�
   [#104](https://github.com/MeteoBoy4/PaperRadar/issues/104)、[#105](https://github.com/MeteoBoy4/PaperRadar/issues/105)、
   [#106](https://github.com/MeteoBoy4/PaperRadar/issues/106)、[#107](https://github.com/MeteoBoy4/PaperRadar/issues/107)、
   [#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)。
+
+## 隔离脱网回放
+
+`restore verify ... --target SESSION --replay-container` 显式生成可移动回放封装。
+默认标准恢复行为保持不变。封装精确顶层只有 `contents/`、`views/`、
+`restore-receipt.json`；`contents/` 原样保留标准 `manifest.json`、`database.sqlite3`
+与根级 `blobs/`，不改 manifest 成员名，不套实验执行根布局。
+来源回执记录 format=1、operation=`restore verify`、contents=`contents`、batch_id
+与 manifest SHA-256，使用紧凑排序 JSON 和单个换行；未知字段、重复键、非规范字节、
+清单不匹配与缺回执均拒绝。它是本地可检查的编排来源记录，没有密码签名，
+不证明能抵御同 UID 恶意伪造。普通备份批次或无回执的同形目录不能直接 replay。
+
+```bash
+paper-radar restore verify backups/<backup-batch> \
+  --target demo/restore/session --replay-container
+paper-radar replay --restored demo/restore/session \
+  --original-database demo/paper-radar.sqlite3 \
+  --original-data-root demo/data --original-config-root demo/config \
+  --original-material-root demo/pi-materials \
+  --original-material-root demo/pi-install --original-material-root demo/models
+```
+
+原数据库、数据树、配置树必填，原材料选项可重复，操作者须列全原材料、安装和模型树；
+不指定认证目录，命令不读取凭据。参数不从历史 metadata、当前 settings、环境或父目录猜测。
+原件可已缺失；存在时父进程只 metadata 与打开/关闭正对照，不读取内容、不遍历材料。
+受限 worker 再核对每个已声明路径与专门逃逸软链均 EACCES；缺原件只记数量，
+不把 ENOENT 当成已存在原件的权限证明。默认文件白名单同时阻止其他未授权来源读取。
+支持恢复位于外层实验根的 `restore/session/`：不因外层共同祖先存在而拒绝，
+也不授予该祖先读取权限。
+
+父启动器在业务读取前以独立 `exec` 建立 Linux x86_64 Landlock ABI≥4、
+no_new_privs 与 seccomp；能力不足受控拒绝，没有无隔离降级。
+仅白名单恢复 contents（只读）、views（读写）、回执及必要目录枚举、准确 Python
+解释器/标准库/site-packages/venv 配置文件、公共 src、动态运行库、zoneinfo 与 `/dev/null`。
+不授予 `/home`、`/tmp`、`/usr`、项目共同父目录、整个 venv 或 `/proc`。
+不复用 Pi 的 TCP443 权限；seccomp 拒绝 AF_INET/INET6/UNIX socket、直接 connect
+及现有 Docling 禁网过滤器定义的网络/namespace 逃逸 syscall。提取纯过滤器不改变
+Docling worker 原资源/隔离语义，也不调用 SDK。
+
+worker 在解析业务前实际自证恢复成员可读、contents 写拒绝、原件/逃逸链接读拒绝、
+三类 socket 创建和直接 connect 被拒绝、prctl 的 no_new_privs=1/seccomp=2；
+再启动 close_fds 的后代重复自证继承。生产启动 stdin=DEVNULL、close_fds=True、
+pass_fds=()、env={}，不继承原文件、目录、已连接 socket 或认证环境。
+完整恢复路径及各组件软链、特殊文件、硬链接成员和运行依赖/来源重叠均拒绝；
+可识别路径与 inode 旁路受控拒绝。可信安装及无同 UID 恶意并发替换为部署前提；
+不声称通用 mount alias 检测、race-free openat 防护或路径元数据隐藏。
+
+通过自证后，worker 复用 `verify_contents` 的完整组件闭包（含 B 报告与暴露导出），
+并读取全部历史 Read；orig 从持久 evidence-map 重建，FulltextArtifacts 核对完整成员、
+pages/bbox/charspan 和逐字节切片。实验分析可见、普通消费继续拒绝。
+`Reports(database, contents, views).history/receipt/rebuild/verify` 按每个固定 daily/paper
+输入重渲染，成员和 SHA/字节必须与冻结登记一致；不是按今日配置重新规划日报。
+`Exposures.history/payload/write` 逐个核对全部冻结导出及输出原字节。
+views 仅接受这些报告/暴露路径及必要父目录，拒绝未知文件、空多余目录、链接与坏字节。
+输出不放入 contents，故再次回放仍执行原严格 `verify_tree`，不全局忽略输出。
+
+SQLite DELETE 单文件与 contents 只读，worker 无 WAL/SHM、正文或原业务根写权限。
+前后再次完整校验且比较数据库物理哈希；不迁移、不回收租约、不激活配置、不执行任务、
+不退/加预算。Reports、ReadTasks、Exposures 均显式注入 `FileSink(SESSION/views)`；
+只读历史和派生重建不发运行事件，因此不建 logs。入口接线和实际无日志分别有独立 D1 守卫。
+
+stdout 仅包含严格类型的 `isolation=verified`、`descendant=verified`、
+`originals_denied`、`missing_originals`、`sockets_denied=3`、`direct_connect_denied=true`、
+`reports`、`analyses`、`evidence_slices`、`exposures`；不打印私有内容或任何来源位置。
+子进程 stderr 不透传；私有全文/分析按用途保留在 views，不能用删除正文通过隐私检查。
+成功退出 0，参数/业务/隔离错误 2，中断 130；自动配额 0，中文冷帮助无外部 I/O。
+新增原因 `restore_provenance_invalid`、`unsafe_layout`、`isolation_unavailable`、
+`isolation_verification_failed`、`replay_failed`；既有 `file_missing/file_corrupt`、
+`registration_invalid`、`invalid_manifest`、`unsupported_rule_version` 等原具体原因保留。
+所有失败给出保留副本、检查来源/完整性/隔离部署后重试的安全下一步，不回显原始异常。
+临时权限探针链接清理失败时保留现场，不替换原受控错误；残留链接使下一次布局核验拒绝，
+须先检查副本，不静默放宽布局或扫描清理其他文件。
+
+此命令只验证内容闭包，不安装/调用 Pi、OAuth、Docling、模型或缓存，不是重新执行。
+恢复副本没有永久 replay-only 执行禁令；以后仍可按既有显式 db upgrade 与执行准入使用。
+原根/副本同时执行的重复外发授权、预算与租约风险未解决，交 [I](../roadmap.md#module-i)
+评估；不承诺跨副本 exactly-once，不提供 C importer、merge engine 或 NAS。
+本机 `/tmp` 合成 OS 正反对照与业务恢复证明见[独立覆盖台账](../verification/issue-201-offline-replay.md)，
+不替代 CI、现场脱网、真实材料/模型质量或 NAS 验收。

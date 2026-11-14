@@ -85,8 +85,9 @@ audit 留存各事实拥有者的完整持久主键集合、安全不可变引�
 旧导出不与今日全集全等，也不是只核验今日一个未声明的子集。
 
 `experiment.validation.validate_all` 是唯一备份聚合接线；登记、两成员及源闭包全部随业务备份。
-`Exposures(database, data_root).payload/receipt/write/validate_all` 支持标准恢复的
-`database.sqlite3 + blobs`，不要求原根、配置、模型、Docling 或网络；`write` 只重建输出，不写库或日志。
+`Exposures(database, data_root).history/payload/receipt/write/validate_all` 支持标准恢复的
+`database.sqlite3 + blobs`，不要求原根、配置、模型、Docling 或网络。
+`history()` 只列全部已冻结导出身份；`write` 只重建输出，不写库或日志。
 视图发布使用私有同目录临时文件、fsync 和不覆盖 hard-link；已有不同字节或软链受控拒绝。
 
 ### CLI 与隐私
