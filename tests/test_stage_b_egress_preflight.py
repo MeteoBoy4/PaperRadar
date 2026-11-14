@@ -129,6 +129,17 @@ def test_preflight_lists_both_slots_and_all_missing_resources_without_writes(
     cwd = tmp_path / "cwd"
     monkeypatch.setattr("paper_radar.doctor.pi_exec.EXECUTION_CWD", cwd)
     monkeypatch.setattr("paper_radar.pi_execution.resources.EXECUTION_CWD", cwd)
+    from paper_radar.experiment.preflight import HostPaths
+
+    monkeypatch.setattr("paper_radar.doctor.pi_exec.isolation_capability", lambda: 6)
+    monkeypatch.setattr(
+        "paper_radar.experiment.preflight.HOST_PATHS",
+        HostPaths(
+            tmp_path / "missing-meminfo",
+            tmp_path / "missing-membership",
+            tmp_path / "missing-cgroups",
+        ),
+    )
     before = inventory(tmp_path), logical(root / "paper-radar.sqlite3")
     result = invoke(
         "preflight",
@@ -489,9 +500,6 @@ def prepared_preflight(
         "paper_radar.experiment.preflight.HOST_PATHS",
         HostPaths(host / "meminfo", host / "membership", cgroup),
     )
-    monkeypatch.setattr(
-        "paper_radar.experiment.preflight.MIN_AVAILABLE_MEMORY_BYTES", 8 * 1024**3
-    )
     # 任何读取凭据内容/启动进程/联网均使本测试失败;只允许 stat 元数据。
     original_open = Path.open
 
@@ -589,7 +597,7 @@ def preflight_inventory(
         ("isolation", "isolation_unavailable"),
         ("waiver", "owner_waiver_history_invalid"),
         ("egress", "egress_not_authorized"),
-        ("memory", "host_memory_insufficient"),
+        ("memory", "host_memory_observed"),
         ("cgroup", "cgroup_v2_unavailable"),
         ("peak", "memory_peak_unknown"),
         ("disk", "model_snapshot_space_insufficient"),
@@ -664,7 +672,7 @@ def test_static_preflight_reports_each_blocker_without_calls_or_business_writes(
         args[args.index("--install-root") + 1] = str(tmp_path / "different-install")
     before = preflight_inventory(tmp_path), logical(root / "paper-radar.sqlite3")
     result = invoke("preflight", *args)
-    assert result.exit_code == (0 if fault == "peak" else 2), result.output
+    assert result.exit_code == (0 if fault in {"peak", "memory"} else 2), result.output
     assert reason in result.output
     assert (
         preflight_inventory(tmp_path),
@@ -782,3 +790,52 @@ def test_concurrent_owner_actions_append_one_complete_chain(tmp_path: Path) -> N
         states = list(pool.map(append, [True, False]))
     assert sorted(state.version for state in states) == [2, 3]
     assert egress_authorization(root / "paper-radar.sqlite3").version == 3
+
+
+@pytest.mark.parametrize(
+    "meminfo", ["MemAvailable: 1 kB\n", None, "unreadable measurement\n"]
+)
+@pytest.mark.parametrize("required_failure", [False, True])
+def test_memory_disclosure_never_blocks_or_waives_required_checks(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    meminfo: str | None,
+    required_failure: bool,
+) -> None:
+    from tests.test_doctor_process import logical
+
+    root, _, args = prepared_preflight(tmp_path, monkeypatch)
+    measurement = tmp_path / "host/meminfo"
+    if meminfo is None:
+        measurement.unlink()
+    else:
+        measurement.write_text(meminfo)
+    if required_failure:
+        (tmp_path / "cwd").rmdir()
+    before = preflight_inventory(tmp_path), logical(root / "paper-radar.sqlite3")
+    result = invoke("preflight", *args)
+    assert result.exit_code == (2 if required_failure else 0), result.output
+    if meminfo == "MemAvailable: 1 kB\n":
+        assert (
+            "check=host.memory result=passed reason=host_memory_observed"
+            in result.output
+        )
+        assert "可用内存字节=1024" in result.output
+    else:
+        assert (
+            "check=host.memory result=not_assessed reason=host_memory_unknown"
+            in result.output
+        )
+        assert "unknown" in result.output
+    for retired_policy in (
+        "host_memory_sufficient",
+        "host_memory_insufficient",
+        "host_memory_policy_unset",
+    ):
+        assert retired_policy not in result.output
+    if required_failure:
+        assert "check=screening.cwd result=missing reason=cwd_missing" in result.output
+    assert (
+        preflight_inventory(tmp_path),
+        logical(root / "paper-radar.sqlite3"),
+    ) == before
