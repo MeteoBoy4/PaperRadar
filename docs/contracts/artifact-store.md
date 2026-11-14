@@ -1,7 +1,7 @@
 # 不可变制品存储 Contract v1
 
 本 Contract 固定内容对象身份、制品清单格式、纯内容布局及公共发布/读取边界。
-提供四种单文件制品与完整 extraction 多文件发布；自包含备份与隔离恢复组合此服务，
+提供单文件制品、完整 extraction 与 exposure_manifest 多成员发布；自包含备份与隔离恢复组合此服务，
 其公开边界见[备份与恢复 Contract](backup-restore.md)。
 存储成功表示原字节完整保存，业务接收不在这个边界：不判断来源是否贡献事实、PDF
 是否合法取得或模型输出是否通过权威接收。上游必须先完成相应验证；不提供通用人工导入 CLI。
@@ -24,13 +24,15 @@ artifact 身份是规范清单 UTF-8 字节的 SHA-256，不包含时间、路�
 | model_success_response | payload |
 | reference_tei | payload |
 | extraction | document、evidence_map、manifest、reading |
+| exposure_manifest | audit、payload |
 
 extraction 的 manifest 成员与制品清单的区别见[集合规则](#多文件集合原子性与失败恢复)。
 同一 artifact 内不同角色允许引用同一个 blob。媒体类型由 kind/role 推导，不由调用方传入，
 不进入身份：original_pdf 为 application/pdf，reference_tei 为 application/tei+xml，
 extraction/reading 为 text/markdown，其余 extraction 角色为 application/json；
-candidate_snapshot 为 application/json，其专用载荷格式与历史投影规则由
+candidate_snapshot 与 exposure_manifest 各角色为 application/json，其专用载荷格式与历史投影规则由
 [B 工作流](stage-b-workflow.md#候选事实与私有视图)定义；
+exposure_manifest 的双成员与冻结边界由[暴露导出](exposure-export.md)定义；
 来源与模型响应默认 application/octet-stream，以保持原始字节语义。
 Screening 接收使用 model_success_response 保存原始成功响应；权威校验、响应格式、
 结构结果与审计归属见[Screening 任务契约](screening-tasks.md)。存储保留 payload
@@ -130,7 +132,7 @@ chunks 为 bytes 分段 iterable，非 bytes 分段拒绝；members 为角色到
 ## Revision 与原因码
 
 所有制品发布和登记查询均要求数据库处于随包迁移图的唯一 head，当前为
-`b006_reports`；不会隐式建库或升级。制品三表由
+`b007_exposure`；不会隐式建库或升级。制品三表由
 [`a302_artifact_store`](../../src/paper_radar/storage/migrations/versions/a302_artifact_store.py)
 从 `a201_profile_snapshot` 追加 CREATE TABLE/INDEX，不重建既有配置三表；
 `a302_artifact_store` 是历史迁移节点，不是当前可用库的 head。

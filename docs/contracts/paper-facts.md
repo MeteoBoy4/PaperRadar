@@ -324,6 +324,13 @@ conflict_id。事务失败可能留下完整未引用制品，不代表冲突已
 
 冲突来源字节及断言完整性纳入 `validate_all()`、备份与隔离恢复；损坏引用返回 `corrupt_reference`。恢复不依赖原根目录。迁移 `feed01_identity_conflicts` 保留非空数据库及原取得回执；当前 head 见[备份 Contract](backup-restore.md)。真实 JGR 来源假设的核实责任见[路线图 Audit](../roadmap.md#module-audit)与[B](../roadmap.md#module-b)。
 
+## 暴露身份读面
+
+`PaperFacts.exposure_history_in_connection` 在调用方一致读事务投影全部版本强身份与权威关系，
+不携带 metadata 正文、重复取得次数或当前选择。`exposure_scope_in_connection` 仅返回完整持久主键元数据；
+`exposure_relations` 对已冻结权威边求 DOI 种子的双向可达闭包，不以关系归属三态过滤。
+跨库版本字段及消费边界见[暴露导出](exposure-export.md)。
+
 ## 相关
 
 依据：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#115](https://github.com/MeteoBoy4/PaperRadar/issues/115)、[#67](https://github.com/MeteoBoy4/PaperRadar/issues/67)、[#68](https://github.com/MeteoBoy4/PaperRadar/issues/68)、[#69](https://github.com/MeteoBoy4/PaperRadar/issues/69)、[#70](https://github.com/MeteoBoy4/PaperRadar/issues/70)、[#71](https://github.com/MeteoBoy4/PaperRadar/issues/71)、[#72](https://github.com/MeteoBoy4/PaperRadar/issues/72)、[#73](https://github.com/MeteoBoy4/PaperRadar/issues/73)、[#74](https://github.com/MeteoBoy4/PaperRadar/issues/74)、[#75](https://github.com/MeteoBoy4/PaperRadar/issues/75)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)。

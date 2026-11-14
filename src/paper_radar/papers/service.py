@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import Connection, select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
 from paper_radar.papers.conflict_tables import conflicts as conflict_table
@@ -50,6 +50,13 @@ from paper_radar.storage.database import (
     require_current_revision,
 )
 from paper_radar.storage.errors import StorageError
+from paper_radar.storage.history import (
+    HistoryBoundary,
+    HistoryKeys,
+    HistoryPage,
+    history_boundaries,
+    history_page,
+)
 
 
 def _database_error(error: SQLAlchemyError) -> PaperError:
@@ -66,6 +73,77 @@ class PaperFacts:
     def __init__(self, database: Path, data_root: Path | None = None) -> None:
         self.database = database
         self.data_root = data_root
+
+    def exposure_scope_in_connection(
+        self, connection: Connection
+    ) -> dict[str, HistoryBoundary]:
+        """短写事务使用的只读事件范围元数据;不加载历史或文件。"""
+        from paper_radar.papers.tables import identifiers, version_relations, versions
+
+        return history_boundaries(
+            connection, (versions, identifiers, version_relations)
+        )
+
+    def exposure_history_in_connection(
+        self, connection: Connection, through: dict[str, HistoryKeys] | None = None
+    ) -> tuple[HistoryPage, ...]:
+        """强身份和权威关系的持久范围;不包含取得次数或当前选择。"""
+        from paper_radar.papers.tables import identifiers, version_relations, versions
+
+        return (
+            history_page(
+                connection,
+                versions,
+                ("version_id", "paper_id", "version_kind"),
+                through=through,
+            ),
+            history_page(
+                connection,
+                identifiers,
+                ("scheme", "normalized_value", "paper_id", "version_id"),
+                through=through,
+            ),
+            history_page(
+                connection,
+                version_relations,
+                (
+                    "relation_id",
+                    "preprint_doi",
+                    "journal_doi",
+                    "acquisition_id",
+                    "artifact_id",
+                    "locator",
+                ),
+                through=through,
+                hashed=("locator",),
+            ),
+        )
+
+    @staticmethod
+    def exposure_relations(
+        pages: tuple[HistoryPage, ...], seeds: frozenset[str]
+    ) -> tuple[dict[str, str], ...]:
+        """对已冻结权威关系求双向可达闭包;归属三态不改变排除传播。"""
+        relations = next(
+            page.rows for page in pages if page.table == "paper_version_relations"
+        )
+        edges = {(row["preprint_doi"], row["journal_doi"]) for row in relations}
+        reachable = set(seeds)
+        while True:
+            expanded = reachable | {
+                endpoint
+                for edge in edges
+                if reachable.intersection(edge)
+                for endpoint in edge
+            }
+            if expanded == reachable:
+                break
+            reachable = expanded
+        return tuple(
+            {"kind": "is-preprint-of", "preprint_doi": preprint, "journal_doi": journal}
+            for preprint, journal in sorted(edges)
+            if preprint in reachable
+        )
 
     def register_feed(self, url: str) -> FeedFact:
         normalized = normalize_feed_url(url)

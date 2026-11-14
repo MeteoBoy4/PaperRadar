@@ -76,7 +76,7 @@ init 显式迁移数据库并登记不可改写的 experiment 用途。
 示例：paper-radar experiment init --root /tmp/my-experiment
 """
 
-INIT_HELP = """初始化独立实验根，显式迁移并一次性登记 experiment 用途。
+INIT_HELP = """初始化独立实验根,显式迁移并一次性登记 experiment 用途。
 
 参数：必填 --root。固定数据库 paper-radar.sqlite3，制品 data/blobs/sha256，配置
 config/settings.yaml，日志 logs/，私有视图 views/；不猜测根。
@@ -182,7 +182,7 @@ def extract(
 @experiment_app.command(
     "accept",
     cls=ExperimentCommand,
-    help="""依所有者预先选样授权，由 Agent 显式代记 accepted。
+    help="""依所有者预先选样授权,由 Agent 显式代记 accepted。
 
 参数：必填 PAPER、--root、--selection-id、--snapshot、--request-id。
 前置：同论文同版本有效选样、当前 pi_rpc boundary（非 out_of_scope）与 value 成功。
@@ -257,7 +257,7 @@ def accept(
 @experiment_app.command(
     "probe-models",
     cls=ExperimentCommand,
-    help="""显式执行无 prompt 的模型映射探测，screening 与 reading 独立核对。
+    help="""显式执行无 prompt 的模型映射探测,screening 与 reading 独立核对。
 
 参数：必填 --root、--snapshot、--credentials-dir、--material-root、--install-root；
 --slot 可选 screening 或 reading，默认两槽。只核实精确模型与推理档位可设置。
@@ -486,7 +486,7 @@ Screening 包含 Profile、题名摘要；Read 另包含合法正文提取物。
 --snapshot snapshot-id --stage boundary --stage value --stage read --reason 所有者批准
 """
 
-EGRESS_STATUS_HELP = """只读查看所有者外发授权的安全状态与范围，不输出理由正文。
+EGRESS_STATUS_HELP = """只读查看所有者外发授权的安全状态与范围,不输出理由正文。
 
 参数：必填 --root；副作用：无，不建日志、不写业务库；自动配额 0。
 输出去向：stdout 安全 JSON，缺记录显示未授权；损坏不退回缺省。
@@ -1188,7 +1188,7 @@ def _layout_run(action: Callable[[], dict[str, object]]) -> None:
 @experiment_app.command(
     "read",
     cls=ExperimentCommand,
-    help="""显式新登记默认中文 Read，或继续已有任务。
+    help="""显式新登记默认中文 Read,或继续已有任务。
 
 参数：PAPER、--root、--snapshot、明确正文三元组、认证/材料/安装根；
 --request-id 与 --task-id 二选一。新登记默认 zh/label=manual。
@@ -1413,4 +1413,48 @@ def _report_read_action(root: Path, report_id: str, *, rebuild: bool) -> None:
         raise typer.Exit(130) from None
     except Exception as error:
         _report_error(error)
+        raise typer.Exit(2) from None
+
+
+@experiment_app.command(
+    "export-exposure",
+    cls=ExperimentCommand,
+    help="""冻结并导出实验根全历史的已暴露论文清单,供 C 机械排除正式校准。
+
+参数：必填 --root；不从 cwd 猜根。候选题名／摘要展示不计，选样授权及后续事实计入；
+失败与换下样本永久保留。副作用：登记不可改写的内容寻址清单与内部审计制品，
+发布 views/exposure/SHA256.json；执行日志写 logs/。自动配额 0，不调用模型或来源。
+帮助不联网、不开库、不建目录。输出去向：stdout 只给安全身份／数量／相对引用，
+获准私有文件含必要 DOI、权威版本关联及依据类别，不含研究正文、临时论文 ID 或时钟。
+退出码：成功 0；参数、用途、强身份缺失或闭包／路径损坏 2；中断 130。
+常见失败：缺 DOI 时先补强论文身份；损坏时保留原登记并核对备份，再显式重试。
+示例：paper-radar experiment export-exposure --root /tmp/my-experiment
+""",
+)
+def export_exposure(root: RootOption) -> None:
+    try:
+        from paper_radar.experiment.exposure import Exposures
+        from paper_radar.experiment.root import ExperimentRoot
+        from paper_radar.runtime_logging import FileSink
+
+        selected = ExperimentRoot(root)
+        selected.require()
+        service = Exposures(
+            selected.database, selected.data_root, sink=FileSink(selected.root)
+        )
+        with service.log.operation("experiment", run=True):
+            receipt = service.export()
+            service.write(str(receipt["export_id"]), selected.views)
+        typer.echo(json.dumps(receipt, ensure_ascii=False))
+    except KeyboardInterrupt:
+        typer.echo("interrupted：暴露导出中断；保留原登记后显式重跑。", err=True)
+        raise typer.Exit(130) from None
+    except Exception as error:
+        from paper_radar.experiment.exposure import ExposureError
+        from paper_radar.experiment.root import ExperimentError
+
+        if isinstance(error, (ExposureError, ExperimentError)):
+            typer.echo(str(error), err=True)
+        else:
+            report_component_error(error)
         raise typer.Exit(2) from None

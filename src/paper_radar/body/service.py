@@ -54,6 +54,13 @@ from paper_radar.screening_tasks.tables import budgets as screening_budgets
 from paper_radar.screening_tasks.tables import successes as screening_successes
 from paper_radar.stage_inputs import StageInput
 from paper_radar.storage.artifacts import ArtifactStore
+from paper_radar.storage.history import (
+    HistoryBoundary,
+    HistoryKeys,
+    HistoryPage,
+    history_boundaries,
+    history_page,
+)
 from paper_radar.storage.schema import (
     experiment_frozen_samples,
     experiment_layout_recordings,
@@ -101,6 +108,50 @@ class BodyService:
         self.data_root = data_root
         self.store = ArtifactStore(database, data_root)
         self.log = RuntimeLog(sink)
+
+    def exposure_scope_in_connection(
+        self, connection: Connection
+    ) -> dict[str, HistoryBoundary]:
+        """短写事务使用的只读事件范围元数据;不加载历史或文件。"""
+        return history_boundaries(connection, (tables.decisions, tables.pdfs))
+
+    def exposure_history_in_connection(
+        self, connection: Connection, through: dict[str, HistoryKeys] | None = None
+    ) -> tuple[HistoryPage, ...]:
+        """全部人工决定与 PDF 附件;不依赖有效决定或当前 PDF。"""
+        return (
+            history_page(
+                connection,
+                tables.decisions,
+                (
+                    "decision_id",
+                    "paper_id",
+                    "version_id",
+                    "revision_no",
+                    "sequence",
+                    "record_json",
+                ),
+                through=through,
+                hashed=("record_json",),
+            ),
+            history_page(
+                connection,
+                tables.pdfs,
+                (
+                    "attachment_id",
+                    "paper_id",
+                    "version_id",
+                    "artifact_id",
+                    "pdf_sha256",
+                    "sequence",
+                ),
+                through=through,
+            ),
+        )
+
+    def root_in_connection(self, connection: Connection) -> RootRegistration:
+        """调用方一致读事务内的唯一根事实。"""
+        return root_fact(connection)
 
     def root(self) -> RootRegistration:
         with transaction(self.database) as connection:

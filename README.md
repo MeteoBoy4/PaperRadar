@@ -33,6 +33,9 @@ trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型�
 `experiment report render --root ROOT --date YYYY-MM-DD --timezone Asia/Shanghai` 发布固定实验日报；
 `--analysis-id ANALYSIS` 生成单篇，`report rebuild/verify REPORT --root ROOT` 重建或核验。
 已发布日报固定成员与字节，晚到分析等待次日日报；私有内容与恢复接口见[报告 Contract](docs/contracts/reports.md)。
+`experiment export-exposure --root ROOT` 冻结全历史的已暴露 DOI、权威版本关联和依据类别，
+保存私有 `views/exposure/SHA256.json`，失败与换下样本保留；候选题名／摘要展示不计。
+格式及 C 的机械排除约定见[暴露导出 Contract](docs/contracts/exposure-export.md)。
 这些动作不建人工精读请求、不占自动名额，实验分析及其恢复副本始终被普通消费拒绝。
 `experiment probe-models` 显式对 screening/reading 分别执行无 prompt RPC 映射探测，
 认证可能刷新并写回专用凭据；只说明本次模型与档位可设置，不提供生成或准入证明。

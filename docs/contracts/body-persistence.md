@@ -166,6 +166,13 @@ Read 任务与分析由[独立服务](read-tasks.md)提供。SDK 受限执行与
 本服务不调用 Read、不自动 accepted、不授予校准、自动队列或生产消费资格。
 人工附加合成 PDF 的工程回归不证明真实 PDF 归属、Docling 保真、Pi live、完整 B 或 NAS。
 
+## 暴露历史读面
+
+`BodyService.root_in_connection` 在调用方一致读事务返回唯一根事实。
+`exposure_history_in_connection` 提供全部人工决定与 PDF 附件的不可变安全引用，
+不取有效决定或当前 PDF；`exposure_scope_in_connection` 只返回完整持久主键元数据，
+供短写事务重核。冻结与跨库规则见[暴露导出](exposure-export.md)。
+
 ## 相关
 
 - [ADR-0043](../adr/0043-persist-body-prerequisites-before-stage-b.md)、

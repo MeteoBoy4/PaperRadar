@@ -6,6 +6,7 @@ from paper_radar.config.owner_waiver import OwnerWaiverError, owner_waiver
 from paper_radar.experiment.acceptance import AcceptanceError, Acceptances
 from paper_radar.experiment.candidates import validate_candidate_snapshots
 from paper_radar.experiment.egress import EgressError, egress_authorization
+from paper_radar.experiment.exposure import ExposureError, Exposures
 from paper_radar.experiment.extraction import ExtractionError, Extractions
 from paper_radar.experiment.layout import LayoutError, LayoutReviews
 from paper_radar.experiment.pdf import PdfError, PdfSamples
@@ -33,6 +34,7 @@ def validate_all(database: Path, data_root: Path) -> None:
         LayoutReviews(database, data_root).validate_all()
         validate_read_links(database, data_root)
         Reports(database, data_root, data_root).validate_all()
+        Exposures(database, data_root).validate_all()
         owner_waiver(database)
         egress_authorization(database)
     except (
@@ -47,5 +49,6 @@ def validate_all(database: Path, data_root: Path) -> None:
         OwnerWaiverError,
         EgressError,
         ReportError,
+        ExposureError,
     ):
         raise ExperimentValidationError("registration_invalid") from None
