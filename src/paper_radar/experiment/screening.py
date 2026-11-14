@@ -156,8 +156,14 @@ class Screening:
         )
 
     def run(
-        self, selection_id: str, *, receipt_id: str | None = None
+        self,
+        selection_id: str,
+        *,
+        receipt_id: str | None = None,
+        continue_value: bool = False,
     ) -> dict[str, object]:
+        if continue_value and receipt_id is not None:
+            raise ScreenError("invalid_execution_mode")
         record = selected_record(self.root, selection_id)
         snapshot_id = resolve_config_snapshot_reference(
             self.root.database, self.snapshot_reference
@@ -241,26 +247,37 @@ class Screening:
                 actor="agent",
             )
 
-        boundary_receipt, replayed = tasks.register_with_status(
-            request("boundary"),
-            registration_guard=lambda connection: self._check(
-                connection, record, grants
-            ),
-        )
         result: dict[str, object] = dict(
             selection_id=selection_id, state="replayed", boundary=None, value=None
         )
-        if replayed:
-            # 原回执是登记快照;不补后来成功,不认证、不领取、不继续 value。
-            result["boundary"] = dict(receipt=asdict(boundary_receipt))
-            return result
-        boundary = self._stage(execution, boundary_receipt, record, (grants[0],))
-        result["boundary"] = boundary
-        if boundary["state"] == "failed":
-            result["state"] = "budget_exhausted"
-            return result
-        success_id = boundary["success_id"]
-        assert isinstance(success_id, str)
+        if continue_value:
+            self._before(record, grants)
+            successes = tasks.query_successes(
+                paper_id=record.paper_id, stage="boundary", snapshot_id=snapshot_id
+            )
+            current = next((v for v in successes if v.applicability == "current"), None)
+            if current is None:
+                raise ScreenError("boundary_missing")
+            success_id = current.receipt.success_id
+        else:
+            boundary_receipt, replayed = tasks.register_with_status(
+                request("boundary"),
+                registration_guard=lambda connection: self._check(
+                    connection, record, grants
+                ),
+            )
+            if replayed:
+                # 原回执是登记快照;不补后来成功,不认证、不领取、不继续 value。
+                result["boundary"] = dict(receipt=asdict(boundary_receipt))
+                return result
+            boundary = self._stage(execution, boundary_receipt, record, (grants[0],))
+            result["boundary"] = boundary
+            if boundary["state"] == "failed":
+                result["state"] = "budget_exhausted"
+                return result
+            identifier = boundary["success_id"]
+            assert isinstance(identifier, str)
+            success_id = identifier
         content = tasks.load_success(success_id)
         if not isinstance(content.output, BoundaryOutput):
             raise ScreenError("boundary_missing")
@@ -271,15 +288,20 @@ class Screening:
             return result
         # 两阶段之间短事务重新读取全部有效事实;boundary 成功不授予 value 权限。
         self._before(record, grants)
-        value_receipt = (
-            FeedPipeline(self.root.database, self.root.data_root, sink=self.sink)
-            .register_value(
-                request("value"),
-                metadata_request_key=record.metadata_request_key,
-                boundary_success_id=success_id,
-            )
-            .receipt
+        registration, value_replayed = FeedPipeline(
+            self.root.database, self.root.data_root, sink=self.sink
+        ).register_value_with_status(
+            request("value"),
+            metadata_request_key=record.metadata_request_key,
+            boundary_success_id=success_id,
+            registration_guard=lambda connection: self._check(
+                connection, record, grants
+            ),
         )
+        value_receipt = registration.receipt
+        if value_replayed:
+            result["value"] = dict(receipt=asdict(value_receipt))
+            return result
         value = self._stage(execution, value_receipt, record, (grants[1],))
         result["value"] = value
         result["state"] = (

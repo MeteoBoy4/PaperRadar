@@ -179,6 +179,21 @@ def test_two_failures_replay_and_a_b_a_preserve_original_budget(
     )
     assert b.exit_code == 0, b.output
     second = json.loads(b.stdout)
+    assert prepared.egress(disabled=True).exit_code == 0
+    old_after_swap = prepared.screen()
+    assert old_after_swap.exit_code == 0, old_after_swap.output
+    replayed = json.loads(old_after_swap.stdout)
+    assert replayed["state"] == "replayed" and replayed["value"] is None
+    assert replayed["boundary"]["receipt"] == first["boundary"]["receipt"]
+    assert (prepared.credentials / "auth-observed.json").stat().st_mtime_ns == before
+    new_request = prepared.screen(selection_id=second["selection_id"])
+    assert new_request.exit_code == 2 and "egress_not_authorized" in new_request.output
+    explicit = prepared.screen(receipt_id=first["boundary"]["receipt"]["receipt_id"])
+    assert explicit.exit_code == 2 and "selection_changed" in explicit.output
+    continued = prepared.screen(continue_value=True)
+    assert continued.exit_code == 2 and "selection_changed" in continued.output
+    assert (prepared.credentials / "auth-observed.json").stat().st_mtime_ns == before
+    assert prepared.egress().exit_code == 0
     a = select(
         prepared.root,
         prepared.view_id,
@@ -631,6 +646,7 @@ def test_screen_help_has_no_network_database_or_files(tmp_path: Path) -> None:
         "常见失败",
         "示例",
         "--receipt-id",
+        "--continue-value",
         "130",
         "重放",
     ):
@@ -772,3 +788,54 @@ def test_test_boundary_success_is_never_promoted_by_screen(
         ).budgets
         == ()
     )
+
+
+def test_boundary_recovery_can_explicitly_register_value_without_reopening_boundary(
+    feed: FeedFixture,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from paper_radar.screening_tasks import ScreeningTasks
+
+    prepared = screen_fixture(feed, tmp_path, monkeypatch)
+    auth = prepared.credentials / "auth.json"
+    content = json.loads(auth.read_text())
+    auth.write_text(json.dumps({**content, "mode": "failure"}))
+    refused = prepared.screen()
+    assert refused.exit_code == 2 and "auth_failed" in refused.output
+    tasks = ScreeningTasks(
+        prepared.root / "paper-radar.sqlite3",
+        prepared.root,
+        clock=lambda: datetime.now(UTC),
+    )
+    query = tasks.query(
+        paper_id=prepared.paper_id, stage="boundary", snapshot_id=prepared.snapshot
+    )
+    original = query.budgets[0].tasks[0].requests[0]
+    auth.write_text(json.dumps(content))
+    boundary = prepared.screen(receipt_id=original.receipt_id)
+    assert boundary.exit_code == 0, boundary.output
+    assert json.loads(boundary.stdout)["value"] is None
+    replay = prepared.screen()
+    assert replay.exit_code == 0 and json.loads(replay.stdout)["state"] == "replayed"
+    assert (
+        tasks.query(
+            paper_id=prepared.paper_id, stage="value", snapshot_id=prepared.snapshot
+        ).budgets
+        == ()
+    )
+    continued = prepared.screen(continue_value=True)
+    assert continued.exit_code == 0, continued.output
+    receipt = json.loads(continued.stdout)
+    assert receipt["state"] == "succeeded" and receipt["boundary"] is None
+    assert receipt["value"]["attempts"] == 1
+    assert tasks.status(original.receipt_id).used_attempts == 1
+    before = (prepared.credentials / "auth-observed.json").stat().st_mtime_ns
+    repeated = prepared.screen(continue_value=True)
+    assert repeated.exit_code == 0, repeated.output
+    result = json.loads(repeated.stdout)
+    assert result["state"] == "replayed" and result["boundary"] is None
+    assert result["value"]["receipt"] == receipt["value"]["receipt"]
+    assert (prepared.credentials / "auth-observed.json").stat().st_mtime_ns == before
+    conflict = prepared.screen(receipt_id=original.receipt_id, continue_value=True)
+    assert conflict.exit_code == 2 and "invalid_execution_mode" in conflict.output

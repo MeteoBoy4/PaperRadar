@@ -33,7 +33,11 @@ class ScreenFixture:
     paper_id: str
 
     def screen(
-        self, *, selection_id: str | None = None, receipt_id: str | None = None
+        self,
+        *,
+        selection_id: str | None = None,
+        receipt_id: str | None = None,
+        continue_value: bool = False,
     ) -> Result:
         return invoke(
             "screen",
@@ -50,6 +54,7 @@ class ScreenFixture:
             "--install-root",
             str(self.install),
             *(["--receipt-id", receipt_id] if receipt_id is not None else []),
+            *(["--continue-value"] if continue_value else []),
         )
 
     def egress(self, *, disabled: bool = False) -> Result:

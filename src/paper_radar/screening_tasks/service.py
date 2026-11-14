@@ -298,6 +298,22 @@ class ScreeningTasks:
             raw_request, policy_version=policy_version, feed_gate=feed_gate
         )[0]
 
+    def register_feed_value_with_status(
+        self,
+        raw_request: object,
+        *,
+        policy_version: str = "v1",
+        feed_gate: FeedGate | None = None,
+        registration_guard: Callable[[Connection], None] | None = None,
+    ) -> tuple[RequestReceipt, bool]:
+        """生产 value 原子登记及重放标志;产品守卫只读当前写事务。"""
+        return self._register(
+            raw_request,
+            policy_version=policy_version,
+            feed_gate=feed_gate,
+            registration_guard=registration_guard,
+        )
+
     def language_basis(self, receipt_id: str) -> LanguageBasis:
         receipt = self.get_receipt(receipt_id)
         with (
@@ -488,6 +504,8 @@ class ScreeningTasks:
                         if existing_budget is not None:
                             language = existing_budget["original_title_is_zh"]
                         else:
+                            if registration_guard is not None:
+                                registration_guard(connection)
                             basis = derive(connection, request.paper_id, policy_version)
                             if basis["status"] != "resolved":
                                 retain(connection, basis)

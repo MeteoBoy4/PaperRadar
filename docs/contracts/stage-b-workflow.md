@@ -238,6 +238,29 @@ Feed 派生；`test` 成功拒绝。组件独立阶段与来源规则见[任务]
 失败耗尽以 4 拒绝；第二次租约过期但未结算时要求先显式结算，不暗中回收或退款。
 前置失败或中断留下的回执从公共任务查询回查，再由此模式显式继续；默认重放不表示继续许可。
 
+`screen ... --continue-value` 与 `--receipt-id` 互斥，显式从当前成功 boundary 登记 value。
+它仍重查当前授权、冻结版本、元数据与范围，boundary 必须为当前 pi_rpc 且非 out_of_scope；
+新 value 经 `FeedPipeline.register_value_with_status` 生产登记，资格守卫位于 A7 同一写事务，
+仅首次新登记执行；精确重复只返回原 value 回执，不认证、不继续 ready/failed 回执。
+已有 ready value 用明确的 `--receipt-id` 执行；不会重开 boundary 或以新任意 request 绕过。
+没有 boundary 成功时拒绝；out_of_scope 仍以 3 停止。
+
+前置失败/中断后，先从公共任务查询取得明确回执，再按下列连续动作恢复（各占位身份
+由原查询给出；配置与路径保持原值）：
+
+```bash
+paper-radar experiment screen --root /tmp/my-experiment --selection-id SELECTION \
+  --snapshot SNAPSHOT --credentials-dir /tmp/credentials --material-root /tmp/materials \
+  --install-root /tmp/pi --receipt-id BOUNDARY_RECEIPT
+paper-radar experiment screen --root /tmp/my-experiment --selection-id SELECTION \
+  --snapshot SNAPSHOT --credentials-dir /tmp/credentials --material-root /tmp/materials \
+  --install-root /tmp/pi --continue-value
+# 若 value 已登记但认证前中断，继续其原回执：
+paper-radar experiment screen --root /tmp/my-experiment --selection-id SELECTION \
+  --snapshot SNAPSHOT --credentials-dir /tmp/credentials --material-root /tmp/materials \
+  --install-root /tmp/pi --receipt-id VALUE_RECEIPT
+```
+
 ### B 事实验证与备份闭包
 
 `experiment.validation.validate_all(database, data_root)` 是唯一 B 持久事实聚合，验证全部
@@ -275,6 +298,7 @@ Feed 派生；`test` 成功拒绝。组件独立阶段与来源规则见[任务]
 | `0 / screen` | 两阶段或明确回执执行成功，或默认请求精确重放原回执 |
 | `3 / out_of_scope` | boundary 成功但停止 value；由所有者换样 |
 | `4 / budget_exhausted` | 当前代际两次失败已耗尽；查询后由所有者显式 retry |
+| `2 / invalid_execution_mode` | `--continue-value` 与 `--receipt-id` 互斥；选择一个明确动作 |
 | `2 / frozen_version_changed / metadata_not_ready / receipt_scope_mismatch` | 冻结版本、完整元数据或显式回执范围不符；回查事实后重新选样或使用正确回执 |
 | `2 / already_succeeded / not_latest / task_running / lease_unsettled` | 回执不能重新执行；查询当前代际与租约，必要时显式结算，禁止退款或重开预算 |
 | `2 / invalid_arguments` | 缺必填参数或未知参数；查看对应 `--help` |

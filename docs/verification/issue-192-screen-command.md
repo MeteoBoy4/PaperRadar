@@ -8,7 +8,7 @@
 
 | 独立模块 | 数量 | 工程断言 |
 | --- | ---: | --- |
-| `tests/test_experiment_screen_cli.py` | 21 | 缺选择、外发/严格证据/冻结依据拒绝；真实 CLI waiver/egress；生产 Feed 与合成固定供给/RPC 经 PiExecution 和权威接收取得两阶段 pi_rpc；Feed 派生语言；out_of_scope 停止 value；false inferable 不建下游任务；两次失败、精确重放、A→B→A 预算保持；阶段间及认证到领取之间换样/版本/授权变化；已领取 boundary 按原租约结算但不放行 value；ready 前置失败/中断后的明确回执执行；value 显式 retry 后继只执行该代；成功/耗尽/非当前回执拒绝；test 来源不晋级；所选根日志守卫及敏感内容不泄漏；冷进程帮助禁网络/SQLite/文件写入；真实备份与恢复子进程保留失败预算 |
+| `tests/test_experiment_screen_cli.py` | 22 | 缺选择、外发/严格证据/冻结依据拒绝；真实 CLI waiver/egress；生产 Feed 与合成固定供给/RPC 经 PiExecution 和权威接收取得两阶段 pi_rpc；Feed 派生语言；out_of_scope 停止 value；false inferable 不建下游任务；两次失败、精确重放、A→B→A 预算保持；阶段间及认证到领取之间换样/版本/授权变化；已领取 boundary 按原租约结算但不放行 value；ready 前置失败/中断后的明确回执执行；boundary 恢复后显式生产登记 value、重复仅回原回执及与 receipt 模式互斥；value 显式 retry 后继只执行该代；成功/耗尽/非当前回执拒绝；test 来源不晋级；所选根日志守卫及敏感内容不泄漏；冷进程帮助禁网络/SQLite/文件写入；真实备份与恢复子进程保留失败预算 |
 
 CLI 为主接缝；只有明确故障/并发与恢复准备使用公开服务 API。HTTP 由
 `httpx.MockTransport` 与注入退避时钟替代；供给下载/安装及 Pi 使用独立合成对端，
@@ -25,6 +25,8 @@ CLI 为主接缝；只有明确故障/并发与恢复准备使用公开服务 AP
 可观察 red → green：未注册 screen 时缺选样用例失败；初始仅预验时没有两阶段 JSON；
 显式 `--receipt-id` 未注册时 ready 恢复用例失败；value 后继初始拒绝 boundary_missing，
 加入 FeedPipeline 公共生产依据读取后由原始合成 RPC 与权威接收成功。
+boundary 回执恢复后默认重放无法新建 value；完整 CLI 反例先失败，再加入互斥的
+`--continue-value` 与生产原子登记状态入口，明确继续才登记/执行，重复不续跑。
 领取前正常授权拒绝最初误记 unexpected_error；增加受控 ClaimDenied 基类并在入口声明
 受控组件异常后，零 attempt 且只记 controlled_failure。
 
@@ -42,11 +44,12 @@ CLI 为主接缝；只有明确故障/并发与恢复准备使用公开服务 AP
 - `experiment/cli.py`、`experiment/selections.py`：入口及事务外完整预验后的同连接当前行复核。
 - `pi_execution/service.py`：认证前产品复核及 A7 Connection guard 透传。
 - `screening_tasks/service.py`、`screening_tasks/execution.py`、`errors.py` 与公共导出：原子登记重放标志、只读登记/领取守卫、当前代际读取。
-- `feed_pipeline/service.py`：同预算的历史生产 value 依据读取，含显式 retry 后继；不补挂新证明。
+- `feed_pipeline/service.py`：同预算的历史生产 value 依据读取，含显式 retry 后继；
+  生产新登记/重放标志与事务内产品守卫，不补挂新证明。
 
 README、GLOSSARY 与 B/Pi/任务/Feed Contract 同步当前接口；组合规则只在 B Contract
 定义，组件文档保留各自公共接缝。默认 request 重放不授予执行许可；显式回执模式不
-新增请求、不创建后继、不自动执行另一阶段。#193 消费这一入口提供产品恢复路径。
+新增请求、不创建后继、不自动执行另一阶段；`--continue-value` 显式登记缺少的 value。#193 消费这一入口提供产品恢复路径。
 
 以上 source/support 字节漂移交 #185/#206 最终树审阅、必要重绑及 S3 确认，不机械
 重绑。D7 `live-admission-source-guard-v25` 的 service.py 源码哈希漂移保持受控拒绝；

@@ -58,6 +58,9 @@ JGR Feed 取得、当前版本最低元数据结果、语言依据及 value 任�
 - 组合用途 `test`/`production` 不进入 Stage fingerprint 或 Frozen Contract，也不划分
   新的预算范围。组合入口使用任务服务的 `v1` 语言策略，不接受策略参数；语言派生、
   已有预算及 retry 的冻结/继承语义见[任务语言规则](screening-tasks.md#feed-原题名语言来源)。
+- `register_value_with_status(..., registration_guard=None)` 沿生产登记返回 `(ValueRegistration, replayed)`；
+  新登记的只读产品资格守卫在 A7 同一写事务内、任何业务写入前执行，精确重放不调用守卫。
+  旧 `register_value` 返回值保持；重复请求不隐含继续执行许可。
 - `production_value_basis(receipt_id)` 只读验证同 value 预算的生产 Feed 登记、冻结语言、
   元数据与当前非 out_of_scope 的 pi_rpc boundary；显式 retry 后继沿用该预算依据。
   缺少生产登记或只有 test 登记拒绝，不补挂证明、不创建请求；B 另核对选样和冻结版本。

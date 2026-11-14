@@ -24,6 +24,8 @@
 `require_current_generation(connection, receipt)` 提供同连接最新代际复核；不增代、不回收。
 `register_with_status(request, registration_guard=None)` 返回 `(原回执, 是否精确重放)`；
 精确重放不调用守卫，新 boundary 登记在短写事务、写入前调用同连接只读守卫。
+`register_feed_value_with_status(..., registration_guard=None)` 对生产 Feed value 返回同样的
+原子重放标志并提供相同守卫，包含语言观察写入前的资格复核；原返回回执的入口保持兼容。
 这一区分不授予旧请求继续执行许可；跨组件执行规则见[B 工作流](stage-b-workflow.md)。
 领取仍核对当前论文依据、已有成功、在途租约和两次预算；提交后仍重读实际修正再
 交给唯一执行者。Pi 的实际请求帧预检使用这一接缝，见[执行组合](pi-execution.md)。

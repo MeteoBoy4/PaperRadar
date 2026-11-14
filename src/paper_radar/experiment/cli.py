@@ -689,7 +689,10 @@ def selection_history(root: RootOption) -> None:
 日志写所选根 logs/。自动配额 0；成功后不自动决定、Read 或 reuse。
 可选 --receipt-id 只执行该回执，不登记请求、不继续另一阶段或增代；仍重新核对当前
 选样、冻结版本、快照与代际；value 须有当前生产 boundary。成功/非当前回执拒绝，
-未结算租约先显式结算；ready 可显式继续，默认重放不代表继续许可。
+末次租约过期未结算须先显式结算；ready 可显式继续，默认重放不代表继续许可。
+可选 --continue-value 与 --receipt-id 互斥：从当前 pi_rpc 非 out_of_scope boundary
+显式生产登记 value，只有首次新登记才执行；重复只回原 value 回执，ready 另用
+--receipt-id。前置失败后可先执行 boundary 回执，再 --continue-value 完成两阶段。
 输出去向：stdout 安全 JSON 回执，不展开摘要、Prompt 或模型正文；错误写 stderr。
 帮助不联网、不开库、不建目录。常见失败：前置拒绝请核对选样、版本、外发授权与
 豁免/严格证据；耗尽后显式 retry；out_of_scope 请所有者换样。精确重放只返回原回执。
@@ -714,6 +717,13 @@ def screen(
     install_root: Annotated[
         Path, typer.Option("--install-root", help="所选固定安装根。")
     ],
+    continue_value: Annotated[
+        bool,
+        typer.Option(
+            "--continue-value",
+            help="从当前生产boundary显式登记value；与--receipt-id互斥。",
+        ),
+    ] = False,
     receipt_id: Annotated[
         str | None,
         typer.Option("--receipt-id", help="只执行明确回执，不登记请求或自动增代。"),
@@ -750,7 +760,7 @@ def screen(
                 material_root=material_root,
                 install_root=install_root,
                 sink=sink,
-            ).run(selection_id, receipt_id=receipt_id)
+            ).run(selection_id, receipt_id=receipt_id, continue_value=continue_value)
     except (ScreenError, ExperimentError) as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(
