@@ -1,6 +1,6 @@
 # Pi 执行资源与隔离
 
-本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。没有执行 CLI；准入事实由独立[受保护账本](live-evidence.md)保存，本模块只读消费。默认严格模式缺少现场隔离/模型能力准入证据时在领取前阻断；所有者显式豁免只移除该证据前提，运行隔离仍强制；这里的合成对端通过不产生兼容 passed。
+本契约描述 `paper_radar.pi_execution` 的离线工程边界；依据 [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) 最终裁决与 [#141](https://github.com/MeteoBoy4/PaperRadar/issues/141)。它补充 [pi-rpc](pi-rpc.md) 和 [pi-supply](pi-supply.md)，机制取舍见 [ADR-0039](../adr/0039-isolate-pi-with-landlock.md)。资源层不领取任务或接收成功；同包的执行组合复用既有任务权威。组件不注册执行 CLI；上层显式入口见[B 工作流](stage-b-workflow.md)；准入事实由独立[受保护账本](live-evidence.md)保存，本模块只读消费。默认严格模式缺少现场隔离/模型能力准入证据时在领取前阻断；所有者显式豁免只移除该证据前提，运行隔离仍强制；这里的合成对端通过不产生兼容 passed。
 
 ## 用途与范围
 
@@ -240,10 +240,14 @@ Landlock 端口规则不限制主机，也不覆盖 UDP/DNS；豁免模式接受
 
 `paper_radar.pi_execution.service.PiExecution(database, data_root, *, roots,
 credentials_dir, auth_mode, proxy=None, sink=None, clock=None)` 提供显式回执
-`run_attempt(receipt_id, *, limits=DEFAULT_LIMITS, cancelled=..., clock=monotonic)`。
+`run_attempt(receipt_id, *, limits=DEFAULT_LIMITS, cancelled=..., clock=monotonic,
+before_prepare=None, claim_guard=None)`。
 构造不执行 I/O。wall clock 同时用于 ScreeningTasks 和准入检查（默认当前 UTC）；run_attempt 的 clock
 是协议有界单调时钟。sink 原样交给任务服务，缺省 NullSink；不新增日志类型或 CLI，
-产品入口的文件日志与入口守卫接线责任见[路线图 B](../roadmap.md#module-b)。
+产品入口的文件日志与入口守卫见[B 工作流](stage-b-workflow.md)。
+`before_prepare()` 在准备认证前执行产品复核，`claim_guard(Connection)` 透传到 A7 的同连接
+领取守卫；两者拒绝不结算模型失败或占用预算。前者可预验不可变材料，后者只读事务事实、
+不执行外部 I/O；完整选择链、外发和两阶段规则由 B 组合拥有。
 
 只读 `prepare_call(tasks, receipt_id)` 通过公共 load_input/load_config_snapshot/build_call
 取得预算首次语义与本回执审计；核对同阶段投影而非完整 snapshot ID。通过

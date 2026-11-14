@@ -11,6 +11,7 @@ from paper_radar.screening_tasks.attempt_models import (
 from paper_radar.screening_tasks.errors import (
     GUIDANCE,
     REASON_CATALOG_VERSION,
+    ClaimDenied,
     TaskError,
     TaskReason,
 )
@@ -45,6 +46,7 @@ __all__ = [
     "AttemptView",
     "BudgetView",
     "Claim",
+    "ClaimDenied",
     "FailureKind",
     "FailureReceipt",
     "FailureReport",

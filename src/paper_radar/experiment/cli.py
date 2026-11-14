@@ -592,3 +592,113 @@ def selection_history(root: RootOption) -> None:
             ensure_ascii=False,
         )
     )
+
+
+@experiment_app.command(
+    "screen",
+    cls=ExperimentCommand,
+    help="""显式执行有效选样的 boundary → value 两阶段 Screening。
+
+参数：必填 --root、--selection-id、--snapshot、--credentials-dir、--material-root、
+--install-root。副作用：登记 manual 请求、领取当前代际剩余尝试、认证与 RPC 外发；
+日志写所选根 logs/。自动配额 0；成功后不自动决定、Read 或 reuse。
+可选 --receipt-id 只执行该回执，不登记请求、不继续另一阶段或增代；仍重新核对当前
+选样、冻结版本、快照与代际；value 须有当前生产 boundary。成功/非当前回执拒绝，
+未结算租约先显式结算；ready 可显式继续，默认重放不代表继续许可。
+输出去向：stdout 安全 JSON 回执，不展开摘要、Prompt 或模型正文；错误写 stderr。
+帮助不联网、不开库、不建目录。常见失败：前置拒绝请核对选样、版本、外发授权与
+豁免/严格证据；耗尽后显式 retry；out_of_scope 请所有者换样。精确重放只返回原回执。
+退出码：成功/精确重放 0；前置或运行拒绝 2；out_of_scope 停止 3；预算耗尽 4；中断 130。
+示例：paper-radar experiment screen --root /tmp/my-experiment --selection-id SELECTION
+--snapshot SNAPSHOT --credentials-dir /tmp/credentials --material-root /tmp/materials
+--install-root /tmp/pi
+""",
+)
+def screen(
+    root: RootOption,
+    selection_id: Annotated[
+        str, typer.Option("--selection-id", help="冻结的选样授权。")
+    ],
+    snapshot: Annotated[str, typer.Option("--snapshot", help="显式历史配置快照。")],
+    credentials_dir: Annotated[
+        Path, typer.Option("--credentials-dir", help="专用认证目录。")
+    ],
+    material_root: Annotated[
+        Path, typer.Option("--material-root", help="显式材料根。")
+    ],
+    install_root: Annotated[
+        Path, typer.Option("--install-root", help="所选固定安装根。")
+    ],
+    receipt_id: Annotated[
+        str | None,
+        typer.Option("--receipt-id", help="只执行明确回执，不登记请求或自动增代。"),
+    ] = None,
+) -> None:
+    from paper_radar.config import ConfigError
+    from paper_radar.experiment import ExperimentError, ExperimentRoot
+    from paper_radar.experiment.screening import ScreenError, Screening
+    from paper_radar.feed_pipeline import PipelineError
+    from paper_radar.pi_execution import ExecutionError
+    from paper_radar.runtime_logging import FileSink, RuntimeLog
+    from paper_radar.screening_tasks import TaskError, TaskReason
+
+    try:
+        selected = ExperimentRoot(root)
+        selected.require()
+        sink = FileSink(selected.root)
+        log = RuntimeLog(sink)
+        with log.execution(
+            "experiment",
+            controlled=(
+                ScreenError,
+                ExperimentError,
+                ExecutionError,
+                TaskError,
+                ConfigError,
+                PipelineError,
+            ),
+        ):
+            result = Screening(
+                selected,
+                snapshot=snapshot,
+                credentials_dir=credentials_dir,
+                material_root=material_root,
+                install_root=install_root,
+                sink=sink,
+            ).run(selection_id, receipt_id=receipt_id)
+    except (ScreenError, ExperimentError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(
+            4
+            if isinstance(error, ScreenError) and error.reason == "budget_exhausted"
+            else 2
+        ) from None
+    except ExecutionError as error:
+        typer.echo(
+            f"{error.reason}：执行前置未满足；请核对 doctor、供给及所有者豁免。",
+            err=True,
+        )
+        raise typer.Exit(2) from None
+    except TaskError as error:
+        report_component_error(error)
+        raise typer.Exit(
+            4 if error.reason is TaskReason.BUDGET_EXHAUSTED else 2
+        ) from None
+    except KeyboardInterrupt:
+        typer.echo(
+            "interrupted：执行中断；请回查任务与租约，精确重放不继续执行。", err=True
+        )
+        raise typer.Exit(130) from None
+    except Exception as error:
+        report_component_error(error)
+        raise typer.Exit(2) from None
+    typer.echo(json.dumps(result, ensure_ascii=False))
+    state = result["state"]
+    if state == "out_of_scope":
+        typer.echo("out_of_scope：已停止 value；请由所有者从候选清单换样。", err=True)
+        raise typer.Exit(3)
+    if state == "budget_exhausted":
+        typer.echo(
+            "budget_exhausted：当前代际已耗尽；请查询失败并显式 retry。", err=True
+        )
+        raise typer.Exit(4)

@@ -278,6 +278,35 @@ class Selections:
         records = self.history_in_connection(connection)
         return records[-1] if records else None
 
+    def require_current_in_connection(
+        self, connection: Connection, validated: SelectionRecord
+    ) -> None:
+        """复核事务外完整预验的不可变授权;只读当前行与根,无制品/文件 I/O。"""
+        registered = root_fact(connection)
+        row = (
+            connection.execute(
+                select(experiment_selections)
+                .order_by(experiment_selections.c.sequence.desc())
+                .limit(1)
+            )
+            .mappings()
+            .first()
+        )
+        if row is None or row["selection_id"] != validated.selection_id:
+            raise SelectionError("selection_changed")
+        if (
+            registered.purpose is not RootPurpose.EXPERIMENT
+            or registered.root_id != validated.root_id
+            or row["record_json"] != canonical(validated.model_dump(mode="json"))
+            or row["sequence"] != validated.sequence
+            or row["paper_id"] != validated.paper_id
+            or row["version_id"] != validated.version_id
+            or row["request_id"] != validated.request.request_id
+            or row["replaces"] != validated.request.replaces
+            or row["view_id"] != validated.request.view_id
+        ):
+            raise SelectionError("registration_invalid")
+
     def history(self) -> tuple[SelectionRecord, ...]:
         with transaction(self.database) as connection:
             return self.history_in_connection(connection)

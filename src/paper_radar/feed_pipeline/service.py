@@ -29,6 +29,7 @@ from paper_radar.screening_tasks.feed_gate import (
     sha,
 )
 from paper_radar.screening_tasks.repository import task_database, task_transaction
+from paper_radar.screening_tasks.tables import requests, tasks
 
 PipelineReason = Literal[
     "invalid_request",
@@ -267,6 +268,51 @@ class FeedPipeline:
                 boundary_success_id=boundary_id,
             )
         )
+
+    def production_value_basis(self, receipt_id: str) -> ValueRegistration:
+        """只读验证 value 预算的生产登记依据,含显式 retry 后继;不新建请求。"""
+        receipt = self.tasks.get_receipt(receipt_id)
+        if receipt.stage != "value":
+            raise PipelineError("invalid_request")
+        with (
+            task_database(self.database, write=False) as engine,
+            task_transaction(engine, write=False) as connection,
+        ):
+            keys = tuple(
+                connection.execute(
+                    select(proofs.c.request_key)
+                    .join(requests, requests.c.receipt_id == proofs.c.receipt_id)
+                    .join(tasks, tasks.c.task_id == requests.c.task_id)
+                    .where(tasks.c.budget_id == receipt.budget_id)
+                    .order_by(proofs.c.request_key)
+                ).scalars()
+            )
+            rows = tuple(find(connection, key) for key in keys)
+        for row in rows:
+            if row is None:
+                raise PipelineError("corrupt_reference")
+            if row["purpose"] != "production":
+                continue
+            basis = self._verify_basis(row)
+            metadata = self.metadata.replay(basis.metadata_request_key)
+            if (
+                not metadata.current_version
+                or metadata.version_id != receipt.version_id
+                or metadata.revision_no != receipt.revision_no
+            ):
+                raise PipelineError("metadata_stale")
+            if not any(
+                value.receipt.success_id == basis.boundary_success_id
+                and value.applicability == "current"
+                for value in self.tasks.query_successes(
+                    paper_id=receipt.paper_id,
+                    stage="boundary",
+                    snapshot_id=receipt.snapshot_id,
+                )
+            ):
+                raise PipelineError("boundary_missing")
+            return basis
+        raise PipelineError("test_source")
 
     def _verify_basis(self, row: dict[str, Any]) -> ValueRegistration:
         result = self._result(row)

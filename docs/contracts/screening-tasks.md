@@ -15,9 +15,16 @@
 不判断任务状态。详细输入、协议及错误映射见[RPC Contract](pi-rpc.md)。
 `prepare_correction(receipt_id)` 只读预览下次领取将使用的受控修正，包含脱敏验证
 问题及过期未结算尝试将产生的 `outcome_unknown` 修正；不回收、不预留预算，也不
-授予领取资格。`run_once(..., preclaim=None)` 可选传入有限、无 I/O 的纯校验回调，
+授予领取资格。`run_once(..., preclaim=None, claim_guard=None)` 可选传入有限、无 I/O 的纯校验回调，
 在领取短事务内用最新修正调用，先于回收和 attempt 写入；回调以 `TaskError` 拒绝
 则事务回滚且无任务日志。调用方不能在回调中执行业务写入或外发；默认行为不变。
+另有 `claim_guard(Connection)` 只读产品守卫，在同一领取写事务内、任何过期回收与 attempt
+写入前调用；它只读该连接的业务事实，禁止文件、网络、认证、业务写入或另开当前事实视图。
+产品正常拒绝须继承 `ClaimDenied` 或使用 `TaskError`，不能让普通 ValueError 被映射成 corrupt_reference。
+`require_current_generation(connection, receipt)` 提供同连接最新代际复核；不增代、不回收。
+`register_with_status(request, registration_guard=None)` 返回 `(原回执, 是否精确重放)`；
+精确重放不调用守卫，新 boundary 登记在短写事务、写入前调用同连接只读守卫。
+这一区分不授予旧请求继续执行许可；跨组件执行规则见[B 工作流](stage-b-workflow.md)。
 领取仍核对当前论文依据、已有成功、在途租约和两次预算；提交后仍重读实际修正再
 交给唯一执行者。Pi 的实际请求帧预检使用这一接缝，见[执行组合](pi-execution.md)。
 协议内核只提供完整候选，内层业务 JSON 与最终模型身份仍由本任务服务权威接收；
