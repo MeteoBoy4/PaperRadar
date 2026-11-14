@@ -87,7 +87,7 @@ def test_backup_rejects_selection_tampering(
             "--database",
             str(root / "paper-radar.sqlite3"),
             "--data-root",
-            str(root),
+            str(root / "data"),
             "--output",
             str(tmp_path / "backups"),
         ],
@@ -187,7 +187,7 @@ def test_current_revision_changes_reject_old_view_and_allow_explicit_new_view(
     from tests.test_experiment_candidates_cli import MAIN
 
     root, view, check = candidate
-    papers = PaperFacts(root / "paper-radar.sqlite3", root)
+    papers = PaperFacts(root / "paper-radar.sqlite3", root / "data")
     current = papers.show(check["items"][0]["paper_id"])
     papers.correct(
         dict(
@@ -327,7 +327,7 @@ def test_selection_transaction_interruption_leaves_no_partial_authorization(
     from tests.artifact_support import fail_sql
 
     root, view, _ = candidate
-    service = Selections(root / "paper-radar.sqlite3", root)
+    service = Selections(root / "paper-radar.sqlite3", root / "data")
 
     def interrupt(
         connection: Connection,
@@ -385,7 +385,7 @@ def test_concurrent_replacements_have_one_current_sample(candidate: Candidate) -
     def replace(number: int) -> str:
         barrier.wait(timeout=10)
         try:
-            record, _ = Selections(root / "paper-radar.sqlite3", root).select(
+            record, _ = Selections(root / "paper-radar.sqlite3", root / "data").select(
                 view_id=view,
                 request_id=f"replace-{number}",
                 position=number,
@@ -458,7 +458,7 @@ def test_backup_restore_subprocess_keeps_private_reason_and_full_authorization(
             "--database",
             str(root / "paper-radar.sqlite3"),
             "--data-root",
-            str(root),
+            str(root / "data"),
             "--output",
             str(backups),
         ],
@@ -552,7 +552,7 @@ def test_backup_validates_consumed_authorization_chains(
             "--database",
             str(root / "paper-radar.sqlite3"),
             "--data-root",
-            str(root),
+            str(root / "data"),
             "--output",
             str(tmp_path / "backups"),
         ],
@@ -572,7 +572,7 @@ def test_metadata_change_between_view_load_and_write_is_rejected(
     from tests.test_experiment_candidates_cli import MAIN
 
     root, view, check = candidate
-    papers = PaperFacts(root / "paper-radar.sqlite3", root)
+    papers = PaperFacts(root / "paper-radar.sqlite3", root / "data")
     current = papers.show(check["items"][0]["paper_id"])
 
     @contextmanager
@@ -636,7 +636,7 @@ def test_blocked_snapshot_never_creates_authorization(
         state["conflict"] = True
         check = fetch("conflicting")
     else:
-        papers = PaperFacts(root / "paper-radar.sqlite3", root)
+        papers = PaperFacts(root / "paper-radar.sqlite3", root / "data")
         current = papers.show(check["items"][0]["paper_id"])
         papers.correct(
             dict(

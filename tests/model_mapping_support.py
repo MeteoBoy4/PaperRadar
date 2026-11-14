@@ -1,5 +1,6 @@
 """#191 合成固定供给与 RPC 外部对端;不读任何凭据内容。"""
 
+import shutil
 import sys
 from pathlib import Path
 
@@ -9,7 +10,8 @@ from typer.testing import CliRunner, Result
 
 from paper_radar.cli import app
 from paper_radar.config import compile_config
-from paper_radar.pi_supply import activate_supply
+from paper_radar.experiment import ExperimentRoot
+from paper_radar.pi_supply import activate_supply, prepare_supply
 from tests import pi_supply_support
 from tests.pi_execution_support import PeerRun
 
@@ -22,6 +24,9 @@ def prepared(
     root: Path, monkeypatch: pytest.MonkeyPatch, mode: str = "normal"
 ) -> list[str]:
     monkeypatch.setattr(pi_supply_support, "PI", "1.4.0")
+    experiment = root / "experiment"
+    assert invoke("init", "--root", str(experiment)).exit_code == 0
+    layout = ExperimentRoot(experiment)
     source = pi_supply_support.inputs(root)
     settings = root / "config/settings.yaml"
     models_path = root / "config/models/models-v1.yaml"
@@ -44,7 +49,9 @@ def prepared(
     settings.write_text(
         settings.read_text().replace("reading: pi-v1", "reading: pi-read")
     )
-    snapshot = compile_config(settings, source[0])
+    for directory in ("config", "prompts", "contracts"):
+        shutil.copytree(root / directory, experiment / directory, dirs_exist_ok=True)
+    snapshot = compile_config(layout.settings, layout.database)
     peer = (
         Path(__file__)
         .with_name("model_mapping_rpc_peer.py")
@@ -52,18 +59,19 @@ def prepared(
         .replace('"__MODE__"', repr(mode))
         .replace("__DATABASE__", str(root / "experiment/paper-radar.sqlite3"))
     )
-    installation = pi_supply_support.prepare(
-        root, (source[0], snapshot.snapshot_id, source[2], source[3], PeerRun(peer))
+    installation = prepare_supply(
+        layout.database,
+        snapshot.snapshot_id,
+        "screening",
+        source[2],
+        experiment / "pi-install",
+        data_root=layout.data_root,
+        config_root=layout.config,
+        material_root=experiment / "pi-materials",
+        downloader=source[3],
+        runner=PeerRun(peer),
     )
-    activate_supply(source[0], installation.supply_id, snapshot.snapshot_id)
-    experiment = root / "experiment"
-    assert invoke("init", "--root", str(experiment)).exit_code == 0
-    # 初始化只登记根,供给库迁移到该根后再次登记相同用途。
-    from paper_radar.body import BodyService
-
-    BodyService(source[0], experiment).register_root("experiment")
-    source[0].replace(experiment / "paper-radar.sqlite3")
-    assert invoke("init", "--root", str(experiment)).exit_code == 0
+    activate_supply(layout.database, installation.supply_id, snapshot.snapshot_id)
     waiver = CliRunner().invoke(
         app,
         [
@@ -117,7 +125,7 @@ def prepared(
         "--credentials-dir",
         str(credentials),
         "--material-root",
-        str(root / "materials"),
+        str(experiment / "pi-materials"),
         "--install-root",
-        str(root / "install"),
+        str(experiment / "pi-install"),
     ]

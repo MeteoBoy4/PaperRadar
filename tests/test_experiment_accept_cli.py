@@ -57,7 +57,7 @@ def test_accept_is_delegated_atomic_and_replayed_in_safe_trace(
     assert json.loads(replay.stdout) == {**receipt, "replayed": True}
     logged_before_query = log_path.read_bytes()
     events = BodyService(
-        prepared.root / "paper-radar.sqlite3", prepared.root
+        prepared.root / "paper-radar.sqlite3", prepared.root / "data"
     ).decisions(prepared.paper_id)
     assert len(events) == 1
     assert events[0].fact.reference == receipt["decision_id"]
@@ -73,7 +73,7 @@ def test_accept_is_delegated_atomic_and_replayed_in_safe_trace(
             "--database",
             str(prepared.root / "paper-radar.sqlite3"),
             "--data-root",
-            str(prepared.root),
+            str(prepared.root / "data"),
             "--snapshot",
             prepared.snapshot,
             "--json",
@@ -92,7 +92,7 @@ def test_accept_is_delegated_atomic_and_replayed_in_safe_trace(
             "--database",
             str(prepared.root / "paper-radar.sqlite3"),
             "--data-root",
-            str(prepared.root),
+            str(prepared.root / "data"),
             "--snapshot",
             prepared.snapshot,
             "--json",
@@ -156,7 +156,9 @@ def test_accept_rejects_ineligible_basis_without_decision(
             case, 0
         ), screened.output
     if case == "changed":
-        papers = PaperFacts(prepared.root / "paper-radar.sqlite3", prepared.root)
+        papers = PaperFacts(
+            prepared.root / "paper-radar.sqlite3", prepared.root / "data"
+        )
         original = papers.show(prepared.paper_id)
         corrected = papers.correct(
             dict(
@@ -187,9 +189,9 @@ def test_accept_rejects_ineligible_basis_without_decision(
     assert result.exit_code == 2 and reason in result.output, result.output
     if case != "mismatch":
         assert (
-            BodyService(prepared.root / "paper-radar.sqlite3", prepared.root).decisions(
-                prepared.paper_id
-            )
+            BodyService(
+                prepared.root / "paper-radar.sqlite3", prepared.root / "data"
+            ).decisions(prepared.paper_id)
             == ()
         )
 
@@ -231,7 +233,7 @@ def test_test_success_source_never_authorizes_delegated_acceptance(
     # 公共 A7 test 接收器注入不适合生产消费的成功,断言仍走产品 CLI。
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     registered = tasks.register(
@@ -254,7 +256,10 @@ def test_test_success_source_never_authorizes_delegated_acceptance(
     assert isinstance(success, SuccessReceipt)
     result = accept(prepared)
     assert result.exit_code == 2 and "test_source" in result.output, result.output
-    assert BodyService(tasks.database, prepared.root).decisions(prepared.paper_id) == ()
+    assert (
+        BodyService(tasks.database, prepared.root / "data").decisions(prepared.paper_id)
+        == ()
+    )
 
 
 def test_low_experimental_prediction_does_not_veto_preselection(
@@ -281,7 +286,7 @@ def test_low_experimental_prediction_does_not_veto_preselection(
     assert screened.exit_code == 0, screened.output
     tasks = ScreeningTasks(
         prepared.root / "paper-radar.sqlite3",
-        prepared.root,
+        prepared.root / "data",
         clock=lambda: datetime.now(UTC),
     )
     output = tasks.load_success(
@@ -348,8 +353,10 @@ def test_acceptance_fault_rolls_back_decision_and_association(
     assert failed.exit_code == 2, failed.output
     assert "execution_failed" in failed.output or "database_failed" in failed.output
     database = prepared.root / "paper-radar.sqlite3"
-    assert BodyService(database, prepared.root).decisions(prepared.paper_id) == ()
-    assert Acceptances(database, prepared.root).history() == ()
+    assert (
+        BodyService(database, prepared.root / "data").decisions(prepared.paper_id) == ()
+    )
+    assert Acceptances(database, prepared.root / "data").history() == ()
     retried = accept(prepared)
     assert retried.exit_code == 0, retried.output
 
@@ -383,9 +390,9 @@ def test_visibility_is_checked_before_prevalidation_and_inside_write(
     assert refused.exit_code == 2 and "visibility_denied" in refused.output
     assert calls == when
     assert (
-        BodyService(prepared.root / "paper-radar.sqlite3", prepared.root).decisions(
-            prepared.paper_id
-        )
+        BodyService(
+            prepared.root / "paper-radar.sqlite3", prepared.root / "data"
+        ).decisions(prepared.paper_id)
         == ()
     )
 
@@ -431,7 +438,7 @@ def test_short_transaction_rechecks_after_full_success_prevalidation(
                 )
                 assert result.exit_code == 0, result.output
             else:
-                papers = PaperFacts(service.database, prepared.root)
+                papers = PaperFacts(service.database, prepared.root / "data")
                 revision = papers.show(prepared.paper_id)
                 result_correction = papers.correct(
                     dict(
@@ -455,9 +462,9 @@ def test_short_transaction_rechecks_after_full_success_prevalidation(
     assert refused.exit_code == 2 and reason in refused.output, refused.output
     assert changed
     assert (
-        BodyService(prepared.root / "paper-radar.sqlite3", prepared.root).decisions(
-            prepared.paper_id
-        )
+        BodyService(
+            prepared.root / "paper-radar.sqlite3", prepared.root / "data"
+        ).decisions(prepared.paper_id)
         == ()
     )
 
@@ -534,7 +541,7 @@ def test_backup_restore_keeps_delegated_acceptance_without_original_roots(
             "--database",
             str(database),
             "--data-root",
-            str(prepared.root),
+            str(prepared.root / "data"),
             "--snapshot",
             prepared.snapshot,
             "--json",
@@ -550,7 +557,7 @@ def test_backup_restore_keeps_delegated_acceptance_without_original_roots(
             "--database",
             str(database),
             "--data-root",
-            str(prepared.root),
+            str(prepared.root / "data"),
             "--output",
             str(output),
         ],
@@ -632,7 +639,7 @@ def test_backup_closure_rejects_corrupted_or_missing_delegation(
             "--database",
             str(database),
             "--data-root",
-            str(prepared.root),
+            str(prepared.root / "data"),
             "--output",
             str(tmp_path / "backups"),
         ],
@@ -688,8 +695,10 @@ def test_commit_failure_and_interrupt_leave_no_partial_acceptance(
     ) in failed.output
     assert "PRIVATE_SYNTHETIC_COMMIT_FAILURE" not in failed.output
     database = prepared.root / "paper-radar.sqlite3"
-    assert BodyService(database, prepared.root).decisions(prepared.paper_id) == ()
-    assert Acceptances(database, prepared.root).history() == ()
+    assert (
+        BodyService(database, prepared.root / "data").decisions(prepared.paper_id) == ()
+    )
+    assert Acceptances(database, prepared.root / "data").history() == ()
 
 
 @pytest.mark.parametrize(
@@ -715,7 +724,7 @@ def test_delegation_association_is_append_only(
     assert prepared.screen().exit_code == 0
     assert accept(prepared).exit_code == 0
     database = prepared.root / "paper-radar.sqlite3"
-    service = Acceptances(database, prepared.root)
+    service = Acceptances(database, prepared.root / "data")
     before = service.history()
     with (
         sqlite3.connect(database) as connection,

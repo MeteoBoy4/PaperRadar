@@ -605,7 +605,7 @@ def test_product_retry_receipt_executes_via_explicit_screen_and_continues_value(
         "--database",
         str(database),
         "--data-root",
-        str(prepared.root),
+        str(prepared.root / "data"),
         "--snapshot",
         prepared.snapshot,
         "--json",

@@ -366,20 +366,24 @@ def test_new_help_does_not_access_network_sqlite_or_create_directories(
 def prepared_preflight(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> tuple[Path, RuntimeConfigSnapshot, list[str]]:
+    import shutil
     from hashlib import sha256
 
     import yaml
 
-    from paper_radar.body import BodyService
     from paper_radar.config import compile_config
+    from paper_radar.experiment import ExperimentRoot
     from paper_radar.experiment.preflight import HostPaths
-    from paper_radar.pi_supply import activate_supply
+    from paper_radar.pi_supply import activate_supply, prepare_supply
     from tests import pi_supply_support
     from tests.config_extraction_support import EXTRACTION_YAML
     from tests.docling_runtime_support import environment
 
     environment(monkeypatch)
     monkeypatch.setattr(pi_supply_support, "PI", "1.4.0")
+    root = tmp_path / "experiment"
+    assert invoke("init", "--root", str(root)).exit_code == 0
+    layout = ExperimentRoot(root)
     source = pi_supply_support.inputs(tmp_path)
     settings = tmp_path / "config/settings.yaml"
     model_file = settings.parent / "models/models-v1.yaml"
@@ -435,16 +439,22 @@ def prepared_preflight(
         yaml.safe_dump(extraction)
     )
     settings.write_text(yaml.safe_dump(values))
-    snapshot = compile_config(settings, source[0])
-    prepared = pi_supply_support.prepare(
-        tmp_path, (source[0], snapshot.snapshot_id, *source[2:])
+    for directory in ("config", "prompts", "contracts"):
+        shutil.copytree(tmp_path / directory, root / directory, dirs_exist_ok=True)
+    snapshot = compile_config(layout.settings, layout.database)
+    prepared = prepare_supply(
+        layout.database,
+        snapshot.snapshot_id,
+        "screening",
+        source[2],
+        root / "pi-install",
+        data_root=layout.data_root,
+        config_root=layout.config,
+        material_root=root / "pi-materials",
+        downloader=source[3],
+        runner=source[4],
     )
-    activate_supply(source[0], prepared.supply_id, snapshot.snapshot_id)
-    root = tmp_path / "experiment"
-    root.mkdir()
-    BodyService(source[0], root).register_root("experiment")
-    source[0].rename(root / "paper-radar.sqlite3")
-    assert invoke("init", "--root", str(root)).exit_code == 0
+    activate_supply(layout.database, prepared.supply_id, snapshot.snapshot_id)
     waiver = CliRunner().invoke(
         app,
         [
@@ -529,9 +539,9 @@ def prepared_preflight(
         "--credentials-dir",
         str(credentials),
         "--material-root",
-        str(tmp_path / "materials"),
+        str(root / "pi-materials"),
         "--install-root",
-        str(tmp_path / "install"),
+        str(root / "pi-install"),
         "--attempt-root",
         str(tmp_path / "attempt"),
         "--model-root",
@@ -665,7 +675,7 @@ def test_static_preflight_reports_each_blocker_without_calls_or_business_writes(
     elif fault == "deployment":
         (tmp_path / "models/deployment.json").unlink()
     elif fault == "attempt":
-        args[args.index("--attempt-root") + 1] = str(root / "tmp")
+        args[args.index("--attempt-root") + 1] = str(root / "data/tmp")
     elif fault == "credential_root":
         args[args.index("--material-root") + 1] = str(tmp_path / "credentials")
     elif fault == "install_root":
@@ -689,7 +699,7 @@ def test_read_slot_cannot_borrow_screening_provider_or_auth_compatibility(
     from paper_radar.config import compile_config
 
     root, _, args = prepared_preflight(tmp_path, monkeypatch)
-    settings = tmp_path / "config/settings.yaml"
+    settings = root / "config/settings.yaml"
     models = yaml.safe_load((settings.parent / "models/models-b.yaml").read_text())
     models["version"] = "models-reading-other"
     models["reading"]["provider"] = "other-provider"
