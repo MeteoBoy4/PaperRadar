@@ -145,10 +145,10 @@ v1 历史使用冻结 v1 接收器，保留原接收记录；不追溯生成旧�
 - `evidence(analysis_id, evidence_id, *, ordinary=False)` 只回放保留条目实际引用的合法源切片。
 
 正文轴不读取配置：沿版本表的当前版本、该版本最新一次显式 PDF 附加选择、该 PDF
-唯一成功提取的正文三元组判断 current/historical/undeterminable。没有 PDF、没有成功提取
-或同 PDF 有多个不同成功三元组均不能猜测当前正文；CurrentRead.state 为 undeterminable，
+有效显式选择（无选择时为唯一成功提取）的正文三元组判断 current/historical/undeterminable。没有 PDF、没有成功提取
+或同 PDF 有多个不同成功三元组且没有有效显式选择均不能猜测当前正文；CurrentRead.state 为 undeterminable，
 identity_reason 分别为 pdf_absent/extraction_absent/ambiguous_extractions。
-后者等待显式正文选择能力，不能按最新配置或任意传入指纹选取；产品责任见路线图 B/F。
+后者可依[B 显式正文选择](stage-b-workflow.md#显式正文选择)记录所有者授权，不能按最新配置或任意传入指纹选取。
 同一依据同时进入 Body 当前资格装配：不能唯一确定时新登记/领取带 facts_changed 拒绝。
 历史 claim 引用核验保持独立，歧义、后来决定/样本/元数据/质量变化不抹除合法历史。
 

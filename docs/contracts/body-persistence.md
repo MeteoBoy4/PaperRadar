@@ -105,6 +105,24 @@ B 使用这些接缝保存[有界执行记录](stage-b-workflow.md#显式有界�
 
 ### 人工版式核查与同事务事实
 
+`paper_radar.body.selection.BodySelections(database, data_root)` 保存显式正文选择。
+`history(paper_id=None)` 只读验证并返回全部选择，按论文内持久 sequence 排列；
+`validate_all()` 同时由 Body 的唯一验证入口调用。选择保存根 ID、paper/version/revision、
+冻结 sample、明确 PDF attachment/SHA、选样授权、成功正文 fingerprint/reading SHA/evidence-map SHA、
+selector=owner、recorder=agent、request 和 UTC 时间。这两个本地角色不提供认证或签名。
+`select(record, *, guard)` 在写锁外完整加载正文四角色和 PDF 字节，写锁内重核轻量关系、
+当前样本、版本修订、PDF、选样及 visibility，原子追加完整选择；调用方 guard 只检查事务内事实。
+序号由 API 分配，UPDATE/DELETE/REPLACE 拒绝；同 request 精确重放，异内容 request_conflict。
+产品协调者先完整预验 PdfSamples，再组合这个接缝；其 API 和安全回执见
+[B 显式正文选择](stage-b-workflow.md#显式正文选择)。
+
+选择只取已成功注册的准确正文；新成功不自动改选。后继选择保留旧选择，
+当前版本/修订、样本、PDF 附件或选样变化使旧绑定失效。选择可早于六项人工核查，
+不产生质量通过，不解除旧指纹永久否决，不登记/结算 attempt、任务、预算或租约。
+已经领取的 Read 沿原三元组和历史 ReadBasis 结算；后续领取用同 Connection 当前正文重新核对。
+选择事实随数据库全表备份恢复并验证，不扩展既有 exposure 捕获表集合：
+其前置样本与选样已经进入暴露历史，旧导出继续严格验证原有 scope 和字段，旧报告保留冻结输入。
+
 `review_layout(identity, *, passed, checks, note, actor, request_id)` 独立追加记录，
 绑定 `(extraction_fingerprint, reading_sha256, evidence_map_sha256)`；
 checks 必须完整包含 `body_boundary/reading_order/sections/headers_footers/provenance/restricted_content`
@@ -144,8 +162,9 @@ extraction_input_in_connection(connection, fingerprint) 只读回放首次持久
 
 `current_body(paper_id)` 与 `current_body_in_connection(connection, paper_id)` 返回
 CurrentBody，保留当前正文三元组或 pdf_absent/extraction_absent/ambiguous_extractions 原因。
-它们与当前资格共用当前版本→最新显式 PDF→唯一成功正文的依据；不选择配置，不触发提取，
-多成功歧义不能由传入指纹覆盖。完整正文/配置两轴及展示边界见[Read 查询](read-tasks.md#展示查询与两轴)。
+它们与当前资格共用当前版本→最新显式 PDF→有效显式正文选择的依据；
+无有效选择时保留唯一成功行为，多成功仍歧义拒绝。传入指纹、当前配置和最新成功时间均不代替选择。
+不选择配置，不触发提取；完整正文/配置两轴及展示边界见[Read 查询](read-tasks.md#展示查询与两轴)。
 
 ## 错误与拒绝
 
