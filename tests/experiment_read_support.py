@@ -11,6 +11,7 @@ from typer.testing import CliRunner, Result
 from paper_radar.cli import app
 from paper_radar.config import compile_config
 from paper_radar.contracts import export_frozen_contract
+from paper_radar.fulltext.canonical import CanonicalDocument
 from tests.experiment_layout_support import LayoutFixture, layout_fixture
 from tests.pi_execution_support import PeerRun
 from tests.test_experiment_candidates_cli import FeedFixture, invoke
@@ -59,6 +60,7 @@ def read_fixture(
     *,
     mode: str = "normal",
     reviewed: bool = True,
+    canonical: CanonicalDocument | None = None,
 ) -> ReadFixture:
     original = PeerRun.__init__
     # 改写外部合成对端的发布字节;安装/保护/认证/准入及 ReadExecution 均真实。
@@ -107,7 +109,7 @@ def read_fixture(
         original(self, peer.replace(before, replacement + before))
 
     monkeypatch.setattr(PeerRun, "__init__", initialize)
-    layout = layout_fixture(feed, tmp_path, monkeypatch)
+    layout = layout_fixture(feed, tmp_path, monkeypatch, canonical=canonical)
     if reviewed:
         layout.review()
     root = layout.extraction.root
