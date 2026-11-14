@@ -325,6 +325,7 @@ def extract(
                 document_json=result.document_json,
                 warnings=result.warnings,
                 execution_audit=audit,
+                normalization_version=semantics.normalization_version.value,
             )
         except FulltextError:
             if observer is not None:

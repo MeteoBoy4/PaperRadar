@@ -1,7 +1,8 @@
-"""normalization v1:源块粒度、稳定序号和版面信号;不读取 SDK/数据库。"""
+"""版本化规范正文:保留 v1,显式 v2 修复版面与局部符号风险。"""
 
 import hashlib
 import json
+import re
 from collections import Counter
 from typing import Literal
 
@@ -59,7 +60,11 @@ def source_kind(label: str) -> Literal["text", "table", "formula"]:
     return "text"
 
 
-def normalize_document(document: CanonicalDocument) -> EvidenceMap:
+def normalize_document(
+    document: CanonicalDocument, *, version: Literal["v1", "v2"] = "v1"
+) -> EvidenceMap:
+    if version not in ("v1", "v2"):
+        raise FulltextError("invalid_members")
     if document.conversion_status != "success" or not document.pages_complete:
         raise FulltextError("conversion_incomplete")
     if not document.pages:
@@ -92,7 +97,12 @@ def normalize_document(document: CanonicalDocument) -> EvidenceMap:
             cover_pages.add(page.page_no)
         else:
             break
-    marginal = _repeated_marginal(blocks, document)
+    marginal = (
+        _repeated_marginal(blocks, document)
+        if version == "v1"
+        else _repeated_marginal_v2(blocks, document)
+    )
+    backmatter = _terminal_backmatter(blocks, marginal) if version == "v2" else set()
     sources: list[Source] = []
     reading: list[ReadingBlock] = []
     evidence: list[EvidenceEntry] = []
@@ -115,7 +125,11 @@ def normalize_document(document: CanonicalDocument) -> EvidenceMap:
             excluded = "cover"
         heading = None
         if block.label in ("title", "section_header") and excluded is None:
-            heading = min(max(block.heading_level or 1, 1), previous_heading + 1)
+            heading = (
+                1
+                if block.ref in backmatter
+                else min(max(block.heading_level or 1, 1), previous_heading + 1)
+            )
             previous_heading = heading
         if source_id:
             sources.append(
@@ -124,7 +138,15 @@ def normalize_document(document: CanonicalDocument) -> EvidenceMap:
                     orig=block.orig,
                     text=block.text,
                     kind=source_kind(block.label),
-                    unreliable=is_unreliable(block.orig, declared=block.unreliable),
+                    unreliable=is_unreliable(
+                        block.orig,
+                        declared=block.unreliable
+                        or (
+                            version == "v2"
+                            and source_kind(block.label) == "text"
+                            and _inline_symbol_duplication(block.orig)
+                        ),
+                    ),
                     provenance=block.provenance,
                 )
             )
@@ -160,6 +182,7 @@ def normalize_document(document: CanonicalDocument) -> EvidenceMap:
             )
         )
     return EvidenceMap(
+        normalization_version=version,
         has_text_layer=document.has_text_layer,
         pages=tuple(sorted(document.pages, key=lambda page: page.page_no)),
         source_blocks=tuple(sources),
@@ -214,3 +237,165 @@ def _repeated_marginal(
     repeated = Counter((text, page_no) for text, page_no, _ in candidates)
     occurrences = Counter(text for text, _ in repeated)
     return {ref for text, _, ref in candidates if occurrences[text] >= 2}
+
+
+def _repeated_marginal_v2(
+    blocks: list[CanonicalBlock], document: CanonicalDocument
+) -> set[str]:
+    """跨页同文同相对位置的页边文本,不依赖上游把横幅标成何种标题。"""
+    pages = {page.page_no: page for page in document.pages}
+    candidates: dict[tuple[str, tuple[float, ...]], list[tuple[int, str]]] = {}
+    for block in blocks:
+        if (
+            block.label not in {"text", "title", "section_header", *FURNITURE_LABELS}
+            or len(block.provenance) != 1
+            or not block.orig.strip()
+        ):
+            continue
+        p = block.provenance[0]
+        page = pages.get(p.page_no)
+        if page is None:
+            continue
+        x0, y0, x1, y1 = p.bbox
+        if p.origin == "bottom_left":
+            y0, y1 = page.height - y1, page.height - y0
+        if not (0 <= x0 < x1 <= page.width and 0 <= y0 < y1 <= page.height):
+            continue
+        if y1 <= page.height * 0.08 or y0 >= page.height * 0.92:
+            position = (
+                x0 / page.width,
+                y0 / page.height,
+                x1 / page.width,
+                y1 / page.height,
+            )
+            candidates.setdefault((block.orig.strip(), position), []).append(
+                (p.page_no, block.ref)
+            )
+    return {
+        ref
+        for occurrences in candidates.values()
+        if len({page for page, _ in occurrences}) >= 2
+        for _, ref in occurrences
+    }
+
+
+# 常见短功能词/代词/应答词不因大小写被当作变量。
+_INLINE_WORDS = frozenset(
+    [
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "but",
+        "by",
+        "can",
+        "did",
+        "do",
+        "for",
+        "go",
+        "had",
+        "has",
+        "he",
+        "her",
+        "him",
+        "his",
+        "how",
+        "i",
+        "if",
+        "in",
+        "is",
+        "it",
+        "its",
+        "may",
+        "me",
+        "my",
+        "no",
+        "nor",
+        "not",
+        "of",
+        "off",
+        "on",
+        "or",
+        "our",
+        "out",
+        "own",
+        "per",
+        "see",
+        "she",
+        "so",
+        "the",
+        "to",
+        "too",
+        "up",
+        "us",
+        "was",
+        "we",
+        "who",
+        "why",
+        "yes",
+        "yet",
+        "you",
+    ]
+)
+_INLINE_DUPLICATE = re.compile(r"(?<![\w])([A-Za-z]{1,3})[ \t]+\1(?![\w])")
+
+
+def _inline_symbol_duplication(text: str) -> bool:
+    """仅降级相邻重复的变量样短 token;字符与定位始终原样保留。"""
+    return any(
+        any(char.isupper() for char in match[1])
+        or not any(char in "aeiouy" for char in match[1])
+        for match in _INLINE_DUPLICATE.finditer(text)
+        if match[1].casefold() not in _INLINE_WORDS
+    )
+
+
+_BACKMATTER_ROLES = (
+    r"(?:data|code|software|materials?)?\s*availability(?: statement)?",
+    r"(?:conflicts? of interest|competing interests)(?: statement| declaration)?",
+    r"acknowledg(?:e)?ments?",
+    r"(?:references|bibliography)",
+    r"author contributions?(?: statement)?",
+    r"funding(?: statement| information)?",
+    r"(?:ethics approval|ethical approval|consent)(?: statement)?",
+)
+
+
+def _terminal_backmatter(blocks: list[CanonicalBlock], marginal: set[str]) -> set[str]:
+    """仅独立角色可分类的连续尾部标题组,且已有顶层锚,才对齐。"""
+    headings = [
+        block
+        for block in blocks
+        if block.label in {"title", "section_header"}
+        and block.ref not in marginal
+        and block.content_layer == "body"
+    ]
+    group: list[CanonicalBlock] = []
+    roles: set[int] = set()
+    for block in reversed(headings):
+        text = block.orig.strip().casefold().rstrip(".:：")
+        role = next(
+            (
+                index
+                for index, pattern in enumerate(_BACKMATTER_ROLES)
+                if re.fullmatch(pattern, text)
+            ),
+            None,
+        )
+        if role is None:
+            break
+        group.append(block)
+        roles.add(role)
+    if (
+        len(roles) < 2
+        or not any(block.heading_level == 1 for block in group)
+        or len({block.parent_ref for block in group}) != 1
+        or any(
+            block.parent_ref in {heading.ref for heading in headings} for block in group
+        )
+    ):
+        return set()
+    return {block.ref for block in group}

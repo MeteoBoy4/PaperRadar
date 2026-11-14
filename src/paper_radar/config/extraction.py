@@ -30,6 +30,7 @@ from paper_radar.config.schema import valid_declared_version
 
 class NormalizationVersion(StrEnum):
     V1 = "v1"
+    V2 = "v2"
 
 
 class ModelStage(StrEnum):
@@ -101,7 +102,7 @@ class Extraction(FrozenExtractionConfig):
     @classmethod
     def supported_normalization(cls, value: object) -> NormalizationVersion:
         if not isinstance(value, str):
-            raise ValueError("正文规范化只支持受控 v1")
+            raise ValueError("正文规范化只支持受控 v1/v2")
         return NormalizationVersion(value)
 
     def compiled_config(self) -> dict[str, object]:

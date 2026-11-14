@@ -8,7 +8,7 @@
 公共入口为 `paper_radar.fulltext.artifacts.FulltextArtifacts(ArtifactStore)`：
 
 - `publish(document, *, extraction_fingerprint, backend_config_hash, model_artifacts_hash,
-  elapsed_seconds, peak_memory_bytes, document_json=None, warnings=())` 返回
+  elapsed_seconds, peak_memory_bytes, document_json=None, warnings=(), normalization_version="v1")` 返回
   `PublishedExtraction(artifact_id, identity, quality, statistics)`。
 - `load(artifact_id, *, expected_identity, expected_language="zh")` 返回完整校验后的
   `LoadedExtraction`，含 `context`、`reading`、自动质量和统计。语言只接受 zh/en。
@@ -41,6 +41,17 @@ formal_gate。生产者保存完整但失败的制品供审计，`load` 拒绝�
 入口没有题名、DOI、摘要或数据库回调。normalization 只消费文档、布局、顺序和显式分类；
 不会以外部元数据补救封面识别。C1 单样本失败仍阻断 B，扩大输入须另行升格式并获裁决。
 
+### 版本选择与历史
+
+`normalization_version` 显式接受 `v1/v2`。低层 `publish` 和 `normalize_document`
+为既有调用者保留缺省 `v1`；生产 `BodyService.extract` 始终取已验证快照的版本，
+并传给发布器及执行审计。新运行选择新声明的 `normalization_version: v2`，
+不修改已登记版本或原制品；工具链、PDF 后端、模型/文件可保持相同身份。
+版本进入 extraction 配置投影与 StageInput，所以同 PDF 自然获得新指纹和独立预算。
+新版本不覆盖旧成功、旧否决或其已消耗预算，也不自动取得人工版式通过。
+manifest 与 evidence-map 必须声明同一版本；load 按持久成员恢复 v1/v2，
+不重跑规范化、不读取 document 审计或原 PDF。未知版本拒绝。
+
 ### normalization v1
 
 1. 按 `order` 字典序排序。排序后的第 N 块使用六位起始序号 `b000001`，
@@ -70,8 +81,32 @@ formal_gate。生产者保存完整但失败的制品供审计，`load` 拒绝�
    普通中英文、数学符号不据此猜为不可靠。U+FFFD 同时导致自动质量 text_integrity 失败；
    私用字符只标记 unreliable，由对应 Read 规则处理其降级。
 
-v1 的真实冻结以 smoke 结论为输入；首次真实 B 制品之后，任何上述语义变化必须升 normalization v2，
-改变 extraction 身份，不能沿用 v1 改写历史制品。
+### normalization v2
+
+除以下规则外保留 v1 的源块粒度、序号、封面、源/候选分离和逐字定位规则：
+
+1. 跨页页边检测纳入 `text/title/section_header/page_header/page_footer/page_number`。
+   先按 provenance 原点转成 top_left，仅合法 bbox 完全位于上下 8% 时作为候选。
+   strip 后同文且相对页面尺寸的 bbox 完全相同、至少出现于两个不同原页，才排除为 furniture。
+   同页、不同位置或非页边重复不排除；源字符与 provenance 仍保留。
+2. 尾部连续 `title/section_header` 组的标题，须可归为 availability、利益冲突、致谢、
+   参考文献、作者贡献、资助或伦理/同意的独立事项角色；仅英文受控词形。
+   至少两个不同角色、同一 parent、至少一个原始 level=1，且 parent 本身不是标题，
+   才把该组对齐为 level=1。带章节编号或不可分类标题中断该组；
+   不用相同父节点、bbox 高度或假设字体相同独自判定层级。其余仍用 v1 clamp，
+   真实编号子节和明确标题父子关系保留。此规则是保守结构/角色推断，不证明 PDF 字体相同。
+3. 文本源中相邻且仅以空格/tab 分隔的相同 ASCII 字母短 token（1–3 字母），
+   若包含大写或完全不含 `aeiouy`，且不属于代码内冻结的常见短功能词/代词/应答词，
+   则该源块 `unreliable=true`。text/caption 等普通文本均适用，单次重复即可；
+   不依赖不存在的 inline/span/字体信息，不去重或改写 `orig/text`，不改变 charspan。
+   普通中英文、非相邻变量、普通重复词保留；已有坏字符/显式 unreliable 规则继续适用。
+   这是局部风险检测，可能对变量样缩写重复保守降级，不能恢复原科学符号，
+   也不能穷尽其他重复、错序或解析损坏。缺少可恢复元数据时不生成替代原文。
+
+受限标签进入 evidence-map，并沿持久 `ReadContext` 传播；Read v2 的受限引用产生
+`restricted_source_reference` 程序警告，Read v1 保持原证据拒绝语义。
+版式材料的受限内容页同样显示这些源块。新规则不把普通正文全部标为受限。
+
 
 ### 四角色与非循环编码
 

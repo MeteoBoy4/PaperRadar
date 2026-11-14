@@ -348,6 +348,10 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 `paper_radar.docling_executor.DoclingParser` 通过显式模型根、超时和地址空间上限，
 在离线受限子进程中执行所选工具链；[执行契约与调用方式](docs/contracts/docling-execution.md)
 及[单样本真实 smoke 与隔离恢复记录](docs/verification/issue-164-docling-smoke.md)说明资源口径和能力上限。
+新提取可以在新的 extraction 声明中显式选择 `normalization_version: v2`，
+修复跨标签页边、保守尾部事项层级，并将变量样重复源字符降级；旧 v1 制品保持可回放。
+规则与限制见[规范正文](docs/contracts/fulltext-extraction.md#normalization-v2)，
+[新合成配置](examples/config/settings-extraction-v3.yaml)仍使用同一 cpu-v2 工具链与模型声明。
 外部 canonical parser 通过显式参数注入，
 只读事实可在调用者事务内核验；备份会重验正文业务闭包。
 接口、拒绝与限制见[正文持久化契约](docs/contracts/body-persistence.md)，
