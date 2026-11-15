@@ -5,7 +5,8 @@
 `paper-radar experiment` 在必填的显式 `--root` 中组合 B 实验动作。
 当前提供 `init`、`feed-fetch`、`candidates`、`select/selection`、`egress-authorize/status/check` 和静态
 `preflight`、显式无 prompt 映射探测 `probe-models` 与两阶段 `screen`、`accept`、`attach-pdf`、
-`extract` 及 `layout-materials/layout-review`；不推断 cwd 或父目录中的根。
+`extract`、`body-select/body-selections`、`layout-materials/layout-review`、`read`、
+`report render/rebuild/verify` 与 `export-exposure`；不推断 cwd 或父目录中的根。
 实验用途、执行来源和质量资格分别判断；组件规则仍由各自 Contract 定义。
 
 ## 规则
@@ -602,6 +603,16 @@ Read 成功/回执重放退出 0，参数/前置/运行拒绝 2，预算耗尽�
 标准恢复消费显式 database/data_root/output_dir，不改 manifest 布局；
 report validate_all 经本组合唯一聚合加入备份，现场隔离回放另按 B 闸门验收。
 
+### 脱网恢复组合
+
+`restore verify --replay-container` 与根级 `replay` 使用独立受限 worker，
+先自证原数据库/数据/配置/材料与逃逸链接不可读、实际禁网及后代继承，
+再组合全部 validate_all、Read evidence、固定日报/单篇重渲染和暴露 payload。
+contents 与库只读，输出限定封装内 views，移动及第二次回放仍完整核验；
+不读取原配置路径，不执行 Pi/Docling、不激活或回收，不改变预算/业务历史。
+准确来源、布局、退出码、隔离部署限制与未解决跨副本执行风险唯一规则见
+[备份/恢复 Contract](backup-restore.md#隔离脱网回放)；真实现场结论由 B 单独取得。
+
 ### 日志与命令帮助
 
 `report render` 显式装配所选根 FileSink；rebuild/verify 只读库、不建日志，守卫见
@@ -624,7 +635,8 @@ report validate_all 经本组合唯一聚合加入备份，现场隔离回放另
 守卫位于独立 D1 模块 `tests/test_experiment_feed_cli.py`；既有审计守卫保持原样。
 `init` 与只读候选投影不记录模型／来源执行日志；候选默认终端只输出身份、数量和相对
 文件名，完整题名／摘要只进入获准的私有快照与视图。帮助不联网、不开库、不建目录。全部命令的自动配额
-恒为 0；只有显式 `screen` 发送业务 prompt 并领取任务；`probe-models` 只进行无 prompt 映射探测。错误只投影封闭原因与白名单字段位置，不展开
+恒为 0；显式 `screen` 和 `read` 分别发送所选业务阶段的 prompt 并领取任务；
+`extract` 领取提取尝试；`probe-models` 只进行无 prompt 映射探测。错误只投影封闭原因与白名单字段位置，不展开
 异常自由文本、私有路径、HTTP 响应、Prompt、Profile、摘要、正文或凭据。
 
 ## 错误与拒绝
@@ -686,14 +698,3 @@ report validate_all 经本组合唯一聚合加入备份，现场隔离回放另
 - [Feed 组合](feed-pipeline.md)、[元数据](feed-metadata.md)、[正文持久化](body-persistence.md)、[运行日志](runtime-logging.md)。
 - [根与 Feed 工程覆盖](../verification/issue-187-experiment-feed.md)、[候选工程覆盖](../verification/issue-188-candidate-views.md)、[授权与预检工程覆盖](../verification/issue-189-egress-preflight.md)、[选样工程覆盖](../verification/issue-190-selection-authorization.md)、[Screening 工程覆盖](../verification/issue-192-screen-command.md)、[失败恢复与追踪工程覆盖](../verification/issue-193-recovery-trace.md)。
 - 依据：[#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)、[#187](https://github.com/MeteoBoy4/PaperRadar/issues/187)、[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。
-
-
-### 脱网恢复组合
-
-`restore verify --replay-container` 与根级 `replay` 使用独立受限 worker，
-先自证原数据库/数据/配置/材料与逃逸链接不可读、实际禁网及后代继承，
-再组合全部 validate_all、Read evidence、固定日报/单篇重渲染和暴露 payload。
-contents 与库只读，输出限定封装内 views，移动及第二次回放仍完整核验；
-不读取原配置路径，不执行 Pi/Docling、不激活或回收，不改变预算/业务历史。
-准确来源、布局、退出码、隔离部署限制与未解决跨副本执行风险唯一规则见
-[备份/恢复 Contract](backup-restore.md#隔离脱网回放)；真实现场结论由 B 单独取得。

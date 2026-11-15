@@ -15,6 +15,7 @@ from paper_radar.backup.restore import restore_backup
 from paper_radar.papers import PaperFacts
 from paper_radar.storage.database import upgrade_database
 from tests.config_test_support import run_cli
+from tests.stage_b_trace_support import workflow_snapshot
 from tests.test_paper_service import observation
 
 
@@ -41,6 +42,7 @@ def test_backup_restores_paper_identity_and_candidates_in_new_process(
         )
         assert repeated.status == "not_retained"
         expected = service.trace(result.paper_id).model_dump(mode="json")
+        expected["workflow"] = workflow_snapshot(database, data_root, result.paper_id)
         assert len(expected["acquisitions"]) == 2
         assert database.with_name(database.name + "-wal").stat().st_size > 0
         batch = create_backup(database, data_root, tmp_path / "backups")

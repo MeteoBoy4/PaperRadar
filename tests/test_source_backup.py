@@ -139,6 +139,11 @@ def test_nonempty_wal_backup_restores_all_source_history_in_new_process_after_mo
         wal.execute("SELECT count(*) FROM papers")
         assert service.submit(observation(payload=b"latest")).status == "retained"
         expected = service.trace(first.paper_id).model_dump(mode="json")
+        from tests.stage_b_trace_support import workflow_snapshot
+
+        expected["workflow"] = workflow_snapshot(
+            service.database, service.data_root, first.paper_id
+        )
         expected_history = history_view(service.database, service.data_root)
         assert (
             service.database.with_name(service.database.name + "-wal").stat().st_size

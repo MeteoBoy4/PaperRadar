@@ -49,7 +49,8 @@ trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型�
 
 这些工程入口不等于完整论文处理流水线或生产运行许可。目标与判据见
 [V1 规格](intent/draft.md)，当前前沿、未验范围与后续责任见[路线图](docs/roadmap.md)，
-已发布的工程证明见[文档与证据入口](#文档与证据入口)。
+B 的工程覆盖、最终冻结门禁条件与分开的签收索引见[B 收口台账](docs/verification/stage-b-engineering-closure.md)；
+其他已发布的工程证明见[文档与证据入口](#文档与证据入口)。
 
 ## 能力导航
 
@@ -570,7 +571,8 @@ value 通过 `register` 登记时由调用方提供语言事实，`register_feed
 Pi 一次执行已支持 models-v2 采样声明、共享受保护账本的三检查点准入、完整当前绑定、
 隔离启动、pi_rpc 权威成功与 Feed value 登记/恢复。默认严格模式缺少有效且人工激活的必需证据时拒绝，持久所有者豁免只移除证据前提；
 合成对端通过不代表真实认证、参数或 RPC 兼容。见 [执行契约](docs/contracts/pi-execution.md#一次任务执行组合)。
-后续产品入口与实验用途由 [B](docs/roadmap.md#module-b) 承接。
+当前显式实验入口与用途规则见 [B 工作流](docs/contracts/stage-b-workflow.md)；
+生产根与保留器、正式校准分别由 [C](docs/roadmap.md#module-c)、[D](docs/roadmap.md#module-d) 承接。
 
 ## JGR Feed 与元数据
 

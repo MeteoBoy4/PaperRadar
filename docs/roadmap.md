@@ -8,7 +8,9 @@
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-当前前沿是 [B](#module-b)，已规格化为 [#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)；所有者准备与授权见[grill 裁决](../intent/review/stage-b-grill-decisions.md)，质量、隔离与最小日报闸门仍按[规格 §11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)执行。
+当前没有满足规则的前沿模块；下一承接为 [C](#module-c)，仍待成形。
+[B](#module-b) 的工程范围与最终冻结门禁生效条件见[收口台账](verification/stage-b-engineering-closure.md)，
+所有者已签收的真实链与隔离恢复分别由该台账索引，证明范围仍按[规格 §11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)。
 
 to-spec 发布前仍须按[tracker 规则](agents/issue-tracker.md)重查原生关系。`J` 的「已完成」仅指判据固定，不指审计通过。
 
@@ -39,7 +41,7 @@ flowchart TD
   G --> H
   H --> I[I 最终验收]
   classDef completed fill:#bfdbfe
-  class J,Audit,Source,A,Pi,Live,Extra,Body,Feed completed
+  class J,Audit,Source,A,Pi,Live,Extra,Body,Feed,B completed
 ```
 
 ## 模块
@@ -58,7 +60,7 @@ flowchart TD
 | <a id="module-extra"></a>Extra | Docling extra 安装与兼容探测 | 已完成（[#150](https://github.com/MeteoBoy4/PaperRadar/issues/150)；[工程覆盖与最终门禁判据](verification/issue-150-extra-delivery.md)；[历史收口回帖](https://github.com/MeteoBoy4/PaperRadar/issues/150#issuecomment-6611646055)） | 无 | AFK |
 | <a id="module-body"></a>Body | 正文生产切片、Read 身份与预算 | 已完成（[#155](https://github.com/MeteoBoy4/PaperRadar/issues/155)；[工程覆盖与最终门禁判据](verification/issue-165-body-read-closure.md)） | Extra | AFK |
 | <a id="module-feed"></a>Feed | 强冲突持久化、JGR 元数据与语言事实 | 已完成（[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)；[离线工程证据](verification/issue-114-feed-delivery.md)） | 无 | AFK |
-| <a id="module-b"></a>B | B 实验根内纵向闭环 | 已规格化（[#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)） | A、Body、Feed、Source | HITL |
+| <a id="module-b"></a>B | B 实验根内纵向闭环 | 已完成（[#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)；[工程收口与最终门禁条件](verification/stage-b-engineering-closure.md)，结论按该条件生效） | A、Body、Feed、Source | HITL |
 | <a id="module-c"></a>C | C 生产根四刊积累、保留器与可见性 | 未成形 | B | HITL |
 | <a id="module-f"></a>F | F 全通道、四刊正文与摘录 fixture | 未成形 | C | HITL |
 | <a id="module-abstract"></a>Abstract | 四刊摘要稳定证据及判据裁决 | 待裁决 | C、F | HITL |
@@ -115,7 +117,7 @@ flowchart TD
 - G：I03、I09、T04、T07–T10、T13、T17–T20、T24；长文 reduce 的允许集合适用 v2 相同末次降级，评分理由始终整体拒绝；本轮 Body 仅 single 编排。
 - B：显式 Read/失败恢复及安全两轴的合成工程边界见[覆盖台账](verification/issue-198-explicit-read.md)；真实材料、Pi、逐文档所有者核查、日报与现场隔离恢复仍由 B 各自闸门承担，不将合成来源提升为 live。
 - B/F：当前正文查询遇到同一 PDF 的多个成功正文三元组时安全保留 undeterminable；
-  后续如需选定正文，须提供显式选择事实并与新领取资格共用，不能靠当前配置或传入指纹猜测。
+  显式正文选择与新领取共享 Body 权威，旧核查和永久否决保留；F 扩展质量场景时继续沿用此约束，不能靠当前配置或传入指纹猜测。
   规则见[Read 两轴查询](contracts/read-tasks.md#展示查询与两轴)。
 - B/H：承接 I04、I05、T05、T07、T08、T12 的分项披露，B 首个日报票验收共享片段在最小/健康/空日报的嵌入，H 完整日报保持 unknown、原状态与下一动作，片段不占论文容量，依据见[收口台账](verification/issue-168-176-live-admission-closure.md)；按 [ADR-0042](adr/0042-accept-read-v2-with-final-attempt-degradation.md) 显著展示受限内容未核对警告及丢弃标记/每类计数，不把降级结果展示为已核对或已支撑。
 - H：I06、I12、T15–T17、T23、T24；另承接 A3 历史证明未含的报告重建（[规格 §9.1](../intent/draft.md#91-本机一致性快照)）；E 沿用 I07、T02、T03、T11、T24 的共同约束。
@@ -131,6 +133,20 @@ Audit 首轮 live 沿用已有日志接线。D 负责未揭晓/揭晓、review/e
 H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 deferred 概念与真实组合验收。
 依据：[运行日志](contracts/runtime-logging.md)、[共享规则](contracts/eligibility-visibility.md)、
 [doctor](contracts/doctor.md)、[#120](https://github.com/MeteoBoy4/PaperRadar/issues/120)。
+
+### B 下游承接
+
+以下承接来源为[B 工程收口](verification/stage-b-engineering-closure.md)，不扩大阶段 A 历史证明；
+各节点继续承担前表的 I/T/D 原责任。
+
+| 下一节点 | 承接责任 |
+| --- | --- |
+| C | 独立长期生产根；在保留器启用前导入[冻结暴露清单](contracts/exposure-export.md)，按规范 DOI 与双向权威关系保留排除，覆盖重复发现、版本变化和未来合并；实验结果不提升、不复用 |
+| D | 完整确定性建议、reuse 执行与正式盲评校准；公开 Prompt 和 B 实验接受均不充当正式基线或盲评标签 |
+| F | 四刊／中文／复杂正文与摘录 fixture、通用资源阈值及正文质量；B 的单样本及 MemAvailable 披露不替代这些判据 |
+| G | 通用长文分块／reduce 与正常 Read 队列；超预算不得截断正文，延续逐阶段两次及显式 retry |
+| H | 完整日报／复核与其他展示面；沿用五／三项容量、冻结成员和依据、受限内容警告、unknown／not_assessed 与共享 visibility |
+| I | NAS、无人值守与最终恢复；重新评估原根／副本并行执行的外发授权、预算、租约和重复执行风险，本机内容回放不提供跨副本协调 |
 
 ## 待裁决
 
@@ -180,6 +196,7 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 | Pi | [#140](https://github.com/MeteoBoy4/PaperRadar/issues/140) | [独立工程覆盖与同次门禁判据](verification/issue-140-gate-followup.md)；现场证明由可选证据链承接 |
 | Extra | [#150](https://github.com/MeteoBoy4/PaperRadar/issues/150) | [独立工程覆盖与最终门禁判据](verification/issue-150-extra-delivery.md)；Body/B/F 继续独立验收 |
 | Body | [#155](https://github.com/MeteoBoy4/PaperRadar/issues/155) | [#165 工程覆盖与最终门禁判据](verification/issue-165-body-read-closure.md)；B/F/G/H 继续独立承接，真实单样本仍限 #164 |
+| B | [#185](https://github.com/MeteoBoy4/PaperRadar/issues/185) | [工程范围、覆盖与最终门禁条件](verification/stage-b-engineering-closure.md)；[版式签收](verification/issue-204-live-layout-acceptance.md)、[真实链签收](verification/issue-205-live-chain-acceptance.md)、[隔离恢复签收](verification/issue-205-recovery-acceptance.md)各保留自己的范围 |
 
 ## 已取消
 
