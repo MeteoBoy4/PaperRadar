@@ -15,6 +15,7 @@ from paper_radar.backup.restore_contract import RestoreError
 from tests.backup_support import tree
 from tests.config_test_support import run_cli
 from tests.feed_support import facts, item
+from tests.stage_b_trace_support import workflow_snapshot
 from tests.test_paper_service import observation
 
 
@@ -74,6 +75,10 @@ def test_feed_backup_restores_originals_and_interpretations_after_move(
             )
             for paper_id in (first.paper_id, third.paper_id)
         }
+        for paper_id, trace in expected.items():
+            trace["workflow"] = workflow_snapshot(
+                service.database, service.data_root, paper_id
+            )
         assert (
             service.database.with_name(service.database.name + "-wal").stat().st_size
             > 0
