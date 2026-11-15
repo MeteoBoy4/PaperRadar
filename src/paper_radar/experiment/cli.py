@@ -549,7 +549,9 @@ def egress_authorize(
             selected.database,
             resolve_config_snapshot_reference(selected.database, snapshot),
         )
-        grants = selected_grants(config, stage)
+        from paper_radar.experiment.egress import parse_stages
+
+        grants = selected_grants(config, parse_stages(stage))
         log = RuntimeLog(FileSink(root))
         with log.operation("experiment", run=True):
             state = record_egress_authorization(
@@ -621,7 +623,9 @@ def egress_check(
             selected.database,
             resolve_config_snapshot_reference(selected.database, snapshot),
         )
-        for grant in selected_grants(config, stage):
+        from paper_radar.experiment.egress import parse_stages
+
+        for grant in selected_grants(config, parse_stages(stage)):
             require_egress_authorization(
                 selected,
                 stage=grant.stage,

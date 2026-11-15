@@ -290,6 +290,7 @@ def query_paper_trace(
                 item.selected_at,
             )
             for item in selections
+            if item.paper_id == paper_id
         ),
         queries,
         projection,

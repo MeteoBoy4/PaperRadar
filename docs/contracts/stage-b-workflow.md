@@ -450,7 +450,11 @@ accepted、文件哈希与版本；中断可同 request 续办，内容冲突不
 快照前按所选文件实际总大小核对 `tempfile` 实际临时根的可用磁盘，空间不足拒绝，
 不使用开发环境或 Pi 的磁盘阈值；复制期间失败仍按既有预检受控拒绝。
 
-入口只读 `/proc/self/cgroup` 与 v2 mountinfo，定位当前进程所属组并要求
+入口只读 `/proc/self/cgroup` 与 v2 mountinfo，核对当前 UID 的
+`user.slice/user-UID.slice/user@UID.service` 归属，并以有界的
+`systemctl --user show` 核对已加载、active、transient scope 的 Id 与精确 ControlGroup；
+仅名称以 .scope 结尾或数值限制合格不足以放行。挂载 root 映射与软链拒绝仍成立。
+定位当前进程所属组并要求
 `0 < memory.max ≤ 8 GiB`、`memory.swap.max = 0`；无限、缺失、不可读、歧义、越界路径或链接拒绝。
 它在根锁前及等待根锁后、领取事务前重新核验；更换所属组拒绝。
 主机 `MemAvailable` 仅披露实际字节或 unknown，不设置硬下限，也不解释为容量足够。
@@ -635,6 +639,8 @@ contents 与库只读，输出限定封装内 views，移动及第二次回放�
 见 `tests/test_experiment_accept_cli.py` 与 `tests/test_experiment_pdf_cli.py`。原文理由、模型正文和凭据不进入回执或日志。
 `extract` 的独立入口／日志／隐私守卫在 `tests/test_experiment_extract_cli.py`；
 只读 trace 不追加日志，帮助在冷进程禁止网络与 SQLite 后仍可用。
+隔离 replay 的所选输出根为恢复封装 SESSION/views；组件注入该根的 FileSink，
+只读历史与派生重建不发运行事件，因此不建 logs，遵守恢复输出闭集。
 `layout-review` 显式装配所选根文件汇；独立执行入口／说明隐私守卫在
 `tests/test_experiment_layout_cli.py`，`layout-materials` 只生成私有视图、不建日志。
 `egress-authorize` 显式注入 `FileSink(root)`，仅记录 component=experiment 的入口/结尾事件；
@@ -648,6 +654,10 @@ contents 与库只读，输出限定封装内 views，移动及第二次回放�
 异常自由文本、私有路径、HTTP 响应、Prompt、Profile、摘要、正文或凭据。
 
 ## 错误与拒绝
+
+产品异常的未知运行时原因正规化为 `invalid_reason`，不回显未受控原输入；
+核对调用方使用的封闭原因词汇后重试。只读报告内核的写入口以
+`output_directory_required` 在写事实前拒绝，使用显式输出目录的 Reports 入口。
 
 | 退出码／原因 | 含义与下一步 |
 | --- | --- |

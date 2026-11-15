@@ -31,7 +31,7 @@ class ReportEntry(SnapshotModel):
 
 
 class ReportInput(SnapshotModel):
-    renderer_version: Literal[1] = 1
+    renderer_version: Literal[1, 2] = 1
     report_id: str
     kind: Literal["daily", "paper"]
     scope: Literal["experiment"] = "experiment"
@@ -52,7 +52,9 @@ class ReportInput(SnapshotModel):
 
 def validate_input(value: ReportInput) -> None:
     if (
-        str(UUID(value.report_id)) != value.report_id
+        type(value.renderer_version) is not int
+        or value.renderer_version not in (1, 2)
+        or str(UUID(value.report_id)) != value.report_id
         or date.fromisoformat(value.report_date).isoformat() != value.report_date
         or not ZoneInfo(value.timezone)
         or len(value.entries) > 5
@@ -66,7 +68,13 @@ def validate_input(value: ReportInput) -> None:
         raise ValueError("registration_invalid")
     for position, entry in enumerate(value.entries, 1):
         if (
-            (entry.position, entry.display_number) != (position, f"N{position}")
+            (value.renderer_version == 1 and "evidence_sections" in entry.basis)
+            or (
+                value.renderer_version == 2
+                and entry.primary_kind == "analysis"
+                and not isinstance(entry.basis.get("evidence_sections"), dict)
+            )
+            or (entry.position, entry.display_number) != (position, f"N{position}")
             or entry.first_publication_key
             != f"{entry.primary_kind}:{entry.primary_ref}"
             or (entry.primary_kind == "analysis") != (entry.analysis_id is not None)
@@ -102,7 +110,7 @@ def render(value: ReportInput) -> bytes:
         "",
         "**实验范围：experiment；实验建议与报告无自动决定权。**",
         f"报告：{value.report_id}；日期：{value.report_date}；时区：{value.timezone}；"
-        f"固定时点：{value.frozen_at}；renderer=1",
+        f"固定时点：{value.frozen_at}；renderer={value.renderer_version}",
         "",
         "## 运行摘要",
         "；".join(f"{key}={count}" for key, count in sorted(value.summary.items())),
@@ -188,9 +196,22 @@ def render(value: ReportInput) -> bytes:
                         ),
                         "",
                         "### Evidence（页码／章节／bbox／charspan）",
-                        "page_no 为原页码；char_span=start:end；"
-                        "章节=unknown（未提供稳定章节定位）。",
-                        _block(payload["evidence"]),
+                        (
+                            "page_no 为原页码；char_span=start:end；"
+                            "章节=unknown（未提供稳定章节定位）。"
+                            if value.renderer_version == 1
+                            else "page_no 为原页码；char_span=start:end；"
+                            "sections 引用持久正文源标题路径；"
+                            "无持久章节时逐源披露 unavailable。"
+                        ),
+                        _block(
+                            payload["evidence"]
+                            if value.renderer_version == 1
+                            else dict(
+                                source_slices=payload["evidence"],
+                                sections=entry.basis["evidence_sections"],
+                            )
+                        ),
                     )
                 )
             else:

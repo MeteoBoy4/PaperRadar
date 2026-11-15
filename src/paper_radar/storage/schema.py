@@ -35,7 +35,7 @@ report_runs = Table(
     Column("published_at", Text),
     CheckConstraint("kind IN ('daily','paper')"),
     CheckConstraint("scope='experiment'"),
-    CheckConstraint("renderer_version=1"),
+    CheckConstraint("renderer_version IN (1,2)"),
     CheckConstraint("state IN ('prepared','published')"),
 )
 

@@ -4,51 +4,14 @@ PaperRadar 是面向单个研究者的论文发现与研读流水线。当前提
 备份恢复、论文事实、Screening 任务与输出验证、Read 证据校验、Pi 固定供给与有界 RPC
 组件，以及 JGR Feed／元数据取得服务、四刊摘要审计工具、只读 doctor、
 安全运行日志与共享资格／校准可见性纯规则，以及不依赖 SDK 的规范正文生产与持久证据回查。
-`experiment init/feed-fetch/candidates` 提供显式实验根初始化、JGR v2 生产取得
-与固定事实修订的私有候选清单；`experiment select/selection` 保存选样接受授权及换样历史，
-按当前完整依据重新核对就绪，重放仅返回原回执；
-`experiment egress-authorize/status/check` 登记与核对范围外发授权，`experiment preflight`
-汇总两槽、隔离与资源静态阻断，不刷新认证或启动模型；主机 MemAvailable 仅披露，
-不设可用内存硬下限，也不把实测值解释为容量足够。
-`experiment screen` 显式执行有效选样的 boundary → value，重放只回原回执；
-`--receipt-id` 只执行明确回执，`--continue-value` 从已恢复的 boundary 显式登记 value；
-失败不自动增代，out_of_scope 停止 value。
-`experiment accept PAPER --selection-id SELECTION --snapshot SNAPSHOT --request-id REQUEST
---root ROOT` 依预先选样授权代执行 accepted；决定、两阶段成功引用与授权关联原子追加，
-trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型输出。
-`experiment attach-pdf` 先保存所有者独立的 PDF 归属/合法性确认，再原子附加并冻结样本；
-冻结版本、SHA-256、选样及接受关联均可追踪，中断可按原 request 续办。
-`experiment extract` 在核验当前进程 cgroup ≤8 GiB、无 swap、部署与快照磁盘后，
-显式执行冻结样本的一次 Body 提取；worker 与历史组峰值分列，失败停止，不调用 Read。
-同 PDF 有多个成功正文时，`experiment body-select` 由所有者授权、Agent 代录明确三元组的选择；
-`experiment body-selections` 只读保留历史。选择不授予 Read、不重置预算；
-规则见[B 工作流](docs/contracts/stage-b-workflow.md#显式正文选择)。
-`experiment layout-materials` 从登记 PDF 与持久正文生成六项私有图文对照，不重跑 Docling；
-`experiment layout-review` 显式接收所有者全部六项布尔结论，区分所有者核查与 Agent 代录，
-否决对该正文指纹永久生效。
-`experiment read` 显式登记当前正文的默认中文 Read 并最多驱动本代剩余两次尝试；
-精确 request 重放不执行；已有 ready 任务用 `--task-id` 继承冻结语言和指纹继续，不另建请求或预算。
-`reading tasks/failures/reclaim` 提供全库安全查询与显式过期结算；
-`reading failures --database DATABASE --data-root DATA_ROOT --snapshot SNAPSHOT`
-提供披露根用途的根中性只读失败查询，兼容原 `--root` 列表输出；规则见[Read 任务](docs/contracts/read-tasks.md)。
-`reading retry PAPER --root ROOT --snapshot SNAP --request-id REQUEST --reason REASON --actor owner`
-从当前失败唯一定位父代并只登记后继，歧义拒绝；可选 `--task-id` 仍须当前/latest/failed。
-后继再用 `experiment read ... --task-id CHILD` 显式执行，精确 retry 重放不续跑；
-`reading analysis` 是含未核对警告、丢弃计数和逐字 evidence 的获准私有视图。
-`experiment report render --root ROOT --date YYYY-MM-DD --timezone Asia/Shanghai` 发布固定实验日报；
-`--analysis-id ANALYSIS` 生成单篇，`report rebuild/verify REPORT --root ROOT` 重建或核验。
-已发布日报固定成员与字节，晚到分析等待次日日报；私有内容与恢复接口见[报告 Contract](docs/contracts/reports.md)。
-`experiment export-exposure --root ROOT` 冻结全历史的已暴露 DOI、权威版本关联和依据类别，
-保存私有 `views/exposure/SHA256.json`，失败与换下样本保留；候选题名／摘要展示不计。
-格式及 C 的机械排除约定见[暴露导出 Contract](docs/contracts/exposure-export.md)。
-这些动作不建人工精读请求、不占自动名额，实验分析及其恢复副本始终被普通消费拒绝。
-`experiment probe-models` 显式对 screening/reading 分别执行无 prompt RPC 映射探测，
-认证可能刷新并写回专用凭据；只说明本次模型与档位可设置，不提供生成或准入证明。
-实验根将制品放在 `data/`，数据库保持根内原位置；Pi 供给四根可并列，
-非空旧顶层制品布局受控拒绝并保留原材料。根布局、用途守卫及安全输出见[B 实验工作流](docs/contracts/stage-b-workflow.md)。
-仓库还提供 B 首版 boundary、value、reading 与 Pi 系统生产 Prompt，材料位置、
-复制登记与冻结规则见[公开生产 Prompt](docs/contracts/runtime-config.md#公开生产-prompt)。
-
+实验入口覆盖 JGR 取得与私有候选、选样接受授权、两阶段 Screening、PDF 确认、
+有界提取、显式正文选择、六项版式核查、Read、固定报告及暴露导出。
+命令示例、根布局、前置条件、授权、预算与重放规则见
+[B 实验工作流](docs/contracts/stage-b-workflow.md)。
+实验报告与隔离恢复分别见[报告](docs/contracts/reports.md)和
+[备份/恢复](docs/contracts/backup-restore.md#隔离脱网回放)。
+仓库提供公开生产 Prompt；位置与冻结规则见
+[运行配置](docs/contracts/runtime-config.md#公开生产-prompt)。
 这些工程入口不等于完整论文处理流水线或生产运行许可。目标与判据见
 [V1 规格](intent/draft.md)，当前前沿、未验范围与后续责任见[路线图](docs/roadmap.md)，
 B 的工程覆盖、最终冻结门禁条件与分开的签收索引见[B 收口台账](docs/verification/stage-b-engineering-closure.md)；

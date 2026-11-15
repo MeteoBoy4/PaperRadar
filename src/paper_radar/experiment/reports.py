@@ -16,7 +16,9 @@ from paper_radar.eligibility import QualityBasis, QualityFailure, RootPurpose
 from paper_radar.experiment.acceptance import Acceptances, DelegatedAcceptance
 from paper_radar.experiment.layout import LayoutReviews
 from paper_radar.experiment.reading import analysis_payload
+from paper_radar.experiment.reasons import ReportReason
 from paper_radar.experiment.report_rendering import ReportEntry, ReportInput, render
+from paper_radar.experiment.report_sections import evidence_sections
 from paper_radar.experiment.selections import SelectionRecord, Selections
 from paper_radar.feed_ingestion import JGRFeed
 from paper_radar.feed_ingestion import tables as feed_tables
@@ -30,6 +32,7 @@ from paper_radar.runtime_logging.events import Clock
 from paper_radar.screening.reasons import ScreeningResult
 from paper_radar.screening_tasks import ScreeningTasks
 from paper_radar.screening_tasks import tables as screening_tables
+from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.filesystem import (
     UnsafePathError,
     controlled_path,
@@ -46,8 +49,8 @@ from paper_radar.storage.schema import report_entries, report_runs
 
 
 class ReportError(ValueError):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
+    def __init__(self, reason: ReportReason | str) -> None:
+        self.reason = reason = ReportReason(reason)
         super().__init__(
             f"{reason}：报告操作停止；请核对报告身份、固定成员、制品闭包与受控路径；"
             "篡改先 verify，缺失投影可 rebuild；不重新执行模型。"
@@ -109,7 +112,7 @@ class Reports:
         self,
         database: Path,
         data_root: Path,
-        output_dir: Path,
+        output_dir: Path | None,
         *,
         clock: Clock | None = None,
         sink: Sink | None = None,
@@ -226,6 +229,8 @@ class Reports:
         analysis_id: str,
         snapshot_id: str | None,
         records: tuple[tuple[DelegatedAcceptance, ...], tuple[SelectionRecord, ...]],
+        *,
+        renderer_version: Literal[1, 2] = 2,
     ) -> ReportEntry:
         tasks = ReadTasks(self.database, self.data_root)
         analysis = tasks.analysis(analysis_id)
@@ -274,6 +279,19 @@ class Reports:
         payload = analysis_payload(
             self.database, self.data_root, analysis_id, snapshot_id=snapshot_id
         )
+        sections = (
+            {
+                "evidence_sections": evidence_sections(
+                    ArtifactStore(self.database, self.data_root),
+                    analysis,
+                    tuple(payload["evidence"])
+                    if isinstance(payload["evidence"], dict)
+                    else (),
+                )
+            }
+            if renderer_version == 2
+            else {}
+        )
         return ReportEntry(
             position=1,
             display_number="N1",
@@ -295,6 +313,7 @@ class Reports:
                 screening=outputs,
                 acceptance=acceptance.model_dump(mode="json"),
                 authorization=selection.model_dump(mode="json"),
+                **sections,
             ),
         )
 
@@ -567,8 +586,12 @@ class Reports:
                     feed_tables.checks.c.check_id, feed_tables.checks.c.feed_id
                 ).order_by(feed_tables.checks.c.event_no)
             ).all()
+            metadata_service = JGRMetadata(self.database, self.data_root)
             metadata = tuple(
-                connection.execute(select(metadata_tables.runs.c.request_key)).scalars()
+                metadata_service.result_in_connection(connection, paper_id)
+                for paper_id in connection.execute(
+                    select(metadata_tables.runs.c.paper_id).distinct()
+                ).scalars()
             )
             screenings = connection.execute(
                 select(func.count()).select_from(screening_tables.successes)
@@ -595,12 +618,9 @@ class Reports:
                     f"Feed 异常：check={check} reason={view.reason}；"
                     "下一步：回查原 Feed 检查与条目。"
                 )
-        metadata_service = JGRMetadata(self.database, self.data_root)
-        latest_metadata = {}
-        for key in metadata:
-            view_metadata = metadata_service.replay(key)
-            latest_metadata[view_metadata.paper_id] = view_metadata
-        for view_metadata in latest_metadata.values():
+        for view_metadata in metadata:
+            if view_metadata is None:
+                raise ReportError("registration_invalid")
             if not view_metadata.nontruncated_complete:
                 warnings.append(
                     f"元数据不可得：paper={view_metadata.paper_id} "
@@ -669,6 +689,7 @@ class Reports:
     ) -> dict[str, object]:
         """显式发布:首次冻结,随后只复用;daily 与 paper 修订身份分开。"""
         _visible()
+        self._require_output()
         _day(day, timezone)
         root_id = self._root()
         kind: Literal["daily", "paper"] = "paper" if analysis_id else "daily"
@@ -731,6 +752,7 @@ class Reports:
                                 )
                             )
                         inputs = ReportInput(
+                            renderer_version=2,
                             report_id=str(uuid4()),
                             kind=kind,
                             root_id=root_id,
@@ -754,7 +776,7 @@ class Reports:
                                 timezone=timezone,
                                 input_fingerprint=sha(payload),
                                 projection_json=payload,
-                                renderer_version=1,
+                                renderer_version=inputs.renderer_version,
                                 relative_path=inputs.relative_path,
                                 content_sha256=sha(render(inputs)),
                                 state="prepared",
@@ -788,7 +810,13 @@ class Reports:
                 )
             return self.receipt(old)
 
+    def _require_output(self) -> None:
+        if self.output_dir is None:
+            raise ReportError("output_directory_required")
+
     def _path(self, relative: str, *, create: bool) -> Path:
+        self._require_output()
+        assert self.output_dir is not None
         try:
             # 输出根自身及全部现有祖先拒绝软链;不能将任意路径解析成获准目录。
             for parent in (self.output_dir, *self.output_dir.parents):
@@ -813,7 +841,10 @@ class Reports:
                 self._validate_nonanalysis(entry, records)
                 continue
             current = self._analysis_entry(
-                entry.primary_ref, inputs.snapshot_id, records
+                entry.primary_ref,
+                inputs.snapshot_id,
+                records,
+                renderer_version=inputs.renderer_version,
             )
             frozen_basis = dict(entry.basis)
             current_basis = dict(current.basis)
@@ -979,6 +1010,7 @@ class Reports:
 
     def rebuild(self, report_id: str) -> dict[str, object]:
         """仅恢复投影文件;可接受 prepared run,不更新发布状态、库或任务。"""
+        self._require_output()
         _visible()
         inputs, row = self._load(report_id)
         self._validate_sources(inputs)
@@ -1080,6 +1112,7 @@ class Reports:
         调用者不能传入已验证状态;普通 rebuild/verify 仍各自完整核验。
         """
         _visible()
+        self._require_output()
         result = []
         for report_id in self._history_ids():
             inputs, row = self._load(report_id)
@@ -1091,3 +1124,26 @@ class Reports:
             self._verify_projection(inputs, row)
             result.append(self.receipt(report_id))
         return tuple(result)
+
+
+class ReportHistory:
+    """没有发布/重建入口的只读历史接口,不伪造输出目录。"""
+
+    def __init__(self, database: Path, data_root: Path) -> None:
+        self._reports = Reports(database, data_root, None)
+
+    def history(self) -> tuple[ReportInput, ...]:
+        return self._reports.history()
+
+    def validate_all(self) -> None:
+        self._reports.validate_all()
+
+    def exposure_scope_in_connection(
+        self, connection: Connection
+    ) -> dict[str, HistoryBoundary]:
+        return self._reports.exposure_scope_in_connection(connection)
+
+    def exposure_history_in_connection(
+        self, connection: Connection, through: dict[str, HistoryKeys] | None = None
+    ) -> tuple[HistoryPage, ...]:
+        return self._reports.exposure_history_in_connection(connection, through)

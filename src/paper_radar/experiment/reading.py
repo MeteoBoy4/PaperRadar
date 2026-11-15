@@ -22,6 +22,7 @@ from paper_radar.experiment.egress import (
 )
 from paper_radar.experiment.layout import LayoutError, LayoutReviews, load_body
 from paper_radar.experiment.pdf import FrozenSample, PdfError, PdfSamples
+from paper_radar.experiment.reasons import ReadingReason
 from paper_radar.experiment.root import ExperimentError, ExperimentRoot
 from paper_radar.feed_metadata.repository import transaction
 from paper_radar.fulltext.models import FulltextError
@@ -37,8 +38,8 @@ from paper_radar.storage.schema import body_layout_reviews, experiment_layout_re
 
 
 class ReadingError(ValueError):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
+    def __init__(self, reason: ReadingReason | str) -> None:
+        self.reason = reason = ReadingReason(reason)
         super().__init__(
             f"{reason}：Read 已停止;核对当前选样、PDF、唯一正文、所有者六项核查、"
             "egress-status 与 doctor;running 须等待或显式 reclaim，耗尽须显式 retry;"

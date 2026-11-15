@@ -18,6 +18,7 @@ from paper_radar.doctor.pi_exec import execution_checks
 from paper_radar.doctor.service import Check, Result, basic_checks
 from paper_radar.experiment.egress import (
     EgressError,
+    Stage,
     require_egress_authorization,
     selected_grants,
 )
@@ -354,7 +355,8 @@ def preflight_checks(
                 root.database, snapshot, credentials_dir, slot=slot
             )
         )
-    for stage in ("boundary", "value", "read"):
+    stages: tuple[Stage, ...] = ("boundary", "value", "read")
+    for stage in stages:
         try:
             grant = selected_grants(selected, [stage])[0]
             require_egress_authorization(

@@ -12,7 +12,7 @@ from sqlalchemy import Connection, insert, select
 from paper_radar.body import BodyService
 from paper_radar.eligibility import RootPurpose
 from paper_radar.experiment.pdf import PdfSamples
-from paper_radar.experiment.reports import Reports
+from paper_radar.experiment.reports import ReportHistory
 from paper_radar.experiment.selections import Selections
 from paper_radar.feed_metadata.repository import canonical, sha, transaction
 from paper_radar.papers import PaperFacts, normalize_doi
@@ -143,7 +143,7 @@ class Exposures:
             ReadTasks(database, data_root),
             self.body,
             PdfSamples(database, data_root),
-            Reports(database, data_root, data_root),
+            ReportHistory(database, data_root),
         )
 
     def _root(self, connection: Connection) -> str:

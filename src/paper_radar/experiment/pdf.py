@@ -14,6 +14,7 @@ from paper_radar.body.queries import current_pdf, root_fact
 from paper_radar.calibration import visibility
 from paper_radar.experiment.acceptance import Acceptances, DelegatedAcceptance
 from paper_radar.experiment.candidates import SnapshotModel
+from paper_radar.experiment.reasons import PdfReason
 from paper_radar.experiment.root import ExperimentRoot
 from paper_radar.experiment.selections import SelectionRecord, Selections
 from paper_radar.feed_metadata.repository import canonical, sha, transaction
@@ -36,8 +37,8 @@ from paper_radar.storage.schema import (
 
 
 class PdfError(ValueError):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
+    def __init__(self, reason: PdfReason | str) -> None:
+        self.reason = reason = PdfReason(reason)
         super().__init__(
             f"{reason}：PDF 确认或冻结未完成；请核对所有者归属与合法性确认、"
             "有效 selection/accepted、冻结版本和文件 SHA-256；"

@@ -1,0 +1,131 @@
+{
+  "archive_sha256": "27e3f911f0092fc8afd223afd781c99376071864f19f4c39f97b224ece0c049d",
+  "excluded": [
+    "logs",
+    "credentials",
+    "auth files",
+    "model runtime",
+    "config filesystem"
+  ],
+  "format_version": 1,
+  "members": [
+    {
+      "bytes": 1417216,
+      "mode": "0o644",
+      "path": "paper-radar.sqlite3",
+      "sha256": "88184773060ae46ad8da9e1d7b606e7af0dedef781d7c81be4677e401005cbfd"
+    },
+    {
+      "bytes": 0,
+      "mode": "0o600",
+      "path": "data/.body-docling.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "mode": "0o600",
+      "path": "data/.body-read.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 70,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/04/04f24a65fdfd5317234367ef0a6edaccadc4f1a8b61babd67cd3019147064a37",
+      "sha256": "04f24a65fdfd5317234367ef0a6edaccadc4f1a8b61babd67cd3019147064a37"
+    },
+    {
+      "bytes": 697,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/19/191e8716b9e995cede7c89d418ae9232b89462b575bbef8f2a024dd02c05ceae",
+      "sha256": "191e8716b9e995cede7c89d418ae9232b89462b575bbef8f2a024dd02c05ceae"
+    },
+    {
+      "bytes": 399,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/25/25655cf4893bce8b090e03cf6ec1a52f5466a448b9425beacb7b4fc0e58ae8e7",
+      "sha256": "25655cf4893bce8b090e03cf6ec1a52f5466a448b9425beacb7b4fc0e58ae8e7"
+    },
+    {
+      "bytes": 1142,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/2a/2ac0d07da997469c5c7bd85c0c2e6c973277b36e661fc80019dbacedacbfceee",
+      "sha256": "2ac0d07da997469c5c7bd85c0c2e6c973277b36e661fc80019dbacedacbfceee"
+    },
+    {
+      "bytes": 398,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/35/35f8239f8c5d3fc93e1c894cc968053fe78b4323964d4b26ebf5e5e37e239c81",
+      "sha256": "35f8239f8c5d3fc93e1c894cc968053fe78b4323964d4b26ebf5e5e37e239c81"
+    },
+    {
+      "bytes": 2,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/44/44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "bytes": 1642,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/44/44af8ef407d4f2ef61fc6e42eb70001a03751dfa2faa18cecb977e93524ecdd2",
+      "sha256": "44af8ef407d4f2ef61fc6e42eb70001a03751dfa2faa18cecb977e93524ecdd2"
+    },
+    {
+      "bytes": 65,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/54/549f890ec74a0d5f0a9c28954f596a717ec55c51e850b0a117fd0efe824a847a",
+      "sha256": "549f890ec74a0d5f0a9c28954f596a717ec55c51e850b0a117fd0efe824a847a"
+    },
+    {
+      "bytes": 339,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/61/610187d4d9e9753798cd342833308812edab8933a51a0f15b66db723d60f6f78",
+      "sha256": "610187d4d9e9753798cd342833308812edab8933a51a0f15b66db723d60f6f78"
+    },
+    {
+      "bytes": 399,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/94/94bb4c2504f2d486957878240c02dc31991b5f97499ad920de0aa6adda24ac06",
+      "sha256": "94bb4c2504f2d486957878240c02dc31991b5f97499ad920de0aa6adda24ac06"
+    },
+    {
+      "bytes": 885,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/99/99387ee9723f5f999df308511b5eda62bfbca2805961c13ee846467e639d5c4e",
+      "sha256": "99387ee9723f5f999df308511b5eda62bfbca2805961c13ee846467e639d5c4e"
+    },
+    {
+      "bytes": 1354,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/c6/c6ad646bec42db377bb449a10eaa57ece32dba66f8371834c6d9150156ebc4ae",
+      "sha256": "c6ad646bec42db377bb449a10eaa57ece32dba66f8371834c6d9150156ebc4ae"
+    },
+    {
+      "bytes": 339,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/ce/ce6b58de34a30ae2ed605cd8bdbf5859a59ee521b559b90a3aaa608e3280a160",
+      "sha256": "ce6b58de34a30ae2ed605cd8bdbf5859a59ee521b559b90a3aaa608e3280a160"
+    },
+    {
+      "bytes": 21581,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/dd/dd6c655e8da939676dad1b0e1a49e933f0ee727ebe00510ae66153dd9e5b75b0",
+      "sha256": "dd6c655e8da939676dad1b0e1a49e933f0ee727ebe00510ae66153dd9e5b75b0"
+    },
+    {
+      "bytes": 1454,
+      "mode": "0o400",
+      "path": "data/blobs/sha256/f8/f89f22e2e6ccb91c9075d0de73e6d06ae2b4a8178aab0c734b1d2dbf25843451",
+      "sha256": "f89f22e2e6ccb91c9075d0de73e6d06ae2b4a8178aab0c734b1d2dbf25843451"
+    },
+    {
+      "bytes": 69722,
+      "mode": "0o600",
+      "path": "views/2026-11-14/17c46a56-45e2-4b64-8a8f-0ae1d9edc1f5.md",
+      "sha256": "4c0c27698af9ee63d1b1b6a22a87ca58ce7cea6d57e18000f26aa0a48265d8e6"
+    }
+  ],
+  "origin": "sections-red.log: pre-fix product CLI, all inputs synthetic; pytest session finished before SQLite backup API snapshot",
+  "original_report_sha256": "4c0c27698af9ee63d1b1b6a22a87ca58ce7cea6d57e18000f26aa0a48265d8e6",
+  "renderer_version": 1,
+  "source_revision": "b008_body_selection"
+}

@@ -12,6 +12,7 @@ from paper_radar.body.queries import decision_events
 from paper_radar.calibration import visibility
 from paper_radar.config import resolve_config_snapshot_reference
 from paper_radar.experiment.candidates import SnapshotModel
+from paper_radar.experiment.reasons import AcceptanceReason
 from paper_radar.experiment.root import ExperimentRoot
 from paper_radar.experiment.selections import SelectionRecord, Selections
 from paper_radar.feed_metadata.repository import canonical, sha, transaction
@@ -24,8 +25,8 @@ from paper_radar.storage.schema import body_decisions, experiment_acceptances
 
 
 class AcceptanceError(ValueError):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
+    def __init__(self, reason: AcceptanceReason | str) -> None:
+        self.reason = reason = AcceptanceReason(reason)
         super().__init__(
             f"{reason}：代执行接受未完成；请回查有效 selection、冻结版本及所选快照的"
             "两阶段成功；授权变化须由所有者重新选样，请求冲突请使用新 request。"

@@ -17,6 +17,7 @@ from paper_radar.config.adapters import PiAdapter
 from paper_radar.config.compile import MaterialKind
 from paper_radar.experiment.egress import (
     Grant,
+    Stage,
     require_egress_authorization,
     selected_grants,
 )
@@ -29,6 +30,7 @@ from paper_radar.live_evidence.types import (
 )
 from paper_radar.llm.models import PROTOCOL_PROFILES, MappingDescription
 from paper_radar.llm.rpc import RpcMappingResult, probe_mapping
+from paper_radar.llm.rpc_types import RpcReason
 from paper_radar.pi_execution.admission import (
     EvidenceBinding,
     bind_description,
@@ -51,9 +53,9 @@ MAPPING_SYSTEM_PROMPT = b"PaperRadar model mapping probe. No user prompt is sent
 
 
 class MappingReceipt(TypedDict):
-    slot: str
-    state: str
-    reason: str
+    slot: Literal["screening", "reading"]
+    state: Literal["mapping_settable", "failed"]
+    reason: Literal["mapping_state_matched"] | RpcReason
 
 
 @dataclass(frozen=True)
@@ -136,7 +138,9 @@ def probe_models(
             profile = PROTOCOL_PROFILES.get(declared.pi_version)
             if profile is None or declared.pi_version != record.manifest.pi_version:
                 raise ExecutionError("protocol_unsupported")
-            stages = ["read"] if name == "reading" else ["boundary", "value"]
+            stages: list[Stage] = (
+                ["read"] if name == "reading" else ["boundary", "value"]
+            )
             grants = selected_grants(selected, stages)
             model = json.loads(
                 project_config(selected).projections[StageName(stages[0])].payload_json
@@ -210,10 +214,10 @@ def probe_models(
             _egress(root, plan)
             outcome = probe_mapping(plan.description, prepared)
         success = isinstance(outcome, RpcMappingResult)
-        reason_code = (
+        reason_code: Literal["mapping_state_matched"] | RpcReason = (
             "mapping_state_matched"
             if isinstance(outcome, RpcMappingResult)
-            else outcome.reason.value
+            else outcome.reason
         )
         result.append(
             {

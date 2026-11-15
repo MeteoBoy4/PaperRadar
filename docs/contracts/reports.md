@@ -16,7 +16,7 @@
 日报按根身份及日期唯一；第一次固定的时区保持不变。单篇按 analysis 唯一，
 新 analysis 取得新 UUID；同一 analysis 可同时作为日报和单篇成员。
 
-run 保存种类、实验范围、日期、时区、renderer=1、固定时点、完整投影 JSON、
+run 保存种类、实验范围、日期、时区、renderer 版本、固定时点、完整投影 JSON、
 输入 fingerprint、预期字节哈希、受控相对路径及 prepared/published 状态。
 entry 保存 paper/version/revision、primary 种类与引用、analysis、supporting Screening
 成功及制品引用、固定 N1–N5、栏位、顺序和 first-publication key。
@@ -69,7 +69,14 @@ replace 已完成、published 尚未提交时，重跑仍使用原输入、成�
 尚无该记录的 pending 条目明确显示“尚无代执行接受决定（保留选样授权）”。
 Read 只经 `analysis_payload` / ReadQueries 消费已接收输出、历史 attempt 依据和 evidence；
 显著披露受限内容未核对、各类 discard 标记与计数。evidence 保存原页码、bbox、
-charspan；没有稳定章节定位时显示 unknown。健康运行摘要只显示计数，异常展开受控告警；
+charspan。新报告使用 renderer=2，从该分析固定 artifact 与准确正文三元组校验后的
+evidence-map 的正文阅读顺序、层级与源标题 orig 派生每个 evidence/source 的章节路径，
+独立冻结为 evidence_sections；不使用 furniture、生成标题或不可靠标题冒充章节。
+无持久标题时逐源披露 unavailable/no_persisted_section；不可靠标题的范围披露
+unavailable/unreliable_section_heading，不沿用前一章节猜测。原 evidence 切片不改写。
+旧 renderer=1 保持原冻结输入、unknown 披露与原字节重建，不追加章节或重绑今日正文。
+健康摘要的元数据结果复用 feed_metadata 的当前版本优先、再按 observed_at/请求键的
+公共选择权威；异常展开受控告警；
 空日报分别显示无新结果或因故障没有结果。
 
 准入披露复用 doctor 的共享片段及分项行，分别展示 Screening/Read 格，
@@ -83,6 +90,8 @@ received/active/revoked 也保持 unknown，不合成历史 claim 或因此产�
 ### 恢复与消费接缝
 
 公共 `Reports(database, data_root, output_dir).rebuild/verify(report_id)` 接受显式位置，
+只读历史消费者使用 `ReportHistory(database, data_root)`，不提供发布或重建入口。
+Reports 的无输出目录内核在 render/rebuild/replay 入口受控拒绝，拒绝前不写报告事实。
 标准恢复的 `database.sqlite3` 与根级 blobs 无需改名或套用 ExperimentRoot。
 恢复输出目录独立；重建不写 SQLite、attempt、预算、历史或日志。
 `Reports.history()` 返回经闭包校验的不可变 `ReportInput` 历史，entry 显式保留
@@ -104,7 +113,9 @@ paper/version/revision、primary/supporting 与原授权依据，供后续暴露
 受控原因包括 invalid_arguments、unknown_command、invalid_date_timezone、
 invalid_clock、facts_changed、ordinary_consumption_denied、
 analysis_not_found、analysis_scope_invalid、report_not_found、visibility_denied、
-registration_invalid、unsafe_path、file_missing、content_corrupt。
+registration_invalid、unsafe_path、file_missing、content_corrupt、invalid_reason、
+output_directory_required。未知运行时原因正规化为 invalid_reason，不回显原输入；
+无输出目录的内核调用写入口时返回 output_directory_required，先拒绝而不写报告事实。
 错误只含受控原因与下一步，不回显题名、摘要、模型响应、路径或自由文本。
 render 显式注入所选根 FileSink；安全 JSON 只含身份、固定成员与摘要哈希。
 获准的私有 Markdown 保留必要内容，日志字段闭集保持不变。

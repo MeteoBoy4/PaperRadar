@@ -7,7 +7,7 @@ ISSUE = 85
 PARENT_ISSUE = 85
 FORMAT_VERSION = 1
 SUFFIX = ".a8.json"
-MIGRATION_REVISION = "b008_body_selection"
+MIGRATION_REVISION = "b009_report_renderer"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
 FORMAT_VERSIONS = {
@@ -187,7 +187,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/rpc.py",
-        "13a22cf9b6c7eaf9cd7790a7e1f9ffe6b15bfd7f1ac5da70ca6a213df7101ba7",
+        "8c5d8264ca5fa532f11ccf71d78c4ad531b8944ed86ffeae4bd84f4d7f209aac",
     ),
     (
         "src/paper_radar/llm/rpc_frames.py",

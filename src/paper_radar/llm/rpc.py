@@ -7,7 +7,7 @@ from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from time import monotonic
-from typing import Any
+from typing import Any, Literal
 
 from paper_radar.llm.dispatch import DispatchDenied
 from paper_radar.llm.models import (
@@ -421,7 +421,11 @@ def _cleanup(session: ByteSession, clock: MonotonicClock, deadline: float) -> No
 class RpcMappingResult:
     """当次初始化映射回读匹配;不授予生成或执行资格。"""
 
-    state: str = "mapping_settable"
+    state: Literal["mapping_settable"] = "mapping_settable"
+
+    def __post_init__(self) -> None:
+        if self.state != "mapping_settable":
+            raise RpcProblem(RpcReason.INVALID_DESCRIPTION)
 
 
 def probe_mapping(

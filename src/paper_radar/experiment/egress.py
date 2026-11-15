@@ -1,19 +1,20 @@
 """实验外发授权:既有 config_versions 上只追加的所有者范围决定。"""
 
 import json
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 from sqlalchemy import Connection, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from paper_radar.body.queries import root_fact
 from paper_radar.config import RuntimeConfigSnapshot, StageName, project_config
+from paper_radar.experiment.reasons import EgressReason
 from paper_radar.experiment.root import ExperimentRoot
 from paper_radar.storage.database import (
     DatabaseMode,
@@ -29,8 +30,8 @@ _KIND, _NAME = "experiment_egress", "stage-b-egress"
 
 
 class EgressError(ValueError):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
+    def __init__(self, reason: EgressReason | str) -> None:
+        self.reason = reason = EgressReason(reason)
         super().__init__(reason)
 
 
@@ -67,7 +68,17 @@ class _Record(BaseModel):
     previous_sha256: str | None
 
 
-def required_categories(stage: str) -> tuple[Category, ...]:
+def parse_stages(stages: Sequence[str]) -> tuple[Stage, ...]:
+    """CLI 等未类型化输入先做封闭校验,非法值只返回受控原因。"""
+    try:
+        return TypeAdapter(tuple[Stage, ...]).validate_python(
+            tuple(stages), strict=True
+        )
+    except ValidationError:
+        raise EgressError("egress_scope_mismatch") from None
+
+
+def required_categories(stage: Stage) -> tuple[Category, ...]:
     if stage not in {"boundary", "value", "read"}:
         raise EgressError("egress_scope_mismatch")
     return (
@@ -78,7 +89,7 @@ def required_categories(stage: str) -> tuple[Category, ...]:
 
 
 def selected_grants(
-    snapshot: RuntimeConfigSnapshot, stages: list[str]
+    snapshot: RuntimeConfigSnapshot, stages: Sequence[Stage]
 ) -> tuple[Grant, ...]:
     result = []
     if not stages or len(set(stages)) != len(stages):
@@ -262,7 +273,7 @@ def require_egress_authorization(
                 categories=categories,
                 connection=opened,
             )
-    needed = required_categories(stage)
+    needed = required_categories(parse_stages((stage,))[0])
     registered = root_fact(connection)
     state, record = _read(connection)
     if record is None or not state.enabled:

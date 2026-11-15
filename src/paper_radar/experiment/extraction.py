@@ -1,8 +1,11 @@
 """B 显式单次正文执行:当前样本守卫、资源事实与持久回放。"""
 
 import hashlib
+import os
 import re
+import subprocess
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Literal
@@ -22,6 +25,7 @@ from paper_radar.docling_executor import (
 from paper_radar.doctor.service import Result
 from paper_radar.experiment.candidates import SnapshotModel
 from paper_radar.experiment.pdf import PdfError, PdfSamples
+from paper_radar.experiment.reasons import ExtractionReason
 from paper_radar.experiment.root import ExperimentRoot
 from paper_radar.runtime_logging import FileSink, RuntimeLog
 from paper_radar.storage.schema import (
@@ -33,12 +37,38 @@ from paper_radar.storage.schema import (
 
 
 class ExtractionError(ValueError):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
+    def __init__(self, reason: ExtractionReason | str) -> None:
+        self.reason = reason = ExtractionReason(reason)
         super().__init__(
             f"{reason}：提取停止；核对当前样本、cgroup ≤8 GiB/swap=0、"
             "模型部署与快照磁盘；回查 trace 后显式重跑，不绕过预算或质量。"
         )
+
+
+def _user_scope_properties(scope: str) -> str:
+    # systemd 的只读查询有固定属性、超时及读取上限;不接受调用方命令。
+    with tempfile.TemporaryFile() as output:
+        completed = subprocess.run(
+            [
+                "systemctl",
+                "--user",
+                "show",
+                "--no-pager",
+                "--property=Id,ControlGroup,LoadState,ActiveState,Transient",
+                "--",
+                scope,
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=output,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+            check=False,
+        )
+        output.seek(0)
+        raw = output.read(16385)
+    if completed.returncode != 0 or len(raw) > 16384:
+        raise ValueError
+    return raw.decode("utf-8")
 
 
 @dataclass(frozen=True)
@@ -47,6 +77,8 @@ class ResourcePaths:
     mount: Path = Path("/sys/fs/cgroup")
     meminfo: Path = Path("/proc/meminfo")
     mountinfo: Path | None = Path("/proc/self/mountinfo")
+    user_scope_properties: Callable[[str], str] = _user_scope_properties
+    current_uid: Callable[[], int] = os.getuid
 
 
 RESOURCE_PATHS = ResourcePaths()
@@ -95,6 +127,26 @@ def resource_fact(paths: ResourcePaths) -> tuple[ResourceFact, Path]:
         ):
             raise ValueError
         membership = PurePosixPath(entries[0])
+        uid = paths.current_uid()
+        prefix = f"/user.slice/user-{uid}.slice/user@{uid}.service/"
+        if not str(membership).startswith(prefix) or not re.fullmatch(
+            r"[A-Za-z0-9_.:@\\-]+\.scope", membership.name
+        ):
+            raise ValueError
+        properties = {}
+        for line in paths.user_scope_properties(membership.name).splitlines():
+            key, separator, value = line.partition("=")
+            if not separator or key in properties:
+                raise ValueError
+            properties[key] = value
+        if properties != {
+            "Id": membership.name,
+            "ControlGroup": str(membership),
+            "LoadState": "loaded",
+            "ActiveState": "active",
+            "Transient": "yes",
+        }:
+            raise ValueError
         mount_root = PurePosixPath("/")
         if paths.mountinfo is not None:
             mounts = []
@@ -144,7 +196,7 @@ def resource_fact(paths: ResourcePaths) -> tuple[ResourceFact, Path]:
             memory_max_bytes=maximum,
             host_mem_available_bytes=available,
         ), group
-    except (OSError, ValueError, IndexError):
+    except (OSError, ValueError, IndexError, subprocess.TimeoutExpired):
         raise ExtractionError("cgroup_limit_invalid") from None
 
 

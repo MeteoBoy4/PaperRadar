@@ -7,6 +7,7 @@ from paper_radar.body import BodyService
 from paper_radar.body.models import BodyError
 from paper_radar.body.selection import BodySelection, BodySelections, require_visibility
 from paper_radar.experiment.pdf import PdfError, PdfSamples
+from paper_radar.experiment.reasons import BodySelectionReason
 from paper_radar.experiment.root import ExperimentRoot
 from paper_radar.fulltext.models import FulltextError
 from paper_radar.reading.context import ExtractionIdentity
@@ -14,8 +15,8 @@ from paper_radar.runtime_logging import FileSink, RuntimeLog
 
 
 class BodySelectionError(ValueError):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
+    def __init__(self, reason: BodySelectionReason | str) -> None:
+        self.reason = reason = BodySelectionReason(reason)
         super().__init__(
             f"{reason}：正文选择停止；请核对当前冻结样本、PDF "
             "和已成功注册的准确正文三元组，"

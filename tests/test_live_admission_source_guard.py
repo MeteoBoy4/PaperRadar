@@ -14,7 +14,7 @@ from paper_radar.pi_execution.resources import LAUNCH_POLICY_VERSION
 from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v28.json"
+MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v29.json"
 ARCHIVED_MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
 # 显式清单;不能由目录扫描或生产依赖图动态扩大/缩小。
 ARCHIVED_SOURCE_FILES = (
@@ -305,11 +305,15 @@ STAGE_B_SOURCE_FILES = (
 )
 
 
-SOURCE_FILES = (*V25_SOURCE_FILES, *STAGE_B_SOURCE_FILES)
+V28_SOURCE_FILES = (*V25_SOURCE_FILES, *STAGE_B_SOURCE_FILES)
+SOURCE_FILES = (*V28_SOURCE_FILES, "src/paper_radar/experiment/reasons.py")
 
 
 # 已审阅版本的清单摘要只追加;后继不得以同一策略键重绑该摘要。
 REVIEWED_POLICY_MANIFESTS = {
+    "pi-admission-v29": (
+        "5c21855b8ed457148ea1a5005d6c779164e22bc3dc1b3f9ee3aee7e5ad3a4839"
+    ),
     "pi-admission-v28": (
         "cd6ad7bb74b954002e40db4d5c6e7bb861f0be7108811b1b3a80607bb89d044e"
     ),

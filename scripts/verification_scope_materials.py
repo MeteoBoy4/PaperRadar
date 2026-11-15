@@ -2,7 +2,7 @@
 
 SHARED_MATERIALS = {
     "tests/migration_expectations.py": (
-        "83864876b793bccf7b8faa4b0fa5452386d0c0ae0e7d7a743bb901700c2c1c3c"
+        "a902948f26a7ce40c0e1f7efe08956d0ce98dd12b263e24c7cb7403fd1a743ad"
     ),
     "docs/verification/contracts-backup-restore-history.md": (
         "77fdc9ee348bddd16d5c5a694ef52459d2703241efe5e123da8e6742f68ff46e"
@@ -122,7 +122,7 @@ SHARED_MATERIALS = {
         "8bf4f05fea2085b1e6b25bb0ae426db2c13da47aa314dd695a1cd5c5259d36b8"
     ),
     "src/paper_radar/backup/manifest.py": (
-        "72f8db97278668c4794c04f8f454a197da13e58537950f45eb2c8a02de2b3452"
+        "e19c6df3d5ec9bb8960e7cb1159339ed4740e95ae893f23c7a53b4fca25bdd2c"
     ),
     "src/paper_radar/backup/restore.py": (
         "42030f738c27edfffb7b3d811ec9d2663010c665b797ad3f55023535d2ddaa4b"
@@ -572,7 +572,7 @@ SHARED_MATERIALS = {
         "91a48152f1f2fdd840471f81c6db13ca87dc533a8ce4fa03f5b396b08019f5bf"
     ),
     "src/paper_radar/storage/schema.py": (
-        "18dac7d70c4fb9e59657e4c929cac47829a3891cf52ff341568a2cafc7b6d6f8"
+        "64f5c3ccb3a2a8526b40b80ff8e9c9731988832a60416ea1d6d1aae8d6490af2"
     ),
     "src/paper_radar/storage/snapshot_queries.py": (
         "e394fb3bbc2e70e5bc92f4c539481e7d9660c026f60d709ef990763022f6acf1"

@@ -8,7 +8,7 @@ ISSUE = 75
 PARENT_ISSUE = 67
 FORMAT_VERSION = 1
 SUFFIX = ".a6.json"
-MIGRATION_REVISION = "b008_body_selection"
+MIGRATION_REVISION = "b009_report_renderer"
 REQUIRED_CHECKS = ("lockfile", "format", "lint", "types", "tests", "contracts")
 REQUIRED_DEPENDENCIES = ("alembic", "SQLAlchemy", "PyYAML", "pydantic")
 FORMAT_VERSIONS = {
@@ -506,7 +506,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/paper_trace.py",
-        "a625e3563cd42abeb38072c4d750e94a192b493d56af9cf8f2170e0a087e8061",
+        "5b5218d57f03627e65f2f9d2cff63ce6609d4bd9f2294cc6d3af151a5c86e958",
     ),
     (
         "tests/stage_b_trace_support.py",

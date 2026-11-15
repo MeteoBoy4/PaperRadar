@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -86,9 +87,14 @@ def extract_fixture(
         settings, prepared.root / "paper-radar.sqlite3"
     ).snapshot_id
     proc = tmp_path / "self-cgroup"
-    proc.write_text("0::/user/synthetic\n")
+    membership = (
+        f"/user.slice/user-{os.getuid()}.slice/user@{os.getuid()}.service/"
+        "app.slice/run-synthetic.scope"
+    )
+    proc.write_text(f"0::{membership}\n")
     mount = tmp_path / "cgroup"
-    group = mount / "user/synthetic"
+    # 旧测试的 mount_root 替身仍从 group.parent.parent 取得挂载点。
+    group = mount / "app.slice/run-synthetic.scope"
     group.mkdir(parents=True)
     (mount / "cgroup.controllers").write_text("memory\n")
     for name, value in {
@@ -99,12 +105,26 @@ def extract_fixture(
         (group / name).write_text(value)
     meminfo = tmp_path / "meminfo"
     meminfo.write_text("MemAvailable: 1 kB\n")
+    mountinfo = tmp_path / "cgroup-mountinfo"
+    mountinfo.write_text(
+        f"1 0 0:1 {membership.rsplit('/app.slice/', 1)[0]} {mount} "
+        "rw - cgroup2 cgroup rw\n"
+    )
     from paper_radar.experiment import extraction as execution
 
     monkeypatch.setattr(
-        execution, "RESOURCE_PATHS", execution.ResourcePaths(proc, mount, meminfo, None)
+        execution,
+        "RESOURCE_PATHS",
+        execution.ResourcePaths(
+            proc,
+            mount,
+            meminfo,
+            mountinfo,
+            lambda scope: (
+                f"Id={scope}\nControlGroup={membership}\nLoadState=loaded\nActiveState=active\nTransient=yes\n"
+            ),
+        ),
     )
-    import os
 
     monkeypatch.setattr(
         os,

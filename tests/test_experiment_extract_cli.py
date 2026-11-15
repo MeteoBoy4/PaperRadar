@@ -368,7 +368,11 @@ def test_current_cgroup_must_be_unambiguous_and_bounded(
             extraction,
             "RESOURCE_PATHS",
             extraction.ResourcePaths(
-                prepared.proc, prepared.group.parent.parent, prepared.meminfo, mounts
+                prepared.proc,
+                prepared.group.parent.parent,
+                prepared.meminfo,
+                mounts,
+                extraction.RESOURCE_PATHS.user_scope_properties,
             ),
         )
     result = prepared.extract()
@@ -453,17 +457,22 @@ def test_optional_memory_unknown_and_namespaced_mount_root(
     elif case == "invalid_host_encoding":
         prepared.meminfo.write_bytes(b"\xff")
     else:
-        prepared.proc.write_text("0::/delegated/user/synthetic\n")
+        membership = prepared.proc.read_text().strip().removeprefix("0::")
         mounts = tmp_path / "mountinfo"
         mounts.write_text(
-            f"1 0 0:1 /delegated {prepared.group.parent.parent} "
+            f"1 0 0:1 {membership.rsplit('/app.slice/', 1)[0]} "
+            f"{prepared.group.parent.parent} "
             "rw - cgroup2 cgroup rw\n"
         )
         monkeypatch.setattr(
             extraction,
             "RESOURCE_PATHS",
             extraction.ResourcePaths(
-                prepared.proc, prepared.group.parent.parent, prepared.meminfo, mounts
+                prepared.proc,
+                prepared.group.parent.parent,
+                prepared.meminfo,
+                mounts,
+                extraction.RESOURCE_PATHS.user_scope_properties,
             ),
         )
     result = prepared.extract()

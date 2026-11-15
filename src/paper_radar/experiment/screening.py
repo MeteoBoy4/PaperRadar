@@ -12,6 +12,7 @@ from paper_radar.experiment.egress import (
     require_egress_authorization,
     selected_grants,
 )
+from paper_radar.experiment.reasons import ScreenReason
 from paper_radar.experiment.root import ExperimentRoot
 from paper_radar.experiment.selections import (
     SelectionError,
@@ -32,8 +33,8 @@ from paper_radar.screening_tasks import ClaimDenied, RequestReceipt, ScreeningTa
 class ScreenError(ClaimDenied):
     """正常业务拒绝可穿过 A7 事务,不被 ValueError 损坏映射吞掉。"""
 
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
+    def __init__(self, reason: ScreenReason | str) -> None:
+        self.reason = reason = ScreenReason(reason)
         super().__init__(
             f"{reason}：Screening 未获继续执行资格；请回查 selection、元数据、"
             "egress-status 与 doctor；需要时由所有者换样或显式 retry。"
