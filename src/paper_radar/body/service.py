@@ -73,6 +73,7 @@ if TYPE_CHECKING:
         ExtractionObserver,
         ExtractionView,
     )
+    from paper_radar.eligibility import PaperProjection
     from paper_radar.reading.context import ExtractionIdentity
 
 
@@ -621,6 +622,13 @@ class BodyService:
                 fingerprint=fingerprint,
                 ordinary=ordinary,
             )
+
+    def current_projection(self, paper_id: str) -> "PaperProjection":
+        """根中性当前全文事实投影;只读,不领取任务或放宽歧义/质量守卫。"""
+        from paper_radar.body.facts import current_projection
+
+        with transaction(self.database) as connection:
+            return current_projection(connection, paper_id)
 
     def extraction_input_in_connection(
         self, connection: Connection, fingerprint: str

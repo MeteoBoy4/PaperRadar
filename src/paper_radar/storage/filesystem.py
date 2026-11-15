@@ -1,6 +1,7 @@
 """受控根内路径与目录持久化;不解释制品或备份领域错误。"""
 
 import os
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
@@ -37,3 +38,30 @@ def sync_directory(path: Path) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+
+
+def publish_projection(
+    path: Path,
+    content: bytes,
+    *,
+    prefix: str,
+    validate: Callable[[Path], None] | None = None,
+) -> None:
+    """调用方已校验路径;私有同目录临时文件经校验/持久化后原子替换。"""
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=path.parent, prefix=prefix, delete=False
+        ) as stream:
+            temporary = Path(stream.name)
+            stream.write(content)
+            stream.flush()
+            if validate is not None:
+                validate(temporary)
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        temporary = None
+        sync_directory(path.parent)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)

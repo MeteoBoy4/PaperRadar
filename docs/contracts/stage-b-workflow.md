@@ -315,15 +315,21 @@ PDF 附加/独立确认与冻结样本引用（理由只引用选样），
 以及共享 `evaluate_paper(projection)`
 概念结果、原因和支持范围；不倾倒内部 projection 或决定载荷。
 论文事实与各组件分别读，不承诺跨组件同一 SQLite 快照，允许并发滞后。
+组合组件的受控错误保留原原因与中文下一步，不展开原异常、输入或路径；
+show/trace 继续遵守原 Paper CLI 的受控退出 1，参数退出 2。
 
 显式 `--snapshot` 才核对 Screening 与 Read 输入的当前性；省略时 Read 最小事实保持
 mapping_determinable=false，model_failure_queue 以 partial/task_mapping_unknown 披露，
 不从历史任务猜当前失败。已装配事实按[共享资格](eligibility-visibility.md)提供
 Screening/Read 当前最新代际范围，其他 partial/deferred 含义保持。metadata_ready 仍仅最低元数据；value 的当前成功作为
 current_screening_artifact，boundary 单阶段成功不冒充完整建议/决定。
+显式快照且当前 PDF 已知缺失、没有任何 PDF/提取/Read 历史时，仅装配 Screening 的失败支持范围；
+存在任一全文/Read 事实时仍保留 Read 映射，包括待提取、未就绪和歧义的不可判定。
 实验 eligible_for_auto_read 始终包含 experiment_no_auto_queue；前置通过不代表名额、
 预算或领取许可。PDF 附加、确认与样本提供独立事实；正文与 Read 资格由各自权威和
-下述显式组合继续核对，报告由报告组合承接，未装配事实保持 unknown。
+下述显式组合继续核对。trace 通过 Body 的 `current_projection` 装配全文事实，
+已知缺 PDF、待提取、永久失败及质量通过均展示对应共享原因；正文选择与歧义规则见
+[正文持久化](body-persistence.md)。报告由报告组合承接，未装配事实保持 unknown。
 
 默认输出不含 Agent 内容、Profile、Prompt、摘要正文或原始响应。`--show-abstract`
 展开获准的论文事实；`--show-agent-content` 必须同时提供快照与 data-root，实际核对
@@ -562,8 +568,9 @@ label=manual、默认 zh；不创建 manual_read_request/read_requests、不扫�
 1. `reading tasks --root ROOT` 查询；过期仍保持 running，不进入失败队列。
 2. `reading reclaim TASK --root ROOT` 显式追加 outcome_unknown，不退款；尚有尝试则 ready，
    用 `experiment read ... --task-id TASK` 继续。
-3. `reading failures --root ROOT --snapshot SNAPSHOT` 枚举全库当前 Read 输入最新 failed 代际，
-   不限制当前选样；配置或正文无法映射不猜失败，不隐式回收。
+3. `reading failures --database DATABASE --data-root DATA_ROOT --snapshot SNAPSHOT`
+   枚举全库当前 Read 输入最新 failed 代际，对根用途中性；兼容 `--root ROOT`。
+   位置、输出及只读边界见 [Read 任务](read-tasks.md)；配置或正文无法映射不猜失败，不隐式回收。
 4. `reading retry PAPER --root ROOT --snapshot SNAPSHOT --request-id REQUEST --reason REASON
    --actor OWNER` 由公共 ReadTasks 当前失败查询唯一定位父代，显式追加后继。
    当前失败不唯一以 ambiguous_task 拒绝；可选 `--task-id PARENT` 明确父代，但仍须归属该论文、

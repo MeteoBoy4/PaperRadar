@@ -48,5 +48,3 @@ def current_pdf(
         .first()
     )
     return pdf_record(row) if row is not None else None
-
-

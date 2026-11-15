@@ -13,7 +13,8 @@ from sqlalchemy import Connection, insert, literal_column, select
 from sqlalchemy.engine import RowMapping
 
 from paper_radar.body import BodyService
-from paper_radar.config import load_config_snapshot
+from paper_radar.config import StageName, load_config_snapshot
+from paper_radar.config.compile import StageStatus
 from paper_radar.eligibility import QualityBasis, RootPurpose
 from paper_radar.fulltext.artifacts import FulltextArtifacts
 from paper_radar.read_tasks import tables as t
@@ -385,7 +386,6 @@ class ReadTasks:
     def _current_fingerprints(
         self, paper_id: str, snapshot_id: str | None
     ) -> tuple[ExtractionIdentity | None, frozenset[str]]:
-        from paper_radar.config import ConfigError
         from paper_radar.read_inputs import prepare_read_input
 
         if snapshot_id is None:
@@ -393,34 +393,31 @@ class ReadTasks:
         current = self.body.current_body(paper_id)
         if current.identity is None:
             return None, frozenset()
-        try:
-            snapshot = load_config_snapshot(self.database, snapshot_id)
-            with transaction(self.database) as connection:
-                extraction = self.body.extraction_input_in_connection(
-                    connection, current.identity.extraction_fingerprint
-                )
-            view = next(
-                v
-                for v in self.body.extractions(paper_id)
-                if v.identity == current.identity
-            )
-            if view.artifact_id is None:
-                raise ReadTaskError("corrupt_reference")
-            languages: tuple[Literal["zh", "en"], ...] = ("zh", "en")
-            fingerprints = {
-                prepare_read_input(
-                    self.artifacts,
-                    view.artifact_id,
-                    extraction,
-                    snapshot,
-                    snapshot,
-                    expected_identity=current.identity,
-                    output_language=language,
-                ).stage_input.fingerprint
-                for language in languages
-            }
-        except ConfigError:
+        snapshot = load_config_snapshot(self.database, snapshot_id)
+        if snapshot.stages[StageName.READ].status is not StageStatus.READY:
             return None, frozenset()
+        with transaction(self.database) as connection:
+            extraction = self.body.extraction_input_in_connection(
+                connection, current.identity.extraction_fingerprint
+            )
+        view = next(
+            v for v in self.body.extractions(paper_id) if v.identity == current.identity
+        )
+        if view.artifact_id is None:
+            raise ReadTaskError("corrupt_reference")
+        languages: tuple[Literal["zh", "en"], ...] = ("zh", "en")
+        fingerprints = {
+            prepare_read_input(
+                self.artifacts,
+                view.artifact_id,
+                extraction,
+                snapshot,
+                snapshot,
+                expected_identity=current.identity,
+                output_language=language,
+            ).stage_input.fingerprint
+            for language in languages
+        }
         return current.identity, frozenset(fingerprints)
 
     def _failure_facts_in_connection(

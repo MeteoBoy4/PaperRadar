@@ -2,6 +2,7 @@
 
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated, NoReturn
 
 import typer
@@ -21,7 +22,8 @@ reading_app = typer.Typer(
     cls=ReadingGroup,
     no_args_is_help=True,
     help=(
-        "显式 Read 查询与恢复;每项须 --root，自动配额 0;帮助不联网、不开库、不建目录。"
+        "显式 Read 查询与恢复;failures 可用 --database/--data-root 根中性只读查询，"
+        "其余命令须 --root；自动配额 0;帮助不联网、不开库、不建目录。"
     ),
 )
 
@@ -42,7 +44,9 @@ def reading_error(error: BaseException) -> NoReturn:
     from paper_radar.fulltext.models import FulltextError
     from paper_radar.pi_execution import ExecutionError
     from paper_radar.read_tasks import ReadTaskError
+    from paper_radar.stage_inputs import StageInputError
     from paper_radar.storage.artifact_contract import ArtifactError
+    from paper_radar.storage.errors import StorageError
 
     if isinstance(error, KeyboardInterrupt):
         typer.echo("interrupted：请查询任务，过期后显式 reclaim;次数不退还。", err=True)
@@ -65,6 +69,8 @@ def reading_error(error: BaseException) -> NoReturn:
                 ReadTaskError,
                 FulltextError,
                 ArtifactError,
+                StorageError,
+                StageInputError,
             ),
         )
         else "execution_failed"
@@ -121,36 +127,74 @@ def tasks(
     "failures",
     cls=ExperimentCommand,
     help="""只读全库当前输入的最新 failed Read 代际。
-参数：--root、--snapshot。副作用：无，不结算过期租约，不建日志;自动配额 0。
-输出去向：stdout 安全 JSON;不局限当前选样。常见失败：配置/正文无法映射时不伪造 failed。
+参数：--snapshot，位置二选一：--database 与 --data-root，或兼容 --root。
+查询对 experiment/production/unknown 根中性，不授予执行许可。
+副作用：业务只读，不结算过期租约，不建业务目录、主库或日志，不改事实。
+SQLite 可能维护标准 WAL/SHM 协调文件；自动配额 0。
+输出去向：stdout 安全 JSON 包含根用途和失败列表；兼容 --root 保留列表，stderr 披露用途。
+不局限当前选样。常见失败：配置/正文无法映射时不伪造 failed。
 帮助不联网、不开库、不建目录。退出码：成功 0;拒绝 2;中断 130。
 示例：paper-radar reading failures --root /tmp/experiment --snapshot SNAP
+示例：paper-radar reading failures --database /tmp/archive.sqlite3
+  --data-root /tmp/data --snapshot SNAP
 """,
 )
 def failures(
-    root: RootOption,
     snapshot: Annotated[
         str, typer.Option("--snapshot", help="当前输入的明确配置参照。")
     ],
+    root: Annotated[
+        Path | None, typer.Option("--root", help="兼容既有根布局只读查询。")
+    ] = None,
+    database: Annotated[
+        Path | None, typer.Option("--database", help="既有数据库路径。")
+    ] = None,
+    data_root: Annotated[
+        Path | None, typer.Option("--data-root", help="既有制品根。")
+    ] = None,
 ) -> None:
+    from paper_radar.body import BodyService
     from paper_radar.config import resolve_config_snapshot_reference
     from paper_radar.experiment import ExperimentRoot
     from paper_radar.experiment.reading import task_payload
     from paper_radar.read_tasks import ReadTasks
 
+    if (root is not None and (database is not None or data_root is not None)) or (
+        root is None and (database is None or data_root is None)
+    ):
+        typer.echo(
+            "Read 查询参数不正确；请使用 --root 或 --database 与 --data-root，"
+            "并查看 --help。",
+            err=True,
+        )
+        raise typer.Exit(2)
     try:
-        selected = ExperimentRoot(root)
-        selected.require()
-        identifier = resolve_config_snapshot_reference(selected.database, snapshot)
+        if root is not None:
+            selected = ExperimentRoot(root)
+            database, data_root = selected.database, selected.data_root
+        assert database is not None and data_root is not None
+        purpose = BodyService(database, data_root).root().purpose
+        identifier = resolve_config_snapshot_reference(database, snapshot)
         result = [
             task_payload(t)
-            for t in ReadTasks(selected.database, selected.data_root).failures(
-                snapshot_id=identifier
-            )
+            for t in ReadTasks(database, data_root).failures(snapshot_id=identifier)
         ]
     except BaseException as error:
         reading_error(error)
-    typer.echo(json.dumps(result, ensure_ascii=False))
+    if root is not None:
+        typer.echo(
+            f"根用途：{purpose.value}；只读查询不授予实验执行或生产消费许可。", err=True
+        )
+        typer.echo(json.dumps(result, ensure_ascii=False))
+    else:
+        typer.echo(
+            json.dumps(
+                dict(
+                    root_purpose=purpose.value, snapshot_id=identifier, failures=result
+                ),
+                ensure_ascii=False,
+            )
+        )
 
 
 @reading_app.command(

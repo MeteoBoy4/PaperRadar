@@ -1,7 +1,5 @@
 """实验报告的固定输入、原子发布与只读恢复;SQLite 是唯一事实源。"""
 
-import os
-import tempfile
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -14,8 +12,9 @@ from paper_radar.body import BodyService
 from paper_radar.body.models import BodyError, DecisionMetadata
 from paper_radar.calibration import visibility
 from paper_radar.doctor.admission import report_admission_fragment
-from paper_radar.eligibility import RootPurpose
+from paper_radar.eligibility import QualityBasis, QualityFailure, RootPurpose
 from paper_radar.experiment.acceptance import Acceptances, DelegatedAcceptance
+from paper_radar.experiment.layout import LayoutReviews
 from paper_radar.experiment.reading import analysis_payload
 from paper_radar.experiment.report_rendering import ReportEntry, ReportInput, render
 from paper_radar.experiment.selections import SelectionRecord, Selections
@@ -34,7 +33,7 @@ from paper_radar.screening_tasks import tables as screening_tables
 from paper_radar.storage.filesystem import (
     UnsafePathError,
     controlled_path,
-    sync_directory,
+    publish_projection,
 )
 from paper_radar.storage.history import (
     HistoryBoundary,
@@ -438,7 +437,8 @@ class Reports:
                         )
                     )
                     continue
-                if body.current_pdf(selection.paper_id) is None:
+                current_pdf = body.current_pdf(selection.paper_id)
+                if current_pdf is None:
                     result.append(
                         self._nonanalysis_entry(
                             selection,
@@ -456,8 +456,54 @@ class Reports:
                         )
                     )
                 else:
-                    for extraction in body.extractions(selection.paper_id):
-                        if extraction.artifact_id or not extraction.attempts:
+                    current_body = body.current_body(selection.paper_id)
+                    views = tuple(
+                        v
+                        for v in body.extractions(selection.paper_id)
+                        if v.pdf_sha256 == current_pdf.pdf_sha256
+                    )
+                    if current_body.identity is None and len(views) > 1:
+                        # 无唯一当前正文时仅由运行摘要披露歧义,不任选历史失败占槽。
+                        continue
+                    for extraction in views:
+                        if (
+                            current_body.identity is not None
+                            and extraction.identity != current_body.identity
+                        ):
+                            continue
+                        if not extraction.attempts:
+                            continue
+                        if (
+                            extraction.quality.basis is QualityBasis.FAILED
+                            and extraction.quality.failure
+                            is QualityFailure.LAYOUT_REVIEW
+                        ):
+                            for review in LayoutReviews(
+                                self.database, self.data_root
+                            ).history(selection.paper_id):
+                                if (
+                                    review["fingerprint"] != extraction.fingerprint
+                                    or review["passed"] is not False
+                                ):
+                                    continue
+                                result.append(
+                                    self._nonanalysis_entry(
+                                        selection,
+                                        success_id,
+                                        kind="blocked",
+                                        reference=f"quality:{review['review_id']}",
+                                        available_at=str(review["reviewed_at"]),
+                                        fact=dict(
+                                            kind="quality_failed",
+                                            quality_failure="layout_review",
+                                            fingerprint=extraction.fingerprint,
+                                            review_id=review["review_id"],
+                                            next_action="保留所有者版式否决；由所有者决定新的正文与核查，不自动重试。",
+                                        ),
+                                        acceptance=acceptance.model_dump(mode="json"),
+                                        decision_scope=scope,
+                                    )
+                                )
                             continue
                         last = extraction.attempts[-1]
                         if (
@@ -582,6 +628,22 @@ class Reports:
                         f"Read 模型失败：paper={paper} task={task.task_id}；"
                         f"下一步：reading retry {paper} --snapshot {task.snapshot_id} "
                         "--request-id REQUEST --reason REASON --actor owner。"
+                    )
+        body = BodyService(self.database, self.data_root)
+        for paper in sorted(
+            {s.paper_id for s in Selections(self.database, self.data_root).history()}
+        ):
+            current_body = body.current_body(paper)
+            pdf = body.current_pdf(paper)
+            if current_body.identity is None and pdf is not None:
+                views = tuple(
+                    v for v in body.extractions(paper) if v.pdf_sha256 == pdf.pdf_sha256
+                )
+                if current_body.reason == "ambiguous_extractions" or len(views) > 1:
+                    warnings.append(
+                        f"正文不可判定：paper={paper} reason={current_body.reason}；"
+                        "下一步：核对当前 PDF 提取历史；"
+                        "多成功须显式 body-select，不猜选正文。"
                     )
         for entry in candidates:
             if entry.primary_kind == "blocked":
@@ -845,6 +907,26 @@ class Reports:
                         or fact["decision_id"] != record.decision_id
                     ):
                         raise ValueError
+                elif fact["kind"] == "quality_failed":
+                    review = next(
+                        (
+                            r
+                            for r in LayoutReviews(
+                                self.database, self.data_root
+                            ).history(entry.paper_id)
+                            if r["review_id"] == fact["review_id"]
+                        ),
+                        None,
+                    )
+                    if (
+                        review is None
+                        or review["passed"] is not False
+                        or review["fingerprint"] != fact["fingerprint"]
+                        or fact["quality_failure"] != "layout_review"
+                        or entry.primary_ref != f"quality:{review['review_id']}"
+                        or entry.available_at != review["reviewed_at"]
+                    ):
+                        raise ValueError
                 else:
                     attempts = [
                         a
@@ -908,23 +990,12 @@ class Reports:
         path = self._path(inputs.relative_path, create=True)
         if path.exists() and not path.is_file():
             raise ReportError("unsafe_path")
-        temporary: str | None = None
-        try:
-            with tempfile.NamedTemporaryFile(
-                dir=path.parent, prefix=".report-", delete=False
-            ) as stream:
-                temporary = stream.name
-                stream.write(content)
-                stream.flush()
-                if sha(Path(temporary).read_bytes()) != row["content_sha256"]:
-                    raise ReportError("content_corrupt")
-                os.fsync(stream.fileno())
-            os.replace(temporary, path)
-            temporary = None
-            sync_directory(path.parent)
-        finally:
-            if temporary is not None:
-                Path(temporary).unlink(missing_ok=True)
+
+        def validate(temporary: Path) -> None:
+            if sha(temporary.read_bytes()) != row["content_sha256"]:
+                raise ReportError("content_corrupt")
+
+        publish_projection(path, content, prefix=".report-", validate=validate)
 
     def verify(self, report_id: str) -> dict[str, object]:
         _visible()

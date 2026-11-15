@@ -1,6 +1,6 @@
 """根中性的论文工作流只读组合;组件当前性与资格各由原权威计算。"""
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -174,18 +174,29 @@ def query_paper_trace(
                 raise TaskError(TaskReason.CORRUPT_REFERENCE)
             artifact = ArtifactFact.from_success(chosen, version_id=claim_version)
     reads = ReadTasks(database, data_root)
-    projection = PaperProjection(
-        paper_id,
-        current.version_id,
-        current.version_id,
-        canonical_id=paper_id,
+    pdfs = body.pdfs(paper_id)
+    extractions = body.extractions(paper_id)
+    read_history = reads.history(paper_id)
+    body_projection = body.current_projection(paper_id)
+    read_facts = reads.failure_facts(paper_id, snapshot_id=snapshot_id)
+    # 明确没有任何全文/Read 事实时,保留旧 Screening-only 支持范围。
+    # 有 PDF、提取、Read 历史或省略快照,均保留 Read 的不可判定事实。
+    screening_only = (
+        snapshot_id is not None
+        and body_projection.pdf.presence is Presence.ABSENT
+        and not pdfs
+        and not extractions
+        and not read_history
+    )
+    projection = replace(
+        body_projection,
         revision_no=current.revision_no,
         metadata=metadata,
         decisions=tuple(item.fact for item in body.decisions(paper_id)),
         root_purpose=root.purpose,
         visibility=permissions,
         screening=artifact,
-        read_tasks=reads.failure_facts(paper_id, snapshot_id=snapshot_id),
+        read_tasks=None if screening_only else read_facts,
         screening_tasks=ScreeningTaskFacts.from_queries(paper_id, queries)
         if snapshot_id
         else None,
@@ -231,7 +242,7 @@ def query_paper_trace(
             for record in Acceptances(database, data_root).history()
             if record.request.paper_id == paper_id
         ),
-        pdfs=tuple(asdict(pdf) for pdf in body.pdfs(paper_id)),
+        pdfs=tuple(asdict(pdf) for pdf in pdfs),
         pdf_confirmations=tuple(
             pdf_receipt(record)
             for record in pdf_samples.history()
@@ -242,12 +253,10 @@ def query_paper_trace(
             for sample in pdf_samples.samples()
             if sample.paper_id == paper_id
         ),
-        extractions=tuple(
-            extraction_payload(view) for view in body.extractions(paper_id)
-        ),
+        extractions=tuple(extraction_payload(view) for view in extractions),
         bounded_executions=Extractions(database, data_root).history(paper_id),
         layout_reviews=LayoutReviews(database, data_root).history(paper_id),
-        read_tasks=tuple(task_payload(t) for t in reads.history(paper_id)),
+        read_tasks=tuple(task_payload(t) for t in read_history),
         read_analyses=ReadQueries(database, data_root).axes(
             paper_id, snapshot_id=snapshot_id
         ),

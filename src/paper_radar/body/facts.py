@@ -7,10 +7,15 @@ from paper_radar.body.extraction import extraction_view
 from paper_radar.body.models import BodyError, BodyFacts, BodyReason, DecisionEvent
 from paper_radar.calibration.visibility import evaluate_visibility
 from paper_radar.eligibility import (
+    ArtifactFact,
     Concept,
     ExecutionSource,
+    ExtractionFact,
+    ExtractionState,
     PaperProjection,
+    Presence,
     QualityBasis,
+    QualityFact,
     RootPurpose,
     evaluate_paper,
 )
@@ -19,6 +24,72 @@ from paper_radar.reading.context import ExtractionIdentity
 from paper_radar.screening.reasons import ScreeningResult
 from paper_radar.screening_tasks.success_rules import stored_candidate
 from paper_radar.screening_tasks.tables import budgets, successes
+
+
+def project_facts(facts: BodyFacts) -> PaperProjection:
+    """同一 Body 事实转换,只装配共享字段,资格仍由 evaluate_paper 计算。"""
+    pdf, extraction = facts.pdf, facts.extraction
+    extracted = ExtractionFact(ExtractionState.ABSENT)
+    if extraction is not None and pdf is not None:
+        failed = bool(extraction.attempts and extraction.attempts[-1].failure)
+        if failed or extraction.artifact_id is not None:
+            extracted = ExtractionFact(
+                ExtractionState.FAILED if failed else ExtractionState.SUCCEEDED,
+                extraction.artifact_id,
+                pdf.artifact_id,
+                "current",
+            )
+    return PaperProjection(
+        facts.paper_id,
+        facts.version_id,
+        facts.version_id,
+        canonical_id=facts.paper_id,
+        revision_no=facts.revision_no,
+        decisions=(facts.decision.fact,) if facts.decision else (),
+        pdf=ArtifactFact(Presence.PRESENT, pdf.artifact_id, pdf.version_id, "current")
+        if pdf
+        else ArtifactFact(Presence.ABSENT),
+        extraction=extracted,
+        quality=extraction.quality if extraction else QualityFact(QualityBasis.ABSENT),
+        root_purpose=facts.root.purpose,
+        execution_source=facts.execution_source,
+        visibility=evaluate_visibility(frozenset()),
+    )
+
+
+def current_projection(connection: Connection, paper_id: str) -> PaperProjection:
+    """当前选择优先;唯一同 PDF 失败只作诊断,多输入歧义不选第一条。"""
+    from dataclasses import replace
+
+    from paper_radar.body.queries import current_body, current_pdf
+
+    current = load_trace(connection, paper_id).current
+    body = current_body(connection, paper_id)
+    fingerprint = None
+    ambiguous = body.reason == "ambiguous_extractions"
+    if body.identity is None and not ambiguous:
+        pdf = current_pdf(connection, paper_id, current.version_id)
+        if pdf is not None:
+            keys = tuple(
+                connection.execute(
+                    select(tables.inputs.c.fingerprint).where(
+                        tables.inputs.c.pdf_sha256 == pdf.pdf_sha256
+                    )
+                ).scalars()
+            )
+            if len(keys) == 1:
+                fingerprint = keys[0]
+            elif keys:
+                ambiguous = True
+    facts = assemble_facts(
+        connection, paper_id, identity=body.identity, fingerprint=fingerprint
+    )
+    projection = project_facts(facts)
+    if ambiguous:
+        projection = replace(
+            projection, extraction=ExtractionFact(), quality=QualityFact()
+        )
+    return projection
 
 
 def execution_source(

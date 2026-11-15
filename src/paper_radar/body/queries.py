@@ -13,7 +13,11 @@ from paper_radar.body.models import (
 )
 from paper_radar.body.query_records import (
     current_pdf as current_pdf,
+)
+from paper_radar.body.query_records import (
     pdf_record as pdf_record,
+)
+from paper_radar.body.query_records import (
     root_fact as root_fact,
 )
 from paper_radar.eligibility import DecisionFact
