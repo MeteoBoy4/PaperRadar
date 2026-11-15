@@ -1,7 +1,7 @@
 """明确正文身份的版式回查与所有者核查;不重新解析 PDF。"""
 
 import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
 
@@ -10,15 +10,16 @@ from sqlalchemy import insert, select
 
 from paper_radar.body import BodyService
 from paper_radar.body.extraction import LAYOUT_CHECKS
-from paper_radar.body.models import BodyError, ExtractionView
+from paper_radar.body.models import BodyError
 from paper_radar.body.repository import digest, transaction
 from paper_radar.calibration import visibility
 from paper_radar.experiment.candidates import SnapshotModel
 from paper_radar.experiment.layout_errors import LayoutError as LayoutError
-from paper_radar.experiment.pdf import FrozenSample, PdfError, PdfSamples
+from paper_radar.experiment.layout_models import LayoutBody as LayoutBody
+from paper_radar.experiment.pdf import PdfError, PdfSamples
 from paper_radar.experiment.root import ExperimentRoot
 from paper_radar.fulltext.artifacts import FulltextArtifacts
-from paper_radar.fulltext.models import EvidenceMap, FulltextError, LoadedExtraction
+from paper_radar.fulltext.models import EvidenceMap, FulltextError
 from paper_radar.reading.context import ExtractionIdentity
 from paper_radar.runtime_logging import FileSink, RuntimeLog
 from paper_radar.storage.artifacts import ArtifactStore
@@ -31,15 +32,6 @@ def _visibility(capability: visibility.VisibilityCapability) -> None:
         is not visibility.VisibilityPermission.ALLOWED
     ):
         raise LayoutError("visibility_denied")
-
-
-@dataclass(frozen=True)
-class LayoutBody:
-    sample: FrozenSample
-    view: ExtractionView
-    loaded: LoadedExtraction = field(repr=False)
-    evidence_map: EvidenceMap = field(repr=False)
-    pdf: bytes = field(repr=False)
 
 
 def load_body(

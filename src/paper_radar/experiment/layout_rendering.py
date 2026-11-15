@@ -16,7 +16,7 @@ from paper_radar.experiment.layout_errors import LayoutError
 from paper_radar.fulltext.models import EvidenceMap, ReadingBlock
 
 if TYPE_CHECKING:
-    from paper_radar.experiment.layout import LayoutBody
+    from paper_radar.experiment.layout_models import LayoutBody
     from paper_radar.experiment.root import ExperimentRoot
 
 
