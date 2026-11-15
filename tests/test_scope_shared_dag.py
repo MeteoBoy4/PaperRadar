@@ -177,12 +177,25 @@ def test_production_migration_keeps_exact_materials_counts_and_graph() -> None:
             "path": "src/paper_radar/fixture_audit/abstract_versions.py",
         },
     ]
+    # B 收口已逐项批准的 A6 只读组合依赖;两项均为单组 source。
+    stage_b_trace_additions = [
+        {
+            "group": "A6",
+            "kind": "source",
+            "path": "src/paper_radar/paper_trace.py",
+        },
+        {
+            "group": "A6",
+            "kind": "source",
+            "path": "tests/stage_b_trace_support.py",
+        },
+    ]
     additions = (
         abstract_version_additions
         + expectation_additions
         + preparation["added_bindings"]
     )
-    assert len(report["files"]) == 1175 + len(additions)
+    assert len(report["files"]) == 1175 + len(additions) + len(stage_b_trace_additions)
     assert report["order"] == ledger["original_order"]
     assert report["downstream"] == ledger["original_downstream"]
     assert (
@@ -222,6 +235,11 @@ def test_production_migration_keeps_exact_materials_counts_and_graph() -> None:
                 if row["group"] == scope.group and row["kind"] == kind
             ]
             + [entry[0] for entry in entries]
+            + [
+                row["path"]
+                for row in stage_b_trace_additions
+                if row["group"] == scope.group and row["kind"] == kind
+            ]
             for kind, entries in migrated["bindings"].items()
         }
         assert scope.counts == old["counts"]

@@ -39,6 +39,64 @@ from paper_radar.storage.database import (
 )
 
 
+class PaperTraceError(Exception):
+    """CLI 组合边界只透出组件受控原因,不把执行组件交给论文事实层。"""
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(reason)
+
+
+def query_paper_trace_for_cli(
+    database: Path,
+    data_root: Path,
+    paper_id: str,
+    *,
+    snapshot_id: str | None = None,
+    include_agent_content: bool = False,
+) -> "PaperWorkflowTrace":
+    """把组件受控拒绝转换为查询错误;不改写组件的事实和失败类别。"""
+    from paper_radar.body import BodyError
+    from paper_radar.config import ConfigError
+    from paper_radar.experiment.acceptance import AcceptanceError
+    from paper_radar.experiment.extraction import ExtractionError
+    from paper_radar.experiment.layout import LayoutError
+    from paper_radar.experiment.pdf import PdfError
+    from paper_radar.experiment.selections import SelectionError
+    from paper_radar.feed_pipeline import PipelineError
+    from paper_radar.fulltext.models import FulltextError
+    from paper_radar.papers import PaperError
+    from paper_radar.read_tasks import ReadTaskError
+    from paper_radar.stage_inputs import StageInputError
+    from paper_radar.storage.errors import StorageError
+
+    try:
+        return query_paper_trace(
+            database,
+            data_root,
+            paper_id,
+            snapshot_id=snapshot_id,
+            include_agent_content=include_agent_content,
+        )
+    except (
+        PaperError,
+        StorageError,
+        TaskError,
+        ConfigError,
+        BodyError,
+        SelectionError,
+        PdfError,
+        ReadTaskError,
+        AcceptanceError,
+        LayoutError,
+        ExtractionError,
+        FulltextError,
+        PipelineError,
+        StageInputError,
+    ) as error:
+        raise PaperTraceError(str(error.reason)) from None
+
+
 @dataclass(frozen=True)
 class SelectionReference:
     selection_id: str

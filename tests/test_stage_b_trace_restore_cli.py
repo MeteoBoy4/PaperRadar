@@ -66,6 +66,7 @@ def test_unknown_root_workflow_keeps_old_trace_and_denies_production(
         "--verify-source-bytes",
         "--json",
         "--show-abstract",
+        "--workflow",
     )
     assert query.returncode == 0, query.stderr
     assert json.loads(query.stdout) == expected
@@ -115,6 +116,7 @@ def test_nonempty_workflow_restores_body_read_and_selection_without_promotion(
         "--verify-source-bytes",
         "--json",
         "--show-abstract",
+        "--workflow",
     )
     assert original.returncode == 0, original.stderr
     expected = json.loads(original.stdout)
@@ -134,6 +136,7 @@ def test_nonempty_workflow_restores_body_read_and_selection_without_promotion(
         "--verify-source-bytes",
         "--json",
         "--show-abstract",
+        "--workflow",
     )
     assert recovered.returncode == 0, recovered.stderr
     assert json.loads(recovered.stdout) == expected

@@ -137,7 +137,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_feed_backup.py",
-        "8b3c93726bb632452355a7894210d971a5a6987e2391243ee2d40f6d99bf8e22",
+        "981ac6ef38fe78f948d2bfbf7e7408bc11977d4c28f68e13d234d1d314703edd",
     ),
     (
         "tests/test_feed_cli.py",
@@ -177,7 +177,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_paper_backup.py",
-        "b97253772eff5e0ef15f6e7f9fff842fcee781625b9e9d0f5b47b11ab98b7489",
+        "c82e2d19b7268531ac6b9bde156d2c194efad5a35e39e21c1247863de7ea3440",
     ),
     (
         "tests/test_paper_cli.py",
@@ -231,7 +231,7 @@ REQUIRED_TEST_MODULES = (
     ),
     (
         "tests/test_source_backup.py",
-        "bca71856cea7dbc9602ab4fb48b2b98d2982c388f3dc1f1eef235bc646ecaac4",
+        "9642f5938bf071ba66e86964a4ba1914283fca9b90742ae3d5db56319151c316",
     ),
     (
         "tests/test_source_cli.py",
@@ -506,7 +506,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/paper_trace.py",
-        "3e606e697589f09868d69544aece0940c563fbaa95b2b89c2741acbf607a6644",
+        "a625e3563cd42abeb38072c4d750e94a192b493d56af9cf8f2170e0a087e8061",
     ),
     (
         "tests/stage_b_trace_support.py",

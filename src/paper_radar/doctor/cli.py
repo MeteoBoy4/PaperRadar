@@ -60,7 +60,11 @@ CAPABILITIES = (
 
 def _show(check: Check) -> None:
     if check.detail is not None:
-        typer.echo(check.detail)
+        detail = check.detail
+        if detail.startswith("check="):
+            _, separator, body = detail.partition(" ")
+            detail = f"check={check.name}{separator}{body}"
+        typer.echo(detail)
         return
     typer.echo(
         f"check={check.name} result={check.result.value} reason={check.reason} "

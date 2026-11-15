@@ -63,6 +63,7 @@ def test_backup_restores_paper_identity_and_candidates_in_new_process(
         "--verify-source-bytes",
         "--json",
         "--show-abstract",
+        "--workflow",
     )
     assert query.returncode == 0, query.stderr
     assert json.loads(query.stdout) == expected

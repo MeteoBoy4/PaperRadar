@@ -77,7 +77,16 @@ def test_paper_composition_fault_is_controlled(
     monkeypatch.setattr("paper_radar.paper_trace.query_paper_trace", fail)
     missing = tmp_path / "private-location" / "never-opened.sqlite3"
     result = CliRunner().invoke(
-        app, ["paper", command, "private-input", "--database", str(missing), "--json"]
+        app,
+        [
+            "paper",
+            command,
+            "private-input",
+            "--database",
+            str(missing),
+            "--json",
+            "--workflow",
+        ],
     )
     assert result.exit_code == 1, result.output
     assert "论文查询失败" in result.output

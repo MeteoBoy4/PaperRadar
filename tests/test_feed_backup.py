@@ -102,6 +102,7 @@ def test_feed_backup_restores_originals_and_interpretations_after_move(
             "--verify-source-bytes",
             "--json",
             "--show-abstract",
+            "--workflow",
         )
         assert query.returncode == 0, query.stderr
         assert json.loads(query.stdout) == trace
