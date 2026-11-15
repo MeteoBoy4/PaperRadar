@@ -187,7 +187,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/llm/rpc.py",
-        "c0cb3455716ac2147e808190177c9909f6bc9a7bb1015da6d5c0b21e89195ad9",
+        "13a22cf9b6c7eaf9cd7790a7e1f9ffe6b15bfd7f1ac5da70ca6a213df7101ba7",
     ),
     (
         "src/paper_radar/llm/rpc_frames.py",

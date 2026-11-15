@@ -218,7 +218,7 @@ REQUIRED_TEST_MODULES: tuple[tuple[str, str], ...] = (
     ),
     (
         "tests/test_config_extraction_validation.py",
-        "613071380962f23d802a90dc8a778246c6cb3b36665891f6a9ee43405aed3c9d",
+        "18bfcdd1c3e6bfb0905cabb1fb403bc0089f896d7260ab7bf0d2f62161178a0a",
     ),
     (
         "tests/test_config_journals.py",

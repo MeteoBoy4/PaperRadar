@@ -110,7 +110,7 @@ SHARED_MATERIALS = {
         "081a13f82706ebc16aee21138c40bcf6620ad8daeb8efa6338a1512f07edd1c5"
     ),
     "src/paper_radar/backup/__init__.py": (
-        "b03e71f04496d78aceb9ab27b399945c72d4ac150db3a47f45e52a6696558078"
+        "946f1c035ff104141d8d07d10efe8c840d6d9dc65548f68a5f2db3f749953f26"
     ),
     "src/paper_radar/backup/cli.py": (
         "731e05af4659eefa8c52707516525e27244265ae0bdbd4a6a364228fda92d838"
@@ -125,19 +125,19 @@ SHARED_MATERIALS = {
         "72f8db97278668c4794c04f8f454a197da13e58537950f45eb2c8a02de2b3452"
     ),
     "src/paper_radar/backup/restore.py": (
-        "13d80b3ce3239dcc8159d02cc91ac50ac6abec1f526a8337b16fad8aba77b46f"
+        "42030f738c27edfffb7b3d811ec9d2663010c665b797ad3f55023535d2ddaa4b"
     ),
     "src/paper_radar/backup/restore_cli.py": (
-        "d168d5159b481ac48fdeff10c2931052a490cb1eea58b784a8494ce2cf81b6e5"
+        "be731cf074228ca5afad674fe311aec1d51170f75d2b7325499d7bb67ee760dd"
     ),
     "src/paper_radar/backup/restore_contract.py": (
         "9f251dd2aa193d3a6908361fd813c184d6dbe605aec122a7cf0de0db9262bb13"
     ),
     "src/paper_radar/backup/service.py": (
-        "bb9e344c63eb3a8bd448273dbd3e877774d855b0710c661c356b2a44ef8c16ef"
+        "a1f362de8a68d89d102af3f993de801579539aae41796bae079c255c56dd7f1d"
     ),
     "src/paper_radar/cli.py": (
-        "1a26040550e69858e1230d4122ce38bfab066ec8fd41a79e2f180d8eb61e5abd"
+        "c8002ab4b0739868f04f58be2d6a5dc2ad02c69c83760282360000a48ab4078f"
     ),
     "src/paper_radar/config/__init__.py": (
         "183ae92cde48da098849568b1c84aef187d2487370e7117f1447a9f7e1af418b"
@@ -164,7 +164,7 @@ SHARED_MATERIALS = {
         "086813af87547c24fce5b2940e6fb773b276a63f7ac880637311e3b24443d24d"
     ),
     "src/paper_radar/config/extraction.py": (
-        "5e40614630817b84fc66aeed221cf65b0aee58012fe7e09148cc1f635bc36c4e"
+        "3583a00041eef97c2e1e13d8304b260772f11f85515bb5019d713a4c191ea400"
     ),
     "src/paper_radar/config/extraction_models.py": (
         "a25c95e28eef976d63827959e87da3c09bd1124383bb05b298cb114156768c6b"
@@ -236,13 +236,13 @@ SHARED_MATERIALS = {
         "a52553e700aa7a06f69c45c90052ffb813db6319c90d4a9fd39173767af3b9d9"
     ),
     "src/paper_radar/llm/models.py": (
-        "a08af74b01fbec27a6108df73b9a54b5a6f3afe70b58794809be598155442664"
+        "ad9d60184e01f72a2ff671a060d3e6b0766c8d875be03b181fb7c4f8256eac7b"
     ),
     "src/paper_radar/papers/__init__.py": (
         "2db5994c8f0a7b00bfd205a739e0f32e96b8769a75c185725335710c3c5fec36"
     ),
     "src/paper_radar/papers/cli.py": (
-        "a733d4a91ca64608ec4638518373f2c9022d4d287ab9b6b8d92099ff2d455af2"
+        "24ce1dca966c346286350ee1c5d1068815563e794ac892139885e9e214daeb74"
     ),
     "src/paper_radar/papers/doi.py": (
         "228846911cf806f424da4bbb155062f7b376249696d6625b74c80b6a421c2aee"
@@ -296,7 +296,7 @@ SHARED_MATERIALS = {
         "27579c3eb0bedbbe90f7da5c5326904b6058023cf3fe1a7576a71afde4b9c7f1"
     ),
     "src/paper_radar/papers/service.py": (
-        "04473effebe65c5ca44f6765d3d4c5b1d2fc9b7f176ac9e38a6cdfe51b8302f4"
+        "ac348e9fe34ddf912591d3fcb00271a4c993c468438db60e73708473f386a0c7"
     ),
     "src/paper_radar/papers/tables.py": (
         "b190ff9f7f1d0ded4bfa559246cd07e5fb8b47290e3c7a76a344c886a6311f21"
@@ -422,7 +422,7 @@ SHARED_MATERIALS = {
         "7a6d1be2b56745e15d074575b7cc4f9f9ae0e4fed3a8409cf098fac0751b5b85"
     ),
     "src/paper_radar/screening_tasks/__init__.py": (
-        "dc13d29177723406c86a03b062ed898b849d798b374b6e8f8a8c4471af49a71d"
+        "3dea4379e25108a00c7998c04eb271e8a3c43f781eb85d257c81c0480ad650a3"
     ),
     "src/paper_radar/screening_tasks/attempt_integrity.py": (
         "a1cc83d965132feab740fcc6ebb4302e349166db1ed9f17c98630b33b5a4c0fc"
@@ -440,10 +440,10 @@ SHARED_MATERIALS = {
         "433e727d768e8281fe69fe48cff91eb861e59572b26ae839ed743872547c6630"
     ),
     "src/paper_radar/screening_tasks/errors.py": (
-        "6b9fb832adb19ce2394f26c19610e8b6eb0860fa47ae46af55de06163a732970"
+        "90afffff925969e6e194b0f230d922e3b301f48db6361e47b06ac1003f9a0b61"
     ),
     "src/paper_radar/screening_tasks/execution.py": (
-        "cd56a05f6766aad76f0ea723069a8015f863c15d8b1a8b1a7b4ac3fc828559bd"
+        "f210a465ce0f684f4c864d85481ef499460c3f0360865f0cb19f2bcc7ed6ec2a"
     ),
     "src/paper_radar/screening_tasks/frozen.py": (
         "1feeec54b063c149788086812cac02ae148004a496ef9a79cc04b5903842438a"
@@ -455,25 +455,25 @@ SHARED_MATERIALS = {
         "42c24b28d5d53d4a748ef2bb8d9948348acf83b8470e26e56aa37f11bcafb249"
     ),
     "src/paper_radar/screening_tasks/query.py": (
-        "8a5a4c8f07e58e5f3c7414d7cc186788fa3bf13fb8297ff8d1759734aa5605cd"
+        "bed38b34d773cb928a207de2c21f5a112e74f3a7a2e3f2e178c5c13fd4c6fb26"
     ),
     "src/paper_radar/screening_tasks/query_models.py": (
-        "a771cf0bc91a6cc4ee961c2c85ebca8b7c7a4f38eaa8e6f64b58e3d3b15f2ad2"
+        "c949f6b7b35811d294ce7b7a1740aa4829909f50338787d7d577303bb0c3176e"
     ),
     "src/paper_radar/screening_tasks/repository.py": (
         "1d72dd519cc8f7ea1a734fc1df0686054ab07351a270e13cb2da30046479cd1c"
     ),
     "src/paper_radar/screening_tasks/retry.py": (
-        "7723a0e6cb209215860e7bfff74a8fd2b5e060884045492f9a8a1966be885052"
+        "7b940e9518fecedfbe7bf4737e06d7866f2efd2e4492ed58292bf42797d050a5"
     ),
     "src/paper_radar/screening_tasks/rules.py": (
         "ad6e02377fbc3cc965a2644a36c8321324a036e63d493232b387566cd3a3a4bd"
     ),
     "src/paper_radar/screening_tasks/service.py": (
-        "6e335461c25f4bf01eefa72ab9dec4fa76e7a5a4a64e9e32e8ed234ea7e512d8"
+        "5e50ed269cd88b57150b465c2e0fb0fe3698860289c552fe6efccdacaccfb8ff"
     ),
     "src/paper_radar/screening_tasks/success.py": (
-        "ecd723373feb614d3dced2d8c9de09776f42141cb95b2269888e240f6e4eab92"
+        "0da0d13d46e04f99b4f9169784fdf8ce940146b816e48d54ec0b0964d601ba24"
     ),
     "src/paper_radar/screening_tasks/success_integrity.py": (
         "1ee3ca56fddb35cc64bcc12972eefa89fe3e5361d323435bb2927bb288729770"
@@ -497,7 +497,7 @@ SHARED_MATERIALS = {
         "52dd2406b588ddb72767d4621f5bddc12d8b68425e049b562574ca9c1789b236"
     ),
     "src/paper_radar/storage/artifact_contract.py": (
-        "ab8284b17b5710fe9e537f6edb88fff7fc84f686417f96e3558405699f1fa999"
+        "7e04e78ac21e203f80055be4d75238a82bef50647d1815c7da33c81bf445dec0"
     ),
     "src/paper_radar/storage/artifact_repository.py": (
         "463a855fa7c11ca8a908d6770a26bd453be8005f452339ec1930e8600341e661"
@@ -572,7 +572,7 @@ SHARED_MATERIALS = {
         "91a48152f1f2fdd840471f81c6db13ca87dc533a8ce4fa03f5b396b08019f5bf"
     ),
     "src/paper_radar/storage/schema.py": (
-        "67d2382bf545bd068b207f0dd525eebeb0c6c70c7efe36c907ffac66fb2d7450"
+        "18dac7d70c4fb9e59657e4c929cac47829a3891cf52ff341568a2cafc7b6d6f8"
     ),
     "src/paper_radar/storage/snapshot_queries.py": (
         "e394fb3bbc2e70e5bc92f4c539481e7d9660c026f60d709ef990763022f6acf1"

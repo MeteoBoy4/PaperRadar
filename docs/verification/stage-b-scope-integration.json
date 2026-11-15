@@ -1,0 +1,420 @@
+{
+  "base": "6f0c4e93d43b86cf25e87d90bf5130e7533d19d1",
+  "central_entries_changed": 19,
+  "final_confirmations": "stored outside the worktree and rebound to final HEAD/target/full tree; this file is not a reusable confirmation",
+  "fixed_test_members_and_counts_unchanged": true,
+  "format_version": 1,
+  "full_offline_gate_run": false,
+  "integration_input_commit": "145962532c6db722e22158b23bf99be09f55b170",
+  "new_A6_source_support_entries": 2,
+  "new_consumption_closure": [
+    {
+      "affected_groups": [
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ],
+      "group": "A6",
+      "kind": "source",
+      "path": "tests/stage_b_trace_support.py",
+      "reason": "三旧固定trace恢复测试直接消费的新增备份前安全JSON快照support；不新增测试/分母。",
+      "role": "support",
+      "sha256": "f32383c60b77d39fc3ce10d6e75181ec37e856b7f1a9772bbc0423b521671607"
+    },
+    {
+      "affected_groups": [
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ],
+      "group": "A6",
+      "kind": "source",
+      "path": "src/paper_radar/paper_trace.py",
+      "reason": "新增support直接消费的既有公共workflow权威；固定报告/私有内容不因此获得资格。",
+      "role": "source",
+      "sha256": "1f7c99da4bcb695106be725e675e2fe37b5fbd296d00027bd02c859b5b37ebb3"
+    }
+  ],
+  "rebindings": [
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A3",
+        "A9"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "946f1c035ff104141d8d07d10efe8c840d6d9dc65548f68a5f2db3f749953f26",
+      "old_sha256": "b03e71f04496d78aceb9ab27b399945c72d4ac150db3a47f45e52a6696558078",
+      "path": "src/paper_radar/backup/__init__.py",
+      "reason": "公开恢复封装组合接口；标准批次布局不变。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A3",
+        "A4",
+        "A7",
+        "A9"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "42030f738c27edfffb7b3d811ec9d2663010c665b797ad3f55023535d2ddaa4b",
+      "old_sha256": "13d80b3ce3239dcc8159d02cc91ac50ac6abec1f526a8337b16fad8aba77b46f",
+      "path": "src/paper_radar/backup/restore.py",
+      "reason": "显式replay-container封装；标准contents成员与完整校验保持。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A3"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "be731cf074228ca5afad674fe311aec1d51170f75d2b7325499d7bb67ee760dd",
+      "old_sha256": "d168d5159b481ac48fdeff10c2931052a490cb1eea58b784a8494ce2cf81b6e5",
+      "path": "src/paper_radar/backup/restore_cli.py",
+      "reason": "显式恢复封装CLI选项与受控输出；不自动执行模型。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A3",
+        "A6",
+        "A7",
+        "A9"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "a1f362de8a68d89d102af3f993de801579539aae41796bae079c255c56dd7f1d",
+      "old_sha256": "bb9e344c63eb3a8bd448273dbd3e877774d855b0710c661c356b2a44ef8c16ef",
+      "path": "src/paper_radar/backup/service.py",
+      "reason": "新增B事实闭包通过公共validate_all统一校验，保留完整源成员验证。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A2-01",
+        "A3",
+        "A4",
+        "A6",
+        "A9",
+        "完整 A2"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "c8002ab4b0739868f04f58be2d6a5dc2ad02c69c83760282360000a48ab4078f",
+      "old_sha256": "1a26040550e69858e1230d4122ce38bfab066ec8fd41a79e2f180d8eb61e5abd",
+      "path": "src/paper_radar/cli.py",
+      "reason": "注册已实现实验、Read与回放命令；普通生产语义保持。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A2-01",
+        "完整 A2"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "3583a00041eef97c2e1e13d8304b260772f11f85515bb5019d713a4c191ea400",
+      "old_sha256": "5e40614630817b84fc66aeed221cf65b0aee58012fe7e09148cc1f635bc36c4e",
+      "path": "src/paper_radar/config/extraction.py",
+      "reason": "新增显式normalization v2并保留v1解释与指纹语义。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A8"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "ad9d60184e01f72a2ff671a060d3e6b0766c8d875be03b181fb7c4f8256eac7b",
+      "old_sha256": "a08af74b01fbec27a6108df73b9a54b5a6f3afe70b58794809be598155442664",
+      "path": "src/paper_radar/llm/models.py",
+      "reason": "B显式调用的消费者与只读审计元数据接缝；不授予Live能力。"
+    },
+    {
+      "central": false,
+      "groups": [
+        "A8"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "13a22cf9b6c7eaf9cd7790a7e1f9ffe6b15bfd7f1ac5da70ca6a213df7101ba7",
+      "old_sha256": "c0cb3455716ac2147e808190177c9909f6bc9a7bb1015da6d5c0b21e89195ad9",
+      "path": "src/paper_radar/llm/rpc.py",
+      "reason": "受控RPC完成与安全审计接线；原始会话和凭据不进入诊断。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A6"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "24ce1dca966c346286350ee1c5d1068815563e794ac892139885e9e214daeb74",
+      "old_sha256": "a733d4a91ca64608ec4638518373f2c9022d4d287ab9b6b8d92099ff2d455af2",
+      "path": "src/paper_radar/papers/cli.py",
+      "reason": "组合paper trace新增workflow安全投影，保留原论文事实字段。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A6"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "ac348e9fe34ddf912591d3fcb00271a4c993c468438db60e73708473f386a0c7",
+      "old_sha256": "04473effebe65c5ca44f6765d3d4c5b1d2fc9b7f176ac9e38a6cdfe51b8302f4",
+      "path": "src/paper_radar/papers/service.py",
+      "reason": "增加供工作流组合消费的公共只读事实接缝，身份权威不替代。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A7"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "3dea4379e25108a00c7998c04eb271e8a3c43f781eb85d257c81c0480ad650a3",
+      "old_sha256": "dc13d29177723406c86a03b062ed898b849d798b374b6e8f8a8c4471af49a71d",
+      "path": "src/paper_radar/screening_tasks/__init__.py",
+      "reason": "公开任务查询与retry值接口。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A7"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "90afffff925969e6e194b0f230d922e3b301f48db6361e47b06ac1003f9a0b61",
+      "old_sha256": "6b9fb832adb19ce2394f26c19610e8b6eb0860fa47ae46af55de06163a732970",
+      "path": "src/paper_radar/screening_tasks/errors.py",
+      "reason": "B失败队列/重试与受控原因扩展；预算身份不变。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A7"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "f210a465ce0f684f4c864d85481ef499460c3f0360865f0cb19f2bcc7ed6ec2a",
+      "old_sha256": "cd56a05f6766aad76f0ea723069a8015f863c15d8b1a8b1a7b4ac3fc828559bd",
+      "path": "src/paper_radar/screening_tasks/execution.py",
+      "reason": "显式执行检查点重核与安全结算；复用既有attempt权威。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A7"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "bed38b34d773cb928a207de2c21f5a112e74f3a7a2e3f2e178c5c13fd4c6fb26",
+      "old_sha256": "8a5a4c8f07e58e5f3c7414d7cc186788fa3bf13fb8297ff8d1759734aa5605cd",
+      "path": "src/paper_radar/screening_tasks/query.py",
+      "reason": "安全任务/失败队列投影，历史与当前资格分离。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A7"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "c949f6b7b35811d294ce7b7a1740aa4829909f50338787d7d577303bb0c3176e",
+      "old_sha256": "a771cf0bc91a6cc4ee961c2c85ebca8b7c7a4f38eaa8e6f64b58e3d3b15f2ad2",
+      "path": "src/paper_radar/screening_tasks/query_models.py",
+      "reason": "B工作流安全查询类型与组合元数据。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A7"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "7b940e9518fecedfbe7bf4737e06d7866f2efd2e4492ed58292bf42797d050a5",
+      "old_sha256": "7723a0e6cb209215860e7bfff74a8fd2b5e060884045492f9a8a1966be885052",
+      "path": "src/paper_radar/screening_tasks/retry.py",
+      "reason": "仅失败终态的唯一显式后继；不自动执行或重开成功。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A7"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "5e50ed269cd88b57150b465c2e0fb0fe3698860289c552fe6efccdacaccfb8ff",
+      "old_sha256": "6e335461c25f4bf01eefa72ab9dec4fa76e7a5a4a64e9e32e8ed234ea7e512d8",
+      "path": "src/paper_radar/screening_tasks/service.py",
+      "reason": "事务内领取前重核与公开历史接缝，沿用预算/租约。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A7"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "0da0d13d46e04f99b4f9169784fdf8ce940146b816e48d54ec0b0964d601ba24",
+      "old_sha256": "ecd723373feb614d3dced2d8c9de09776f42141cb95b2269888e240f6e4eab92",
+      "path": "src/paper_radar/screening_tasks/success.py",
+      "reason": "生产pi_rpc成功与当前依据公共读取，冻结历史不回填。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A3",
+        "A7",
+        "A9"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "7e04e78ac21e203f80055be4d75238a82bef50647d1815c7da33c81bf445dec0",
+      "old_sha256": "ab8284b17b5710fe9e537f6edb88fff7fc84f686417f96e3558405699f1fa999",
+      "path": "src/paper_radar/storage/artifact_contract.py",
+      "reason": "登记candidate_snapshot/exposure_manifest等B制品角色，旧格式保持。"
+    },
+    {
+      "central": true,
+      "groups": [
+        "A10",
+        "A2-01",
+        "A3",
+        "A4",
+        "A7",
+        "完整 A2"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "new_sha256": "18dac7d70c4fb9e59657e4c929cac47829a3891cf52ff341568a2cafc7b6d6f8",
+      "old_sha256": "67d2382bf545bd068b207f0dd525eebeb0c6c70c7efe36c907ffac66fb2d7450",
+      "path": "src/paper_radar/storage/schema.py",
+      "reason": "线性b001–b008新事实表与保护声明；旧表事实和历史migration字节保留。"
+    },
+    {
+      "central": false,
+      "groups": [
+        "完整 A2"
+      ],
+      "kinds": [
+        "test"
+      ],
+      "new_sha256": "18bfcdd1c3e6bfb0905cabb1fb403bc0089f896d7260ab7bf0d2f62161178a0a",
+      "old_sha256": "613071380962f23d802a90dc8a778246c6cb3b36665891f6a9ee43405aed3c9d",
+      "path": "tests/test_config_extraction_validation.py",
+      "reason": "未知normalization负例v2改v3适配显式支持v2；82分母、字段路径及隐私断言不变。"
+    },
+    {
+      "central": false,
+      "groups": [
+        "A6"
+      ],
+      "kinds": [
+        "test"
+      ],
+      "new_sha256": "8b3c93726bb632452355a7894210d971a5a6987e2391243ee2d40f6d99bf8e22",
+      "old_sha256": "06bbab8bef3bbab03b17427c1cc5b5f5d6375aa7406c556f12015e59a85227d5",
+      "path": "tests/test_feed_backup.py",
+      "reason": "仅追加备份前公共workflow安全快照，完整JSON比较与18节点/旧断言不减。"
+    },
+    {
+      "central": false,
+      "groups": [
+        "A6"
+      ],
+      "kinds": [
+        "test"
+      ],
+      "new_sha256": "b97253772eff5e0ef15f6e7f9fff842fcee781625b9e9d0f5b47b11ab98b7489",
+      "old_sha256": "81e33733173ecbfb1079ad0500ddd23b0a7270f8163b1b961068f94b27444d34",
+      "path": "tests/test_paper_backup.py",
+      "reason": "仅追加备份前公共workflow安全快照，完整JSON比较与9节点/旧断言不减。"
+    },
+    {
+      "central": false,
+      "groups": [
+        "A6"
+      ],
+      "kinds": [
+        "test"
+      ],
+      "new_sha256": "bca71856cea7dbc9602ab4fb48b2b98d2982c388f3dc1f1eef235bc646ecaac4",
+      "old_sha256": "05d2756b4707d7553da72b45f779a5210c8c312b464885e2b14b0ecd8401a80a",
+      "path": "tests/test_source_backup.py",
+      "reason": "仅追加备份前公共workflow安全快照，完整JSON比较与5节点/旧断言不减。"
+    }
+  ],
+  "registration_file_changes": [
+    {
+      "new_sha256": "4bbdd429f927aef7ceb4fed49f70046cf613a3e03447d89007da8af7778721c6",
+      "old_sha256": "e45000ecb3714242ec5f7359261c795a78e03cde16d00b135cc9f92fb5362cae",
+      "path": "scripts/verification_scope_materials.py"
+    },
+    {
+      "new_sha256": "36616976b034d168cb6af1079d00500f848e3dad33220a6108974a92090c25ff",
+      "old_sha256": "6b91b54b8c1f7c2dff3212ad7800c734cc892f1a8fea34d429ba36be58ac6c19",
+      "path": "scripts/a2_full_scope.py"
+    },
+    {
+      "new_sha256": "6a2b20ca37dfa8eb00c5adb325523ab79017aed63bcd60e13b4c0285d120c856",
+      "old_sha256": "7983dcd77248eb85307e6062e6abd5c1e4a1522a7e92b52ad1e47c251090c7a3",
+      "path": "scripts/a6_scope.py"
+    },
+    {
+      "new_sha256": "39a4dad9f58d3d2461cdb14e8559597ad2eb6790ed0e795be7c7b00883fc24ac",
+      "old_sha256": "23c253707f19aceddaa04cea529e87eb261c6006b500738f99aed1113314bfc7",
+      "path": "scripts/a8_scope.py"
+    }
+  ],
+  "scope": "stage_b_engineering_scope_maintenance",
+  "scope_hash_edges_added": 0,
+  "single_group_literal_entries_changed": 5,
+  "stage_a_verified": false
+}
