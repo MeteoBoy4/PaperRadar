@@ -12,6 +12,7 @@ REASONS = frozenset(
         "isolation_unavailable",
         "isolation_verification_failed",
         "replay_failed",
+        "replay_timeout",
         "file_missing",
         "file_corrupt",
         "unsafe_path",

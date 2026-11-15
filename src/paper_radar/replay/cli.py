@@ -16,7 +16,8 @@ REPLAY_HELP = """在实际 OS 隔离与禁网条件下核验恢复内容闭包�
 仅在恢复封装内独立 views 重渲染全部固定日报、单篇报告及暴露清单，不建日志。
 自动配额：0；不联网、不调用或安装 Pi、OAuth、Docling，不依赖模型缓存；帮助无外部 I/O。
 输出去向：私有视图写 restored/views；终端仅显示受控计数与隔离结果。
-常见失败：来源不符、缺件/篡改、路径重叠或隔离能力不足返回 2，成功 0，中断 130；
+总 worker 时限：--timeout-seconds 为 1–3600 秒，默认 600 秒；超时返回 replay_timeout。
+常见失败：来源不符、缺件/篡改、路径重叠、超时或隔离能力不足返回 2，成功 0，中断 130；
 保留副本，用匹配程序检查 restore verify 与 Linux x86_64 Landlock/seccomp 支持后重试。
 示例：paper-radar replay --restored demo/restore/session
  --original-database demo/paper-radar.sqlite3 --original-data-root demo/data
@@ -41,6 +42,10 @@ def replay_command(
     original_material_root: Annotated[
         list[Path], typer.Option(help="原材料/安装/模型树；重复列全，勿指定认证树。")
     ],
+    timeout_seconds: Annotated[
+        int,
+        typer.Option(min=1, max=3600, help="完整 worker 总时限（秒）；超时保留副本。"),
+    ] = 600,
 ) -> None:
     import json
 
@@ -56,11 +61,18 @@ def replay_command(
                 original_config_root,
                 *original_material_root,
             ),
+            timeout_seconds=timeout_seconds,
         )
         typer.echo(json.dumps(result, sort_keys=True, ensure_ascii=False))
     except ReplayError as error:
+        message = (
+            "完整 worker 超过总时限；请保留副本，核对规模与运行资源，"
+            "必要时显式调整 --timeout-seconds 后重试。"
+            if error.reason == "replay_timeout"
+            else "回放未完成；请保留副本，检查来源、完整性与隔离部署后重试。"
+        )
         typer.echo(
-            f"{error.reason}：回放未完成；请保留副本，检查来源、完整性与隔离部署后重试。",
+            f"{error.reason}：{message}",
             err=True,
         )
         raise typer.Exit(2) from None

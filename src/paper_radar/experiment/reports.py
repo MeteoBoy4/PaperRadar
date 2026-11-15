@@ -900,6 +900,10 @@ class Reports:
         _visible()
         inputs, row = self._load(report_id)
         self._validate_sources(inputs)
+        self._write_projection(inputs, row)
+        return self.receipt(report_id)
+
+    def _write_projection(self, inputs: ReportInput, row: dict[str, Any]) -> None:
         content = render(inputs)
         path = self._path(inputs.relative_path, create=True)
         if path.exists() and not path.is_file():
@@ -921,18 +925,20 @@ class Reports:
         finally:
             if temporary is not None:
                 Path(temporary).unlink(missing_ok=True)
-        return self.receipt(report_id)
 
     def verify(self, report_id: str) -> dict[str, object]:
         _visible()
         inputs, row = self._load(report_id)
         self._validate_sources(inputs)
+        self._verify_projection(inputs, row)
+        return self.receipt(report_id)
+
+    def _verify_projection(self, inputs: ReportInput, row: dict[str, Any]) -> None:
         path = self._path(inputs.relative_path, create=False)
         if not path.is_file():
             raise ReportError("file_missing")
         if sha(path.read_bytes()) != row["content_sha256"]:
             raise ReportError("content_corrupt")
-        return self.receipt(report_id)
 
     def receipt(self, report_id: str) -> dict[str, object]:
         inputs, row = self._load(report_id)
@@ -978,17 +984,39 @@ class Reports:
     def history(self) -> tuple[ReportInput, ...]:
         """获准私有历史;保留原primary/supporting与paper/version,不猜当前性。"""
         _visible()
+        ids = self._history_ids()
+        result = []
+        for report_id in ids:
+            inputs, _row = self._load(report_id)
+            self._validate_sources(inputs)
+            result.append(inputs)
+        return tuple(result)
+
+    def _history_ids(self) -> tuple[str, ...]:
         with transaction(self.database) as connection:
-            ids = tuple(
+            return tuple(
                 connection.execute(
                     select(report_runs.c.report_id).order_by(
                         report_runs.c.report_date, report_runs.c.report_id
                     )
                 ).scalars()
             )
+
+    def replay(self) -> tuple[dict[str, object], ...]:
+        """实核全部固定报告后重建并复核字节;已有坏投影拒绝,不改事实。
+
+        每个报告在本次操作内只重建一次来源,不缓存跨调用结果。
+        调用者不能传入已验证状态;普通 rebuild/verify 仍各自完整核验。
+        """
+        _visible()
         result = []
-        for report_id in ids:
-            inputs, _row = self._load(report_id)
+        for report_id in self._history_ids():
+            inputs, row = self._load(report_id)
             self._validate_sources(inputs)
-            result.append(inputs)
+            path = self._path(inputs.relative_path, create=False)
+            if path.exists():
+                self._verify_projection(inputs, row)
+            self._write_projection(inputs, row)
+            self._verify_projection(inputs, row)
+            result.append(self.receipt(report_id))
         return tuple(result)

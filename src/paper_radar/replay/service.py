@@ -14,10 +14,23 @@ from paper_radar.replay.container import check_layout, safe_path
 from paper_radar.replay.contract import ReplayError, ReplaySummary
 from paper_radar.replay.isolation import ReplayBoundary, runtime_paths
 
+DEFAULT_TIMEOUT_SECONDS = 600
+MAX_TIMEOUT_SECONDS = 3600
 
-def replay(root: Path, originals: tuple[Path, ...]) -> dict[str, Any]:
+
+def replay(
+    root: Path,
+    originals: tuple[Path, ...],
+    *,
+    timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
     links: list[Path] = []
     try:
+        if (
+            type(timeout_seconds) is not int
+            or not 1 <= timeout_seconds <= MAX_TIMEOUT_SECONDS
+        ):
+            raise ReplayError("invalid_arguments")
         root = check_layout(root)
         if len(originals) < 4:
             raise ReplayError("invalid_arguments")
@@ -46,26 +59,29 @@ def replay(root: Path, originals: tuple[Path, ...]) -> dict[str, Any]:
             link.symlink_to(path, target_is_directory=path.is_dir())
             links.append(link)
             probes.append({"path": str(path), "link": str(link), "exists": exists})
-        process = subprocess.run(
-            [
-                sys.executable,
-                "-I",
-                "-B",
-                str(Path(__file__).with_name("worker.py")),
-                str(root),
-                json.dumps(probes),
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            cwd=root / "contents",
-            env={},
-            close_fds=True,
-            pass_fds=(),
-            preexec_fn=ReplayBoundary(root, dependencies),
-            timeout=120,
-            check=False,
-        )
+        try:
+            process = subprocess.run(
+                [
+                    sys.executable,
+                    "-I",
+                    "-B",
+                    str(Path(__file__).with_name("worker.py")),
+                    str(root),
+                    json.dumps(probes),
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                cwd=root / "contents",
+                env={},
+                close_fds=True,
+                pass_fds=(),
+                preexec_fn=ReplayBoundary(root, dependencies),
+                timeout=timeout_seconds,
+                check=False,
+            )
+        except OSError:
+            raise ReplayError("isolation_unavailable") from None
         try:
             result = json.loads(process.stdout)
         except (ValueError, UnicodeError):
@@ -80,6 +96,8 @@ def replay(root: Path, originals: tuple[Path, ...]) -> dict[str, Any]:
             raise ReplayError("isolation_verification_failed") from None
     except ReplayError:
         raise
+    except subprocess.TimeoutExpired:
+        raise ReplayError("replay_timeout") from None
     except subprocess.SubprocessError:
         raise ReplayError("isolation_unavailable") from None
     except (OSError, ValueError, RuntimeError):

@@ -373,6 +373,10 @@ worker 在解析业务前实际自证恢复成员可读、contents 写拒绝、�
 三类 socket 创建和直接 connect 被拒绝、prctl 的 no_new_privs=1/seccomp=2；
 再启动 close_fds 的后代重复自证继承。生产启动 stdin=DEVNULL、close_fds=True、
 pass_fds=()、env={}，不继承原文件、目录、已连接 socket 或认证环境。
+唯一自证后代在 exec 前设置 Linux `PR_SET_PDEATHSIG=SIGKILL`，随后复核预期父 PID；
+设置失败或父已退出均受控拒绝。worker 总时限终止父进程时，已 exec 的自证后代随父终止；
+父在设置前退出时，PID 复核阻止孤儿进入解释器；这不保证父返回瞬间 preexec 后代已同步回收。
+生产 preexec 在绑定前不写业务文件；自证分支不再派生，业务阶段拒绝再启动子进程。
 完整恢复路径及各组件软链、特殊文件、硬链接成员和运行依赖/来源重叠均拒绝；
 可识别路径与 inode 旁路受控拒绝。可信安装及无同 UID 恶意并发替换为部署前提；
 不声称通用 mount alias 检测、race-free openat 防护或路径元数据隐藏。
@@ -380,8 +384,9 @@ pass_fds=()、env={}，不继承原文件、目录、已连接 socket 或认证�
 通过自证后，worker 复用 `verify_contents` 的完整组件闭包（含 B 报告与暴露导出），
 并读取全部历史 Read；orig 从持久 evidence-map 重建，FulltextArtifacts 核对完整成员、
 pages/bbox/charspan 和逐字节切片。实验分析可见、普通消费继续拒绝。
-`Reports(database, contents, views).history/receipt/rebuild/verify` 按每个固定 daily/paper
-输入重渲染，成员和 SHA/字节必须与冻结登记一致；不是按今日配置重新规划日报。
+`Reports(database, contents, views).replay()` 在本次调用内逐个实核固定 daily/paper
+输入与来源，核对已有投影后重渲染并复核发布字节；成员和 SHA/字节必须与冻结登记一致。
+不跨调用缓存已验证状态，不按今日配置重新规划日报；普通 rebuild/verify 仍独立完整核验。
 `Exposures.history/payload/write` 逐个核对全部冻结导出及输出原字节。
 views 仅接受这些报告/暴露路径及必要父目录，拒绝未知文件、空多余目录、链接与坏字节。
 输出不放入 contents，故再次回放仍执行原严格 `verify_tree`，不全局忽略输出。
@@ -396,8 +401,14 @@ stdout 仅包含严格类型的 `isolation=verified`、`descendant=verified`、
 `reports`、`analyses`、`evidence_slices`、`exposures`；不打印私有内容或任何来源位置。
 子进程 stderr 不透传；私有全文/分析按用途保留在 views，不能用删除正文通过隐私检查。
 成功退出 0，参数/业务/隔离错误 2，中断 130；自动配额 0，中文冷帮助无外部 I/O。
+`--timeout-seconds` 限定完整 worker 的等待时限，整数 1–3600 秒，默认 600 秒。
+这是有限工程余量，不是历史规模或吞吐保证；隔离自证后代仍有独立 20 秒时限。
+达到总时限返回 `replay_timeout` 和退出 2，丢弃部分 stdout，仅保留副本供检查规模与资源；
+可显式调整时限后重试，不继承部分成功。隔离安装/进程启动失败为 `isolation_unavailable`，
+隔离自证不符、后代启动/生命周期绑定失败或自证超时为 `isolation_verification_failed`，
+worker 业务原因按闭集传播。
 新增原因 `restore_provenance_invalid`、`unsafe_layout`、`isolation_unavailable`、
-`isolation_verification_failed`、`replay_failed`；既有 `file_missing/file_corrupt`、
+`isolation_verification_failed`、`replay_failed`、`replay_timeout`；既有 `file_missing/file_corrupt`、
 `registration_invalid`、`invalid_manifest`、`unsupported_rule_version` 等原具体原因保留。
 所有失败给出保留副本、检查来源/完整性/隔离部署后重试的安全下一步，不回显原始异常。
 临时权限探针链接清理失败时保留现场，不替换原受控错误；残留链接使下一次布局核验拒绝，
