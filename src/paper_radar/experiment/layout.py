@@ -14,6 +14,7 @@ from paper_radar.body.models import BodyError, ExtractionView
 from paper_radar.body.repository import digest, transaction
 from paper_radar.calibration import visibility
 from paper_radar.experiment.candidates import SnapshotModel
+from paper_radar.experiment.layout_errors import LayoutError as LayoutError
 from paper_radar.experiment.pdf import FrozenSample, PdfError, PdfSamples
 from paper_radar.experiment.root import ExperimentRoot
 from paper_radar.fulltext.artifacts import FulltextArtifacts
@@ -22,15 +23,6 @@ from paper_radar.reading.context import ExtractionIdentity
 from paper_radar.runtime_logging import FileSink, RuntimeLog
 from paper_radar.storage.artifacts import ArtifactStore
 from paper_radar.storage.schema import body_layout_reviews, experiment_layout_recordings
-
-
-class LayoutError(ValueError):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
-        super().__init__(
-            f"{reason}：版式操作停止；核对当前样本、明确正文三元组及所有者六项结论；"
-            "缺渲染依赖请准备锁定 extra，否决不能覆盖，材料可显式重建。"
-        )
 
 
 def _visibility(capability: visibility.VisibilityCapability) -> None:

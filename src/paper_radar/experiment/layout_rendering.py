@@ -12,7 +12,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from paper_radar.experiment.layout import LayoutError
+from paper_radar.experiment.layout_errors import LayoutError
 from paper_radar.fulltext.models import EvidenceMap, ReadingBlock
 
 if TYPE_CHECKING:

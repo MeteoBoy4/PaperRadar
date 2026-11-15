@@ -9,12 +9,14 @@ from paper_radar.body.models import (
     CurrentBody,
     DecisionEvent,
     DecisionMetadata,
-    PdfAttachment,
-    RootRegistration,
     SampleAdmission,
 )
-from paper_radar.body.repository import digest
-from paper_radar.eligibility import DecisionFact, RootPurpose
+from paper_radar.body.query_records import (
+    current_pdf as current_pdf,
+    pdf_record as pdf_record,
+    root_fact as root_fact,
+)
+from paper_radar.eligibility import DecisionFact
 from paper_radar.papers.queries import load_trace
 from paper_radar.screening.reasons import (
     ScreeningReasonInput,
@@ -23,51 +25,10 @@ from paper_radar.screening.reasons import (
 )
 
 
-def pdf_record(row: RowMapping) -> PdfAttachment:
-    return PdfAttachment(
-        **{key: row[key] for key in PdfAttachment.__dataclass_fields__}
-    )
-
-
 def sample_record(row: RowMapping) -> SampleAdmission:
     return SampleAdmission(
         **{key: row[key] for key in SampleAdmission.__dataclass_fields__}
     )
-
-
-def root_fact(connection: Connection) -> RootRegistration:
-    rows = connection.execute(select(tables.roots)).mappings().all()
-    if len(rows) != 1 or rows[0]["singleton"] != 1:
-        return RootRegistration()
-    row = rows[0]
-    try:
-        if row["registration_hash"] != digest(
-            [row["root_id"], row["purpose"], row["registered_at"]]
-        ):
-            return RootRegistration()
-        return RootRegistration(
-            row["root_id"], RootPurpose(row["purpose"]), row["registered_at"]
-        )
-    except ValueError:
-        return RootRegistration()
-
-
-def current_pdf(
-    connection: Connection, paper_id: str, version_id: str
-) -> PdfAttachment | None:
-    row = (
-        connection.execute(
-            select(tables.pdfs)
-            .where(
-                tables.pdfs.c.paper_id == paper_id,
-                tables.pdfs.c.version_id == version_id,
-            )
-            .order_by(tables.pdfs.c.sequence.desc())
-        )
-        .mappings()
-        .first()
-    )
-    return pdf_record(row) if row is not None else None
 
 
 def decision_metadata(
