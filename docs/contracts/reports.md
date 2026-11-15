@@ -81,6 +81,12 @@ received/active/revoked 也保持 unknown，不合成历史 claim 或因此产�
 paper/version/revision、primary/supporting 与原授权依据，供后续暴露清单消费。
 它是获准私有内容边界，不能用于默认安全诊断。
 
+`Reports.replay()` 按相同历史顺序对全部固定报告逐个实核登记、成员与权威来源，
+已有投影须先通过字节核验，再原子重建并复核发布字节，返回原 receipt 元组。
+同一报告在本次调用内复用刚校验的固定输入，不提供调用方可传的已验证标志，
+不缓存跨调用结果；源登记或旧投影变化在下一次调用仍重新核验并受控拒绝。
+它不改变普通 rebuild/verify 的独立校验语义，不写事实、状态、预算或日志。
+
 `Reports.validate_all` 经 `experiment.validation.validate_all` 唯一接入备份闭包。
 备份保存冻结输入及所有源成员，不复制可重建 Markdown；标准恢复可独立重建相同字节。
 

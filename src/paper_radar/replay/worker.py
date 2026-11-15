@@ -5,9 +5,11 @@ import errno
 import hashlib
 import json
 import os
+import signal
 import socket
 import subprocess
 import sys
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -112,16 +114,8 @@ def business(root: Path) -> dict[str, int]:
     reports = Reports(database, contents, output, sink=sink)
     report_count = 0
     expected: set[Path] = set()
-    for inputs in reports.history():
-        original = reports.receipt(inputs.report_id)
-        if (output / inputs.relative_path).exists():
-            reports.verify(inputs.report_id)
-        if (
-            reports.rebuild(inputs.report_id) != original
-            or reports.verify(inputs.report_id) != original
-        ):
-            raise ReplayError("content_corrupt")
-        expected.add(output / inputs.relative_path)
+    for receipt in reports.replay():
+        expected.add(output / str(receipt["relative_path"]))
         report_count += 1
     reads = ReadTasks(database, contents, sink=sink)
     analyses = evidence_slices = 0
@@ -188,6 +182,16 @@ def business(root: Path) -> dict[str, int]:
     }
 
 
+def _bind_parent_lifetime(expected_parent: int) -> None:
+    """唯一自证后代在 exec 前绑定父生存期,父已退出时不进入解释器。"""
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.prctl(1, signal.SIGKILL, 0, 0, 0) != 0:
+        raise ReplayError("isolation_verification_failed")
+    # 父可能在 fork 与 prctl 之间退出;不能把已收养的后代留给新父进程。
+    if os.getppid() != expected_parent:
+        raise ReplayError("isolation_verification_failed")
+
+
 def main() -> int:
     try:
         root, probes = Path(sys.argv[1]), json.loads(sys.argv[2])
@@ -195,25 +199,29 @@ def main() -> int:
         if len(sys.argv) > 3:
             print(json.dumps(result))
             return 0
-        child = subprocess.run(
-            [
-                sys.executable,
-                "-I",
-                "-B",
-                __file__,
-                str(root),
-                sys.argv[2],
-                "--selftest",
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            env={},
-            close_fds=True,
-            pass_fds=(),
-            timeout=20,
-            check=False,
-        )
+        try:
+            child = subprocess.run(
+                [
+                    sys.executable,
+                    "-I",
+                    "-B",
+                    __file__,
+                    str(root),
+                    sys.argv[2],
+                    "--selftest",
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                env={},
+                close_fds=True,
+                pass_fds=(),
+                preexec_fn=partial(_bind_parent_lifetime, os.getpid()),
+                timeout=20,
+                check=False,
+            )
+        except (subprocess.SubprocessError, OSError):
+            raise ReplayError("isolation_verification_failed") from None
         if child.returncode != 0 or json.loads(child.stdout) != result:
             raise ReplayError("isolation_verification_failed")
         result["descendant"] = "verified"

@@ -269,7 +269,8 @@ uv run --offline --locked paper-radar db upgrade --database restored/database.sq
 `restore verify --replay-container` 生成 `contents/`、独立 `views/` 与来源回执；
 `paper-radar replay --restored SESSION` 在实际 Linux Landlock/seccomp 禁网边界内
 重验全部组件、证据、固定报告和暴露清单。须显式提供原数据库、数据/配置树及全部材料树，
-参数见 `replay --help`。移动和重复回放保持内容原字节，不执行模型或更改预算，
+参数见 `replay --help`；`--timeout-seconds` 可显式选择有界总时限，超时受控拒绝。
+移动和重复回放保持内容原字节，不执行模型或更改预算，
 不新增恢复副本永久禁执行规则；[回放契约与部署边界](docs/contracts/backup-restore.md#隔离脱网回放)。
 
 ## 不可变制品存储
