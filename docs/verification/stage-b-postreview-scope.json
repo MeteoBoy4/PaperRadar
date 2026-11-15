@@ -1,0 +1,55 @@
+{
+  "changed_registration_files": [
+    {
+      "new_sha256": "237274d0dddc93ac8c55005ca4b48fc325afd6cbace2ef040e7c813cb455b93d",
+      "old_sha256": "6a2b20ca37dfa8eb00c5adb325523ab79017aed63bcd60e13b4c0285d120c856",
+      "path": "scripts/a6_scope.py"
+    },
+    {
+      "new_sha256": "636d6a2343fb47e18425138fce668b3d410946978a5a3a10cd7edf9f28a3df73",
+      "old_sha256": "4bbdd429f927aef7ceb4fed49f70046cf613a3e03447d89007da8af7778721c6",
+      "path": "scripts/verification_scope_materials.py"
+    }
+  ],
+  "full_offline_gate_run": false,
+  "input_commit": "0276713c18475d875e762e3131558351a234008b",
+  "no_new_scope_hash_edges": true,
+  "old_required_and_fixed_counts_unchanged": true,
+  "rebindings": [
+    {
+      "groups": [
+        "A10",
+        "A3",
+        "A7"
+      ],
+      "location": "scripts/verification_scope_materials.py",
+      "new_sha256": "a85abd73fe213525b9545573710249a21d8bcc2001ca9f07aafd8bd6bfc6a7c6",
+      "old_sha256": "b0904b630bb476eb4a7286ec9b6623176e83549be8c0a33faec7e29a1480e91e",
+      "path": "src/paper_radar/storage/filesystem.py",
+      "reason": "STD4:新增同目录私有投影发布机制，保校验/fsync/原子替换/故障清理，候选与报告复用。"
+    },
+    {
+      "groups": [
+        "A10",
+        "A6"
+      ],
+      "location": "scripts/verification_scope_materials.py",
+      "new_sha256": "cce82aa6a5bfb365c7fbff35698ad0cc8bcd601b63bf082ec4e78af843f928e5",
+      "old_sha256": "24ce1dca966c346286350ee1c5d1068815563e794ac892139885e9e214daeb74",
+      "path": "src/paper_radar/papers/cli.py",
+      "reason": "STD1:完整封闭组件/StageInput错误转译，保原业务exit1、具体原因与中文下一步，旧断言不变。"
+    },
+    {
+      "groups": [
+        "A6"
+      ],
+      "location": "scripts/a6_scope.py",
+      "new_sha256": "3e606e697589f09868d69544aece0940c563fbaa95b2b89c2741acbf607a6644",
+      "old_sha256": "1f7c99da4bcb695106be725e675e2fe37b5fbd296d00027bd02c859b5b37ebb3",
+      "path": "src/paper_radar/paper_trace.py",
+      "reason": "SPEC2:公共Body当前事实投影共享资格、NOT_READY映射不可判定，明确无全文事实才Screening-only；不授予执行。"
+    }
+  ],
+  "stage_a_verified": false,
+  "status": "reviewed_three_path_rebindings_applied"
+}

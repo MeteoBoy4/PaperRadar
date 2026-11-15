@@ -506,7 +506,7 @@ REQUIRED_SOURCE_MODULES = (
     ),
     (
         "src/paper_radar/paper_trace.py",
-        "1f7c99da4bcb695106be725e675e2fe37b5fbd296d00027bd02c859b5b37ebb3",
+        "3e606e697589f09868d69544aece0940c563fbaa95b2b89c2741acbf607a6644",
     ),
     (
         "tests/stage_b_trace_support.py",
