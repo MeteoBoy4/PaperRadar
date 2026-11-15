@@ -167,6 +167,7 @@ def test_nonempty_wal_backup_restores_all_source_history_in_new_process_after_mo
         "--verify-source-bytes",
         "--json",
         "--show-abstract",
+        "--workflow",
     )
     assert query.returncode == 0, query.stderr
     assert json.loads(query.stdout) == expected

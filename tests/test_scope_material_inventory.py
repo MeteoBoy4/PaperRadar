@@ -85,6 +85,8 @@ def test_classification_distinguishes_authority_from_replacement(
         "docs/contracts/offline-pytest-diagnostics.md",
         "docs/contracts/live-evidence.md",
         "docs/contracts/read-execution.md",
+        "docs/contracts/exposure-export.md",
+        "docs/contracts/reports.md",
         "docs/roadmap.md",
     }
     assert live == expected_live | authorized_additions

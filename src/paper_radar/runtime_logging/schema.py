@@ -71,6 +71,8 @@ REASONS = frozenset(
         "already_retried",
         "not_latest",
         "not_failed",
+        "ambiguous_failure",
+        "visibility_denied",
         "invalid_request",
         "invalid_context",
         "context_conflict",

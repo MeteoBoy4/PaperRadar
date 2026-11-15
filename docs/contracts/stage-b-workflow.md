@@ -305,7 +305,8 @@ paper-radar experiment screen --root /tmp/root --selection-id SELECTION \
   --install-root /tmp/pi --continue-value
 ```
 
-`paper show/trace` 对 experiment/production/unknown 根中性，每次实际调用 visibility，
+`paper show/trace` 默认保留原有论文事实输出；显式 `--workflow` 启用组合，
+`--snapshot` 也启用组合并核对当前性。组合对 experiment/production/unknown 根中性，每次实际调用 visibility，
 包括空隐藏集合。论文事实规则由 [PaperFacts](paper-facts.md#8-当前查询历史重建与只读-cli)定义；
 `paper_radar.paper_trace.query_paper_trace(database, data_root, paper_id, snapshot_id=None,
 include_agent_content=False)` 返回 `PaperWorkflowTrace`，组合任务、正文与 Read 两轴，供报告消费。
@@ -318,7 +319,7 @@ PDF 附加/独立确认与冻结样本引用（理由只引用选样），
 组合组件的受控错误保留原原因与中文下一步，不展开原异常、输入或路径；
 show/trace 继续遵守原 Paper CLI 的受控退出 1，参数退出 2。
 
-显式 `--snapshot` 才核对 Screening 与 Read 输入的当前性；省略时 Read 最小事实保持
+显式 `--snapshot` 才核对 Screening 与 Read 输入的当前性；仅用 `--workflow` 时 Read 最小事实保持
 mapping_determinable=false，model_failure_queue 以 partial/task_mapping_unknown 披露，
 不从历史任务猜当前失败。已装配事实按[共享资格](eligibility-visibility.md)提供
 Screening/Read 当前最新代际范围，其他 partial/deferred 含义保持。metadata_ready 仍仅最低元数据；value 的当前成功作为

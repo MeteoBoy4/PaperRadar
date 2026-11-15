@@ -542,11 +542,11 @@ Read 的执行组合见 [Read 执行契约](docs/contracts/read-execution.md)，
 ```bash
 uv run --offline --locked paper-radar paper show PAPER_ID --database data/paperradar.sqlite3
 uv run --offline --locked paper-radar paper trace PAPER_ID --database data/paperradar.sqlite3 \
-  --data-root data --verify-source-bytes --json
+  --data-root data --verify-source-bytes --workflow --json
 ```
 
-`paper show/trace` 只读组合论文事实、Feed/语言、选样链、Screening 历史、PDF 独立确认/冻结样本与共享资格支持范围，
-对根用途中性。`--snapshot SNAPSHOT` 指定任务当前性；`--show-agent-content` 经许可展开结构结果。
+`paper show/trace` 默认只读展示原有论文事实；`--workflow` 显式组合 Feed/语言、选样链、Screening 历史、
+PDF 独立确认/冻结样本与共享资格支持范围，对根用途中性。`--snapshot SNAPSHOT` 同时启用组合并指定任务当前性；`--show-agent-content` 经许可展开结构结果。
 恢复查询、显式 reclaim→retry→执行路径见 [B 工作流](docs/contracts/stage-b-workflow.md#失败查询显式恢复与组合追踪)。摘要需显式
 `--show-abstract` 展开；来源字节核验不会转储原始响应。
 

@@ -243,8 +243,9 @@ locator 规范后必须非空且最多 2048 UTF-8 字节、无敏感 URL 包装�
 普通映射仅核对数据库引用链、候选→观察→同一版本及已登记制品 kind=source_snapshot，不全量哈希 blob，不读当前文件补历史。backup verify 与显式 trace 字节核验承担实际字节验证。
 
 CLI 命令为 `paper show PAPER_ID --database PATH` 与 `paper trace PAPER_ID --database PATH`，
-共用可选 `--data-root PATH`、`--json`、`--show-abstract`、`--snapshot`、`--show-agent-content`。
-论文事实仍来自本服务同次一致读视图；在既有输出中另有安全 `workflow` 组合，详细字段、
+共用可选 `--data-root PATH`、`--json`、`--show-abstract`、`--workflow`、`--snapshot`、`--show-agent-content`。
+默认保留仅论文事实的原有文本与 JSON 输出；`--workflow` 显式增加安全工作流组合，
+`--snapshot` 同时启用该组合并核对当前性。论文事实仍来自本服务同次一致读视图；详细字段、
 共享资格支持范围、visibility 与根中性规则由 [B 工作流](stage-b-workflow.md#失败查询显式恢复与组合追踪)定义。
 显式 snapshot 只用于 Screening 当前性查询，不是论文历史选择器；不初始化目录或数据库。
 show 显示当前身份/版本/修订、题名/书目、摘要存在性与截断状态；trace 保留完整来源历史、

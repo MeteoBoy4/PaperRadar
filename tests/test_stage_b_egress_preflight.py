@@ -568,6 +568,8 @@ def test_preflight_checks_independent_read_selection_and_preserves_waived_unknow
         " reason=owner_evidence_prerequisite_waived" in result.output
     )
     assert "check=reading.admission_evidence result=not_assessed" in result.output
+    assert "check=screening.admission_evidence result=not_assessed" in result.output
+    assert "check=admission_evidence result=not_assessed" not in result.output
     assert "check=reading.adapter result=passed" in result.output
     assert "check=host.model_snapshot_disk result=passed" in result.output
     assert "check=host.memory result=passed" in result.output

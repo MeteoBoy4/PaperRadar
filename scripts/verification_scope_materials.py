@@ -242,7 +242,7 @@ SHARED_MATERIALS = {
         "2db5994c8f0a7b00bfd205a739e0f32e96b8769a75c185725335710c3c5fec36"
     ),
     "src/paper_radar/papers/cli.py": (
-        "cce82aa6a5bfb365c7fbff35698ad0cc8bcd601b63bf082ec4e78af843f928e5"
+        "36735c6edf88ee819c850e99c8a0c704e6d75374bb877b66997d71d3fc516b40"
     ),
     "src/paper_radar/papers/doi.py": (
         "228846911cf806f424da4bbb155062f7b376249696d6625b74c80b6a421c2aee"

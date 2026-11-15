@@ -20,8 +20,9 @@ HELP = """\
 前置通过不表示名额、预算或领取许可。
 
 参数与选项：show/trace 接受 PAPER_ID、必填 --database；可选 --data-root、
---json、--show-abstract、--show-agent-content、--snapshot。
-显式快照才计算 Screening 当前性。trace 可用 --verify-source-bytes 只读核验来源字节，
+--json、--show-abstract、--workflow、--show-agent-content、--snapshot。
+默认仅显示原有论文事实；--workflow 显式组合工作流，--snapshot 同时启用组合并核对当前性。
+trace 可用 --verify-source-bytes 只读核验来源字节，
 使用时必须同时提供 --data-root。
 
 副作用：只读既有数据库与组合所需制品；含选样历史时需提供实际 --data-root。
@@ -226,22 +227,11 @@ def _query(
     verify_source_bytes: bool = False,
     snapshot: str | None = None,
     show_agent_content: bool = False,
+    include_workflow: bool = False,
 ) -> None:
-    from paper_radar.body import BodyError
     from paper_radar.calibration import visibility
-    from paper_radar.config import ConfigError
-    from paper_radar.experiment.acceptance import AcceptanceError
-    from paper_radar.experiment.extraction import ExtractionError
-    from paper_radar.experiment.layout import LayoutError
-    from paper_radar.experiment.pdf import PdfError
-    from paper_radar.experiment.selections import SelectionError
-    from paper_radar.feed_pipeline import PipelineError
-    from paper_radar.fulltext.models import FulltextError
-    from paper_radar.paper_trace import query_paper_trace
+    from paper_radar.paper_trace import PaperTraceError, query_paper_trace_for_cli
     from paper_radar.papers.service import PaperFacts
-    from paper_radar.read_tasks import ReadTaskError
-    from paper_radar.screening_tasks import TaskError
-    from paper_radar.stage_inputs import StageInputError
 
     try:
         permissions = visibility.evaluate_visibility(frozenset())
@@ -262,14 +252,18 @@ def _query(
         payload: object = result.model_dump(mode="json")
         if not show_abstract:
             payload = _redact_abstracts(payload)
-        workflow = query_paper_trace(
-            database,
-            data_root or database.parent,
-            paper_id,
-            snapshot_id=snapshot,
-            include_agent_content=show_agent_content,
+        workflow = (
+            query_paper_trace_for_cli(
+                database,
+                data_root or database.parent,
+                paper_id,
+                snapshot_id=snapshot,
+                include_agent_content=show_agent_content,
+            )
+            if include_workflow or snapshot is not None
+            else None
         )
-        if isinstance(payload, dict):
+        if workflow is not None and isinstance(payload, dict):
             payload["workflow"] = workflow.safe_payload()
         if as_json:
             typer.echo(
@@ -277,32 +271,18 @@ def _query(
             )
         else:
             _text_result(result, trace=trace, show_abstract=show_abstract)
-            typer.echo(f"根用途：{workflow.root.purpose.value}")
-            typer.echo(workflow.scope)
-            typer.echo(
-                json.dumps(
-                    workflow.safe_payload(),
-                    ensure_ascii=False,
-                    indent=2,
-                    default=_json_default,
+            if workflow is not None:
+                typer.echo(f"根用途：{workflow.root.purpose.value}")
+                typer.echo(workflow.scope)
+                typer.echo(
+                    json.dumps(
+                        workflow.safe_payload(),
+                        ensure_ascii=False,
+                        indent=2,
+                        default=_json_default,
+                    )
                 )
-            )
-    except (
-        PaperError,
-        StorageError,
-        TaskError,
-        ConfigError,
-        BodyError,
-        SelectionError,
-        PdfError,
-        ReadTaskError,
-        AcceptanceError,
-        LayoutError,
-        ExtractionError,
-        FulltextError,
-        PipelineError,
-        StageInputError,
-    ) as error:
+    except (PaperError, StorageError, PaperTraceError) as error:
         typer.echo(
             f"论文查询失败 [{error.reason}]；请核对 ID、显式快照、制品根与备份；"
             "缺库或旧库请先显式 db upgrade。",
@@ -316,6 +296,9 @@ def show_command(
     paper_id: Annotated[str, typer.Argument(help="论文 UUID")],
     database: Database,
     data_root: DataRoot = None,
+    workflow: Annotated[
+        bool, typer.Option("--workflow", help="显式组合任务、正文与 Read 工作流")
+    ] = False,
     show_agent_content: Annotated[
         bool,
         typer.Option(
@@ -346,6 +329,7 @@ def show_command(
         show_abstract,
         snapshot=snapshot,
         show_agent_content=show_agent_content,
+        include_workflow=workflow,
     )
 
 
@@ -354,6 +338,9 @@ def trace_command(
     paper_id: Annotated[str, typer.Argument(help="论文 UUID")],
     database: Database,
     data_root: DataRoot = None,
+    workflow: Annotated[
+        bool, typer.Option("--workflow", help="显式组合任务、正文与 Read 工作流")
+    ] = False,
     show_agent_content: Annotated[
         bool,
         typer.Option(
@@ -393,4 +380,5 @@ def trace_command(
         verify_source_bytes,
         snapshot,
         show_agent_content,
+        workflow,
     )
