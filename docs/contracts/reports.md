@@ -27,6 +27,12 @@ entry 保存 paper/version/revision、primary 种类与引用、analysis、suppo
 value 成功与缺 PDF／终态解析受阻事实共同按首次可发布时间 FIFO 竞争，
 同刻按稳定 paper ID 破同；同类型、同事实只预留一个 daily 首次发布键。
 已接受筛选不独立占 pending 槽；analysis 的 supporting Screening 不新增槽位。
+受阻规划按权威提取终态、自动质量失败和所有者版式否决装配；存在 artifact 不表示质量通过。
+自动失败保留原 attempt 引用，所有者否决保存 review 引用、指纹与核查时点，
+均产生 PDF/解析受阻告警；历史失败和尝试预算不因报告规划改变。
+当前受阻按当前 PDF 与 Body 当前正文选择判断；多成功无选择等歧义只给不可判定与
+需选择告警，不增加论文槽位或任选历史失败。当前 PDF 唯一终态失败仍用于诊断受阻，
+不授予 Read。显式选择新合格正文后，新规划不持续计算旧否决积压；旧报告按原固定引用重建。
 方法、数据、代码/工具归可转化栏，其余归认知栏，不给跨栏总排名。
 
 同日日报固定后，重跑只复用原 run。当天已发布空/失败日报后成功的分析可生成
@@ -45,6 +51,8 @@ value 成功与缺 PDF／终态解析受阻事实共同按首次可发布时间 
 
 发布顺序是同一事务固定 run/entries → 同目录独占临时文件 → 核对成员、引用、
 evidence 与受控路径 → flush/fsync → atomic replace → 同步目录 → 标记 published。
+候选与报告共用的私有文件发布机制见[存储发布](artifact-store.md#路径权限与发布)；
+报告输入、字节哈希、引用校验与 published 状态仍由报告调用方负责。
 run 输入及 entries 有追加保护，run 只允许 prepared 到 published 的状态更新。
 路径仅为 `views/YYYY-MM-DD/UUID.md`，不用题名。题名的 Markdown 元字符显示为
 字符实体；Read/Screening/evidence 位于不可逃逸的 JSON 代码围栏中。

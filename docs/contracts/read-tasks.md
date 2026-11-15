@@ -64,8 +64,19 @@ KeyboardInterrupt/SystemExit 透传并保留已花费但未结算的租约。
 新 retry 在写事务复核共享 `set_decision` 可见性与可选 retry_guard；精确旧请求仅回原任务。
 `papers()` 枚举全库任务身份；`failure_facts(paper_id, snapshot_id=...)` 从唯一当前正文与明确
 历史配置重建 Read 输入，按语言匹配预算并仅取最新代际的 failed；旧输入、ready、running
-及过期未结算均不计失败。无明确配置或正文不可判定时 mapping_determinable=false。
+及过期未结算均不计失败。无明确配置、明确 Read stage 未 READY 或正文不可判定时
+mapping_determinable=false；不把空失败列表当作已完成当前输入映射。
+其它缺失、损坏及输入重建失败仍保留具体受控错误，不据此创建后继或补充预算。
 `failures(snapshot_id=...)` 组合全库此事实，不限制 B 的当前选样；不结算、不激活配置。
+
+CLI `reading failures --database DATABASE --data-root DATA_ROOT --snapshot SNAPSHOT`
+显式选择既有位置，对 experiment/production/unknown 根中性；stdout JSON 披露
+`root_purpose`、解析后的 `snapshot_id` 与 `failures`。兼容 `--root ROOT` 映射原布局，
+保留 stdout 原任务列表，stderr 披露用途；两种位置形式互斥。
+查询业务只读，不创建业务目录、主数据库或日志，不改变任务、attempt、预算或主库字节；
+既有 SQLite `mode=ro` 可维护标准 WAL 协调 sidecar，不承诺完全无文件系统副作用。
+这不放宽 `retry/reclaim` 的实验根守卫，也不放宽 `experiment read` 的当前性、用途、
+可见性、选样、外发授权、质量、预算和执行准入；查询资格不等于执行许可。
 
 `retry_paper(paper_id, *, snapshot_id, request_id, reason, actor, task_id=None, retry_guard=None)`
 是规范 paper-ID 恢复入口。它复用上述当前 failed 查询权威，省略 task_id 时须唯一父代；

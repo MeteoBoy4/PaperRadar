@@ -14,7 +14,7 @@ from paper_radar.body import tables
 from paper_radar.body.extraction import extraction_view
 from paper_radar.body.models import BodyError
 from paper_radar.body.pdf import valid_pdf_bytes
-from paper_radar.body.queries import current_pdf, root_fact
+from paper_radar.body.query_records import current_pdf, root_fact
 from paper_radar.body.repository import digest, sequence, transaction
 from paper_radar.calibration import visibility
 from paper_radar.eligibility import RootPurpose

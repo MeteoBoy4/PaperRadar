@@ -166,6 +166,14 @@ CurrentBody，保留当前正文三元组或 pdf_absent/extraction_absent/ambigu
 无有效选择时保留唯一成功行为，多成功仍歧义拒绝。传入指纹、当前配置和最新成功时间均不代替选择。
 不选择配置，不触发提取；完整正文/配置两轴及展示边界见[Read 查询](read-tasks.md#展示查询与两轴)。
 
+`current_projection(paper_id)` 在只读事务内沿上述当前正文权威装配共享 `PaperProjection` 的
+PDF、提取、质量、执行来源、决定与根用途字段。无成功正文时，仅唯一同 PDF 的已存提取输入
+用于失败诊断；多输入或多成功歧义保持 unknown，不按时间或第一条记录猜选。
+转换与 Read 任务前置使用同一 Body 事实装配；共享 `evaluate_paper` 仍唯一计算资格，
+Read 领取另核全部 `BodyFacts.reasons`。诊断投影不领取任务、修改选择或解除永久否决。
+根/PDF 轻量记录读取位于 `body.query_records`，查询编排与选择单向依赖它；旧 `body.queries`
+导入保持兼容。
+
 ## 错误与拒绝
 
 `BodyError.reason` 为 `BodyReason` 闭集，异常只含受控中文指引，不附路径、PDF 或原异常。

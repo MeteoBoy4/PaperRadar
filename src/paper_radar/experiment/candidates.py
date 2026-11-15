@@ -1,8 +1,7 @@
 """候选事实冻结与 Markdown 投影;不取得来源、不调用模型。"""
 
 import json
-import os
-import tempfile
+import os as os  # 保留既有发布故障注入路径;helper 使用同一个 os 模块。
 from pathlib import Path
 from typing import Literal, Self
 
@@ -24,7 +23,7 @@ from paper_radar.papers.queries import load_trace, resolve_revision
 from paper_radar.screening_tasks.language import LanguageResolution, derive
 from paper_radar.storage.artifact_contract import ArtifactError, ArtifactReason
 from paper_radar.storage.artifacts import ArtifactStore
-from paper_radar.storage.filesystem import controlled_path, sync_directory
+from paper_radar.storage.filesystem import controlled_path, publish_projection
 
 
 def invalid_snapshot() -> ArtifactError:
@@ -206,18 +205,7 @@ class CandidateViews:
                     mode=0o700, exist_ok=True
                 ),
             )
-            with tempfile.NamedTemporaryFile(
-                dir=path.parent, prefix=".candidate-", delete=False
-            ) as stream:
-                temporary = Path(stream.name)
-                try:
-                    stream.write(text)
-                    stream.flush()
-                    os.fsync(stream.fileno())
-                    os.replace(temporary, path)
-                    sync_directory(path.parent)
-                finally:
-                    temporary.unlink(missing_ok=True)
+            publish_projection(path, text, prefix=".candidate-")
         except (OSError, ValueError):
             raise ExperimentError("unsafe_layout") from None
         return dict(

@@ -29,6 +29,8 @@ trace 区分所有者授权与 Agent 代执行，不声称所有者看过模型�
 `experiment read` 显式登记当前正文的默认中文 Read 并最多驱动本代剩余两次尝试；
 精确 request 重放不执行；已有 ready 任务用 `--task-id` 继承冻结语言和指纹继续，不另建请求或预算。
 `reading tasks/failures/reclaim` 提供全库安全查询与显式过期结算；
+`reading failures --database DATABASE --data-root DATA_ROOT --snapshot SNAPSHOT`
+提供披露根用途的根中性只读失败查询，兼容原 `--root` 列表输出；规则见[Read 任务](docs/contracts/read-tasks.md)。
 `reading retry PAPER --root ROOT --snapshot SNAP --request-id REQUEST --reason REASON --actor owner`
 从当前失败唯一定位父代并只登记后继，歧义拒绝；可选 `--task-id` 仍须当前/latest/failed。
 后继再用 `experiment read ... --task-id CHILD` 显式执行，精确 retry 重放不续跑；

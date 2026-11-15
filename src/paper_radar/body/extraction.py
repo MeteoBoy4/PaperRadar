@@ -217,7 +217,7 @@ def extract(
     claim_guard: Callable[[Connection], None] | None = None,
     observer: ExtractionObserver | None = None,
 ) -> ExtractionView:
-    from paper_radar.body.queries import current_pdf
+    from paper_radar.body.query_records import current_pdf
     from paper_radar.papers.queries import load_trace
 
     snapshot = load_config_snapshot(database, snapshot_id)

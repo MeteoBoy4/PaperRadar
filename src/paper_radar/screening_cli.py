@@ -61,6 +61,7 @@ def _tasks(database: Path) -> "ScreeningTasks":
 
 
 def _run(operation: Callable[[], object]) -> None:
+    from paper_radar.body import BodyError
     from paper_radar.config import ConfigError
     from paper_radar.papers import PaperError
     from paper_radar.screening_tasks import TaskError
@@ -69,7 +70,7 @@ def _run(operation: Callable[[], object]) -> None:
     try:
         result = operation()
         typer.echo(json.dumps(result, default=str, ensure_ascii=False, indent=2))
-    except (ConfigError, PaperError, TaskError, StorageError) as error:
+    except (ConfigError, PaperError, TaskError, StorageError, BodyError) as error:
         typer.echo(
             f"Screening 拒绝 [{error.reason.value}]；"
             "请回查 paper trace 或 --help 后显式继续。",

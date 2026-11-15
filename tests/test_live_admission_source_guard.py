@@ -14,7 +14,7 @@ from paper_radar.pi_execution.resources import LAUNCH_POLICY_VERSION
 from paper_radar.pi_protocol import PROTOCOL_PROFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v26.json"
+MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v28.json"
 ARCHIVED_MANIFEST = ROOT / "tests/fixtures/live-admission-source-guard-v1.json"
 # 显式清单;不能由目录扫描或生产依赖图动态扩大/缩小。
 ARCHIVED_SOURCE_FILES = (
@@ -120,6 +120,7 @@ STAGE_B_SOURCE_FILES = (
     "src/paper_radar/body/models.py",
     "src/paper_radar/body/pdf.py",
     "src/paper_radar/body/queries.py",
+    "src/paper_radar/body/query_records.py",
     "src/paper_radar/body/read_basis.py",
     "src/paper_radar/body/repository.py",
     "src/paper_radar/body/selection.py",
@@ -168,6 +169,8 @@ STAGE_B_SOURCE_FILES = (
     "src/paper_radar/experiment/cli.py",
     "src/paper_radar/experiment/egress.py",
     "src/paper_radar/experiment/layout.py",
+    "src/paper_radar/experiment/layout_errors.py",
+    "src/paper_radar/experiment/layout_models.py",
     "src/paper_radar/experiment/model_mapping.py",
     "src/paper_radar/experiment/pdf.py",
     "src/paper_radar/experiment/preflight.py",
@@ -307,6 +310,12 @@ SOURCE_FILES = (*V25_SOURCE_FILES, *STAGE_B_SOURCE_FILES)
 
 # 已审阅版本的清单摘要只追加;后继不得以同一策略键重绑该摘要。
 REVIEWED_POLICY_MANIFESTS = {
+    "pi-admission-v28": (
+        "cd6ad7bb74b954002e40db4d5c6e7bb861f0be7108811b1b3a80607bb89d044e"
+    ),
+    "pi-admission-v27": (
+        "7527179b22cc6020985bedd9f66bbd2893a8d727aaf53ee9e7f5ba249c9396b5"
+    ),
     "pi-admission-v26": (
         "d3000d203a1b680c760abc852bfcb915dac40229d1d840242c93f5b0ab8b6ec5"
     ),
@@ -489,7 +498,30 @@ def test_fifth_policy_manifest_retains_original_bytes() -> None:
 
 @pytest.mark.parametrize(
     "version",
-    (6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
+    (
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+    ),
 )
 def test_later_archived_policy_vectors_keep_original_bytes(version: int) -> None:
     data = (

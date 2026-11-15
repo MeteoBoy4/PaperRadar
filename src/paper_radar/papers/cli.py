@@ -230,10 +230,18 @@ def _query(
     from paper_radar.body import BodyError
     from paper_radar.calibration import visibility
     from paper_radar.config import ConfigError
+    from paper_radar.experiment.acceptance import AcceptanceError
+    from paper_radar.experiment.extraction import ExtractionError
+    from paper_radar.experiment.layout import LayoutError
+    from paper_radar.experiment.pdf import PdfError
     from paper_radar.experiment.selections import SelectionError
+    from paper_radar.feed_pipeline import PipelineError
+    from paper_radar.fulltext.models import FulltextError
     from paper_radar.paper_trace import query_paper_trace
     from paper_radar.papers.service import PaperFacts
+    from paper_radar.read_tasks import ReadTaskError
     from paper_radar.screening_tasks import TaskError
+    from paper_radar.stage_inputs import StageInputError
 
     try:
         permissions = visibility.evaluate_visibility(frozenset())
@@ -286,9 +294,18 @@ def _query(
         ConfigError,
         BodyError,
         SelectionError,
+        PdfError,
+        ReadTaskError,
+        AcceptanceError,
+        LayoutError,
+        ExtractionError,
+        FulltextError,
+        PipelineError,
+        StageInputError,
     ) as error:
         typer.echo(
-            f"论文查询失败 [{error.reason}]；请核对 ID、显式快照、制品根与备份。",
+            f"论文查询失败 [{error.reason}]；请核对 ID、显式快照、制品根与备份；"
+            "缺库或旧库请先显式 db upgrade。",
             err=True,
         )
         raise typer.Exit(1) from None
