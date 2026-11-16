@@ -17,10 +17,14 @@ worker 使用该环境的 Python 调用 Ruff 模块，对所选树运行同源�
 
 只读指不改被检查源码、index 或提交内容；uv 可能同步锁定项目环境。
 Ruff cache 与 Python bytecode 禁用，index 快照在树外创建并在成功、失败后清理。
+暂存路径来自 `git ls-files --stage -z`，内容由 `git cat-file --batch` 读取原始 blob；
+不应用 smudge、换行、编码或 replace refs，不用工作树补齐。普通/可执行文件保留模式；
+符号链接、submodule、未合并条目、非 UTF-8 路径和 intent-to-add 受控拒绝，
+须先解决冲突、调整路径或完整暂存后重试。
 `TMPDIR` 指向工作树内时 staged 检查受控失败；可设 `TMPDIR=/tmp`。
 入口不自动修复、暂存或 stash。坏 index 与已修复的工作树并存时 staged 检查仍失败；
 好 index 与未暂存的坏工作树并存时，结果只取 index。文档目标未暂存也不能通过 staged 检查。
-向快照外引用的符号链接受控拒绝。
+
 
 缺 uv、Git、锁定依赖或必需工具时返回非零并给出准备环境的命令；
 离线缓存不足时遵循[开发环境准备规则](../agents/testing.md#开发环境)，不会自动联网补包。

@@ -130,3 +130,120 @@ def test_missing_uv_is_controlled(
     assert "launch_error" in result.stderr
     assert "uv run --offline --locked" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("arguments", "reason"),
+    [
+        (("--unknown",), "未知选项或多余参数"),
+        (("unknown-action",), "action 不受支持"),
+        (("install", "--staged"), "--staged 只适用于 check"),
+    ],
+)
+def test_invalid_arguments_report_specific_chinese_reason(
+    git_root: Path, arguments: tuple[str, ...], reason: str
+) -> None:
+    result = invoke(git_root, *arguments)
+    assert result.returncode == 2
+    assert reason in result.stderr
+    assert "./scripts/check-local --help" in result.stderr
+    assert "执行 format" not in result.stdout
+
+
+def test_staged_checks_raw_blobs_without_smudge_filters(git_root: Path) -> None:
+    source = git_root / "src/example.py"
+    source.write_bytes(b"import os\nx=1\n")
+    (git_root / ".gitattributes").write_text("src/example.py filter=fixture\n")
+    git(
+        git_root,
+        "add",
+        ".gitattributes",
+        "README.md",
+        "src",
+        "tests",
+        "scripts",
+        "docs",
+    )
+    git(
+        git_root,
+        "config",
+        "filter.fixture.smudge",
+        "sed 's/^import os$/x = 1/; /^x=1$/d'",
+    )
+    source.write_bytes(b"x = 1\n")
+    index_bytes = (git_root / ".git/index").read_bytes()
+    result = invoke(git_root, "--staged")
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "F401" in result.stdout
+    assert source.read_bytes() == b"x = 1\n"
+    assert (git_root / ".git/index").read_bytes() == index_bytes
+
+
+def test_staged_preserves_executable_mode(git_root: Path) -> None:
+    source = git_root / "src/example.py"
+    source.write_text("#!/usr/bin/env python3\nx = 1\n")
+    source.chmod(0o755)
+    (git_root / "pyproject.toml").write_text('[tool.ruff.lint]\nselect = ["EXE001"]\n')
+    git(
+        git_root,
+        "add",
+        "README.md",
+        "src",
+        "tests",
+        "scripts",
+        "docs",
+        "pyproject.toml",
+    )
+    result = invoke(git_root, "--staged")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("kind", ["symlink", "submodule", "unmerged", "non_utf8"])
+def test_unsupported_index_entries_fail_closed(git_root: Path, kind: str) -> None:
+    git(git_root, "add", "README.md", "src", "tests", "scripts", "docs")
+    if kind == "symlink":
+        (git_root / "src/linked.py").symlink_to("empty.py")
+        git(git_root, "add", "src/linked.py")
+    elif kind == "submodule":
+        git(git_root, "commit", "-qm", "temporary base")
+        commit_id = git(git_root, "rev-parse", "HEAD").stdout.strip()
+        git(
+            git_root,
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            f"160000,{commit_id},vendor",
+        )
+    elif kind == "unmerged":
+        blob = git(git_root, "hash-object", "src/empty.py").stdout.strip()
+        subprocess.run(
+            ["git", "update-index", "--index-info"],
+            cwd=git_root,
+            input=f"0 {'0' * 40}\tsrc/empty.py\n100644 {blob} 1\tsrc/empty.py\n",
+            text=True,
+            check=True,
+        )
+    else:
+        raw_path = os.fsencode(git_root) + b"/src/invalid-\xff.py"
+        descriptor = os.open(raw_path, os.O_CREAT | os.O_WRONLY, 0o644)
+        os.close(descriptor)
+        git(git_root, "add", "--all")
+    index_bytes = (git_root / ".git/index").read_bytes()
+    result = invoke(git_root, "--staged")
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert (
+        "non_utf8_path" if kind == "non_utf8" else "unsupported_index_entry"
+    ) in result.stderr
+    assert "Traceback" not in result.stderr
+    assert "执行 format" not in result.stdout
+    assert (git_root / ".git/index").read_bytes() == index_bytes
+
+
+def test_intent_to_add_target_cannot_satisfy_staged_link(git_root: Path) -> None:
+    (git_root / "README.md").write_text("[not committed](target.md)\n")
+    git(git_root, "add", "README.md", "src", "tests", "scripts", "docs")
+    (git_root / "target.md").write_text("# Only intent to add\n")
+    git(git_root, "add", "--intent-to-add", "target.md")
+    result = invoke(git_root, "--staged")
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "intent_to_add" in result.stderr

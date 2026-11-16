@@ -52,6 +52,81 @@ def run_checks(root: Path) -> int:
     return int(failed or bool(problems))
 
 
+def _export_index(root: Path, snapshot: Path) -> None:
+    additions = []
+    for visibility in ("--ita-visible-in-index", "--ita-invisible-in-index"):
+        result = subprocess.run(
+            [
+                "git",
+                "diff",
+                "--cached",
+                "--name-only",
+                "--diff-filter=A",
+                "-z",
+                visibility,
+            ],
+            cwd=root,
+            capture_output=True,
+            check=True,
+        )
+        additions.append(set(result.stdout.split(b"\0")))
+    if additions[0] != additions[1]:
+        raise ValueError(
+            "intent_to_add：存在仅登记意图、尚未暂存内容的路径；请先完整暂存或撤销意图。"
+        )
+    listing = subprocess.run(
+        ["git", "ls-files", "--stage", "-z"],
+        cwd=root,
+        capture_output=True,
+        check=True,
+    ).stdout
+    entries: list[tuple[Path, bytes, int]] = []
+    for entry in listing.split(b"\0"):
+        if not entry:
+            continue
+        fields, _, raw_path = entry.partition(b"\t")
+        mode, object_id, stage = fields.split()
+        if stage != b"0" or mode not in {b"100644", b"100755"}:
+            raise ValueError(
+                "unsupported_index_entry：只支持已合并的普通/可执行文件；"
+                "请先解决冲突或移除暂存的符号链接/submodule。"
+            )
+        try:
+            relative = raw_path.decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise ValueError(
+                "non_utf8_path：暂存路径必须为 UTF-8；请重命名后重新暂存。"
+            ) from error
+        path = snapshot / relative
+        if not relative or not path.resolve().is_relative_to(snapshot):
+            raise ValueError("invalid_index_path：暂存路径不在快照内。")
+        entries.append((path, object_id, 0o755 if mode == b"100755" else 0o644))
+    # 直接读取对象字节:不执行 attributes 的 smudge/编码/EOL 转换或 replace refs。
+    objects = subprocess.run(
+        ["git", "--no-replace-objects", "cat-file", "--batch"],
+        input=b"".join(object_id + b"\n" for _, object_id, _ in entries),
+        cwd=root,
+        capture_output=True,
+        check=True,
+    ).stdout
+    cursor = 0
+    for path, object_id, mode_bits in entries:
+        header_end = objects.index(b"\n", cursor)
+        actual_id, kind, raw_size = objects[cursor:header_end].split()
+        if actual_id != object_id or kind != b"blob":
+            raise ValueError("invalid_index_object：暂存对象不是原始 blob。")
+        start = header_end + 1
+        end = start + int(raw_size)
+        if end >= len(objects) or objects[end : end + 1] != b"\n":
+            raise ValueError("invalid_index_object：暂存 blob 不完整。")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(objects[start:end])
+        path.chmod(mode_bits)
+        cursor = end + 1
+    if cursor != len(objects):
+        raise ValueError("invalid_index_object：暂存 blob 输出不完整。")
+
+
 @contextmanager
 def checked_tree(root: Path, staged: bool) -> Iterator[Path]:
     if not staged:
@@ -66,15 +141,7 @@ def checked_tree(root: Path, staged: bool) -> Iterator[Path]:
         prefix="paper-radar-index-", dir=temporary_root
     ) as name:
         snapshot = Path(name)
-        subprocess.run(
-            ["git", "checkout-index", "--all", f"--prefix={snapshot}/"],
-            cwd=root,
-            check=True,
-        )
-        # 不让 Ruff 或文档解析通过 index 中的符号链接读取工作树外材料。
-        for path in snapshot.rglob("*"):
-            if path.is_symlink() and not path.resolve().is_relative_to(snapshot):
-                raise ValueError("outside_repository：暂存符号链接指向快照外。")
+        _export_index(root, snapshot)
         yield snapshot
 
 
@@ -83,7 +150,15 @@ class _Parser(argparse.ArgumentParser):
         return super().format_help().replace("usage: ", "用法：", 1)
 
     def error(self, message: str) -> NoReturn:
-        self.exit(2, "参数错误：请运行 ./scripts/check-local --help。\n")
+        if message.startswith("unrecognized arguments:"):
+            reason = "未知选项或多余参数"
+        elif message.startswith("argument action: invalid choice:"):
+            reason = "action 不受支持（可用 check、install、uninstall）"
+        elif message == "--staged only applies to check":
+            reason = "--staged 只适用于 check；请移除该选项或使用 check --staged"
+        else:
+            reason = "参数格式不正确"
+        self.exit(2, f"参数错误：{reason}；请运行 ./scripts/check-local --help。\n")
 
 
 def main(root: Path | None = None) -> int:
