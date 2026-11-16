@@ -824,6 +824,7 @@ docling = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "markdown-it-py" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "ruff" },
@@ -852,6 +853,7 @@ provides-extras = ["docling"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "markdown-it-py", specifier = ">=4,<5" },
     { name = "mypy", specifier = ">=1.18,<2" },
     { name = "pytest", specifier = ">=8.4,<9" },
     { name = "ruff", specifier = ">=0.13,<1" },

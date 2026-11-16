@@ -377,6 +377,18 @@ uv run --offline --locked paper-radar contracts check \
 
 ## 完整离线验证
 
+轻量本地检查可直接调用，或显式安装提交前 hook：
+
+```bash
+./scripts/check-local             # 工作树
+./scripts/check-local --staged    # index 快照
+./scripts/check-local install     # 显式安装
+./scripts/check-local uninstall   # 安全卸载
+```
+
+检查范围、部分暂存、冲突及只读边界见[轻量检查契约](docs/contracts/check-local.md)，
+[独立覆盖与实测耗时](docs/verification/issue-208-local-checks.md)给出开发验证口径。
+
 开发中先运行相关功能测试，再按变更类型选择入口兼容组合；例如：
 
 ```bash

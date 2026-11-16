@@ -16181,6 +16181,7 @@
         "docs/contracts/artifact-store.md",
         "docs/contracts/backup-restore.md",
         "docs/contracts/check-compatibility.md",
+        "docs/contracts/check-local.md",
         "docs/contracts/config-projections.md",
         "docs/contracts/config-snapshots.md",
         "docs/contracts/doctor.md",

@@ -86,6 +86,7 @@ def test_classification_distinguishes_authority_from_replacement(
         "docs/contracts/live-evidence.md",
         "docs/contracts/read-execution.md",
         "docs/contracts/exposure-export.md",
+        "docs/contracts/check-local.md",
         "docs/contracts/reports.md",
         "docs/roadmap.md",
     }

@@ -18,6 +18,12 @@
 - 完整离线验证入口与证据格式见 `docs/verification/offline-evidence.md`。
 - 新增能力沿用 D1：使用独立未绑定测试模块与新的 `docs/verification/` 覆盖台账，逐模块点名数量；同次全量 pytest 退出约束不等于进入既有组回执或固定分母。冻结测试修改须先有裁决并逐项登记，skip/deselect/incomplete 不算通过。spec 集成与必要重绑见[固定范围与集成规则](verification-scope.md)。
 
+## 轻量本地检查
+
+日常工作可运行 `./scripts/check-local`；显式安装/卸载 hook、index 快照语义与冲突处理见
+[轻量检查契约](../contracts/check-local.md)。检查清单派生自现有门禁计划与 inventory，
+不替代下面按变更类别运行的相关测试和兼容组合；完整离线门禁仍须用户明确授权。
+
 ## 按变更类型运行开发期检查
 
 先运行本次功能的相关 `pytest` 子集，再按下面的触发条件运行入口兼容组合。

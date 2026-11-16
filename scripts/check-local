@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repository_root"
+
+# 参数解析沿用只读工具的启动方式; 真正检查由 Python 模块通过 uv 启动。
+project_environment="${UV_PROJECT_ENVIRONMENT-.venv}"
+if [[ "$project_environment" != /* ]]; then
+  project_environment="$repository_root/$project_environment"
+fi
+project_python="$project_environment/bin/python"
+if [[ ! -x "$project_python" ]]; then
+  project_python="$(command -v python3 || true)"
+fi
+export PYTHONDONTWRITEBYTECODE=1
+if [[ -z "$project_python" ]] || ! "$project_python" -I -S -B -c \
+  'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)' \
+  >/dev/null 2>&1; then
+  echo '无法启动轻量检查：需要 Python >=3.12；请检查项目环境或宿主 python3，并用 uv run --offline --locked 准备环境。' >&2
+  exit 1
+fi
+exec "$project_python" -I -S -B -c '
+import runpy
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+runpy.run_module("scripts.check_local", run_name="__main__", alter_sys=True)
+' "$repository_root" "$@"
