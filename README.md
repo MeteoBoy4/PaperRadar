@@ -387,7 +387,7 @@ uv run --offline --locked paper-radar contracts check \
 ```
 
 检查范围、部分暂存、冲突及只读边界见[轻量检查契约](docs/contracts/check-local.md)，
-[独立覆盖与实测耗时](docs/verification/issue-208-local-checks.md)给出开发验证口径。
+[覆盖、计时与集成验证](docs/verification/issue-208-local-checks-integration.md)给出开发验证口径。
 
 开发中先运行相关功能测试，再按变更类型选择入口兼容组合；例如：
 

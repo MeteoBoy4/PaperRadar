@@ -18,8 +18,8 @@ worker 使用该环境的 Python 调用 Ruff 模块，对所选树运行同源�
 只读指不改被检查源码、index 或提交内容；uv 可能同步锁定项目环境。
 Ruff cache 与 Python bytecode 禁用，index 快照在树外创建并在成功、失败后清理。
 暂存路径来自 `git ls-files --stage -z`，内容由 `git cat-file --batch` 读取原始 blob；
-不应用 smudge、换行、编码或 replace refs，不用工作树补齐。普通/可执行文件保留模式；
-符号链接、submodule、未合并条目、非 UTF-8 路径和 intent-to-add 受控拒绝，
+不应用 smudge、换行、编码或 replace refs，不用工作树补齐。普通/可执行文件保留模式，支持指向快照内的符号链接；
+树外或成环的符号链接、submodule、未合并条目、非 UTF-8 路径和 intent-to-add 受控拒绝，
 须先解决冲突、调整路径或完整暂存后重试。
 `TMPDIR` 指向工作树内时 staged 检查受控失败；可设 `TMPDIR=/tmp`。
 入口不自动修复、暂存或 stash。坏 index 与已修复的工作树并存时 staged 检查仍失败；
@@ -82,7 +82,7 @@ hook 冲突分别给出 `hook_conflict`、`hooks_path_conflict`；启动失败�
 
 ## 相关
 
-- [README 使用入口](../../README.md#完整离线验证)、[独立 D1 与计时](../verification/issue-208-local-checks.md)。
+- [README 使用入口](../../README.md#完整离线验证)、[独立 D1 与计时](../verification/issue-208-local-checks-integration.md)。
 - 依据：[规格及补充评论](https://github.com/MeteoBoy4/PaperRadar/issues/208)、
   [统一实现](../../scripts/check_local.py)、[链接检查](../../scripts/live_document_links.py)、
   [hook 适配](../../scripts/local_hooks.py)。

@@ -86,10 +86,10 @@ def _export_index(root: Path, snapshot: Path) -> None:
             continue
         fields, _, raw_path = entry.partition(b"\t")
         mode, object_id, stage = fields.split()
-        if stage != b"0" or mode not in {b"100644", b"100755"}:
+        if stage != b"0" or mode not in {b"100644", b"100755", b"120000"}:
             raise ValueError(
-                "unsupported_index_entry：只支持已合并的普通/可执行文件；"
-                "请先解决冲突或移除暂存的符号链接/submodule。"
+                "unsupported_index_entry：不支持未合并条目或 submodule；"
+                "请先解决冲突或移除暂存的 submodule。"
             )
         try:
             relative = raw_path.decode("utf-8")
@@ -100,7 +100,7 @@ def _export_index(root: Path, snapshot: Path) -> None:
         path = snapshot / relative
         if not relative or not path.resolve().is_relative_to(snapshot):
             raise ValueError("invalid_index_path：暂存路径不在快照内。")
-        entries.append((path, object_id, 0o755 if mode == b"100755" else 0o644))
+        entries.append((path, object_id, int(mode, 8)))
     # 直接读取对象字节:不执行 attributes 的 smudge/编码/EOL 转换或 replace refs。
     objects = subprocess.run(
         ["git", "--no-replace-objects", "cat-file", "--batch"],
@@ -110,6 +110,7 @@ def _export_index(root: Path, snapshot: Path) -> None:
         check=True,
     ).stdout
     cursor = 0
+    symlinks: list[tuple[Path, str]] = []
     for path, object_id, mode_bits in entries:
         header_end = objects.index(b"\n", cursor)
         actual_id, kind, raw_size = objects[cursor:header_end].split()
@@ -120,11 +121,35 @@ def _export_index(root: Path, snapshot: Path) -> None:
         if end >= len(objects) or objects[end : end + 1] != b"\n":
             raise ValueError("invalid_index_object：暂存 blob 不完整。")
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(objects[start:end])
-        path.chmod(mode_bits)
+        if mode_bits == 0o120000:
+            try:
+                symlinks.append((path, objects[start:end].decode("utf-8")))
+            except UnicodeDecodeError as error:
+                raise ValueError(
+                    "invalid_index_symlink：符号链接目标必须为 UTF-8。"
+                ) from error
+        else:
+            path.write_bytes(objects[start:end])
+            path.chmod(mode_bits & 0o777)
         cursor = end + 1
     if cursor != len(objects):
         raise ValueError("invalid_index_object：暂存 blob 输出不完整。")
+    # 全部普通文件写完后才创建链接,避免父目录链接引导写入快照外。
+    for path, target in symlinks:
+        path.symlink_to(target)
+    for path, _ in symlinks:
+        try:
+            try:
+                resolved = path.resolve(strict=True)
+            except FileNotFoundError:
+                # 仓库可能保留悬空的内部 skills 链接;其目标仍须位于快照内。
+                resolved = path.resolve()
+        except (OSError, RuntimeError) as error:
+            raise ValueError(
+                "invalid_index_symlink：符号链接成环或无法解析。"
+            ) from error
+        if not resolved.is_relative_to(snapshot):
+            raise ValueError("outside_repository：暂存符号链接指向快照外。")
 
 
 @contextmanager

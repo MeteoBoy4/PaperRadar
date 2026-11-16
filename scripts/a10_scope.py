@@ -1357,7 +1357,7 @@ REQUIRED_FIXTURE_FILES = (
         "tests/fixtures/a10_coverage.json",
         "8c5a1af640e63ccd1a2215836a5ac12b1bb69c29b132aa5397379a0bb7589d9d",
     ),
-    ("uv.lock", "fcd6149e80b961d9bfa3c9b0015f3ddf2835c830f03b956506f300353c0f0905"),
+    ("uv.lock", "b398adef6f5bcb674fc411fff0faf3efbde3e4e520223a4bdfd47890c153aa8c"),
 )
 
 # 显式证明引用; 不将 scope 登记数据作为逐文件哈希材料。

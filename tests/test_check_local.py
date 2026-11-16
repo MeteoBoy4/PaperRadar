@@ -198,11 +198,16 @@ def test_staged_preserves_executable_mode(git_root: Path) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-@pytest.mark.parametrize("kind", ["symlink", "submodule", "unmerged", "non_utf8"])
+@pytest.mark.parametrize(
+    "kind", ["symlink", "symlink_cycle", "submodule", "unmerged", "non_utf8"]
+)
 def test_unsupported_index_entries_fail_closed(git_root: Path, kind: str) -> None:
     git(git_root, "add", "README.md", "src", "tests", "scripts", "docs")
     if kind == "symlink":
-        (git_root / "src/linked.py").symlink_to("empty.py")
+        (git_root / "src/linked.py").symlink_to("../../outside.py")
+        git(git_root, "add", "src/linked.py")
+    elif kind == "symlink_cycle":
+        (git_root / "src/linked.py").symlink_to("linked.py")
         git(git_root, "add", "src/linked.py")
     elif kind == "submodule":
         git(git_root, "commit", "-qm", "temporary base")
@@ -231,9 +236,12 @@ def test_unsupported_index_entries_fail_closed(git_root: Path, kind: str) -> Non
     index_bytes = (git_root / ".git/index").read_bytes()
     result = invoke(git_root, "--staged")
     assert result.returncode == 1, result.stdout + result.stderr
-    assert (
-        "non_utf8_path" if kind == "non_utf8" else "unsupported_index_entry"
-    ) in result.stderr
+    expected_reason = {
+        "non_utf8": "non_utf8_path",
+        "symlink": "outside_repository",
+        "symlink_cycle": "invalid_index_symlink",
+    }.get(kind, "unsupported_index_entry")
+    assert expected_reason in result.stderr
     assert "Traceback" not in result.stderr
     assert "执行 format" not in result.stdout
     assert (git_root / ".git/index").read_bytes() == index_bytes
@@ -247,3 +255,12 @@ def test_intent_to_add_target_cannot_satisfy_staged_link(git_root: Path) -> None
     result = invoke(git_root, "--staged")
     assert result.returncode == 1, result.stdout + result.stderr
     assert "intent_to_add" in result.stderr
+
+
+def test_staged_accepts_internal_symlinks_without_reading_worktree(
+    git_root: Path,
+) -> None:
+    (git_root / "src/linked.py").symlink_to("empty.py")
+    git(git_root, "add", "README.md", "src", "tests", "scripts", "docs")
+    result = invoke(git_root, "--staged")
+    assert result.returncode == 0, result.stdout + result.stderr

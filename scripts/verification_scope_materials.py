@@ -38,7 +38,7 @@ SHARED_MATERIALS = {
         "7d116290291efcff745119919e6d5f827e2fbc38e20d0f93ac974b7530a33d1c"
     ),
     "pyproject.toml": (
-        "c3bd0b4984c4b8480c826c8a1b537712cb81bf6013c71d389af24b734a417349"
+        "634b507d2112cda9d656df9f60cd5f30ea557c69ee577d1d4c770240c291693c"
     ),
     "scripts/a1_acceptance.py": (
         "6d823619d4a139c5df7d19be39f7c5ec409af2a7d7d1864d757dcc7fa697b4df"
