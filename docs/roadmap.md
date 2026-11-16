@@ -8,7 +8,7 @@
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-当前没有满足规则的前沿模块；下一承接为 [C](#module-c)，仍待成形。
+当前没有满足规则的前沿模块；下一承接为 [C](#module-c)，状态与依赖见[模块表](#模块)。
 [B](#module-b) 的工程范围与最终冻结门禁生效条件见[收口台账](verification/stage-b-engineering-closure.md)，
 所有者已签收的真实链与隔离恢复分别由该台账索引，证明范围仍按[规格 §11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)。
 
@@ -94,45 +94,23 @@ flowchart TD
 
 ### 模块承接索引
 
-条目引用[阶段 A 收口清单](verification/stage-a-closure.md#原实施逐条处置)的 I/T/D 编号，原文措辞与下一责任节点以该冻结表为准（T、D 分别见其「原测试逐条处置」「原DoD逐条处置」）；责任涉及多个下游时全部保留，不以历史通过代替新消费者验收。各模块同时承接其中指向自己的阶段消费者义务。
+条目引用[阶段 A 收口清单](verification/stage-a-closure.md#原实施逐条处置)的 I/T/D 编号，原文措辞与下一责任节点以该冻结表为准；已完成模块的证明入口见[已完成](#已完成)，以下只保留后续消费责任。B 的受限实验结论不替代下游生产验收。
 
-- A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04 的窄范围处置见[覆盖台账](verification/a-narrow-delivery.md)；完整阶段 A 结论与下游消费仍受收口安排约束。
-- Extra：I02；CPU 单锁、v2 身份、历史回放、显式安装/依赖诊断、三解释器与无 extra 组合见[工程覆盖及最终门禁判据](verification/issue-150-extra-delivery.md)。完整验收仍以最终冻结树中 extra + dev 的同次 `check-offline` 退出 0、查询 `passed/verified/same` 及树外前后库存/回执为准；定向组合与探索转换不替代门禁，最终 run_id 不回写身份材料。
-- Pi/Live：I04、I05、T05、T07、T08、T12；Pi 工程切片与同次最终门禁判据见[独立台账](verification/issue-140-gate-followup.md)；Pi 另承接[生产启动器准入](../intent/draft.md#pi-生产启动器准入)，Live 的可选证据链承接[首次 Pi 生产接线](../intent/draft.md#b-首次-pi-生产接线)中的现场证明；B 承接其产品运行组合，依据 [pi-rpc](contracts/pi-rpc.md)。
-- Live：I04、I05、T05、T07、T08、T12 的现场证明由可选后置证据链承接；所有者豁免、不可豁免隔离及恢复路径见 [ADR-0068](adr/0068-replace-live-prerequisites-with-explicit-owner-waiver.md) 与 [执行契约](contracts/pi-execution.md)。
-  原六格、正常刷新、nft/cgroup/resolver 与 AppArmor 现场取证仍保留各自原判据，不作为 B 执行前提；所有旧账本、inbox、intents、回执、归档和失败／停止历史保留。
-  未来恢复可选证据链需所有者另行批准部署、重新采集／接收／激活；部署维护或清理不构成 B 前置。完整离线门禁仅在所有者明确要求后执行。
+- A：I01、I10、I11、T06、T07、T16、T17、T22、D01、D03、D04 的窄范围证据见[覆盖台账](verification/a-narrow-delivery.md)；完整阶段 A 结论仍须按[收口安排](#收口安排)独立产出，由 I 聚合。
+- Live：I04、I05、T05、T07、T08、T12 的可选后置现场证明保留原六格、正常刷新、nft/cgroup/resolver 与 AppArmor 判据。恢复该路径须所有者另行批准部署、重新采集／接收／激活；旧账本、inbox、intents、回执、归档和失败／停止历史保留。该路径不作为 B 执行前提，依据 [ADR-0068](adr/0068-replace-live-prerequisites-with-explicit-owner-waiver.md)与[执行契约](contracts/pi-execution.md)。
+- C：I10、I12、I15、T01、T15–T19、T23、T24、T26；承接四刊生产采集扩展、保留器与未揭晓事实扩展、来源假设与语言约定核实、7 天复查／metadata_unobtainable 生命周期及完整 eligibility。保留器装配 waiting_calibration 与身份／合并链全部仍成立的隐藏条件，存活论文继承事实，再调用共享 visibility，并做消费者组合验证。纯人工 accepted 无 Screening 引用仍为 unknown，专用人工通道须独立扩展。依据：[元数据契约](contracts/feed-metadata.md)、[共享规则](contracts/eligibility-visibility.md)、[持久前置](contracts/body-persistence.md)与[ADR-0043](adr/0043-persist-body-prerequisites-before-stage-b.md)。
+- F/Abstract：I09、I14、I15、T01、T10、T20、T26；承接[Docling 未覆盖范围](verification/exp-3-docling-probe.md#移交与仍未验范围)中的四刊、中文、复杂版式、正文／摘录 fixture、行间／行内公式分类、独立 item、无父源块类别及通用资源阈值。遵守[Extra 移交](verification/issue-150-extra-delivery.md#bodybf-承接)的 native ABI、模型缓存、解析及资源失败边界；单样本、双口径峰值和安装／依赖 passed 均不替代正式质量门槛。同一 PDF 多成功正文的当前性与[显式正文选择](contracts/body-persistence.md)沿用共享 Body 权威，旧核查及永久否决保留，不能按当前配置猜测三元组。
+  与 C 共同承接[HTTP 新规则未完成项](verification/exp-1-http-audit-v2.md#b-前进方向与后续责任)：AIES Feed 202、dqkx 第 2 位协议重定向、Wiley 出版者 403 与 QJRMS `10.1002/qj.70349` 缺摘要。AIES/dqkx 后续遇到时另拟方案，保留两个 partial 计划、成员／失败与暂停位置，不盲目 resume。v2 字段误取与来源缺摘要分别判断；完成适用新计划后才登记 acquired fixture，最迟 D 正式预热冻结／首批校准前逐刊收口。
+- D：I03、I06、I09、I12、I15、T04、T07–T10、T14–T17、T19、T20、T23、T24、T26；负责正式校准、reuse 与新展示面的未揭晓／揭晓、review/evaluation 接线。B 的公开 Prompt、实验建议及代接受不构成正式校准基线或标签。
+- E：I07、T02、T03、T11、T24；参考文献发现及消费者组合继续遵守强身份、来源保留、共享资格与可见性边界。
+- G：I03、I09、T04、T07–T10、T13、T17–T20、T24；扩展通用长文与普通 Read 队列，reduce 允许集合适用 Read v2 末次降级规则，评分理由始终整体拒绝；依据[Read 校验](contracts/read-validation.md)。
+- H：I06、I12、T15–T17、T23、T24；负责完整日报、复核和诊断分支实际隐藏，承接 A3 历史证明未含的普通报告重建（[规格 §9.1](../intent/draft.md#91-本机一致性快照)）。I04、I05、T05、T07、T08、T12 的分项披露继续保留 unknown、原状态、时点与下一动作，共享片段不占论文容量；依据[准入收口台账](verification/issue-168-176-live-admission-closure.md)。按 [ADR-0042](adr/0042-accept-read-v2-with-final-attempt-degradation.md)展示受限内容警告及丢弃标记／每类计数，不将降级结果表述为已核对或已支撑。
+- I：I13、T06、T17、T25、D02、D04；聚合各阶段验收，承接 A3 历史证明未含的任务续跑、NAS 与最终恢复。按[脱网回放](contracts/backup-restore.md#隔离脱网回放)独立评估原根／副本并行执行的外发授权、预算、租约和重复执行风险；本机内容闭包不代替跨副本 exactly-once 或 NAS。依 [ADR-0048](adr/0048-accept-bounded-request-observability.md)重新评估精确请求计数及其隐私／运行成本，近似下界与 unknown 不构成完整计数通过。
+- A10 遗留：AMS 来源与四刊摘要稳定及附加区块语义接 C/F/Abstract，正文／PDF／Docling 接 F，生产导入接 C，NAS 接 I；首轮 AIES 为 202，不声称历史 AMS403 复现。来源见[实测证据](verification/exp-1-http-audit.md)，其他未验范围见[A10 继承缺口](verification/doc-unification-history.md#a10-继承缺口)。
 
-- B（Pi 消费）：I04、I05、T05、T07、T08、T12；独立落实真实产品入口、实验根、所选根安全日志、任务预算及用途/正文质量资格。消费 [EXP-2 证据](verification/exp-2-pi-live-probe.md)时保留目录独立观察与其他 not_assessed，不把真实 RPC、公共 terminate 返回或合成 Read 接收提升为对应生产许可；Live 证据不再作为 B 前置；真实资料外发确认、独立实验根、质量与最小日报仍按 B 自身闸门验收。
-- Audit/Source：I14、I15、T01、T26 的首轮结论见[实测证据](verification/exp-1-http-audit.md)，v2 适用证据与暂停移交见[新计划报告](verification/exp-1-http-audit-v2.md)；两个计划均保留 partial，未完成的四刊材料与完成计划 fixture 引用由 C/F 承接，不回写历史离线结论。
-- Feed：I07，以及[强冲突与语言事实](../intent/draft.md#阶段-c四刊发现身份版本与来源)。
-- Body：正文生产切片、Read 身份/预算、持久执行与两轴查询的工程覆盖及未验边界见[台账](verification/issue-165-body-read-closure.md)；显式正文选择依据见[ADR-0071](adr/0071-record-explicit-body-selection.md)，B 承接所有者授权代录及新正文六项核查，选择不解除永久否决或重置预算。产品接线与真实来源、四刊质量、通用长文编排及完整报告分别由 B/F/G/H 承接。
-- B：I03–I13、T02–T25、D02、D04 中的 B 消费者；另落实[StageInput C1](contracts/stage-inputs.md#c1-已知未决问题封面识别的论文元数据依赖)，沿 [ADR-0041](adr/0041-self-contained-evidence-map.md) 的 EXP-6 自包含源成员方向消费[真实 SDK 与隔离回查证据](verification/issue-164-docling-smoke.md)（限冻结单样本；行间/行内分类及四刊覆盖仍由 F 补齐），并按 [ADR-0042](adr/0042-accept-read-v2-with-final-attempt-degradation.md) 落实已定的 EXP-7 方向（v2 末次降级与规则身份；[纯层覆盖](verification/issue-157-read-v2-delivery.md)不代替持久消费），并承接 [Docling 原始样本风险](verification/exp-3-docling-probe.md#移交与仍未验范围)的生产转换链、逐文档质量与资源门禁；实验原始输出不直接取得 Read 资格。B 消费已有 pi_rpc boundary/value 工程来源时须补真实接线与用途资格，保留 test 来源拒绝；在受限实验根核实 JGR 生产解析字段、entry 稳定性、主摘要非截断及语言来源约定，并完成真实材料与审计的字段差异审查、样本冻结和隔离恢复。B 消费 Body 已有的输入身份、任务/预算/租约/retry、analysis 持久化与证据规则身份（[规格补充准入](../intent/draft.md#b-最小-read-与正文消费)、[read-validation](contracts/read-validation.md)）；B 首张真实任务票另承接 Screening 产品接线，含 failures/retry、trace 组合及中文 help/退出码/恢复验证，不能后推到 H（[规格补充准入](../intent/draft.md#b-screening-产品接线)、[screening-tasks](contracts/screening-tasks.md)）。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[组合契约](contracts/feed-pipeline.md)、[parser 固定回归边界](verification/feed-parser-v1.md)；Feed 工程完成不替代来源验收。消费[首轮 JGR 来源证据](verification/exp-1-http-audit.md#生产路径适用性)时须保留 Crossref 主摘要依据，拒绝卷期说明充当主摘要；选择 v2 时核对[新计划 JGR 来源与差异依据](verification/exp-1-http-audit-v2.md#b-前进方向与后续责任)，仍由 B 自己完成生产路径完整主摘要与样本验收；CLI 默认 v1 不等于已切换 v2。后续解析规则变化须补适用证据，DEC-1/DEC-3 不因本轮关闭。
-- Body/B/F：另承接 [Extra 移交](verification/issue-150-extra-delivery.md#bodybf-承接)；Body 在明确请求及公共 probe 必要项通过后延迟导入 SDK，独立处理 native ABI、模型缓存、解析和资源失败；B 接线受限实验根的真实任务与资格；F 负责四刊/中文/复杂版式 fixture、摘录及资源阈值，并补齐公式行间/行内分类、独立 item 与无父源块类别；单样本的未知类别父源块及双口径峰值不替代上述责任，安装/依赖 passed 不解除这些责任。
-- B/C：消费[根、决定与样本持久接口](contracts/body-persistence.md)和[ADR-0043](adr/0043-persist-body-prerequisites-before-stage-b.md)，B 提供产品命令、真实选样/版式核查与[冻结暴露清单格式](contracts/exposure-export.md)。C 在保留器启用前导入并按 DOI 与双向权威关系图保留排除，新增关系或未来合并也不得遗失。B 按 [ADR-0069](adr/0069-treat-stage-b-selection-as-owner-acceptance.md)先保存选样及接受授权，Screening 成功后代记用户决定，PDF 后补绑定；候选清单、首票在 Screening 前交付及简短人工交互见[规格 §11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)。决定仍须引用上游 Screening 成功；纯人工 accepted 无此依据仍为 unknown，专用通道由 B/C 另行扩展。F 提供正式质量门槛、四刊资源与 PDF 裁切，不提升旧实验结果。
-- B 首个新增 migration 票：实施前核实 [#139 测试 head 人工预期集中化](https://github.com/MeteoBoy4/PaperRadar/issues/139) 完成及[交付结论](verification/issue-139-migration-expectations.md)，人工更新与集成要求分别见[测试规则](agents/testing.md)和[共享资源串行规则](agents/verification-scope.md#共享资源串行与后续承接)；此承接不新增 B/Body 对 Scope spec 的功能依赖。
-- C：I10、I12、I15、T01、T15–T19、T23、T24、T26；承接四刊生产采集扩展、保留器与未揭晓事实扩展、来源假设与语言约定核实、7 天复查/metadata_unobtainable 生命周期及完整 eligibility，不能从 JGR 合成材料推定四刊就绪。保留器装配 waiting_calibration 与身份/合并链全部仍成立的隐藏条件，存活论文继承事实，再调用共享 visibility；实际隐藏须做消费者组合验证。出处：[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)、[#119](https://github.com/MeteoBoy4/PaperRadar/issues/119)、[元数据契约](contracts/feed-metadata.md)、[共享规则](contracts/eligibility-visibility.md)。
-- F/Abstract：I09、I14、I15、T01、T10、T20、T26；F 另承接 [Docling 本轮未覆盖范围](verification/exp-3-docling-probe.md#移交与仍未验范围)的四刊/中文/其他版式、正式 fixture、摘录与资源阈值，不复用两份同论文材料作为四刊通过证据；与 C 共同承接[新规则实测的未完成项](verification/exp-1-http-audit-v2.md#b-前进方向与后续责任)：AIES Feed 202、dqkx 第 2 位协议重定向、Wiley 出版者 403 与 QJRMS `10.1002/qj.70349` 缺摘要。用户确认本轮不再处理 AIES/dqkx，后续阶段遇到时另拟方案；保留两个 partial 计划、成员/失败与暂停位置，不盲目 resume。v2 字段误取已修复且有该轮来源证据，不再把缺摘要与旧误取混为一事；完成适用新计划后才登记 acquired fixture，最迟 D 正式预热冻结/首批校准前逐刊收口。
-- D：I03、I06、I09、I12、I15、T04、T07–T10、T14–T17、T19、T20、T23、T24、T26。
-- G：I03、I09、T04、T07–T10、T13、T17–T20、T24；长文 reduce 的允许集合适用 v2 相同末次降级，评分理由始终整体拒绝；本轮 Body 仅 single 编排。
-- B：显式 Read/失败恢复及安全两轴的合成工程边界见[覆盖台账](verification/issue-198-explicit-read.md)；真实材料、Pi、逐文档所有者核查、日报与现场隔离恢复仍由 B 各自闸门承担，不将合成来源提升为 live。
-- B/F：当前正文查询遇到同一 PDF 的多个成功正文三元组时安全保留 undeterminable；
-  显式正文选择与新领取共享 Body 权威，旧核查和永久否决保留；F 扩展质量场景时继续沿用此约束，不能靠当前配置或传入指纹猜测。
-  规则见[Read 两轴查询](contracts/read-tasks.md#展示查询与两轴)。
-- B/H：承接 I04、I05、T05、T07、T08、T12 的分项披露，B 首个日报票验收共享片段在最小/健康/空日报的嵌入，H 完整日报保持 unknown、原状态与下一动作，片段不占论文容量，依据见[收口台账](verification/issue-168-176-live-admission-closure.md)；按 [ADR-0042](adr/0042-accept-read-v2-with-final-attempt-degradation.md) 显著展示受限内容未核对警告及丢弃标记/每类计数，不把降级结果展示为已核对或已支撑。
-- H：I06、I12、T15–T17、T23、T24；另承接 A3 历史证明未含的报告重建（[规格 §9.1](../intent/draft.md#91-本机一致性快照)）；E 沿用 I07、T02、T03、T11、T24 的共同约束。
-- I：承接[脱网回放](contracts/backup-restore.md#隔离脱网回放)后原根/副本并行执行的重复外发授权、预算与租约风险；不以本机内容闭包通过代替跨副本 exactly-once 或 NAS。I13、T06、T17、T25、D02、D04；聚合各阶段验收，另承接 A3 历史证明未含的任务续跑、NAS 及最终恢复。 依 [ADR-0048](adr/0048-accept-bounded-request-observability.md) 在无人值守/NAS 门槛重新评估精确请求计数及其隐私/运行边界成本，不把 Live 接受的近似下界与 unknown 当完整计数通过。
-- A10 遗留：AMS 来源与四刊摘要稳定及附加区块语义接 C/F/Abstract，正文/PDF/Docling 接 Body/F，生产导入接 Feed/C，NAS 接 I；首轮 AIES 为 202，不能声称历史 AMS403 复现，来源承接见[实测证据](verification/exp-1-http-audit.md)。其他未验范围见[A10 继承缺口](verification/doc-unification-history.md#a10-继承缺口)。
-
-B 的 Screening 执行、Feed 导入、实验及 run-due 新入口须给所选根显式注入文件日志汇，
-逐个加入已有执行入口守卫；实验根自带日志，库服务继续默认 NullSink。B 首次让
-show/trace/最小日报调用 visibility（隐藏集合为空也调用），普通动作在事务写入前守卫；
-trace 消费 eligibility，并组合最低元数据、人工 accepted、PDF/Read 前置与当前性，
-通过前置不等于获得名额。Pi/Live 在 doctor 九类骨架如实展示工程检查、所有者豁免与原能力状态；
-Audit 首轮 live 沿用已有日志接线。D 负责未揭晓/揭晓、review/evaluation、新展示面；
-H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 deferred 概念与真实组合验收。
-依据：[运行日志](contracts/runtime-logging.md)、[共享规则](contracts/eligibility-visibility.md)、
-[doctor](contracts/doctor.md)、[#120](https://github.com/MeteoBoy4/PaperRadar/issues/120)。
+后续执行入口从首次接线起显式注入所选根文件汇，并补对应执行入口守卫；库服务默认 NullSink。
+E/G/H/I 各自补 deferred 概念与真实消费者组合，不从纯规则或 B 单样本继承生产资格。
+依据：[运行日志](contracts/runtime-logging.md)、[共享规则](contracts/eligibility-visibility.md)和[doctor](contracts/doctor.md)。
 
 ### B 下游承接
 
@@ -166,13 +144,15 @@ H 负责完整日报、复核与诊断分支实际隐藏。E/G/H/I 各自补 def
 
 ## 用户须提供
 
-配置要求仅见[规格 §14](../intent/draft.md#十四上线前必须由用户提供的配置)。B 的实验根、Profile、模型与采样选择、OAuth 认证声明、联系邮箱、8 GB 单进程约束、阶段内外发授权及由 Agent 执行所有者豁免，已由本轮[grill 裁决](../intent/review/stage-b-grill-decisions.md)确定；精确运行资料在私有实验根 `stage-b-preparation.md`。主题按用户委托从 Profile 生成，仍须编译选择；认证和模型可用性由运行预检核实。用户后续只需在具体材料就绪时选样／换样、提供并确认合法 PDF 与版本归属、完成六项版式核查，接受动作按 ADR-0069 代执行。
-
-`/srv/pi-cwd` 为已裁决唯一常量；执行前须复核固定供给、运行隔离及专用认证／模型；[历史 Live 未验边界](verification/exp-2-pi-live-probe.md#明确承接与产品闸门)继续披露。B 使用本轮独立真实资料授权，不沿用 EXP-1 的临时 HTTP 标识或授权范围。选择可选证据链重验时，仍由所有者重新批准采集窗口、接收及激活；已有模板和旧激活不代替新执行输入。不从准备资料齐备推定 live 验收通过。
+后续阶段所需配置、Research Profile、模型／采样、认证与资料授权以[规格 §14](../intent/draft.md#十四上线前必须由用户提供的配置)为准；C 建立独立长期生产根，按其实际输入重新确认授权，不沿用 B 实验资料的授权范围或结果。
+选样、合法 PDF 及版本归属、正文质量和正式盲评标签仍由所有者按各自闸门提供或确认。
+选择可选 Live 证据链复验时，须重新批准采集窗口、接收及激活；模板、旧激活或准备资料齐备均不表示新执行已经通过。
 
 ## 未成形
 
-[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126) 取代 #112，承接 Verification Scope 文档解耦、集中登记与并行集成；按 S7(c) 不增模块、不阻塞 B。单 spec、跨 spec 与资源串行统一执行[唯一集成规则](agents/verification-scope.md)，材料与覆盖见[集成台账](verification/scope-registry-integration.md)。
+下一承接为[模块表](#模块)中的 C；依赖完成不自动将模块提升为可规格化。
+后续模块成形、单 spec、跨 spec 与共享资源串行统一执行[集成规则](agents/verification-scope.md)，
+固定材料与覆盖依据见[集成台账](verification/scope-registry-integration.md)。
 
 ## 已完成
 
@@ -215,7 +195,7 @@ A 窄收口新增能力沿用 #114 先例：独立新测试模块作为工程证
 
 ## 并行安排
 
-依据[规格 §10/§11](../intent/draft.md#十一九阶段实施与验收)：Docling 探测、Pi 离线启动器与 A 窄收口可以并行；C 长期生产根积累与 F 可以并行，E/G 可在 D 工程完成后并行。所有最迟入口、先后约束和运行门禁以规格为准。
+依据[规格 §10/§11](../intent/draft.md#十一九阶段实施与验收)：C 长期生产根积累与 F 可以并行，E/G 可在 D 工程完成后并行。所有最迟入口、先后约束和运行门禁以规格为准。
 
 ## 已移出板块索引
 

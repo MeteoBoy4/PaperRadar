@@ -45,7 +45,7 @@ value 成功与缺 PDF／终态解析受阻事实共同按首次可发布时间 
 回滚并要求显式重规划。Body 不读取实验关联；report 以已预验的 decision_id 映射 supporting value 成功。
 历史 pending 只排除冻结范围内已接受的同一成功，后来追加的决定即使墙钟回退或相同也不进入原范围。
 日期/时间只作披露，不作为决定 as-of 次序。缺少范围的旧开发树非分析输入受控拒绝，不按墙钟回填；
-此范围属于本票首次发布的固定输入格式。
+固定输入必须保存该决定范围。
 
 ### 发布与核验
 
@@ -87,6 +87,12 @@ historical_state_read=false、原因、时点及下一动作，不计论文容�
 received/active/revoked 也保持 unknown，不合成历史 claim 或因此产生 verified。重建使用冻结片段，
 不重新查询当前 doctor 或所有者选择。
 
+### 暴露成员读面
+
+`Reports.exposure_history_in_connection` 在调用方一致读事务投影全部固定 entry 的安全引用和
+不可变 projection 摘要；prepared 与 published 都保留，不携带后续发布状态或报告正文。
+`exposure_scope_in_connection` 仅返回完整持久主键元数据；消费规则见[暴露导出](exposure-export.md)。
+
 ### 恢复与消费接缝
 
 公共 `Reports(database, data_root, output_dir).rebuild/verify(report_id)` 接受显式位置，
@@ -125,12 +131,6 @@ render 显式注入所选根 FileSink；安全 JSON 只含身份、固定成员�
 不提供普通生产日报/复核、周报、生产队列或完整运行摘要；承接：[H](../roadmap.md#module-h)。
 不证明真实论文、模型质量、现场脱网隔离或 NAS；B 现场回放与[I](../roadmap.md#module-i)
 各自验收。恢复 API 的 Python 禁 I/O 守卫不代表操作系统隔离证明。
-
-## 暴露成员读面
-
-`Reports.exposure_history_in_connection` 在调用方一致读事务投影全部固定 entry 的安全引用和
-不可变 projection 摘要；prepared 与 published 都保留，不携带后续发布状态或报告正文。
-`exposure_scope_in_connection` 仅返回完整持久主键元数据；消费规则见[暴露导出](exposure-export.md)。
 
 ## 相关
 

@@ -45,6 +45,10 @@ B 的工程覆盖、最终冻结门禁条件与分开的签收索引见[B 收口
 | 在有界 cgroup 中显式提取当前冻结样本 | [显式提取](docs/contracts/stage-b-workflow.md#显式有界提取)；`paper-radar experiment extract --help` |
 | 代录所有者正文选择并只读回查历史 | [显式正文选择](docs/contracts/stage-b-workflow.md#显式正文选择)；`paper-radar experiment body-select --help` |
 | 生成六项版式对照并代录所有者结论 | [版式材料与核查](docs/contracts/stage-b-workflow.md#版式材料与核查)；`paper-radar experiment layout-materials --help` |
+| 显式精读合格实验样本、回查失败与证据 | [Read 与恢复](docs/contracts/stage-b-workflow.md#显式-read-与恢复)；`paper-radar experiment read --help` |
+| 发布、校验或重建私有日报与单篇报告 | [实验报告](docs/contracts/reports.md)；`paper-radar experiment report --help` |
+| 冻结并回查实验暴露清单 | [暴露导出](docs/contracts/exposure-export.md)；`paper-radar experiment export-exposure --help` |
+| 从既有备份隔离重放事实与报告 | [脱网回放](docs/contracts/backup-restore.md#隔离脱网回放) |
 | 记录选样接受授权、显式换样与查询历史 | [B 选样契约](docs/contracts/stage-b-workflow.md#选样接受授权与换样)；`paper-radar experiment select --help` |
 | 初始化实验根、取得 JGR v2 并生成候选清单 | [B 实验工作流](docs/contracts/stage-b-workflow.md)；`paper-radar experiment --help` |
 | 登记 fixture、执行或回放摘要审计 | [Fixture 与摘要审计](#fixture-与摘要审计) |
@@ -326,7 +330,8 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 外部 canonical parser 通过显式参数注入，
 只读事实可在调用者事务内核验；备份会重验正文业务闭包。
 接口、拒绝与限制见[正文持久化契约](docs/contracts/body-persistence.md)，
-产品入口和真实核查责任见[路线图 B](docs/roadmap.md#module-b)。
+产品入口见[B 工作流](docs/contracts/stage-b-workflow.md#显式有界提取)，
+固定单样本的所有者核查结论见[版式签收](docs/verification/issue-204-live-layout-acceptance.md)。
 
 ## 显式 Read 任务与历史分析
 
@@ -341,7 +346,9 @@ uv run --offline --locked paper-radar config diff <before-reference> <after-refe
 必需证据缺失或退化时在领取前拒绝。公共边界见[Read 任务](docs/contracts/read-tasks.md)及
 [执行契约](docs/contracts/read-execution.md)，跨消费者组合与恢复候选见
 [独立 D1 台账](docs/verification/issue-165-body-read-closure.md)。显式实验 CLI 与恢复路径见[B 工作流](docs/contracts/stage-b-workflow.md#显式-read-与恢复)。
-真实 Pi、真实材料与现场隔离责任见[路线图 B](docs/roadmap.md#module-b)。
+固定单样本的真实链与隔离恢复结论分别见
+[真实链签收](docs/verification/issue-205-live-chain-acceptance.md)和
+[恢复签收](docs/verification/issue-205-recovery-acceptance.md)；通用能力的后续责任见[路线图](docs/roadmap.md#b-下游承接)。
 
 ## Read 输出与证据校验
 
@@ -616,4 +623,5 @@ uv run --offline --locked paper-radar audit replay PLAN_ID \
   [Fixture／摘要审计](docs/verification/a10-requirements.md)。
 - Feed 工程与解析边界：[交付证据](docs/verification/issue-114-feed-delivery.md)、
   [parser 固定回归](docs/verification/feed-parser-v1.md)。
+- B 审阅修复的独立工程覆盖：[r1/r2 覆盖台账](docs/verification/issue-185-review-r1-r2-coverage.md)。
 - 历史研究：[Pi 供给 spike](docs/research/pi-1.3.0-supply-spike.md)，不作为 live 验收结论。
