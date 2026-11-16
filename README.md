@@ -375,7 +375,7 @@ uv run --offline --locked paper-radar contracts check \
 `export` 安全发布快照，`check` 只读检查漂移。契约选择、目录布局、不可覆盖规则与
 部分失败后的重试见[冻结契约 Contract](docs/contracts/frozen-contracts.md)。
 
-## 完整离线验证
+## 轻量本地检查
 
 轻量本地检查可直接调用，或显式安装提交前 hook：
 
@@ -388,6 +388,9 @@ uv run --offline --locked paper-radar contracts check \
 
 检查范围、部分暂存、冲突及只读边界见[轻量检查契约](docs/contracts/check-local.md)，
 [覆盖、计时与集成验证](docs/verification/issue-208-local-checks-integration.md)给出开发验证口径。
+后续独立覆盖见[补充验证](docs/verification/issue-208-local-checks-followup.md)。
+
+## 开发期回归
 
 开发中先运行相关功能测试，再按变更类型选择入口兼容组合；例如：
 
@@ -402,6 +405,8 @@ uv run --offline --locked pytest tests/test_feed_pipeline.py
 
 `all` 运行五个组合的有序去重并集。选择依据与使用边界见
 [开发入口契约](docs/contracts/check-compatibility.md)和[测试导航](docs/agents/testing.md)。
+
+## 完整离线验证
 
 完整离线门禁及历史结果查询：
 

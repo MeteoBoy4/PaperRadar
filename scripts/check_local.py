@@ -25,13 +25,22 @@ def run_checks(root: Path) -> int:
         environment.pop(key, None)
     environment.update(PYTHONDONTWRITEBYTECODE="1", RUFF_NO_CACHE="true")
     failed = False
+    uv_prefix = ("uv", "run", "--offline", "--locked")
     for check in default_checks():
         if check.id not in {"format", "lint"}:
             continue
+        if check.command[: len(uv_prefix)] != uv_prefix:
+            print(
+                "invalid_check_plan：Ruff 检查计划缺少锁定离线 uv 前缀；"
+                "请检查 default_checks() 的 format/lint 定义。",
+                file=sys.stderr,
+            )
+            return 1
+        module_command = check.command[len(uv_prefix) :]
         started = time.monotonic()
-        print(f"执行 {check.id}：{' '.join(check.command[4:])}", flush=True)
+        print(f"执行 {check.id}：{' '.join(module_command)}", flush=True)
         result = subprocess.call(
-            [sys.executable, "-B", "-m", *check.command[4:]],
+            [sys.executable, "-B", "-m", *module_command],
             cwd=root,
             env=environment,
         )
@@ -45,7 +54,7 @@ def run_checks(root: Path) -> int:
     for problem in problems:
         print(problem, flush=True)
     print(
-        f"docs：{'failed' if problems else 'passed'}；"
+        f"docs：{'失败' if problems else '通过'}；"
         f"耗时 {time.monotonic() - started:.3f}s",
         flush=True,
     )
@@ -99,7 +108,9 @@ def _export_index(root: Path, snapshot: Path) -> None:
             ) from error
         path = snapshot / relative
         if not relative or not path.resolve().is_relative_to(snapshot):
-            raise ValueError("invalid_index_path：暂存路径不在快照内。")
+            raise ValueError(
+                "invalid_index_path：暂存路径不在快照内；请移除异常条目后重新暂存。"
+            )
         entries.append((path, object_id, int(mode, 8)))
     # 直接读取对象字节:不执行 attributes 的 smudge/编码/EOL 转换或 replace refs。
     objects = subprocess.run(
@@ -115,25 +126,35 @@ def _export_index(root: Path, snapshot: Path) -> None:
         header_end = objects.index(b"\n", cursor)
         actual_id, kind, raw_size = objects[cursor:header_end].split()
         if actual_id != object_id or kind != b"blob":
-            raise ValueError("invalid_index_object：暂存对象不是原始 blob。")
+            raise ValueError(
+                "invalid_index_object：暂存对象不是原始 blob；"
+                "请检查 Git 对象完整性并重新暂存。"
+            )
         start = header_end + 1
         end = start + int(raw_size)
         if end >= len(objects) or objects[end : end + 1] != b"\n":
-            raise ValueError("invalid_index_object：暂存 blob 不完整。")
+            raise ValueError(
+                "invalid_index_object：暂存 blob 不完整；"
+                "请检查 Git 对象完整性并重新暂存。"
+            )
         path.parent.mkdir(parents=True, exist_ok=True)
         if mode_bits == 0o120000:
             try:
                 symlinks.append((path, objects[start:end].decode("utf-8")))
             except UnicodeDecodeError as error:
                 raise ValueError(
-                    "invalid_index_symlink：符号链接目标必须为 UTF-8。"
+                    "invalid_index_symlink：符号链接目标必须为 UTF-8；"
+                    "请修正目标后重新暂存。"
                 ) from error
         else:
             path.write_bytes(objects[start:end])
             path.chmod(mode_bits & 0o777)
         cursor = end + 1
     if cursor != len(objects):
-        raise ValueError("invalid_index_object：暂存 blob 输出不完整。")
+        raise ValueError(
+            "invalid_index_object：暂存 blob 输出不完整；"
+            "请检查 Git 对象完整性并重新暂存。"
+        )
     # 全部普通文件写完后才创建链接,避免父目录链接引导写入快照外。
     for path, target in symlinks:
         path.symlink_to(target)
@@ -146,10 +167,14 @@ def _export_index(root: Path, snapshot: Path) -> None:
                 resolved = path.resolve()
         except (OSError, RuntimeError) as error:
             raise ValueError(
-                "invalid_index_symlink：符号链接成环或无法解析。"
+                "invalid_index_symlink：符号链接成环或无法解析；"
+                "请修正链接目标后重新暂存。"
             ) from error
         if not resolved.is_relative_to(snapshot):
-            raise ValueError("outside_repository：暂存符号链接指向快照外。")
+            raise ValueError(
+                "outside_repository：暂存符号链接指向快照外；"
+                "请改为仓库内相对目标或移除该暂存链接。"
+            )
 
 
 @contextmanager
@@ -167,6 +192,11 @@ def checked_tree(root: Path, staged: bool) -> Iterator[Path]:
     ) as name:
         snapshot = Path(name)
         _export_index(root, snapshot)
+        if not (snapshot / "pyproject.toml").is_file():
+            raise ValueError(
+                "missing_ruff_config：暂存快照缺少 pyproject.toml；"
+                "请暂存项目配置后重试，不能沿用工作树配置或默认规则。"
+            )
         yield snapshot
 
 
@@ -199,15 +229,16 @@ def main(root: Path | None = None) -> int:
             "本入口不运行 mypy/pytest/兼容检查或正式验收。"
         ),
     )
-    parser.add_argument("-h", "--help", action="help", help="显示中文帮助并退出")
-    parser.add_argument(
+    arguments = parser.add_argument_group("参数与选项")
+    arguments.add_argument("-h", "--help", action="help", help="显示中文帮助并退出")
+    arguments.add_argument(
         "action",
         nargs="?",
         choices=("check", "install", "uninstall"),
         default="check",
         help="检查（默认）、显式安装或安全卸载 hook",
     )
-    parser.add_argument(
+    arguments.add_argument(
         "--staged", action="store_true", help="检查 index 的树外临时快照；不使用 stash"
     )
     options = parser.parse_args()
@@ -248,7 +279,10 @@ def main(root: Path | None = None) -> int:
                 "uv run --offline --locked python --version 准备环境。"
             )
         return result
-    except (OSError, ImportError, ValueError, subprocess.CalledProcessError) as error:
+    except ValueError as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    except (OSError, ImportError, subprocess.CalledProcessError) as error:
         print(
             f"launch_error：{error}；请检查 uv / Git 可用，"
             "运行 uv run --offline --locked python --version 准备环境。",

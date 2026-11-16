@@ -23,7 +23,7 @@ def test_install_is_idempotent_and_uninstall_is_safe(git_root: Path) -> None:
     hook.write_bytes(original + b"# user change\n")
     result = invoke(git_root, "uninstall")
     assert result.returncode == 1
-    assert "hook_conflict" in result.stderr
+    assert result.stderr.startswith("hook_conflict：")
     assert hook.read_bytes() == original + b"# user change\n"
     hook.write_bytes(original)
     assert invoke(git_root, "uninstall").returncode == 0
@@ -72,7 +72,7 @@ def test_hook_blocks_bad_index_then_allows_commit_and_uninstall(git_root: Path) 
     assert git(git_root, "diff", "--cached", "--binary").stdout == index
     assert source.read_bytes() == b"x = 1\n"
     git(git_root, "add", "src/example.py")
-    result = commit(git_root)
+    result = commit(git_root / "src")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "staged" in result.stdout + result.stderr
     assert invoke(git_root, "uninstall").returncode == 0
@@ -88,14 +88,14 @@ def test_existing_hook_and_hooks_path_preserve_original_bytes(git_root: Path) ->
     hook.write_bytes(original)
     result = invoke(git_root, "install")
     assert result.returncode == 1
-    assert "hook_conflict" in result.stderr
+    assert result.stderr.startswith("hook_conflict：")
     assert hook.read_bytes() == original
     hook.unlink()
     git(git_root, "config", "core.hooksPath", "custom-hooks")
     configuration = (git_root / ".git/config").read_bytes()
     result = invoke(git_root, "install")
     assert result.returncode == 1
-    assert "hooks_path_conflict" in result.stderr
+    assert result.stderr.startswith("hooks_path_conflict：")
     assert (git_root / ".git/config").read_bytes() == configuration
     assert not hook.exists()
 

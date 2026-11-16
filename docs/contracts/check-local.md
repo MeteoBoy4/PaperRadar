@@ -14,6 +14,8 @@ Ruff 参数与路径直接派生自 `scripts/offline_evidence.py::default_checks
 `format`、`lint` 项；不另维护命令清单。外层以 `uv run --offline --locked` 准备锁定环境，
 worker 使用该环境的 Python 调用 Ruff 模块，对所选树运行同源参数。
 快照不执行自己的 Python 代码、不另建 editable 环境，Ruff 配置取所选树。
+staged 快照必须包含 `pyproject.toml`，缺失时以 `missing_ruff_config` 拒绝；
+不能回落到默认 Ruff 规则或沿用工作树中的配置，应先暂存项目配置。
 
 只读指不改被检查源码、index 或提交内容；uv 可能同步锁定项目环境。
 Ruff cache 与 Python bytecode 禁用，index 快照在树外创建并在成功、失败后清理。
@@ -71,6 +73,9 @@ Git 原生 `git commit --no-verify` 只绕过 hook，不能解释为检查通过
 无法读取来源、目标或 inventory 分别给出 `source_error`、`target_error`、`invalid_inventory`，
 树外目标给出 `outside_repository`，不以解析失败冒充无链接通过。
 hook 冲突分别给出 `hook_conflict`、`hooks_path_conflict`；启动失败给出 `launch_error`。
+index 与 hook 的受控拒绝保留各自原因码及对应下一步，不统一标记为启动失败。
+派生 Ruff 命令若缺少锁定离线 uv 前缀，以 `invalid_check_plan` 非零拒绝，
+提示维护者检查 `default_checks()` 的 format/lint 定义。
 `--help` 纯本地输出，不启动 uv 或检查，缺项目环境时可用 Python >=3.12 的宿主解释器。
 
 ## 不提供／不证明
@@ -82,7 +87,8 @@ hook 冲突分别给出 `hook_conflict`、`hooks_path_conflict`；启动失败�
 
 ## 相关
 
-- [README 使用入口](../../README.md#完整离线验证)、[独立 D1 与计时](../verification/issue-208-local-checks-integration.md)。
+- [README 使用入口](../../README.md#轻量本地检查)、[独立 D1 与计时](../verification/issue-208-local-checks-integration.md)。
+- [补充独立覆盖](../verification/issue-208-local-checks-followup.md)。
 - 依据：[规格及补充评论](https://github.com/MeteoBoy4/PaperRadar/issues/208)、
   [统一实现](../../scripts/check_local.py)、[链接检查](../../scripts/live_document_links.py)、
   [hook 适配](../../scripts/local_hooks.py)。

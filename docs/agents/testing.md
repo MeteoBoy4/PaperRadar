@@ -59,9 +59,8 @@ pytest 插件自动加载、pytest 缓存和字节码。测试仍会使用临时
 选择依据为独立精选的公共回归，唯一权威在
 `scripts/check_compatibility.py::CHECK_GROUPS`，不是各 scope 的全部业务测试。
 新增相关消费者时，在同一变更中人工核对目录与理由；注册表非空及模块/节点存在只证明
-机械完整性。当前版本负例使用人工维护的字面量，先核实 mutation 与有效前置，再断言精确
-受控原因；历史 fixture、manifest、迁移及证据保留各自版本与原字节。
-通用 migration 基线与报告历史条件性义务见[开发入口契约](../contracts/check-compatibility.md)。
+机械完整性。当前版本负例、历史保护、通用 migration 基线与报告历史条件性义务见
+[开发入口契约](../contracts/check-compatibility.md)。
 复用现有测试不会继承其历史通过结论。原产物数量、历史终端字节、帮助及禁外部 I/O
 断言继续独立维护，不从生产输出机械推导预期。新增 CLI 冷进程帮助测试沿用现有
 `deny_external_io` 的 socket/SQLite 拒绝守卫。

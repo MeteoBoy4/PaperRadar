@@ -68,6 +68,7 @@ def git_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     for name in ("src", "tests", "scripts"):
         (tmp_path / name).mkdir()
         (tmp_path / name / "empty.py").write_text("")
+    (tmp_path / "pyproject.toml").write_text("[tool.ruff]\n")
     return tmp_path
 
 
@@ -77,6 +78,10 @@ def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def stage_default(root: Path) -> None:
+    git(root, "add", "README.md", "src", "tests", "scripts", "docs", "pyproject.toml")
+
+
 @pytest.mark.parametrize("index_bad", [True, False])
 def test_staged_checks_index_independently_of_worktree(
     git_root: Path, index_bad: bool
@@ -84,7 +89,7 @@ def test_staged_checks_index_independently_of_worktree(
     source = git_root / "src/example.py"
     bad, good = b"import os\nx=1\n", b"x = 1\n"
     source.write_bytes(bad if index_bad else good)
-    git(git_root, "add", "README.md", "src", "tests", "scripts", "docs")
+    stage_default(git_root)
     source.write_bytes(good if index_bad else bad)
     index_before = git(git_root, "ls-files", "--stage", "-z").stdout
     index_bytes = (git_root / ".git/index").read_bytes()
@@ -98,12 +103,32 @@ def test_staged_checks_index_independently_of_worktree(
 
 def test_staged_document_cannot_use_unstaged_target(git_root: Path) -> None:
     (git_root / "README.md").write_text("[new](target.md)\n")
-    git(git_root, "add", "README.md", "src", "tests", "scripts", "docs")
+    stage_default(git_root)
     (git_root / "target.md").write_text("# Present only in worktree\n")
     assert invoke(git_root).returncode == 0
     result = invoke(git_root, "--staged")
     assert result.returncode == 1
     assert "README.md:1 -> target.md: missing_target" in result.stdout
+
+
+def test_staged_document_cannot_use_ignored_worktree_receipt(git_root: Path) -> None:
+    (git_root / "README.md").write_text("[receipt](verification-runs/local.json)\n")
+    (git_root / ".gitignore").write_text("verification-runs/\n")
+    stage_default(git_root)
+    git(git_root, "add", ".gitignore")
+    receipt = git_root / "verification-runs/local.json"
+    receipt.parent.mkdir()
+    receipt.write_text("{}\n")
+    assert git(git_root, "check-ignore", "verification-runs/local.json").stdout.strip()
+    assert invoke(git_root).returncode == 0
+    index_before = (git_root / ".git/index").read_bytes()
+    result = invoke(git_root, "--staged")
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert (
+        "README.md:1 -> verification-runs/local.json: missing_target" in result.stdout
+    )
+    assert receipt.read_text() == "{}\n"
+    assert (git_root / ".git/index").read_bytes() == index_before
 
 
 def test_help_and_checks_deny_external_io(
@@ -114,9 +139,12 @@ def test_help_and_checks_deny_external_io(
     result = invoke(git_root, "--help")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "用法：" in result.stdout
+    assert "options:" not in result.stdout
+    assert "positional arguments:" not in result.stdout
     assert "uv run --offline --locked" in result.stdout
     result = invoke(git_root)
     assert result.returncode == 0, result.stdout + result.stderr
+    assert "docs：通过；" in result.stdout
     assert not (git_root / "must-not-exist").exists()
     assert not (git_root / "verification-runs").exists()
 
@@ -158,6 +186,7 @@ def test_staged_checks_raw_blobs_without_smudge_filters(git_root: Path) -> None:
         git_root,
         "add",
         ".gitattributes",
+        "pyproject.toml",
         "README.md",
         "src",
         "tests",
@@ -202,7 +231,7 @@ def test_staged_preserves_executable_mode(git_root: Path) -> None:
     "kind", ["symlink", "symlink_cycle", "submodule", "unmerged", "non_utf8"]
 )
 def test_unsupported_index_entries_fail_closed(git_root: Path, kind: str) -> None:
-    git(git_root, "add", "README.md", "src", "tests", "scripts", "docs")
+    stage_default(git_root)
     if kind == "symlink":
         (git_root / "src/linked.py").symlink_to("../../outside.py")
         git(git_root, "add", "src/linked.py")
@@ -241,7 +270,7 @@ def test_unsupported_index_entries_fail_closed(git_root: Path, kind: str) -> Non
         "symlink": "outside_repository",
         "symlink_cycle": "invalid_index_symlink",
     }.get(kind, "unsupported_index_entry")
-    assert expected_reason in result.stderr
+    assert result.stderr.startswith(f"{expected_reason}：")
     assert "Traceback" not in result.stderr
     assert "执行 format" not in result.stdout
     assert (git_root / ".git/index").read_bytes() == index_bytes
@@ -249,18 +278,48 @@ def test_unsupported_index_entries_fail_closed(git_root: Path, kind: str) -> Non
 
 def test_intent_to_add_target_cannot_satisfy_staged_link(git_root: Path) -> None:
     (git_root / "README.md").write_text("[not committed](target.md)\n")
-    git(git_root, "add", "README.md", "src", "tests", "scripts", "docs")
+    stage_default(git_root)
     (git_root / "target.md").write_text("# Only intent to add\n")
     git(git_root, "add", "--intent-to-add", "target.md")
     result = invoke(git_root, "--staged")
     assert result.returncode == 1, result.stdout + result.stderr
-    assert "intent_to_add" in result.stderr
+    assert result.stderr.startswith("intent_to_add：")
+
+
+def test_staged_rejects_temporary_root_inside_worktree(
+    git_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    stage_default(git_root)
+    temporary_root = git_root / "temporary"
+    temporary_root.mkdir()
+    monkeypatch.setenv("TMPDIR", str(temporary_root))
+    result = invoke(git_root, "--staged")
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stderr.startswith("temporary_root：")
+    assert not list(temporary_root.iterdir())
+    assert "执行 format" not in result.stdout
 
 
 def test_staged_accepts_internal_symlinks_without_reading_worktree(
     git_root: Path,
 ) -> None:
     (git_root / "src/linked.py").symlink_to("empty.py")
-    git(git_root, "add", "README.md", "src", "tests", "scripts", "docs")
+    stage_default(git_root)
     result = invoke(git_root, "--staged")
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("configuration", ["worktree_only", "deleted_from_index"])
+def test_staged_requires_ruff_configuration_from_index(
+    git_root: Path, configuration: str
+) -> None:
+    (git_root / "pyproject.toml").write_text('[tool.ruff.lint]\nselect = ["F"]\n')
+    git(git_root, "add", "README.md", "src", "tests", "scripts", "docs")
+    if configuration == "deleted_from_index":
+        git(git_root, "add", "pyproject.toml")
+        git(git_root, "commit", "-qm", "temporary configuration")
+        git(git_root, "rm", "--cached", "pyproject.toml")
+    result = invoke(git_root, "--staged")
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "missing_ruff_config：" in result.stderr
+    assert "执行 format" not in result.stdout

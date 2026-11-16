@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -14,31 +16,37 @@ from markdown_it.rules_inline import StateInline, image, link
 from markdown_it.token import Token
 
 
+class LinkReason(StrEnum):
+    INVALID_INVENTORY = "invalid_inventory"
+    SOURCE_ERROR = "source_error"
+    OUTSIDE_REPOSITORY = "outside_repository"
+    MISSING_TARGET = "missing_target"
+    MISSING_ANCHOR = "missing_anchor"
+    TARGET_ERROR = "target_error"
+
+
 @dataclass(frozen=True)
 class LinkProblem:
     source: str
     line: int
     target: str
-    reason: str
+    reason: LinkReason
 
     def __str__(self) -> str:
         return f"{self.source}:{self.line} -> {self.target}: {self.reason}"
 
 
-def _positioned_link(state: StateInline, silent: bool) -> bool:
-    start, count = state.pos, len(state.tokens) + bool(state.pending)
-    matched = link(state, silent)
-    if matched and not silent:
-        state.tokens[count].meta["line_offset"] = state.src.count("\n", 0, start)
-    return matched
+def _positioned(
+    rule: Callable[[StateInline, bool], bool],
+) -> Callable[[StateInline, bool], bool]:
+    def positioned(state: StateInline, silent: bool) -> bool:
+        start, count = state.pos, len(state.tokens) + bool(state.pending)
+        matched = rule(state, silent)
+        if matched and not silent:
+            state.tokens[count].meta["line_offset"] = state.src.count("\n", 0, start)
+        return matched
 
-
-def _positioned_image(state: StateInline, silent: bool) -> bool:
-    start, count = state.pos, len(state.tokens) + bool(state.pending)
-    matched = image(state, silent)
-    if matched and not silent:
-        state.tokens[count].meta["line_offset"] = state.src.count("\n", 0, start)
-    return matched
+    return positioned
 
 
 class _LocalMarkdown(MarkdownIt):
@@ -49,8 +57,8 @@ class _LocalMarkdown(MarkdownIt):
 
 def _parse(text: str) -> list[Token]:
     parser = _LocalMarkdown("commonmark")
-    parser.inline.ruler.at("link", _positioned_link)
-    parser.inline.ruler.at("image", _positioned_image)
+    parser.inline.ruler.at("link", _positioned(link))
+    parser.inline.ruler.at("image", _positioned(image))
     return parser.parse(text)
 
 
@@ -101,7 +109,9 @@ def check_document_links(root: Path) -> list[LinkProblem]:
         if not all(isinstance(source, str) and source for source in sources):
             raise ValueError("invalid live document selection")
     except (OSError, ValueError, KeyError, TypeError):
-        return [LinkProblem(inventory_path, 1, inventory_path, "invalid_inventory")]
+        return [
+            LinkProblem(inventory_path, 1, inventory_path, LinkReason.INVALID_INVENTORY)
+        ]
     parsed: dict[Path, list[Token]] = {}
     for source in sources:
         try:
@@ -111,7 +121,7 @@ def check_document_links(root: Path) -> list[LinkProblem]:
             tokens = _parse(source_path.read_text(encoding="utf-8"))
             parsed[source_path] = tokens
         except (OSError, ValueError):
-            problems.append(LinkProblem(source, 1, source, "source_error"))
+            problems.append(LinkProblem(source, 1, source, LinkReason.SOURCE_ERROR))
             continue
         for token in tokens:
             if token.type != "inline":
@@ -134,18 +144,20 @@ def check_document_links(root: Path) -> list[LinkProblem]:
                         if url.path
                         else source_path
                     ).resolve()
-                    reason = None
+                    reason: LinkReason | None = None
                     if not path.is_relative_to(root):
-                        reason = "outside_repository"
+                        reason = LinkReason.OUTSIDE_REPOSITORY
                     elif not path.exists():
-                        reason = "missing_target"
+                        reason = LinkReason.MISSING_TARGET
                     elif url.fragment and path.suffix.lower() == ".md":
                         if path not in parsed:
                             parsed[path] = _parse(path.read_text(encoding="utf-8"))
                         if unquote(url.fragment) not in _anchors(parsed[path]):
-                            reason = "missing_anchor"
+                            reason = LinkReason.MISSING_ANCHOR
                     if reason:
                         problems.append(LinkProblem(source, line, target, reason))
                 except (OSError, ValueError):
-                    problems.append(LinkProblem(source, line, target, "target_error"))
+                    problems.append(
+                        LinkProblem(source, line, target, LinkReason.TARGET_ERROR)
+                    )
     return problems
