@@ -25,7 +25,7 @@
 
 对基线 483 份非 vendored Markdown 扫描本地路径和锚点，并以 CommonMark 解析器
 复核真实链接；35 份显式活文档无断链，锚点核对无新增失配。
-历史文档发现以下 16 个引用例外，按[统一迁移的原字节保留边界](../../docs/verification/doc-unification-ledger.md#基线与范围)
+历史文档有 15 处旧路径引用，另有一处被忽略的本机回执在独立 worktree 中缺失，按[统一迁移的原字节保留边界](../../docs/verification/doc-unification-ledger.md#基线与范围)
 和[固定材料规则](../../docs/agents/verification-scope.md#材料与证明边界)保留原件，不伪造历史回执：
 
 | 历史原件 | 次数 | 现行去向或限制 |
@@ -33,10 +33,11 @@
 | [daily-paper-reader 调研](../archived_discussions/daily-paper-reader.md)中的 `./draft.md` | 2 | 现行规格为 [intent/draft.md](../draft.md) |
 | [AIHOT 调研](../discussions/research-aihot-v1-lessons.md)中的 `../docs/adr/…` | 12 | 相对层级应多上一级；决策原件仍在 [docs/adr/](../../docs/adr/) |
 | [Pi 文档审阅](pi-agent-v1-document-consistency-review.md)中的 `CONTEXT.md` | 1 | 已更名为 [GLOSSARY.md](../../GLOSSARY.md)，维护规则保留此历史映射 |
-| [#61 审阅](issue-61-receipt-isolation-process-group-review.md)指向的本机历史运行 JSON | 1 | 当前 checkout 没有该被忽略的本机文件；不补写、重建或声称已核验该运行 |
+| [#61 审阅](issue-61-receipt-isolation-process-group-review.md)指向的本机历史运行 JSON | 1 | 主工作区有该被忽略文件，独立 worktree 不携带；这是本机材料可用性差异，不计入仓库路径断链，也不由文档引用推定该运行已核验 |
 
 首轮正则扫描识别前 15 处；标准解析补出最后一处带代码格式标签的历史回执链接。
-全部例外来自原字节保持的非活文档，不是本次修订引入。
+核对主工作区与独立 worktree 的差异后，将该本机材料单列。全部引用来自原字节保持的
+非活文档，不是本次修订引入；没有补写、重建或解析该历史回执。
 
 ## 验证与边界
 
