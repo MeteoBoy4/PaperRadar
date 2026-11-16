@@ -1,17 +1,32 @@
 # 开发期入口兼容检查
 
-`./scripts/check-compatibility {acceptance,cli,all}` 是完整离线门禁之前的开发工具，
-不是 `paper-radar` 产品命令。它只运行精选的入口兼容回归，不改变验收合格标准、
+`./scripts/check-compatibility {acceptance,cli,renderer,source-guard,migration,all}`
+是完整离线门禁之前的开发工具，不是 `paper-radar` 产品命令。
+它运行精选的入口和版本消费者回归，不改变验收合格标准、
 Frozen Contract 或既有历史证据。
 
 ## 参数与选择
 
 只接受一个组合名：`acceptance` 检查验收入口/回执接线，`cli` 检查 CLI 注册/导入链，
-`all` 按 `acceptance`、`cli` 顺序取有序并集。不接受任意 pytest 参数。
+`renderer` 检查当前报告呈现、持久投影和历史重建；`source-guard` 检查当前策略、
+manifest、bundle 构建和 epoch 升级；`migration` 检查有效旧 revision 升级、Schema、
+人工 head 预期及备份恢复。`all` 按 `acceptance`、`cli`、`renderer`、`source-guard`、
+`migration` 顺序取有序去重并集。不接受任意 pytest 参数。
 选择规则唯一登记在 `scripts/check_compatibility.py::CHECK_GROUPS`；清单及逐项理由由
 `selection_documentation()` 派生到 `--help` 和[测试导航](../agents/testing.md#按变更类型运行开发期检查)。
 它使用独立精选的公共回归，不自动扩展为所有 scope 测试，也不自动分析变更。
 影响面无法确定时，开发者应运行 `all`。
+
+开发者按变更类别显式选择；跨类别时分别运行或运行 `all`。新增相关消费者时，
+在同一变更中人工核对并更新目录及选择理由。文件存在和成功收集只证明机械完整性，
+不证明消费者已经找全。当前版本负例使用人工维护的字面量并核实 mutation 生效及精确
+错误边界；历史 manifest、renderer fixture、迁移节点和已发布证据分别保护原版本。
+
+通用 migration 基线是上一有效 revision 的非空代表库升级到当前 head，检查数据保留、
+实际 Schema 与 metadata、适用约束及追加保护、失败原子性，受影响时检查备份恢复。
+目录中的 b008/v1 恢复、合法旧报告降级与 v2 历史拒降属于报告域的条件性义务。
+推进 head 时人工核对[测试规则](../agents/testing.md)的维护清单与当前受影响域消费者；
+目录不会自动更新，不建设任意 revision 升级矩阵。
 
 入口先切换到仓库根目录。引导解释器优先取 `${UV_PROJECT_ENVIRONMENT-.venv}/bin/python`，
 相对环境路径以仓库为准；仅当该文件不可执行时才查找 PATH 中的宿主 `python3`。
@@ -40,7 +55,9 @@ uv 自身失败时保留其诊断及非零返回值。输出是终端文本，�
 
 ## 副作用与证据边界
 
-所选回归使用临时文件、临时数据库及固定 fixture/mock，不访问实时来源、模型或用户数据库；
+所选回归使用临时合成根、临时数据库及固定 fixture/mock，不联网，不读取凭据、
+真实实验根或用户数据库，不写正式回执；本地 SQLite、Git/pytest 子进程与
+`uv run --offline --locked` 属于允许的开发 I/O。
 uv 可能同步锁定环境。测试进程在导入 pytest 前清除继承的
 `PAPER_RADAR_TEST_RECEIPT`、`PAPER_RADAR_TEST_RUN_ID`、`PYTEST_ADDOPTS`、`PYTEST_PLUGINS`，
 禁用第三方 pytest 插件自动加载、回执插件、pytest 缓存与字节码。
