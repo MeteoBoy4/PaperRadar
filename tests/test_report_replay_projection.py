@@ -67,10 +67,13 @@ def test_report_replay_rejects_changed_existing_projection_across_calls(
 def test_report_replay_rejects_changed_registration_across_calls(
     tmp_path: Path,
 ) -> None:
-    service, receipt, _ = prepared(tmp_path)
+    service, receipt, root = prepared(tmp_path)
+    projection = root / "views" / str(receipt["relative_path"])
+    assert b"renderer=2" in projection.read_bytes()
     assert service.replay() == (receipt,)
     # 只损坏本用例创建的合成文件;不关闭 append-only 保护或改生产写入规则。
     original = service.database.read_bytes()
+    assert b'"renderer_version":2' in original
     altered = original.replace(b'"renderer_version":2', b'"renderer_version":9')
     assert altered != original and len(altered) == len(original)
     service.database.write_bytes(altered)

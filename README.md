@@ -383,9 +383,12 @@ uv run --offline --locked paper-radar contracts check \
 uv run --offline --locked pytest tests/test_feed_pipeline.py
 ./scripts/check-compatibility acceptance
 ./scripts/check-compatibility cli
+./scripts/check-compatibility renderer
+./scripts/check-compatibility source-guard
+./scripts/check-compatibility migration
 ```
 
-`all` 可替代两个组合，运行去重并集。选择依据与使用边界见
+`all` 运行五个组合的有序去重并集。选择依据与使用边界见
 [开发入口契约](docs/contracts/check-compatibility.md)和[测试导航](docs/agents/testing.md)。
 
 完整离线门禁及历史结果查询：

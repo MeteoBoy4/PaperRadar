@@ -399,12 +399,18 @@ def test_changed_source_copy_refuses_stale_guard(
     tampered_source = tmp_path / "guard-source"
     vector_path = Path("tests/fixtures/live-admission-source-guard-v29.json")
     vector = json.loads((upgrade.source_root / vector_path).read_bytes())
+    assert vector["policies"]["admission"] == "pi-admission-v29"
     for name in (*vector["files"], vector_path.as_posix()):
         target = tampered_source / name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(upgrade.source_root / name, target)
     member = tampered_source / "src/paper_radar/live_evidence/live_bundle.py"
-    member.write_bytes(member.read_bytes() + b"\n# synthetic changed source\n")
+    original = member.read_bytes()
+    member.write_bytes(original + b"\n# synthetic changed source\n")
+    assert member.read_bytes() != original
+    assert (tampered_source / vector_path).read_bytes() == (
+        upgrade.source_root / vector_path
+    ).read_bytes()
     output = tmp_path / "guard-rejected"
     with pytest.raises(ValueError, match=r"^source_guard_mismatch$"):
         build_live_bundle(

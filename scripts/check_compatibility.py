@@ -119,6 +119,101 @@ CHECK_GROUPS = {
             ),
         ),
     ),
+    "renderer": CheckGroup(
+        "当前报告 renderer / 持久投影与历史回放",
+        (
+            TestSelection("tests/test_experiment_reports_cli.py", "当前报告命令与回执"),
+            TestSelection(
+                "tests/test_experiment_reports_sections.py", "报告各节的公共呈现"
+            ),
+            TestSelection(
+                "tests/test_experiment_reports_disclosure.py",
+                "当前 renderer 的安全披露",
+            ),
+            TestSelection(
+                "tests/test_experiment_reports_publication.py", "持久投影与原子发布"
+            ),
+            TestSelection(
+                "tests/test_experiment_reports_recovery.py", "报告恢复与重建"
+            ),
+            TestSelection(
+                "tests/test_report_replay_projection.py", "回放原字节及当前注册损坏负例"
+            ),
+            TestSelection(
+                "tests/test_stage_b_review_report_quality.py",
+                "阶段 B 报告消费者与质量边界",
+            ),
+            TestSelection(
+                "tests/test_experiment_exposure_migrations.py",
+                "合法 v1 报告历史升级和恢复消费者",
+            ),
+            TestSelection(
+                "tests/test_stage_b_report_renderer_migrations.py",
+                "非空上一 revision 升级、Schema、冷恢复与 v2 拒降",
+            ),
+            TestSelection(
+                "tests/test_version_consumer_checks.py",
+                "独立 D1 目录完整性与跨类别去重",
+            ),
+        ),
+    ),
+    "source-guard": CheckGroup(
+        "当前源码守卫 / bundle 与 epoch 消费者",
+        (
+            TestSelection(
+                "tests/test_live_bundle.py", "当前 manifest 的构建消费及受控拒绝"
+            ),
+            TestSelection(
+                "tests/test_live_epoch_upgrade.py", "epoch 升级的源码副本与历史连续性"
+            ),
+            TestSelection(
+                "tests/test_live_admission_source_guard.py",
+                "当前完整源码与各历史策略 manifest",
+            ),
+            TestSelection(
+                "tests/test_stage_b_review_source_history.py",
+                "独立历史 v28 原字节与成员保护",
+            ),
+            TestSelection(
+                "tests/test_stage_b_admission_source_closure.py",
+                "阶段 B 新增准入源的闭包保护",
+            ),
+            TestSelection(
+                "tests/test_version_consumer_checks.py",
+                "独立 D1 目录完整性与跨类别去重",
+            ),
+        ),
+    ),
+    "migration": CheckGroup(
+        "迁移升级 / Schema 与备份恢复消费者",
+        (
+            TestSelection(
+                "tests/test_stage_b_report_renderer_migrations.py",
+                "上一有效非空 revision 升级、Schema、原子性与报告历史边界",
+            ),
+            TestSelection(
+                "tests/test_experiment_exposure_migrations.py",
+                "报告历史的合法降级、升级和备份恢复",
+            ),
+            TestSelection(
+                "tests/test_migration_expectations.py", "独立人工 head 预期的唯一维护点"
+            ),
+            TestSelection(
+                "tests/test_storage_migrations.py", "数据库 revision 分类与事务回滚"
+            ),
+            TestSelection("tests/test_backup_service.py", "实际备份声明与非空数据保留"),
+            TestSelection(
+                "tests/test_backup_failures.py", "旧版、未知及 future revision 备份拒绝"
+            ),
+            TestSelection(
+                "tests/test_restore_service.py", "恢复副本的 revision 与数据闭包"
+            ),
+            TestSelection(
+                "tests/test_version_consumer_checks.py",
+                "独立 D1 目录完整性与跨类别去重",
+            ),
+        ),
+    ),
 }
 
 

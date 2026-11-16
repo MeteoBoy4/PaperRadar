@@ -406,8 +406,12 @@ def test_build_refuses_unreviewed_source_guard_before_freezing_or_output(
             / "tests/fixtures/live-admission-source-guard-v29.json"
         ).read_bytes()
     )
+    assert reviewed["policies"]["admission"] == "pi-admission-v29"
+    assert "root.py" not in reviewed["files"]
     reviewed["files"] = {"root.py": "0" * 64}
     fixture.write_text(json.dumps(reviewed))
+    assert fixture.is_file()
+    assert json.loads(fixture.read_bytes())["files"] == {"root.py": "0" * 64}
     (source / "root.py").write_bytes(b"unreviewed frozen root code\n")
     with pytest.raises(ValueError, match="source_guard_mismatch"):
         build_live_bundle(

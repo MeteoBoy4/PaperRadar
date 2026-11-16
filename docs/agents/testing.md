@@ -28,7 +28,10 @@
 | --- | --- |
 | 新增验收组、调整发布产物/回执接线/终态读取 | `./scripts/check-compatibility acceptance` |
 | CLI 注册、帮助或包初始化/服务导入链 | `./scripts/check-compatibility cli` |
-| 同时触及以上两类，或无法判断影响面 | `./scripts/check-compatibility all` |
+| 当前报告 renderer、持久投影、历史重建或回放入口 | `./scripts/check-compatibility renderer` |
+| 当前源码策略、manifest、守卫文件集合、bundle 构建或 epoch 升级 | `./scripts/check-compatibility source-guard` |
+| 新迁移、唯一 head、备份 revision 声明或迁移消费行为 | `./scripts/check-compatibility migration` |
+| 跨类别或无法判断影响面 | 分别运行对应组合，或 `./scripts/check-compatibility all` |
 
 `./scripts/check-compatibility --help` 只打印中文帮助与完整选择清单，不启动 uv、
 测试或文件写入；优先使用项目 Python，缺失时使用宿主 `python3`（>=3.12），
@@ -49,6 +52,10 @@ pytest 插件自动加载、pytest 缓存和字节码。测试仍会使用临时
 
 选择依据为独立精选的公共回归，唯一权威在
 `scripts/check_compatibility.py::CHECK_GROUPS`，不是各 scope 的全部业务测试。
+新增相关消费者时，在同一变更中人工核对目录与理由；注册表非空及模块/节点存在只证明
+机械完整性。当前版本负例使用人工维护的字面量，先核实 mutation 与有效前置，再断言精确
+受控原因；历史 fixture、manifest、迁移及证据保留各自版本与原字节。
+通用 migration 基线与报告历史条件性义务见[开发入口契约](../contracts/check-compatibility.md)。
 复用现有测试不会继承其历史通过结论。原产物数量、历史终端字节、帮助及禁外部 I/O
 断言继续独立维护，不从生产输出机械推导预期。新增 CLI 冷进程帮助测试沿用现有
 `deny_external_io` 的 socket/SQLite 拒绝守卫。
@@ -80,6 +87,30 @@ pytest 插件自动加载、pytest 缓存和字节码。测试仍会使用临时
 | cli（CLI 注册/导入链） | `tests/test_audit_matrix_cli.py` | 摘要矩阵命令及安全输出 |
 | cli（CLI 注册/导入链） | `tests/test_audit_resume_cli.py` | resume/replay 帮助、继续和只读回放 |
 | cli（CLI 注册/导入链） | `tests/test_fixture_audit_references.py` | fixture 与 audit 的完整历史引用 |
+| renderer（当前报告 renderer / 持久投影与历史回放） | `tests/test_experiment_reports_cli.py` | 当前报告命令与回执 |
+| renderer（当前报告 renderer / 持久投影与历史回放） | `tests/test_experiment_reports_sections.py` | 报告各节的公共呈现 |
+| renderer（当前报告 renderer / 持久投影与历史回放） | `tests/test_experiment_reports_disclosure.py` | 当前 renderer 的安全披露 |
+| renderer（当前报告 renderer / 持久投影与历史回放） | `tests/test_experiment_reports_publication.py` | 持久投影与原子发布 |
+| renderer（当前报告 renderer / 持久投影与历史回放） | `tests/test_experiment_reports_recovery.py` | 报告恢复与重建 |
+| renderer（当前报告 renderer / 持久投影与历史回放） | `tests/test_report_replay_projection.py` | 回放原字节及当前注册损坏负例 |
+| renderer（当前报告 renderer / 持久投影与历史回放） | `tests/test_stage_b_review_report_quality.py` | 阶段 B 报告消费者与质量边界 |
+| renderer（当前报告 renderer / 持久投影与历史回放） | `tests/test_experiment_exposure_migrations.py` | 合法 v1 报告历史升级和恢复消费者 |
+| renderer（当前报告 renderer / 持久投影与历史回放） | `tests/test_stage_b_report_renderer_migrations.py` | 非空上一 revision 升级、Schema、冷恢复与 v2 拒降 |
+| renderer（当前报告 renderer / 持久投影与历史回放） | `tests/test_version_consumer_checks.py` | 独立 D1 目录完整性与跨类别去重 |
+| source-guard（当前源码守卫 / bundle 与 epoch 消费者） | `tests/test_live_bundle.py` | 当前 manifest 的构建消费及受控拒绝 |
+| source-guard（当前源码守卫 / bundle 与 epoch 消费者） | `tests/test_live_epoch_upgrade.py` | epoch 升级的源码副本与历史连续性 |
+| source-guard（当前源码守卫 / bundle 与 epoch 消费者） | `tests/test_live_admission_source_guard.py` | 当前完整源码与各历史策略 manifest |
+| source-guard（当前源码守卫 / bundle 与 epoch 消费者） | `tests/test_stage_b_review_source_history.py` | 独立历史 v28 原字节与成员保护 |
+| source-guard（当前源码守卫 / bundle 与 epoch 消费者） | `tests/test_stage_b_admission_source_closure.py` | 阶段 B 新增准入源的闭包保护 |
+| source-guard（当前源码守卫 / bundle 与 epoch 消费者） | `tests/test_version_consumer_checks.py` | 独立 D1 目录完整性与跨类别去重 |
+| migration（迁移升级 / Schema 与备份恢复消费者） | `tests/test_stage_b_report_renderer_migrations.py` | 上一有效非空 revision 升级、Schema、原子性与报告历史边界 |
+| migration（迁移升级 / Schema 与备份恢复消费者） | `tests/test_experiment_exposure_migrations.py` | 报告历史的合法降级、升级和备份恢复 |
+| migration（迁移升级 / Schema 与备份恢复消费者） | `tests/test_migration_expectations.py` | 独立人工 head 预期的唯一维护点 |
+| migration（迁移升级 / Schema 与备份恢复消费者） | `tests/test_storage_migrations.py` | 数据库 revision 分类与事务回滚 |
+| migration（迁移升级 / Schema 与备份恢复消费者） | `tests/test_backup_service.py` | 实际备份声明与非空数据保留 |
+| migration（迁移升级 / Schema 与备份恢复消费者） | `tests/test_backup_failures.py` | 旧版、未知及 future revision 备份拒绝 |
+| migration（迁移升级 / Schema 与备份恢复消费者） | `tests/test_restore_service.py` | 恢复副本的 revision 与数据闭包 |
+| migration（迁移升级 / Schema 与备份恢复消费者） | `tests/test_version_consumer_checks.py` | 独立 D1 目录完整性与跨类别去重 |
 
 `all` 是上面所有组合的有序并集，同一节点只执行一次。
 <!-- compatibility-selections:end -->
@@ -89,6 +120,9 @@ pytest 插件自动加载、pytest 缓存和字节码。测试仍会使用临时
 原始复现/计时记录保存在被 Git 忽略的 `.scratch/issue-109/`：包含同环境的三个组合、
 完整门禁的实际数量/耗时，以及隔离副本中“旧产物预期”和“提前服务导入”两类
 受控回归的修前失败、修后通过原始输出。记录仅供开发诊断，不是正式验收文件。
+
+版本消费者目录的人工核对、独立 D1 数量及三类旧缺陷隔离重放见
+[#207 开发验证台账](../verification/issue-207-version-consumers.md)。
 
 ## 开发环境
 

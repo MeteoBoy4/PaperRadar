@@ -38,6 +38,13 @@ def test_nonempty_reports_revision_upgrade_failure_retry_and_restore(
 ) -> None:
     # 冻结的合成 b008/v1 非空根:不让当前 renderer2 产物冒充 b006 历史。
     root = ExperimentRoot(legacy_root(tmp_path))
+    with sqlite3.connect(root.database) as connection:
+        assert connection.execute(
+            "SELECT version_num FROM alembic_version"
+        ).fetchone() == ("b008_body_selection",)
+        assert connection.execute(
+            "SELECT renderer_version,state FROM report_runs"
+        ).fetchall() == [(1, "published")]
     original = root.initialize()
     with sqlite3.connect(root.database) as connection:
         (historical_id,) = connection.execute(

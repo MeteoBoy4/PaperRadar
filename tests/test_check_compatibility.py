@@ -19,7 +19,11 @@ def test_union_preserves_order_and_executes_each_selection_once() -> None:
     cli = select_tests("cli")
     union = select_tests("all")
     assert acceptance and cli
-    assert set(union) == set(acceptance) | set(cli)
+    assert set(union) == set(acceptance) | set(cli) | {
+        selector
+        for group in ("renderer", "source-guard", "migration")
+        for selector in select_tests(group)
+    }
     assert len(union) == len(set(union))
     assert union[: len(acceptance)] == acceptance
     assert "tests/test_a10_entry.py" in acceptance
