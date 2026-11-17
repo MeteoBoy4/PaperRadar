@@ -106,7 +106,7 @@ flowchart TD
 - G：I03、I09、T04、T07–T10、T13、T17–T20、T24；扩展通用长文与普通 Read 队列，reduce 允许集合适用 Read v2 末次降级规则，评分理由始终整体拒绝；依据[Read 校验](contracts/read-validation.md)。
 - H：I06、I12、T15–T17、T23、T24；负责完整日报、复核和诊断分支实际隐藏，承接 A3 历史证明未含的普通报告重建（[规格 §9.1](../intent/draft.md#91-本机一致性快照)）。I04、I05、T05、T07、T08、T12 的分项披露继续保留 unknown、原状态、时点与下一动作，共享片段不占论文容量；依据[准入收口台账](verification/issue-168-176-live-admission-closure.md)。按 [ADR-0042](adr/0042-accept-read-v2-with-final-attempt-degradation.md)展示受限内容警告及丢弃标记／每类计数，不将降级结果表述为已核对或已支撑。
 - I：I13、T06、T17、T25、D02、D04；聚合各阶段验收，承接 A3 历史证明未含的任务续跑、NAS 与最终恢复。按[脱网回放](contracts/backup-restore.md#隔离脱网回放)独立评估原根／副本并行执行的外发授权、预算、租约和重复执行风险；本机内容闭包不代替跨副本 exactly-once 或 NAS。依 [ADR-0048](adr/0048-accept-bounded-request-observability.md)重新评估精确请求计数及其隐私／运行成本，近似下界与 unknown 不构成完整计数通过。
-- A10 遗留：AMS 来源与四刊摘要稳定及附加区块语义接 C/F/Abstract，正文／PDF／Docling 接 F，生产导入接 C，NAS 接 I；首轮 AIES 为 202，不声称历史 AMS403 复现。来源见[实测证据](verification/exp-1-http-audit.md)，其他未验范围见[A10 继承缺口](verification/doc-unification-history.md#a10-继承缺口)。
+- A10 遗留：AMS 来源与四刊摘要稳定接 C/F/Abstract，附加区块消费语义已由 [ADR-0072](adr/0072-screening-consumes-main-abstract-block-only.md) 固定为只保留存在与定位，正文／PDF／Docling 接 F，生产导入接 C，NAS 接 I；首轮 AIES 为 202，不声称历史 AMS403 复现。来源见[实测证据](verification/exp-1-http-audit.md)，其他未验范围见[A10 继承缺口](verification/doc-unification-history.md#a10-继承缺口)。
 
 后续执行入口从首次接线起显式注入所选根文件汇，并补对应执行入口守卫；库服务默认 NullSink。
 E/G/H/I 各自补 deferred 概念与真实消费者组合，不从纯规则或 B 单样本继承生产资格。
@@ -131,7 +131,6 @@ E/G/H/I 各自补 deferred 概念与真实消费者组合，不从纯规则或 B
 | 编号 | 问题 | 阻塞的模块 | 最迟闸门 | 裁决后位置与出处 |
 | --- | --- | --- | --- | --- |
 | DEC-1 | 四刊摘要稳定阈值与是否一律非截断；未达标的降级及披露 | Abstract、D | 验收前确定，最迟 D 正式预热冻结/首批校准前逐刊收口 | 规格 §4.3/§11；[收口未决项](verification/stage-a-closure.md#收口责任与未决项) |
-| DEC-3 | 附加摘要区块消费语义 | C | C 消费前 | 规格 §4.3；[ADR-0036](adr/0036-isolate-stage-b-read-experiment.md#未豁免条件与证明边界) |
 
 ## 待探索
 

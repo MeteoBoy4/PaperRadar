@@ -415,7 +415,7 @@ validate_all 与备份固定副本核验声明原字节/替换链、全部审计
 
 - complete 仅表示终态齐备，不实现 B 就绪判定，不证明真实来源稳定、Docling 质量、模型或完整阶段 A 通过。首轮实测与 JGR 来源闸门由[Audit](../roadmap.md#module-audit)/[Source](../roadmap.md#module-source)承接；四刊稳定证据与判据由[Abstract](../roadmap.md#module-abstract)承接。
 - 不提供浏览器、官方 API、仓储或授权运行时，不下载或解析 PDF；正文与全通道责任见[F](../roadmap.md#module-f)，B 单篇正文与接线见[Body](../roadmap.md#module-body)/[B](../roadmap.md#module-b)。本机 PDF 登记不授予许可、身份或质量资格。
-- 不消费附加区块生成生产 Screening，不实现生产人工队列、metadata_ready 或 metadata_unobtainable 生命周期；相关责任见[C](../roadmap.md#module-c)。不提供参考文献 acquired 取得入口，参考文献处理责任见[E](../roadmap.md#module-e)。
+- 不消费附加区块生成生产 Screening，附加区块只保留存在及定位（[ADR-0072](../adr/0072-screening-consumes-main-abstract-block-only.md)）；不实现生产人工队列、metadata_ready 或 metadata_unobtainable 生命周期，相关责任见[C](../roadmap.md#module-c)。不提供参考文献 acquired 取得入口，参考文献处理责任见[E](../roadmap.md#module-e)。
 - 不以本机恢复或历史离线工程证据推定 NAS、无人值守或 live 就绪；恢复扩展责任见[I](../roadmap.md#module-i)。原有过程与恢复证明范围见[历史摘录](../verification/contracts-fixture-audit-history.md)，独立 A10 验收边界见[验证状态契约](verification-status.md#a10-结论支持)。
 
 
@@ -433,7 +433,7 @@ A10 覆盖台账的 `ledger_revision=2` 保留 693 个原 ID 与 37 份来源原
 
 ## 相关
 
-依据：[#146](https://github.com/MeteoBoy4/PaperRadar/issues/146)、[#100](https://github.com/MeteoBoy4/PaperRadar/issues/100)、[#101](https://github.com/MeteoBoy4/PaperRadar/issues/101)、[#102](https://github.com/MeteoBoy4/PaperRadar/issues/102)、[#103](https://github.com/MeteoBoy4/PaperRadar/issues/103)、[#104](https://github.com/MeteoBoy4/PaperRadar/issues/104)、[#105](https://github.com/MeteoBoy4/PaperRadar/issues/105)、[#106](https://github.com/MeteoBoy4/PaperRadar/issues/106)、[#107](https://github.com/MeteoBoy4/PaperRadar/issues/107)、[#108](https://github.com/MeteoBoy4/PaperRadar/issues/108)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)、[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126)、[#129](https://github.com/MeteoBoy4/PaperRadar/issues/129)。
+依据：[#146](https://github.com/MeteoBoy4/PaperRadar/issues/146)、[#100](https://github.com/MeteoBoy4/PaperRadar/issues/100)、[#101](https://github.com/MeteoBoy4/PaperRadar/issues/101)、[#102](https://github.com/MeteoBoy4/PaperRadar/issues/102)、[#103](https://github.com/MeteoBoy4/PaperRadar/issues/103)、[#104](https://github.com/MeteoBoy4/PaperRadar/issues/104)、[#105](https://github.com/MeteoBoy4/PaperRadar/issues/105)、[#106](https://github.com/MeteoBoy4/PaperRadar/issues/106)、[#107](https://github.com/MeteoBoy4/PaperRadar/issues/107)、[#108](https://github.com/MeteoBoy4/PaperRadar/issues/108)、[#111](https://github.com/MeteoBoy4/PaperRadar/issues/111)、[#126](https://github.com/MeteoBoy4/PaperRadar/issues/126)、[#129](https://github.com/MeteoBoy4/PaperRadar/issues/129)、[ADR-0072](../adr/0072-screening-consumes-main-abstract-block-only.md)。
 
 - 目标：[规格 §4.3](../../intent/draft.md#43-元数据与来源仲裁)、[§11 B](../../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)、[§13](../../intent/draft.md#十三真实来源与冻结样本)。
 - 决策：[ADR-0032](../adr/0032-relax-paper-acquisition-without-evading-access-controls.md)、[ADR-0033](../adr/0033-classify-journal-articles-from-explicit-source-types.md)、[ADR-0034](../adr/0034-separate-fixture-declarations-and-acquisition-audits.md)、[ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。

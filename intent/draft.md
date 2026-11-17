@@ -417,7 +417,7 @@ paper-radar run-due --date YYYY-MM-DD
 
 A10 裁决（#100）：类别依据只采用 Crossref `message.type=journal-article`、DataCite `types.resourceTypeGeneral=JournalArticle`、《大气科学》current Feed `dc:type=article` 与出版者 `dc.type=论文`。注册机构其他明确类型为非 journal-article，平台表外值/缺字段为未知，不同明确判定矛盾为冲突，分别计数；Wiley `category`/`prism:section` 只保存原值，不用子类型预过滤。doiRA `https://doi.org/doiRA/{doi}` 只用于机构路由，Crossref/DataCite 各走适用机构，其他 RA 为 `agency_unsupported`，查询失败或 404 为 `agency_unknown`，单机构 404 不证明 DOI 不存在（ADR-0033/0034）。
 
-主摘要边界同时用于 Feed 和出版者：只取 Abstract/摘要 主区块；《大气科学》取中文 abstract-cn，英文 abstract-en、Significance Statement、Plain Language Summary、Key Points 只保留存在与定位。Wiley Feed 的 Abstract 前置段与《大气科学》`<p>` 外引文尾行均不并入摘要，不拼接另一语种或来源。区块切分、实体解码、去标记和段落连接整体版本化；B 首次 Screening 只消费主区块并记录这一选择；是否消费这些额外区块留待 C 裁决，不受 B 结果约束。
+主摘要边界同时用于 Feed 和出版者：只取 Abstract/摘要 主区块；《大气科学》取中文 abstract-cn，英文 abstract-en、Significance Statement、Plain Language Summary、Key Points 只保留存在与定位。Wiley Feed 的 Abstract 前置段与《大气科学》`<p>` 外引文尾行均不并入摘要，不拼接另一语种或来源。区块切分、实体解码、去标记和段落连接整体版本化；Screening 只消费主区块，上述附加区块不进入 Screening 输入或校准标签，继续只保留存在与定位，附加区块取得失败不构成摘要取得失败或降级条件（ADR-0072）。
 
 第一版只接入：
 

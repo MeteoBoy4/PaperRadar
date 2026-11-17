@@ -121,8 +121,9 @@ historical_result_in_connection按明确请求/版本/修订重放历史最低�
   真实审计与 JGR 判据由[Audit](../roadmap.md#module-audit)、
   [Source](../roadmap.md#module-source)及[B](../roadmap.md#module-b)承接。
 - 不提供四刊生产元数据扩展、7 天复查或完整资格调度，责任见[C](../roadmap.md#module-c)。
-  附加区块消费语义由[C](../roadmap.md#module-c)承接，四刊摘要稳定阈值与条件降级由
-  [Abstract](../roadmap.md#module-abstract)承接；本契约不定义其未来行为。
+  附加区块不进入 Screening 输入，只保存存在及定位，消费边界见
+  [ADR-0072](../adr/0072-screening-consumes-main-abstract-block-only.md)；四刊摘要稳定阈值与条件降级由
+  [Abstract](../roadmap.md#module-abstract)承接，本契约不定义其未来行为。
 
 ## 相关
 
@@ -137,5 +138,6 @@ historical_result_in_connection按明确请求/版本/修订重放历史最低�
   [ADR-0009](../adr/0009-retain-only-material-provider-responses.md)、
   [ADR-0030](../adr/0030-paper-version-identity-and-source-observations.md)、
   [ADR-0032](../adr/0032-relax-paper-acquisition-without-evading-access-controls.md)、
-  [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)。
+  [ADR-0036](../adr/0036-isolate-stage-b-read-experiment.md)、
+  [ADR-0072](../adr/0072-screening-consumes-main-abstract-block-only.md)。
 - [历史工程证据及证明边界](../verification/issue-114-feed-delivery.md)。
