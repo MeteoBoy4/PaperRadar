@@ -8,7 +8,7 @@
 
 前沿按[维护规则](agents/roadmap.md)从下表推导：依赖全部已完成的「可规格化」模块，加上所有「已规格化」模块。
 
-当前没有满足规则的前沿模块；下一承接为 [C](#module-c)，状态与依赖见[模块表](#模块)。
+当前前沿是 [C](#module-c)，已规格化为 [#209](https://github.com/MeteoBoy4/PaperRadar/issues/209)；四份阶段 C 裁决与 [grill 记录](../intent/review/stage-c-grill-decisions.md)先由文档统一子票 [#210](https://github.com/MeteoBoy4/PaperRadar/issues/210) 融入规格、ADR、术语与路线图，状态与依赖见[模块表](#模块)。
 [B](#module-b) 的工程范围与最终冻结门禁生效条件见[收口台账](verification/stage-b-engineering-closure.md)，
 所有者已签收的真实链与隔离恢复分别由该台账索引，证明范围仍按[规格 §11 B](../intent/draft.md#阶段-bjgr-feed-第一条真实纵向闭环)。
 
@@ -61,7 +61,7 @@ flowchart TD
 | <a id="module-body"></a>Body | 正文生产切片、Read 身份与预算 | 已完成（[#155](https://github.com/MeteoBoy4/PaperRadar/issues/155)；[工程覆盖与最终门禁判据](verification/issue-165-body-read-closure.md)） | Extra | AFK |
 | <a id="module-feed"></a>Feed | 强冲突持久化、JGR 元数据与语言事实 | 已完成（[#114](https://github.com/MeteoBoy4/PaperRadar/issues/114)；[离线工程证据](verification/issue-114-feed-delivery.md)） | 无 | AFK |
 | <a id="module-b"></a>B | B 实验根内纵向闭环 | 已完成（[#185](https://github.com/MeteoBoy4/PaperRadar/issues/185)；[工程收口与最终门禁条件](verification/stage-b-engineering-closure.md)，结论按该条件生效） | A、Body、Feed、Source | HITL |
-| <a id="module-c"></a>C | C 生产根四刊积累、保留器与可见性 | 未成形 | B | HITL |
+| <a id="module-c"></a>C | C 生产根四刊积累、保留器与可见性 | 已规格化（[#209](https://github.com/MeteoBoy4/PaperRadar/issues/209)） | B | HITL |
 | <a id="module-f"></a>F | F 全通道、四刊正文与摘录 fixture | 未成形 | C | HITL |
 | <a id="module-abstract"></a>Abstract | 四刊摘要稳定证据及判据裁决 | 待裁决 | C、F | HITL |
 | <a id="module-d"></a>D | D reuse 执行与正式校准 | 未成形 | F、Abstract | HITL |
@@ -149,7 +149,7 @@ E/G/H/I 各自补 deferred 概念与真实消费者组合，不从纯规则或 B
 
 ## 未成形
 
-下一承接为[模块表](#模块)中的 C；依赖完成不自动将模块提升为可规格化。
+未成形模块的状态以[模块表](#模块)为准；依赖完成不自动将模块提升为可规格化。
 后续模块成形、单 spec、跨 spec 与共享资源串行统一执行[集成规则](agents/verification-scope.md)，
 固定材料与覆盖依据见[集成台账](verification/scope-registry-integration.md)。
 
